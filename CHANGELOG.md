@@ -32,6 +32,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `blueprint::mesh::examples::braid` examples with mixed element topologies (`mesh_type={"mixed", "mixed_2d"}`)
 - Added 1D mesh example support to `blueprint::mesh::examples::basic()`.
 - Added adjacency set aware generate functions (`genearte_points()`, etc) to the non-mpi blueprint library.
+- Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in an existing tree.
 
 
 #### Relay
@@ -40,12 +41,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Changed
 
+#### Blueprint
+- Removed field `type` entries from braid examples, since that info is not required by the Mesh Blueprint.
+- Fixed a const-ignoring crime related to polyhedral element and subelement offset generation.
+- Refactored unstructured case in `blueprint::mesh::topology::logical_dims` calculation to directly calculate number of elements instead of generating offsets.
+
 #### Relay
 - Changed HDF5 CMake sanity checks to issue `WARNING` instead of `FATAL_ERROR`, since Cray system HDF5 installs do not always present the info we use for sanity checks.
 - Changed HDF5 version guards to also check requested HDF5 API.
 
-#### Blueprint
-- Removed field `type` entries from braid examples, since that info is not required by the Mesh Blueprint.
 
 ### Fixed
 

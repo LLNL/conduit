@@ -1306,12 +1306,24 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     // is currently no good way in Blueprint to create mappings with sparse data.
     const std::vector<std::string> csys_axes = bputils::coordset::axes(coordset);
 
-    Node topo_offsets;
-    bputils::topology::unstructured::generate_offsets(topo, topo_offsets);
-    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
-
     const ShapeCascade topo_cascade(topo);
     const ShapeType &topo_shape = topo_cascade.get_shape();
+
+    Node topo_offsets, topo_suboffsets;
+
+    if (topo_shape.is_polyhedral())
+    {
+        bputils::topology::unstructured::generate_offsets(topo,
+                                                          topo_offsets,
+                                                          topo_suboffsets);
+    }
+    else
+    {
+        bputils::topology::unstructured::generate_offsets(topo, topo_offsets);
+    }
+
+    const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
+
 
     Node topo_sizes;
     if (topo_shape.is_poly())
@@ -1321,13 +1333,10 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 
     Node topo_subconn;
     Node topo_subsizes;
-    Node topo_suboffsets;
     if (topo_shape.is_polyhedral())
     {
-        const Node &topo_subconn_const = topo["subelements/connectivity"];
-        topo_subconn.set_external(topo_subconn_const);
-        topo_subsizes = topo["subelements/sizes"];
-        topo_suboffsets = topo["subelements/offsets"];
+        topo_subconn.set_external(topo["subelements/connectivity"]);
+        topo_subsizes.set_external(topo["subelements/sizes"]);
     }
 
     // Discover Data Types //
@@ -3822,7 +3831,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
             temp.set_external(poly_size_data);
             temp.to_data_type(int_dtype.id(), dest["elements/sizes"]);
 
-            generate_offsets(dest, dest["elements/offsets"]);
+            utils::topology::unstructured::generate_offsets_inline(dest);
         }
         else // if(is_topo_3d) // polyhedral
         {
@@ -3893,9 +3902,7 @@ mesh::topology::unstructured::to_polygonal(const Node &topo,
 
             dest["subelements/shape"].set("polygonal");
 
-            // BHAN - For polyhedral, writes offsets for
-            // "elements/offsets" and "subelements/offsets"
-            generate_offsets(dest, dest["elements/offsets"]);
+            utils::topology::unstructured::generate_offsets_inline(dest);
         }
     }
 }
@@ -5556,7 +5563,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
         // TODO(JRC): Implement these counts in-line instead of being lazy and
         // taking care of it at the end of the function w/ a helper.
-        generate_offsets(topo_dest, topo_dest["elements/offsets"]);
+        generate_offsets_inline(topo_dest);
+        
         blueprint::o2mrelation::generate_offsets(s2dmap, info);
         blueprint::o2mrelation::generate_offsets(d2smap, info);
     }
@@ -5568,6 +5576,25 @@ mesh::topology::unstructured::generate_offsets(const Node &topo,
                                                Node &dest)
 {
     return bputils::topology::unstructured::generate_offsets(topo, dest);
+}
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_offsets(const Node &topo,
+                                               Node &dest_eleoffsets,
+                                               Node &dest_subeleoffsets)
+{
+    return bputils::topology::unstructured::generate_offsets(topo,
+                                                             dest_eleoffsets,
+                                                             dest_subeleoffsets);
+}
+
+
+//-----------------------------------------------------------------------------
+void
+mesh::topology::unstructured::generate_offsets_inline(Node &topo)
+{
+    return bputils::topology::unstructured::generate_offsets_inline(topo);
 }
 
 //-----------------------------------------------------------------------------

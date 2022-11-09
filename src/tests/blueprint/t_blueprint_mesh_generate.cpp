@@ -950,8 +950,9 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
         Node grid_offsets;
         mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
         const DataType offset_dtype = grid_offsets.dtype();
-
-        EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
+        
+        // relax exact type req, conn transforms will become index_t
+        //EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
         EXPECT_EQ(offset_dtype.number_of_elements(), grid_mesh.elems());
 
         Node expected_offsets_int64(DataType::int64(grid_mesh.elems()));
@@ -985,8 +986,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
         Node grid_offsets;
         mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
         const DataType offset_dtype = grid_offsets.dtype();
-
-        EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
         EXPECT_EQ(offset_dtype.number_of_elements(), grid_mesh.elems());
 
         Node expected_offsets_int64(DataType::int64(grid_mesh.elems()));
@@ -1047,7 +1048,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
         Node &cent_conn = cent_topo["elements/connectivity"];
 
         EXPECT_EQ(cent_topo["coordset"].as_string(), CENTROID_COORDSET_NAME);
-        EXPECT_EQ(cent_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        //EXPECT_EQ(cent_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(cent_conn.dtype().number_of_elements(), grid_mesh.elems());
 
         // Verify Data Integrity //
@@ -1061,7 +1063,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
         for(index_t mi = 0; mi < 2; mi++)
         {
             conduit::Node& map_node = *map_nodes[mi];
-            EXPECT_EQ(map_node.dtype().id(), grid_conn.dtype().id());
+            // relax exact type req, conn transforms will become index_t
+            //EXPECT_EQ(map_node.dtype().id(), grid_conn.dtype().id());
             EXPECT_EQ(map_node.dtype().number_of_elements(), 2 * grid_mesh.elems());
 
             std::vector<index_t> map_values, expected_values;
@@ -1116,7 +1119,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
         const Node &grid_conn = grid_topo["elements/connectivity"];
         Node &point_conn = point_topo["elements/connectivity"];
 
-        EXPECT_EQ(point_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(point_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(point_conn.dtype().number_of_elements(), grid_points);
 
         // Content Consistency Checks //
@@ -1201,7 +1205,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
         const Node &grid_conn = grid_topo["elements/connectivity"];
         Node &line_conn = line_topo["elements/connectivity"];
 
-        EXPECT_EQ(line_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(line_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(line_conn.dtype().number_of_elements(), 2 * grid_mesh.lines());
 
         // Content Consistency Checks //
@@ -1279,7 +1284,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 
         EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
         EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
-        EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(face_off.dtype().number_of_elements(), grid_mesh.faces());
 
         // Content Consistency Checks //
@@ -1376,7 +1382,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
 
         EXPECT_EQ(side_topo["coordset"].as_string(), SIDE_COORDSET_NAME);
         EXPECT_EQ(side_topo["elements/shape"].as_string(), side_type_name);
-        EXPECT_EQ(side_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(side_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(side_off.dtype().number_of_elements(), grid_sides);
 
         // Validate Correctness of Element Integrity //
@@ -1572,7 +1579,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
 
         EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
         EXPECT_EQ(corner_topo["elements/shape"].as_string(), corner_type_name);
-        EXPECT_EQ(corner_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(corner_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(corner_off.dtype().number_of_elements(), grid_corners);
 
         // Validate Correctness of Element Integrity //

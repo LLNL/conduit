@@ -224,8 +224,20 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 {
     // NOTE(JRC): This type current only works at forming associations within
     // an unstructured topology's hierarchy.
-    Node topo_offsets;
-    topology::unstructured::generate_offsets(*topo, topo_offsets);
+    Node topo_offsets, topo_suboffsets;
+    bool is_polyhedral = topo->has_child("subelements");
+
+    if(is_polyhedral)
+    {
+        topology::unstructured::generate_offsets(*topo,
+                                                 topo_offsets,
+                                                 topo_suboffsets);
+    }
+    else
+    {
+        topology::unstructured::generate_offsets(*topo, topo_offsets);
+    }
+
     const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
     const index_t topo_num_coords = coordset::length(coordset);
 
@@ -250,6 +262,10 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
     // processing below.
     dim_topos[topo_shape.dim].set_external(topology);
     dim_topos[topo_shape.dim]["elements/offsets"].set(topo_offsets);
+    if(is_polyhedral)
+    {
+        dim_topos[topo_shape.dim]["subelements/offsets"].set(topo_suboffsets);
+    }
     std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
 
     // Prepare Initial Values for Processing //
@@ -321,21 +337,18 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         else // if(dim_shape.is_polyhedral())
         {
             const index_t elem_outer_count = entity_indices.size();
+            index_t_accessor elem_inner_sizes   = topo->fetch_existing("subelements/sizes").value();
+            index_t_accessor elem_inner_offsets = topo_suboffsets.value();
+            index_t_accessor elem_inner_conn    = topo->fetch_existing("subelements/connectivity").value();
+            
             for(index_t oi = 0; oi < elem_outer_count; oi++)
             {
-                temp.set_external((*topo)["subelements/offsets"]);
-                data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
-                const index_t elem_inner_offset = data.to_index_t();
+                const index_t elem_inner_size   = elem_inner_sizes[entity_indices[oi]];
+                const index_t elem_inner_offset = elem_inner_offsets[entity_indices[oi]];
 
-                temp.set_external((*topo)["subelements/sizes"]);
-                data.set_external(int_dtype, temp.element_ptr(entity_indices[oi]));
-                const index_t elem_inner_count = data.to_index_t();
-
-                for(index_t ii = 0; ii < elem_inner_count; ii++)
+                for(index_t ii = 0; ii < elem_inner_size; ii++)
                 {
-                    temp.set_external((*topo)["subelements/connectivity"]);
-                    data.set_external(int_dtype, temp.element_ptr(elem_inner_offset + ii));
-                    const index_t vi = data.to_int64();
+                    const index_t vi = elem_inner_conn[elem_inner_offset + ii];
                     vert_ids.insert(vi);
                 }
             }
@@ -395,24 +408,22 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
             // to be refactored so that it's legible. There's a lot of overlap in
             // used variables where it feels unnecessary (e.g. 'poly' being
             // shoehorned into using 'implicit' variables), for example.
+            
+            
+            //
+            // NOTE(CYRUSH): Refactored to use accessors, however we still have
+            // inner loop accessor fetches, which is less than ideal
+            //
             for(index_t oi = 0, ooff = 0; oi < elem_outer_count; oi++)
             {
                 index_t elem_inner_count = embed_shape.indices;
 
                 if (dim_shape.is_polyhedral())
                 {
-                    const Node &subelem_off_const = (*topo)["subelements/offsets"];
-                    const Node &subelem_size_const = (*topo)["subelements/sizes"];
-
-                    Node subelem_off; subelem_off.set_external(subelem_off_const);
-                    Node subelem_size; subelem_size.set_external(subelem_size_const);
-
-                    temp.set_external(int_dtype,
-                        subelem_off.element_ptr(entity_indices[oi]));
-                    ooff = temp.to_int64();
-                    temp.set_external(int_dtype,
-                        subelem_size.element_ptr(entity_indices[oi]));
-                    elem_inner_count = temp.to_int64();
+                    index_t_accessor subelem_sizes   = topo->fetch_existing("subelements/sizes").value();
+                    index_t_accessor subelem_offsets = topo_suboffsets.value();
+                    elem_inner_count = subelem_sizes[entity_indices[oi]];
+                    ooff = subelem_offsets[entity_indices[oi]];
                 }
 
                 std::vector<int64> embed_indices;
@@ -423,17 +434,12 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
                     if (dim_shape.is_polyhedral())
                     {
-                        const Node &subelem_conn_const = (*topo)["subelements/connectivity"];
-                        Node subelem_conn; subelem_conn.set_external(subelem_conn_const);
-
-                        temp.set_external(int_dtype,
-                            subelem_conn.element_ptr(ioff));
-                        embed_indices.push_back(temp.to_int64());
+                        index_t_accessor subele_conn = topo->fetch_existing("subelements/connectivity").value();
+                        embed_indices.push_back(subele_conn[ioff]);
                     }
                     else
                     {
-                        embed_indices.push_back(
-                            entity_indices[ioff % entity_indices.size()]);
+                        embed_indices.push_back(entity_indices[ioff % entity_indices.size()]);
                     }
                 }
 
@@ -480,8 +486,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
             }
         }
 
-        Node dim_topo_offsets;
-        topology::unstructured::generate_offsets(dim_topos[di], dim_topo_offsets);
+        topology::unstructured::generate_offsets_inline(dim_topos[di]);
     }
 }
 
@@ -1761,11 +1766,45 @@ topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
     }
     else // if(type == "unstructured")
     {
-        // TODO(JRC): This is rather inefficient because the offsets array
-        // is discarded after this calculation is complete.
-        Node topo_offsets;
-        topology::unstructured::generate_offsets(n, topo_offsets);
-        d[0] = topo_offsets.dtype().number_of_elements();
+        // calc total number of elements
+
+        // polygonal and polyhedral, or otherwise explicit "sizes"
+        if(n["elements"].has_child("sizes"))
+        {
+            d[0] = n["elements/sizes"].dtype().number_of_elements();
+        }
+        else if( n["elements"].has_child("element_index") )  // stream style (deprecated)
+        {
+            const Node &elems_idx =  n["elements/element_index"];
+            if(elems_idx.has_child("element_counts"))
+            {
+                index_t_accessor elem_counts_vals  = elems_idx["element_counts"].value();
+                index_t total_elems = 0;
+                for(index_t i=0;i< elem_counts_vals.number_of_elements();i++)
+                {
+                    total_elems += elem_counts_vals[i];
+                }
+                d[0] = total_elems;
+            } // else, use size of stream_ids
+            else if(elems_idx.has_child("stream_ids"))
+            {
+                d[0] = elems_idx["stream_ids"].dtype().number_of_elements();
+            }
+            else
+            {
+                CONDUIT_ERROR("invalid stream id topology: "
+                              "missing elements/element_index/stream_ids");
+            }
+
+        }
+        else // zoo
+        {
+            index_t conn_size = n["elements/connectivity"].dtype().number_of_elements();
+            std::string shape_type_name = n["elements/shape"].as_string();
+            // total number of elements == conn array size / shape size
+            ShapeType shape_info(shape_type_name);
+            d[0] = conn_size / shape_info.indices;
+        }
     }
 }
 
@@ -1835,30 +1874,32 @@ topology::reindex_coords(const Node& topo,
 
 //-----------------------------------------------------------------------------
 void
-topology::unstructured::generate_offsets(Node &n,
-                                         Node &dest)
+topology::unstructured::generate_offsets_inline(Node &topo)
 {
-    dest.reset();
-
-    // FIXME(JRC): There are weird cases wherein a polyhedral topology can have only
-    // the 'elements/offsets' defined and not 'subelements/offsets', which isn't currently
-    // properly handled by this function.
-
-    if(n["elements"].has_child("offsets") && !n["elements/offsets"].dtype().is_empty())
+    // check for polyhedral case
+    if(topo.has_child("subelements"))
     {
-        if(&dest != &n["elements/offsets"])
+        // if ele or subelee offsets are missing or empty we want to generate
+        if( (!topo["elements"].has_child("offsets") || 
+             topo["elements/offsets"].dtype().is_empty()) ||
+           (!topo["subelements"].has_child("offsets") || 
+             topo["subelements/offsets"].dtype().is_empty())
+           )
         {
-            dest.set_external(n["elements/offsets"]);
+            blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
+                                                                             topo["elements/offsets"],
+                                                                             topo["subelements/offsets"]);
         }
+
     }
     else
     {
-        const Node &n_const = n;
-        Node &offsets = n["elements/offsets"];
-        blueprint::mesh::utils::topology::unstructured::generate_offsets(n_const, offsets);
-        if(&dest != &offsets)
+        // if ele offsets is missing or empty we want to generate
+        if( !topo["elements"].has_child("offsets") || 
+            topo["elements/offsets"].dtype().is_empty())
         {
-            dest.set_external(offsets);
+            blueprint::mesh::utils::topology::unstructured::generate_offsets(topo,
+                                                                             topo["elements/offsets"]);
         }
     }
 }
@@ -1866,32 +1907,82 @@ topology::unstructured::generate_offsets(Node &n,
 
 //-----------------------------------------------------------------------------
 void
-topology::unstructured::generate_offsets(const Node &n,
-                                         Node &dest)
+topology::unstructured::generate_offsets(const Node &topo,
+                                         Node &ele_offsets)
 {
-    const ShapeType topo_shape(n);
-    const DataType int_dtype = find_widest_dtype(n, DEFAULT_INT_DTYPES);
+    Node subele_offsets;
+    generate_offsets(topo,ele_offsets,subele_offsets);
+}
+
+//-----------------------------------------------------------------------------
+void
+topology::unstructured::generate_offsets(const Node &topo,
+                                         Node &dest_ele_offsets,
+                                         Node &dest_subele_offsets)
+{
+    dest_ele_offsets.reset();
+    dest_subele_offsets.reset();
+
+    const ShapeType topo_shape(topo);
+    const DataType int_dtype = find_widest_dtype(topo, DEFAULT_INT_DTYPES);
     std::string key("elements/connectivity"), stream_key("elements/stream");
-    if(!n.has_path(key))
+
+    if(!topo.has_path(key))
         key = stream_key;
-    const Node &topo_conn = n[key];
+    const Node &topo_conn = topo[key];
 
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
-    if(n["elements"].has_child("offsets") && !n["elements/offsets"].dtype().is_empty())
+    // if these have already been generate, use set external to copy out results
+    if(topo_shape.type == "polyhedral")
     {
-        if(&dest != &n["elements/offsets"])
+    
+        if( (topo["elements"].has_child("offsets") &&
+             !topo["elements/offsets"].dtype().is_empty())  &&
+             (topo["subelements"].has_child("offsets") &&
+             !topo["subelements/offsets"].dtype().is_empty())
+          )
         {
-            dest.set_external(n["elements/offsets"]);
+            // they are already here, set external and return
+            if(&dest_ele_offsets != &topo["elements/offsets"])
+            {
+                dest_ele_offsets.set_external(topo["elements/offsets"]);
+            }
+            if(&dest_subele_offsets != &topo["subelements/offsets"])
+            {
+                dest_subele_offsets.set_external(topo["subelements/offsets"]);
+            }
+            // we are done
+            return;
         }
     }
-    else if(n.has_path(stream_key))
+    else // non polyhedral
     {
-        dest.reset();
+        if( topo["elements"].has_child("offsets") &&
+            !topo["elements/offsets"].dtype().is_empty()
+          )
+        {
+            // they are already here, set external and return
+            if(&dest_ele_offsets != &topo["elements/offsets"])
+            {
+                dest_ele_offsets.set_external(topo["elements/offsets"]);
+            }
+            return;
+        }
+    }
+
+    ///
+    /// Generate Cases
+    ///
+    if(topo.has_path(stream_key))
+    {
+        ///
+        /// TODO STREAM TOPOS ARE DEPRECATED
+        ///
         // Mixed element types
         std::map<int,int> stream_id_npts;
-        const conduit::Node &n_element_types = n["elements/element_types"];
+        const conduit::Node &n_element_types = topo["elements/element_types"];
         for(index_t i = 0; i < n_element_types.number_of_children(); i++)
         {
             const Node &n_et = n_element_types[i];
@@ -1907,11 +1998,11 @@ topology::unstructured::generate_offsets(const Node &n,
             }
         }
 
-        const Node &n_stream_ids = n["elements/element_index/stream_ids"];
+        const Node &n_stream_ids = topo["elements/element_index/stream_ids"];
         std::vector<index_t> offsets;
-        if(n.has_path("elements/element_index/element_counts"))
+        if(topo.has_path("elements/element_index/element_counts"))
         {
-            const Node &n_element_counts = n["elements/element_index/element_counts"];
+            const Node &n_element_counts = topo["elements/element_index/element_counts"];
 
             index_t offset = 0, elemid = 0;
             for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
@@ -1932,10 +2023,10 @@ topology::unstructured::generate_offsets(const Node &n,
                 }
             }
         }
-        else if(n.has_path("elements/element_index/offsets"))
+        else if(topo.has_path("elements/element_index/offsets"))
         {
-            const Node &n_stream = n["elements/stream"];
-            const Node &n_element_offsets = n["elements/element_index/offsets"];
+            const Node &n_stream = topo["elements/stream"];
+            const Node &n_element_offsets = topo["elements/element_index/offsets"];
             index_t offset = 0, elemid = 0;
             for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
             {
@@ -1972,11 +2063,10 @@ topology::unstructured::generate_offsets(const Node &n,
 
         Node off_node;
         off_node.set_external(offsets);
-        off_node.to_data_type(int_dtype.id(), dest);
+        off_node.to_data_type(int_dtype.id(), dest_ele_offsets);
     }
     else if(!topo_shape.is_poly())
     {
-        dest.reset();       
         // Single element type
         const index_t num_topo_shapes =
             topo_conn.dtype().number_of_elements() / topo_shape.indices;
@@ -1987,13 +2077,11 @@ topology::unstructured::generate_offsets(const Node &n,
         {
             shape_array[s] = s * topo_shape.indices;
         }
-        shape_node.to_data_type(int_dtype.id(), dest);
+        shape_node.to_data_type(int_dtype.id(), dest_ele_offsets);
     }
     else if(topo_shape.type == "polygonal")
     {
-        dest.reset();
-
-        const Node &topo_size = n["elements/sizes"];
+        const Node &topo_size = topo["elements/sizes"];
         int64_accessor topo_sizes = topo_size.as_int64_accessor();
         std::vector<int64> shape_array;
         index_t i = 0;
@@ -2007,21 +2095,18 @@ topology::unstructured::generate_offsets(const Node &n,
 
         Node shape_node;
         shape_node.set_external(shape_array);
-        shape_node.to_data_type(int_dtype.id(), dest);
+        shape_node.to_data_type(int_dtype.id(), dest_ele_offsets);
     }
     else if(topo_shape.type == "polyhedral")
     {
-        Node &dest_elem_off = const_cast<Node &>(n)["elements/offsets"];
-        Node &dest_subelem_off = const_cast<Node &>(n)["subelements/offsets"];
-
-        index_t_accessor topo_elem_size = n["elements/sizes"].value();
-        index_t_accessor topo_subelem_size = n["subelements/sizes"].value();
-
-        Node elem_node;
-        Node subelem_node;
+        index_t_accessor topo_elem_size = topo["elements/sizes"].value();
+        index_t_accessor topo_subelem_size = topo["subelements/sizes"].value();
 
         index_t es_count = topo_elem_size.number_of_elements();
-        std::vector<index_t> shape_array(es_count, 0);
+
+        dest_ele_offsets.set(DataType::index_t(es_count));
+        index_t_array shape_array = dest_ele_offsets.value();
+
         index_t es = 0;
         for (index_t ei = 0; ei < es_count; ++ei)
         {
@@ -2029,21 +2114,17 @@ topology::unstructured::generate_offsets(const Node &n,
             es += topo_elem_size[ei];
         }
 
-        elem_node.set_external(shape_array);
-        elem_node.to_data_type(int_dtype.id(), dest_elem_off);
-        elem_node.to_data_type(int_dtype.id(), dest);
-
         int ses_count = topo_subelem_size.number_of_elements();
-        std::vector<index_t> subshape_array(ses_count, 0);
+
+        dest_subele_offsets.set(DataType::index_t(ses_count));
+        index_t_array subshape_array = dest_subele_offsets.value();
+
         index_t ses = 0;
         for (index_t ei = 0; ei < ses_count; ++ei)
         {
             subshape_array[ei] = ses;
             ses += topo_subelem_size[ei];
         }
-
-        subelem_node.set_external(subshape_array);
-        subelem_node.to_data_type(int_dtype.id(), dest_subelem_off);
     }
 }
 
@@ -2057,7 +2138,7 @@ topology::unstructured::points(const Node &n,
     // if they don't exist and aren't regenerated for each subcall that needs them.
     Node ntemp;
     ntemp.set_external(n);
-    generate_offsets(ntemp, ntemp["elements/offsets"]);
+    generate_offsets_inline(ntemp);
 
     const ShapeType topo_shape(ntemp);
 

@@ -590,8 +590,22 @@ namespace topology
                                                     conduit::Node &d2smap);
 
         //-------------------------------------------------------------------------
+        // Generates element offsets for given topo
         void CONDUIT_BLUEPRINT_API generate_offsets(const conduit::Node &topo,
                                                     conduit::Node &dest);
+
+        //-------------------------------------------------------------------------
+        // Generates element and subelement offsets for given topo
+        // (subelement will be empty for non-polyhedral topologies)
+        void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
+                                                    Node &dest_ele_offsets,
+                                                    Node &dest_subele_offsets);
+
+        //-------------------------------------------------------------------------
+        // Adds offsets to given topo
+        void CONDUIT_BLUEPRINT_API generate_offsets_inline(conduit::Node &topo);
+
+
     }
 
     //-------------------------------------------------------------------------

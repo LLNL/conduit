@@ -2907,7 +2907,9 @@ Partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
             if(n_topo.has_path("elements/offsets"))
                 n_topo["elements/offsets"].to_unsigned_int_array(n_offsets);
             else
+            {
                 conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(n_topo, n_offsets);
+            }
             auto offsets = n_offsets.as_unsigned_int_array();
 #else
             if(n_topo.has_path("elements/offsets"))
