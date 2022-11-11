@@ -1289,11 +1289,45 @@ TEST(conduit_blueprint_mesh_examples, polystar)
 }
 
 //-----------------------------------------------------------------------------
+void add_oneD_matset_field(Node& mesh, const std::string& topo_name, int nele)
+{
+    Node& fields = mesh["fields"];
+    Node& matsets = mesh["matsets"];
+
+    Node& f1 = fields["f1"];
+    f1["association"] = "element";
+    f1["topology"] = topo_name;
+    f1["volume_dependent"] = "false";
+    f1["matset"] = "matset";
+    f1["matset_values/001"].set(DataType::float64(nele));
+    f1["values"].set(DataType::float64(nele));
+
+    Node& ms1 = matsets["matset"];
+    ms1["topology"] = topo_name;
+    ms1["volume_fractions/001"].set(DataType::float64(nele));
+
+    float64* f1ms001vals = f1["matset_values/001"].value();
+    float64* f1vals = f1["values"].value();
+    float64* ms1vfracs = ms1["volume_fractions/001"].value();
+
+    float64 dval = 1. / nele;
+
+    for (int i = 0; i < nele; ++i)
+    {
+        f1ms001vals[i] = 1. - i*dval;
+        f1vals[i] = 1. - i * dval;
+        ms1vfracs[i] = 1.0;
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 {
+    const int nvert = 5;
     {
         Node mesh;
-        blueprint::mesh::examples::basic("rectilinear", 5, 0, 0, mesh);
+        blueprint::mesh::examples::basic("rectilinear", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
 
         test_save_mesh_helper(mesh, "oneD_struct_orig");
 
@@ -1312,7 +1346,8 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 
     {
         Node mesh;
-        blueprint::mesh::examples::basic("uniform", 5, 0, 0, mesh);
+        blueprint::mesh::examples::basic("uniform", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
 
         test_save_mesh_helper(mesh, "oneD_unif_orig");
 
@@ -1333,9 +1368,11 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, oneDtostrip_fullfeatured)
 {
+    const int nvert = 5;
     {
         Node mesh;
-        blueprint::mesh::examples::basic("rectilinear", 5, 0, 0, mesh);
+        blueprint::mesh::examples::basic("rectilinear", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
 
         test_save_mesh_helper(mesh, "oneD_struct_orig_feature");
 
@@ -1360,7 +1397,8 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip_fullfeatured)
 
     {
         Node mesh;
-        blueprint::mesh::examples::basic("uniform", 5, 0, 0, mesh);
+        blueprint::mesh::examples::basic("uniform", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
 
         test_save_mesh_helper(mesh, "oneD_unif_orig_feature");
 
