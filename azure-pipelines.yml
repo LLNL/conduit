@@ -373,9 +373,6 @@ stages:
            if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^${HDF5_SPEC}"; fi
            # silo constraints
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-           # sneak --depcreated on the end of the spec command so we can build python 2 for testing
-           # this is really evil:
-           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ' --spack-extra-args=--deprecated"; fi
            # show final spec
            echo "SPACK SPEC:"
            echo $SPACK_SPEC
