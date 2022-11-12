@@ -374,14 +374,13 @@ stages:
            # silo constraints
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
            # sneak --depcreated on the end of the spec command so we can build python 2 for testing
-           if [ $ENABLE_PYTHON2 = 'ON' ]; then export UBERENV_EXTRA_ARGS="--spack-extra-args=--deprecated"; fi
+           # this is really evil:
+           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ' --spack-extra-args=--deprecated"; fi
            # show final spec
            echo "SPACK SPEC:"
            echo $SPACK_SPEC
-           echo "UBERENV EXTRA ARGS:"
-           echo $UBERENV_EXTRA_ARGS
            # run uber to build tpls
-           python3 scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" ${UBERENV_EXTRA_ARGS} --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
+           python3 scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
         displayName: 'Spack Build Tpls'
 
       - script: |
