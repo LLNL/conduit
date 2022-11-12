@@ -411,6 +411,8 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FIND_MPI=${BLT_ENABLE_FIND_MPI}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # this is now getting set to the uberenv-pkg loc by spack, ignore for ci
+           export CMAKE_OPTS="${CMAKE_OPTS} -DPYTHON_MODULE_INSTALL_PREFIX=IGNORE"
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${COMPILER_CC}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${COMPILER_CXX}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${COMPILER_FC}"; fi
