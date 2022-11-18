@@ -2153,10 +2153,21 @@ mesh::generate_strip(conduit::Node &mesh,
     const Node& src_topo = mesh["topologies"][src_topo_name];
     const Node& src_coordset = mesh["coordsets"][src_topo["coordset"].as_string()];
     Node dst_topo, dst_coordset;
+    std::map<std::string, std::string> matset_names;
 
     mesh::coordset::generate_strip(src_coordset, dst_coordset);
     mesh::topology::generate_strip(src_topo, dst_topo_name, dst_topo);
-    mesh::field::generate_strip(mesh["fields"], src_topo_name, dst_topo_name);
+    mesh::field::generate_strip(mesh["fields"], src_topo_name, dst_topo_name, matset_names);
+    if (matset_names.size() > 0)
+    {
+        Node& matsets = mesh["matsets"];
+
+        for (std::pair<std::string, std::string> msnames : matset_names)
+        {
+           matsets[msnames.second] = matsets[msnames.first];
+           matsets[msnames.second]["topology"] = dst_topo_name;
+        }
+    }
 
     mesh["topologies"][dst_topo_name] = dst_topo;
     mesh["coordsets"][dst_topo_name] = dst_coordset;
@@ -2172,8 +2183,9 @@ mesh::generate_strip(const conduit::Node& topo,
 {
     const std::string topo_name = topo.name();
     const std::string topo_dest_name = topo_dest.name();
-    std::string field_prefix = "";
+    std::string field_prefix = "", matset_prefix = "";
     std::vector<std::string> field_names;
+    std::map<std::string, std::string> matset_names;
     const Node& fields_src = (*(topo.parent()->parent()))["fields"];
     const Node& coordset_src = (*(topo.parent()->parent()))["coordsets/" + topo["coordset"].as_string()];
 
@@ -2183,6 +2195,7 @@ mesh::generate_strip(const conduit::Node& topo,
         if (options["field_prefix"].dtype().is_string())
         {
             field_prefix = options["field_prefix"].as_string();
+            matset_prefix = field_prefix;
         }
         else
         {
@@ -2241,24 +2254,70 @@ mesh::generate_strip(const conduit::Node& topo,
         }
     }
 
+    // check for existence of matset prefix
+    if (options.has_child("matset_prefix"))
+    {
+        if (options["matset_prefix"].dtype().is_string())
+        {
+            matset_prefix = options["matset_prefix"].as_string();
+        }
+        else
+        {
+            CONDUIT_ERROR("matset_prefix must be a string.");
+        }
+    }
+
     // generate new topology
     mesh::coordset::generate_strip(coordset_src, coords_dest);
     mesh::topology::generate_strip(topo, coords_dest.name(), topo_dest);
 
+    // generate new fields
     for (const std::string& field_name : field_names)
     {
         // TODO Something useful with grid functions, when needed by users.
         if (fields_src[field_name]["association"].as_string() == "element")
         {
-            std::string field_dest_name = field_prefix + field_name;
-            fields_dest[field_dest_name] = fields_src[field_name];
+            const std::string field_dest_name = field_prefix + field_name;
 
+            if (fields_dest.has_child(field_dest_name))
+            {
+               CONDUIT_ERROR("Attempted to generate a field with an existing name " + field_dest_name);
+            }
+
+            fields_dest[field_dest_name] = fields_src[field_name];
             fields_dest[field_dest_name]["topology"] = topo_dest_name;
+
+            // If a field refers to a matset, fix up the reference and convert the matset later.
+            if (fields_dest[field_dest_name].has_child("matset"))
+            {
+                const std::string matset_name = fields_dest[field_dest_name]["matset"].as_string();
+                const std::string matset_dest_name = matset_prefix + matset_name;
+                matset_names[matset_name] = matset_dest_name;
+                fields_dest[field_dest_name]["matset"] = matset_dest_name;
+            }
         }
         else
         {
             // For now, do nothing.
             // TODO Something useful with vertex fields.  Confer with users.
+        }
+    }
+
+    // for each referenced matset, generate a matset
+    if (fields_dest.parent()->has_child("matsets"))
+    {
+        const Node& matsets_src = (*(topo.parent()->parent()))["matsets"];
+        Node& matsets_dest = (*(fields_dest.parent()))["matsets"];
+
+        for (std::pair<std::string, std::string> matset_name : matset_names)
+        {
+            if (matsets_dest.has_child(matset_name.second))
+            {
+               CONDUIT_ERROR("Attempted to generate a matset with an existing name " + matset_name.second);
+            }
+
+            matsets_dest[matset_name.second] = matsets_src[matset_name.first];
+            matsets_dest[matset_name.second]["topology"] = topo_dest_name;
         }
     }
 }
@@ -6054,7 +6113,8 @@ mesh::field::verify(const Node &field,
 void
 mesh::field::generate_strip(Node& fields,
                             const std::string& toponame,
-                            const std::string& dest_toponame)
+                            const std::string& dest_toponame,
+                            std::map<std::string, std::string> & matset_names)
 {
     Node newfields;
 
@@ -6073,6 +6133,12 @@ mesh::field::generate_strip(Node& fields,
                     const std::string newfieldname = dest_toponame + "_" + fields_it.name();
                     newfields[newfieldname] = field;
                     newfields[newfieldname]["topology"] = dest_toponame;
+                    if (newfields[newfieldname].has_child("matset"))
+                    {
+                        const std::string matset_name = newfields[newfieldname]["matset"].as_string();
+                        const std::string newmatsetname = dest_toponame + "_" + matset_name;
+                        matset_names[matset_name] = newmatsetname;
+                    }
                 }
                 else
                 {

@@ -709,7 +709,8 @@ namespace field
     //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node& fields,
                                               const std::string & toponame,
-                                              const std::string& topo_dest);
+                                              const std::string& topo_dest,
+                                              std::map<std::string, std::string>& matset_names);
 
     //-------------------------------------------------------------------------
     // Given a blueprint field and matset, converts the matset and the field
