@@ -643,11 +643,6 @@ namespace topology
 namespace matset
 {
     //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API generate_strip(conduit::Node& fields,
-                                              const std::string& topo_dest,
-                                              std::map<std::string, std::string> & matset_names);
-
-    //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &matset,
                                       conduit::Node &info);
 

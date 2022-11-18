@@ -2151,7 +2151,13 @@ mesh::generate_strip(conduit::Node &mesh,
     mesh::field::generate_strip(mesh["fields"], src_topo_name, dst_topo_name, matset_names);
     if (matset_names.size() > 0)
     {
-        mesh::matset::generate_strip(mesh["matsets"], dst_topo_name, matset_names);
+        Node& matsets = mesh["matsets"];
+
+        for (std::pair<std::string, std::string> msnames : matset_names)
+        {
+           matsets[msnames.second] = matsets[msnames.first];
+           matsets[msnames.second]["topology"] = dst_topo_name;
+        }
     }
 
     mesh["topologies"][dst_topo_name] = dst_topo;
@@ -2263,7 +2269,12 @@ mesh::generate_strip(const conduit::Node& topo,
         if (fields_src[field_name]["association"].as_string() == "element")
         {
             const std::string field_dest_name = field_prefix + field_name;
-            // TODO Error if we try to overwrite
+
+            if (fields_dest.has_child(field_dest_name))
+            {
+               CONDUIT_ERROR("Attempted to generate a field with an existing name " + field_dest_name);
+            }
+
             fields_dest[field_dest_name] = fields_src[field_name];
             fields_dest[field_dest_name]["topology"] = topo_dest_name;
 
@@ -2291,7 +2302,11 @@ mesh::generate_strip(const conduit::Node& topo,
 
         for (std::pair<std::string, std::string> matset_name : matset_names)
         {
-            // TODO Error if we try to overwrite
+            if (matsets_dest.has_child(matset_name.second))
+            {
+               CONDUIT_ERROR("Attempted to generate a matset with an existing name " + matset_name.second);
+            }
+
             matsets_dest[matset_name.second] = matsets_src[matset_name.first];
             matsets_dest[matset_name.second]["topology"] = topo_dest_name;
         }
@@ -5727,19 +5742,6 @@ mesh::topology::shape_map::verify(const Node& shape_map,
 //-----------------------------------------------------------------------------
 // blueprint::mesh::matset protocol interface
 //-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void
-mesh::matset::generate_strip(Node& matsets,
-                             const std::string& dest_toponame,
-                             std::map<std::string, std::string> & matset_names)
-{
-    for (std::pair<std::string, std::string> msnames : matset_names)
-    {
-        matsets[msnames.second] = matsets[msnames.first];
-        matsets[msnames.second]["topology"] = dest_toponame;
-    }
-}
 
 //-----------------------------------------------------------------------------
 // helper to verify a matset material_map
