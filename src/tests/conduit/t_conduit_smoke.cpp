@@ -19,15 +19,6 @@ TEST(conduit_smoke, basic_use)
     EXPECT_EQ(sizeof(conduit::uint32),4);
     EXPECT_EQ(sizeof(conduit::uint64),8);
     EXPECT_EQ(sizeof(conduit::float64),8);
-    
-    std::cout << conduit::about() << std::endl;
-    
-    conduit::Node n1;
-    n1["path"] = "mydata";
-    conduit::Node n2;
-    n2.set_external(n1);
-    n1["path"].set(n2["path"]);
-    // bad!
-    n1.print();
 
+    std::cout << conduit::about() << std::endl;
 }
