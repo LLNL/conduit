@@ -2179,10 +2179,10 @@ topology::unstructured::points(const Node &n,
             }
         }
 
+        index_t_accessor pidxs_vals = enode["connectivity"].value();
+        o2mrelation::O2MIterator piter(enode);
         for(const index_t eidx : eidxs)
         {
-            index_t_accessor pidxs_vals = enode["connectivity"].value();
-            o2mrelation::O2MIterator piter(enode);
             piter.to(eidx, O2MIndex::ONE);
             piter.to_front(O2MIndex::MANY);
             while(piter.has_next(O2MIndex::MANY))
