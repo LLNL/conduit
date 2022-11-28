@@ -377,7 +377,7 @@ stages:
            echo "SPACK SPEC:"
            echo $SPACK_SPEC
            # run uber to build tpls
-           python3 scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
+           python3 scripts/uberenv/uberenv.py -k --allow-spack-deprecated --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
         displayName: 'Spack Build Tpls'
 
       - script: |
