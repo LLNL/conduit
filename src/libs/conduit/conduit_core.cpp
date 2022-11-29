@@ -89,6 +89,13 @@ about(Node &n)
     // Type Info Map
     Node &nn = n["native_typemap"];
 
+// caliper annotations support
+#if defined(CONDUIT_USE_CALIPER)
+    n["annotations"] = "enabled";
+#else 
+    n["annotations"] = "disabled";
+#endif
+
     // ints
 #ifdef CONDUIT_INT8_NATIVE_NAME
     nn["int8"] = CONDUIT_INT8_NATIVE_NAME;
