@@ -104,6 +104,8 @@ class Conduit(CMakePackage):
     # doxygen support is wip, since doxygen has several dependencies
     # we want folks to explicitly opt in to building doxygen
     variant("doxygen", default=False, description="Build Conduit's Doxygen documentation")
+    # caliper
+    variant("caliper", default=True, description="Build Conduit Caliper support")
 
     ###########################################################################
     # package dependencies
@@ -168,6 +170,11 @@ class Conduit(CMakePackage):
     # MPI
     #######################
     depends_on("mpi", when="+mpi")
+
+    #######################
+    # Caliper
+    #######################
+    depends_on("caliper", when="+caliper")
 
     #######################
     # Documentation related
@@ -576,6 +583,16 @@ class Conduit(CMakePackage):
             cfg.write(cmake_cache_entry("ZFP_DIR", spec["zfp"].prefix))
         else:
             cfg.write("# zfp not built by spack \n")
+
+        #######################
+        # Caliper
+        #######################
+        cfg.write("# caliper from spack \n")
+        if "+caliper" in spec:
+            cfg.write(cmake_cache_entry("CALIPER_DIR", spec["caliper"].prefix))
+            cfg.write(cmake_cache_entry("ADIAK_DIR", spec["adiak"].prefix))
+        else:
+            cfg.write("# caliper not built by spack \n")
 
         #######################################################################
         # I/O Packages
