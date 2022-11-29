@@ -27,11 +27,6 @@
 #include "conduit_core.hpp"
 
 //-----------------------------------------------------------------------------
-#if defined(CONDUIT_USE_CALIPER)
-#include <caliper/cali.h>
-#endif
-
-//-----------------------------------------------------------------------------
 //
 /// The CONDUIT_INFO macro is the primary mechanism used to log basic messages.
 /// It calls conduit::utils::handle_info() which invokes
