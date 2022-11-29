@@ -1377,6 +1377,14 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 
     // Compute Data for Centroid Topology //
 
+    // Create some float64 accessors to access the data.
+    index_t csys_axes_size = csys_axes.size();
+    std::vector<float64_accessor> axis_data_access;
+    for(index_t ai = 0; ai < csys_axes_size; ai++)
+    {
+        axis_data_access.push_back(coordset["values"][csys_axes[ai]].as_float64_accessor());
+    }
+
     Node data_node;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
@@ -1435,17 +1443,12 @@ calculate_unstructured_centroids(const conduit::Node &topo,
         }
 
         float64 ecentroid[3] = {0.0, 0.0, 0.0};
-        for(std::set<index_t>::iterator elem_cindices_it = elem_coord_indices.begin();
-            elem_cindices_it != elem_coord_indices.end(); ++elem_cindices_it)
+        for(index_t ai = 0; ai < csys_axes_size; ai++)
         {
-            index_t ci = *elem_cindices_it;
-            for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
-            {
-                const Node &axis_data = coordset["values"][csys_axes[ai]];
-                data_node.set_external(DataType(axis_data.dtype().id(), 1),
-                    const_cast<void*>(axis_data.element_ptr(ci)));
-                ecentroid[ai] += data_node.to_float64() / elem_coord_indices.size();
-            }
+            const auto &axis_data = axis_data_access[ai];
+            for(const auto ci : elem_coord_indices)
+                ecentroid[ai] += axis_data[ci];
+            ecentroid[ai] /= static_cast<float64>(elem_coord_indices.size());
         }
 
         int64 ei_value = static_cast<int64>(ei);
