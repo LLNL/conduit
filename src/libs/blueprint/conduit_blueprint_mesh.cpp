@@ -1324,7 +1324,6 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 
     const index_t topo_num_elems = topo_offsets.dtype().number_of_elements();
 
-
     Node topo_sizes;
     if (topo_shape.is_poly())
     {
@@ -1377,7 +1376,7 @@ calculate_unstructured_centroids(const conduit::Node &topo,
 
     // Compute Data for Centroid Topology //
 
-    // Create some float64 accessors to access the data.
+    // Create some accessors to access the data.
     index_t csys_axes_size = csys_axes.size();
     std::vector<float64_accessor> axis_data_access;
     for(index_t ai = 0; ai < csys_axes_size; ai++)
@@ -1392,21 +1391,33 @@ calculate_unstructured_centroids(const conduit::Node &topo,
     const auto topo_subsizes_access = topo_subsizes.as_index_t_accessor();
     const auto topo_subconn_access = topo_subconn.as_index_t_accessor();
 
+    // Get the dest nodes to save on lookups later.
+    std::vector<Node *> dest_centroid;
+    for(index_t ai = 0; ai < csys_axes_size; ai++)
+        dest_centroid.push_back(cdest["values"].fetch_ptr(csys_axes[ai]));
+    Node &dest_elem_conn = dest["elements/connectivity"];
+
+    // Pre-register the nodes that we'll use to convert the data back
+    // into the destination arrays.
+    float64 ecentroid[3] = {0.0, 0.0, 0.0};
+    Node center_data[3];
+    for(index_t ai = 0; ai < csys_axes_size; ai++)
+        center_data[ai].set_external(DataType::float64(), &ecentroid[ai]);
+    int64 ei_value;
+    Node ei_data(DataType::int64(1), &ei_value, true);
+
     Node data_node;
+    std::vector<index_t> elem_coord_indices;
+    elem_coord_indices.reserve(12);
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
-        index_t esize = 0;
-        if (topo_shape.is_polygonal())
-        {
-            esize = topo_sizes_access[ei];
-        }
         const index_t eoffset = topo_offsets_access[ei];
-        const index_t elem_num_faces = topo_shape.is_polyhedral() ?
-            topo_sizes_access[ei] : 1;
 
-        std::set<index_t> elem_coord_indices;
+        // Determine the unique points in the element.
+        elem_coord_indices.clear();
         if (topo_shape.is_polyhedral())
         {
+            const index_t elem_num_faces = topo_sizes_access[ei];
             for(index_t fi = 0, foffset = eoffset; fi < elem_num_faces; fi++)
             {
                 index_t subelem_index = topo_conn_access[foffset];
@@ -1417,48 +1428,60 @@ calculate_unstructured_centroids(const conduit::Node &topo,
                 for(index_t ci = 0; ci < face_num_coords; ci++)
                 {
                     index_t id = topo_subconn_access[subelem_offset + ci];
-                    elem_coord_indices.insert(id);
+                    if(std::find(elem_coord_indices.cbegin(),
+                                 elem_coord_indices.cend(), id)
+                       == elem_coord_indices.cend())
+                    {
+                        elem_coord_indices.push_back(id);
+                    }
                 }
                 foffset++;
             }
         }
         else // polygonal, other
         {
-            for(index_t fi = 0, foffset = eoffset; fi < elem_num_faces; fi++)
-            {
-                const index_t face_num_coords =
-                    topo_shape.is_polygonal() ? esize :
-                    topo_shape.indices;
+            const index_t face_num_coords =
+                topo_shape.is_polygonal() ? topo_sizes_access[ei] :
+                topo_shape.indices;
 
-                for(index_t ci = 0; ci < face_num_coords; ci++)
+            for(index_t ci = 0; ci < face_num_coords; ci++)
+            {
+                index_t id = topo_conn_access[eoffset + ci];
+                if(std::find(elem_coord_indices.cbegin(),
+                             elem_coord_indices.cend(), id)
+                   == elem_coord_indices.cend())
                 {
-                    index_t id = topo_conn_access[foffset + ci];
-                    elem_coord_indices.insert(id);
+                    elem_coord_indices.push_back(id);
                 }
-                foffset += face_num_coords;
             }
         }
 
-        float64 ecentroid[3] = {0.0, 0.0, 0.0};
+        // Compute the centroid.
         for(index_t ai = 0; ai < csys_axes_size; ai++)
         {
             const auto &axis_data = axis_data_access[ai];
+            ecentroid[ai] = 0.0;
             for(const auto ci : elem_coord_indices)
                 ecentroid[ai] += axis_data[ci];
             ecentroid[ai] /= static_cast<float64>(elem_coord_indices.size());
         }
 
-        int64 ei_value = static_cast<int64>(ei);
-        Node ei_data(DataType::int64(1), &ei_value, true);
-        data_node.set_external(int_dtype, dest["elements/connectivity"].element_ptr(ei));
+        // NOTE: These stores could still be faster...
+
+        // This code sticks ei into connectivity[ei]
+        ei_value = static_cast<int64>(ei);
+        // Use data_node to wrap connectivity[ei].
+        data_node.set_external(int_dtype, dest_elem_conn.element_ptr(ei));
+        // Convert ei_data to int, store in data_node.
         ei_data.to_data_type(int_dtype.id(), data_node);
 
-        for(index_t ai = 0; ai < (index_t)csys_axes.size(); ai++)
+        for(index_t ai = 0; ai < csys_axes_size; ai++)
         {
-            data_node.set_external(float_dtype,
-                cdest["values"][csys_axes[ai]].element_ptr(ei));
-            Node center_data(DataType::float64(), &ecentroid[ai], true);
-            center_data.to_data_type(float_dtype.id(), data_node);
+            // Set up the destination, wrapped in data_node.
+            data_node.set_external(float_dtype, dest_centroid[ai]->element_ptr(ei));
+            // Convert to the float type, store in data_node. center_data[ai]
+            // was already associated with ecentroid[ai].
+            center_data[ai].to_data_type(float_dtype.id(), data_node);
         }
     }
 }
