@@ -37,6 +37,41 @@ if(UNIX AND NOT APPLE)
 endif()
 
 ###############################################################################
+# Setup Caliper
+###############################################################################
+if(NOT CALIPER_DIR)
+    set(CALIPER_DIR ${CONDUIT_CALIPER_DIR})
+endif()
+
+if(CALIPER_DIR)
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Conduit was built with Caliper Support")
+    endif()
+
+    if(NOT ADIAK_DIR)
+        set(ADIAK_DIR ${CONDUIT_ADIAK_DIR})
+    endif()
+
+    if(ADIAK_DIR)
+        if(NOT Conduit_FIND_QUIETLY)
+            message(STATUS "Looking for Adiak at: ${ADIAK_DIR}/lib/cmake/adiak")
+        endif()
+        # find adiak first
+        find_package(adiak REQUIRED
+                     NO_DEFAULT_PATH
+                     PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+    endif()
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Looking for Caliper at: ${CALIPER_DIR}/share/cmake/caliper")
+    endif()
+    # find caliper
+    find_package(caliper REQUIRED
+                 NO_DEFAULT_PATH
+                 PATHS ${CALIPER_DIR}/share/cmake/caliper)
+endif()
+
+
+###############################################################################
 # Setup HDF5
 ###############################################################################
 if(CONDUIT_HDF5_DIR)

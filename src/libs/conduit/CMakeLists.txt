@@ -53,6 +53,7 @@ set(conduit_headers
     conduit_schema.hpp
     conduit_log.hpp
     conduit_utils.hpp
+    conduit_annotations.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
     conduit_config.hpp
@@ -86,6 +87,7 @@ set(conduit_sources
     conduit_schema.cpp
     conduit_log.cpp
     conduit_utils.cpp
+    conduit_annotations.cpp
     )
 
 #
@@ -127,6 +129,7 @@ if(FORTRAN_FOUND)
 
 endif()
 
+
 #
 # Setup the conduit lib
 #
@@ -139,6 +142,9 @@ add_compiled_library(NAME   conduit
                      HEADERS_DEST_DIR include/conduit
                      FOLDER libs)
 
+if(CALIPER_FOUND)
+    target_link_libraries(conduit caliper)
+endif()
 
 target_include_directories(conduit
                            PUBLIC

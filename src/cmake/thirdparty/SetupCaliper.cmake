@@ -32,4 +32,4 @@ find_package(caliper REQUIRED
 
 set(ADIAK_FOUND TRUE)
 set(CALIPER_FOUND TRUE)
-
+set(CONDUIT_USE_CALIPER TRUE)
