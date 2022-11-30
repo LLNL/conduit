@@ -1385,61 +1385,58 @@ calculate_unstructured_centroids(const conduit::Node &topo,
         axis_data_access.push_back(coordset["values"][csys_axes[ai]].as_float64_accessor());
     }
 
+    const auto topo_sizes_access = topo_sizes.as_index_t_accessor();
+    const auto topo_offsets_access = topo_offsets.as_index_t_accessor();
+    const auto topo_conn_access = topo_conn.as_index_t_accessor();
+    const auto topo_suboffsets_access = topo_suboffsets.as_index_t_accessor();
+    const auto topo_subsizes_access = topo_subsizes.as_index_t_accessor();
+    const auto topo_subconn_access = topo_subconn.as_index_t_accessor();
+
     Node data_node;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
         index_t esize = 0;
         if (topo_shape.is_polygonal())
         {
-            data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
-            esize = data_node.to_int64();
+            esize = topo_sizes_access[ei];
         }
-        data_node.set_external(offset_dtype, topo_offsets.element_ptr(ei));
-        const index_t eoffset = data_node.to_int64();
-
-        if (topo_shape.is_polyhedral())
-        {
-            data_node.set_external(size_dtype, topo_sizes.element_ptr(ei));
-        }
+        const index_t eoffset = topo_offsets_access[ei];
         const index_t elem_num_faces = topo_shape.is_polyhedral() ?
-            data_node.to_int64() : 1;
+            topo_sizes_access[ei] : 1;
 
         std::set<index_t> elem_coord_indices;
-        for(index_t fi = 0, foffset = eoffset;
-            fi < elem_num_faces; fi++)
+        if (topo_shape.is_polyhedral())
         {
-
-            index_t subelem_index = 0;
-            index_t subelem_offset = 0;
-            index_t subelem_size = 0;
-            if (topo_shape.is_polyhedral())
+            for(index_t fi = 0, foffset = eoffset; fi < elem_num_faces; fi++)
             {
-                data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset));
-                subelem_index = data_node.to_int64();
-                data_node.set_external(suboffset_dtype, topo_suboffsets.element_ptr(subelem_index));
-                subelem_offset = data_node.to_int64();
-                data_node.set_external(subsize_dtype, topo_subsizes.element_ptr(subelem_index));
-                subelem_size = data_node.to_int64();
+                index_t subelem_index = topo_conn_access[foffset];
+                index_t subelem_offset = topo_suboffsets_access[subelem_index];
+                index_t subelem_size = topo_subsizes_access[subelem_index];
+
+                const index_t face_num_coords = subelem_size;
+                for(index_t ci = 0; ci < face_num_coords; ci++)
+                {
+                    index_t id = topo_subconn_access[subelem_offset + ci];
+                    elem_coord_indices.insert(id);
+                }
+                foffset++;
             }
-
-            const index_t face_num_coords =
-                topo_shape.is_polyhedral() ? subelem_size :
-                topo_shape.is_polygonal() ? esize :
-                topo_shape.indices;
-
-            for(index_t ci = 0; ci < face_num_coords; ci++)
+        }
+        else // polygonal, other
+        {
+            for(index_t fi = 0, foffset = eoffset; fi < elem_num_faces; fi++)
             {
-                if (topo_shape.is_polyhedral())
+                const index_t face_num_coords =
+                    topo_shape.is_polygonal() ? esize :
+                    topo_shape.indices;
+
+                for(index_t ci = 0; ci < face_num_coords; ci++)
                 {
-                    data_node.set_external(subconn_dtype, topo_subconn.element_ptr(subelem_offset + ci));
+                    index_t id = topo_conn_access[foffset + ci];
+                    elem_coord_indices.insert(id);
                 }
-                else
-                {
-                    data_node.set_external(conn_dtype, topo_conn.element_ptr(foffset + ci));
-                }
-                elem_coord_indices.insert(data_node.to_int64());
+                foffset += face_num_coords;
             }
-            foffset += topo_shape.is_polyhedral() ? 1 : face_num_coords;
         }
 
         float64 ecentroid[3] = {0.0, 0.0, 0.0};
