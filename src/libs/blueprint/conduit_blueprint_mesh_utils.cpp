@@ -284,6 +284,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
     const index_t bag_num_elems = topo_num_coords + topo_num_elems;
     std::deque< std::vector<int64> > entity_index_bag(bag_num_elems);
     std::deque< index_t > entity_dim_bag(bag_num_elems, -1);
+    std::deque< index_t > entity_origid_bag(bag_num_elems, -1);
     std::deque< std::vector< std::pair<int64, int64> > > entity_parent_bag(bag_num_elems);
 
     // NOTE(JRC): We start with processing the points of the topology followed
@@ -294,11 +295,20 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         index_t bi = pi;
         entity_index_bag[bi].push_back(bi);
         entity_dim_bag[bi] = 0;
+        // Keep track of original id.
+        entity_origid_bag[bi] = pi;
     }
+    // Prepopulate point connectivity
+    dim_buffers[0].reserve(topo_num_coords);
+    for(index_t pi = 0; pi < topo_num_coords; pi++)
+        dim_buffers[0].push_back(pi);
+
+    // Add entities for the top-level elements (these will be refined later).
     const Node &topo_elem_conn = dim_topos[topo_shape.dim]["elements/connectivity"];
     const Node &topo_elem_offsets = dim_topos[topo_shape.dim]["elements/offsets"];
     const auto elem_conn_access = topo_elem_conn.as_index_t_accessor();
     const auto elem_offsets_access = topo_elem_offsets.as_index_t_accessor();
+    index_t topo_conn_len = 0;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
         index_t bi = topo_num_coords + ei;
@@ -307,6 +317,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         index_t entity_end_index = (ei < topo_num_elems - 1) ? elem_offsets_access[ei + 1] : 
                                        topo_elem_conn.dtype().number_of_elements();
         index_t entity_size = entity_end_index - entity_start_index;
+        topo_conn_len += entity_size;
 
         // Get the vector we'll populate.
         std::vector<int64> &elem_indices = entity_index_bag[bi];
@@ -318,17 +329,35 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
         // Set the entity dimension
         entity_dim_bag[bi] = topo_shape.dim;
+
+        // Keep track of original id.
+        entity_origid_bag[bi] = ei;
     }
+    // Prepopulate element connectivity
+    auto &dim_buffers_topo = dim_buffers[topo_shape.dim];
+    dim_buffers_topo.reserve(topo_num_coords);
+    for(index_t ei = 0; ei < topo_num_elems; ei++)
+    {
+        index_t bi = topo_num_coords + ei;
+        std::vector<int64> &elem_indices = entity_index_bag[bi];
+        dim_buffers_topo.insert(dim_buffers_topo.end(), elem_indices.begin(), elem_indices.end());
+    }
+
+    constexpr index_t ENTITY_REQUIRES_ID = -1;
 
     while(!entity_index_bag.empty())
     {
-        std::vector<int64> entity_indices = entity_index_bag.front();
+        // Pop some work off of the deques
+        std::vector<int64> entity_indices(std::move(entity_index_bag.front()));
         entity_index_bag.pop_front();
         index_t entity_dim = entity_dim_bag.front();
         entity_dim_bag.pop_front();
-        std::vector< std::pair<int64, int64> > entity_parents = entity_parent_bag.front();
+        std::vector< std::pair<int64, int64> > entity_parents(std::move(entity_parent_bag.front()));
         entity_parent_bag.pop_front();
+        index_t entity_origid = entity_origid_bag.front();
+        entity_origid_bag.pop_front();
 
+        // Make some references basedo n entity_dim.
         std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
         std::map< std::vector<index_t>, index_t > &dim_geid_map = dim_geid_maps[entity_dim];
         auto &dim_geassocs = dim_geassocs_maps[entity_dim];
@@ -338,52 +367,63 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
         // Add Element to Topology //
 
-        // NOTE: This code assumes that all entities can be uniquely
-        // identified by the list of coordinate indices of which they
-        // are comprised. This is certainly true of all implicit topologies
-        // and of 2D polygonal topologies, but it may not be always the
-        // case for 3D polygonal topologies.
-        std::vector<int64> vert_ids;
-        if(!dim_shape.is_polyhedral())
+        index_t global_id = entity_origid;
+        const index_t local_id = dim_leassocs.size();
+        if(global_id == ENTITY_REQUIRES_ID)
         {
-            vert_ids = entity_indices;
-        }
-        else // if(dim_shape.is_polyhedral())
-        {
-            const index_t elem_outer_count = entity_indices.size();
-            index_t_accessor elem_inner_sizes   = topo->fetch_existing("subelements/sizes").value();
-            index_t_accessor elem_inner_offsets = topo_suboffsets.value();
-            index_t_accessor elem_inner_conn    = topo->fetch_existing("subelements/connectivity").value();
-            
-            for(index_t oi = 0; oi < elem_outer_count; oi++)
-            {
-                const index_t elem_inner_size   = elem_inner_sizes[entity_indices[oi]];
-                const index_t elem_inner_offset = elem_inner_offsets[entity_indices[oi]];
+            // Make a unique map key from the entity_indices.
 
-                for(index_t ii = 0; ii < elem_inner_size; ii++)
+            // NOTE: This code assumes that all entities can be uniquely
+            // identified by the list of coordinate indices of which they
+            // are comprised. This is certainly true of all implicit topologies
+            // and of 2D polygonal topologies, but it may not be always the
+            // case for 3D polygonal topologies.
+            std::vector<int64> vert_ids;
+            if(!dim_shape.is_polyhedral())
+            {
+                vert_ids = entity_indices;
+            }
+            else // if(dim_shape.is_polyhedral())
+            {
+                const index_t elem_outer_count = entity_indices.size();
+                index_t_accessor elem_inner_sizes   = topo->fetch_existing("subelements/sizes").value();
+                index_t_accessor elem_inner_offsets = topo_suboffsets.value();
+                index_t_accessor elem_inner_conn    = topo->fetch_existing("subelements/connectivity").value();
+            
+                for(index_t oi = 0; oi < elem_outer_count; oi++)
                 {
-                    const index_t vi = elem_inner_conn[elem_inner_offset + ii];
-                    if(std::find(vert_ids.begin(), vert_ids.end(), vi) == vert_ids.end())
-                        vert_ids.push_back(vi);
+                    const index_t elem_inner_size   = elem_inner_sizes[entity_indices[oi]];
+                    const index_t elem_inner_offset = elem_inner_offsets[entity_indices[oi]];
+
+                    for(index_t ii = 0; ii < elem_inner_size; ii++)
+                    {
+                        const index_t vi = elem_inner_conn[elem_inner_offset + ii];
+                        if(std::find(vert_ids.begin(), vert_ids.end(), vi) == vert_ids.end())
+                            vert_ids.push_back(vi);
+                    }
                 }
             }
-        }
-        std::sort(vert_ids.begin(), vert_ids.end());
+            std::sort(vert_ids.begin(), vert_ids.end());
 
-        const index_t local_id = dim_leassocs.size();
-        const auto dim_geid_it = dim_geid_map.find(vert_ids);
-        index_t global_id;
-        if(dim_geid_it == dim_geid_map.end())
-        {
-            global_id = dim_geassocs.size();
-            dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
+            // Look up the entity in the map, make global_id.
+            const auto dim_geid_it = dim_geid_map.find(vert_ids);
+            if(dim_geid_it == dim_geid_map.end())
+            {
+                // Generate new id.
+                global_id = dim_geassocs.size();
 
-            std::pair<std::vector<index_t>, index_t> obj(std::move(vert_ids), global_id);
-            dim_geid_map.insert(std::move(obj));
-        }
-        else
-        {
-            global_id = dim_geid_it->second;
+                // Append the entity indices to the connectivity.
+                dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
+
+                // Add vert_ids to the map so it is known.
+                std::pair<std::vector<index_t>, index_t> obj(std::move(vert_ids), global_id);
+                dim_geid_map.insert(std::move(obj));
+            }
+            else
+            {
+                // We've seen the entity before, reuse the id.
+                global_id = dim_geid_it->second;
+            }
         }
 
         { // create_entity(global_id, local_id, entity_dim)
@@ -420,7 +460,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
         if(entity_dim > 0)
         {
-            std::vector< std::pair<int64, int64> > embed_parents = entity_parents;
+            std::vector< std::pair<int64, int64> > embed_parents(std::move(entity_parents));
             embed_parents.push_back(std::make_pair(global_id, local_id));
             ShapeType embed_shape = topo_cascade.get_shape(entity_dim - 1);
 
@@ -449,7 +489,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
                     ooff = subelem_offsets[entity_indices[oi]];
                 }
 
-                std::vector<int64> embed_indices;
+                std::vector<index_t> embed_indices;
                 for(index_t ii = 0; ii < elem_inner_count; ii++)
                 {
                     index_t ioff = ooff + (dim_shape.is_poly() ?
@@ -471,6 +511,9 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
                 entity_index_bag.push_back(embed_indices);
                 entity_dim_bag.push_back(embed_shape.dim);
                 entity_parent_bag.push_back(embed_parents);
+
+                // For any entity other than points, we'll want to make a new id.
+                entity_origid_bag.push_back((embed_shape.dim == 0) ? embed_indices[0] : ENTITY_REQUIRES_ID);
             }
         }
     }
