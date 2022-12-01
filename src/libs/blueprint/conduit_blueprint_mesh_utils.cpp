@@ -243,6 +243,11 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
     // Allocate Data Templates for Outputs //
 
+    // per-dimension maps from an entity's point id set to its global entity id
+    std::vector< std::map< std::vector<index_t>, index_t > > dim_geid_maps;
+    // per-dimension vector to build up connectivity.
+    std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
+
     dim_topos.resize(topo_shape.dim + 1);
     dim_geid_maps.resize(topo_shape.dim + 1);
     dim_geassocs_maps.resize(topo_shape.dim + 1);
@@ -266,7 +271,6 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
     {
         dim_topos[topo_shape.dim]["subelements/offsets"].set(topo_suboffsets);
     }
-    std::vector< std::vector<int64> > dim_buffers(topo_shape.dim + 1);
 
     // Prepare Initial Values for Processing //
 
@@ -326,7 +330,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         entity_parent_bag.pop_front();
 
         std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
-        std::map< std::set<index_t>, index_t > &dim_geid_map = dim_geid_maps[entity_dim];
+        std::map< std::vector<index_t>, index_t > &dim_geid_map = dim_geid_maps[entity_dim];
         auto &dim_geassocs = dim_geassocs_maps[entity_dim];
         auto &dim_leassocs = dim_leassocs_maps[entity_dim];
         std::vector<index_t> &dim_le2ge_map = dim_le2ge_maps[entity_dim];
@@ -339,10 +343,10 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         // are comprised. This is certainly true of all implicit topologies
         // and of 2D polygonal topologies, but it may not be always the
         // case for 3D polygonal topologies.
-        std::set<int64> vert_ids;
+        std::vector<int64> vert_ids;
         if(!dim_shape.is_polyhedral())
         {
-            vert_ids = std::set<int64>(entity_indices.begin(), entity_indices.end());
+            vert_ids = entity_indices;
         }
         else // if(dim_shape.is_polyhedral())
         {
@@ -359,10 +363,12 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
                 for(index_t ii = 0; ii < elem_inner_size; ii++)
                 {
                     const index_t vi = elem_inner_conn[elem_inner_offset + ii];
-                    vert_ids.insert(vi);
+                    if(std::find(vert_ids.begin(), vert_ids.end(), vi) == vert_ids.end())
+                        vert_ids.push_back(vi);
                 }
             }
         }
+        std::sort(vert_ids.begin(), vert_ids.end());
 
         const index_t local_id = dim_leassocs.size();
         const auto dim_geid_it = dim_geid_map.find(vert_ids);
@@ -372,7 +378,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
             global_id = dim_geassocs.size();
             dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
 
-            std::pair<std::set<index_t>, index_t> obj(std::move(vert_ids), global_id);
+            std::pair<std::vector<index_t>, index_t> obj(std::move(vert_ids), global_id);
             dim_geid_map.insert(std::move(obj));
         }
         else
@@ -493,7 +499,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
             for(const auto &poly_pair : dim_geid_maps[di])
             {
-                const std::set<index_t> &poly_verts = poly_pair.first;
+                const std::vector<index_t> &poly_verts = poly_pair.first;
                 const index_t &poly_geid = poly_pair.second;
 
                 temp.set_external(DataType(int_dtype.id(), 1),
