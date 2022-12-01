@@ -253,7 +253,6 @@ struct CONDUIT_BLUEPRINT_API TopologyMetadata
 
     const std::vector<index_t> &get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
     void get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
-    void get_entity_data(IndexType type, index_t entity_id, index_t entity_dim, Node &data) const;
     void get_point_data(IndexType type, index_t point_id, Node &data) const;
 
     index_t get_length(index_t dim = -1) const;

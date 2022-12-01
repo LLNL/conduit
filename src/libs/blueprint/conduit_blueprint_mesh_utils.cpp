@@ -291,18 +291,28 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         entity_index_bag[bi].push_back(bi);
         entity_dim_bag[bi] = 0;
     }
+    const Node &topo_elem_conn = dim_topos[topo_shape.dim]["elements/connectivity"];
+    const Node &topo_elem_offsets = dim_topos[topo_shape.dim]["elements/offsets"];
+    const auto elem_conn_access = topo_elem_conn.as_index_t_accessor();
+    const auto elem_offsets_access = topo_elem_offsets.as_index_t_accessor();
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
         index_t bi = topo_num_coords + ei;
+        // Use the offsets to compute a size.
+        index_t entity_start_index = elem_offsets_access[ei];
+        index_t entity_end_index = (ei < topo_num_elems - 1) ? elem_offsets_access[ei + 1] : 
+                                       topo_elem_conn.dtype().number_of_elements();
+        index_t entity_size = entity_end_index - entity_start_index;
 
-        temp.reset();
-        get_entity_data(TopologyMetadata::GLOBAL, ei, topo_shape.dim, temp);
-
+        // Get the vector we'll populate.
         std::vector<int64> &elem_indices = entity_index_bag[bi];
-        elem_indices.resize(temp.dtype().number_of_elements());
-        data.set_external(DataType::int64(elem_indices.size()), &elem_indices[0]);
-        temp.to_int64_array(data);
+        elem_indices.resize(entity_size);
 
+        // Store the connectivity into the vector.
+        for(index_t i = 0; i < entity_size; i++)
+            elem_indices[i] = elem_conn_access[entity_start_index + i];
+
+        // Set the entity dimension
         entity_dim_bag[bi] = topo_shape.dim;
     }
 
@@ -551,41 +561,6 @@ TopologyMetadata::get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, 
         data.to_data_type(int_dtype.id(), map_node[path_names[pi]]);
     }
 }
-
-
-//---------------------------------------------------------------------------//
-void
-TopologyMetadata::get_entity_data(IndexType type, index_t entity_id, index_t entity_dim, Node &data) const
-{
-    Node temp;
-
-    // NOTE(JRC): This is done in order to get around 'const' casting for
-    // data pointers that won't be changed by the function anyway.
-    Node dim_conn; dim_conn.set_external(dim_topos[entity_dim]["elements/connectivity"]);
-    Node dim_off; dim_off.set_external(dim_topos[entity_dim]["elements/offsets"]);
-
-    const DataType conn_dtype(dim_conn.dtype().id(), 1);
-    const DataType off_dtype(dim_off.dtype().id(), 1);
-    const DataType data_dtype = data.dtype().is_number() ? data.dtype() : DataType::int64(1);
-
-    // FIXME(JRC): This code assumes that the per-element index data is packed
-    // in memory, which isn't guaranteed to be the case (could be stride between
-    // values, etc.).
-
-    const index_t entity_gid = (type == IndexType::LOCAL) ?
-        dim_le2ge_maps[entity_dim][entity_id] : entity_id;
-    temp.set_external(off_dtype, dim_off.element_ptr(entity_gid));
-    index_t entity_start_index = temp.to_int64();
-    temp.set_external(off_dtype, dim_off.element_ptr(entity_gid + 1));
-    index_t entity_end_index = (entity_gid < get_length(entity_dim) - 1) ?
-        temp.to_int64() : dim_conn.dtype().number_of_elements();
-
-    index_t entity_size = entity_end_index - entity_start_index;
-    temp.set_external(DataType(conn_dtype.id(), entity_size),
-        dim_conn.element_ptr(entity_start_index));
-    temp.to_data_type(data_dtype.id(), data);
-}
-
 
 //---------------------------------------------------------------------------//
 void
