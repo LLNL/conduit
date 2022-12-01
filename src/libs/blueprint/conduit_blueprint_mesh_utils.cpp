@@ -365,13 +365,20 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         }
 
         const index_t local_id = dim_leassocs.size();
-        if(dim_geid_map.find(vert_ids) == dim_geid_map.end())
+        const auto dim_geid_it = dim_geid_map.find(vert_ids);
+        index_t global_id;
+        if(dim_geid_it == dim_geid_map.end())
         {
-            const index_t global_id = dim_geassocs.size();
+            global_id = dim_geassocs.size();
             dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
-            dim_geid_map[vert_ids] = global_id;
+
+            std::pair<std::set<index_t>, index_t> obj(std::move(vert_ids), global_id);
+            dim_geid_map.insert(std::move(obj));
         }
-        const index_t global_id = dim_geid_map.find(vert_ids)->second;
+        else
+        {
+            global_id = dim_geid_it->second;
+        }
 
         { // create_entity(global_id, local_id, entity_dim)
             if((index_t)dim_geassocs.size() <= global_id)
