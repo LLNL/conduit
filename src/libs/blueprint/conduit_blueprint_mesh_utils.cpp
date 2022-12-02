@@ -254,6 +254,24 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
     dim_leassocs_maps.resize(topo_shape.dim + 1);
     dim_le2ge_maps.resize(topo_shape.dim + 1);
 
+    // Start out reserving space for the association spines. These multiples
+    // were calibrated using a 2D dataset. Other topological dims may need
+    // different values. These were determined using the final sizes of the
+    // dim_leassocs_maps, dim_geassocs_maps and comparing to topo_num_elems.
+    // 
+    size_t le_est_size_multiples[] = {9, 4, 1, 1};
+    size_t ge_est_size_multiples[] = {1, 2, 1, 1};
+    for(index_t dim = 0; dim <= topo_shape.dim; dim++)
+    {
+        dim_leassocs_maps[dim].reserve(le_est_size_multiples[dim] *
+                                       (topo_shape.dim + 1) *
+                                       topo_num_elems);
+        dim_geassocs_maps[dim].reserve(ge_est_size_multiples[dim] *
+                                       (topo_shape.dim + 1) *
+                                       topo_num_elems);
+    }
+
+    // Set up the output nodes.
     for(index_t di = 0; di < topo_shape.dim; di++)
     {
         Node &dim_topo = dim_topos[di];
@@ -357,18 +375,18 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         index_t entity_origid = entity_origid_bag.front();
         entity_origid_bag.pop_front();
 
-        // Make some references basedo n entity_dim.
+        // Make some references based on entity_dim.
         std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
         std::map< std::vector<index_t>, index_t > &dim_geid_map = dim_geid_maps[entity_dim];
         auto &dim_geassocs = dim_geassocs_maps[entity_dim];
         auto &dim_leassocs = dim_leassocs_maps[entity_dim];
         std::vector<index_t> &dim_le2ge_map = dim_le2ge_maps[entity_dim];
-        ShapeType dim_shape = topo_cascade.get_shape(entity_dim);
+        const ShapeType &dim_shape = topo_cascade.get_shape(entity_dim);
 
         // Add Element to Topology //
 
         index_t global_id = entity_origid;
-        const index_t local_id = dim_leassocs.size();
+        const index_t local_id = next_local_id(entity_dim);
         if(global_id == ENTITY_REQUIRES_ID)
         {
             // Make a unique map key from the entity_indices.
@@ -410,7 +428,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
             if(dim_geid_it == dim_geid_map.end())
             {
                 // Generate new id.
-                global_id = dim_geassocs.size();
+                global_id = next_global_id(entity_dim);
 
                 // Append the entity indices to the connectivity.
                 dim_buffer.insert(dim_buffer.end(), entity_indices.begin(), entity_indices.end());
@@ -427,14 +445,9 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         }
 
         { // create_entity(global_id, local_id, entity_dim)
-            if((index_t)dim_geassocs.size() <= global_id)
-            {
-                dim_geassocs.resize(global_id + 1);
-            }
-            if((index_t)dim_leassocs.size() <= local_id)
-            {
-                dim_leassocs.resize(local_id + 1);
-            }
+            expand_assoc_capacity(IndexType::GLOBAL, global_id, entity_dim);
+            expand_assoc_capacity(IndexType::LOCAL, local_id, entity_dim);
+
             if((index_t)dim_le2ge_map.size() <= local_id)
             {
                 dim_le2ge_map.resize(local_id + 1);
@@ -558,36 +571,58 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
 
 //---------------------------------------------------------------------------//
 void
-TopologyMetadata::add_entity_assoc(IndexType type, index_t e0_id, index_t e0_dim, index_t e1_id, index_t e1_dim)
+TopologyMetadata::expand_assoc_capacity(IndexType type, index_t idx, index_t dim)
 {
-    auto &assoc_maps = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
-    std::vector< std::vector<index_t> > *entity_assocs[2] = {
-        &assoc_maps[e0_dim][e0_id],
-        &assoc_maps[e1_dim][e1_id]
-    };
-
-    for(index_t ai = 0; ai < 2; ai++)
+    auto &dim_assocs = (type == IndexType::LOCAL) ? dim_leassocs_maps[dim] : dim_geassocs_maps[dim];
+    index_t tdim1 = topo_shape.dim + 1;
+    index_t idxT = tdim1 * idx;
+    if(idxT >= (index_t)dim_assocs.size())
     {
-        auto &curr_assocs = *entity_assocs[ai];
-        curr_assocs.resize(topo_shape.dim + 1);
-
-        const index_t cross_id = (ai == 0) ? e1_id : e0_id;
-        const index_t cross_dim = (ai == 0) ? e1_dim : e0_dim;
-        auto &cross_assocs = curr_assocs[cross_dim];
-        if(std::find(cross_assocs.begin(), cross_assocs.end(), cross_id) == cross_assocs.end())
-        {
-            cross_assocs.push_back(cross_id);
-        }
+        index_t start = dim_assocs.size();
+        index_t end = idxT + tdim1;
+        dim_assocs.resize(idxT + tdim1);
+        // Give each association vector a little memory now to reduce the
+        // number of reallocations later.
+        for(index_t i = start; i < end; i++)
+            dim_assocs[i].reserve(4);
     }
 }
 
+//---------------------------------------------------------------------------//
+void
+TopologyMetadata::add_entity_assoc(IndexType type, index_t e0_id, index_t e0_dim, index_t e1_id, index_t e1_dim)
+{
+    auto &e0_cross_assocs = get_entity_assocs(type, e0_id, e0_dim, e1_dim);
+    if(std::find(e0_cross_assocs.begin(), e0_cross_assocs.end(), e1_id) == e0_cross_assocs.end())
+    {
+        e0_cross_assocs.push_back(e1_id);
+    }
+
+    auto &e1_cross_assocs = get_entity_assocs(type, e1_id, e1_dim, e0_dim);
+    if(std::find(e1_cross_assocs.begin(), e1_cross_assocs.end(), e0_id) == e1_cross_assocs.end())
+    {
+        e1_cross_assocs.push_back(e0_id);
+    }
+}
 
 //---------------------------------------------------------------------------//
 const std::vector<index_t>&
 TopologyMetadata::get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim) const
 {
-    auto &dim_assocs = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
-    return dim_assocs[entity_dim][entity_id][assoc_dim];
+    auto &dim_assoc = (type == IndexType::LOCAL) ? dim_leassocs_maps[entity_dim] : dim_geassocs_maps[entity_dim];
+    index_t tdim1 = topo_shape.dim + 1;
+    index_t sidx = entity_id * tdim1 + assoc_dim;
+    return dim_assoc[sidx];
+}
+
+//---------------------------------------------------------------------------//
+std::vector<index_t>&
+TopologyMetadata::get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim)
+{
+    auto &dim_assoc = (type == IndexType::LOCAL) ? dim_leassocs_maps[entity_dim] : dim_geassocs_maps[entity_dim];
+    index_t tdim1 = topo_shape.dim + 1;
+    index_t sidx = entity_id * tdim1 + assoc_dim;
+    return dim_assoc[sidx];
 }
 
 
@@ -597,15 +632,17 @@ TopologyMetadata::get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, 
 {
     auto &dim_assocs = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
 
+    index_t tdim1 = topo_shape.dim + 1;
+    index_t dimlen = static_cast<index_t>(dim_assocs[src_dim].size()) / tdim1;
     std::vector<index_t> values, sizes, offsets;
-    for(index_t sdi = 0, so = 0; sdi < (index_t)dim_assocs[src_dim].size(); sdi++, so += sizes.back())
+    for(index_t sdi = 0, so = 0; sdi < dimlen; sdi++, so += sizes.back())
     {
         const std::vector<index_t> &src_assocs = get_entity_assocs(type, sdi, src_dim, dst_dim);
         values.insert(values.end(), src_assocs.begin(), src_assocs.end());
         sizes.push_back((index_t)src_assocs.size());
         offsets.push_back(so);
     }
-
+// NOTE: can we store the data directly into the Conduit node?
     std::vector<index_t>* path_data[] = { &values, &sizes, &offsets };
     std::string path_names[] = { "values", "sizes", "offsets" };
     const index_t path_count = sizeof(path_data) / sizeof(path_data[0]);
