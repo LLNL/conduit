@@ -561,7 +561,7 @@ void
 TopologyMetadata::add_entity_assoc(IndexType type, index_t e0_id, index_t e0_dim, index_t e1_id, index_t e1_dim)
 {
     auto &assoc_maps = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
-    std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > *entity_assocs[2] = {
+    std::vector< std::vector<index_t> > *entity_assocs[2] = {
         &assoc_maps[e0_dim][e0_id],
         &assoc_maps[e1_dim][e1_id]
     };
@@ -574,10 +574,9 @@ TopologyMetadata::add_entity_assoc(IndexType type, index_t e0_id, index_t e0_dim
         const index_t cross_id = (ai == 0) ? e1_id : e0_id;
         const index_t cross_dim = (ai == 0) ? e1_dim : e0_dim;
         auto &cross_assocs = curr_assocs[cross_dim];
-        if(cross_assocs.second.find(cross_id) == cross_assocs.second.end())
+        if(std::find(cross_assocs.begin(), cross_assocs.end(), cross_id) == cross_assocs.end())
         {
-            cross_assocs.first.push_back(cross_id);
-            cross_assocs.second.insert(cross_id);
+            cross_assocs.push_back(cross_id);
         }
     }
 }
@@ -588,7 +587,7 @@ const std::vector<index_t>&
 TopologyMetadata::get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim) const
 {
     auto &dim_assocs = (type == IndexType::LOCAL) ? dim_leassocs_maps : dim_geassocs_maps;
-    return dim_assocs[entity_dim][entity_id][assoc_dim].first;
+    return dim_assocs[entity_dim][entity_id][assoc_dim];
 }
 
 

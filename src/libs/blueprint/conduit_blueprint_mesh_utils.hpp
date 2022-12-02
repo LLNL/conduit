@@ -268,9 +268,9 @@ struct CONDUIT_BLUEPRINT_API TopologyMetadata
     // per-dimension topology nodes (mapped onto 'cset' coordinate set)
     std::vector< conduit::Node > dim_topos;
     // per-dimension maps from global entity ids to per-dimension global associate ids
-    std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_geassocs_maps;
+    std::vector< std::vector< std::vector< std::vector<index_t> > > > dim_geassocs_maps;
     // per-dimension maps from local entity ids to per-dimension local associate ids
-    std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_leassocs_maps;
+    std::vector< std::vector< std::vector< std::vector<index_t> > > > dim_leassocs_maps;
     // per-dimension mapping from local entity ids to global entity ids (delegates)
     std::vector< std::vector<index_t> > dim_le2ge_maps;
 };
