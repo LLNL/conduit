@@ -36,7 +36,7 @@ jobs:
                                 libbz2-dev \
                                 mpich \
                                 libmpich-dev \
-                                libhdf5-dev
+                                libhdf5-dev 
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py
     - uses: actions/checkout@v2
