@@ -16,7 +16,7 @@ jobs:
                                 gcc \
                                 g++ \
                                 gfortran \
-                                python \
+                                python3 \
                                 perl \
                                 git \
                                 git-lfs \
