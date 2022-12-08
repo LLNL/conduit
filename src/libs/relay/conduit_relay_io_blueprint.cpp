@@ -958,7 +958,6 @@ void write_mesh(const Node &mesh,
         }
     }
 
-
     // ----------------------------------------------------
     // setup root file name
     // ----------------------------------------------------
@@ -990,6 +989,12 @@ void write_mesh(const Node &mesh,
         num_files = global_num_domains;
     }
 
+    // new style bp index partition_map
+    // NOTE: the part_map is inited during write process for N domains
+    // to M files case.
+    // Other cases are simpler and are created when root file is written
+    conduit::Node output_partition_map;
+
     // at this point for file_style,
     // default has been resolved, we need to just handle:
     //   root_only, multi_file
@@ -1003,7 +1008,6 @@ void write_mesh(const Node &mesh,
         // the outer loop + par_rank == current_writer implements
         // the baton.
 
-        
         Node local_root_file_created;
         Node global_root_file_created;
         local_root_file_created.set((int)0);
@@ -1135,6 +1139,17 @@ void write_mesh(const Node &mesh,
         detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
+
+        //generate part map
+        // use global_d2f is what we need for "file" part of part_map
+        output_partition_map["file"] = books["global_domain_to_file"];
+        output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+        index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+        for(index_t i=0; i < global_num_domains; i++)
+        {
+            part_map_domain_vals[i] = i;
+        }
+
         index_t_accessor global_d2f = books["global_domain_to_file"].value();
 
         // init our local map and status array
@@ -1396,12 +1411,13 @@ void write_mesh(const Node &mesh,
 
         std::string output_tree_pattern;
         std::string output_file_pattern;
+        // new style bp index partition spec
+        std::string output_partition_pattern;
 
         // NOTE: 
         // The file pattern needs to be relative to
         // the root file. 
         // reverse split the path
-
 
         if(opts_file_style == "root_only")
         {
@@ -1414,18 +1430,49 @@ void write_mesh(const Node &mesh,
             if(global_num_domains == 1)
             {
                 output_tree_pattern = "/";
+                output_partition_pattern = root_filename + ":/";
+                // NOTE: we don't need the part map entries for this case
             }
             else
             {
                 output_tree_pattern = "/domain_%06d/";
+                output_partition_pattern = root_filename + ":/domain_{domain:06d}";
+
+                //generate part map (we only need domain for this case)
+                output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+                index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+                for(index_t i=0; i < global_num_domains; i++)
+                {
+                    part_map_domain_vals[i] = i;
+                }
             }
         }
         else if(global_num_domains == num_files)
         {
+            //generate part map
+            output_partition_map["file"].set(DataType::index_t(global_num_domains));
+            output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+            index_t_array part_map_file_vals   = output_partition_map["file"].value();
+            index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+
+            for(index_t i=0; i < global_num_domains; i++)
+            {
+                // file id == domain id
+                part_map_file_vals[i]   = i;
+                part_map_domain_vals[i] = i;
+            }
+
             std::string tmp;
             utils::rsplit_path(output_dir_base,
                                output_file_pattern,
                                tmp);
+
+            output_partition_pattern = conduit::utils::join_file_path(
+                                                output_file_pattern,
+                                                "domain_{domain:06d}." +
+                                                file_protocol +
+                                                ":/");
+
             output_file_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
                                                 "domain_%06d." + file_protocol);
@@ -1437,26 +1484,53 @@ void write_mesh(const Node &mesh,
             utils::rsplit_path(output_dir_base,
                                output_file_pattern,
                                tmp);
+
+            output_partition_pattern = conduit::utils::join_file_path(
+                                                output_file_pattern,
+                                                "file_{file:06d}." +
+                                                file_protocol +
+                                                ":/domain_{domain:06d}");
+
             output_file_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
                                                 "file_%06d." + file_protocol);
             output_tree_pattern = "/domain_%06d";
         }
 
+        /////////////////////////////
+        // mesh partition map
+        /////////////////////////////
+        // example of cases:
+        // root only, single domain
+        // partition_pattern: "out.root"
+        //
+        // root only, multi domain
+        // partition_pattern: "out.root:domain_{domain:06d}"
+        // partition_map:
+        //   domain: [0, 1, 2, 3, 4 ]
+        //
+        // # domains == # files:
+        // partition_pattern: "out/domain_{domain:06d}.hdf5"
+        // partition_map:
+        //   file:  [ 0, 1, 2, 3, 4 ]
+        //   domain: [ 0, 1, 2, 3, 4 ]
+        //
+        // N domains to M files:
+        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // partition_map:
+        //   file:  [ 0, 0, 1, 2, 2 ]
+        //   domain: [ 0, 1, 2, 3, 4 ]
+
+        bp_idx[opts_mesh_name + "/state/partition_pattern"] = output_partition_pattern;
+        // add the partition map if non empty
+        // (empty case is single domain root file)
+        if (output_partition_map.number_of_children() > 0 )
+        {
+            bp_idx[opts_mesh_name + "/state/partition_map"] = output_partition_map;
+        }
+
         Node root;
         root["blueprint_index"].set(bp_idx);
-
-
-        // work around conduit and manually add state fields
-        if(multi_dom.child(0).has_path("state/cycle"))
-        {
-          bp_idx[ opts_mesh_name + "/state/cycle"] = multi_dom.child(0)["state/cycle"].to_int32();
-        }
-
-        if(multi_dom.child(0).has_path("state/time"))
-        {
-          bp_idx[opts_mesh_name + "/state/time"] = multi_dom.child(0)["state/time"].to_double();
-        }
 
         root["protocol/name"]    = file_protocol;
         root["protocol/version"] = CONDUIT_VERSION;
