@@ -7,7 +7,7 @@ on:
 jobs:
   build_pip_basic:
     name: Ubuntu pip setup.py
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Install Deps
       run: |
