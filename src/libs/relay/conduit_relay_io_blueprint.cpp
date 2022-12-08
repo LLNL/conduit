@@ -1384,6 +1384,9 @@ void write_mesh(const Node &mesh,
     // it is duplicated here b/c we dont want a circular dep
     // between conduit_blueprint_mpi and conduit_relay_io_mpi
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    //
+    // TODO: Do we need to update per mesh found?
+    //
     Node gather_bp_idx;
     relay::mpi::all_gather_using_schema(local_bp_idx,
                                         gather_bp_idx,
@@ -1398,6 +1401,9 @@ void write_mesh(const Node &mesh,
         bp_idx[opts_mesh_name].update(curr);
     }
 #else
+    //
+    // TODO: Do we need to update per mesh found?
+    //
     bp_idx[opts_mesh_name] = local_bp_idx;
 #endif
 
@@ -1521,12 +1527,21 @@ void write_mesh(const Node &mesh,
         //   file:  [ 0, 0, 1, 2, 2 ]
         //   domain: [ 0, 1, 2, 3, 4 ]
 
-        bp_idx[opts_mesh_name + "/state/partition_pattern"] = output_partition_pattern;
-        // add the partition map if non empty
-        // (empty case is single domain root file)
-        if (output_partition_map.number_of_children() > 0 )
+        //
+        // this info should be added to all meshes in the index
+        //
+
+        NodeIterator idx_itr = bp_idx.children();
+        while(bp_idx_itr.has_next())
         {
-            bp_idx[opts_mesh_name + "/state/partition_map"] = output_partition_map;
+            Node &curr = bp_idx_itr.next();
+            curr["state/partition_pattern"] = output_partition_pattern;
+            // add the partition map if non empty
+            // (empty case is single domain root file)
+            if (output_partition_map.number_of_children() > 0 )
+            {
+                curr["state/partition_map"] = output_partition_map;
+            }
         }
 
         Node root;
