@@ -7,7 +7,7 @@ on:
 jobs:
   build_pip_basic:
     name: Ubuntu pip setup.py
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-20.04
     steps:
     - name: Install Deps
       run: |
@@ -16,7 +16,7 @@ jobs:
                                 gcc \
                                 g++ \
                                 gfortran \
-                                python \
+                                python3 \
                                 perl \
                                 git \
                                 git-lfs \
@@ -36,7 +36,7 @@ jobs:
                                 libbz2-dev \
                                 mpich \
                                 libmpich-dev \
-                                libhdf5-dev
+                                libhdf5-dev 
     - name: Setup Python Env
       run: python3 -m pip install --upgrade pip numpy mpi4py
     - uses: actions/checkout@v2
