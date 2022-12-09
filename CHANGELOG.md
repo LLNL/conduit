@@ -33,6 +33,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added 1D mesh example support to `blueprint::mesh::examples::basic()`.
 - Added adjacency set aware generate functions (`genearte_points()`, etc) to the non-mpi blueprint library.
 - Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in an existing tree.
+- Added support to write and read per-mesh blueprint index entires with `partition_pattern` and `partition_map`.
+
 
 
 #### Relay
