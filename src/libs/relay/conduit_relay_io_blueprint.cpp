@@ -128,23 +128,34 @@ void gen_domain_to_file_map(index_t num_domains,
     }
 }
 
+class BlueprintPathGeneratorImpl
+{
+public:
+    BlueprintPathGeneratorImpl()
+    {}
 
-class BlueprintTreePathGenerator
+    virtual ~BlueprintPathGeneratorImpl()
+    {}
+
+    virtual std::string GenerateFilePath(index_t tree_id) const =0;
+    virtual std::string GenerateTreePath(index_t tree_id) const =0;
+};
+
+
+class BlueprintLegacyPathGenerator: public BlueprintPathGeneratorImpl
 {
 public:
     //-------------------------------------------------------------------//
-    BlueprintTreePathGenerator(const std::string &file_pattern,
-                               const std::string &tree_pattern,
-                               index_t num_files,
-                               index_t num_trees,
-                               const std::string &protocol,
-                               const Node &mesh_index)
+    BlueprintLegacyPathGenerator(const std::string &file_pattern,
+                                 const std::string &tree_pattern,
+                                 index_t num_files,
+                                 index_t num_trees,
+                                 const std::string &protocol)
     : m_file_pattern(file_pattern),
       m_tree_pattern(tree_pattern),
       m_num_files(num_files),
       m_num_trees(num_trees),
-      m_protocol(protocol),
-      m_mesh_index(mesh_index)
+      m_protocol(protocol)
     {
         // if we need domain to file map, gen it
         if( m_num_files > 1 && (m_num_trees != m_num_files) )
@@ -156,7 +167,7 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    ~BlueprintTreePathGenerator()
+    virtual ~BlueprintLegacyPathGenerator()
     {
 
     }
@@ -202,7 +213,7 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    std::string GenerateFilePath(index_t tree_id) const
+    virtual std::string GenerateFilePath(index_t tree_id) const
     {
         index_t file_id = -1;
 
@@ -224,7 +235,7 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    std::string GenerateTreePath(index_t tree_id) const
+    virtual std::string GenerateTreePath(index_t tree_id) const
     {
         // the tree path should always end in a /
         std::string res = Expand(m_tree_pattern,tree_id);
@@ -241,9 +252,158 @@ private:
     index_t     m_num_files;
     index_t     m_num_trees;
     std::string m_protocol;
-    Node        m_mesh_index;
     Node        m_d2f_map;
 };
+
+class BlueprintPartitonMapPathGenerator: public BlueprintPathGeneratorImpl
+{
+public:
+    //-------------------------------------------------------------------//
+    BlueprintPartitonMapPathGenerator(const std::string &part_pattern,
+                                      const conduit::Node &part_map)
+    : m_part_pattern(part_pattern),
+      m_part_map(part_map)
+    {
+        // empty
+    }
+    
+    //-------------------------------------------------------------------//
+    BlueprintPartitonMapPathGenerator(const std::string &part_pattern)
+    : m_part_pattern(part_pattern),
+      m_part_map()
+    {
+        // empty
+    }
+
+    //-------------------------------------------------------------------//
+    virtual ~BlueprintPartitonMapPathGenerator()
+    {
+        // empty
+    }
+
+    //-------------------------------------------------------------------//
+    virtual std::string GenerateFullPath(index_t tree_id) const
+    {
+        std::cout << m_part_pattern << std::endl;
+        if( m_part_map.number_of_children() == 0 )
+        {
+            // special case, not format sub needed
+            return m_part_pattern;
+        }
+        else
+        {
+            return conduit::utils::format(m_part_pattern,
+                                          m_part_map,
+                                          tree_id);
+        }
+    }
+
+    //-------------------------------------------------------------------//
+    virtual std::string GenerateFilePath(index_t tree_id) const
+    {
+        std::string res,tmp;
+        utils::split_string(GenerateFullPath(tree_id),
+                            ":/",
+                            res,  // result is before sep
+                            tmp);
+        return res;
+    }
+
+    //-------------------------------------------------------------------//
+    virtual std::string GenerateTreePath(index_t tree_id) const
+    {
+        std::string res,tmp;
+        utils::split_string(GenerateFullPath(tree_id),
+                            ":/",
+                            tmp,
+                            res); // result is after sep
+        // tree path should always end with "/"
+        if( (res.size() > 0) && (res[res.size()-1] != '/') )
+        {
+            res += "/";
+        }
+        return res;
+
+    }
+
+private:
+    std::string m_part_pattern;
+    Node        m_part_map;
+};
+
+
+class BlueprintTreePathGenerator
+{
+public:
+    
+    BlueprintTreePathGenerator()
+    : m_impl(nullptr)
+    {
+
+    }
+    
+    void Cleanup()
+    {
+        if(m_impl != nullptr)
+        {
+            delete m_impl;
+            m_impl = nullptr;
+        }
+    }
+    
+    //-------------------------------------------------------------------//
+    void Init(const std::string &file_pattern,
+              const std::string &tree_pattern,
+              index_t num_files,
+              index_t num_trees,
+              const std::string &protocol)
+    {
+        Cleanup();
+        m_impl = new BlueprintLegacyPathGenerator(file_pattern,
+                                                  tree_pattern,
+                                                  num_files,
+                                                  num_trees,
+                                                  protocol);
+    }
+    
+    //-------------------------------------------------------------------//
+    void Init(const std::string   &part_pattern,
+             const conduit::Node &part_map)
+    {
+        Cleanup();
+        m_impl = new BlueprintPartitonMapPathGenerator(part_pattern,
+                                                       part_map);
+    }
+    
+    //-------------------------------------------------------------------//
+    void Init(const std::string   &part_pattern)
+    {
+        Cleanup();
+        m_impl = new BlueprintPartitonMapPathGenerator(part_pattern);
+    }
+
+    ~BlueprintTreePathGenerator()
+    {
+        Cleanup();
+    }
+
+    std::string GenerateFilePath(index_t tree_id) const
+    {
+        return m_impl->GenerateFilePath(tree_id);
+    }
+
+    std::string GenerateTreePath(index_t tree_id) const
+    {
+        return m_impl->GenerateTreePath(tree_id);
+    }
+
+private:
+    BlueprintPathGeneratorImpl *m_impl;
+
+};
+
+
+
 
 bool global_someone_agrees(bool vote
                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
@@ -1384,9 +1544,8 @@ void write_mesh(const Node &mesh,
     // it is duplicated here b/c we dont want a circular dep
     // between conduit_blueprint_mpi and conduit_relay_io_mpi
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    //
-    // TODO: Do we need to update per mesh found?
-    //
+    // note: do to save vs write cases, these updates should be
+    // single mesh only
     Node gather_bp_idx;
     relay::mpi::all_gather_using_schema(local_bp_idx,
                                         gather_bp_idx,
@@ -1401,9 +1560,8 @@ void write_mesh(const Node &mesh,
         bp_idx[opts_mesh_name].update(curr);
     }
 #else
-    //
-    // TODO: Do we need to update per mesh found?
-    //
+    // note: do to save vs write cases, these updates should be
+    // single mesh only
     bp_idx[opts_mesh_name] = local_bp_idx;
 #endif
 
@@ -1436,7 +1594,7 @@ void write_mesh(const Node &mesh,
             if(global_num_domains == 1)
             {
                 output_tree_pattern = "/";
-                output_partition_pattern = root_filename + ":/";
+                output_partition_pattern = output_file_pattern + ":/";
                 // NOTE: we don't need the part map entries for this case
             }
             else
@@ -1527,21 +1685,13 @@ void write_mesh(const Node &mesh,
         //   file:  [ 0, 0, 1, 2, 2 ]
         //   domain: [ 0, 1, 2, 3, 4 ]
 
-        //
-        // this info should be added to all meshes in the index
-        //
+        // note: do to save vs write cases, these updates should be
+        // single mesh only
+        bp_idx[opts_mesh_name]["state/partition_pattern"] = output_partition_pattern;
 
-        NodeIterator idx_itr = bp_idx.children();
-        while(bp_idx_itr.has_next())
+        if (output_partition_map.number_of_children() > 0 )
         {
-            Node &curr = bp_idx_itr.next();
-            curr["state/partition_pattern"] = output_partition_pattern;
-            // add the partition map if non empty
-            // (empty case is single domain root file)
-            if (output_partition_map.number_of_children() > 0 )
-            {
-                curr["state/partition_map"] = output_partition_map;
-            }
+            bp_idx[opts_mesh_name]["state/partition_map"] = output_partition_map;
         }
 
         Node root;
@@ -1759,12 +1909,33 @@ void read_mesh(const std::string &root_file_path,
     // read all domains for given mesh
     int num_domains = root_node["number_of_trees"].to_int();
     int num_files   = root_node["number_of_files"].to_int();
-    detail::BlueprintTreePathGenerator gen(root_node["file_pattern"].as_string(),
-                                           root_node["tree_pattern"].as_string(),
-                                           num_files,
-                                           num_domains,
-                                           data_protocol,
-                                           mesh_index);
+    detail::BlueprintTreePathGenerator gen;
+
+    // three cases:
+    //  legacy case that uses file_pattern and tree_pattern
+    //  case that uses a mesh specific partition pattern and partition map
+    //  case that uses a mesh specific partition pattern 
+    if(mesh_index["state"].has_child("partition_pattern"))
+    {
+        if(mesh_index["state"].has_child("partition_map"))
+        {
+            gen.Init(mesh_index["state/partition_pattern"].as_string(),
+                     mesh_index["state/partition_map"]);
+        }
+        else
+        {
+            // this will only occur for single domain root file case
+            gen.Init(mesh_index["state/partition_pattern"].as_string());
+        }
+    }
+    else
+    {
+        gen.Init(root_node["file_pattern"].as_string(),
+                 root_node["tree_pattern"].as_string(),
+                 num_files,
+                 num_domains,
+                 data_protocol);
+    }
 
     std::ostringstream oss;
     int domain_start = 0;
