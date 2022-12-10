@@ -262,15 +262,30 @@ public:
     BlueprintPartitonMapPathGenerator(const std::string &part_pattern,
                                       const conduit::Node &part_map)
     : m_part_pattern(part_pattern),
-      m_part_map(part_map)
+      m_part_map(part_map),
+      m_dom_to_tree()
     {
         // empty
+        // init the map that takes us from domain_id (what we want)
+        // to part map entry
+        
+        index_t_accessor doms = part_map["domain"].value();
+        index_t num_domains = doms.max() + 1;
+        // NOTE: Most cases will be compact, but what about
+        // cases that are not?
+        m_dom_to_tree.set(DataType::index_t(num_domains));
+        index_t_array dom_to_tree_vals = m_dom_to_tree.value();
+        for(index_t i=0;i<num_domains;i++)
+        {
+            dom_to_tree_vals[doms[i]] = i;
+        }
     }
     
     //-------------------------------------------------------------------//
     BlueprintPartitonMapPathGenerator(const std::string &part_pattern)
     : m_part_pattern(part_pattern),
-      m_part_map()
+      m_part_map(),
+      m_dom_to_tree()
     {
         // empty
     }
@@ -284,7 +299,6 @@ public:
     //-------------------------------------------------------------------//
     virtual std::string GenerateFullPath(index_t tree_id) const
     {
-        std::cout << m_part_pattern << std::endl;
         if( m_part_map.number_of_children() == 0 )
         {
             // special case, not format sub needed
@@ -292,9 +306,11 @@ public:
         }
         else
         {
+            index_t_array dom_to_tree_vals = m_dom_to_tree.value();
+            index_t dom_lookup = dom_to_tree_vals[tree_id];
             return conduit::utils::format(m_part_pattern,
                                           m_part_map,
-                                          tree_id);
+                                          dom_lookup);
         }
     }
 
@@ -329,6 +345,8 @@ public:
 private:
     std::string m_part_pattern;
     Node        m_part_map;
+    // extra map for non trivial domain 
+    Node        m_dom_to_tree;
 };
 
 
@@ -1831,12 +1849,6 @@ void read_mesh(const std::string &root_file_path,
     Node root_node;
     relay::io::load(root_fname, root_protocol, root_node);
 
-
-    if(!root_node.has_child("file_pattern"))
-    {
-        CONDUIT_ERROR("Root file missing 'file_pattern'");
-    }
-
     if(!root_node.has_child("blueprint_index"))
     {
         CONDUIT_ERROR("Root file missing 'blueprint_index'");
@@ -1876,7 +1888,9 @@ void read_mesh(const std::string &root_file_path,
 
         CONDUIT_ERROR(oss.str());
     }
+    
 
+    
     // make sure we have a valid bp index
     Node verify_info;
     const Node &mesh_index = root_node["blueprint_index"][mesh_name];
@@ -1887,6 +1901,27 @@ void read_mesh(const std::string &root_file_path,
                       << verify_info.to_json());
     }
 
+    bool has_part_pattern = mesh_index.has_path("state/partition_pattern");
+    // We need either a state/partition_pattern, or root level file_pattern
+
+    if(!has_part_pattern && !root_node.has_child("file_pattern"))
+    {
+        CONDUIT_ERROR("Root file missing 'file_pattern' or mesh specific"
+            " partition_pattern (" << mesh_name << "/state/partition_pattern)");
+    }
+
+    // NOTE: future cases (per mesh maps, won't need these)
+    // but they are needed for all current cases
+    if(!has_part_pattern && !root_node.has_child("number_of_trees"))
+    {
+        CONDUIT_ERROR("Root missing `number_of_trees`");
+    }
+
+    if(!has_part_pattern && !root_node.has_child("number_of_files"))
+    {
+        CONDUIT_ERROR("Root missing `number_of_files`");
+    }
+    
     std::string data_protocol = "hdf5";
 
     if(root_node.has_child("protocol"))
@@ -1894,21 +1929,25 @@ void read_mesh(const std::string &root_file_path,
         data_protocol = root_node["protocol/name"].as_string();
     }
 
-    // NOTE: future cases (per mesh maps, won't need these)
-    // but they are needed for all current cases
-    if(!root_node.has_child("number_of_trees"))
-    {
-        CONDUIT_ERROR("Root missing `number_of_trees`");
-    }
-
-    if(!root_node.has_child("number_of_files"))
-    {
-        CONDUIT_ERROR("Root missing `number_of_files`");
-    }
-
     // read all domains for given mesh
-    int num_domains = root_node["number_of_trees"].to_int();
-    int num_files   = root_node["number_of_files"].to_int();
+    int num_domains = -1;
+    if(has_part_pattern)
+    {
+        if(mesh_index.has_path("state/partition_map/domain"))
+        {
+            index_t_accessor doms = mesh_index["state/partition_map/domain"].value();
+            num_domains = doms.max() + 1;
+        }
+        else
+        {
+            // special case, one 1 domain
+            num_domains = 1;
+        }
+    }
+    else
+    {
+        num_domains = root_node["number_of_trees"].to_int();
+    }
     detail::BlueprintTreePathGenerator gen;
 
     // three cases:
@@ -1930,6 +1969,7 @@ void read_mesh(const std::string &root_file_path,
     }
     else
     {
+        int num_files   = root_node["number_of_files"].to_int();
         gen.Init(root_node["file_pattern"].as_string(),
                  root_node["tree_pattern"].as_string(),
                  num_files,

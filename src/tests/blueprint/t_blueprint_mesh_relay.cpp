@@ -592,4 +592,85 @@ TEST(conduit_blueprint_mesh_relay, save_with_subdir)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, custom_part_map_index)
+{
+
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping custom_part_map_index test");
+        return;
+    }
+
+    std::string output_root = "tout_custom_part_map_index_hdf5.root";
+    std::string output_dir = "tout_custom_part_map_index_hdf5";
+    remove_path_if_exists(output_root);
+    remove_path_if_exists(output_dir);
+    create_directory(output_dir);
+
+    //
+    // 5 domain case, has a non trivial domain ordering across 3 files 
+    //
+
+    // partition_pattern: "tout_custom_part_map_index/file_{:02}.hdf5:/domain_{:03}"
+    // partition_map:
+    //    file:  [ 0, 0, 1, 2, 2 ]
+    //    domain: [ 4, 0, 3, 2, 1 ]
+
+    // use spiral , with 5 domains
+    Node data, root;
+    conduit::blueprint::mesh::examples::spiral(5,data);
+
+    // create an index 
+    blueprint::mesh::generate_index(data,
+                                    "",
+                                    5,
+                                    root["blueprint_index/spiral"]);
+
+    // add the custom part map
+                                    
+    Node &bp_idx_state = root["blueprint_index/spiral/state"];
+    bp_idx_state["partition_pattern"] = output_dir + "/file_{:02}.hdf5:/domain_{:03}";
+
+    bp_idx_state["partition_map/file"] = {0,0,1,2,2};
+    bp_idx_state["partition_map/domain"]= {4,0,3,2,1};
+    index_t_accessor pmap_d_vals = bp_idx_state["partition_map/domain"].value();
+
+    for(index_t i=0;i<5;i++)
+    {
+        int domain_id = pmap_d_vals[i];
+        std::string opath = conduit::utils::format( 
+                                bp_idx_state["partition_pattern"].as_string(),
+                                bp_idx_state["partition_map"],
+                                i);
+        CONDUIT_INFO("Saving domain " << domain_id << " to " << opath);
+        relay::io::save_merged(data[domain_id],opath,"hdf5");
+        data[domain_id].print();
+    }
+
+    root["protocol/name"] = "hdf5";
+    root["protocol/version"] = CONDUIT_VERSION;
+    root["number_of_trees"] = 5;
+
+    CONDUIT_INFO("Creating: tout_custom_part_map_index.root");
+    relay::io::save(root, output_root,"hdf5");
+
+    // now to test the read, the domains should return 
+    // back in the original order
+    Node n_load, n_info;
+    relay::io::blueprint::load_mesh(output_root,n_load);
+
+    // sprial domains are unique, so we can 
+    // check if they came back in the right order via diff
+    // (read should have retrieved 0 -> 4 in order)
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_FALSE(data[i].diff(n_load[i],n_info));
+    }
+
+}
+
 
