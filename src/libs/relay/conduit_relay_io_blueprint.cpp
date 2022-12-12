@@ -265,7 +265,6 @@ public:
       m_part_map(part_map),
       m_dom_to_tree()
     {
-        // empty
         // init the map that takes us from domain_id (what we want)
         // to part map entry
         
@@ -1236,7 +1235,7 @@ void write_mesh(const Node &mesh,
                     hnd.write(dom,mesh_path);
                 }
                 
-                // note: local file handle goes out of scope here
+                // NOTE: local file handle goes out of scope here
                 // and data is committed to file for handles that write
                 // on close
             }
@@ -1562,7 +1561,7 @@ void write_mesh(const Node &mesh,
     // it is duplicated here b/c we dont want a circular dep
     // between conduit_blueprint_mpi and conduit_relay_io_mpi
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    // note: do to save vs write cases, these updates should be
+    // NOTE: do to save vs write cases, these updates should be
     // single mesh only
     Node gather_bp_idx;
     relay::mpi::all_gather_using_schema(local_bp_idx,
@@ -1578,7 +1577,7 @@ void write_mesh(const Node &mesh,
         bp_idx[opts_mesh_name].update(curr);
     }
 #else
-    // note: do to save vs write cases, these updates should be
+    // NOTE: do to save vs write cases, these updates should be
     // single mesh only
     bp_idx[opts_mesh_name] = local_bp_idx;
 #endif
@@ -1702,8 +1701,14 @@ void write_mesh(const Node &mesh,
         // partition_map:
         //   file:  [ 0, 0, 1, 2, 2 ]
         //   domain: [ 0, 1, 2, 3, 4 ]
-
-        // note: do to save vs write cases, these updates should be
+        //
+        // N domains to M files (non trivial domain order):
+        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // partition_map:
+        //    file:  [ 0, 0, 1, 2, 2 ]
+        //    domain: [ 4, 0, 3, 2, 1 ]
+        //
+        // NOTE: do to save vs write cases, these updates should be
         // single mesh only
         bp_idx[opts_mesh_name]["state/partition_pattern"] = output_partition_pattern;
 
