@@ -2950,6 +2950,17 @@ create_hdf5_file_access_plist()
                                  << "property list " << h5_fa_props);
 
     }
+    else if (major_num == 1 && ((minor_num == 10 && release_num >= 2) || minor_num > 10))
+    {
+        h5_status = H5Pset_libver_bounds(h5_fa_props,
+                                         H5F_LIBVER_V18,
+                                         H5F_LIBVER_V18);
+
+        CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                                 "Failed to set libver options for "
+                                 << "property list " << h5_fa_props);
+    }
+
     return h5_fa_props;
 }
 
