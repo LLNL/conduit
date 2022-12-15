@@ -57,6 +57,7 @@ namespace examples
     /// Generates a structured grid with an element field and a vertex field,
     /// each element of which contains a sequentially increasing value.
     /// Calling code can specify the shape of the storage array for the fields.
+    ///
     /// Pass the extra specifications with a conduit::Node:
     ///
     /// \code{.yaml} 
@@ -72,14 +73,97 @@ namespace examples
     ///          too small to contain the requested mesh data at the specified
     ///          origin.
     ///
-    /// For example, if the function were called like this:
+    /// The following example shows how to produce a structured grid with 4x3
+    /// The following example shows how to produce a structured grid with 3x2
+    /// elements.  We would like to have two elements padding each end of each
+    /// dimension.  Thus, element field values will be stored at origin (2, 2)
+    /// in a 7x6 array.  We will also use a custom-sized array for vertex
+    /// fields.  In other Blueprint meshes, fields over vertices are stored in
+    /// arrays bigger by one in each dimension than arrays storing fields over
+    /// elements.  In strided structured meshes, the array dimensions of vertex
+    /// and element fields are decoupled.  For this example, we will store
+    /// vertex fields in a 7x6 array, not an 8x7 array.  Since there are 3x2
+    /// mesh elements, we will store 4x3 vertex field values starting at origin
+    /// (2, 2).
+    ///
+    /// The diagram below shows the mesh.  For elements, a space indicates
+    /// a padding element and a `d` indicates a data element.  For vertices, an `o`
+    /// indicates a padding vertex, an asterisk `*` indicates a data vertex, and
+    /// a space indicates a mesh vertex that has no field data.
+    ///
+    /// \verbatim
+    ///  -- -- -- -- -- -- -- 
+    /// |  |  |  |  |  |  |  |
+    /// o--o--o--o--o--o--o-- 
+    /// |  |  |  |  |  |  |  |
+    /// o--o--*--*--*--*--o-- 
+    /// |  |  |d |d |d |  |  |
+    /// o--o--*--*--*--*--o-- 
+    /// |  |  |d |d |d |  |  |
+    /// o--o--*--*--*--*--o-- 
+    /// |  |  |  |  |  |  |  |
+    /// o--o--o--o--o--o--o-- 
+    /// |  |  |  |  |  |  |  |
+    /// o--o--o--o--o--o--o-- 
+    /// \endverbatim
+    ///
+    /// In summary, this will be a mesh with 4x3 vertices (therefore, 3x2
+    /// elements).  The shape of each array storing a vertex field will be
+    /// [7, 6, 0] with a data origin of [2, 2, 0].  The shape of each array
+    /// storing a field over elements will be [7, 6, 0] with a data origin of
+    /// [2, 2, 0].
+    ///
+    /// Here is code to produce this mesh.
     /// \code
-    /// conduit::Node desc;  // empty description node: use default shape and origin
+    /// conduit::Node desc;  // description node
     /// conduit::Node res;   // result node will contain mesh
-    /// strided_structured(desc, 3, 2, 0, res);
+    ///
+    /// index_t npts_x = 4;
+    /// index_t npts_y = 3;
+    /// index_t npts_z = 0;
+    ///
+    /// index_t nelts_x = npts_x - 1;
+    /// index_t nelts_y = npts_y - 1;
+    /// index_t nelts_z = 0;
+    ///
+    /// index_t total_elt_pad = 4; // two on each end
+    /// index_t total_pt_pad = 3;  // two on the low end, one on the high end
+    ///
+    /// index_t origin_x = 2;
+    /// index_t origin_y = 2;
+    ///
+    /// // A mesh with "two elements of padding and equal sized element and vertex
+    /// // field arrays" is a common use case.  It is the default that will be produced
+    /// // if code passes an empty desc node to strided_structured().
+    ///
+    /// // Equivalently, we can fill in desc:
+    ///
+    /// desc["vertex_data/shape"].set(DataType::index_t(3));
+    /// index_t_array vertex_shape = desc["vertex_data/shape"].as_index_t_array();
+    /// vertex_shape[0] = npts_x + total_pt_pad;
+    /// vertex_shape[1] = npts_y + total_pt_pad;
+    /// vertex_shape[2] = 0;
+    /// desc["vertex_data/origin"].set(DataType::index_t(3));
+    /// index_t_array vertex_origin = desc["vertex_data/origin"].as_index_t_array();
+    /// vertex_origin[0] = origin_x;
+    /// vertex_origin[1] = origin_y;
+    /// vertex_origin[2] = 0;
+    /// desc["element_data/shape"].set(DataType::index_t(3));
+    /// index_t_array element_shape = desc["element_data/shape"].as_index_t_array();
+    /// element_shape[0] = nelts_x + total_elt_pad;
+    /// element_shape[1] = nelts_y + total_elt_pad;
+    /// element_shape[2] = 0;
+    /// desc["element_data/origin"].set(DataType::index_t(3));
+    /// index_t_array element_origin = desc["element_data/origin"].as_index_t_array();
+    /// element_origin[0] = origin_x;
+    /// element_origin[1] = origin_y;
+    /// element_origin[2] = 0;
+    ///
+    /// strided_structured(desc, npts_x, npts_y, npts_z, res);
     /// \endcode
     ///
-    /// the node `res` would contain the following structure:
+    /// The node `res` will contain the following structure (edited slightly
+    /// for clarity):
     /// \verbatim
     /// state:
     ///   time: 3.1415
@@ -88,18 +172,18 @@ namespace examples
     ///   coords:
     ///     type: "explicit"
     ///     values:
-    ///       x: [-2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
-    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
-    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
-    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
-    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0,
-    ///           -2.0, -1.0, 0.0, 1.0, 2.0, 3.0, 4.0]
-    ///       y: [-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0,
-    ///            0.0,  0.0,  0.0,  0.0,  0.0,  0.0,  0.0,
-    ///            1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,
-    ///            2.0,  2.0,  2.0,  2.0,  2.0,  2.0,  2.0,
-    ///            3.0,  3.0,  3.0,  3.0,  3.0,  3.0,  3.0,
-    ///            4.0,  4.0,  4.0,  4.0,  4.0,  4.0,  4.0]
+    ///       x: [-10.0,  -6.67, -3.33,  0.0,   3.33,  6.67, 10.0,
+    ///           -10.0,  -6.67, -3.33,  0.0,   3.33,  6.67, 10.0,
+    ///           -10.0,  -6.67, -3.33,  0.0,   3.33,  6.67, 10.0,
+    ///           -10.0,  -6.67, -3.33,  0.0,   3.33,  6.67, 10.0,
+    ///           -10.0,  -6.67, -3.33,  0.0,   3.33,  6.67, 10.0,
+    ///           -10.0,  -6.67, -3.33,  0.0,   3.33,  6.67, 10.0]
+    ///       y: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0,
+    ///            -6.0,  -6.0,  -6.0,  -6.0,  -6.0,  -6.0,  -6.0,
+    ///            -2.0,  -2.0,  -2.0,  -2.0,  -2.0,  -2.0,  -2.0,
+    ///             2.0,   2.0,   2.0,   2.0,   2.0,   2.0,   2.0,
+    ///             6.0,   6.0,   6.0,   6.0,   6.0,   6.0,   6.0,
+    ///            10.0,  10.0,  10.0,  10.0,  10.0,  10.0,  10.0]
     /// topologies:
     ///   mesh:
     ///     type: "structured"
@@ -155,11 +239,11 @@ namespace examples
     /// - `strides` tells how big the `values` array is.
     /// - `offsets` tells where to start looking within `values`.
     /// - The size of the mesh named by `topology` tells what elements to use
-    ///   from `array`.  Anything outside that is ignored.
+    ///   from `array`.  Any array element outside this range is ignored.
     void CONDUIT_BLUEPRINT_API strided_structured(conduit::Node &desc,
-                                                  conduit::index_t nx,
-                                                  conduit::index_t ny,
-                                                  conduit::index_t nz,
+                                                  conduit::index_t npts_x,
+                                                  conduit::index_t npts_y,
+                                                  conduit::index_t npts_z,
                                                   conduit::Node &res);
 
     /// Generates a multidomain uniform grid of 'basic' examples for each
