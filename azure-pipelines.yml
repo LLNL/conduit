@@ -35,7 +35,7 @@ stages:
           # run our sanity check script
           #######################################
           git fetch
-          python scripts/ci/check_blt_time_travel.py
+          python3 scripts/ci/check_blt_time_travel.py
         displayName: 'BLT Time Travel Check'
 
 # main checks
@@ -328,6 +328,8 @@ stages:
            ##################
            # output env
            cat etc/*rel*
+           # install pkgs we need
+           sudo apt-get update && sudo apt-get -y install python3
            env
         displayName: 'Prepare build env'
 
@@ -339,7 +341,7 @@ stages:
            pwd
            # echo system python details
            which python
-           python --version
+           python3 --version
            # setup spack spec
            export SPACK_SPEC="%${COMPILER_SPEC}"
            # mpi
@@ -375,7 +377,7 @@ stages:
            echo "SPACK SPEC:"
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/
+           python3 scripts/uberenv/uberenv.py -k --spack-allow-deprecated --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -409,6 +411,8 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FIND_MPI=${BLT_ENABLE_FIND_MPI}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # this is now getting set to the uberenv-pkg loc by spack, ignore for ci
+           export CMAKE_OPTS="${CMAKE_OPTS} -DPYTHON_MODULE_INSTALL_PREFIX=IGNORE"
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${COMPILER_CC}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${COMPILER_CXX}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${COMPILER_FC}"; fi

@@ -903,4 +903,3 @@ TEST(conduit_utils, timer)
     // check that at least 1/4 a second has elapsed
     EXPECT_TRUE(t.elapsed() > .249);
 }
-
