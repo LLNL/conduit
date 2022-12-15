@@ -92,19 +92,19 @@ namespace examples
     /// a space indicates a mesh vertex that has no field data.
     ///
     /// \verbatim
+    /// o--o--o--o--o--o--o-- 
+    /// |  |  |  |  |  |  |  |
+    /// o--o--o--o--o--o--o-- 
+    /// |  |  |  |  |  |  |  |
+    /// o--o--*--*--*--*--o-- 
+    /// |  |  |d |d |d |  |  |
+    /// o--o--*--*--*--*--o-- 
+    /// |  |  |d |d |d |  |  |
+    /// o--o--*--*--*--*--o-- 
+    /// |  |  |  |  |  |  |  |
+    /// o--o--o--o--o--o--o-- 
+    /// |  |  |  |  |  |  |  |
     ///  -- -- -- -- -- -- -- 
-    /// |  |  |  |  |  |  |  |
-    /// o--o--o--o--o--o--o-- 
-    /// |  |  |  |  |  |  |  |
-    /// o--o--*--*--*--*--o-- 
-    /// |  |  |d |d |d |  |  |
-    /// o--o--*--*--*--*--o-- 
-    /// |  |  |d |d |d |  |  |
-    /// o--o--*--*--*--*--o-- 
-    /// |  |  |  |  |  |  |  |
-    /// o--o--o--o--o--o--o-- 
-    /// |  |  |  |  |  |  |  |
-    /// o--o--o--o--o--o--o-- 
     /// \endverbatim
     ///
     /// In summary, this will be a mesh with 4x3 vertices (therefore, 3x2
