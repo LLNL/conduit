@@ -591,6 +591,48 @@ TEST(conduit_blueprint_mesh_relay, save_with_subdir)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, single_file_custom_part_map_index)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping custom_part_map_index test");
+        return;
+    }
+
+    std::string output_root = "tout_single_file_part_map_index_hdf5.root";
+    remove_path_if_exists(output_root);
+
+    Node root;
+    conduit::blueprint::mesh::examples::braid("quads",10,10,0,root["mesh"]);
+
+    // create an index 
+    blueprint::mesh::generate_index(root["mesh"],
+                                    "",
+                                    1,
+                                    root["blueprint_index/mesh"]);
+
+    // add the custom part map for simple case
+    Node &bp_idx_state = root["blueprint_index/mesh/state"];
+    bp_idx_state["partition_pattern"] =  output_root + ":/mesh";
+
+    CONDUIT_INFO("Creating: tout_single_file_part_map_index_hdf5.root");
+    relay::io::save(root, output_root,"hdf5");
+
+    // now to test the read, the domains should return 
+    // back in the original order
+    Node n_load, n_info;
+    relay::io::blueprint::load_mesh(output_root,n_load);
+
+    root.print();
+    n_load.print();
+    EXPECT_FALSE(root["mesh"].diff(n_load[0],n_info));
+    n_info.print();
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_relay, custom_part_map_index)
