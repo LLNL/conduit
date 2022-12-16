@@ -89,9 +89,9 @@ namespace examples
     /// values.  To match the element fields' padding as closely as possible,
     /// the vertex field values are located at origin (2, 2).
     ///
-    /// The diagram below shows the mesh.  Note that the origin is at the top
-    /// left.  For elements, a space indicates a padding element and a `d`
-    /// indicates a data element.  For vertices, an `o` indicates a padding
+    /// The diagram below shows the mesh.  Note that the diagram origin is at
+    /// the top left.  For elements, a space indicates a padding element and a
+    /// `d` indicates a data element.  For vertices, an `o` indicates a padding
     /// vertex, an asterisk `*` indicates a data vertex, and a space indicates a
     /// mesh vertex that has no field data.
     ///
