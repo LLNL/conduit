@@ -73,7 +73,6 @@ namespace examples
     ///          too small to contain the requested mesh data at the specified
     ///          origin.
     ///
-    /// The following example shows how to produce a structured grid with 4x3
     /// The following example shows how to produce a structured grid with 3x2
     /// elements.  We would like to have two elements padding each end of each
     /// dimension.  Thus, element field values will be stored at origin (2, 2)
