@@ -54,11 +54,12 @@ namespace examples
                                      conduit::index_t nz,
                                      conduit::Node &res);
 
-    /// Generates a structured grid with an element field and a vertex field,
-    /// each element of which contains a sequentially increasing value.
-    /// Calling code can specify the shape of the storage array for the fields.
+    /// Generates a strided structured grid with an element field and a vertex
+    /// field, each element of which contains a sequentially increasing value.
+    /// Calling code can specify the shape of the storage array for the fields
+    /// and the location of the field values within the array.
     ///
-    /// Pass the extra specifications with a conduit::Node:
+    /// Pass the extra specifications with a conduit::Node desc:
     ///
     /// \code{.yaml} 
     /// vertex_data:
@@ -74,21 +75,25 @@ namespace examples
     ///          origin.
     ///
     /// The following example shows how to produce a structured grid with 3x2
-    /// elements.  We would like to have two elements padding each end of each
-    /// dimension.  Thus, element field values will be stored at origin (2, 2)
-    /// in a 7x6 array.  We will also use a custom-sized array for vertex
-    /// fields.  In other Blueprint meshes, fields over vertices are stored in
-    /// arrays bigger by one in each dimension than arrays storing fields over
-    /// elements.  In strided structured meshes, the array dimensions of vertex
-    /// and element fields are decoupled.  For this example, we will store
-    /// vertex fields in a 7x6 array, not an 8x7 array.  Since there are 3x2
-    /// mesh elements, we will store 4x3 vertex field values starting at origin
-    /// (2, 2).
+    /// elements for data and two elements padding each end of each dimension.
+    /// Thus, element field values will be located at origin (2, 2) in a 7x6
+    /// array.
     ///
-    /// The diagram below shows the mesh.  For elements, a space indicates
-    /// a padding element and a `d` indicates a data element.  For vertices, an `o`
-    /// indicates a padding vertex, an asterisk `*` indicates a data vertex, and
-    /// a space indicates a mesh vertex that has no field data.
+    /// We will also use a custom-sized array for vertex fields.  In other
+    /// Blueprint meshes, fields over vertices are stored in arrays larger by
+    /// one element in each dimension than arrays that store fields over
+    /// elements.  In strided structured meshes, the array dimensions of vertex
+    /// and element fields are decoupled.  In this example, vertex fields will
+    /// use a 7x6 array, not an 8x7 array as required by other Blueprint meshes.
+    /// Since there are 3x2 mesh elements, there will be 4x3 vertex field
+    /// values.  To match the element fields' padding as closely as possible,
+    /// the vertex field values are located at origin (2, 2).
+    ///
+    /// The diagram below shows the mesh.  Note that the origin is at the top
+    /// left.  For elements, a space indicates a padding element and a `d`
+    /// indicates a data element.  For vertices, an `o` indicates a padding
+    /// vertex, an asterisk `*` indicates a data vertex, and a space indicates a
+    /// mesh vertex that has no field data.
     ///
     /// \verbatim
     /// o--o--o--o--o--o--o-- 
@@ -114,9 +119,7 @@ namespace examples
     ///
     /// Here is code to produce this mesh.
     /// \code
-    /// conduit::Node desc;  // description node
-    /// conduit::Node res;   // result node will contain mesh
-    ///
+    /// // Data mesh dimensions (the part we care about, not the padding) 
     /// index_t npts_x = 4;
     /// index_t npts_y = 3;
     /// index_t npts_z = 0;
@@ -125,9 +128,11 @@ namespace examples
     /// index_t nelts_y = npts_y - 1;
     /// index_t nelts_z = 0;
     ///
+    /// // Total padding in each dimension 
     /// index_t total_elt_pad = 4; // two on each end
     /// index_t total_pt_pad = 3;  // two on the low end, one on the high end
     ///
+    /// // Origin: where the data starts in the arrays 
     /// index_t origin_x = 2;
     /// index_t origin_y = 2;
     ///
@@ -135,7 +140,10 @@ namespace examples
     /// // field arrays" is a common use case.  It is the default that will be produced
     /// // if code passes an empty desc node to strided_structured().
     ///
-    /// // Equivalently, we can fill in desc:
+    /// conduit::Node desc;  // description node
+    /// conduit::Node res;   // result node will contain mesh
+    ///
+    /// // Equivalently, we can fill in the description node:
     ///
     /// desc["vertex_data/shape"].set(DataType::index_t(3));
     /// index_t_array vertex_shape = desc["vertex_data/shape"].as_index_t_array();
@@ -158,6 +166,7 @@ namespace examples
     /// element_origin[1] = origin_y;
     /// element_origin[2] = 0;
     ///
+    /// // Generate the mesh into res
     /// strided_structured(desc, npts_x, npts_y, npts_z, res);
     /// \endcode
     ///
