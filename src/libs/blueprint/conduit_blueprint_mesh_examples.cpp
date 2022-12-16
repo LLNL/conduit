@@ -3409,10 +3409,10 @@ strided_structured(Node &desc, // shape of requested data arrays
     }
     // fill strides
     strides[0] = 1;
-    strides[1] = strides[0] * ele_extent[0];
+    strides[1] = strides[0] * pts_extent[0];
     if (npts_z > 0)
     {
-        strides[2] = strides[1] * ele_extent[1];
+        strides[2] = strides[1] * pts_extent[1];
     }
 
     Node &fields = res["fields"];
