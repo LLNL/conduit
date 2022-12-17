@@ -15,6 +15,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Updated to BLT v0.5.2 
 
+### Fixed
+#### Blueprint
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh} to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
+
 ## [0.8.4] - Released 2022-08-22
 
 ### Added

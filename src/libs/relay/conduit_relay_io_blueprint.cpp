@@ -1820,36 +1820,19 @@ void read_mesh(const std::string &root_file_path,
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     std::string root_fname = root_file_path;
-
-    // read the root file, it can be either json or hdf5
-
-    // assume hdf5, but check for json file
-    std::string root_protocol = "hdf5";
-    // we will read the first 5 bytes, but
-    // make sure our buff is null termed, unless you
-    // want a random chance at sadness.
-    char buff[6] = {0,0,0,0,0,0};
-
-    // heuristic, if json, we expect to see "{" in the first 5 chars of the file.
+    
+    // make sure we can open the root file
     std::ifstream ifs;
     ifs.open(root_fname.c_str());
     if(!ifs.is_open())
     {
         CONDUIT_ERROR("failed to open root file: " << root_fname);
     }
-
-    if(!ifs.read((char *)buff,5))
-    {
-        CONDUIT_ERROR("failed to read starting bytes from root file: " << root_fname);
-    }
     ifs.close();
 
-    std::string test_str(buff);
-
-    if(test_str.find("{") != std::string::npos)
-    {
-       root_protocol = "json";
-    }
+    // check root file protocol using heuristic search 
+    std::string root_protocol = "hdf5";
+    conduit::relay::io::identify_file_type(root_fname,root_protocol);
 
     Node root_node;
     relay::io::load(root_fname, root_protocol, root_node);
@@ -2053,6 +2036,7 @@ void read_mesh(const std::string &root_file_path,
             // read components of the mesh according to the mesh index
             // for each child in the index
             NodeConstIterator outer_itr = mesh_index.children();
+
             while(outer_itr.has_next())
             {
                 const Node &outer = outer_itr.next();
