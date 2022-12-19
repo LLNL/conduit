@@ -592,6 +592,48 @@ TEST(conduit_blueprint_mesh_relay, save_with_subdir)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, round_trip_all_protos)
+{
+    std::vector<std::string> protocols;
+
+    protocols.push_back("json");
+    protocols.push_back("yaml");
+
+    Node n_about;
+    relay::io::about(n_about);
+
+    if(n_about["protocols/hdf5"].as_string() == "enabled")
+        protocols.push_back("hdf5");
+
+
+    for (std::vector<std::string>::const_iterator itr = protocols.begin();
+             itr < protocols.end(); ++itr)
+    {
+        std::string protocol = *itr;
+        CONDUIT_INFO("Testing Relay IO Blueprint round trip with protocol: "
+                     << protocol );
+        std::string tout_base = "tout_mesh_bp_round_trip_" + protocol;
+        std::string tout_fname = tout_base + ".root";
+        remove_path_if_exists(tout_fname);
+
+        Node data, n_load, opts,info;
+        conduit::blueprint::mesh::examples::braid("quads",10,10,0,data);
+        // type sanitize sieve (avoid diffs due to int32 src  vs int64 load heurstic)
+        std::string data_str = data.to_yaml();
+        data.reset();
+        data.parse(data_str,"yaml");
+        
+        opts["suffix"] = "none";
+        relay::io::blueprint::save_mesh(data,tout_base,protocol,opts);
+        relay::io::blueprint::load_mesh(tout_fname,n_load);
+        // this isn't in the input, so remove.
+        n_load[0].remove("state/domain_id");
+        EXPECT_FALSE(data.diff(n_load[0],info));
+        info.print();
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_relay, single_file_custom_part_map_index)
 {
     Node io_protos;

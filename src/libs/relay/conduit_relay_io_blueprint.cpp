@@ -1830,7 +1830,7 @@ void read_mesh(const std::string &root_file_path,
     }
     ifs.close();
 
-    // check root file protocol using heuristic search 
+    // check root file protocol using heurstic search
     std::string root_protocol = "hdf5";
     conduit::relay::io::identify_file_type(root_fname,root_protocol);
 

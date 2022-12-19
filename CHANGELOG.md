@@ -14,10 +14,16 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 #### General
 - Updated to BLT v0.5.2 
+- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/`s.
 
 ### Fixed
+
 #### Blueprint
-- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh} to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
+- Leading `/`s in mesh tree paths no longer undermine `conduit.relay.io.blueprint.{load_mesh|read_mesh}` reading json and yaml flavored files.
+
+#### Relay
+- Leading `/`s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
 
 ## [0.8.4] - Released 2022-08-22
 
