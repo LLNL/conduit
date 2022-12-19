@@ -438,6 +438,21 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_2d)
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
     CONDUIT_INFO(info.to_yaml());
 
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
+
     test_save_mesh_helper(res, "strided_structured_2d");
 
     res.reset();
@@ -469,6 +484,21 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_2d)
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
     CONDUIT_INFO(info.to_yaml());
 
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
+
     test_save_mesh_helper(res, "strided_structured_2d_pad");
 }
 
@@ -481,6 +511,21 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
     CONDUIT_INFO(info.to_yaml());
+
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
 
     test_save_mesh_helper(res, "strided_structured_3d");
 
@@ -513,7 +558,23 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
     EXPECT_TRUE(blueprint::mesh::verify(res, info));
     CONDUIT_INFO(info.to_yaml());
 
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
+
     test_save_mesh_helper(res, "strided_structured_3d_pad");
+
 }
 
 
