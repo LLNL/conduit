@@ -1813,36 +1813,95 @@ void read_mesh(const std::string &root_file_path,
 #endif
 }
 
-//-----------------------------------------------------------------------------
-void read_mesh(const std::string &root_file_path,
-               const Node &opts,
-               Node &mesh
-               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+
+// read bp index from root file,
+// returns false if there is an error
+bool
+read_root_blueprint_index(const std::string &root_file_path,
+                          const Node &opts,
+                          Node &root_node, // output
+                          std::string &mesh_name, // output
+                          std::ostringstream &error_oss) // output
 {
-    std::string root_fname = root_file_path;
-    
-    // make sure we can open the root file
+    // clear output vars
+    root_node.reset();
+    mesh_name = "";
+    error_oss.str("");
+
+    // first, make sure we can open the root file
     std::ifstream ifs;
-    ifs.open(root_fname.c_str());
+    ifs.open(root_file_path.c_str());
     if(!ifs.is_open())
     {
-        CONDUIT_ERROR("failed to open root file: " << root_fname);
+        error_oss << "failed to open root file: " << root_file_path;
+        return false;
     }
     ifs.close();
 
-    // check root file protocol using heurstic search
-    std::string root_protocol = "hdf5";
-    conduit::relay::io::identify_file_type(root_fname,root_protocol);
+    // check root file protocol using heuristic search
+    std::string root_protocol;
+    conduit::relay::io::identify_file_type(root_file_path,root_protocol);
 
-    Node root_node;
-    relay::io::load(root_fname, root_protocol, root_node);
+    if(root_protocol == "unknown")
+    {
+        error_oss << "failed to detect file protocol (protocol ='" 
+                  << root_protocol
+                  << "') of root file: "
+                  << root_file_path;
+        return false;
+    }
+
+    // Read root file info
+    // We don't want to always read everything in the file
+    // b/c the root index node is broadcasted to all ranks
+    // (think of cases where root file also contains meshes)
+    // so we still filter what is pulled out here
+
+    // list of names we want to read from the root file
+    conduit::Node index_names;
+    index_names.append() = "blueprint_index";
+    index_names.append() = "file_pattern";
+    index_names.append() = "tree_pattern";
+    index_names.append() = "number_of_trees";
+    index_names.append() = "number_of_files";
+    index_names.append() = "protocol";
+
+
+    relay::io::IOHandle root_hnd;
+    Node open_opts;
+    open_opts["mode"] = "r";
+
+    try
+    {
+        root_hnd.open(root_file_path, root_protocol, open_opts);
+
+        // loop over all names and copy them to the output node
+        NodeConstIterator itr = index_names.children();
+        while(itr.has_next())
+        {
+            std::string curr_idx_name = itr.next().as_string();
+            if(root_hnd.has_path(curr_idx_name))
+            {
+                root_hnd.read(curr_idx_name,
+                              root_node[curr_idx_name]);
+            }
+        }
+        root_hnd.close();
+    }
+    catch(const conduit::Error &err)
+    {
+        error_oss << err.message();
+        return false;
+    }
 
     if(!root_node.has_child("blueprint_index"))
     {
-        CONDUIT_ERROR("Root file missing 'blueprint_index'");
+        error_oss << "Root file ("
+                  << root_file_path
+                  << " ) missing 'blueprint_index'";
+        return false;
     }
 
-    std::string mesh_name ="";
     if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
     {
         mesh_name = opts["mesh_name"].as_string();
@@ -1859,8 +1918,7 @@ void read_mesh(const std::string &root_file_path,
     {
         // bad name, construct an error message that
         // displays the valid options
-        std::ostringstream oss;
-        oss << "Mesh named '" << mesh_name << "' "
+        error_oss << "Mesh named '" << mesh_name << "' "
             << " not found in " 
             << root_file_path
             << std::endl
@@ -1870,15 +1928,94 @@ void read_mesh(const std::string &root_file_path,
         while(itr.has_next())
         {
             itr.next();
-            oss << " " << itr.name();
-            oss << std::endl;
+            error_oss << " " << itr.name();
+            error_oss << std::endl;
         }
-
-        CONDUIT_ERROR(oss.str());
+        return false;
     }
     
+    return true;
+}
 
+//-----------------------------------------------------------------------------
+void read_mesh(const std::string &root_file_path,
+               const Node &opts,
+               Node &mesh
+               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+    int par_rank = 0;
+#if CONDUIT_RELAY_IO_MPI_ENABLED
+    par_rank = relay::mpi::rank(mpi_comm);
+    int par_size = relay::mpi::size(mpi_comm);
+#endif
+
+    int error = 0;
+    std::ostringstream error_oss;
+    Node root_node;
+    std::string mesh_name;
+
+    // only read bp index on rank 0
+    if(par_rank == 0)
+    {
+        if(!read_root_blueprint_index(root_file_path,
+                                      opts,
+                                      root_node,
+                                      mesh_name,
+                                      error_oss))
+        {
+            error = 1;
+        }
+    }
     
+#if CONDUIT_RELAY_IO_MPI_ENABLED
+    Node n_local, n_global;
+    n_local.set((int)error);
+    relay::mpi::sum_all_reduce(n_local,
+                               n_global,
+                               mpi_comm);
+
+    error = n_global.as_int();
+
+    if(error == 1)
+    {
+        // we have a problem, broadcast string message
+        // from rank 0 all ranks can throw an error
+        if(par_rank ==0)
+        {
+            n_global.set(error_oss.str());
+        }
+        else
+        {
+            n_global.reset();
+        }
+        conduit::relay::mpi::broadcast_using_schema(n_global,
+                                                    0,
+                                                    mpi_comm);
+
+        CONDUIT_ERROR(n_global.as_string());
+    }
+    else
+    {
+        // broadcast the mesh name and the bp index
+        // from rank 0 to all ranks
+        if(par_rank == 0)
+        {
+            n_global.set(mesh_name);
+        }
+        else
+        {
+            n_global.reset();
+        }
+        conduit::relay::mpi::broadcast_using_schema(n_global,
+                                                    0,
+                                                    mpi_comm);
+        mesh_name = n_global.as_string();
+        conduit::relay::mpi::broadcast_using_schema(root_node,
+                                                    0,
+                                                    mpi_comm);
+    }
+#endif
+
     // make sure we have a valid bp index
     Node verify_info;
     const Node &mesh_index = root_node["blueprint_index"][mesh_name];
@@ -1898,8 +2035,7 @@ void read_mesh(const std::string &root_file_path,
             " partition_pattern (" << mesh_name << "/state/partition_pattern)");
     }
 
-    // NOTE: future cases (per mesh maps, won't need these)
-    // but they are needed for all current cases
+    //(per mesh part maps case doesn't need these, but older style does)
     if(!has_part_pattern && !root_node.has_child("number_of_trees"))
     {
         CONDUIT_ERROR("Root missing `number_of_trees`");
@@ -1970,12 +2106,10 @@ void read_mesh(const std::string &root_file_path,
     int domain_end = num_domains;
 
 #if CONDUIT_RELAY_IO_MPI_ENABLED
-    int rank = relay::mpi::rank(mpi_comm);
-    int total_size = relay::mpi::size(mpi_comm);
 
-    int read_size = num_domains / total_size;
-    int rem = num_domains % total_size;
-    if(rank < rem)
+    int read_size = num_domains / par_size;
+    int rem = num_domains % par_size;
+    if(par_rank < rem)
     {
         read_size++;
     }
@@ -1991,7 +2125,7 @@ void read_mesh(const std::string &root_file_path,
     int *counts = (int*)n_doms_per_rank.data_ptr();
 
     int rank_offset = 0;
-    for(int i = 0; i < rank; ++i)
+    for(int i = 0; i < par_rank; ++i)
     {
         rank_offset += counts[i];
     }
@@ -2005,7 +2139,7 @@ void read_mesh(const std::string &root_file_path,
         relay::io::IOHandle hnd;
         Node open_opts;
         open_opts["mode"] = "r";
-        hnd.open(root_fname, "sidre_hdf5", open_opts);
+        hnd.open(root_file_path, "sidre_hdf5", open_opts);
         for(int i = domain_start ; i < domain_end; i++)
         {
             oss.str("");
@@ -2021,7 +2155,7 @@ void read_mesh(const std::string &root_file_path,
         for(int i = domain_start ; i < domain_end; i++)
         {
             std::string current, next;
-            utils::rsplit_file_path (root_fname, current, next);
+            utils::rsplit_file_path (root_file_path, current, next);
             std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
 
             hnd.open(domain_file, data_protocol, open_opts);
