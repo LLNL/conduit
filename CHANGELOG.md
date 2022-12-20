@@ -22,6 +22,17 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
 - Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
+- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/`s.
+
+### Fixed
+
+#### Blueprint
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
+- Leading `/`s in mesh tree paths no longer undermine `conduit.relay.io.blueprint.{load_mesh|read_mesh}` reading json and yaml flavored files.
+
+#### Relay
+- Leading `/`s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
+
 
 ## [0.8.4] - Released 2022-08-22
 
@@ -41,6 +52,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added 1D mesh example support to `blueprint::mesh::examples::basic()`.
 - Added adjacency set aware generate functions (`genearte_points()`, etc) to the non-mpi blueprint library.
 - Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in an existing tree.
+- Added support to write and read per-mesh blueprint index entires with `partition_pattern` and `partition_map`.
+
 
 
 #### Relay

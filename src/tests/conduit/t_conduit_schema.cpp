@@ -355,6 +355,16 @@ TEST(schema_basics, pathlike_child_names)
 }
 
 //-----------------------------------------------------------------------------
+TEST(schema_basics, has_path_leading_slash)
+{
+    Schema s;
+    s["a/path"].set(DataType::int64());
+
+    EXPECT_TRUE(s.has_path("a/path"));
+    EXPECT_TRUE(s.has_path("/a/path"));
+}
+
+//-----------------------------------------------------------------------------
 TEST(schema_basics, schema_to_string)
 {
     Schema s;
