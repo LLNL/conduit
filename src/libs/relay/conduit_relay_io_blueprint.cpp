@@ -128,23 +128,34 @@ void gen_domain_to_file_map(index_t num_domains,
     }
 }
 
+class BlueprintPathGeneratorImpl
+{
+public:
+    BlueprintPathGeneratorImpl()
+    {}
 
-class BlueprintTreePathGenerator
+    virtual ~BlueprintPathGeneratorImpl()
+    {}
+
+    virtual std::string GenerateFilePath(index_t tree_id) const =0;
+    virtual std::string GenerateTreePath(index_t tree_id) const =0;
+};
+
+
+class BlueprintLegacyPathGenerator: public BlueprintPathGeneratorImpl
 {
 public:
     //-------------------------------------------------------------------//
-    BlueprintTreePathGenerator(const std::string &file_pattern,
-                               const std::string &tree_pattern,
-                               index_t num_files,
-                               index_t num_trees,
-                               const std::string &protocol,
-                               const Node &mesh_index)
+    BlueprintLegacyPathGenerator(const std::string &file_pattern,
+                                 const std::string &tree_pattern,
+                                 index_t num_files,
+                                 index_t num_trees,
+                                 const std::string &protocol)
     : m_file_pattern(file_pattern),
       m_tree_pattern(tree_pattern),
       m_num_files(num_files),
       m_num_trees(num_trees),
-      m_protocol(protocol),
-      m_mesh_index(mesh_index)
+      m_protocol(protocol)
     {
         // if we need domain to file map, gen it
         if( m_num_files > 1 && (m_num_trees != m_num_files) )
@@ -156,7 +167,7 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    ~BlueprintTreePathGenerator()
+    virtual ~BlueprintLegacyPathGenerator()
     {
 
     }
@@ -202,7 +213,7 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    std::string GenerateFilePath(index_t tree_id) const
+    virtual std::string GenerateFilePath(index_t tree_id) const
     {
         index_t file_id = -1;
 
@@ -224,7 +235,7 @@ public:
     }
 
     //-------------------------------------------------------------------//
-    std::string GenerateTreePath(index_t tree_id) const
+    virtual std::string GenerateTreePath(index_t tree_id) const
     {
         // the tree path should always end in a /
         std::string res = Expand(m_tree_pattern,tree_id);
@@ -241,9 +252,175 @@ private:
     index_t     m_num_files;
     index_t     m_num_trees;
     std::string m_protocol;
-    Node        m_mesh_index;
     Node        m_d2f_map;
 };
+
+class BlueprintPartitonMapPathGenerator: public BlueprintPathGeneratorImpl
+{
+public:
+    //-------------------------------------------------------------------//
+    BlueprintPartitonMapPathGenerator(const std::string &part_pattern,
+                                      const conduit::Node &part_map)
+    : m_part_pattern(part_pattern),
+      m_part_map(part_map),
+      m_dom_to_tree()
+    {
+        // init the map that takes us from domain_id (what we want)
+        // to part map entry
+        
+        index_t_accessor doms = part_map["domain"].value();
+        index_t num_domains = doms.max() + 1;
+        // NOTE: Most cases will be compact, but what about
+        // cases that are not?
+        m_dom_to_tree.set(DataType::index_t(num_domains));
+        index_t_array dom_to_tree_vals = m_dom_to_tree.value();
+        for(index_t i=0;i<num_domains;i++)
+        {
+            dom_to_tree_vals[doms[i]] = i;
+        }
+    }
+    
+    //-------------------------------------------------------------------//
+    BlueprintPartitonMapPathGenerator(const std::string &part_pattern)
+    : m_part_pattern(part_pattern),
+      m_part_map(),
+      m_dom_to_tree()
+    {
+        // empty
+    }
+
+    //-------------------------------------------------------------------//
+    virtual ~BlueprintPartitonMapPathGenerator()
+    {
+        // empty
+    }
+
+    //-------------------------------------------------------------------//
+    virtual std::string GenerateFullPath(index_t tree_id) const
+    {
+        if( m_part_map.number_of_children() == 0 )
+        {
+            // special case, not format sub needed
+            return m_part_pattern;
+        }
+        else
+        {
+            index_t_array dom_to_tree_vals = m_dom_to_tree.value();
+            index_t dom_lookup = dom_to_tree_vals[tree_id];
+            return conduit::utils::format(m_part_pattern,
+                                          m_part_map,
+                                          dom_lookup);
+        }
+    }
+
+    //-------------------------------------------------------------------//
+    virtual std::string GenerateFilePath(index_t tree_id) const
+    {
+        std::string res,tmp;
+        utils::split_string(GenerateFullPath(tree_id),
+                            ":/",
+                            res,  // result is before sep
+                            tmp);
+        return res;
+    }
+
+    //-------------------------------------------------------------------//
+    virtual std::string GenerateTreePath(index_t tree_id) const
+    {
+        std::string res,tmp;
+        utils::split_string(GenerateFullPath(tree_id),
+                            ":/",
+                            tmp,
+                            res); // result is after sep
+        // tree path should always end with "/"
+        if( (res.size() > 0) && (res[res.size()-1] != '/') )
+        {
+            res += "/";
+        }
+        return res;
+
+    }
+
+private:
+    std::string m_part_pattern;
+    Node        m_part_map;
+    // extra map for non trivial domain 
+    Node        m_dom_to_tree;
+};
+
+
+class BlueprintTreePathGenerator
+{
+public:
+    
+    BlueprintTreePathGenerator()
+    : m_impl(nullptr)
+    {
+
+    }
+    
+    void Cleanup()
+    {
+        if(m_impl != nullptr)
+        {
+            delete m_impl;
+            m_impl = nullptr;
+        }
+    }
+    
+    //-------------------------------------------------------------------//
+    void Init(const std::string &file_pattern,
+              const std::string &tree_pattern,
+              index_t num_files,
+              index_t num_trees,
+              const std::string &protocol)
+    {
+        Cleanup();
+        m_impl = new BlueprintLegacyPathGenerator(file_pattern,
+                                                  tree_pattern,
+                                                  num_files,
+                                                  num_trees,
+                                                  protocol);
+    }
+    
+    //-------------------------------------------------------------------//
+    void Init(const std::string   &part_pattern,
+             const conduit::Node &part_map)
+    {
+        Cleanup();
+        m_impl = new BlueprintPartitonMapPathGenerator(part_pattern,
+                                                       part_map);
+    }
+    
+    //-------------------------------------------------------------------//
+    void Init(const std::string   &part_pattern)
+    {
+        Cleanup();
+        m_impl = new BlueprintPartitonMapPathGenerator(part_pattern);
+    }
+
+    ~BlueprintTreePathGenerator()
+    {
+        Cleanup();
+    }
+
+    std::string GenerateFilePath(index_t tree_id) const
+    {
+        return m_impl->GenerateFilePath(tree_id);
+    }
+
+    std::string GenerateTreePath(index_t tree_id) const
+    {
+        return m_impl->GenerateTreePath(tree_id);
+    }
+
+private:
+    BlueprintPathGeneratorImpl *m_impl;
+
+};
+
+
+
 
 bool global_someone_agrees(bool vote
                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
@@ -958,7 +1135,6 @@ void write_mesh(const Node &mesh,
         }
     }
 
-
     // ----------------------------------------------------
     // setup root file name
     // ----------------------------------------------------
@@ -990,6 +1166,12 @@ void write_mesh(const Node &mesh,
         num_files = global_num_domains;
     }
 
+    // new style bp index partition_map
+    // NOTE: the part_map is inited during write process for N domains
+    // to M files case.
+    // Other cases are simpler and are created when root file is written
+    conduit::Node output_partition_map;
+
     // at this point for file_style,
     // default has been resolved, we need to just handle:
     //   root_only, multi_file
@@ -1003,7 +1185,6 @@ void write_mesh(const Node &mesh,
         // the outer loop + par_rank == current_writer implements
         // the baton.
 
-        
         Node local_root_file_created;
         Node global_root_file_created;
         local_root_file_created.set((int)0);
@@ -1054,7 +1235,7 @@ void write_mesh(const Node &mesh,
                     hnd.write(dom,mesh_path);
                 }
                 
-                // note: local file handle goes out of scope here
+                // NOTE: local file handle goes out of scope here
                 // and data is committed to file for handles that write
                 // on close
             }
@@ -1135,6 +1316,17 @@ void write_mesh(const Node &mesh,
         detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
+
+        //generate part map
+        // use global_d2f is what we need for "file" part of part_map
+        output_partition_map["file"] = books["global_domain_to_file"];
+        output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+        index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+        for(index_t i=0; i < global_num_domains; i++)
+        {
+            part_map_domain_vals[i] = i;
+        }
+
         index_t_accessor global_d2f = books["global_domain_to_file"].value();
 
         // init our local map and status array
@@ -1369,6 +1561,8 @@ void write_mesh(const Node &mesh,
     // it is duplicated here b/c we dont want a circular dep
     // between conduit_blueprint_mpi and conduit_relay_io_mpi
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    // NOTE: do to save vs write cases, these updates should be
+    // single mesh only
     Node gather_bp_idx;
     relay::mpi::all_gather_using_schema(local_bp_idx,
                                         gather_bp_idx,
@@ -1383,6 +1577,8 @@ void write_mesh(const Node &mesh,
         bp_idx[opts_mesh_name].update(curr);
     }
 #else
+    // NOTE: do to save vs write cases, these updates should be
+    // single mesh only
     bp_idx[opts_mesh_name] = local_bp_idx;
 #endif
 
@@ -1396,12 +1592,13 @@ void write_mesh(const Node &mesh,
 
         std::string output_tree_pattern;
         std::string output_file_pattern;
+        // new style bp index partition spec
+        std::string output_partition_pattern;
 
         // NOTE: 
         // The file pattern needs to be relative to
         // the root file. 
         // reverse split the path
-
 
         if(opts_file_style == "root_only")
         {
@@ -1414,18 +1611,49 @@ void write_mesh(const Node &mesh,
             if(global_num_domains == 1)
             {
                 output_tree_pattern = "/";
+                output_partition_pattern = output_file_pattern + ":/";
+                // NOTE: we don't need the part map entries for this case
             }
             else
             {
                 output_tree_pattern = "/domain_%06d/";
+                output_partition_pattern = root_filename + ":/domain_{domain:06d}";
+
+                //generate part map (we only need domain for this case)
+                output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+                index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+                for(index_t i=0; i < global_num_domains; i++)
+                {
+                    part_map_domain_vals[i] = i;
+                }
             }
         }
         else if(global_num_domains == num_files)
         {
+            //generate part map
+            output_partition_map["file"].set(DataType::index_t(global_num_domains));
+            output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+            index_t_array part_map_file_vals   = output_partition_map["file"].value();
+            index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+
+            for(index_t i=0; i < global_num_domains; i++)
+            {
+                // file id == domain id
+                part_map_file_vals[i]   = i;
+                part_map_domain_vals[i] = i;
+            }
+
             std::string tmp;
             utils::rsplit_path(output_dir_base,
                                output_file_pattern,
                                tmp);
+
+            output_partition_pattern = conduit::utils::join_file_path(
+                                                output_file_pattern,
+                                                "domain_{domain:06d}." +
+                                                file_protocol +
+                                                ":/");
+
             output_file_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
                                                 "domain_%06d." + file_protocol);
@@ -1437,26 +1665,60 @@ void write_mesh(const Node &mesh,
             utils::rsplit_path(output_dir_base,
                                output_file_pattern,
                                tmp);
+
+            output_partition_pattern = conduit::utils::join_file_path(
+                                                output_file_pattern,
+                                                "file_{file:06d}." +
+                                                file_protocol +
+                                                ":/domain_{domain:06d}");
+
             output_file_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
                                                 "file_%06d." + file_protocol);
             output_tree_pattern = "/domain_%06d";
         }
 
+        /////////////////////////////
+        // mesh partition map
+        /////////////////////////////
+        // example of cases:
+        // root only, single domain
+        // partition_pattern: "out.root"
+        //
+        // root only, multi domain
+        // partition_pattern: "out.root:domain_{domain:06d}"
+        // partition_map:
+        //   domain: [0, 1, 2, 3, 4 ]
+        //
+        // # domains == # files:
+        // partition_pattern: "out/domain_{domain:06d}.hdf5"
+        // partition_map:
+        //   file:  [ 0, 1, 2, 3, 4 ]
+        //   domain: [ 0, 1, 2, 3, 4 ]
+        //
+        // N domains to M files:
+        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // partition_map:
+        //   file:  [ 0, 0, 1, 2, 2 ]
+        //   domain: [ 0, 1, 2, 3, 4 ]
+        //
+        // N domains to M files (non trivial domain order):
+        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // partition_map:
+        //    file:  [ 0, 0, 1, 2, 2 ]
+        //    domain: [ 4, 0, 3, 2, 1 ]
+        //
+        // NOTE: do to save vs write cases, these updates should be
+        // single mesh only
+        bp_idx[opts_mesh_name]["state/partition_pattern"] = output_partition_pattern;
+
+        if (output_partition_map.number_of_children() > 0 )
+        {
+            bp_idx[opts_mesh_name]["state/partition_map"] = output_partition_map;
+        }
+
         Node root;
         root["blueprint_index"].set(bp_idx);
-
-
-        // work around conduit and manually add state fields
-        if(multi_dom.child(0).has_path("state/cycle"))
-        {
-          bp_idx[ opts_mesh_name + "/state/cycle"] = multi_dom.child(0)["state/cycle"].to_int32();
-        }
-
-        if(multi_dom.child(0).has_path("state/time"))
-        {
-          bp_idx[opts_mesh_name + "/state/time"] = multi_dom.child(0)["state/time"].to_double();
-        }
 
         root["protocol/name"]    = file_protocol;
         root["protocol/version"] = CONDUIT_VERSION;
@@ -1558,45 +1820,22 @@ void read_mesh(const std::string &root_file_path,
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     std::string root_fname = root_file_path;
-
-    // read the root file, it can be either json or hdf5
-
-    // assume hdf5, but check for json file
-    std::string root_protocol = "hdf5";
-    // we will read the first 5 bytes, but
-    // make sure our buff is null termed, unless you
-    // want a random chance at sadness.
-    char buff[6] = {0,0,0,0,0,0};
-
-    // heuristic, if json, we expect to see "{" in the first 5 chars of the file.
+    
+    // make sure we can open the root file
     std::ifstream ifs;
     ifs.open(root_fname.c_str());
     if(!ifs.is_open())
     {
         CONDUIT_ERROR("failed to open root file: " << root_fname);
     }
-
-    if(!ifs.read((char *)buff,5))
-    {
-        CONDUIT_ERROR("failed to read starting bytes from root file: " << root_fname);
-    }
     ifs.close();
 
-    std::string test_str(buff);
-
-    if(test_str.find("{") != std::string::npos)
-    {
-       root_protocol = "json";
-    }
+    // check root file protocol using heurstic search
+    std::string root_protocol = "hdf5";
+    conduit::relay::io::identify_file_type(root_fname,root_protocol);
 
     Node root_node;
     relay::io::load(root_fname, root_protocol, root_node);
-
-
-    if(!root_node.has_child("file_pattern"))
-    {
-        CONDUIT_ERROR("Root file missing 'file_pattern'");
-    }
 
     if(!root_node.has_child("blueprint_index"))
     {
@@ -1637,7 +1876,9 @@ void read_mesh(const std::string &root_file_path,
 
         CONDUIT_ERROR(oss.str());
     }
+    
 
+    
     // make sure we have a valid bp index
     Node verify_info;
     const Node &mesh_index = root_node["blueprint_index"][mesh_name];
@@ -1648,6 +1889,27 @@ void read_mesh(const std::string &root_file_path,
                       << verify_info.to_json());
     }
 
+    bool has_part_pattern = mesh_index.has_path("state/partition_pattern");
+    // We need either a state/partition_pattern, or root level file_pattern
+
+    if(!has_part_pattern && !root_node.has_child("file_pattern"))
+    {
+        CONDUIT_ERROR("Root file missing 'file_pattern' or mesh specific"
+            " partition_pattern (" << mesh_name << "/state/partition_pattern)");
+    }
+
+    // NOTE: future cases (per mesh maps, won't need these)
+    // but they are needed for all current cases
+    if(!has_part_pattern && !root_node.has_child("number_of_trees"))
+    {
+        CONDUIT_ERROR("Root missing `number_of_trees`");
+    }
+
+    if(!has_part_pattern && !root_node.has_child("number_of_files"))
+    {
+        CONDUIT_ERROR("Root missing `number_of_files`");
+    }
+    
     std::string data_protocol = "hdf5";
 
     if(root_node.has_child("protocol"))
@@ -1655,27 +1917,53 @@ void read_mesh(const std::string &root_file_path,
         data_protocol = root_node["protocol/name"].as_string();
     }
 
-    // NOTE: future cases (per mesh maps, won't need these)
-    // but they are needed for all current cases
-    if(!root_node.has_child("number_of_trees"))
-    {
-        CONDUIT_ERROR("Root missing `number_of_trees`");
-    }
-
-    if(!root_node.has_child("number_of_files"))
-    {
-        CONDUIT_ERROR("Root missing `number_of_files`");
-    }
-
     // read all domains for given mesh
-    int num_domains = root_node["number_of_trees"].to_int();
-    int num_files   = root_node["number_of_files"].to_int();
-    detail::BlueprintTreePathGenerator gen(root_node["file_pattern"].as_string(),
-                                           root_node["tree_pattern"].as_string(),
-                                           num_files,
-                                           num_domains,
-                                           data_protocol,
-                                           mesh_index);
+    int num_domains = -1;
+    if(has_part_pattern)
+    {
+        if(mesh_index.has_path("state/partition_map/domain"))
+        {
+            index_t_accessor doms = mesh_index["state/partition_map/domain"].value();
+            num_domains = doms.max() + 1;
+        }
+        else
+        {
+            // special case, one 1 domain
+            num_domains = 1;
+        }
+    }
+    else
+    {
+        num_domains = root_node["number_of_trees"].to_int();
+    }
+    detail::BlueprintTreePathGenerator gen;
+
+    // three cases:
+    //  legacy case that uses file_pattern and tree_pattern
+    //  case that uses a mesh specific partition pattern and partition map
+    //  case that uses a mesh specific partition pattern 
+    if(mesh_index["state"].has_child("partition_pattern"))
+    {
+        if(mesh_index["state"].has_child("partition_map"))
+        {
+            gen.Init(mesh_index["state/partition_pattern"].as_string(),
+                     mesh_index["state/partition_map"]);
+        }
+        else
+        {
+            // this will only occur for single domain root file case
+            gen.Init(mesh_index["state/partition_pattern"].as_string());
+        }
+    }
+    else
+    {
+        int num_files   = root_node["number_of_files"].to_int();
+        gen.Init(root_node["file_pattern"].as_string(),
+                 root_node["tree_pattern"].as_string(),
+                 num_files,
+                 num_domains,
+                 data_protocol);
+    }
 
     std::ostringstream oss;
     int domain_start = 0;
@@ -1748,6 +2036,7 @@ void read_mesh(const std::string &root_file_path,
             // read components of the mesh according to the mesh index
             // for each child in the index
             NodeConstIterator outer_itr = mesh_index.children();
+
             while(outer_itr.has_next())
             {
                 const Node &outer = outer_itr.next();

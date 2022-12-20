@@ -1263,12 +1263,24 @@ Schema::has_path(const std::string &path) const
     if(m_dtype.id() != DataType::OBJECT_ID)
         return false;
 
+    std::string p_input;
+
+    // if there is a leading slash, we want to ignore
+    // so check for and adjust if we have this case
+    if(path.size() > 0 && path[0] == '/')
+    {
+        p_input = path.substr(1,path.size()-1);
+    }
+    else
+    {
+        p_input = path;
+    }
+
     std::string p_curr;
     std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-    
+    utils::split_path(p_input,p_curr,p_next);
+
     // handle parent case (..)
-    
     const std::map<std::string,index_t> &ents = object_map();
 
     if(ents.find(p_curr) == ents.end())

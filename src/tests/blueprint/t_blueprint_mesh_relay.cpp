@@ -50,7 +50,7 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file)
     {
         CONDUIT_INFO("test nfiles = " << nfiles);
         oss.str("");
-        oss << "tout_relay_sprial_mesh_save_nfiles_" << nfiles;
+        oss << "tout_relay_spiral_mesh_save_nfiles_" << nfiles;
         std::string output_base = oss.str();
         std::string output_dir  = output_base + ".cycle_000000";
         std::string output_root = output_base + ".cycle_000000.root";
@@ -591,5 +591,257 @@ TEST(conduit_blueprint_mesh_relay, save_with_subdir)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, round_trip_all_protos)
+{
+    std::vector<std::string> protocols;
+
+    protocols.push_back("json");
+    protocols.push_back("yaml");
+
+    Node n_about;
+    relay::io::about(n_about);
+
+    if(n_about["protocols/hdf5"].as_string() == "enabled")
+        protocols.push_back("hdf5");
+
+
+    for (std::vector<std::string>::const_iterator itr = protocols.begin();
+             itr < protocols.end(); ++itr)
+    {
+        std::string protocol = *itr;
+        CONDUIT_INFO("Testing Relay IO Blueprint round trip with protocol: "
+                     << protocol );
+        std::string tout_base = "tout_mesh_bp_round_trip_" + protocol;
+        std::string tout_fname = tout_base + ".root";
+        remove_path_if_exists(tout_fname);
+
+        Node data, n_load, opts,info;
+        conduit::blueprint::mesh::examples::braid("quads",10,10,0,data);
+        // type sanitize sieve (avoid diffs due to int32 src  vs int64 load heurstic)
+        std::string data_str = data.to_yaml();
+        data.reset();
+        data.parse(data_str,"yaml");
+        
+        opts["suffix"] = "none";
+        relay::io::blueprint::save_mesh(data,tout_base,protocol,opts);
+        relay::io::blueprint::load_mesh(tout_fname,n_load);
+        // this isn't in the input, so remove.
+        n_load[0].remove("state/domain_id");
+        EXPECT_FALSE(data.diff(n_load[0],info));
+        info.print();
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, single_file_custom_part_map_index)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping custom_part_map_index test");
+        return;
+    }
+
+    std::string output_root = "tout_single_file_part_map_index_hdf5.root";
+    remove_path_if_exists(output_root);
+
+    Node root;
+    conduit::blueprint::mesh::examples::braid("quads",10,10,0,root["mesh"]);
+
+    // create an index 
+    blueprint::mesh::generate_index(root["mesh"],
+                                    "",
+                                    1,
+                                    root["blueprint_index/mesh"]);
+
+    // add the custom part map for simple case
+    Node &bp_idx_state = root["blueprint_index/mesh/state"];
+    bp_idx_state["partition_pattern"] =  output_root + ":/mesh";
+
+    CONDUIT_INFO("Creating: tout_single_file_part_map_index_hdf5.root");
+    relay::io::save(root, output_root,"hdf5");
+
+    // now to test the read, the domains should return 
+    // back in the original order
+    Node n_load, n_info;
+    relay::io::blueprint::load_mesh(output_root,n_load);
+
+    root.print();
+    n_load.print();
+    EXPECT_FALSE(root["mesh"].diff(n_load[0],n_info));
+    n_info.print();
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, custom_part_map_index)
+{
+
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping custom_part_map_index test");
+        return;
+    }
+
+    std::string output_root = "tout_custom_part_map_index_hdf5.root";
+    std::string output_dir = "tout_custom_part_map_index_hdf5";
+    remove_path_if_exists(output_root);
+    remove_path_if_exists(output_dir);
+    create_directory(output_dir);
+
+    //
+    // 5 domain case, has a non trivial domain ordering across 3 files 
+    //
+
+    // partition_pattern: "tout_custom_part_map_index/file_{:02}.hdf5:/domain_{:03}"
+    // partition_map:
+    //    file:  [ 0, 0, 1, 2, 2 ]
+    //    domain: [ 4, 0, 3, 2, 1 ]
+
+    // use spiral , with 5 domains
+    Node data, root;
+    conduit::blueprint::mesh::examples::spiral(5,data);
+
+    // create an index 
+    blueprint::mesh::generate_index(data,
+                                    "",
+                                    5,
+                                    root["blueprint_index/spiral"]);
+
+    // add the custom part map
+                                    
+    Node &bp_idx_state = root["blueprint_index/spiral/state"];
+    bp_idx_state["partition_pattern"] = output_dir + "/file_{:02}.hdf5:/domain_{:03}";
+
+    bp_idx_state["partition_map/file"] = {0,0,1,2,2};
+    bp_idx_state["partition_map/domain"]= {4,0,3,2,1};
+    index_t_accessor pmap_d_vals = bp_idx_state["partition_map/domain"].value();
+
+    for(index_t i=0;i<5;i++)
+    {
+        int domain_id = pmap_d_vals[i];
+        std::string opath = conduit::utils::format( 
+                                bp_idx_state["partition_pattern"].as_string(),
+                                bp_idx_state["partition_map"],
+                                i);
+        CONDUIT_INFO("Saving domain " << domain_id << " to " << opath);
+        relay::io::save_merged(data[domain_id],opath,"hdf5");
+        data[domain_id].print();
+    }
+
+    root["protocol/name"] = "hdf5";
+    root["protocol/version"] = CONDUIT_VERSION;
+    root["number_of_trees"] = 5;
+
+    CONDUIT_INFO("Creating: tout_custom_part_map_index.root");
+    relay::io::save(root, output_root,"hdf5");
+
+    // now to test the read, the domains should return 
+    // back in the original order
+    Node n_load, n_info;
+    relay::io::blueprint::load_mesh(output_root,n_load);
+
+    // spiral domains are unique, so we can 
+    // check if they came back in the right order via diff
+    // (read should have retrieved 0 -> 4 in order)
+    for(index_t i=0;i<5;i++)
+    {
+        EXPECT_FALSE(data[i].diff(n_load[i],n_info));
+    }
+
+}
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_relay, sparse_topos)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping custom_part_map_index test");
+        return;
+    }
+
+    Node data;
+    Node &dom0 = data["domain0"];
+    // domain 0 has both coords + topo and pts_coords + pts_topo
+    // topo
+    dom0["state/domain_id"] = 0;
+    dom0["coordsets/coords/type"] = "uniform";
+    dom0["coordsets/coords/dims/i"] = 3;
+    dom0["coordsets/coords/dims/j"] = 3;
+    dom0["coordsets/coords/origin/x"] = -1;
+    dom0["coordsets/coords/origin/y"] = -2;
+    dom0["coordsets/coords/spacing/x"] = 1;
+    dom0["coordsets/coords/spacing/y"] = 1;
+    dom0["topologies/topo/type"] = "uniform";
+    dom0["topologies/topo/coordset"] = "coords";
+    dom0["fields/topo_field/association"] = "element";
+    dom0["fields/topo_field/topology"] = "topo";
+    dom0["fields/topo_field/values"] = {0.0, 1.0, 2.0, 3.0};
+    // pts_topo
+    dom0["coordsets/pts_coords/type"] = "explicit";
+    dom0["coordsets/pts_coords/values/x"] = {-1,  0,  1};
+    dom0["coordsets/pts_coords/values/y"] = {-2, -2, -2};
+    dom0["topologies/pts_topo/type"] = "points";
+    dom0["topologies/pts_topo/coordset"] = "pts_coords";
+    dom0["fields/pts_field/association"] = "element";
+    dom0["fields/pts_field/topology"] = "pts_topo";
+    dom0["fields/pts_field/values"] = {0.0, 1.0, 2.0};
+
+    // domain 1 has only coords + topo
+    // topo
+    Node &dom1 = data["domain1"];
+    dom1["state/domain_id"] = 1;
+    dom1["coordsets/coords/type"] = "uniform";
+    dom1["coordsets/coords/dims/i"] = 3;
+    dom1["coordsets/coords/dims/j"] = 3;
+    dom1["coordsets/coords/origin/x"] = -1;
+    dom1["coordsets/coords/origin/y"] = 0;
+    dom1["coordsets/coords/spacing/x"] = 1;
+    dom1["coordsets/coords/spacing/y"] = 1;
+    dom1["topologies/topo/type"] = "uniform";
+    dom1["topologies/topo/coordset"] = "coords";
+    dom1["fields/topo_field/association"] = "element";
+    dom1["fields/topo_field/topology"] = "topo";
+    dom1["fields/topo_field/values"] = {4.0, 5.0, 6.0, 7.0};
+
+    // domain 2 has only pts_coords + pts_topo
+    Node &dom2 = data["domain2"];
+    // pts_topo
+    dom2["state/domain_id"] = 2;
+    dom2["coordsets/pts_coords/type"] = "explicit";
+    dom2["coordsets/pts_coords/values/x"] = {-1, 0, 1};
+    dom2["coordsets/pts_coords/values/y"] = { 2, 2, 2};
+    dom2["topologies/pts_topo/type"] = "points";
+    dom2["topologies/pts_topo/coordset"] = "pts_coords";
+    dom2["fields/pts_field/association"] = "element";
+    dom2["fields/pts_field/topology"] = "pts_topo";
+    dom2["fields/pts_field/values"] = {3.0, 4.0, 5.0};
+
+    Node opts;
+    opts["file_style"] = "root_only";
+    std::string tout_base = "tout_relay_bp_mesh_sparse_topos";
+    std::string tout_hdf5_root =  tout_base + "_hdf5.root";
+    std::string tout_yaml_root =  tout_base + "_yaml.root";
+    remove_path_if_exists(tout_hdf5_root);
+    remove_path_if_exists(tout_yaml_root);
+
+    relay::io::blueprint::save_mesh(data,tout_base + "_hdf5","hdf5",opts);
+    relay::io::blueprint::save_mesh(data,tout_base + "_yaml","yaml",opts);
+
+    Node n_load, info;
+    relay::io::blueprint::load_mesh(tout_hdf5_root, n_load);
+    // make sure round trip works
+    EXPECT_FALSE(n_load[0].diff(dom0,info));
+    EXPECT_FALSE(n_load[1].diff(dom1,info));
+    EXPECT_FALSE(n_load[2].diff(dom2,info));
+}
 
 
