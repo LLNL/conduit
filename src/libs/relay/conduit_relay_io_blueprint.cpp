@@ -1980,14 +1980,7 @@ void read_mesh(const std::string &root_file_path,
     {
         // we have a problem, broadcast string message
         // from rank 0 all ranks can throw an error
-        if(par_rank ==0)
-        {
-            n_global.set(error_oss.str());
-        }
-        else
-        {
-            n_global.reset();
-        }
+        n_global.set(error_oss.str());
         conduit::relay::mpi::broadcast_using_schema(n_global,
                                                     0,
                                                     mpi_comm);
@@ -1998,14 +1991,7 @@ void read_mesh(const std::string &root_file_path,
     {
         // broadcast the mesh name and the bp index
         // from rank 0 to all ranks
-        if(par_rank == 0)
-        {
-            n_global.set(mesh_name);
-        }
-        else
-        {
-            n_global.reset();
-        }
+        n_global.set(mesh_name);
         conduit::relay::mpi::broadcast_using_schema(n_global,
                                                     0,
                                                     mpi_comm);

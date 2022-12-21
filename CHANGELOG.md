@@ -24,6 +24,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
 - Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/`s.
 
+#### Relay
+- Updated C++ and Python tutorial docs for Compatible Schemas with a new example to outline the most common use case.
+
 ### Fixed
 
 #### Blueprint
@@ -33,6 +36,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Leading `/`s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
 - Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh} to only the read the necessary subset of root file entries. Updated MPI version to only read root file entries on rank 0 and broadcast them to other ranks.
+- Fixed write compatibly check in `relay::mpi::gather`, `relay::mpi::all_gather`, and `relay::mpi::broadcast_using_schema`. Node compatible check is not commutative and checks in leaf zero-copy logic were reversed.
 
 
 
