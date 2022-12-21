@@ -9,13 +9,19 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 -  Added Node::move and Node::swap methods, which provide efficient ways to help build Node trees by consuming other Nodes.
 - Added Node::reset methods to C and Fortran interfaces
-- Added support for Wedges and Pyramids to Blueprint.
 
-
+#### Blueprint
+- Added support for Wedges and Pyramids
+- Added helper function `blueprint::mesh::generate_strip` to generate a 2D "strip mesh" topology, and dependent other Blueprint mesh parts, from a 1D mesh.
 
 ### Changed
 #### General
-- Updated to BLT v0.5.2 
+- Updated to BLT v0.5.2
+
+### Fixed
+#### Blueprint
+- Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
+- Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
 - Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/`s.
 
 #### Relay
@@ -33,6 +39,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed write compatibly check in `relay::mpi::gather`, `relay::mpi::all_gather`, and `relay::mpi::broadcast_using_schema`. Node compatible check is not commutative and checks in leaf zero-copy logic were reversed.
 
 
+
 ## [0.8.4] - Released 2022-08-22
 
 ### Added
@@ -44,7 +51,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added Schema and Python Buffer variants to Python `Node.set()` and `Node.set_external()`.
 
 #### Blueprint
-- Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 
+- Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details.
 - Added `blueprint::mesh::examples::strided_structured` which creates a structured mesh with arbitrarily strided vertex and element fields.
 - Added support for mixed element topologies to the mesh blueprint.
 - Added `blueprint::mesh::examples::braid` examples with mixed element topologies (`mesh_type={"mixed", "mixed_2d"}`)
@@ -81,7 +88,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Fixed a bug with `blueprint::mesh::index::generate`, where a uniform grid with no origin would lead to invalid coordinate system name `logical` in the resulting index. This case now defaults to `cartesian`.
 - Improved `relay::io::blueprint::{save_mesh|write_mesh}` blueprint index generation for cases where fields do not exist on all domains.
-- Fixed a bug that labeled internal faces as shared in generated adjsets. 
+- Fixed a bug that labeled internal faces as shared in generated adjsets.
 
 #### Relay
 - Fixed a bug with blueprint root file creation, where the `file_pattern` was not relative to the root file location
