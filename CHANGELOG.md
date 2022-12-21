@@ -24,6 +24,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Leading `/`s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh} to only the read the necessary subset of root file entries. Updated MPI version to only read root file entries on rank 0 and broadcast them to other ranks.
+
 
 ## [0.8.4] - Released 2022-08-22
 
