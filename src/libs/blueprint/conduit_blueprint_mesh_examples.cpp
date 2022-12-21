@@ -3374,46 +3374,46 @@ strided_structured(Node &desc, // shape of requested data arrays
     }
 
     braid_init_example_state(res);
-    braid_init_explicit_coordset(npts_x,
-                                 npts_y,
-                                 npts_z,
+    braid_init_explicit_coordset(pts_extent[0],
+                                 pts_extent[1],
+                                 pts_extent[2],
                                  res["coordsets/coords"]);
 
     res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
 
-	Node &dims = res["topologies/mesh/elements/dims"];
+    Node &dims = res["topologies/mesh/elements/dims"];
 
     dims["i"] = (int32)nele_x;
-	dims["j"] = (int32)nele_y;
+    dims["j"] = (int32)nele_y;
     if(nele_z > 0)
     {
-		dims["k"] = (int32)nele_z;
+        dims["k"] = (int32)nele_z;
     }
 
-	index_t dimensions = 2;
-	if (npts_z > 0)
-	{
-		dimensions += 1;
-	}
-	dims["offsets"].set(DataType::int32(dimensions));
-	dims["strides"].set(DataType::int32(dimensions));
-	int32 *offsets = dims["offsets"].value();
-	int32 *strides = dims["strides"].value();
-	// fill offsets
-	offsets[0] = ele_origin[0];
-	offsets[1] = ele_origin[1];
-	if (npts_z > 0)
-	{
-		offsets[2] = ele_origin[2];
-	}
-	// fill strides
-	strides[0] = 1;
-	strides[1] = strides[0] * ele_extent[0];
-	if (npts_z > 0)
-	{
-		strides[2] = strides[1] * ele_extent[1];
-	}
+    index_t dimensions = 2;
+    if (npts_z > 0)
+    {
+        dimensions += 1;
+    }
+    dims["offsets"].set(DataType::int32(dimensions));
+    dims["strides"].set(DataType::int32(dimensions));
+    int32 *offsets = dims["offsets"].value();
+    int32 *strides = dims["strides"].value();
+    // fill offsets
+    offsets[0] = ele_origin[0];
+    offsets[1] = ele_origin[1];
+    if (npts_z > 0)
+    {
+        offsets[2] = ele_origin[2];
+    }
+    // fill strides
+    strides[0] = 1;
+    strides[1] = strides[0] * pts_extent[0];
+    if (npts_z > 0)
+    {
+        strides[2] = strides[1] * pts_extent[1];
+    }
 
     Node &fields = res["fields"];
 
