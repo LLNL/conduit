@@ -592,9 +592,9 @@ reduce(const Node &snd_node,
     {
         
         rcv_ptr = rcv_node.contiguous_data_ptr();
-    
 
-        if( !snd_node.compatible(rcv_node) ||
+        // make sure `rcv_node` can hold data described by `snd_node`
+        if( !rcv_node.compatible(snd_node) ||
             rcv_ptr == NULL ||
             !rcv_node.is_compact() )
         {
@@ -667,9 +667,9 @@ all_reduce(const Node &snd_node,
     
     
     rcv_ptr = rcv_node.contiguous_data_ptr();
-    
 
-    if( !snd_node.compatible(rcv_node) ||
+    // make sure `rcv_node` can hold data described by `snd_node`
+    if( !rcv_node.compatible(snd_node) ||
         rcv_ptr == NULL ||
         !rcv_node.is_compact() )
     {
@@ -1617,7 +1617,8 @@ broadcast_using_schema(Node &node,
             !(bcast_schema.dtype().is_empty() ||
               bcast_schema.dtype().is_object() ||
               bcast_schema.dtype().is_list() )
-            && bcast_schema.compatible(node.schema()))
+            // make sure `node` can hold data described by `bcast_schema`
+            && node.schema().compatible(bcast_schema))
         {
             
             bcast_data_ptr  = node.contiguous_data_ptr();

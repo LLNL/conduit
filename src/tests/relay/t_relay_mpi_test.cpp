@@ -1228,6 +1228,83 @@ TEST(conduit_mpi_test, bcast_using_schema_non_empty_node)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, reuse_of_node_as_input)
+{
+    // this test tests out specifics with
+    // compatible schemas
+
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    int value = 0;
+    std::string msg;
+    
+    if(rank == 0)
+    {
+        value = 1;
+        msg = "HI!";
+    }
+
+    Node n_local, n_global;
+    n_local.set(value);
+    relay::mpi::sum_all_reduce(n_local,
+                               n_global,
+                               MPI_COMM_WORLD);
+    value  = n_global.as_int();
+
+    if(value == 1)
+    {
+
+        n_global.set(msg);
+        conduit::relay::mpi::broadcast_using_schema(n_global,
+                                                    0,
+                                                    MPI_COMM_WORLD);
+        msg = n_global.as_string();
+    }
+
+    EXPECT_EQ(value,1);
+    EXPECT_EQ(msg,"HI!");
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_mpi_test, reduce_compat_check)
+{
+    // this test tests out specifics with
+    // compatible schemas
+
+    int rank = mpi::rank(MPI_COMM_WORLD);
+    int com_size = mpi::size(MPI_COMM_WORLD);
+    
+    int value = 0;
+    
+    if(rank == 0)
+    {
+        value = 1;
+    }
+
+    Node n_local, n_global;
+    n_local.set(value);
+    relay::mpi::sum_all_reduce(n_local,
+                               n_global,
+                               MPI_COMM_WORLD);
+    value  = n_global.as_int();
+
+    // now all gather
+    relay::mpi::all_gather(n_local,
+                           n_global,
+                           MPI_COMM_WORLD);
+
+    n_global.print();
+    Node n_expected, info;
+    n_expected.append() = 1;
+    n_expected.append() = 0;
+
+    EXPECT_FALSE(n_global.diff(n_expected,info));
+
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

@@ -160,7 +160,25 @@ You can check if a Schema is compatible with another Schema using the **Schema::
 
  - **If the calling Schema describes a List**: The passed test Schema must describe a List, the calling Schema must have at least as many children as the test Schema, and when compared in list order each of the test Schema's children must be compatible with the calling Schema's children.
 
- - **If the calling Schema describes a leaf data type**: The calling Schema's and test Schema's **dtype().id()** and **dtype().element_bytes()** must match, and the calling Schema **dtype().number_of_elements()** must be greater than or equal than the test Schema's.
+ - **If the calling Schema describes a leaf data type**: The calling Schema's and test Schema's ``dtype().id()`` and ``dtype().element_bytes()`` must match, and the calling Schema ``dtype().number_of_elements()`` must be greater than or equal than the test Schema's.
+
+
+Here is a Python pseudocode example that shows the most common use of ``Node.compatible()``:
+
+.. code:: python
+
+    a = conduit.Node()
+    b = conduit.Node()
+    
+    # In this example:
+    #    the calling schema is `a.schema()`
+    #    the test schema is `b.schema()`
+    
+    # ask if `a` can already hold data described by `b`
+    if a.compatible(b) :
+      # data from `b` can be written to `a` without a new allocation
+      # ...
+
 
 
 
