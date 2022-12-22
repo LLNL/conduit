@@ -17,9 +17,12 @@
 
 int main(int argc, char **argv)
 {
-    std::cout << conduit::about() << std::endl
-              << conduit::relay::about() << std::endl
-              << conduit::relay::io::about() << std::endl
-              << conduit::blueprint::about() << std::endl;
+    conduit::Node about;
+    conduit::about(about["conduit"]);
+    conduit::relay::about(about["conduit/relay"]);
+    conduit::relay::io::about(about["conduit/relay/io"]);
+    conduit::blueprint::about(about["conduit/blueprint"]);
+
+    std::cout << about.to_yaml() << std::endl;
 }
 

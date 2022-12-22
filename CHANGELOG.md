@@ -18,6 +18,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Updated to BLT v0.5.2
 
+#### Relay
+- When using HDF5 1.10 or newer, default to use libver 1.8 when creating HDF5 files for wider read compatibly. This setting can be controlled via the hdf5 relay option `libver`, accepted values: `default`,`none`,`latest`,`v108`, and `v110`.
+
 ### Fixed
 #### Blueprint
 - Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
