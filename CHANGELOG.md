@@ -4,28 +4,28 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+
+## [0.8.5] - Released 2022-12-22
+
 ### Added
 #### General
--  Added Node::move and Node::swap methods, which provide efficient ways to help build Node trees by consuming other Nodes.
-- Added Node::reset methods to C and Fortran interfaces
+- Added Node::move and Node::swap methods, which provide efficient ways to help build Node trees by consuming other Nodes.
+- Added Node::reset methods to C and Fortran interfaces.
+- Added initial optional support for Caliper performance annotations.
+- Added Python support for `Node.set` and `Node.set_external` with a schema and external buffer.
 
 #### Blueprint
-- Added support for Wedges and Pyramids
+- Added support for Wedges and Pyramids.
 - Added helper function `blueprint::mesh::generate_strip` to generate a 2D "strip mesh" topology, and dependent other Blueprint mesh parts, from a 1D mesh.
 
 ### Changed
 #### General
+- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/`s.
 - Updated to BLT v0.5.2
 
 #### Relay
 - When using HDF5 1.10 or newer, default to use libver 1.8 when creating HDF5 files for wider read compatibly. This setting can be controlled via the hdf5 relay option `libver`, accepted values: `default`,`none`,`latest`,`v108`, and `v110`.
 
-### Fixed
-#### Blueprint
-- Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
-- Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
-- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/`s.
 
 #### Relay
 - Updated C++ and Python tutorial docs for Compatible Schemas with a new example to outline the most common use case.
@@ -33,14 +33,16 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 
 #### Blueprint
+- Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
+- Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
 - Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
 - Leading `/`s in mesh tree paths no longer undermine `conduit.relay.io.blueprint.{load_mesh|read_mesh}` reading json and yaml flavored files.
+- Fixed indexing and offsets in blueprint mixed element topology examples.
 
 #### Relay
 - Leading `/`s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
 - Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh} to only the read the necessary subset of root file entries. Updated MPI version to only read root file entries on rank 0 and broadcast them to other ranks.
 - Fixed write compatibly check in `relay::mpi::gather`, `relay::mpi::all_gather`, and `relay::mpi::broadcast_using_schema`. Node compatible check is not commutative and checks in leaf zero-copy logic were reversed.
-
 
 
 ## [0.8.4] - Released 2022-08-22
@@ -712,7 +714,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/llnl/conduit/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/llnl/conduit/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/llnl/conduit/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/llnl/conduit/compare/v0.8.1...v0.8.2
