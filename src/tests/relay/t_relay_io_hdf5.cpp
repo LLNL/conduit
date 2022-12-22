@@ -1401,6 +1401,32 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_save_libver)
+{
+        
+    Node n, opts;
+
+    n["data"] = 3.1415;
+
+    opts["libver"]  = "badvalue";
+
+    std::string tout = "tout_hdf5_save_libver_test.hdf5";
+
+    conduit::relay::io::hdf5_set_options(opts);
+    
+    utils::remove_path_if_exists(tout);
+    // bad libver
+    EXPECT_THROW(io::save(n,tout, "hdf5"),Error);
+
+    // better libver
+    opts["libver"]  = "v108";
+    conduit::relay::io::hdf5_set_options(opts);
+    io::save(n,tout, "hdf5");
+
+    EXPECT_TRUE(utils::is_file(tout));
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_group_list_children)
 {
     // get objects in flight already

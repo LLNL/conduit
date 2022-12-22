@@ -4,26 +4,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: example.cpp
+/// file: t_relay_io_smoke.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include <iostream>
-
-#include "conduit.hpp"
 #include "conduit_relay.hpp"
-#include "conduit_blueprint.hpp"
+#include <iostream>
+#include "gtest/gtest.h"
 
+using namespace conduit;
 
-int main(int argc, char **argv)
+TEST(conduit_relay_io_smoke, about)
 {
-    conduit::Node about;
-    conduit::about(about["conduit"]);
-    conduit::relay::about(about["conduit/relay"]);
-    conduit::relay::io::about(about["conduit/relay/io"]);
-    conduit::blueprint::about(about["conduit/blueprint"]);
-
-    std::cout << about.to_yaml() << std::endl;
+    std::cout << relay::io::about() << std::endl;
 }
-
-

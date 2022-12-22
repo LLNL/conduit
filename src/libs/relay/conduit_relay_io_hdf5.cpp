@@ -148,11 +148,18 @@ public:
     static std::string compression_method;
     static int         compression_level;
 
+    static std::string libver;
+
 public:
 
     //------------------------------------------------------------------------
     static void set(const Node &opts)
     {
+
+        if(opts.has_child("libver"))
+        {
+            libver = opts["libver"].as_string();
+        }
 
         if(opts.has_child("compact_storage"))
         {
@@ -219,12 +226,29 @@ public:
                 }
             }
         }
+
     }
 
     //------------------------------------------------------------------------
     static void about(Node &opts)
     {
         opts.reset();
+
+        // report hdf5_library_version
+        unsigned int major_num=0;
+        unsigned int minor_num=0;
+        unsigned int release_num=0;
+
+        herr_t h5_status = H5get_libversion(&major_num, &minor_num,&release_num);
+
+        CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                                 "Failed to fetch HDF5 library version info ");
+
+        opts["hdf5_library_version"] = conduit_fmt::format("v{0}.{1}.{2}",
+                                                           major_num,
+                                                           minor_num,
+                                                           release_num);
+        opts["libver"] = libver;
 
         if(compact_storage_enabled)
         {
@@ -254,6 +278,7 @@ public:
         {
             opts["chunking/compression/level"] = compression_level;
         }
+
     }
 };
 
@@ -269,6 +294,7 @@ int         HDF5Options::chunk_threshold    = 2000000; // 2 mb
 std::string HDF5Options::compression_method = "gzip";
 int         HDF5Options::compression_level  = 5;
 
+std::string HDF5Options::libver             = "default";
 
 //-----------------------------------------------------------------------------
 void
@@ -2942,9 +2968,53 @@ create_hdf5_file_access_plist()
     if(major_num == 1 && minor_num >= 8)
     {
 #if H5_VERSION_GE(1, 10, 2)
-        h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_V18, H5F_LIBVER_V18);
+        if(HDF5Options::libver == "default" ||
+           HDF5Options::libver == "v108")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_V18, H5F_LIBVER_V18);
+        }
+        else if(HDF5Options::libver == "v1110")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_V18, H5F_LIBVER_V110);
+        }
+        else if(HDF5Options::libver == "latest")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_V18, H5F_LIBVER_LATEST);
+        }
+        else if( HDF5Options::libver == "none" )
+        {
+            // no op
+        }
+        else
+        {
+            // unknown or unsupported libver
+            CONDUIT_ERROR("HDF5 libver option: '"
+                          << HDF5Options::libver 
+                          << "' is unknown or unsupported with HDF5 v"
+                          << major_num << "." << major_num << "." << release_num
+                          );
+        }
 #else
-        h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+        // for 1.8, we map def, v108, and latest to H5F_LIBVER_LATEST
+        if(HDF5Options::libver == "default" ||
+           HDF5Options::libver == "v108" ||
+           HDF5Options::libver == "latest")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+        }
+        else if( HDF5Options::libver == "none" )
+        {
+            // no op
+        }
+        else
+        {
+            // unknown or unsupported libver
+            CONDUIT_ERROR("HDF5 libver option: '"
+                          << HDF5Options::libver 
+                          << "' is unknown or unsupported with HDF5 v"
+                          << major_num << "." << major_num << "." << release_num
+                          );
+        }
 #endif
 
         CONDUIT_CHECK_HDF5_ERROR(h5_status,

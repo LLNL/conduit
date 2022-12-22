@@ -294,6 +294,13 @@ It is also the interface used to implement the path-based and handle I/O interfa
 HDF5. This interface provides more control and allows more efficient reuse of I/O handles.
 It is only available in C++.
 
+Relay I/O HDF5 libver
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+HDF5 provides a ``libver`` setting to control the data structures and features used.
+When using HDF5 1.10 or newer, relay io will default to use libver 1.8 when creating HDF5 files to provide wider read compatibly. This setting can be controlled via the hdf5 relay option ``libver``, accepted values include: ``default``,``none``, ``latest``, ``v108``, and ``v110``.
+
+
 Relay I/O HDF5 Interface Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
