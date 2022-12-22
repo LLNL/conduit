@@ -20,11 +20,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Changed
 #### General
-- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/`s.
+- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/` s.
 - Updated to BLT v0.5.2
 
 #### Relay
-- When using HDF5 1.10 or newer, default to use libver 1.8 when creating HDF5 files for wider read compatibly. This setting can be controlled via the hdf5 relay option `libver`, accepted values: `default`,`none`,`latest`,`v108`, and `v110`.
+- When using HDF5 1.10 or newer, default to use libver 1.8 when creating HDF5 files for wider read compatibly. This setting can be controlled via the hdf5 relay option `libver`, accepted values: `default`, `none`, `latest`, `v108`, and `v110`.
 
 
 #### Relay
@@ -36,12 +36,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
 - Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
 - Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
-- Leading `/`s in mesh tree paths no longer undermine `conduit.relay.io.blueprint.{load_mesh|read_mesh}` reading json and yaml flavored files.
+- Leading `/` s in mesh tree paths no longer undermine `conduit.relay.io.blueprint.{load_mesh|read_mesh}` reading json and yaml flavored files.
 - Fixed indexing and offsets in blueprint mixed element topology examples.
 
 #### Relay
-- Leading `/`s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
-- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh} to only the read the necessary subset of root file entries. Updated MPI version to only read root file entries on rank 0 and broadcast them to other ranks.
+- Leading `/` s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to only the read the necessary subset of root file entries. Updated MPI version to only read root file entries on rank 0 and broadcast them to other ranks.
 - Fixed write compatibly check in `relay::mpi::gather`, `relay::mpi::all_gather`, and `relay::mpi::broadcast_using_schema`. Node compatible check is not commutative and checks in leaf zero-copy logic were reversed.
 
 
