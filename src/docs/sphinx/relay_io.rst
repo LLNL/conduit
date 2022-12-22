@@ -298,7 +298,7 @@ Relay I/O HDF5 libver
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 HDF5 provides a ``libver`` setting to control the data structures and features used.
-When using HDF5 1.10 or newer, relay io will default to use libver 1.8 when creating HDF5 files to provide wider read compatibly. This setting can be controlled via the hdf5 relay option ``libver``, accepted values include: ``default``,``none``, ``latest``, ``v108``, and ``v110``.
+When using HDF5 1.10 or newer, relay io will default to use libver 1.8 when creating HDF5 files to provide wider read compatibly. This setting can be controlled via the hdf5 relay option ``libver``, accepted values include: ``default``, ``none``, ``latest``, ``v108``, and ``v110``.
 
 
 Relay I/O HDF5 Interface Examples
