@@ -613,8 +613,8 @@ int32 refine(int32 domain_index,
       x_vals[o] = float32(iters[y * nx + x_o]);
       y_vals[o] = float32(iters[y_o * nx + x]);
     }
-    float32 ddx = std::abs(x_vals[0] - 2.f * x_vals[1] + x_vals[2]);
-    float32 ddy = std::abs(y_vals[0] - 2.f * y_vals[1] + y_vals[2]);
+    float32 ddx = fabsf(x_vals[0] - 2.f * x_vals[1] + x_vals[2]);
+    float32 ddy = fabsf(y_vals[0] - 2.f * y_vals[1] + y_vals[2]);
     float32 eps = sqrt(ddx*ddx + ddy*ddy);
     // TODO, should der be a floating point # here?
     der[i] = eps;
