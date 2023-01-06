@@ -258,7 +258,7 @@ stages:
           ENABLE_HDF5_COMPAT: OFF
           HDF5_SPEC: "hdf5@1.12.0~mpi"
           # silo requires hdf5 1.10, so for now we can't
-          # test both silo and hdft 1.12 support
+          # test both silo and hdf5 1.12 support
           ENABLE_SILO: OFF
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
@@ -286,7 +286,7 @@ stages:
           ENABLE_HDF5_COMPAT: OFF
           HDF5_SPEC: "hdf5@1.14.0~mpi"
           # silo requires hdf5 1.10, so for now we can't
-          # test both silo and hdft 1.12 support
+          # test both silo and hdf5 1.14 support
           ENABLE_SILO: OFF
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
