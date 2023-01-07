@@ -1045,6 +1045,46 @@ void write_mesh(const Node &mesh,
                                mpi_comm);
 
     cycle = n_reduced.as_int();
+
+    // we also need to have all mpi tasks agree on the `opts_suffix`
+    // checking the first mpi task with domains should be sufficient.
+    // find first
+    n_local   = local_num_domains;
+    n_reduced.reset();
+    
+    relay::mpi::all_gather(n_local,
+                           n_reduced,
+                           mpi_comm);
+
+
+    index_t_accessor counts = n_reduced.value();
+    index_t idx = -1;
+    index_t i =0;
+    NodeConstIterator r_itr = n_reduced.children();
+    while(r_itr.has_next() && idx < 0)
+    {
+        const Node &curr = r_itr.next();
+        index_t count = curr.to_index_t();
+        if(count > 0)
+        {
+            idx = i;
+        }
+        i++;
+    }
+
+    // now broadcast from idx
+    Node n_opts_suffix;
+    if(par_rank == idx)
+    {
+        n_opts_suffix = opts_suffix;
+    }
+
+    conduit::relay::mpi::broadcast_using_schema(n_opts_suffix,
+                                                idx,
+                                                mpi_comm);
+
+    opts_suffix = n_opts_suffix.as_string();
+
 #endif
     
     // -----------------------------------------------------------

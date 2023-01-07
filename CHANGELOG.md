@@ -4,6 +4,12 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Fixed
+
+#### Relay
+- Fixed a directory creation bug in `relay::io::blueprint::{save_mesh|write_mesh}` that occurred with sparse topologies with no domains on rank 0. 
 
 ## [0.8.5] - Released 2022-12-22
 
