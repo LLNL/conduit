@@ -1029,6 +1029,10 @@ void write_mesh(const Node &mesh,
                 opts_suffix = "none";
             }
         }
+        else if(opts_suffix == "cycle")
+        {
+            cycle = dom["state/cycle"].to_int();
+        }
         else if(opts_suffix == "default")
         {
             cycle = dom["state/cycle"].to_int();
@@ -1060,10 +1064,10 @@ void write_mesh(const Node &mesh,
     index_t_accessor counts = n_reduced.value();
     index_t idx = -1;
     index_t i =0;
-    NodeConstIterator r_itr = n_reduced.children();
-    while(r_itr.has_next() && idx < 0)
+    NodeConstIterator counts_itr = n_reduced.children();
+    while(counts_itr.has_next() && idx < 0)
     {
-        const Node &curr = r_itr.next();
+        const Node &curr = counts_itr.next();
         index_t count = curr.to_index_t();
         if(count > 0)
         {

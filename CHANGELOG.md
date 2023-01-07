@@ -10,6 +10,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Fixed a directory creation bug in `relay::io::blueprint::{save_mesh|write_mesh}` that occurred with sparse topologies with no domains on rank 0. 
+- Fixed a bug in `relay::io::blueprint::{save_mesh|write_mesh}` with the `suffix=cycle` option that could cause int max to erroneously be used as the cycle number in the output directory.
+
 
 ## [0.8.5] - Released 2022-12-22
 
