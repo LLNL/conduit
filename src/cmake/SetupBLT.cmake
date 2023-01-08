@@ -81,13 +81,7 @@ if(ENABLE_MPI)
     #
     # blt's mpi target is called "mpi" 
     if(TARGET mpi)
-        # check and strip compile opts
-        get_target_property(_mpi_compile_opts mpi COMPILE_OPTIONS)
-        if(_mpi_compile_opts)
-            list(REMOVE_ITEM _mpi_compile_opts "-fallow-argument-mismatch")
-            set_target_properties(mpi PROPERTIES COMPILE_OPTIONS "${_mpi_compile_opts}")
-        endif()
-        # check and strip interface compile opts
+    # check and strip interface compile opts
         get_target_property(_mpi_iface_compile_opts mpi INTERFACE_COMPILE_OPTIONS)
         if(_mpi_iface_compile_opts)
             list(REMOVE_ITEM _mpi_iface_compile_opts "-fallow-argument-mismatch")
