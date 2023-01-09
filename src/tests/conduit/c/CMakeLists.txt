@@ -9,7 +9,8 @@
 set(C_TESTS
     t_c_conduit_smoke
     t_c_conduit_node
-    t_c_conduit_node_set)
+    t_c_conduit_node_set
+    t_c_conduit_datatype)
 
 ################################
 # Add our tests

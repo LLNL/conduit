@@ -29,6 +29,11 @@ extern "C" {
 
 using namespace conduit;
 
+int conduit_datatype_sizeof_index_t()
+{
+    return DataType::sizeof_index_t();
+}
+
 conduit_index_t conduit_datatype_id(const conduit_datatype *cdatatype)
 {
     return cpp_datatype_ref(cdatatype).id();

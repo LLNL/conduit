@@ -6,6 +6,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Added
+#### General
+- Added C++ `int DataType::sizeof_index_t()` and C `int conduit_datatype_sizeof_index_t()` methods to provide a stable ABI to determine configured size (number of bytes) of Conduit's index_t type.
+
 ### Fixed
 
 #### General
