@@ -8,6 +8,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Fixed
 
+#### General
+- Build fixes for Conda Forge (mpi -fallow-argument-mismatch clang protection)
+
 #### Relay
 - Fixed a directory creation bug in `relay::io::blueprint::{save_mesh|write_mesh}` that occurred with sparse topologies with no domains on rank 0. 
 - Fixed a bug in `relay::io::blueprint::{save_mesh|write_mesh}` with the `suffix=cycle` option that could cause int max to erroneously be used as the cycle number in the output directory.
