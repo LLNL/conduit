@@ -85,7 +85,18 @@ about(Node &n)
     n["system"] = CONDUIT_SYSTEM_TYPE;
     n["install_prefix"] = CONDUIT_INSTALL_PREFIX;
     n["license"] = CONDUIT_LICENSE_TEXT;
-    
+
+    Node &nt = n["index_t_typemap"];
+
+    // index_t
+#ifdef CONDUIT_INDEX_32
+    nt["index_t"] = "int32";
+    nt["sizeof_index_t"] = 4;
+#else
+    nt["index_t"] = "int64";
+    nt["sizeof_index_t"] = 8;
+#endif
+
     // Type Info Map
     Node &nn = n["native_typemap"];
 
@@ -151,6 +162,14 @@ about(Node &n)
 #else
     nn["float64"] = "<unmapped>";
 #endif
+
+    // index_t
+#ifdef CONDUIT_INDEX_32
+    nn["index_t"] = CONDUIT_INT32_NATIVE_NAME;
+#else
+    nn["index_t"] = CONDUIT_INT64_NATIVE_NAME;
+#endif
+
 
 }
 

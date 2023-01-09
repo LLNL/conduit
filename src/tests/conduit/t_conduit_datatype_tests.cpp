@@ -737,3 +737,36 @@ TEST(dtype_tests,dtype_comparison_checks)
         }
     }
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(dtype_tests,sizeof_index_t)
+{
+    int sz_it = DataType::sizeof_index_t();
+
+#ifdef CONDUIT_INDEX_32
+    EXPECT_EQ(sz_it,4);
+#else
+    EXPECT_EQ(sz_it,8);
+#endif
+
+    EXPECT_EQ(sz_it,CONDUIT_SIZEOF_INDEX_T);
+
+    // also check about entries
+    Node n_about;
+    conduit::about(n_about);
+
+
+    Node &n_it_info = n_about["index_t_typemap"];
+    EXPECT_EQ(sz_it,n_it_info["sizeof_index_t"].to_int());
+
+    if(sz_it == 4)
+    {
+        EXPECT_EQ(n_it_info["index_t"].as_string(),"int32");
+    }
+    else // if(sz_it == 8)
+    {
+        EXPECT_EQ(n_it_info["index_t"].as_string(),"int64");
+    }
+
+}
