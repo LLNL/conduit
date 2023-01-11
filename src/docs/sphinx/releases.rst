@@ -12,6 +12,39 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.8.6
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.6/conduit-v0.8.6-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **General**
+
+ * Added C++ ``int DataType::sizeof_index_t()`` and C ``int conduit_datatype_sizeof_index_t()`` methods to provide a stable ABI to determine configured size (number of bytes) of Conduit's index_t type.
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Build fixes for Conda Forge (mpi -fallow-argument-mismatch clang protection)
+
+* **Relay**
+
+ * Fixed a directory creation bug in ``relay::io::blueprint::{save_mesh|write_mesh}`` that occurred with sparse topologies with no domains on rank 0.
+ * Fixed a bug in ``relay::io::blueprint::{save_mesh|write_mesh}`` with the ``suffix=cycle`` option that could cause int max to erroneously be used as the cycle number in the output directory.
+
+
 
 v0.8.5
 ---------------------------------
