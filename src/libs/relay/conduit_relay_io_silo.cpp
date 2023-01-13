@@ -1711,15 +1711,38 @@ read_quadmesh_domain(DBfile *file,
         quadmesh_ptr, &DBFreeQuadmesh};
     
     std::string name{quadmesh_ptr->name};
-    
-    mesh_domain["topologies"][name]["type"] = "quad";
+
+    int coordtype{quadmesh_ptr->coordtype};
+    int ndims{quadmesh_ptr->ndims};
+
+    if (coordtype == DB_COLLINEAR)
+    {
+        mesh_domain["topologies"][name]["type"] = "rectilinear";
+    }
+    else if (coordtype == DB_NONCOLLINEAR)
+    {
+        mesh_domain["topologies"][name]["type"] = "structured";
+        mesh_domain["topologies"][name]["elements/dims/i"] = quadmesh_ptr->dims[0];
+        if (ndims > 1) mesh_domain["topologies"][name]["elements/dims/j"] = quadmesh_ptr->dims[1];
+        if (ndims > 2) mesh_domain["topologies"][name]["elements/dims/k"] = quadmesh_ptr->dims[2];
+    }
+    else
+    {
+        CONDUIT_ERROR("Undefined coordtype in " << coordtype);
+    }
+
     mesh_domain["topologies"][name]["coordset"] = name;
+
+    mesh_domain["topologies"][name]["elements/origin/i"] = quadmesh_ptr->base_index[0];
+    if (ndims > 1) mesh_domain["topologies"][name]["elements/origin/j"] = quadmesh_ptr->base_index[1];
+    if (ndims > 2) mesh_domain["topologies"][name]["elements/origin/k"] = quadmesh_ptr->base_index[2];
+    
     mesh_domain["coordsets"][name]["type"] = "explicit";
     
     if (quadmesh_ptr->datatype == DB_DOUBLE)
     {
         copy_point_coords<double>(quadmesh_ptr->coords,
-                                  quadmesh_ptr->ndims,
+                                  ndims,
                                   quadmesh_ptr->dims,
                                   quadmesh_ptr->coord_sys,
                                   mesh_domain["coordsets"][name]["values"]);
@@ -1727,7 +1750,7 @@ read_quadmesh_domain(DBfile *file,
     else if (quadmesh_ptr->datatype == DB_FLOAT)
     {
         copy_point_coords<float>(quadmesh_ptr->coords,
-                                 quadmesh_ptr->ndims,
+                                 ndims,
                                  quadmesh_ptr->dims,
                                  quadmesh_ptr->coord_sys,
                                  mesh_domain["coordsets"][name]["values"]);

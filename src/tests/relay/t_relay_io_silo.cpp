@@ -175,6 +175,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
     for (int ndomains = 2; ndomains < 4; ++ndomains) {
         Node save_mesh;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        // save_mesh.print();
         for (index_t child = 0; child < save_mesh.number_of_children(); ++child){
             save_mesh[child].remove("fields");
             save_mesh[child].remove("state");
@@ -193,7 +194,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-        info.print();
+        // info.print();
 
         // the loaded mesh will be in the multidomain format
         // (it will be a list containing a single mesh domain)
@@ -219,3 +220,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
         }
     }
 }
+
+// TODO we might want "round trip" tests for all the different mesh types
+// not round trip though, since not everything will come back unchanged
