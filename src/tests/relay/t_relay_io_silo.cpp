@@ -194,6 +194,8 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
+        io::blueprint::save_mesh(load_mesh, "myspiral", "hdf5");
+
         // info.print();
 
         // the loaded mesh will be in the multidomain format
@@ -207,16 +209,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             const Node &l_curr = l_itr.next();
             const Node &s_curr = s_itr.next();
 
-            std::cout << "comparing domain " << l_itr.index() << std::endl;
-            std::cout << "{input}" << std::endl;
-            s_curr.print();
-            std::cout << "{loaded}" << std::endl;
-            l_curr.print();
-
             EXPECT_FALSE(l_curr.diff(s_curr, info));
-            std::cout << "{diff}" << std::endl;
-            info.print();
-            std::cout << std::endl;
         }
     }
 }
