@@ -53,6 +53,40 @@ static const char *SPHERICAL_LABELS[] = {"r", "theta", "phi"};
     }                                                               \
 }                                                                   \
 
+// ****************************************************************************
+//  Function: VN (Valid Silo Variable Name) 
+//
+//  Purpose: Ensure a given object name being passed to Silo is a valid name
+//      for a silo object. The function is desgined to be used 'in-place' in
+//      a Silo function call where it may be used for multiple args in the 
+///     call. 
+//
+//  Programmer: Mark C. Miller, Tue Aug 26 14:18:13 PDT 2008
+//
+//  Modifications:
+//    Brad Whitlock, Fri Mar 6 09:56:33 PDT 2009
+//    Allow / since we'll get rid of them using another method where we use
+//    them to create directories.
+//
+// ****************************************************************************
+static const char *VN(const std::string &n)
+{
+    static int k = 0;
+    static std::string vn[10];
+    int km = k % 10;
+
+    k++;
+    vn[km] = n;
+    for (size_t i = 0; i < vn[km].size(); i++)
+    {
+        if (isalnum(vn[km][i]) || vn[km][i] == '_' || vn[km][i] == '/')
+            continue;
+        vn[km][i] = '_';
+    }
+
+    return vn[km].c_str();
+}
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -289,7 +323,6 @@ silo_write_field(DBfile *dbfile,
                  const Node &n_var,
                  Node &n_mesh_info)
 {
-
 
     if (!n_var.has_path("topology"))
     {
@@ -2037,7 +2070,6 @@ read_multivar(DBfile *root_file,
               DBmultivar *multivar,
               conduit::Node &mesh)
 {
-
     std::string file_path, silo_name;
     for (index_t i = 0; i < multivar->nvars; ++i)
     {
@@ -2066,7 +2098,6 @@ read_all_multivars(DBfile *root_file,
                    int expected_domains,
                    conduit::Node &mesh)
 {
-
     for (int i = 0; i < toc->nmultivar; ++i)
     {
         std::unique_ptr<DBmultivar, decltype(&DBFreeMultivar)> multivar{
@@ -3486,7 +3517,8 @@ write_multivar(DBfile *root,
     {
         domain_name_ptrs.push_back(domain.c_str());
         // TODO: make general, not always UCDVAR
-        domain_var_types.push_back(DB_UCDVAR); 
+        // domain_var_types.push_back(DB_UCDVAR);
+        domain_var_types.push_back(DB_QUADVAR);
     }
     CONDUIT_CHECK_SILO_ERROR( DBPutMultivar(root,
                                             mvar_name.c_str(),
@@ -3686,6 +3718,32 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             // domain is not in root file
             silo_mesh_paths.push_back(domain_file + ":" + mesh_domain);
         }
+
+        if (dom->has_path("fields"))
+        {
+            NodeConstIterator itr = (*dom)["fields"].children();
+
+            while (itr.has_next())
+            {
+                itr.next();
+                std::string var_name = itr.name();
+
+                bool singleFile{nfiles == 1};
+
+                std::stringstream tmp;
+                if (singleFile)
+                    tmp << "domain_" << i << "/" << VN(var_name);
+                else
+                {
+                    // CONDUIT_ERROR("Uh oh spaghettio");
+                    // help what is the filename
+                    tmp << "spiral.silo" << ":/domain_" << i << "/" << VN(var_name);
+                }
+
+                silo_variable_paths[mmesh_name].push_back(tmp.str());
+            }
+        }
+
     }
     write_multimesh(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
     if (silo_material_paths.size() > 0) 
@@ -3697,7 +3755,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             write_multimaterial(silofile, pair.first, mmesh_name, pair.second);
         }
     }
-    
+
     if (silo_variable_paths.size() > 0) 
     {
         for (const auto &pair : silo_variable_paths)
