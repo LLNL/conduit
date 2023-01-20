@@ -1955,13 +1955,7 @@ read_quadvariable_domain(DBfile *file,
     std::string name{quadvar_ptr->name};
     field["topology"] = std::string(quadvar_ptr->meshname);
 
-    // set association
-    if (quadvar_ptr->centering == DB_NODECENT)
-        field["association"] = "vertex";
-    else if (quadvar_ptr->centering == DB_ZONECENT)
-        field["association"] = "element";
-    else
-        CONDUIT_ERROR("Unknown centering in " << quadvar_ptr->centering);
+    apply_centering(quadvar_ptr->centering, field);
     
     if (quadvar_ptr->datatype == DB_FLOAT)
     {
