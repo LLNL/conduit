@@ -3718,7 +3718,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             // domain is not in root file
             silo_mesh_paths.push_back(domain_file + ":" + mesh_domain);
         }
-
         if (dom->has_path("fields"))
         {
             NodeConstIterator itr = (*dom)["fields"].children();
@@ -3728,19 +3727,23 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 itr.next();
                 std::string var_name = itr.name();
 
-                bool singleFile{nfiles == 1};
+                bool singleFile{nfiles == 0};
 
                 std::stringstream tmp;
                 if (singleFile)
-                    tmp << "domain_" << i << "/" << VN(var_name);
+                {
+                    CONDUIT_ERROR("Uh oh spaghettio");
+                    std::cout << "single file" << std::endl;
+                    tmp << "block" << i << "/" << VN(var_name);
+                }
                 else
                 {
+                    std::cout << "multi file" << std::endl;
                     // CONDUIT_ERROR("Uh oh spaghettio");
-                    // help what is the filename
-                    tmp << "spiral.silo" << ":/domain_" << i << "/" << VN(var_name);
+                    tmp << "domain" << i << ".silo" << ":" << VN(var_name);
                 }
 
-                silo_variable_paths[mmesh_name].push_back(tmp.str());
+                silo_variable_paths[var_name].push_back(tmp.str());
             }
         }
 
