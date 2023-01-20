@@ -335,6 +335,7 @@ silo_write_field(DBfile *dbfile,
     std::vector<std::string> topos;
     if(n_var["topology"].number_of_children() > 0)
     {
+        // TODO this seems wrong
         // NOTE: this case doesn't seem to make sense WRT the blueprint web doc.
         NodeConstIterator fld_topos_itr = n_var["topology"].children();
         while(fld_topos_itr.has_next())
@@ -1930,7 +1931,7 @@ apply_values(void **vals,
 {
     for (int i = 0; i < num_arrays; ++i)
     {
-        copy_and_assign(static_cast<T *>(vals[i]), num_elems, values.append());
+        copy_and_assign(static_cast<T *>(vals[i]), num_elems, values);
     }
 }
 
@@ -1953,6 +1954,14 @@ read_quadvariable_domain(DBfile *file,
         quadvar_ptr, &DBFreeQuadvar};
     std::string name{quadvar_ptr->name};
     field["topology"] = std::string(quadvar_ptr->meshname);
+
+    // set association
+    if (quadvar_ptr->centering == DB_NODECENT)
+        field["association"] = "vertex";
+    else if (quadvar_ptr->centering == DB_ZONECENT)
+        field["association"] = "element";
+    else
+        CONDUIT_ERROR("Unknown centering in " << quadvar_ptr->centering);
     
     if (quadvar_ptr->datatype == DB_FLOAT)
     {
