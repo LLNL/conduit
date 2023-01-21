@@ -250,6 +250,68 @@ TEST(conduit_relay_io_handle, test_exceptions)
 
 
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_handle, leading_slash_reads)
+{
+    std::vector<std::string> protocols;
+
+    protocols.push_back("conduit_bin");
+    protocols.push_back("json");
+    protocols.push_back("conduit_json");
+    protocols.push_back("conduit_base64_json");
+    protocols.push_back("yaml");
+
+    Node n_about;
+    io::about(n_about);
+
+    if(n_about["protocols/hdf5"].as_string() == "enabled")
+        protocols.push_back("hdf5");
+
+    Node n;
+    n["path/to/some/data"] = "data!";
+
+
+    for (std::vector<std::string>::const_iterator itr = protocols.begin();
+             itr < protocols.end(); ++itr)
+    {
+
+        std::string protocol = *itr;
+        CONDUIT_INFO("Testing Relay IO Handle read path including leading '/' with protocol: "
+                     << protocol );
+        std::string test_file_name = "tout_conduit_relay_handle_read_leading_slash."
+                                     + protocol;
+        // seed the data
+        conduit::relay::io::save(n,test_file_name,protocol);
+
+        // get a handle
+        io::IOHandle h;
+        h.open(test_file_name,protocol);
+
+
+        Node n_read, info;
+        h.read("path",n_read);
+        std::cout << "read: path" << std::endl;
+        n_read.print();
+        EXPECT_FALSE(n["path"].diff(n_read,info));
+        std::cout << "diff:";
+        info.print();
+
+        n_read.reset();
+        std::cout << "read: /path" << std::endl;
+        h.read("/path",n_read);
+        n_read.print();
+
+        EXPECT_FALSE(n["path"].diff(n_read,info));
+        std::cout << "diff:";
+        info.print();
+    }
+
+}
+
+
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_handle, test_mode)
 {

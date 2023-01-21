@@ -141,3 +141,14 @@ else()
     message(STATUS "Parmetis disabled: Skipping related tests")
 endif()
 
+
+if(CALIPER_FOUND)
+    message(STATUS "Caliper enabled: Adding related unit tests")
+    add_cpp_test(TEST t_caliper_smoke
+                 DEPENDS_ON caliper
+                 FOLDER tests/thirdparty)
+else()
+    message(STATUS "Caliper disabled: Skipping related tests")
+endif()
+
+

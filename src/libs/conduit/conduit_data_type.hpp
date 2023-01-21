@@ -72,6 +72,15 @@ public:
     } TypeID;
 
 //-----------------------------------------------------------------------------
+/// DataType::sizeof_index_t() provides an ABI stable way to probe the size
+/// of index_t.
+///
+/// index_t is fundamental to sizes in Conduit's interface,
+/// it is usually 64-bits but there is still a 32-bit option.
+//-----------------------------------------------------------------------------
+    static int sizeof_index_t();
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::DataType Objects Constructor Helpers --
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -86,7 +95,7 @@ public:
     static DataType empty();
     static DataType object();
     static DataType list();
-    
+
 //-----------------------------------------------------------------------------
 // -- end conduit::DataType Objects Constructor Helpers --
 //-----------------------------------------------------------------------------

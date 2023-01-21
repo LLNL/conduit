@@ -47,6 +47,8 @@
 
 #cmakedefine CONDUIT_USE_CXX11
 
+#cmakedefine CONDUIT_USE_CALIPER
+
 #endif
 
 

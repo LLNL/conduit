@@ -18,7 +18,7 @@ The quickest path to install conduit and its dependencies is via :ref:`uberenv <
     
     git clone --recursive https://github.com/llnl/conduit.git
     cd conduit
-    python scripts/uberenv/uberenv.py --install --prefix="build"
+    python3 scripts/uberenv/uberenv.py --install --prefix="build"
 
 
 After this completes, ``build/conduit-install`` will contain a Conduit install.

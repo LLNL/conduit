@@ -60,6 +60,16 @@ class UberenvConduit(Conduit):
     ###################################
     phases = ['hostconfig']
 
+    @run_after("hostconfig")
+    def host_config_fix(self):
+        # remove python install prefix
+        hcfname = self._get_host_config_path(self.spec)
+        lines = open(hcfname).readlines()
+        ofile = open(hcfname,"w")
+        for l in lines:
+            if l.count("PYTHON_MODULE_INSTALL_PREFIX") == 0:
+                ofile.write(l + "\n")
+
     def url_for_version(self, version):
         dummy_tar_path =  os.path.abspath(pjoin(os.path.split(__file__)[0]))
         dummy_tar_path = pjoin(dummy_tar_path,"uberenv-conduit.tar.gz")

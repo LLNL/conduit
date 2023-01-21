@@ -4,16 +4,61 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.8.6] - Released 2023-01-11
+
 ### Added
 #### General
--  Added Node::move and Node::swap methods, which provide efficient ways to help build Node trees by consuming other Nodes.
- - Added Node::reset methods to C and Fortran interfaces
- - Added support for Wedges and Pyramids to Blueprint.
+- Added C++ `int DataType::sizeof_index_t()` and C `int conduit_datatype_sizeof_index_t()` methods to provide a stable ABI to determine configured size (number of bytes) of Conduit's index_t type.
+
+### Fixed
+
+#### General
+- Build fixes for Conda Forge (mpi -fallow-argument-mismatch clang protection)
+
+#### Relay
+- Fixed a directory creation bug in `relay::io::blueprint::{save_mesh|write_mesh}` that occurred with sparse topologies with no domains on rank 0. 
+- Fixed a bug in `relay::io::blueprint::{save_mesh|write_mesh}` with the `suffix=cycle` option that could cause int max to erroneously be used as the cycle number in the output directory.
+
+
+## [0.8.5] - Released 2022-12-22
+
+### Added
+#### General
+- Added Node::move and Node::swap methods, which provide efficient ways to help build Node trees by consuming other Nodes.
+- Added Node::reset methods to C and Fortran interfaces.
+- Added initial optional support for Caliper performance annotations.
+- Added Python support for `Node.set` and `Node.set_external` with a schema and external buffer.
+
+#### Blueprint
+- Added support for Wedges and Pyramids.
+- Added helper function `blueprint::mesh::generate_strip` to generate a 2D "strip mesh" topology, and dependent other Blueprint mesh parts, from a 1D mesh.
 
 ### Changed
 #### General
-- Updated to BLT v0.5.2 
+- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/` s.
+- Updated to BLT v0.5.2
+
+#### Relay
+- When using HDF5 1.10 or newer, default to use libver 1.8 when creating HDF5 files for wider read compatibly. This setting can be controlled via the hdf5 relay option `libver`, accepted values: `default`, `none`, `latest`, `v108`, and `v110`.
+
+
+#### Relay
+- Updated C++ and Python tutorial docs for Compatible Schemas with a new example to outline the most common use case.
+
+### Fixed
+
+#### Blueprint
+- Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
+- Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
+- Leading `/` s in mesh tree paths no longer undermine `conduit.relay.io.blueprint.{load_mesh|read_mesh}` reading json and yaml flavored files.
+- Fixed indexing and offsets in blueprint mixed element topology examples.
+
+#### Relay
+- Leading `/` s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to only the read the necessary subset of root file entries. Updated MPI version to only read root file entries on rank 0 and broadcast them to other ranks.
+- Fixed write compatibly check in `relay::mpi::gather`, `relay::mpi::all_gather`, and `relay::mpi::broadcast_using_schema`. Node compatible check is not commutative and checks in leaf zero-copy logic were reversed.
+
 
 ## [0.8.4] - Released 2022-08-22
 
@@ -26,13 +71,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added Schema and Python Buffer variants to Python `Node.set()` and `Node.set_external()`.
 
 #### Blueprint
-- Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details. 
+- Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details.
 - Added `blueprint::mesh::examples::strided_structured` which creates a structured mesh with arbitrarily strided vertex and element fields.
 - Added support for mixed element topologies to the mesh blueprint.
 - Added `blueprint::mesh::examples::braid` examples with mixed element topologies (`mesh_type={"mixed", "mixed_2d"}`)
 - Added 1D mesh example support to `blueprint::mesh::examples::basic()`.
 - Added adjacency set aware generate functions (`genearte_points()`, etc) to the non-mpi blueprint library.
 - Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in an existing tree.
+- Added support to write and read per-mesh blueprint index entires with `partition_pattern` and `partition_map`.
+
 
 
 #### Relay
@@ -61,7 +108,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Fixed a bug with `blueprint::mesh::index::generate`, where a uniform grid with no origin would lead to invalid coordinate system name `logical` in the resulting index. This case now defaults to `cartesian`.
 - Improved `relay::io::blueprint::{save_mesh|write_mesh}` blueprint index generation for cases where fields do not exist on all domains.
-- Fixed a bug that labeled internal faces as shared in generated adjsets. 
+- Fixed a bug that labeled internal faces as shared in generated adjsets.
 
 #### Relay
 - Fixed a bug with blueprint root file creation, where the `file_pattern` was not relative to the root file location
@@ -682,7 +729,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.4...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/llnl/conduit/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/llnl/conduit/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/llnl/conduit/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/llnl/conduit/compare/v0.8.1...v0.8.2

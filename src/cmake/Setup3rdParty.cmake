@@ -170,3 +170,13 @@ if(PARMETIS_DIR)
     endif()
 endif()
 
+################################
+# Setup Caliper if available
+################################
+# Search for Caliper.
+if(CALIPER_DIR)
+    include(cmake/thirdparty/SetupCaliper.cmake)
+    if(NOT CALIPER_FOUND)
+        message(FATAL_ERROR "CALIPER_DIR is set, but Caliper wasn't found.")
+    endif()
+endif()

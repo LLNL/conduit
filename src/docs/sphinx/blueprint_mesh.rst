@@ -1312,7 +1312,7 @@ spiral
 
     Pseudocolor and Contour plots of the spiral example ``dist`` field.
 
-The ``sprial()`` function generates a multi-domain mesh composed of 2D square
+The ``spiral()`` function generates a multi-domain mesh composed of 2D square
 domains with the area of successive fibonacci numbers. The result estimates the
 `Golden spiral <https://en.wikipedia.org/wiki/Golden_spiral>`_.
 
