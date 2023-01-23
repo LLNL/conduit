@@ -251,9 +251,9 @@ struct CONDUIT_BLUEPRINT_API TopologyMetadata
 
     void add_entity_assoc(IndexType type, index_t e0_id, index_t e0_dim, index_t e1_id, index_t e1_dim);
 
+    std::vector<index_t> &get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim);
     const std::vector<index_t> &get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
     void get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
-    void get_entity_data(IndexType type, index_t entity_id, index_t entity_dim, Node &data) const;
     void get_point_data(IndexType type, index_t point_id, Node &data) const;
 
     index_t get_length(index_t dim = -1) const;
@@ -261,19 +261,44 @@ struct CONDUIT_BLUEPRINT_API TopologyMetadata
 
     std::string to_json() const;
 
+    void expand_assoc_capacity(IndexType type, index_t idx, index_t dim);
+    inline index_t next_global_id(index_t dim) const
+    {
+        index_t tdim1 = topo_shape.dim + 1;
+        return dim_geassocs_maps[dim].size() / tdim1;
+    }
+    inline index_t next_local_id(index_t dim) const
+    {
+        index_t tdim1 = topo_shape.dim + 1;
+        return dim_leassocs_maps[dim].size() / tdim1;
+    }
+
     const conduit::Node *topo, *cset;
     const conduit::DataType int_dtype, float_dtype;
     const ShapeCascade topo_cascade;
     const ShapeType topo_shape;
 
+    /*
+      dim_geassocs_maps[dim][element * (topodims+1) + dim] -> associates vector
+          [dim 0]
+          [dim 1]--->elements
+          [dim 2]      [ei=0, dim=0]
+          [dim 3]      [ei=0, dim=1]
+                       [ei=0, dim=2]--->associates {1,3,5}
+                       [ei=0, dim=3]
+                       [ei=1, dim=0]
+                       [ei=1, dim=1]
+                       ...
+                       [ei=nelem-1, dim=3]
+
+     */
+
     // per-dimension topology nodes (mapped onto 'cset' coordinate set)
     std::vector< conduit::Node > dim_topos;
-    // per-dimension maps from an entity's point id set to its global entity id
-    std::vector< std::map< std::set<index_t>, index_t > > dim_geid_maps;
     // per-dimension maps from global entity ids to per-dimension global associate ids
-    std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_geassocs_maps;
+    std::vector< std::vector< std::vector<index_t> > > dim_geassocs_maps;
     // per-dimension maps from local entity ids to per-dimension local associate ids
-    std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_leassocs_maps;
+    std::vector< std::vector< std::vector<index_t> > > dim_leassocs_maps;
     // per-dimension mapping from local entity ids to global entity ids (delegates)
     std::vector< std::vector<index_t> > dim_le2ge_maps;
 };
