@@ -109,6 +109,47 @@ void CONDUIT_BLUEPRINT_API partition_map_back(const conduit::Node& repart_mesh,
                                               conduit::Node& orig_mesh,
                                               MPI_Comm comm);
 
+
+
+
+///@name blueprint::mpi::mesh::distribute(...)
+//-----------------------------------------------------------------------------
+/// description:
+///   distribute(...) Allows you to send input domains to arbiate MPI ranks.
+///   Domain Overloading is one key use case.
+///
+///  --------------
+///  Example:
+///  --------------
+///
+///   Input -- 4 domains, one per mpi task
+///    task 0: [domain 0]
+///    task 1: [domain 1]
+///    task 2: [domain 2]
+///    task 3: [domain 3]
+///
+///   Goal: Duplicate each domain on two mpi tasks to obtain the following:
+///   Output:
+///    task 0: [domain 0, domain 3]
+///    task 1: [domain 0, domain 1]
+///    task 2: [domain 1, domain 2]
+///    task 3: [domain 2, domain 3]
+///
+///
+///  Node input; /// setup input mesh ...
+///  Node opts, output;
+///  opts["domain_map/values"] = { 0,1,  1,2,  2,3,  3,0};
+///  // we have two dest ranks for for each domain
+///  opts["domain_map/sizes"] = { 2, 2, 2, 2};
+///  opts["domain_map/offsets"] = { 0, 2, 4, 6};
+///  blueprint::mpi::mesh::distribute(input,opts,output,comm);
+//-----------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API distribute(const conduit::Node &mesh,
+                                      const conduit::Node &options,
+                                      conduit::Node &output,
+                                      MPI_Comm comm);
+
+
 ///@name blueprint::mpi::mesh::find_delegate_domain(...)
 ///@{
 //-----------------------------------------------------------------------------

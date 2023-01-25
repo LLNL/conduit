@@ -532,6 +532,15 @@ bool clean_mesh(const conduit::Node &data,
       {
         conduit::Node &dest_dom = output.append();
         dest_dom.set_external(child);
+        // note: this algo may re-write domain ids
+        // so make sure this isn't set as external
+        if(dest_dom.has_path("state/domain_id"))
+        {
+            index_t dom_id = dest_dom["state/domain_id"].to_index_t();
+            dest_dom["state/domain_id"] = dom_id;
+        }
+        
+        
       }
     }
   }
