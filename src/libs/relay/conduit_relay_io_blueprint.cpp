@@ -537,6 +537,7 @@ bool clean_mesh(const conduit::Node &data,
         if(dest_dom.has_path("state/domain_id"))
         {
             index_t dom_id = dest_dom["state/domain_id"].to_index_t();
+            dest_dom["state/domain_id"].reset();
             dest_dom["state/domain_id"] = dom_id;
         }
         
