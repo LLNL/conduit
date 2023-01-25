@@ -25,6 +25,30 @@
 
 using namespace conduit;
 
+
+//-----------------------------------------------------------------------------
+bool
+check_if_hdf5_enabled()
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
+}
+
+
+//-----------------------------------------------------------------------------
+std::string save_protocol()
+{
+        if(check_if_hdf5_enabled())
+        {
+            return "hdf5";
+        }
+        else
+        {
+            return "yaml";
+        }
+}
+
 //-----------------------------------------------------------------------------
 TEST(ascent_mpi_mfem_dist_example, test_2_ranks)
 {
@@ -76,14 +100,14 @@ TEST(ascent_mpi_mfem_dist_example, test_2_ranks)
     MPI_Barrier(comm);
 
     // save input 
-    conduit::relay::mpi::io::blueprint::save_mesh(input,"tout_mpi_dist_case_0_input","hdf5",comm);
+    conduit::relay::mpi::io::blueprint::save_mesh(input,"tout_mpi_dist_case_0_input",save_protocol(),comm);
 
     Node opts,res;
     opts["domain_map/values"] = {1,0};
     conduit::blueprint::mpi::mesh::distribute(input,opts,res,comm);
 
     // save output
-    conduit::relay::mpi::io::blueprint::save_mesh(res,"tout_mpi_dist_case_0_output","hdf5",comm);
+    conduit::relay::mpi::io::blueprint::save_mesh(res,"tout_mpi_dist_case_0_output",save_protocol(),comm);
 
     // check domain ids and show result
     if(par_rank == 0)
@@ -124,7 +148,7 @@ TEST(ascent_mpi_mfem_dist_example, test_2_ranks)
     MPI_Barrier(comm);
 
     // save input 
-    conduit::relay::mpi::io::blueprint::save_mesh(input,"tout_mpi_dist_case_1_input","hdf5",comm);
+    conduit::relay::mpi::io::blueprint::save_mesh(input,"tout_mpi_dist_case_1_input",save_protocol(),comm);
 
     opts.reset();
     opts["domain_map/values"]  = {0,1,0,1};
@@ -133,7 +157,7 @@ TEST(ascent_mpi_mfem_dist_example, test_2_ranks)
     conduit::blueprint::mpi::mesh::distribute(input,opts,res,comm);
 
     // save output
-    conduit::relay::mpi::io::blueprint::save_mesh(res,"tout_mpi_dist_case_1_output","hdf5",comm);
+    conduit::relay::mpi::io::blueprint::save_mesh(res,"tout_mpi_dist_case_1_output",save_protocol(),comm);
 
     // check domain ids and show result
     if(par_rank == 0)
@@ -182,7 +206,7 @@ TEST(ascent_mpi_mfem_dist_example, test_2_ranks)
     }
     MPI_Barrier(comm);
 
-    conduit::relay::mpi::io::blueprint::save_mesh(input,"tout_mpi_dist_case_2_input","hdf5",comm);
+    conduit::relay::mpi::io::blueprint::save_mesh(input,"tout_mpi_dist_case_2_input",save_protocol(),comm);
 
     opts.reset();
     opts["domain_map/values"]  = {0,1};
@@ -190,7 +214,7 @@ TEST(ascent_mpi_mfem_dist_example, test_2_ranks)
     opts["domain_map/offsets"] = {0};
     conduit::blueprint::mpi::mesh::distribute(input,opts,res,comm);
 
-    conduit::relay::mpi::io::blueprint::save_mesh(res,"tout_mpi_dist_case_2_output","hdf5",comm);
+    conduit::relay::mpi::io::blueprint::save_mesh(res,"tout_mpi_dist_case_2_output",save_protocol(),comm);
 
     // check domain ids and show result
     if(par_rank == 0)
