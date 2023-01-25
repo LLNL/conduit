@@ -115,7 +115,7 @@ void CONDUIT_BLUEPRINT_API partition_map_back(const conduit::Node& repart_mesh,
 ///@name blueprint::mpi::mesh::distribute(...)
 //-----------------------------------------------------------------------------
 /// description:
-///   distribute(...) Allows you to send input domains to arbiate MPI ranks.
+///   distribute(...) Allows you to send input domains to arbitrary MPI ranks.
 ///   Domain Overloading is one key use case.
 ///
 ///  --------------
