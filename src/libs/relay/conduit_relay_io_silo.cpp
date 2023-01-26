@@ -87,6 +87,18 @@ static const char *VN(const std::string &n)
     return vn[km].c_str();
 }
 
+//-----------------------------------------------------------------------------
+// prevent duplicate names
+// TODO how does this look?
+std::string
+sanitize_mesh_name(const std::string multimesh_name, 
+                   const std::string mesh_name)
+{
+    if (mesh_name == multimesh_name)
+        return "domain_000000_" + mesh_name;
+    return mesh_name;
+}
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -3597,18 +3609,6 @@ parse_type_option(const std::string &path,
         }
     }
     return type;
-}
-
-//-----------------------------------------------------------------------------
-// prevent duplicate names
-// TODO how does this look?
-std::string
-sanitize_mesh_name(const std::string multimesh_name, 
-                   const std::string mesh_name)
-{
-    if (mesh_name == multimesh_name)
-        return "domain_000000_" + mesh_name;
-    return mesh_name;
 }
 
 //-----------------------------------------------------------------------------
