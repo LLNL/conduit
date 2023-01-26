@@ -2349,24 +2349,24 @@ void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
     DBtoc *toc = DBGetToc(silofile); // shouldn't be free'd
     // get the multimesh
     CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
-    if (!opts.has_path("name"))
+    if (!opts.has_path("mesh_name"))
     {
         mmesh_name = toc->multimesh_names[0];
     }
     else
     {
-        CONDUIT_ASSERT(opts["name"].dtype().is_string(),
-                       "opts['name'] must be a string");
+        CONDUIT_ASSERT(opts["mesh_name"].dtype().is_string(),
+                       "opts['mesh_name'] must be a string");
         for (i = 0; i < toc->nmultimesh; ++i)
         {
-            if (toc->multimesh_names[i] == opts["name"].as_string())
+            if (toc->multimesh_names[i] == opts["mesh_name"].as_string())
             {
                 mmesh_name = toc->multimesh_names[i];
                 break;
             }
         }
         CONDUIT_ERROR("No multimesh found matching "
-                      << opts["name"].as_string());
+                      << opts["mesh_name"].as_string());
     }
     std::unique_ptr<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{
         DBGetMultimesh(silofile, mmesh_name.c_str()), &DBFreeMultimesh};
@@ -3244,9 +3244,11 @@ void silo_write_structured_mesh(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
-void silo_mesh_write(const Node &n, DBfile *dbfile,
+void silo_mesh_write(const Node &n, 
+                     DBfile *dbfile,
                      const std::string &silo_obj_path,
-                     std::vector<int> &silo_mesh_types)
+                     std::vector<int> &silo_mesh_types,
+                     const std::string mmesh_name)
 {
     int silo_error = 0;
     char silo_prev_dir[256];
@@ -3271,7 +3273,7 @@ void silo_mesh_write(const Node &n, DBfile *dbfile,
     {
         const Node &n_topo = topo_itr.next();
 
-        std::string topo_name = topo_itr.name();
+        std::string topo_name = sanitize_mesh_name(mmesh_name, topo_itr.name());
 
         std::string topo_type = n_topo["type"].as_string();
 
@@ -3429,7 +3431,7 @@ get_mesh_domain_name(const conduit::Node &topo, bool overlink)
                    "Multiple topologies not supported");
     if (overlink)
     {
-        return "MESH";
+        return "MESH"; // TODO not "MMESH"?
     }
 
     return topo.children().next().name();
@@ -3533,6 +3535,10 @@ write_multivar(DBfile *root,
 }
 
 //-----------------------------------------------------------------------------
+///      silo_type: "default", "pdb", "hdf5", "hdf5_sec2", "hdf5_stdio",
+///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
+///            when 'path' exists, "default" ==> "unknown"
+///            else,               "default" ==> "hdf5"
 int
 parse_type_option(const std::string &path,
                   const conduit::Node &opts)
@@ -3571,7 +3577,11 @@ parse_type_option(const std::string &path,
         {
             type = DB_HDF5_MPIO;
         }
-        // else if (silo_type == "hdf5_mpiposix"){ type = DB_HDF5_MPIPOSIX; }
+        // TODO when can I uncomment this
+        // else if (silo_type == "hdf5_mpiposix")
+        // {
+        //     type = DB_HDF5_MPIPOSIX; 
+        // }
         else if (silo_type == "taurus") 
         {
             type = DB_TAURUS;
@@ -3587,6 +3597,18 @@ parse_type_option(const std::string &path,
         }
     }
     return type;
+}
+
+//-----------------------------------------------------------------------------
+// prevent duplicate names
+// TODO how does this look?
+std::string
+sanitize_mesh_name(const std::string multimesh_name, 
+                   const std::string mesh_name)
+{
+    if (mesh_name == multimesh_name)
+        return "domain_000000_" + mesh_name;
+    return mesh_name;
 }
 
 //-----------------------------------------------------------------------------
@@ -3619,9 +3641,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
                                   const conduit::Node &opts)
 {
-
     int i, type, ndomains, nfiles;
-    std::string mmesh_name;
+    std::string mmesh_name = "mesh";
     bool overlink = false;
     DBfile *silofile;
     std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
@@ -3635,13 +3656,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
     // parse out options
     type = parse_type_option(path, opts);
-    if (opts.has_path("name"))
+    if (opts.has_path("mesh_name"))
     {
-        mmesh_name = opts["name"].as_string();
-    }
-    else 
-    {
-        mmesh_name = "MMESH";
+        mmesh_name = opts["mesh_name"].as_string();
     }
 
     if (opts.has_path("file_style"))
@@ -3703,13 +3720,18 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         std::string domain_file = get_domain_file(i, ndomains, nfiles, path);
         std::string silo_dir = get_domain_silo_directory(i, nfiles, ndomains);
         const Node *dom = domains[i];
-        std::string mesh_domain = conduit::utils::join_path(silo_dir,
-                                                            get_mesh_domain_name((*dom)["topologies"],
-                                                                                 overlink));
+        std::string mesh_domain = sanitize_mesh_name(
+            mmesh_name, 
+            conduit::utils::join_path(
+                silo_dir,
+                get_mesh_domain_name(
+                    (*dom)["topologies"],
+                    overlink)));
         silo_mesh_write(*dom,
                         get_or_create(filemap, domain_file, type), 
                         silo_dir,
-                        silo_mesh_types);
+                        silo_mesh_types, 
+                        mmesh_name);
 
         if (domain_file == path) 
         {
@@ -3735,14 +3757,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 std::stringstream tmp;
                 if (singleFile)
                 {
-                    CONDUIT_ERROR("Uh oh spaghettio");
-                    std::cout << "single file" << std::endl;
+                    // CONDUIT_ERROR("Uh oh spaghettio");
                     tmp << "block" << i << "/" << VN(var_name);
                 }
                 else
                 {
-                    std::cout << "multi file" << std::endl;
-                    // CONDUIT_ERROR("Uh oh spaghettio");
+                    // TODO is this always right?
                     tmp << "domain" << i << ".silo" << ":" << VN(var_name);
                 }
 
@@ -3751,6 +3771,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
 
     }
+    // We always will want a multimesh so this is unconditional
     write_multimesh(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
     if (silo_material_paths.size() > 0) 
     {
