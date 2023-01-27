@@ -2484,7 +2484,8 @@ get_coordset_type_labels(const Node &values)
 void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
-                      Node &n_mesh_info)
+                      Node &n_mesh_info,
+                      const std::string mmesh_name)
 {
 
     if (!n_var.has_path("topology"))
@@ -2500,13 +2501,15 @@ void silo_write_field(DBfile *dbfile,
         NodeConstIterator fld_topos_itr = n_var["topology"].children();
         while (fld_topos_itr.has_next()) 
         {
-            std::string topo_name = fld_topos_itr.next().as_string();
+            std::string topo_name = sanitize_mesh_name(mmesh_name, 
+                fld_topos_itr.next().as_string());
             topos.push_back(topo_name);
         }
     }
     else
     {
-        topos.push_back(n_var["topology"].as_string());
+        topos.push_back(sanitize_mesh_name(mmesh_name, 
+            n_var["topology"].as_string()));
     }
 
     for (size_t i = 0; i < topos.size(); ++i)
@@ -3371,7 +3374,7 @@ void silo_mesh_write(const Node &n,
             const Node &n_var = itr.next();
             std::string var_name = itr.name();
 
-            silo_write_field(dbfile, var_name, n_var, n_mesh_info);
+            silo_write_field(dbfile, var_name, n_var, n_mesh_info, mmesh_name);
         }
     }
 
@@ -3727,6 +3730,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 get_mesh_domain_name(
                     (*dom)["topologies"],
                     overlink)));
+
+
+        // JUSTIN - in the single file case, the multivar "field" should keep that name, and the ucdvar "field" should be renamed to "domain_000000_field". But how to accomplish this?
+// it has to do with the next function.
         silo_mesh_write(*dom,
                         get_or_create(filemap, domain_file, type), 
                         silo_dir,
@@ -3758,12 +3765,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 if (singleFile)
                 {
                     // CONDUIT_ERROR("Uh oh spaghettio");
-                    tmp << "block" << i << "/" << VN(var_name);
+                    // tmp << "block" << i << "/" << VN(var_name);
+                    tmp << VN("domain_000000_" + var_name);
                 }
                 else
                 {
                     // TODO is this always right?
-                    tmp << "domain" << i << ".silo" << ":" << VN(var_name);
+                    tmp << "domain" << i << ".silo" << ":" << VN("domain_000000_" + var_name);
                 }
 
                 silo_variable_paths[var_name].push_back(tmp.str());
