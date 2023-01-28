@@ -88,19 +88,6 @@ static const char *VN(const std::string &n)
 }
 
 //-----------------------------------------------------------------------------
-// prevent duplicate names
-// TODO how does this look?
-std::string
-sanitize_mesh_name(const std::string multimesh_name, 
-                   const std::string mesh_name)
-{
-    if (mesh_name == multimesh_name)
-        return "domain_000000_" + mesh_name;
-    return mesh_name;
-}
-
-
-//-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
@@ -2501,15 +2488,13 @@ void silo_write_field(DBfile *dbfile,
         NodeConstIterator fld_topos_itr = n_var["topology"].children();
         while (fld_topos_itr.has_next()) 
         {
-            std::string topo_name = sanitize_mesh_name(mmesh_name, 
-                fld_topos_itr.next().as_string());
+            std::string topo_name = fld_topos_itr.next().as_string();
             topos.push_back(topo_name);
         }
     }
     else
     {
-        topos.push_back(sanitize_mesh_name(mmesh_name, 
-            n_var["topology"].as_string()));
+        topos.push_back(n_var["topology"].as_string());
     }
 
     for (size_t i = 0; i < topos.size(); ++i)
@@ -3288,7 +3273,7 @@ void silo_mesh_write(const Node &n,
     {
         const Node &n_topo = topo_itr.next();
 
-        std::string topo_name = sanitize_mesh_name(mmesh_name, topo_itr.name());
+        std::string topo_name = topo_itr.name();
 
         std::string topo_type = n_topo["type"].as_string();
 
@@ -3723,17 +3708,78 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         std::string domain_file = get_domain_file(i, ndomains, nfiles, path);
         std::string silo_dir = get_domain_silo_directory(i, nfiles, ndomains);
         const Node *dom = domains[i];
-        std::string mesh_domain = sanitize_mesh_name(
-            mmesh_name, 
-            conduit::utils::join_path(
-                silo_dir,
-                get_mesh_domain_name(
+        Node dom2;
+
+        std::string mesh_domain_name = conduit::utils::join_path(
+            silo_dir, 
+            get_mesh_domain_name(
                     (*dom)["topologies"],
-                    overlink)));
+                    overlink));
 
+        // we want to prevent naming collisions
+        if (mesh_domain_name == mmesh_name)
+        {
+            std::string new_mesh_domain_name = "domain_000000_" + mesh_domain_name;
+            
+            // we iterate over the current domain's children
+            auto dom_itr = (*dom).children();
+            while (dom_itr.has_next())
+            {
+                const Node &curr_child = dom_itr.next();
+                std::string child_name = dom_itr.name();
 
-        // JUSTIN - in the single file case, the multivar "field" should keep that name, and the ucdvar "field" should be renamed to "domain_000000_field". But how to accomplish this?
-// it has to do with the next function.
+                if (child_name == "topologies")
+                {
+                    // we have to rename the topo to avoid a name collision
+                    CONDUIT_ASSERT((*dom)["topologies"].number_of_children() == 1,
+                                   "Multiple topologies not supported");
+                    dom2["topologies"][new_mesh_domain_name].set_external(curr_child[mesh_domain_name]);
+                }
+                else if (child_name == "fields")
+                {
+                    // since we renamed the topo, we have to change which topo the fields reference
+                    // we iterate over the fields
+                    auto field_itr = curr_child.children();
+                    while (field_itr.has_next())
+                    {
+                        const Node &curr_field = field_itr.next();
+                        std::string field_name = field_itr.name();
+                        if (curr_field["topology"].as_string() == mesh_domain_name)
+                        {
+                            dom2["fields"][field_name]["topology"] = new_mesh_domain_name;
+
+                            auto field_child_itr = curr_field.children();
+                            while (field_child_itr.has_next())
+                            {
+                                const Node &curr_field_child = field_child_itr.next();
+                                std::string field_child_name = field_child_itr.name();
+
+                                if (field_child_name != "topology")
+                                {
+                                    dom2["fields"][field_name][field_child_name].set_external(curr_field_child);
+                                }
+                            }
+                        }
+                        else
+                        {
+                            // If the field somehow refers to another topo...
+                            // This shouldn't happen, but if it does, we will not handle it here
+                            // Just pass it through.
+                            dom2["fields"][field_name].set_external(curr_field);
+                        }
+                    }
+                }
+                else
+                {
+                    dom2[child_name].set_external(curr_child);
+                }
+            }
+
+            // (*dom)["topologies"].rename_child(mesh_domain_name, "domain_000000_" + mesh_domain_name);
+            mesh_domain_name = new_mesh_domain_name;
+            dom = &dom2;
+        }
+
         silo_mesh_write(*dom,
                         get_or_create(filemap, domain_file, type), 
                         silo_dir,
@@ -3743,12 +3789,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         if (domain_file == path) 
         {
             // domain is in root file
-            silo_mesh_paths.push_back(mesh_domain);
+            silo_mesh_paths.push_back(mesh_domain_name);
         }
         else
         {
             // domain is not in root file
-            silo_mesh_paths.push_back(domain_file + ":" + mesh_domain);
+            silo_mesh_paths.push_back(domain_file + ":" + mesh_domain_name);
         }
         if (dom->has_path("fields"))
         {
@@ -3770,8 +3816,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 }
                 else
                 {
-                    // TODO is this always right?
-                    tmp << "domain" << i << ".silo" << ":" << VN("domain_000000_" + var_name);
+                    tmp << domain_file << ":" << VN("domain_000000_" + var_name);
                 }
 
                 silo_variable_paths[var_name].push_back(tmp.str());
