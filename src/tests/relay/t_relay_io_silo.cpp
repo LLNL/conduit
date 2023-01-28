@@ -133,59 +133,60 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 }
 
 
-// // TODO: add tests for fields, matsets, etc.
-// TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
-// {
+// TODO: add tests for fields, matsets, etc.
+TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
+{
 
-//     const std::vector<std::string> mesh_types = {
-//     // TODO: the following types fail
-//     //      "uniform", "rectilinear", "structured",
-//         "tris", "quads"};
-//     // for (int i = 0; i < mesh_types.size(); ++i)
-//     int i = 0; 
-//     {
-//         // for (int nx = 2; nx < 4; ++nx) 
-//         for (int nx = 2; nx < 3; ++nx) 
-//         {
-//             Node save_mesh;
-//             blueprint::mesh::examples::basic(mesh_types[i], nx, nx, (nx - 2) * 2, save_mesh);
-//             // TODO why do we remove fields?
-//             // save_mesh.remove("fields");
-//             // since blueprint topologies and cooordsets are combined into
-//             // one silo object, one of the names is lost. The diff will fail
-//             // unless we rename the coordset name to be the same as the topo.
-//             save_mesh["coordsets"].rename_child("coords", "mesh");
-//             save_mesh["topologies"]["mesh"]["coordset"].reset();
-//             save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
+    const std::vector<std::string> mesh_types = {
+    // TODO: the following types fail
+    //      "uniform", "rectilinear", "structured",
+        "tris", "quads"};
+    // for (int i = 0; i < mesh_types.size(); ++i)
+    int i = 0; 
+    {
+        // for (int nx = 2; nx < 4; ++nx) 
+        for (int nx = 2; nx < 3; ++nx) 
+        {
+            Node save_mesh;
+            blueprint::mesh::examples::basic(mesh_types[i], nx, nx, (nx - 2) * 2, save_mesh);
 
-//             Node info;
+            // save_mesh.remove("fields");
 
-//             io::blueprint::save_mesh(save_mesh, "basic_blueprint1", "hdf5");
+            // since blueprint topologies and cooordsets are combined into
+            // one silo object, one of the names is lost. The diff will fail
+            // unless we rename the coordset name to be the same as the topo.
+            save_mesh["coordsets"].rename_child("coords", "mesh");
+            save_mesh["topologies"]["mesh"]["coordset"].reset();
+            save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
+
+            Node info;
+
+            io::blueprint::save_mesh(save_mesh, "basic_blueprint1", "hdf5");
             
-//             io::silo::save_mesh(save_mesh, "basic.silo");
-//             Node load_mesh;
-//             io::silo::load_mesh("basic.silo", load_mesh);
+            io::silo::save_mesh(save_mesh, "basic.silo");
+            Node load_mesh;
+            io::silo::load_mesh("basic.silo", load_mesh);
             
-//             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+            EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-//             std::cout << "I am save mesh" << std::endl;
-//             save_mesh.print();
-//             std::cout << "I am load mesh" << std::endl;
-//             load_mesh[0].print();
-//             // the loaded mesh will be in the multidomain format
-//             // (it will be a list containing a single mesh domain)
-//             // but the saved mesh is in the single domain format
-//             EXPECT_EQ(load_mesh.number_of_children(), 1);
-//             EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+            std::cout << "I am save mesh" << std::endl;
+            save_mesh.print();
+            std::cout << "I am load mesh" << std::endl;
+            load_mesh[0].print();
+            // the loaded mesh will be in the multidomain format
+            // (it will be a list containing a single mesh domain)
+            // but the saved mesh is in the single domain format
+            EXPECT_EQ(load_mesh.number_of_children(), 1);
+            EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-//             load_mesh[0]["coordsets"].rename_child("domain_000000_mesh", "mesh");
-//             load_mesh[0]["topologies"].rename_child("domain_000000_mesh", "mesh");
-//             load_mesh[0]["topologies"]["mesh"]["coordset"].reset();
-//             load_mesh[0]["topologies"]["mesh"]["coordset"] = "mesh";
-//             EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-//         }
-//     }
-// }
+            load_mesh[0]["coordsets"].rename_child("domain_000000_mesh", "mesh");
+            load_mesh[0]["topologies"].rename_child("domain_000000_mesh", "mesh");
+            load_mesh[0]["topologies"]["mesh"]["coordset"].reset();
+            load_mesh[0]["topologies"]["mesh"]["coordset"] = "mesh";
+            EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+        }
+    }
+}
 
 // TODO: make this pass?
 // right now multidomain meshes are read out as a list, but
@@ -195,8 +196,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
     // for (int ndomains = 1; ndomains < 2; ++ndomains)
-    // for (int ndomains = 2; ndomains < 4; ++ndomains)
-    for (int ndomains = 2; ndomains < 3; ++ndomains)
+    for (int ndomains = 2; ndomains < 4; ++ndomains)
     {
         Node save_mesh;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
