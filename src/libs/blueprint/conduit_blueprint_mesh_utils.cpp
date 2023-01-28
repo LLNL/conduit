@@ -1987,9 +1987,6 @@ topology::unstructured::generate_offsets(const Node &topo,
                                          Node &dest_ele_offsets,
                                          Node &dest_subele_offsets)
 {
-    dest_ele_offsets.reset();
-    dest_subele_offsets.reset();
-
     const ShapeType topo_shape(topo);
     const DataType int_dtype = find_widest_dtype(topo, DEFAULT_INT_DTYPES);
     std::string key("elements/connectivity"), stream_key("elements/stream");
@@ -2001,17 +1998,18 @@ topology::unstructured::generate_offsets(const Node &topo,
     const DataType topo_dtype(topo_conn.dtype().id(), 1, 0, 0,
         topo_conn.dtype().element_bytes(), topo_conn.dtype().endianness());
 
+    bool elem_offsets_exist = topo["elements"].has_child("offsets") &&
+                              !topo["elements/offsets"].dtype().is_empty();
+    bool subelem_offsets_exist = false;
+
     // if these have already been generate, use set external to copy out results
     if(topo_shape.type == "polyhedral")
     {
-    
-        if( (topo["elements"].has_child("offsets") &&
-             !topo["elements/offsets"].dtype().is_empty())  &&
-             (topo["subelements"].has_child("offsets") &&
-             !topo["subelements/offsets"].dtype().is_empty())
-          )
+        subelem_offsets_exist = topo["subelements"].has_child("offsets") &&
+                                !topo["subelements/offsets"].dtype().is_empty();
+        if(elem_offsets_exist && subelem_offsets_exist)
         {
-            // they are already here, set external and return
+            // they are both already here, set external and return
             if(&dest_ele_offsets != &topo["elements/offsets"])
             {
                 dest_ele_offsets.set_external(topo["elements/offsets"]);
@@ -2026,9 +2024,7 @@ topology::unstructured::generate_offsets(const Node &topo,
     }
     else // non polyhedral
     {
-        if( topo["elements"].has_child("offsets") &&
-            !topo["elements/offsets"].dtype().is_empty()
-          )
+        if(elem_offsets_exist)
         {
             // they are already here, set external and return
             if(&dest_ele_offsets != &topo["elements/offsets"])
@@ -2038,6 +2034,13 @@ topology::unstructured::generate_offsets(const Node &topo,
             return;
         }
     }
+
+    // Selectively reset now that early returns have happened. We do the
+    // checks for the polyhedral case since some offsets might exist.
+    if(!elem_offsets_exist)
+        dest_ele_offsets.reset();
+    if(!subelem_offsets_exist)
+        dest_subele_offsets.reset();
 
     ///
     /// Generate Cases
@@ -2166,31 +2169,36 @@ topology::unstructured::generate_offsets(const Node &topo,
     }
     else if(topo_shape.type == "polyhedral")
     {
-        index_t_accessor topo_elem_size = topo["elements/sizes"].value();
-        index_t_accessor topo_subelem_size = topo["subelements/sizes"].value();
-
-        index_t es_count = topo_elem_size.number_of_elements();
-
-        dest_ele_offsets.set(DataType::index_t(es_count));
-        index_t_array shape_array = dest_ele_offsets.value();
-
-        index_t es = 0;
-        for (index_t ei = 0; ei < es_count; ++ei)
+        // Construct any offsets that do not exist.
+        if(!elem_offsets_exist)
         {
-            shape_array[ei] = es;
-            es += topo_elem_size[ei];
+            index_t_accessor topo_elem_size = topo["elements/sizes"].value();
+            index_t es_count = topo_elem_size.number_of_elements();
+
+            dest_ele_offsets.set(DataType::index_t(es_count));
+            index_t_array shape_array = dest_ele_offsets.value();
+
+            index_t es = 0;
+            for (index_t ei = 0; ei < es_count; ++ei)
+            {
+                shape_array[ei] = es;
+                es += topo_elem_size[ei];
+            }
         }
-
-        int ses_count = topo_subelem_size.number_of_elements();
-
-        dest_subele_offsets.set(DataType::index_t(ses_count));
-        index_t_array subshape_array = dest_subele_offsets.value();
-
-        index_t ses = 0;
-        for (index_t ei = 0; ei < ses_count; ++ei)
+        if(!subelem_offsets_exist)
         {
-            subshape_array[ei] = ses;
-            ses += topo_subelem_size[ei];
+            index_t_accessor topo_subelem_size = topo["subelements/sizes"].value();
+            index_t ses_count = topo_subelem_size.number_of_elements();
+
+            dest_subele_offsets.set(DataType::index_t(ses_count));
+            index_t_array subshape_array = dest_subele_offsets.value();
+
+            index_t ses = 0;
+            for (index_t ei = 0; ei < ses_count; ++ei)
+            {
+                subshape_array[ei] = ses;
+                ses += topo_subelem_size[ei];
+            }
         }
     }
 }
