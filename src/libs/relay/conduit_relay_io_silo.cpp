@@ -1332,6 +1332,8 @@ silo_mesh_write(const Node &n,
         }
         else if (topo_type == "uniform")
         {
+            // TODO if this code sticks around, we need to convert to 
+            // rectilinear HERE and then deprecate silo_write_quad_uniform_mesh
             silo_write_quad_uniform_mesh(dbfile,
                                          topo_name,
                                          n_coords,
@@ -3017,146 +3019,6 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
-void silo_write_quad_uniform_mesh(DBfile *dbfile,
-                                  const std::string &topo_name,
-                                  const Node &n_coords,
-                                  DBoptlist *state_optlist,
-                                  Node &n_mesh_info) 
-{
-    // TODO: USE XFORM expand uniform coords to rect-style
-
-    // silo doesn't have a direct path for a uniform mesh
-    // we need to convert its implicit uniform coords to
-    // implicit rectilinear coords
-
-    index_t npts_x = 0;
-    index_t npts_y = 0;
-    index_t npts_z = 0;
-
-    float64 x0 = 0.0;
-    float64 y0 = 0.0;
-    float64 z0 = 0.0;
-
-    float64 dx = 1;
-    float64 dy = 1;
-    float64 dz = 1;
-
-    if (!n_coords.has_path("dims")) 
-    {
-        CONDUIT_ERROR("uniform mesh missing 'dims'")
-    }
-
-    const Node &n_dims = n_coords["dims"];
-
-    if (n_dims.has_path("i")) 
-    {
-        npts_x = n_dims["i"].to_value();
-    }
-
-    if (n_dims.has_path("j")) 
-    {
-        npts_y = n_dims["j"].to_value();
-    }
-
-    if (n_dims.has_path("k")) 
-    {
-        npts_z = n_dims["k"].to_value();
-    }
-
-    // TODO: remove cartesian coords assumptions
-    if (n_coords.has_path("origin")) 
-    {
-        const Node &n_origin = n_coords["origin"];
-
-        if (n_origin.has_path("x")) 
-        {
-            x0 = n_origin["x"].to_value();
-        }
-
-        if (n_origin.has_path("y")) 
-        {
-            y0 = n_origin["y"].to_value();
-        }
-
-        if (n_origin.has_path("z")) 
-        {
-            z0 = n_origin["z"].to_value();
-        }
-    }
-
-    if (n_coords.has_path("spacing")) 
-    {
-        const Node &n_spacing = n_coords["spacing"];
-
-        if (n_spacing.has_path("dx")) 
-        {
-            dx = n_spacing["dx"].to_value();
-        }
-
-        if (n_spacing.has_path("dy")) 
-        {
-            dy = n_spacing["dy"].to_value();
-        }
-
-        if (n_spacing.has_path("dz")) 
-        {
-            dz = n_spacing["dz"].to_value();
-        }
-    }
-
-    Node n_rect_coords;
-
-    n_rect_coords["type"] = "rectilinear";
-    Node &n_rect_coord_vals = n_rect_coords["values"];
-    n_rect_coord_vals["x"].set(DataType::float64(npts_x));
-    n_rect_coord_vals["y"].set(DataType::float64(npts_y));
-
-    if (npts_z > 1)
-    {
-        n_rect_coord_vals["z"].set(DataType::float64(npts_z));
-    }
-
-    float64 *x_coords_ptr = n_rect_coord_vals["x"].value();
-    float64 *y_coords_ptr = n_rect_coord_vals["y"].value();
-    float64 *z_coords_ptr = NULL;
-
-    if (npts_z > 1)
-    {
-        z_coords_ptr = n_rect_coord_vals["z"].value();
-    }
-
-    float64 cv = x0;
-    for (index_t i = 0; i < npts_x; i++)
-    {
-        x_coords_ptr[i] = cv;
-        cv += dx;
-    }
-
-    cv = y0;
-    for (index_t i = 0; i < npts_y; i++)
-    {
-        y_coords_ptr[i] = cv;
-        cv += dy;
-    }
-
-    if (npts_z > 1) 
-    {
-        cv = z0;
-        for (index_t i = 0; i < npts_z; i++)
-        {
-            z_coords_ptr[i] = cv;
-            cv += dz;
-        }
-    }
-
-    silo_write_quad_rect_mesh(dbfile,
-                              topo_name,
-                              n_rect_coords,
-                              state_optlist,
-                              n_mesh_info);
-}
-
-//---------------------------------------------------------------------------//
 void silo_write_structured_mesh(DBfile *dbfile,
                                 const std::string &topo_name,
                                 const Node &n_topo,
@@ -3330,8 +3192,19 @@ void silo_mesh_write(const Node &n,
         else if (topo_type == "uniform") 
         {
             silo_mesh_types.push_back(DB_QUADMESH);
-            silo_write_quad_uniform_mesh(dbfile, topo_name, n_coords,
-                                         state_optlist.get(), n_mesh_info);
+
+            // silo doesn't have a direct path for a uniform mesh
+            // we need to convert its implicit uniform coords to
+            // implicit rectilinear coords
+
+            Node n_rect;
+            Node &n_rect_coords = n_rect["coordsets"][coordset_name];
+            Node &n_rect_topo = n_rect["topologies"][topo_name];
+            blueprint::mesh::topology::uniform::to_rectilinear(
+                n_topo, n_rect_topo, n_rect_coords);
+
+            silo_write_quad_rect_mesh(dbfile, topo_name, n_rect_coords,
+                                      state_optlist.get(), n_mesh_info);
 
         }
         else if (topo_type == "structured")
@@ -3429,7 +3302,7 @@ get_mesh_domain_name(const conduit::Node &topo, bool overlink)
                    "Multiple topologies not supported");
     if (overlink)
     {
-        return "MESH"; // TODO not "MMESH"?
+        return "MESH";
     }
 
     return topo.children().next().name();
@@ -3620,6 +3493,7 @@ parse_type_option(const std::string &path,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
+// TODO check that all opts are honored
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,

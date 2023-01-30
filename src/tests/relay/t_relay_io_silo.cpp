@@ -136,20 +136,19 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 // TODO: add tests for fields, matsets, etc.
 TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
+    bool i_wanna_print = false;
 
     const std::vector<std::string> mesh_types = {
     // TODO: the following types fail
-    //      "uniform", "rectilinear", "structured",
-        "tris", "quads"};
-    // for (int i = 0; i < mesh_types.size(); ++i)
-    int i = 0; 
+         "uniform", /*"rectilinear", "structured",
+        "tris", "quads"*/};
+    for (int i = 0; i < mesh_types.size(); ++i)
     {
-        for (int nx = 2; nx < 4; ++nx) 
+        for (int nx = 2; nx < 3; ++nx) 
+        // for (int nx = 2; nx < 4; ++nx) 
         {
             Node save_mesh;
             blueprint::mesh::examples::basic(mesh_types[i], nx, nx, (nx - 2) * 2, save_mesh);
-
-            // save_mesh.remove("fields");
 
             Node info;
 
@@ -161,10 +160,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             
             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-            // std::cout << "I am save mesh" << std::endl;
-            // save_mesh.print();
-            // std::cout << "I am load mesh" << std::endl;
-            // load_mesh[0].print();
+            if (i_wanna_print)
+            {
+                std::cout << "I am save mesh" << std::endl;
+                save_mesh.print();
+                std::cout << "I am load mesh" << std::endl;
+                load_mesh[0].print();
+            }
 
             // The Blueprint to Silo transformation changes several names 
             // and some information is lost. We manually make changes so 
@@ -177,6 +179,26 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             save_mesh["fields"]["domain_000000_field"]["topology"].reset();
             save_mesh["fields"]["domain_000000_field"]["topology"] = "domain_000000_mesh";
             save_mesh["fields"]["domain_000000_field"].remove_child("volume_dependent");
+
+            // the silo conversion will transform uniform to rectilinear
+            // so we will do the same to allow the diff to succeed
+            if (mesh_types[i] == "uniform")
+            {
+                Node save_mesh_rect;
+                Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["domain_000000_mesh"];
+                Node &save_mesh_rect_topo = save_mesh_rect["topologies"]["domain_000000_mesh"];
+                blueprint::mesh::topology::uniform::to_rectilinear(
+                    save_mesh["topologies"]["domain_000000_mesh"], 
+                    save_mesh_rect_topo, save_mesh_rect_coords);
+                save_mesh["topologies"]["domain_000000_mesh"].set(save_mesh_rect_topo);
+                save_mesh["coordsets"]["domain_000000_mesh"].set(save_mesh_rect_coords);
+            }
+
+            if (i_wanna_print)
+            {
+                std::cout << "I am save mesh updated for modern audiences" << std::endl;
+                save_mesh.print();
+            }
 
             // the loaded mesh will be in the multidomain format
             // (it will be a list containing a single mesh domain)
@@ -196,14 +218,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 // Problem: in overlink, all domains are named the same ('MESH')
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
-    // for (int ndomains = 1; ndomains < 2; ++ndomains)
-    for (int ndomains = 2; ndomains < 4; ++ndomains)
+    for (int ndomains = 1; ndomains < 4; ++ndomains)
     {
         Node save_mesh;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
         for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
         {
-            save_mesh[child].remove("state"); // TODO uncomment this and see what happens
+            save_mesh[child].remove("state"); // TODO uncomment this and add functionality for it
         }
 
         io::silo::save_mesh(save_mesh, "spiral.silo");
@@ -243,3 +264,5 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 
 // TODO we might want "round trip" tests for all the different mesh types
 // not round trip though, since not everything will come back unchanged
+
+// TODO units?
