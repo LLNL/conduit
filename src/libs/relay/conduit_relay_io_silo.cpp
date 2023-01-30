@@ -2660,7 +2660,7 @@ void silo_write_field(DBfile *dbfile,
         }
         else
         {
-            CONDUIT_ERROR("only DBPutQuadvar1 + DBPutUcdvar1 var are supported");
+            CONDUIT_ERROR("only DBPutQuadvar1 + DBPutUcdvar1 + DBPutPointvar1 var are supported");
         }
 
         CONDUIT_CHECK_SILO_ERROR(silo_error,
@@ -3498,7 +3498,7 @@ void
 write_multivar(DBfile *root,
                const std::string &mvar_name,
                const std::string &mmesh_name,
-               std::vector<std::string> var_domains)
+               std::vector<std::pair<std::string, int>> var_domains)
 {
     std::vector<const char *> domain_name_ptrs;
     std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{DBMakeOptlist(1),
@@ -3518,10 +3518,8 @@ write_multivar(DBfile *root,
                               "Error creating options for putting multivar");
     for (auto domain : var_domains)
     {
-        domain_name_ptrs.push_back(domain.c_str());
-        // TODO: make general, not always UCDVAR
-        // domain_var_types.push_back(DB_UCDVAR);
-        domain_var_types.push_back(DB_QUADVAR);
+        domain_name_ptrs.push_back(domain.first.c_str());
+        domain_var_types.push_back(domain.second);
     }
     CONDUIT_CHECK_SILO_ERROR( DBPutMultivar(root,
                                             mvar_name.c_str(),
@@ -3699,7 +3697,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::vector<std::string> silo_mesh_paths;
     std::vector<int> silo_mesh_types;
     std::map<std::string, std::vector<std::string>> silo_material_paths;
-    std::map<std::string, std::vector<std::string>> silo_variable_paths;
+    std::map<std::string, std::vector<std::pair<std::string, int>>> silo_variable_paths;
 
     for (i = 0; i < ndomains; ++i)
     {
@@ -3713,6 +3711,19 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             get_mesh_domain_name(
                     (*dom)["topologies"],
                     overlink));
+
+        std::string mesh_type = (*dom)["topologies"].children().next()["type"].as_string();
+        int var_type;
+        if (mesh_type == "unstructured")
+            var_type = DB_UCDVAR;
+        else if (mesh_type == "rectilinear" || 
+                 mesh_type == "uniform" ||
+                 mesh_type == "structured")
+            var_type = DB_QUADVAR;
+        else if (mesh_type == "points")
+            var_type = DB_POINTVAR;
+        else
+            CONDUIT_ERROR("Unsupported mesh type in " << mesh_type);
 
         // prepare multivar paths
         if (dom->has_path("fields"))
@@ -3742,7 +3753,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     tmp << domain_file << ":" << new_var_name;
                 }
 
-                silo_variable_paths[var_name].push_back(tmp.str());
+                silo_variable_paths[var_name].push_back(std::make_pair(tmp.str(), var_type));
             }
         }
         // TODO material paths as well
