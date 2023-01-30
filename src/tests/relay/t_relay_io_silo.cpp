@@ -144,20 +144,12 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
     // for (int i = 0; i < mesh_types.size(); ++i)
     int i = 0; 
     {
-        // for (int nx = 2; nx < 4; ++nx) 
-        for (int nx = 2; nx < 3; ++nx) 
+        for (int nx = 2; nx < 4; ++nx) 
         {
             Node save_mesh;
             blueprint::mesh::examples::basic(mesh_types[i], nx, nx, (nx - 2) * 2, save_mesh);
 
             // save_mesh.remove("fields");
-
-            // since blueprint topologies and cooordsets are combined into
-            // one silo object, one of the names is lost. The diff will fail
-            // unless we rename the coordset name to be the same as the topo.
-            save_mesh["coordsets"].rename_child("coords", "mesh");
-            save_mesh["topologies"]["mesh"]["coordset"].reset();
-            save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
 
             Node info;
 
@@ -169,20 +161,29 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             
             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-            std::cout << "I am save mesh" << std::endl;
-            save_mesh.print();
-            std::cout << "I am load mesh" << std::endl;
-            load_mesh[0].print();
+            // std::cout << "I am save mesh" << std::endl;
+            // save_mesh.print();
+            // std::cout << "I am load mesh" << std::endl;
+            // load_mesh[0].print();
+
+            // The Blueprint to Silo transformation changes several names 
+            // and some information is lost. We manually make changes so 
+            // that the diff will pass.
+            save_mesh["coordsets"].rename_child("coords", "domain_000000_mesh");
+            save_mesh["topologies"].rename_child("mesh", "domain_000000_mesh");
+            save_mesh["topologies"]["domain_000000_mesh"]["coordset"].reset();
+            save_mesh["topologies"]["domain_000000_mesh"]["coordset"] = "domain_000000_mesh";
+            save_mesh["fields"].rename_child("field", "domain_000000_field");
+            save_mesh["fields"]["domain_000000_field"]["topology"].reset();
+            save_mesh["fields"]["domain_000000_field"]["topology"] = "domain_000000_mesh";
+            save_mesh["fields"]["domain_000000_field"].remove_child("volume_dependent");
+
             // the loaded mesh will be in the multidomain format
             // (it will be a list containing a single mesh domain)
             // but the saved mesh is in the single domain format
             EXPECT_EQ(load_mesh.number_of_children(), 1);
             EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-            load_mesh[0]["coordsets"].rename_child("domain_000000_mesh", "mesh");
-            load_mesh[0]["topologies"].rename_child("domain_000000_mesh", "mesh");
-            load_mesh[0]["topologies"]["mesh"]["coordset"].reset();
-            load_mesh[0]["topologies"]["mesh"]["coordset"] = "mesh";
             EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
         }
     }
@@ -215,9 +216,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 
         for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
         {
-            // since blueprint topologies and cooordsets are combined into
-            // one silo object, one of the names is lost. The diff will fail
-            // unless we rename the coordset name to be the same as the topo.
+            // The Blueprint to Silo transformation changes several names 
+            // and some information is lost. We manually make changes so 
+            // that the diff will pass.
             save_mesh[child]["coordsets"].rename_child("coords", "topo");
             save_mesh[child]["topologies"]["topo"]["coordset"].reset();
             save_mesh[child]["topologies"]["topo"]["coordset"] = "topo";
