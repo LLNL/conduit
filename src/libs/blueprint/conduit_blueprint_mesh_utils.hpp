@@ -146,7 +146,7 @@ static const index_t TOPO_WEDGE_EMBEDDING[8][3] = {
     {0, 1, 2}, {0, 1, 3}, {1, 3, 4}, {1, 2, 4},
     {2, 4, 5}, {2, 0, 5}, {0, 5, 3}, {3, 4, 5}};
 static const index_t TOPO_PYRAMID_EMBEDDING[6][3] = {
-    {0, 1, 2}, {1, 2, 3}, {0, 1, 4}, 
+    {0, 1, 2}, {3, 2, 0}, {0, 1, 4},
     {1, 2, 4}, {2, 3, 4}, {3, 0, 4}};
 static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
     &TOPO_POINT_EMBEDDING[0][0], &TOPO_LINE_EMBEDDING[0][0],
