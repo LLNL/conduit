@@ -33,6 +33,13 @@ class Test_Conduit_Node(unittest.TestCase):
         self.assertTrue(n['b'] == b_val)
         self.assertTrue(n['c'] == c_val)
 
+    def test_name_and_path(self):
+        n = Node()
+        n['a'] = np.uint32(42)
+        n['b/c/d'] = np.float64(3.1415)
+        self.assertEqual(n.fetch_existing('a').name(),'a')
+        self.assertEqual(n.fetch_existing('b/c/d').path(),'b/c/d')
+
     def test_nested(self):
         val = np.uint32(10)
         n = Node()

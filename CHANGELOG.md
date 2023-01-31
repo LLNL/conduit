@@ -4,9 +4,18 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+#### General
+
+- Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
+
 ## [0.8.6] - Released 2023-01-11
 
 ### Added
+
 #### General
 - Added C++ `int DataType::sizeof_index_t()` and C `int conduit_datatype_sizeof_index_t()` methods to provide a stable ABI to determine configured size (number of bytes) of Conduit's index_t type.
 
