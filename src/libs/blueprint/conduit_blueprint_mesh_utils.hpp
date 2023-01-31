@@ -23,7 +23,7 @@
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "conduit_blueprint_mesh_utils_detail.hpp"
+#include "conduit_blueprint_mesh_topology_metadata.hpp"
 #include "conduit_blueprint_exports.h"
 
 //-----------------------------------------------------------------------------
