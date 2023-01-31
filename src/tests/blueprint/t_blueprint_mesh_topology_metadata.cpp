@@ -30,7 +30,7 @@ using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
 using index_t = conduit::index_t;
 
 // Enable this macro to generate baselines.
-#define GENERATE_BASELINES
+//#define GENERATE_BASELINES
 
 #define USE_ERROR_HANDLER
 
@@ -140,8 +140,8 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
         }
     }
 
-#ifdef GENERATE_BASELINES
     std::string b = baseline_file(base);
+#ifdef GENERATE_BASELINES
     make_baseline(b, rep);
 #else
     EXPECT_EQ(compare_baseline(b, rep), true);
@@ -254,14 +254,14 @@ make_custom_ph(conduit::Node &node)
                           0.5f,  0.5f,  0.5f,  0.5f,  0.5f,
                           0.75f, 0.75f, 0.75f, 0.75f, 0.75f,
                           1.f,   1.f,   1.f,   1.f,   1.f};
-    std::vector<float> zc{0.f,   0.0f,  0.f,
-                          0.f,   0.0f,  0.f,
-                          0.f,   0.0f,  0.f,
-                          1.f, 1.f, 1.f, 1.f, 1.f,
-                          1.f, 1.f, 1.f, 1.f, 1.f,
-                          1.f, 1.f, 1.f, 1.f, 1.f,
-                          1.f, 1.f, 1.f, 1.f, 1.f,
-                          1.f, 1.f, 1.f, 1.f, 1.f};
+    std::vector<float> zc{0.5f,  0.5f,  0.5f,
+                          0.5f,  0.5f,  0.5f,
+                          0.5f,  0.5f,  0.5f,
+                          1.f,  1.1f, 1.f,  1.1f, 1.f,
+                          1.1f, 1.2f, 1.1f, 1.2f, 1.1f,
+                          1.f,  1.1f, 1.f,  1.1f, 1.f,
+                          1.1f, 1.2f, 1.1f, 1.2f, 1.1f,
+                          1.f,  1.1f, 1.f,  1.1f, 1.f};
 
     std::vector<int> conn{
                          0,2,6,8,12,16,17,20,21,
@@ -303,7 +303,7 @@ make_custom_ph(conduit::Node &node)
                               21,22,27,26,
                               22,23,28,27,
                               24,25,30,29,
-                              25,26,31,20,
+                              25,26,31,30,
                               26,27,32,31,
                               27,28,33,32
                              };
@@ -316,10 +316,12 @@ make_custom_ph(conduit::Node &node)
                               5,5,
                               5,5,
                               // XY faces
+                              4,4,
+                              4,4,
                               4,4,4,4,
                               4,4,4,4,
                               4,4,4,4,
-                              4,4,4,4,
+                              4,4,4,4
                              };
     node["coordsets/coords/type"] = "explicit";
     node["coordsets/coords/values/x"].set(xc);
@@ -341,11 +343,6 @@ make_custom_ph(conduit::Node &node)
         node["topologies/mesh"], 
         node["topologies/mesh/elements/offsets"],
         node["topologies/mesh/subelements/offsets"]);
-
-//    yaml_print(cout, node);
-//    conduit::Node info;
-//    cout << "verify=" << conduit::blueprint::mesh::verify(node, info) << endl;
-//    info.print();
 }
 
 //-----------------------------------------------------------------------------
@@ -379,7 +376,6 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
     {
         if(topo.has_path(key))
         {
-cout << "Copying " << key << " as index_t." << endl;
             conduit::Node &src = topo[key];
             conduit::Node dest;
             dest.set(conduit::DataType(dtype.id(), src.dtype().number_of_elements()));
@@ -407,7 +403,8 @@ test_mesh_type(const std::string &type)
 
     // For each data type, make a mesh that has data of those types and then
     // do the topmd test.
-    for(auto dtid : test_dtype_ids())
+    auto dtypes = test_dtype_ids();
+    for(auto dtid : dtypes)
     {
         conduit::Node node;
         conduit::DataType dtype(dtid);
@@ -485,7 +482,7 @@ TEST(conduit_blueprint_topology_metadata, custom_hexs)
     test_mesh_type("custom_hexs");
 }
 
-#if 0
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_ph)
 {
