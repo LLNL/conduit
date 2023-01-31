@@ -173,6 +173,69 @@ make_custom_tets(conduit::Node &node)
 
 //-----------------------------------------------------------------------------
 void
+make_custom_hexs(conduit::Node &node)
+{
+    std::vector<float> xc{0.f, 0.5f, 1.f,
+                          0.f, 0.5f, 1.f,
+                          0.f, 0.5f, 1.f,
+
+                          0.f, 0.5f, 1.f,
+                          0.f, 0.5f, 1.f,
+                          0.f, 0.5f, 1.f,
+
+                          0.f, 0.5f, 1.f,
+                          0.f, 0.5f, 1.f,
+                          0.f, 0.5f, 1.f
+                         };
+    std::vector<float> yc{0.f, 0.0f, 0.f,
+                          0.5f, 0.5f, 0.5f,
+                          1.f, 1.f, 1.f,
+
+                          0.f, 0.0f, 0.f,
+                          0.5f, 0.5f, 0.5f,
+                          1.f, 1.f, 1.f,
+
+                          0.f, 0.0f, 0.f,
+                          0.5f, 0.5f, 0.5f,
+                          1.f, 1.f, 1.f
+                         };
+    std::vector<float> zc{0.f, 0.0f, 0.f,
+                          0.f, 0.0f, 0.f,
+                          0.f, 0.0f, 0.f,
+
+                          0.5f, 0.5f, 0.5f,
+                          0.5f, 0.5f, 0.5f,
+                          0.5f, 0.5f, 0.5f,
+
+                          1.f, 1.0f, 1.f,
+                          1.f, 1.0f, 1.f,
+                          1.f, 1.0f, 1.f
+                         };
+
+    // hexes where we change orientations a lot.
+    std::vector<int> conn{0,9,10,1,3,12,13,4,
+                          10,11,2,1,13,14,5,4,
+                          3,6,15,12,4,7,16,13,
+                          7,4,5,8,16,13,14,17,
+                          22,19,18,21,13,10,9,12,
+                          14,11,20,23,13,10,19,22,
+                          12,15,24,21,13,16,25,22,
+                          26,23,22,25,17,14,13,16
+                         };
+
+    node["coordsets/coords/type"] = "explicit";
+    node["coordsets/coords/values/x"].set(xc);
+    node["coordsets/coords/values/y"].set(yc);
+    node["coordsets/coords/values/z"].set(zc);
+
+    node["topologies/mesh/coordset"] = "coords";
+    node["topologies/mesh/type"] = "unstructured";
+    node["topologies/mesh/elements/shape"] = "hex";
+    node["topologies/mesh/elements/connectivity"].set(conn);
+}
+
+//-----------------------------------------------------------------------------
+void
 make_custom_ph(conduit::Node &node)
 {
     std::vector<float> xc{0.f, 0.5f, 1.f,
@@ -291,6 +354,8 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
 {
     if(type == "custom_tets")
         make_custom_tets(node);
+    else if(type == "custom_hexs")
+        make_custom_hexs(node);
     else if(type == "custom_ph")
         make_custom_ph(node);
     else
@@ -353,13 +418,19 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-#if 0
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, points)
+{
+    test_mesh_type("points");
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, lines)
 {
     test_mesh_type("lines");
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, tris)
 {
@@ -401,6 +472,13 @@ TEST(conduit_blueprint_topology_metadata, custom_tets)
 {
     test_mesh_type("custom_tets");
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, custom_hexs)
+{
+    test_mesh_type("custom_hexs");
+}
+
 #if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_ph)
