@@ -214,7 +214,7 @@ ShapeCascade::init(const ShapeType &base_type)
         dim_types[di] = ShapeType(dim_types[di + 1].embed_id);
     }
 }
-
+#if 0
 //---------------------------------------------------------------------------//
 TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset) :
     topo(&topology), cset(&coordset),
@@ -769,7 +769,7 @@ TopologyMetadata::to_json() const
 
     return mesh.to_json();
 }
-
+#endif
 //-----------------------------------------------------------------------------
 /// blueprint mesh utility query functions
 //-----------------------------------------------------------------------------
