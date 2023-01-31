@@ -356,6 +356,14 @@ public:
      */
     const DataType &get_float_dtype() const;
 
+    /**
+     @brief Gets the total number of embeddings for each entity at the top level
+            to the embedding level.
+     @param entity_dim The entity dimension.
+     @param embed_dim The embedding dimension.
+     @return The total number of embeddings.
+     */
+    index_t get_embed_length(index_t entity_dim, index_t embed_dim) const;
 private:
     class Implementation;
     Implementation *impl;

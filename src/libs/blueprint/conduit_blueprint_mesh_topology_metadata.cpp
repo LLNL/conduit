@@ -391,6 +391,15 @@ public:
      */
     const DataType &get_float_dtype() const;
 
+    /**
+     @brief Gets the total number of embeddings for each entity at the top level
+            to the embedding level.
+     @param entity_dim The entity dimension.
+     @param embed_dim The embedding dimension.
+     @return The total number of embeddings.
+     */
+    index_t get_embed_length(index_t entity_dim, index_t embed_dim) const;
+
 private:
 
     //-----------------------------------------------------------------------
@@ -2625,6 +2634,75 @@ TopologyMetadata::Implementation::get_float_dtype() const
 }
 
 //---------------------------------------------------------------------------
+// NOTE: This method is largely borrowed from the previous implementation
+//       so review for performance issues.
+index_t
+TopologyMetadata::Implementation::get_embed_length(index_t entity_dim, index_t embed_dim) const
+{
+    // NOTE: The default version of 'get_embed_length' gets the total number of
+    // embeddings for each entity at the top level to the embedding level. The
+    // parameterized version just fetches the number of embeddings for one
+    // specific entity at the top level.
+
+    index_t len = get_length(entity_dim);
+
+    std::vector<index_t> entity_index_bag;
+    std::vector<index_t> entity_dim_bag;
+    entity_index_bag.reserve(len * 3 / 2);
+    entity_dim_bag.reserve(len * 3 / 2);
+    for(index_t ei = 0; ei < len; ei++)
+    {
+        entity_index_bag.push_back(ei);
+        // NOTE: I don't think that adding entity_dim here makes sense if we
+        //       had passed entity_dim=-1 because we'd get a larger len that
+        //       is really made of different entity dimensions. I think we'd
+        //       have to call get_length() for each dimension so we'd know
+        //       the entity dim that we need to add. That way, we'll have
+        //       entity indices that make sense for the various levels of
+        //       LOCAL maps.
+        entity_dim_bag.push_back(entity_dim);
+    }
+
+    // IDEA: The embed_set is only used at the embed_dim level so it may
+    //       be possible to replace with a std::vector<bool> (or other)
+    //       sized to the max number of items in L(embed_dim+1,embed_dim).
+    //       The L(e,a) maps contain indices in order
+
+    std::set<index_t> embed_set;
+    index_t embed_length = 0;
+    while(!entity_index_bag.empty())
+    {
+        index_t entity_index = entity_index_bag.back();
+        entity_index_bag.pop_back();
+        index_t entity_dim_back = entity_dim_bag.back();
+        entity_dim_bag.pop_back();
+
+        if(entity_dim_back == embed_dim)
+        {
+            if(embed_set.find(entity_index) == embed_set.end())
+            {
+                embed_length++;
+                embed_set.insert(entity_index); // This should be ok.
+            }
+            //embed_set.insert(entity_index);
+        }
+        else
+        {
+            auto lower_dim = entity_dim_back - 1;
+            const auto embed_ids = get_local_association(entity_index,
+                entity_dim_back, lower_dim);
+            for(auto id : embed_ids)
+            {
+                entity_index_bag.push_back(id);
+                entity_dim_bag.push_back(lower_dim);
+            }
+        }
+    }
+
+    return embed_length;
+}
+
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Public interface for TopologyMetadata.
 
@@ -2721,6 +2799,13 @@ const DataType &
 TopologyMetadata::get_float_dtype() const
 {
     return impl->get_float_dtype();
+}
+
+//---------------------------------------------------------------------------
+index_t
+TopologyMetadata::get_embed_length(index_t entity_dim, index_t embed_dim) const
+{
+    return impl->get_embed_length(entity_dim, embed_dim);
 }
 
 //-----------------------------------------------------------------------------
