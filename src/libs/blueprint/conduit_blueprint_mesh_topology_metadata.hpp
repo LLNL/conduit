@@ -142,17 +142,17 @@ public:
                     |
                     face 3 in unique face list (topo[2] connectivity)
 
- There are other global entity maps G(e,a) too. G(3,3) is the relationship of the elements
- to elements, which is self so any input to the map is also the output. The G(3,1) map
- represents the indices of the 1D edges that make up the 3D element. The G(3,0) map
- represents all of the points contained by the 3D element, values which for most
- cases are contained in the 3D connectivity.
+ There are other GLOBAL entity maps G(e,a) too. G(3,3) is the relationship
+ of elements to elements, which is self so any input to the map is also the
+ output. The G(3,1) map represents the indices of the 1D edges that make up
+ the 3D element. The G(3,0) map represents all of the points contained by the
+ 3D element.
 
  G(e,a) is shorthand for "Global(entity_dim, association_dim)".
 
  When e==a, the relationship is self.
- When e>a, the relationship is that entity e contains/references entity a.
- When a>e, the relationship is entity a is referenced by parents of dimension e.
+ When e>a, entity e contains/references entity a.
+ When a>e, entity a is referenced by parents of dimension e.
 
  In the above example for G(3,2), we can see that face 2 is shared by elements 0
  and 1. If we want to know which edges make up face 2, we can consult G(2,1).
@@ -163,8 +163,8 @@ public:
                                    |
                                    face 2 in unique edge list (topo[1] connectivity)
 
- If we want to know which points make up the edges for face 2, consult G(1,0). This is
- the map of lines to points (also top_dims[1] connectivity).
+ If we want to know which points make up the edges for face 2, consult G(1,0).
+ This is the map of edges to points (also top_dims[1] connectivity).
 
            edge number
            |
@@ -201,6 +201,19 @@ e  --|-----------------------------------------------------------------------
   ---------------------------------------------------------------------------
 
  *BBC = built by cascade
+
+ There is another mapping concept called LOCAL mapping L(e,a) where entity
+ gets its own unique index ordering. The local maps look essentially like an
+ increasing series of integers, though the number of repetitions for an
+ entity depends on e,a.
+
+ Example:
+ L(3,2) = {0,1,2,3,4,5},{6,7,8,9,10,11},...
+
+               6 faces 
+           ----------------
+           |              |
+ L(2,3) = {0}{0}{0}{0}{0}{0}{1}{1}{1}{1}{1}{1}...
 
  */
 class CONDUIT_BLUEPRINT_API TopologyMetadata : public TopologyMetadataBase
@@ -306,22 +319,43 @@ public:
 
     //-----------------------------------------------------------------------
     /**
-      @brief Return all of the data for an association by COPYING it into the 
-             provided Conduit node.
+     @brief Return all of the data for an association by COPYING it into the 
+            provided Conduit node.
 
-      @param type Whether we want GLOBAL or LOCAL data.
-      @param src_dim The source dimension of the desired association.
-      @param dst_dim The destination dimension of the desired association.
-      @param[out] map_node The Conduit node that will contain the copied association data.
+     @param type Whether we want GLOBAL or LOCAL data.
+     @param src_dim The source dimension of the desired association.
+     @param dst_dim The destination dimension of the desired association.
+     @param[out] map_node The Conduit node that will contain the copied association data.
 
-      @note This method guarantees that all bulk arrays for values, sizes, and
-            offsets will be index_t.
+     @note This method guarantees that all bulk arrays for values, sizes, and
+           offsets will be index_t.
 
-      @return True if the map exists(was requested); False otherwise.
+     @return True if the map exists(was requested); False otherwise.
      */
     bool get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
 
+    /**
+     @brief Gets the length of the topology as specified by dimension. If
+            dim is -1 then the length of all topologies are summed.
+
+     @param dim The dimension whose length we want. Or if -1 then all
+                dimensions are assumed.
+     @return The topology length for the requested dimension(s).
+     */
     index_t get_length(index_t dim = -1) const;
+
+    /**
+     @brief The the preferred integer storage data type.
+     @return The preferred integer storage data type.
+     */
+    const DataType &get_int_dtype() const;
+
+    /**
+     @brief The the preferred float storage data type.
+     @return The preferred float storage data type.
+     */
+    const DataType &get_float_dtype() const;
+
 private:
     class Implementation;
     Implementation *impl;
@@ -421,7 +455,9 @@ public:
     {
         return get_entity_assocs(LOCAL, entity_id, entity_dim, assoc_dim);
     }
-
+    const DataType &get_int_dtype() const { return int_dtype; }
+    const DataType &get_float_dtype() const { return float_dtype; }
+   
     // Data.
     const conduit::Node *topo, *cset;
     const conduit::DataType int_dtype, float_dtype;

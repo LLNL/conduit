@@ -4445,8 +4445,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
     // Extract Derived Coordinate/Topology Data //
 
     const TopologyMetadata topo_data(topo, *coordset);
-    const DataType &int_dtype = topo_data.int_dtype;
-    const DataType &float_dtype = topo_data.float_dtype;
+    const DataType &int_dtype = topo_data.get_int_dtype();
+    const DataType &float_dtype = topo_data.get_float_dtype();
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
@@ -5639,8 +5639,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     const TopologyMetadata topo_data(topo, *coordset);
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
-    const DataType &int_dtype = topo_data.int_dtype;
-    const DataType &float_dtype = topo_data.float_dtype;
+    const DataType &int_dtype = topo_data.get_int_dtype();
+    const DataType &float_dtype = topo_data.get_float_dtype();
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);

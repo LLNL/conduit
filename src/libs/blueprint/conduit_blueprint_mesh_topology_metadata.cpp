@@ -250,6 +250,8 @@ class TopologyMetadata::Implementation : public TopologyMetadataBase
     const ShapeType topo_shape;
     size_t lowest_cascade_dim;
     index_t coords_length;
+    DataType int_dtype;
+    DataType float_dtype;
     conduit::Node dim_topos[MAX_ENTITY_DIMS];
     index_t dim_topo_lengths[MAX_ENTITY_DIMS];
     association G[MAX_ENTITY_DIMS][MAX_ENTITY_DIMS];  
@@ -257,7 +259,7 @@ class TopologyMetadata::Implementation : public TopologyMetadataBase
 public:
     //-----------------------------------------------------------------------
     /**
-     @brief Legacy constructor, which builds all of the topology levels in the shape
+     @brief This constructor builds all of the topology levels in the shape
             cascade as well as all associations.
 
      @param topology     The input topology node.
@@ -267,9 +269,9 @@ public:
 
     //-----------------------------------------------------------------------
     /**
-     @brief Constructor for the TopologyMetadata::Implementation class. This constructor
-            lets the caller be more selective about which topology levels and 
-            associations are created, possibly saving time.
+     @brief Constructor for the TopologyMetadata::Implementation class. This
+            constructor lets the caller be more selective about which topology
+            levels and associations are created, saving time.
 
      @param topology     The input topology node.
      @param coordset     The input coordset associated with the topology.
@@ -367,7 +369,28 @@ public:
      */
     bool get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
 
+    /**
+      @brief Gets the length of the topology as specified by dimension. If
+             dim is -1 then the length of all topologies are summed.
+
+      @param dim The dimension whose length we want. Or if -1 then all
+                 dimensions are assumed.
+      @return The topology length for the requested dimension(s).
+     */
     index_t get_length(index_t dim) const;
+
+    /**
+     @brief The the preferred integer storage data type.
+     @return The preferred integer storage data type.
+     */
+    const DataType &get_int_dtype() const;
+
+    /**
+     @brief The the preferred float storage data type.
+     @return The preferred float storage data type.
+     */
+    const DataType &get_float_dtype() const;
+
 private:
 
     //-----------------------------------------------------------------------
@@ -1043,7 +1066,9 @@ TopologyMetadata::Implementation::association::get_offsets(const index_t *&array
 TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
     const conduit::Node &coordset) : TopologyMetadataBase(),
     topo(&topology), coords(&coordset), topo_cascade(topology), topo_shape(topology),
-    lowest_cascade_dim(0), coords_length(0)
+    lowest_cascade_dim(0), coords_length(0),
+    int_dtype(DataType::index_t()),
+    float_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_FLOAT_DTYPE))
 {
     // Select all maps that could be valid for this shape.
     std::vector<std::pair<size_t, size_t> > desired;
@@ -1062,7 +1087,9 @@ TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
     const std::vector<std::pair<size_t, size_t> > &desired) :
     TopologyMetadataBase(),
     topo(&topology), coords(&coordset), topo_cascade(topology), topo_shape(topology),
-    lowest_cascade_dim(lowest_dim), coords_length(0)
+    lowest_cascade_dim(lowest_dim), coords_length(0),
+    int_dtype(DataType::index_t()),
+    float_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_FLOAT_DTYPE))
 {
     initialize(desired);
 }
@@ -2577,10 +2604,24 @@ TopologyMetadata::Implementation::get_length(index_t dim) const
     index_t topo_length = 0;
     for(index_t di = start_dim; di <= end_dim; di++)
     {
-        topo_length += topology::length(dim_topos[di]);
+        topo_length += dim_topo_lengths[di];
     }
 
     return topo_length;
+}
+
+//---------------------------------------------------------------------------
+const DataType &
+TopologyMetadata::Implementation::get_int_dtype() const
+{
+    return int_dtype;
+}
+
+//---------------------------------------------------------------------------
+const DataType &
+TopologyMetadata::Implementation::get_float_dtype() const
+{
+    return float_dtype;
 }
 
 //---------------------------------------------------------------------------
@@ -2666,6 +2707,20 @@ index_t
 TopologyMetadata::get_length(index_t dim) const
 {
     return impl->get_length(dim);
+}
+
+//---------------------------------------------------------------------------
+const DataType &
+TopologyMetadata::get_int_dtype() const
+{
+    return impl->get_int_dtype();
+}
+
+//---------------------------------------------------------------------------
+const DataType &
+TopologyMetadata::get_float_dtype() const
+{
+    return impl->get_float_dtype();
 }
 
 //-----------------------------------------------------------------------------
