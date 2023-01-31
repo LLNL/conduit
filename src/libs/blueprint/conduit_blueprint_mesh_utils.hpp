@@ -342,8 +342,7 @@ e  --|-----------------------------------------------------------------------
  *BBC = built by cascade
 
  */
-#endif
-class CONDUIT_BLUEPRINT_API TopologyMetadata : private detail::NewTopologyMetadata
+class CONDUIT_BLUEPRINT_API TopologyMetadata : public detail::NewTopologyMetadata
 {
 public:
     using ParentClass = detail::NewTopologyMetadata;

@@ -8,7 +8,10 @@
 ///
 //-----------------------------------------------------------------------------
 
+#include "conduit_blueprint_mesh_utils_detail.hpp"
+
 #define EA_INDEX(E,A) ((E)*(MAX_ENTITY_DIMS)+(A))
+
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -110,20 +113,6 @@ index_t_id()
     return conduit::DataType::INT32_ID;
 #else
     return conduit::DataType::INT64_ID;
-#endif
-}
-
-//-----------------------------------------------------------------------
-// TODO: Add in conduit::Node.
-inline index_t *
-as_index_t_ptr(conduit::Node &n)
-{
-#ifdef CONDUIT_INDEX_32
-    return n.as_int32_ptr();
-#else
-    if(n.dtype().id() != conduit::DataType::INT64_ID)
-       cout << "as_index_t_ptr: node " << n.name() << " is not index_t. It is " << n.dtype().name() << endl;
-    return n.as_int64_ptr();
 #endif
 }
 
