@@ -4059,6 +4059,7 @@ public:
     int16           *as_int16_ptr();
     int32           *as_int32_ptr();
     int64           *as_int64_ptr();
+    index_t         *as_index_t_ptr();
 
     // unsigned integers via pointers
     uint8           *as_uint8_ptr();
@@ -4081,6 +4082,7 @@ public:
     const uint16    *as_uint16_ptr() const;
     const uint32    *as_uint32_ptr() const;
     const uint64    *as_uint64_ptr() const;
+    const index_t   *as_index_t_ptr() const;
 
     // floating point via pointers
     const float32   *as_float32_ptr() const;
