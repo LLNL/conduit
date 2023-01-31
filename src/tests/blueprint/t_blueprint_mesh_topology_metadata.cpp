@@ -297,7 +297,7 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
     {
         int dims[] = {3,3,2};
         if(type == "lines" || type == "tris" || type == "quads")
-            dims[2] = 1;
+            dims[2] = 0;
         conduit::blueprint::mesh::examples::braid(type, dims[0],dims[1],dims[2], node);
     }
     conduit::Node &topo = node["topologies/mesh"];
@@ -359,7 +359,7 @@ TEST(conduit_blueprint_topology_metadata, lines)
 {
     test_mesh_type("lines");
 }
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, tris)
 {
@@ -371,7 +371,7 @@ TEST(conduit_blueprint_topology_metadata, quads)
 {
     test_mesh_type("quads");
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, tets)
 {
