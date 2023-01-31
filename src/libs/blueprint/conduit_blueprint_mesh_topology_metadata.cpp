@@ -4,13 +4,43 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_utils_detail.cpp
+/// file: conduit_blueprint_mesh_topology_metadata.cpp
 ///
 //-----------------------------------------------------------------------------
 
-#include "conduit_blueprint_mesh_utils_detail.hpp"
+//-----------------------------------------------------------------------------
+// std includes
+//-----------------------------------------------------------------------------
+#include <deque>
+#include <algorithm>
+#include <limits>
+#include <numeric>
+
+//-----------------------------------------------------------------------------
+// conduit lib includes
+//-----------------------------------------------------------------------------
+#include "conduit_blueprint_mesh_topology_metadata.hpp"
+#include "conduit_blueprint_mesh.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
+
+#ifdef _OPENMP
+#include <omp.h>
+#endif
+
+//#define DEBUG_PRINT
+
+// If we have parallel sorting in C++ 20, use it.
+//#include <execution>
+//#define OPTIONAL_PARALLEL_EXECUTION_POLICY std::execution::par,
+
+#define OPTIONAL_PARALLEL_EXECUTION_POLICY
 
 #define EA_INDEX(E,A) ((E)*(MAX_ENTITY_DIMS)+(A))
+
+// for now
+using std::cout;
+using std::endl;
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -36,13 +66,7 @@ namespace mesh
 namespace utils
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::utils::detail --
-//-----------------------------------------------------------------------------
-namespace detail
-{
-
-//-----------------------------------------------------------------------
+//---------------------------------------------------------------------------
 /**
  @brief Hash a series of bytes using a Jenkins hash forwards and backwards
         and combine the results into a uint64 hash.
@@ -52,7 +76,7 @@ namespace detail
 
  @return A hash value that represents the bytes.
  */
-uint64
+inline uint64
 hash_uint8(const uint8 *data, index_t n)
 {
     uint32 hashF = 0;
@@ -89,7 +113,7 @@ hash_uint8(const uint8 *data, index_t n)
     return (static_cast<uint64>(hashF) << 32) | static_cast<uint64>(hashB);
 }
 
-//-----------------------------------------------------------------------
+//---------------------------------------------------------------------------
 /**
  @brief Make a hash value from a series of index_t values.
 
@@ -104,22 +128,783 @@ hash_ids(const index_t *data, index_t n)
     return hash_uint8(reinterpret_cast<const uint8 *>(data), n * sizeof(index_t));
 }
 
-//-----------------------------------------------------------------------
-// TODO: move to conduit::DataType.
-inline conduit::DataType::TypeID
-index_t_id()
+//---------------------------------------------------------------------------
+void
+yaml_print(std::ostream &os, const conduit::Node &node)
 {
-#ifdef CONDUIT_INDEX_32
-    return conduit::DataType::INT32_ID;
-#else
-    return conduit::DataType::INT64_ID;
-#endif
+    // Override these parameters so we 
+    conduit::Node opts;
+    opts["num_elements_threshold"] = 10000;
+    opts["num_children_threshold"] = 10000;
+
+    std::string s;
+    node.to_summary_string_stream(os, opts);
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+std::ostream &
+operator << (std::ostream &os, const std::vector<T> &obj)
+{
+    os << "[size=" << obj.size() << "]{";
+    for(size_t i = 0; i < obj.size(); i++)
+        os << obj[i] << ", ";
+    os << "}";
+    return os;
+}
+
+template <>
+std::ostream &
+operator << (std::ostream &os, const std::vector<std::pair<uint64, uint64>> &obj)
+{
+    os << "{" << endl;
+    for(size_t i = 0; i < obj.size(); i++)
+    {
+        os << "[" << std::setw(2) << i << "]("
+           << std::setw(20) << obj[i].first << ", "
+           << std::setw(20) << obj[i].second << ")"
+           << ", " << endl;
+    }
+    os << "}" << endl;
+    return os;
+}
+
+template <>
+std::ostream &
+operator << (std::ostream &os, const std::vector<std::pair<conduit::index_t, conduit::index_t>> &obj)
+{
+    os << "{" << endl;
+    for(size_t i = 0; i < obj.size(); i++)
+    {
+        os << "[" << std::setw(2) << i << "]("
+           << std::setw(20) << obj[i].first << ", "
+           << std::setw(20) << obj[i].second << ")"
+           << ", " << endl;
+    }
+    os << "}" << endl;
+    return os;
 }
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
+
+/**
+ This class accepts a node containing a topology and it puts that topology
+ through a shape cascade. This means turning elements->faces->edges->points
+ and producing associations (maps) that allow the caller to query various
+ relations such as the elements that own a face, or the lines in an element.
+ All of the various entities in the different topology levels have been made
+ unique.
+
+ This class differs from the previous implementation in the following ways:
+
+ * It uses recursion and template functions to make sure we can access
+   connectivity data using either native pointers or and index_t_accessor
+   so no Conduit casts are needed.
+
+ * Associations are mostly created only when asked for (or indirectly needed)
+   and this is done largely after the cascade has been performed.
+
+ * Associations are stored contiguously in memory or are implicit.
+
+ * Access to associations is made using a "vector_view" which returns a window
+   into the bulk association data so the caller can use the data without
+   having to copy it out. Local association data is returned as a "range_vector"
+   so the local ranges can be represented implicitly while still looking
+   like a vector.
+*/
+class TopologyMetadata::Implementation : public TopologyMetadataBase
+{
+    constexpr static size_t MAX_ENTITY_DIMS = 4;
+
+    struct association
+    {
+        // The association owns this storage.
+        std::vector<index_t> data;
+        std::vector<index_t> sizes;
+        std::vector<index_t> offsets;
+        // The association is using data from a topology.
+        index_t    *data_ptr{nullptr};
+        index_t    *sizes_ptr{nullptr};
+        index_t    *offsets_ptr{nullptr};
+        index_t     data_ptr_size{0};
+        index_t     sizes_ptr_size{0};
+        index_t     offsets_ptr_size{0};
+        // Other fields
+        int                  single_size{1};
+        bool                 requested{false};
+
+        // Helper methods.
+        bool get_data(const index_t *&array, index_t &arraylen) const;
+        bool get_sizes(const index_t *&array, index_t &arraylen) const;
+        bool get_offsets(const index_t *&array, index_t &arraylen) const;
+
+        inline std::pair<index_t *, index_t> get_data(index_t entity_id) const;
+        inline index_t get_size(index_t entity_id) const;
+        inline index_t get_offset(index_t entity_id) const;
+    };
+
+    // Data members
+    const conduit::Node *topo, *coords;
+    const ShapeCascade topo_cascade;
+    const ShapeType topo_shape;
+    size_t lowest_cascade_dim;
+    index_t coords_length;
+    conduit::Node dim_topos[MAX_ENTITY_DIMS];
+    index_t dim_topo_lengths[MAX_ENTITY_DIMS];
+    association G[MAX_ENTITY_DIMS][MAX_ENTITY_DIMS];  
+
+public:
+    //-----------------------------------------------------------------------
+    /**
+     @brief Legacy constructor, which builds all of the topology levels in the shape
+            cascade as well as all associations.
+
+     @param topology     The input topology node.
+     @param coordset     The input coordset associated with the topology.
+     */
+    Implementation(const conduit::Node &topology, const conduit::Node &coordset);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Constructor for the TopologyMetadata::Implementation class. This constructor
+            lets the caller be more selective about which topology levels and 
+            associations are created, possibly saving time.
+
+     @param topology     The input topology node.
+     @param coordset     The input coordset associated with the topology.
+     @param lowest_dim   The lowest level of shape cascade that we're interested in.
+                         If we only want faces, for example, then we don't need to
+                         refine to edges or points.
+     @param desired      A vector of (entity_dim,assoc_dim) pairs that indicate
+                         the associations that will be requested by the client.
+     */
+    Implementation(const conduit::Node &topology,
+                   const conduit::Node &coordset,
+                   size_t lowest_dim,
+                   const std::vector<std::pair<size_t,size_t> > &desired_maps);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get the highest shape dimension.
+     @return The highest shape dimension.
+     */
+    int dimension() const { return topo_shape.dim; }
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get the topologies array.
+     @return The topologies array.
+     */
+    const conduit::Node *get_topologies() const { return dim_topos; }
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get the legnths arrays for the topologies. Any topologies that
+            were not produced will have length 0.
+     @return The topology lengths array.
+     */
+    const index_t *get_topology_lengths() const { return dim_topo_lengths; }
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get a global association for a particular entity_id in the entity_dim
+            dimension. This lets us ask a question like: which face ids are in
+            element 5? Or, which faces contain edge 12?
+
+     @param entity_id The entity id whose information we want to obtain. This
+                      value must be valid for the entity dimension in question.
+     @param entity_dim The dimension of the entity whose information we want.
+     @param assoc_dim  The dimension of the association we want.
+
+     Example: Which faces are in element 5?
+              get_global_association(5,  // element 5
+                                     3,  // elements are 3 dimensional
+                                     2); // faces are 2 dimensional
+
+     Example 2: Which faces contain edge 2?
+              get_global_association(2,  // edge 2
+                                     1,  // edges are 1 dimensional
+                                     2); // faces are 2 dimensional
+
+     @note The data are returned as a vector_view, which is an object that acts
+           like a vector but does not have to copy bulk data. The data it points
+           to for a given return are in the associations.
+     */
+    conduit::vector_view<index_t>
+    get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
+
+    conduit::range_vector<index_t>
+    get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get whether the association e,a was requested when the object
+            was initialized. If so, the association will exist. Otherwise,
+            the association does not exist.
+
+     @param entity_dim The starting dimension.
+     @param assoc_dim  The destination dimension.
+
+     @return True if the association exists; False otherwise.
+     */
+    bool association_requested(index_t entity_dim, index_t assoc_dim) const;
+
+    //-----------------------------------------------------------------------
+    /**
+      @brief Return all of the data for an association by COPYING it into the 
+             provided Conduit node.
+
+      @param type Whether we want GLOBAL or LOCAL data.
+      @param src_dim The source dimension of the desired association.
+      @param dst_dim The destination dimension of the desired association.
+      @param[out] map_node The Conduit node that will contain the copied association data.
+
+      @note This method guarantees that all bulk arrays for values, sizes, and
+            offsets will be index_t.
+
+      @return True if the map exists(was requested); False otherwise.
+     */
+    bool get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
+
+    index_t get_length(index_t dim) const;
+private:
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief This method causes the topologies and maps to be created,
+            initializing the object.
+
+     @param desired A vector of (e,a) pairs that indicate which associations
+                    we want to compute.
+     */
+    void initialize(const std::vector<std::pair<size_t, size_t> > &desired);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Examine the vector of desired maps and mark the associations
+            as requested.
+
+     @param desired A vector of (e,a) pairs that indicate which associations
+                    we want to compute.
+     */
+    void request_associations(const std::vector<std::pair<size_t, size_t> > &desired);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Build any associations that were not produced during the cascade.
+     */
+    void build_associations();
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Build the association from dimension e to dimension 0.
+
+     @param e The source dimension.
+     */
+    void build_association_e_0(int e);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Given a 3D non-PH shape, return the set of unique line segments
+            in traversal order.
+
+     @param shape The input shape, which should be a 3D non-PH element.
+     @return A vector of edge endpoint pairs that represent the unique edges
+             for the element.
+     */
+    std::vector<index_t> embedding_3_1_edges(const ShapeType &shape) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Build the G(3,1) and G(3,0) associations together because they
+            need to do most of the same work.
+     */
+    void build_association_3_1_and_3_0();
+    void build_association_3_1_and_3_0_ph();
+    void build_association_3_1_and_3_0_nonph();
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Print association G[e][a].
+     */
+    void print_association(int e, int a) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief This method builds a child to parent association by reversing
+            an existing parent to child association.
+
+     @param e The entity dimension (the thing we have: element=3,face=2,...)
+     @param a The association dimension (the thing we want to know about with
+              respect to the entity dimension). e < a.
+     */
+    void build_child_to_parent_association(int e, int a);
+
+    /**
+      @brief Return all of the data for a GLOBAL association by COPYING it into
+             the provided Conduit node.
+
+      @param src_dim The source dimension of the desired association.
+      @param dst_dim The destination dimension of the desired association.
+      @param[out] map_node The Conduit node that will contain the copied association data.
+
+      @note This method guarantees that all bulk arrays for values, sizes, and
+            offsets will be index_t.
+     */
+    bool get_global_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const;
+    bool get_local_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const;
+    index_t get_local_association_entity_range(int e, int a) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Takes the input topology and reuses it has the highest topology.
+            The method makes sure that the topology will have offsets too.
+     */
+    void make_highest_topology();
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Make a basic topology for the points.
+     */
+    void make_point_topology();
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Identify sequences of unique ids and give them the same unique id
+            that is an increasing number rather than a random id.
+
+     @param faceid_to_ef A vector of pairs that contain a faceid to element face.
+                         Or, rather, a hashid to element entity.
+     @param ef_to_unique: A reverse map of element face to unique id.
+
+     @return The number of unique ids.
+    */
+    index_t
+    make_unique(const std::vector<std::pair<uint64, uint64>> &faceid_to_ef, 
+                std::vector<std::pair<uint64, uint64>> &ef_to_unique) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief This method casts the sizes node into some usable types and then
+            invokes dispatch_shape_ph built for those types.
+
+     @param subel The polyhedral subelement node.
+     @param sizes The sizes node under the subelement node.
+     */
+    void dispatch_connectivity_ph(const conduit::Node &subel,
+                                  const conduit::Node &sizes);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief This method is called with a shape and connectivity and it casts
+            the connectivity to usable types and calls dispatch_shape methods
+            that operate on those types.
+
+     @param shape The shape that the connectivity represents.
+     @param conn  A node that contains the bulk connectivity data.
+     */
+    void  dispatch_connectivity(const ShapeType &shape,
+                                const conduit::Node &conn);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief This method accepts a node containing polyhedral subelement data,
+            which contains the actual face definitions that make up the PH
+            mesh. We invoke the method to make the face connectivity and then
+            dispatch again to make the lines.
+
+     @param subel The polyhedral subelement node.
+     @param sizes The sizes in the subelement node cast to a more usable type
+                  such as a pointer or an accessor.
+     @param sizeslen The number of elements in sizes.
+     */
+    template <typename ConnType>
+    void
+    dispatch_shape_ph(const conduit::Node &subel,
+                      const ConnType &sizes,
+                      size_t sizeslen)
+    {
+        const int embed_dim = 2;
+
+        // Make faces from the PH faces.
+        make_embedded_connectivity_ph(subel, sizes, sizeslen);
+
+        // Make lines. Note that we get the embed shape from the 2D topo
+        // in case we set it to quads or tris. The topo_cascade would
+        // return polygons but we may do a little better with quads/tris
+        // if we can assume those.
+        const conduit::Node &econn = dim_topos[embed_dim].fetch_existing("elements/connectivity");
+        ShapeType embed_shape(dim_topos[embed_dim]);
+        dispatch_connectivity(embed_shape, econn);
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief This method is called with a shape and connectivity data that
+            is of a concrete type (or an accessor). The method makes calls
+            to create the connectivity for the embedded shape (e.g. faces 
+            from elements) and then calls the next level down when done.
+
+     @param shape The shape that the connectivity represents.
+     @param conn  An array or accessor that contains the connectivity data.
+     @param connlen The number of connectivity array elements.
+     */
+    template <typename ConnType>
+    void
+    dispatch_shape(const ShapeType &shape,
+                   const ConnType &conn,
+                   size_t connlen)
+    {
+        if(!shape.is_polygonal())
+        {
+            // Make faces for any of the 3D implicit cell types.
+            if(shape.dim == 3)
+            {
+                make_embedded_connectivity(shape, conn, connlen);
+
+                // Make lines.
+                int embed_dim = shape.dim - 1;
+                const conduit::Node &econn = dim_topos[embed_dim].fetch_existing("elements/connectivity");
+                ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
+                dispatch_connectivity(embed_shape, econn);
+            }
+            else if(shape.dim == 2)
+            {
+                // All input shapes are the same (e.g. quads or tris).
+                // Make lines.
+                make_embedded_connectivity(shape, conn, connlen);
+            }
+        }
+        else
+        {
+            // The shape is said to contain polygons so we have to be a bit more
+            // general in how we traverse the connectivity. We want sizes/offsets.
+
+            // TODO: write make_embedded_connectivity_mixed
+        }
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief This method accepts a node containing polyhedral subelement data,
+            which contains the actual face definitions that make up the PH
+            mesh. We use these faces as the 2D topology as it is already
+            made of polygons. We scan it too to see whether it contains all
+            triangles or quads, in which case, we change the shape type to
+            make downstream line production easier.
+
+     @param subel The polyhedral subelement node.
+     @param sizes The sizes in the subelement node cast to a more usable type
+                  such as a pointer or an accessor.
+     @param sizeslen The number of elements in sizes.
+     */
+    template <typename ConnType>
+    void
+    make_embedded_connectivity_ph(const conduit::Node &subel,
+                                  const ConnType &sizes,
+                                  size_t sizeslen)
+    {
+        const int embed_dim = 2;
+
+        // Use the subelement information from the PH mesh as the embedded
+        // connectivity for the 2D faces.
+        conduit::Node &node = dim_topos[embed_dim];
+        node["type"] = "unstructured";
+        node["coordset"] = coords->name();
+        node["elements/shape"] = subel["shape"].as_string();
+        node["elements/connectivity"].set_external(subel["connectivity"]);
+        // PH geometries should have sizes and offsets too.
+        if(subel.has_child("sizes"))
+            node["elements/sizes"].set_external(subel["sizes"]);
+        if(subel.has_child("offsets"))
+            node["elements/offsets"].set_external(subel["offsets"]);
+#if 1
+        // Check whether the sizes are the same. If they are then we can convert
+        // from "polygon" types to tri, or quad.
+        bool istri = sizes[0] == 3;
+        bool isquad = sizes[0] == 4;
+        if(istri || isquad)
+        {
+            bool same = true;
+            for(size_t i = 1; i < sizeslen && same; i++)
+                same &= sizes[0] == sizes[i];
+
+            if(same && istri)
+            {
+                node["elements/shape"] = "tri";
+            }
+            else if(same && isquad)
+            {
+                node["elements/shape"] = "quad";
+            }
+        }
+#endif
+    }
+
+    //-----------------------------------------------------------------------
+    /**
+      @brief Make the embedded connectivity from the input connectivity and
+             store the results in dim_topos[shape.dim-1]. If we're passed a
+             3D cell, we make 2D faces. If we're passed 2D faces, we make 1D
+             lines.
+
+      @param shape The input shape.
+      @param conn  The connectivity data. This is usually a pointer but can
+                   be an accessor too.
+      @param connlen The length of the connectivity data.
+
+      - This method assumes that all elements in the connectivity are the 
+        same type.   
+      - This is a template method so we can pass in basic types (like 
+        const int*) for the connectivity.
+    */
+    template <typename ConnType>
+    void
+    make_embedded_connectivity(const ShapeType &shape, const ConnType &conn, index_t connlen)
+    {
+        int embed_dim = shape.dim - 1;
+        ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
+
+// TODO: rename some things so the terms are more generic.
+
+        // Get sizes from the shape and embed_shape.
+        index_t points_per_elem = shape.indices;
+        index_t faces_per_elem = shape.embed_count;
+        index_t points_per_face = embed_shape.indices;
+        index_t nfacepts = faces_per_elem * points_per_face;
+
+        index_t nelem = connlen / points_per_elem;
+        auto nelem_faces = nelem * faces_per_elem;
+#ifdef DEBUG_PRINT
+        cout << "=======================================================" << endl;
+        cout << "make_embedded_connectivity: shape_dim=" << shape.dim << endl;
+        cout << "=======================================================" << endl;
+        cout << "shape=" << shape.type << endl;
+        cout << "embed_shape=" << embed_shape.type << endl;
+        cout << "points_per_elem="<<points_per_elem<<endl;
+        cout << "faces_per_elem="<<faces_per_elem<<endl;
+        cout << "points_per_face="<<points_per_face<<endl;
+        cout << "nfacepts="<<nfacepts<<endl;
+        cout << "nelem="<<nelem<<endl;
+        cout << "nelem_faces="<<nelem_faces<<endl;
+        cout << "conn={";
+        for(index_t i = 0; i < connlen; i++)
+            cout << conn[i] << ", ";
+        cout << "}" << endl << endl;
+#endif
+
+        // Iterate over each hex cell and compute a faceid for it. Store
+        // these in faceid_to_ef. The "ef" stands for element face, which
+        // is the element id * faces_per_elem + face.
+        std::vector<std::pair<uint64, uint64>> faceid_to_ef(nelem_faces);
+
+#pragma omp parallel for
+        for(index_t elem = 0; elem < nelem; elem++)
+        {
+
+// TODO: it might be good to keep these the same as the connectivity element
+//       type rather than index_t (in case sizeof(index_t) > sizeof(elem_t).
+//       That would hash fewer bytes and possibly eliminate casts.
+
+            // Get the element faces, storing them all in face_pts.
+            index_t elemstart = elem * points_per_elem;
+            index_t face_pts[nfacepts];
+            for(index_t i = 0; i < nfacepts; i++)
+                face_pts[i] = conn[elemstart + shape.embedding[i]];
+
+            // Make a unique id for each face.
+            index_t facestart = elem * faces_per_elem;
+            for(index_t face = 0; face < faces_per_elem; face++)
+            {
+                // Sort the face's points
+                index_t *face_pts_start = &face_pts[face * points_per_face];
+                index_t *face_pts_end = face_pts_start + points_per_face;
+
+                // encode element and face into element_face.
+                uint64 element_face = facestart + face;
+
+#if 0
+                cout << "elem=" << elem << ", face=" << face
+                     << ", element_face=" << element_face;
+                cout << ", pts={";
+                for(int q = 0; q < points_per_face; q++)
+                    cout << std::setw(2) << face_pts_start[q] << ", ";
+                cout << "}, sort={";
+#endif
+                std::sort(face_pts_start, face_pts_end); // Better 4 item sort
+                uint64 faceid = hash_ids(face_pts_start, points_per_face);
+#if 0
+                for(int q = 0; q < points_per_face; q++)
+                    cout << std::setw(2) << face_pts_start[q] << ", ";
+                cout << "}, faceid=" << faceid << endl;
+#endif
+
+                // Store the faceid and ef values.
+                faceid_to_ef[element_face] = std::make_pair(faceid, element_face);
+            }
+        }
+
+#ifdef DEBUG_PRINT
+        cout << "faceid_to_ef = " << faceid_to_ef << endl;
+#endif
+
+        // Sort faceid_to_ef so any like faces will be sorted, first by their
+        // general faceid, then by their elemface "ef", which should keep the
+        // elements in order.
+        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY faceid_to_ef.begin(), faceid_to_ef.end());
+#ifdef DEBUG_PRINT
+        cout << "faceid_to_ef.sorted = " << faceid_to_ef << endl;
+#endif
+
+        // Faces are sorted. We probably do not want to necessarily create faces
+        // in this order though since it would create faces in random order.
+        // The spans with like ids should only be 1 or 2 faces long, assuming the
+        // hashing did its job correctly.
+        std::vector<std::pair<uint64, uint64>> ef_to_unique(nelem_faces);
+        index_t unique = make_unique(faceid_to_ef, ef_to_unique);
+#ifdef DEBUG_PRINT
+        cout << "unique = " << unique << endl;
+        cout << "ef_to_unique = " << ef_to_unique << endl;
+#endif
+
+        // Sort on ef to get back to a ef->unique mapping.
+        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY
+                  ef_to_unique.begin(), ef_to_unique.end(),
+            [&](const std::pair<uint64, uint64> &lhs, const std::pair<uint64, uint64> &rhs)
+        {
+            // Only sort using the ef value.
+            return lhs.first < rhs.first;
+        });
+#ifdef DEBUG_PRINT
+        cout << "ef_to_unique.sorted = " << ef_to_unique << endl;
+#endif
+
+        // Store the new embed connectivity data in Conduit nodes.
+        conduit::Node &node = dim_topos[embed_shape.dim];
+        node["type"] = "unstructured";
+        node["coordset"] = coords->name();
+        node["elements/shape"] = embed_shape.type;
+        node["elements/connectivity"].set(DataType::index_t(unique * points_per_face));
+        index_t *embed_conn = node["elements/connectivity"].as_index_t_ptr();
+        index_t embed_conn_idx = 0;
+
+        // Now ef_to_unique contains a list of unique face ids but they are not
+        // expressed in element-creation order.
+        //
+        // elem 0 faces            elem 1 faces
+        // {99, 1, 4, 2, 11, 16}, {4, 22, 44, 67, 55, 12}, ...
+        //
+        // Now we want to iterate over the ef_to_unique in element face order 
+        // and renumber the faces in another pass.
+        //
+        // If the (3,2) or (2,1) association was requested then we do a little
+        // more work to save the map as we build the connectivity. Otherwise,
+        // the 2 code blocks do the same thing. We separate to remove branches.
+        std::vector<unsigned char> avail(unique, 1);
+        if(G[shape.dim][embed_shape.dim].requested)
+        {
+            // Association data. This is the set of indices that point to the
+            // embedded shapes from each input shape. Think of it like the set
+            // of polyhedral face ids for each element but it works for other
+            // dimensions too.
+            std::vector<index_t> face_reorder(unique);
+            auto &embed_refs = G[shape.dim][embed_shape.dim].data;
+            embed_refs.resize(nelem_faces, 0);
+#ifdef DEBUG_PRINT
+            cout << "Building G(" << shape.dim << ", " << embed_shape.dim << ")" << endl;
+            cout << "points_per_face=" << points_per_face << endl;
+            cout << "unique=" << unique << endl;
+            cout << "faces_per_elem=" << faces_per_elem << endl;
+            cout << "nelem_faces=" << nelem_faces << endl;
+#endif
+
+            // Save how many embedded shapes an element would have.
+            G[shape.dim][embed_shape.dim].single_size = shape.embed_count;
+
+            // Make the embedded connectivity (and map data)
+            index_t embed_refs_idx = 0, final_faceid = 0;
+            for(index_t ef = 0; ef < nelem_faces; ef++)
+            {
+                uint64 unique_face_id = ef_to_unique[ef].second;
+
+                if(avail[unique_face_id])
+                {
+                    // Store the map data.
+                    face_reorder[unique_face_id] = final_faceid++;
+                    embed_refs[embed_refs_idx++] = face_reorder[unique_face_id];
+
+                    avail[unique_face_id] = 0;
+
+                    // Emit the face definition (as defined by the first element
+                    // that referenced it.
+                    int faceelem = ef / faces_per_elem;
+                    int facecase = ef % faces_per_elem;
+                    index_t elemstart = faceelem * points_per_elem;
+                    index_t *embed = &shape.embedding[facecase * points_per_face];
+                    for(index_t i = 0; i < points_per_face; i++)
+                        embed_conn[embed_conn_idx++] = conn[elemstart + embed[i]];
+                }
+                else
+                {
+                    // Store the map data. The entity has already been output,
+                    // add its reordered number to the refs.
+                    embed_refs[embed_refs_idx++] = face_reorder[unique_face_id];
+                }
+            }
+#ifdef DEBUG_PRINT
+            cout << "final embed_refs_idx=" << embed_refs_idx << endl << endl;
+            cout << "embed_refs=" << embed_refs << endl;
+#endif
+        }
+        else
+        {
+            // Make the embedded connectivity
+            for(index_t ef = 0; ef < nelem_faces; ef++)
+            {
+                uint64 unique_face_id = ef_to_unique[ef].second;
+                if(avail[unique_face_id])
+                {
+                    avail[unique_face_id] = 0;
+
+                    // Emit the face definition (as defined by the first element
+                    // that referenced it.
+                    int faceelem = ef / faces_per_elem;
+                    int facecase = ef % faces_per_elem;
+                    index_t elemstart = faceelem * points_per_elem;
+                    index_t *embed = &shape.embedding[facecase * points_per_face];
+                    for(index_t i = 0; i < points_per_face; i++)
+                        embed_conn[embed_conn_idx++] = conn[elemstart + embed[i]];
+                }
+            }
+        }
+#if 1
+// It has to be done like this for the connectivity nodes to match the old TopologyMetadata.
+// We have to have offsets for the new topology to match what TopologyMetadata makes.
+// Otherwise we could turn it off and let the maps handle the offsets implicitly.
+
+        // Generate offsets in the output connectivity. Some downstream algorithms want it.
+        node["elements/offsets"].set(DataType::index_t(unique));
+        index_t *offsets = node["elements/offsets"].as_index_t_ptr();
+        for(index_t ei = 0; ei < unique; ei++)
+            offsets[ei] = points_per_face * ei;
+
+#else
+// I changed it to this to try and work around a valgrind bug that I saw somewhere.
+
+        // Generate offsets in the output connectivity. Some downstream algorithms want it.
+        node["elements/offsets"].set(DataType::index_t(nelem_faces));
+        index_t *offsets = node["elements/offsets"].as_index_t_ptr();
+        for(index_t ei = 0; ei < nelem_faces; ei++)
+            offsets[ei] = points_per_face * ei;
+#endif
+    }
+};
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 bool
-NewTopologyMetadata::association::get_data(const index_t *&array,
+TopologyMetadata::Implementation::association::get_data(const index_t *&array,
     index_t &arraylen) const
 {
     bool retval = false;
@@ -151,7 +936,7 @@ NewTopologyMetadata::association::get_data(const index_t *&array,
  @return A pair containing the data pointer and array size.
  */
 std::pair<index_t *, index_t>
-NewTopologyMetadata::association::get_data(index_t entity_id) const
+TopologyMetadata::Implementation::association::get_data(index_t entity_id) const
 {
     index_t size = get_size(entity_id);
     index_t offset = get_offset(entity_id);
@@ -174,7 +959,7 @@ NewTopologyMetadata::association::get_data(index_t entity_id) const
 
 //---------------------------------------------------------------------------
 index_t
-NewTopologyMetadata::association::get_size(index_t entity_id) const
+TopologyMetadata::Implementation::association::get_size(index_t entity_id) const
 {
     index_t retval = 0;
     if(sizes_ptr)
@@ -188,7 +973,7 @@ NewTopologyMetadata::association::get_size(index_t entity_id) const
 
 //---------------------------------------------------------------------------
 index_t
-NewTopologyMetadata::association::get_offset(index_t entity_id) const
+TopologyMetadata::Implementation::association::get_offset(index_t entity_id) const
 {
     index_t retval = 0;
     if(offsets_ptr)
@@ -202,7 +987,7 @@ NewTopologyMetadata::association::get_offset(index_t entity_id) const
 
 //---------------------------------------------------------------------------
 bool
-NewTopologyMetadata::association::get_sizes(const index_t *&array,
+TopologyMetadata::Implementation::association::get_sizes(const index_t *&array,
     index_t &arraylen) const
 {
     bool retval = false;
@@ -228,7 +1013,7 @@ NewTopologyMetadata::association::get_sizes(const index_t *&array,
 
 //---------------------------------------------------------------------------
 bool
-NewTopologyMetadata::association::get_offsets(const index_t *&array,
+TopologyMetadata::Implementation::association::get_offsets(const index_t *&array,
     index_t &arraylen) const
 {
     bool retval = false;
@@ -255,25 +1040,27 @@ NewTopologyMetadata::association::get_offsets(const index_t *&array,
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 
-NewTopologyMetadata::NewTopologyMetadata(const conduit::Node &topology,
-    const conduit::Node &coordset) : topo(&topology), coords(&coordset),
-    topo_cascade(topology), coords_length(0), topo_shape(topology),
-    lowest_cascade_dim(0)
+TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
+    const conduit::Node &coordset) : TopologyMetadataBase(),
+    topo(&topology), coords(&coordset), topo_cascade(topology), topo_shape(topology),
+    lowest_cascade_dim(0), coords_length(0)
 {
     // Select all maps that could be valid for this shape.
     std::vector<std::pair<size_t, size_t> > desired;
-    for(size_t e = 0; e <= topo_shape.dim; e++)
-    for(size_t a = 0; a <= topo_shape.dim; a++)
+    auto maxdim = static_cast<size_t>(topo_shape.dim);
+    for(size_t e = 0; e <= maxdim; e++)
+    for(size_t a = 0; a <= maxdim; a++)
         desired.push_back(std::make_pair(e,a));
 
     initialize(desired);
 }
 
 //------------------------------------------------------------------------------
-NewTopologyMetadata::NewTopologyMetadata(const conduit::Node &topology,
+TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
     const conduit::Node &coordset,
     size_t lowest_dim,
     const std::vector<std::pair<size_t, size_t> > &desired) :
+    TopologyMetadataBase(),
     topo(&topology), coords(&coordset), topo_cascade(topology), topo_shape(topology),
     lowest_cascade_dim(lowest_dim), coords_length(0)
 {
@@ -282,16 +1069,16 @@ NewTopologyMetadata::NewTopologyMetadata(const conduit::Node &topology,
 
 //------------------------------------------------------------------------------
 void
-NewTopologyMetadata::initialize(const std::vector<std::pair<size_t, size_t> > &desired)
+TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t, size_t> > &desired)
 {
     // The lowest cascade dim is less than or equal to the topo_shape.dim.
-    if(lowest_cascade_dim > topo_shape.dim)
+    if(lowest_cascade_dim > static_cast<size_t>(topo_shape.dim))
     {
         CONDUIT_ERROR("lowest_cascade_dim is greater than the topo_shape.dim!");
     }
 
     // Initialize nodes/lengths.
-    for(int dim = 0; dim < MAX_ENTITY_DIMS; dim++)
+    for(size_t dim = 0; dim < MAX_ENTITY_DIMS; dim++)
     {
         dim_topos[dim].reset();
         dim_topo_lengths[dim] = 0;
@@ -310,7 +1097,7 @@ NewTopologyMetadata::initialize(const std::vector<std::pair<size_t, size_t> > &d
         make_point_topology();
 
     // If we have lines or faces to make, make them.
-    if(lowest_cascade_dim < topo_shape.dim && topo_shape.dim > 1)
+    if(lowest_cascade_dim < static_cast<size_t>(topo_shape.dim) && topo_shape.dim > 1)
     {
         if(topo_shape.is_polyhedral())
         {
@@ -330,13 +1117,14 @@ NewTopologyMetadata::initialize(const std::vector<std::pair<size_t, size_t> > &d
 
 //------------------------------------------------------------------------------
 void
-NewTopologyMetadata::request_associations(const std::vector<std::pair<size_t, size_t> > &desired)
+TopologyMetadata::Implementation::request_associations(const std::vector<std::pair<size_t, size_t> > &desired)
 {
+    auto maxdim = static_cast<size_t>(topo_shape.dim);
     for(size_t i = 0; i < desired.size(); i++)
     {
         auto e = desired[i].first;
         auto a = desired[i].second;
-        if(e > topo_shape.dim || a > topo_shape.dim)
+        if(e > maxdim || a > maxdim)
         {
             CONDUIT_ERROR("An invalid (e,a) association index was selected: (" <<
                e << ", " << a << ")");
@@ -351,26 +1139,26 @@ NewTopologyMetadata::request_associations(const std::vector<std::pair<size_t, si
         }
     }
 
-#if 0
-// No longer true - need to do this for PH cells.
-    // A couple of our association cases are built using other associations.
-    if(G[3][1].requested)
+    if(topo_shape.is_polyhedral())
     {
-        G[3][2].requested = true;
-        G[2][1].requested = true;
+        // A couple of our association cases are built using other associations.
+        if(G[3][1].requested)
+        {
+            G[3][2].requested = true;
+            G[2][1].requested = true;
+        }
+        if(G[3][0].requested)
+        {
+            G[3][2].requested = true;
+            G[2][1].requested = true;
+            G[1][0].requested = true;
+        }
     }
-    if(G[3][0].requested)
-    {
-        G[3][2].requested = true;
-        G[2][1].requested = true;
-        G[1][0].requested = true;
-    }
-#endif
 }
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::dispatch_connectivity_ph(const conduit::Node &subel,
+TopologyMetadata::Implementation::dispatch_connectivity_ph(const conduit::Node &subel,
     const conduit::Node &sizes)
 {
     // Dispatch to different versions based on connectivity type.
@@ -392,7 +1180,7 @@ NewTopologyMetadata::dispatch_connectivity_ph(const conduit::Node &subel,
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::dispatch_connectivity(const ShapeType &shape,
+TopologyMetadata::Implementation::dispatch_connectivity(const ShapeType &shape,
     const conduit::Node &conn)
 {
     // Dispatch to different versions based on connectivity type.
@@ -413,7 +1201,7 @@ NewTopologyMetadata::dispatch_connectivity(const ShapeType &shape,
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::make_highest_topology()
+TopologyMetadata::Implementation::make_highest_topology()
 {
     // Reuse the input topology as the highest dimension's topology.
     conduit::Node &node = dim_topos[topo_shape.dim];
@@ -440,8 +1228,8 @@ cout << "copy_keys = " << copy_keys << endl;
 cout << "Copying " << key << " as index_t." << endl;
             const conduit::Node &src = (*topo)[key];
             conduit::Node &dest = node[key];
-            dest.set(DataType(index_t_id(), src.dtype().number_of_elements()));
-            src.to_data_type(index_t_id(), dest);
+            dest.set(DataType::index_t(src.dtype().number_of_elements()));
+            src.to_data_type(DataType::index_t().id(), dest);
         }
     }
 
@@ -462,12 +1250,12 @@ cout << "Copying " << key << " as index_t." << endl;
 
     // Make offsets if they do not exist or if they were not index_t.
     conduit::Node &offsets = node["elements/offsets"];
-    if(src_offsets.dtype().id() != index_t_id())
+    if(src_offsets.dtype().id() != DataType::index_t().id())
     {
 cout << "Copying src_offsets to offsets as index_t. It was " << src_offsets.dtype().id() << endl;
         index_t nvalues = src_offsets.dtype().number_of_elements();
-        offsets.set(DataType(index_t_id(), nvalues));
-        src_offsets.to_data_type(index_t_id(), offsets);
+        offsets.set(DataType::index_t(nvalues));
+        src_offsets.to_data_type(DataType::index_t().id(), offsets);
     }
     else
     {
@@ -479,24 +1267,24 @@ node.print_detailed();
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::make_point_topology()
+TopologyMetadata::Implementation::make_point_topology()
 {
     conduit::Node &node = dim_topos[0];
     node["type"] = "unstructured";
     node["coordset"] = coords->name();
     node["elements/shape"] = "point";
-    node["elements/connectivity"].set(conduit::DataType(index_t_id(), coords_length));
+    node["elements/connectivity"].set(DataType::index_t(coords_length));
     // Also use the connectivity as offsets (works for points).
     node["elements/offsets"].set_external(node["elements/connectivity"]);
 
-    index_t *conn = as_index_t_ptr(node["elements/connectivity"]);
+    index_t *conn = node["elements/connectivity"].as_index_t_ptr();
     for(index_t i = 0; i < coords_length; i++)
         conn[i] = i;
 }
 
 //---------------------------------------------------------------------------
 index_t
-NewTopologyMetadata::make_unique(
+TopologyMetadata::Implementation::make_unique(
     const std::vector<std::pair<uint64, uint64>> &faceid_to_ef,
     std::vector<std::pair<uint64, uint64>> &ef_to_unique) const
 {
@@ -523,7 +1311,7 @@ NewTopologyMetadata::make_unique(
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::build_associations()
+TopologyMetadata::Implementation::build_associations()
 {
     // Some maps will need lengths of the topologies that were produced.
 #ifdef DEBUG_PRINT
@@ -663,38 +1451,37 @@ NewTopologyMetadata::build_associations()
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::build_association_e_0(int e)
+TopologyMetadata::Implementation::build_association_e_0(int e)
 {
     conduit::Node &node = dim_topos[e];
     static const std::string keys[]{"elements/connectivity",
                                     "elements/sizes",
                                     "elements/offsets"};
-cout << "build_association_e_0(" << e << ")" << endl;
-node.print_detailed();
+
     // Save some pointers from the connectivity in the association.
     if(node.has_path(keys[0]))
     {
         conduit::Node &n = node[keys[0]];
-        G[e][0].data_ptr = as_index_t_ptr(n);
+        G[e][0].data_ptr = n.as_index_t_ptr();
         G[e][0].data_ptr_size = n.dtype().number_of_elements();
     }
     if(node.has_path(keys[1]))
     {
         conduit::Node &n = node[keys[1]];
-        G[e][0].sizes_ptr = as_index_t_ptr(n);
+        G[e][0].sizes_ptr = n.as_index_t_ptr();
         G[e][0].sizes_ptr_size = n.dtype().number_of_elements();
     }
     if(node.has_path(keys[2]))
     {
         conduit::Node &n = node[keys[2]];
-        G[e][0].offsets_ptr = as_index_t_ptr(n);
+        G[e][0].offsets_ptr = n.as_index_t_ptr();
         G[e][0].offsets_ptr_size = n.dtype().number_of_elements();
     }
 }
 
 //---------------------------------------------------------------------------
 std::vector<index_t>
-NewTopologyMetadata::embedding_3_1_edges(const ShapeType &shape) const
+TopologyMetadata::Implementation::embedding_3_1_edges(const ShapeType &shape) const
 {
     std::vector<index_t> retval;
     std::set<std::pair<index_t, index_t>> edges;
@@ -721,7 +1508,7 @@ NewTopologyMetadata::embedding_3_1_edges(const ShapeType &shape) const
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::build_association_3_1_and_3_0()
+TopologyMetadata::Implementation::build_association_3_1_and_3_0()
 {
     if(topo_shape.is_polyhedral())
         build_association_3_1_and_3_0_ph();
@@ -731,7 +1518,7 @@ NewTopologyMetadata::build_association_3_1_and_3_0()
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::build_association_3_1_and_3_0_ph()
+TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
 {
     // G(3,2) contains the PH faces.
     const association &map32 = G[3][2];
@@ -837,7 +1624,7 @@ NewTopologyMetadata::build_association_3_1_and_3_0_ph()
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::build_association_3_1_and_3_0_nonph()
+TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
 {
     // This is the non PH method.
 
@@ -947,7 +1734,7 @@ NewTopologyMetadata::build_association_3_1_and_3_0_nonph()
         size_t ptadded = map30.requested ? 0 : std::numeric_limits<size_t>::max();
         index_t elem_point = elem_offset;
 
-        for(size_t edge_index = 0; edge_index < edges_per_elem; edge_index++)
+        for(index_t edge_index = 0; edge_index < edges_per_elem; edge_index++)
         {
             // These point ids are in [0,points_per_elem) and are the local
             // point indices for the edges in the cell.
@@ -1007,7 +1794,7 @@ NewTopologyMetadata::build_association_3_1_and_3_0_nonph()
 // OBSOLETE -- I might want to find my old one for PH elements though.
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::build_association_3_1()
+TopologyMetadata::Implementation::build_association_3_1()
 {
     // Get the number of faces and lines produced during the cascade.
     size_t numelems = dim_topo_lengths[3]; // Or G[3][2].sizes.size()
@@ -1037,10 +1824,9 @@ NewTopologyMetadata::build_association_3_1()
     // Keep track of whether a face has been seen before.
     std::vector<int> facecount(numfaces, 0);
     // Get the line connectivity since we need it.
-    const index_t *lineconn = as_index_t_ptr(dim_topos[1]["elements/connectivity"]);
-    const index_t *faceconn = as_index_t_ptr(dim_topos[2]["elements/connectivity"]);
-    //const index_t *facesize = as_index_t_ptr(dim_topos[2]["elements/sizes"]);
-    const index_t *faceoffset = as_index_t_ptr(dim_topos[2]["elements/offsets"]);
+    const index_t *lineconn = dim_topos[1]["elements/connectivity"].as_index_t_ptr();
+    const index_t *faceconn = dim_topos[2]["elements/connectivity"].as_index_t_ptr();
+    const index_t *faceoffset = dim_topos[2]["elements/offsets"].as_index_t_ptr();
 
     // For each element, get its faces and add its lines to the map31.data
     // if we have not seen that line before in the element.
@@ -1143,7 +1929,7 @@ cout << endl;
 //---------------------------------------------------------------------------
 // OBSOLETE
 void
-NewTopologyMetadata::build_association_3_0()
+TopologyMetadata::Implementation::build_association_3_0()
 {
     // Get the number of faces and lines produced during the cascade.
     size_t numelems = dim_topo_lengths[3];
@@ -1279,7 +2065,7 @@ NewTopologyMetadata::build_association_3_0()
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::print_association(int e, int a) const
+TopologyMetadata::Implementation::print_association(int e, int a) const
 {
     const association &assoc = G[e][a];
     cout << "\tdata=" << assoc.data << endl;
@@ -1315,7 +2101,7 @@ NewTopologyMetadata::print_association(int e, int a) const
 
 //---------------------------------------------------------------------------
 void
-NewTopologyMetadata::build_child_to_parent_association(int e, int a)
+TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a)
 {
     const association &mapPC = G[a][e]; // parent to child (already exists)
     association &mapCP = G[e][a];       // child to parent (what we're making).
@@ -1371,7 +2157,8 @@ NewTopologyMetadata::build_child_to_parent_association(int e, int a)
     }
     else
     {
-        for(index_t id = 0; id < mapPC.sizes.size(); id++)
+        auto mapPC_sizes_size = static_cast<index_t>(mapPC.sizes.size());
+        for(index_t id = 0; id < mapPC_sizes_size; id++)
         {
             for(index_t i = 0; i < mapPC.sizes[id]; i++)
             {
@@ -1423,7 +2210,7 @@ NewTopologyMetadata::build_child_to_parent_association(int e, int a)
 
 //---------------------------------------------------------------------------
 bool
-NewTopologyMetadata::association_requested(index_t entity_dim, index_t assoc_dim) const
+TopologyMetadata::Implementation::association_requested(index_t entity_dim, index_t assoc_dim) const
 {
 #ifndef _NDEBUG
     if(entity_dim > topo_shape.dim || assoc_dim > topo_shape.dim)
@@ -1437,7 +2224,7 @@ NewTopologyMetadata::association_requested(index_t entity_dim, index_t assoc_dim
 
 //---------------------------------------------------------------------------
 vector_view<index_t>
-NewTopologyMetadata::get_global_association(index_t entity_id,
+TopologyMetadata::Implementation::get_global_association(index_t entity_id,
     index_t entity_dim, index_t assoc_dim) const
 {
 #ifndef _NDEBUG
@@ -1460,7 +2247,7 @@ NewTopologyMetadata::get_global_association(index_t entity_id,
 
 //---------------------------------------------------------------------------
 index_t
-NewTopologyMetadata::get_local_association_entity_range(int src_dim, int dst_dim) const
+TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim, int dst_dim) const
 {
     index_t ne;
     index_t mapcase = EA_INDEX(src_dim, dst_dim);
@@ -1514,7 +2301,7 @@ NewTopologyMetadata::get_local_association_entity_range(int src_dim, int dst_dim
 
 //---------------------------------------------------------------------------
 conduit::range_vector<index_t>
-NewTopologyMetadata::get_local_association(index_t entity_id,
+TopologyMetadata::Implementation::get_local_association(index_t entity_id,
     index_t entity_dim, index_t assoc_dim) const
 {
 #ifndef _NDEBUG
@@ -1530,7 +2317,6 @@ NewTopologyMetadata::get_local_association(index_t entity_id,
     }
 #endif
     // Sometimes we need size/offset information from the global association.
-    const association &assoc = G[entity_dim][assoc_dim];
     conduit::range_vector<index_t> vec(entity_id, 1, 1);
 
     // NOTE: A pattern that occurs when e, a are more than 1 apart is that we
@@ -1651,7 +2437,7 @@ NewTopologyMetadata::get_local_association(index_t entity_id,
 
 //---------------------------------------------------------------------------
 bool
-NewTopologyMetadata::get_dim_map(NewTopologyMetadata::IndexType type,
+TopologyMetadata::Implementation::get_dim_map(TopologyMetadata::Implementation::IndexType type,
     index_t src_dim, index_t dst_dim, conduit::Node &map_node) const
 {
     bool retval = false;
@@ -1664,7 +2450,7 @@ NewTopologyMetadata::get_dim_map(NewTopologyMetadata::IndexType type,
 
 //---------------------------------------------------------------------------
 bool
-NewTopologyMetadata::get_global_dim_map(index_t src_dim, index_t dst_dim,
+TopologyMetadata::Implementation::get_global_dim_map(index_t src_dim, index_t dst_dim,
     conduit::Node &map_node) const
 {
     const association &assoc = G[src_dim][dst_dim];
@@ -1693,8 +2479,8 @@ NewTopologyMetadata::get_global_dim_map(index_t src_dim, index_t dst_dim,
         {
             // Shapes were all the same size. Make new values.
             size_t nembed = dim_topo_lengths[src_dim];
-            sizes.set(conduit::DataType(index_t_id(), nembed));
-            index_t *ptr = as_index_t_ptr(sizes);
+            sizes.set(DataType::index_t(nembed));
+            index_t *ptr = sizes.as_index_t_ptr();
             index_t sz = assoc.single_size;
             for(size_t i = 0; i < nembed; i++)
                 ptr[i] = sz;
@@ -1714,8 +2500,8 @@ NewTopologyMetadata::get_global_dim_map(index_t src_dim, index_t dst_dim,
         {
             // Shapes were all the same size. Make new values.
             size_t nembed = dim_topo_lengths[src_dim];
-            offsets.set(conduit::DataType(index_t_id(), nembed));
-            index_t *ptr = as_index_t_ptr(offsets);
+            offsets.set(DataType::index_t(nembed));
+            index_t *ptr = offsets.as_index_t_ptr();
             index_t sz = assoc.single_size;
             for(size_t i = 0; i < nembed; i++)
                 ptr[i] = i * sz;
@@ -1731,7 +2517,7 @@ NewTopologyMetadata::get_global_dim_map(index_t src_dim, index_t dst_dim,
 
 //------------------------------------------------------------------------------
 bool
-NewTopologyMetadata::get_local_dim_map(index_t src_dim, index_t dst_dim,
+TopologyMetadata::Implementation::get_local_dim_map(index_t src_dim, index_t dst_dim,
     conduit::Node &map_node) const
 {
     bool requested = G[src_dim][dst_dim].requested;
@@ -1751,13 +2537,13 @@ NewTopologyMetadata::get_local_dim_map(index_t src_dim, index_t dst_dim,
         conduit::Node &sizes = map_node["sizes"];
         conduit::Node &offsets = map_node["offsets"];
 
-        values.set(conduit::DataType(index_t_id(), total_size));
-        sizes.set(conduit::DataType(index_t_id(),  N));
-        offsets.set(conduit::DataType(index_t_id(), N));
+        values.set(DataType::index_t(total_size));
+        sizes.set(DataType::index_t(N));
+        offsets.set(DataType::index_t(N));
 
-        index_t *values_ptr = as_index_t_ptr(values);
-        index_t *sizes_ptr = as_index_t_ptr(sizes);
-        index_t *offsets_ptr = as_index_t_ptr(offsets);
+        index_t *values_ptr = values.as_index_t_ptr();
+        index_t *sizes_ptr = sizes.as_index_t_ptr();
+        index_t *offsets_ptr = offsets.as_index_t_ptr();
 
         // Do another pass to store the data in the nodes.
         index_t off = 0;
@@ -1777,14 +2563,122 @@ NewTopologyMetadata::get_local_dim_map(index_t src_dim, index_t dst_dim,
     return requested;
 }
 
+//---------------------------------------------------------------------------//
+index_t
+TopologyMetadata::Implementation::get_length(index_t dim) const
+{
+    // NOTE: The default version of 'get_length' gets the total length of all
+    // unique entities in the topology. The parameterized version fetches the
+    // length for just that parameter's dimension.
+
+    index_t start_dim = (dim >= 0) ? dim : 0;
+    index_t end_dim = (dim >= 0) ? dim : topo_shape.dim;
+
+    index_t topo_length = 0;
+    for(index_t di = start_dim; di <= end_dim; di++)
+    {
+        topo_length += topology::length(dim_topos[di]);
+    }
+
+    return topo_length;
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+// Public interface for TopologyMetadata.
+
+TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
+    const conduit::Node &coordset) : TopologyMetadataBase()
+{
+    impl = new Implementation(topology, coordset);
+}
+
+//---------------------------------------------------------------------------
+TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
+    const conduit::Node &coordset,
+    size_t lowest_dim,
+    const std::vector<std::pair<size_t,size_t> > &desired_maps) :
+    TopologyMetadataBase()
+{
+    impl = new Implementation(topology, coordset, lowest_dim, desired_maps);
+}
+
+//---------------------------------------------------------------------------
+TopologyMetadata::~TopologyMetadata()
+{
+    delete impl;
+}
+
+//---------------------------------------------------------------------------
+int
+TopologyMetadata::dimension() const
+{
+    return impl->dimension();
+}
+
+//---------------------------------------------------------------------------
+const conduit::Node *
+TopologyMetadata::get_topologies() const
+{
+    return impl->get_topologies();
+}
+
+//---------------------------------------------------------------------------
+const index_t *
+TopologyMetadata::get_topology_lengths() const
+{
+    return impl->get_topology_lengths();
+}
+
+//---------------------------------------------------------------------------
+conduit::vector_view<index_t>
+TopologyMetadata::get_global_association(index_t entity_id, index_t entity_dim,
+    index_t assoc_dim) const
+{
+    return impl->get_global_association(entity_id, entity_dim, assoc_dim);
+}
+
+//---------------------------------------------------------------------------
+conduit::range_vector<index_t>
+TopologyMetadata::get_local_association(index_t entity_id, index_t entity_dim,
+    index_t assoc_dim) const
+{
+    return impl->get_local_association(entity_id, entity_dim, assoc_dim);
+}
+
+//---------------------------------------------------------------------------
+bool
+TopologyMetadata::association_requested(index_t entity_dim, index_t assoc_dim) const
+{
+    return impl->association_requested(entity_dim, assoc_dim);
+}
+
+//---------------------------------------------------------------------------
+bool
+TopologyMetadata::get_dim_map(IndexType type, index_t src_dim, index_t dst_dim,
+    Node &map_node) const
+{
+    return impl->get_dim_map(type, src_dim, dst_dim, map_node);
+}
+
+//---------------------------------------------------------------------------
+index_t
+TopologyMetadata::get_length(index_t dim) const
+{
+    return impl->get_length(dim);
+}
+
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::utils::detail::reference --
+// -- begin conduit::blueprint::mesh::utils::reference --
 //-----------------------------------------------------------------------------
 namespace reference
 {
 
+// The reference implementation of TopologyMetadata.
 //---------------------------------------------------------------------------//
-TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset) :
+TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
+    const conduit::Node &coordset) :
+    TopologyMetadataBase(),
     topo(&topology), cset(&coordset),
     int_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_INT_DTYPES)),
     float_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_FLOAT_DTYPE)),
@@ -1946,8 +2840,8 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology, const conduit:
         // Make some references based on entity_dim.
         std::vector<int64> &dim_buffer = dim_buffers[entity_dim];
         std::map< std::vector<index_t>, index_t > &dim_geid_map = dim_geid_maps[entity_dim];
-        auto &dim_geassocs = dim_geassocs_maps[entity_dim];
-        auto &dim_leassocs = dim_leassocs_maps[entity_dim];
+        //auto &dim_geassocs = dim_geassocs_maps[entity_dim];
+        //auto &dim_leassocs = dim_leassocs_maps[entity_dim];
         std::vector<index_t> &dim_le2ge_map = dim_le2ge_maps[entity_dim];
         const ShapeType &dim_shape = topo_cascade.get_shape(entity_dim);
 
@@ -2340,12 +3234,7 @@ TopologyMetadata::to_json() const
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::detail::reference --
-//-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::detail --
+// -- end conduit::blueprint::mesh::reference --
 //-----------------------------------------------------------------------------
 
 }
@@ -2353,12 +3242,10 @@ TopologyMetadata::to_json() const
 // -- end conduit::blueprint::mesh::utils --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------

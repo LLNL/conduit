@@ -4,12 +4,12 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_util_detail.hpp
+/// file: conduit_blueprint_mesh_topology_metadata.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_BLUEPRINT_MESH_UTILS_DETAIL_HPP
-#define CONDUIT_BLUEPRINT_MESH_UTILS_DETAIL_HPP
+#ifndef CONDUIT_BLUEPRINT_MESH_TOPOLOGY_METADATA_HPP
+#define CONDUIT_BLUEPRINT_MESH_TOPOLOGY_METADATA_HPP
 
 //-----------------------------------------------------------------------------
 // std includes
@@ -24,6 +24,9 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 #include "conduit_blueprint_exports.h"
+#include "conduit_range_vector.hpp"
+#include "conduit_vector_view.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -49,81 +52,160 @@ namespace mesh
 namespace utils
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::utils::detail --
-//-----------------------------------------------------------------------------
-namespace detail
+class CONDUIT_BLUEPRINT_API TopologyMetadataBase
 {
-
-/**
- This class accepts a node containing a topology and it puts that topology
- through a shape cascade. This means turning elements->faces->edges->points
- and producing associations (maps) that allow the caller to query various
- relations such as the elements that own a face, or the lines in an element.
- All of the various entities in the different topology levels have been made
- unique.
-
- This class differs from the previous implementation in the following ways:
-
- * It uses recursion and template functions to make sure we can access
-   connectivity data using either native pointers or and index_t_accessor
-   so no Conduit casts are needed.
-
- * Associations are mostly created only when asked for (or indirectly needed)
-   and this is done largely after the cascade has been performed.
-
- * Associations are stored contiguously in memory or are implicit.
-
- * Access to associations is made using a "vector_view" which returns a window
-   into the bulk association data so the caller can use the data without
-   having to copy it out. Local association data is returned as a "range_vector"
-   so the local ranges can be represented implicitly while still looking
-   like a vector.
-*/
-class CONDUIT_BLUEPRINT_API NewTopologyMetadata
-{
-    struct association
-    {
-        // The association owns this storage.
-        std::vector<index_t> data;
-        std::vector<index_t> sizes;
-        std::vector<index_t> offsets;
-        // The association is using data from a topology.
-        index_t    *data_ptr{nullptr};
-        index_t    *sizes_ptr{nullptr};
-        index_t    *offsets_ptr{nullptr};
-        index_t     data_ptr_size{0};
-        index_t     sizes_ptr_size{0};
-        index_t     offsets_ptr_size{0};
-        // Other fields
-        int                  single_size{1};
-        bool                 requested{false};
-
-        // Helper methods.
-        bool get_data(const index_t *&array, index_t &arraylen) const;
-        bool get_sizes(const index_t *&array, index_t &arraylen) const;
-        bool get_offsets(const index_t *&array, index_t &arraylen) const;
-
-        inline std::pair<index_t *, index_t> get_data(index_t entity_id) const;
-        inline index_t get_size(index_t entity_id) const;
-        inline index_t get_offset(index_t entity_id) const;
-    };
-
-    // Data members
-    const conduit::Node *topo, *coords;
-    const ShapeCascade topo_cascade;
-    const ShapeType topo_shape;
-    size_t lowest_cascade_dim;
-    index_t coords_length;
-    conduit::Node dim_topos[MAX_ENTITY_DIMS];
-    index_t dim_topo_lengths[MAX_ENTITY_DIMS];
-    association G[MAX_ENTITY_DIMS][MAX_ENTITY_DIMS];  
-
 public:
-    constexpr static size_t MAX_ENTITY_DIMS = 4;
-
     enum IndexType { GLOBAL = 0, LOCAL = 1 };
+    // The 'IndexType' indicates the index space to be used when referring to
+    // entities within this topological cascade.
+};
 
+//---------------------------------------------------------------------------//
+/**
+ The TopologicalMetadata takes an input topology and decomposes each element
+ according to a topological cascade to produce connectivity from the input
+ topology's level down to the points. In 3D, this gives rise to:
+
+   3D cells, 2D faces, 1D edges, 0D points
+ 
+ The set of 2D faces is a unique set of faces shared among the input 3D elements
+ and mappings are produced that allow us to access for each element which faces
+ it "owns" as children. When 2 elements share a face, they will each count it
+ as a child in their connectivity. The 2D faces consist of a set of edges
+ and these are made unique as well and are available in the mapping.
+
+ An example is helpful to understand the concept of the maps.
+
+ 4 3D Hex topology (points are labelled):
+
+             |--------------------------- element 2 (3,4,7,6,12,13,16,15)
+             |
+      +-------------+-------------+
+     /|6           /|7           /|8
+    / |           / |           / |
+   /  |          /  |          /  |
+  /   |         /   |         /   |  <--- element 3 (4,5,8,7,13,14,17,16)
+ +-------------+-------------+    |
+ |15  |        |16  |        |17  |
+ |    +- - - - | - -+ - - - -|- - +
+ |   /|3       |   /|4       |   /|5
+ |  / |        |  / |        |  / |
+ | /  |        | /  |        | /  |
+ |/   |        |/   |        |/   |
+ +-------------+-------------+    |
+ |12  |        |13  |        |14  |
+ |    +- - - - | - -+ - - - -|- - +
+ |   / 0       |   / 1       |   / 2
+ |  /          |  /          |  /
+ | /           | /           | /  <------ element 1 (1,2,5,4,10,11,14,13)
+ |/            |/            |/
+ +-------------+-------------+
+  9             10            11 
+        ^              
+        |-------------------------------- element 0  (0,1,4,3,9,10,13,12)
+
+
+ When the topological cascade is done, each element is turned into a set of faces
+ and these are made unique and elements that abut will share the common face. So,
+ elements 0,1 will share the quad face (10,1,4,13). The unique set of faces in all
+ elements will form the metadata's dimension 2 connectivity:
+
+ face 0: 0, 3, 4, 1
+ face 1: 0, 1, 10, 9
+ face 2: 1, 4, 13, 10  <----- face 2 is made of these points. face 2 is shared
+ face 3: 4, 3, 12, 13         by elements 0, 1.
+ face 4: 3, 0, 9, 12
+ face 5: 9, 10, 13, 12
+ face 6: 1, 4, 5, 2
+ face 7: 1, 2, 11
+ face 8: 10, 2, 5, 14
+ face 9: 11, 5, 4, 13
+ face 10: 14, 10, 11, 14
+ ...
+
+ In the same way, the entire collection of faces can be thought of as a unique
+ set of edges with their own numbering.
+
+ The entity maps contain the information of how these elements,faces,edges,points
+ are connected.
+
+ The global entity map for dimension 3 to dimension 2, which we'll write as G(3,2),
+ indicates the relationship between entities of dimension 3 to the entities of
+ dimension 2. Since the dimension 3 elements are made of the dimension 2 elements
+ (much as PH cells are expressed in Blueprint), the G(3,2) map will consist
+ of the indices of the faces that make up element 0, followed by the indices of the
+ faces that make up element 1, and so on.
+
+           element 0 faces   element 1 faces ...
+ G(3,2) = {0, 1, 2, 3, 4, 5}{6, 7, 8, 9, 2, 10}...
+                    |
+                    |
+                    face 3 in unique face list (topo[2] connectivity)
+
+ There are other global entity maps G(e,a) too. G(3,3) is the relationship of the elements
+ to elements, which is self so any input to the map is also the output. The G(3,1) map
+ represents the indices of the 1D edges that make up the 3D element. The G(3,0) map
+ represents all of the points contained by the 3D element, values which for most
+ cases are contained in the 3D connectivity.
+
+ G(e,a) is shorthand for "Global(entity_dim, association_dim)".
+
+ When e==a, the relationship is self.
+ When e>a, the relationship is that entity e contains/references entity a.
+ When a>e, the relationship is entity a is referenced by parents of dimension e.
+
+ In the above example for G(3,2), we can see that face 2 is shared by elements 0
+ and 1. If we want to know which edges make up face 2, we can consult G(2,1).
+
+           face 0      face 1      face 2      face 3
+ G(2,1) = {0, 1, 2, 3}{3, 4, 5, 6}{2, 7, 8, 4}{1, 9, 10, 7}...
+                                   |
+                                   |
+                                   face 2 in unique edge list (topo[1] connectivity)
+
+ If we want to know which points make up the edges for face 2, consult G(1,0). This is
+ the map of lines to points (also top_dims[1] connectivity).
+
+           edge number
+           |
+           0    1    2    3    4     5     6    7     8
+ G(1,0) = {0,3}{3,4}{4,1}{1,0}{1,10}{10,9}{9,0}{4,13}{13,10}...
+                     |         |                |     |
+                     |         |                |     |
+                     ----------------------------------
+                     |
+                     edges that are in face 2. 
+
+
+ What does G(e,a) mean?
+
+                               Association (a)
+  ---------------------------------------------------------------------------
+     | 3              | 2               | 1               | 0
+  ---------------------------------------------------------------------------
+E  3 |                | face ids in     | edge ids for    | point ids in
+n    |    self        | element i       | element i       | element i
+t    |                | BBC*            |                 | dim[3] connectivity
+i  --|-----------------------------------------------------------------------
+t  2 | element ids    |                 | edge ids in     | point ids in 
+y    | that contain   |      self       | face i          | face i
+     | face i         |                 | BBC *           | dim[2] connectivity
+e  --|-----------------------------------------------------------------------
+   1 | element ids    | face ids that   |                 | point ids in
+     | that contain   | contain edge i  |      self       | edge i
+     | edge i         |                 |                 | dim[1] connectivity
+   --|-----------------------------------------------------------------------
+   0 | element ids    | face ids that   | edge ids that   |
+     | that contain   | contain point i | contain point i |     self
+     | point i        |                 |                 |
+  ---------------------------------------------------------------------------
+
+ *BBC = built by cascade
+
+ */
+class CONDUIT_BLUEPRINT_API TopologyMetadata : public TopologyMetadataBase
+{
+public:
     //-----------------------------------------------------------------------
     /**
      @brief Legacy constructor, which builds all of the topology levels in the shape
@@ -132,7 +214,7 @@ public:
      @param topology     The input topology node.
      @param coordset     The input coordset associated with the topology.
      */
-    NewTopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset);
+    TopologyMetadata(const conduit::Node &topology, const conduit::Node &coordset);
 
     //-----------------------------------------------------------------------
     /**
@@ -148,24 +230,27 @@ public:
      @param desired      A vector of (entity_dim,assoc_dim) pairs that indicate
                          the associations that will be requested by the client.
      */
-    NewTopologyMetadata(const conduit::Node &topology,
-                        const conduit::Node &coordset,
-                        size_t lowest_dim,
-                        const std::vector<std::pair<size_t,size_t> > &desired_maps);
+    TopologyMetadata(const conduit::Node &topology,
+                     const conduit::Node &coordset,
+                     size_t lowest_dim,
+                     const std::vector<std::pair<size_t,size_t> > &desired_maps);
+
+    //-----------------------------------------------------------------------
+    virtual ~TopologyMetadata();
 
     //-----------------------------------------------------------------------
     /**
      @brief Get the highest shape dimension.
      @return The highest shape dimension.
      */
-    int dimension() const { return topo_shape.dim; }
+    int dimension() const;
 
     //-----------------------------------------------------------------------
     /**
      @brief Get the topologies array.
      @return The topologies array.
      */
-    const conduit::Node *get_topologies() const { return dim_topos; }
+    const conduit::Node *get_topologies() const;
 
     //-----------------------------------------------------------------------
     /**
@@ -173,7 +258,7 @@ public:
             were not produced will have length 0.
      @return The topology lengths array.
      */
-    const index_t *get_topology_lengths() const { return dim_topo_lengths; }
+    const index_t *get_topology_lengths() const;
 
     //-----------------------------------------------------------------------
     /**
@@ -200,9 +285,11 @@ public:
            like a vector but does not have to copy bulk data. The data it points
            to for a given return are in the associations.
      */
-    conduit::vector_view<index_t> get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
+    conduit::vector_view<index_t>
+    get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
 
-    conduit::range_vector<index_t> get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
+    conduit::range_vector<index_t>
+    get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
 
     //-----------------------------------------------------------------------
     /**
@@ -233,546 +320,25 @@ public:
       @return True if the map exists(was requested); False otherwise.
      */
     bool get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
+
+    index_t get_length(index_t dim = -1) const;
 private:
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief This method causes the topologies and maps to be created,
-            initializing the object.
-
-     @param desired A vector of (e,a) pairs that indicate which associations
-                    we want to compute.
-     */
-    void initialize(const std::vector<std::pair<size_t, size_t> > &desired);
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Examine the vector of desired maps and mark the associations
-            as requested.
-
-     @param desired A vector of (e,a) pairs that indicate which associations
-                    we want to compute.
-     */
-    void request_associations(const std::vector<std::pair<size_t, size_t> > &desired);
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Build any associations that were not produced during the cascade.
-     */
-    void build_associations();
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Build the association from dimension e to dimension 0.
-
-     @param e The source dimension.
-     */
-    void build_association_e_0(int e);
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Given a 3D non-PH shape, return the set of unique line segments
-            in traversal order.
-
-     @param shape The input shape, which should be a 3D non-PH element.
-     @return A vector of edge endpoint pairs that represent the unique edges
-             for the element.
-     */
-    std::vector<index_t> embedding_3_1_edges(const ShapeType &shape) const;
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Build the G(3,1) and G(3,0) associations together because they
-            need to do most of the same work.
-     */
-    void build_association_3_1_and_3_0();
-    void build_association_3_1_and_3_0_ph();
-    void build_association_3_1_and_3_0_nonph();
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Print association G[e][a].
-     */
-    void print_association(int e, int a) const;
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief This method builds a child to parent association by reversing
-            an existing parent to child association.
-
-     @param e The entity dimension (the thing we have: element=3,face=2,...)
-     @param a The association dimension (the thing we want to know about with
-              respect to the entity dimension). e < a.
-     */
-    void build_child_to_parent_association(int e, int a);
-
-    /**
-      @brief Return all of the data for a GLOBAL association by COPYING it into
-             the provided Conduit node.
-
-      @param src_dim The source dimension of the desired association.
-      @param dst_dim The destination dimension of the desired association.
-      @param[out] map_node The Conduit node that will contain the copied association data.
-
-      @note This method guarantees that all bulk arrays for values, sizes, and
-            offsets will be index_t.
-     */
-    bool get_global_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const;
-    bool get_local_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const;
-    index_t get_local_association_entity_range(int e, int a) const;
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Takes the input topology and reuses it has the highest topology.
-            The method makes sure that the topology will have offsets too.
-     */
-    void make_highest_topology();
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief Identify sequences of unique ids and give them the same unique id
-            that is an increasing number rather than a random id.
-
-     @param faceid_to_ef A vector of pairs that contain a faceid to element face.
-                         Or, rather, a hashid to element entity.
-     @param ef_to_unique: A reverse map of element face to unique id.
-
-     @return The number of unique ids.
-    */
-    index_t
-    make_unique(const std::vector<std::pair<uint64, uint64>> &faceid_to_ef, 
-                std::vector<std::pair<uint64, uint64>> &ef_to_unique) const;
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief This method casts the sizes node into some usable types and then
-            invokes dispatch_shape_ph built for those types.
-
-     @param subel The polyhedral subelement node.
-     @param sizes The sizes node under the subelement node.
-     */
-    void dispatch_connectivity_ph(const conduit::Node &subel,
-                                  const conduit::Node &sizes);
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief This method is called with a shape and connectivity and it casts
-            the connectivity to usable types and calls dispatch_shape methods
-            that operate on those types.
-
-     @param shape The shape that the connectivity represents.
-     @param conn  A node that contains the bulk connectivity data.
-     */
-    void  dispatch_connectivity(const ShapeType &shape,
-                                const conduit::Node &conn);
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief This method accepts a node containing polyhedral subelement data,
-            which contains the actual face definitions that make up the PH
-            mesh. We invoke the method to make the face connectivity and then
-            dispatch again to make the lines.
-
-     @param subel The polyhedral subelement node.
-     @param sizes The sizes in the subelement node cast to a more usable type
-                  such as a pointer or an accessor.
-     @param sizeslen The number of elements in sizes.
-     */
-    template <typename ConnType>
-    void
-    dispatch_shape_ph(const conduit::Node &subel,
-                      const ConnType &sizes,
-                      size_t sizeslen)
-    {
-        const int embed_dim = 2;
-
-        // Make faces from the PH faces.
-        make_embedded_connectivity_ph(subel, sizes, sizeslen);
-
-        // Make lines. Note that we get the embed shape from the 2D topo
-        // in case we set it to quads or tris. The topo_cascade would
-        // return polygons but we may do a little better with quads/tris
-        // if we can assume those.
-        const conduit::Node &econn = dim_topos[embed_dim].fetch_existing("elements/connectivity");
-        ShapeType embed_shape(dim_topos[embed_dim]);
-        dispatch_connectivity(embed_shape, econn);
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief This method is called with a shape and connectivity data that
-            is of a concrete type (or an accessor). The method makes calls
-            to create the connectivity for the embedded shape (e.g. faces 
-            from elements) and then calls the next level down when done.
-
-     @param shape The shape that the connectivity represents.
-     @param conn  An array or accessor that contains the connectivity data.
-     @param connlen The number of connectivity array elements.
-     */
-    template <typename ConnType>
-    void
-    dispatch_shape(const ShapeType &shape,
-                   const ConnType &conn,
-                   size_t connlen)
-    {
-        if(!shape.is_polygonal())
-        {
-            // Make faces for any of the 3D implicit cell types.
-            if(shape.dim == 3)
-            {
-                make_embedded_connectivity(shape, conn, connlen);
-
-                // Make lines.
-                int embed_dim = shape.dim - 1;
-                const conduit::Node &econn = dim_topos[embed_dim].fetch_existing("elements/connectivity");
-                ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
-                dispatch_connectivity(embed_shape, econn);
-            }
-            else if(shape.dim == 2)
-            {
-                // All input shapes are the same (e.g. quads or tris).
-                // Make lines.
-                make_embedded_connectivity(shape, conn, connlen);
-            }
-        }
-        else
-        {
-            // The shape is said to contain polygons so we have to be a bit more
-            // general in how we traverse the connectivity. We want sizes/offsets.
-
-            // TODO: write make_embedded_connectivity_mixed
-        }
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-     @brief This method accepts a node containing polyhedral subelement data,
-            which contains the actual face definitions that make up the PH
-            mesh. We use these faces as the 2D topology as it is already
-            made of polygons. We scan it too to see whether it contains all
-            triangles or quads, in which case, we change the shape type to
-            make downstream line production easier.
-
-     @param subel The polyhedral subelement node.
-     @param sizes The sizes in the subelement node cast to a more usable type
-                  such as a pointer or an accessor.
-     @param sizeslen The number of elements in sizes.
-     */
-    template <typename ConnType>
-    void
-    make_embedded_connectivity_ph(const conduit::Node &subel,
-                                  const ConnType &sizes,
-                                  size_t sizeslen)
-    {
-        const int embed_dim = 2;
-
-        // Use the subelement information from the PH mesh as the embedded
-        // connectivity for the 2D faces.
-        conduit::Node &node = dim_topos[embed_dim];
-        node["type"] = "unstructured";
-        node["coordset"] = coords->name();
-        node["elements/shape"] = subel["shape"].as_string();
-        node["elements/connectivity"].set_external(subel["connectivity"]);
-        // PH geometries should have sizes and offsets too.
-        if(subel.has_child("sizes"))
-            node["elements/sizes"].set_external(subel["sizes"]);
-        if(subel.has_child("offsets"))
-            node["elements/offsets"].set_external(subel["offsets"]);
-#if 1
-        // Check whether the sizes are the same. If they are then we can convert
-        // from "polygon" types to tri, or quad.
-        bool istri = sizes[0] == 3;
-        bool isquad = sizes[0] == 4;
-        if(istri || isquad)
-        {
-            bool same = true;
-            for(size_t i = 1; i < sizeslen && same; i++)
-                same &= sizes[0] == sizes[i];
-
-            if(same && istri)
-            {
-                node["elements/shape"] = "tri";
-            }
-            else if(same && isquad)
-            {
-                node["elements/shape"] = "quad";
-            }
-        }
-#endif
-    }
-
-    //-----------------------------------------------------------------------
-    /**
-      @brief Make the embedded connectivity from the input connectivity and
-             store the results in dim_topos[shape.dim-1]. If we're passed a
-             3D cell, we make 2D faces. If we're passed 2D faces, we make 1D
-             lines.
-
-      @param shape The input shape.
-      @param conn  The connectivity data. This is usually a pointer but can
-                   be an accessor too.
-      @param connlen The length of the connectivity data.
-
-      - This method assumes that all elements in the connectivity are the 
-        same type.   
-      - This is a template method so we can pass in basic types (like 
-        const int*) for the connectivity.
-    */
-    template <typename ConnType>
-    void
-    make_embedded_connectivity(const ShapeType &shape, const ConnType &conn, index_t connlen)
-    {
-        int embed_dim = shape.dim - 1;
-        ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
-
-// TODO: rename some things so the terms are more generic.
-
-        // Get sizes from the shape and embed_shape.
-        index_t points_per_elem = shape.indices;
-        index_t faces_per_elem = shape.embed_count;
-        index_t points_per_face = embed_shape.indices;
-        index_t nfacepts = faces_per_elem * points_per_face;
-
-        index_t nelem = connlen / points_per_elem;
-        auto nelem_faces = nelem * faces_per_elem;
-#ifdef DEBUG_PRINT
-        cout << "=======================================================" << endl;
-        cout << "make_embedded_connectivity: shape_dim=" << shape.dim << endl;
-        cout << "=======================================================" << endl;
-        cout << "shape=" << shape.type << endl;
-        cout << "embed_shape=" << embed_shape.type << endl;
-        cout << "points_per_elem="<<points_per_elem<<endl;
-        cout << "faces_per_elem="<<faces_per_elem<<endl;
-        cout << "points_per_face="<<points_per_face<<endl;
-        cout << "nfacepts="<<nfacepts<<endl;
-        cout << "nelem="<<nelem<<endl;
-        cout << "nelem_faces="<<nelem_faces<<endl;
-        cout << "conn={";
-        for(index_t i = 0; i < connlen; i++)
-            cout << conn[i] << ", ";
-        cout << "}" << endl << endl;
-#endif
-
-        // Iterate over each hex cell and compute a faceid for it. Store
-        // these in faceid_to_ef. The "ef" stands for element face, which
-        // is the element id * faces_per_elem + face.
-        std::vector<std::pair<uint64, uint64>> faceid_to_ef(nelem_faces);
-
-#pragma omp parallel for
-        for(size_t elem = 0; elem < nelem; elem++)
-        {
-
-// TODO: it might be good to keep these the same as the connectivity element
-//       type rather than index_t (in case sizeof(index_t) > sizeof(elem_t).
-//       That would hash fewer bytes and possibly eliminate casts.
-
-            // Get the element faces, storing them all in face_pts.
-            index_t elemstart = elem * points_per_elem;
-            index_t face_pts[nfacepts];
-            for(size_t i = 0; i < nfacepts; i++)
-                face_pts[i] = conn[elemstart + shape.embedding[i]];
-
-            // Make a unique id for each face.
-            index_t facestart = elem * faces_per_elem;
-            for(size_t face = 0; face < faces_per_elem; face++)
-            {
-                // Sort the face's points
-                index_t *face_pts_start = &face_pts[face * points_per_face];
-                index_t *face_pts_end = face_pts_start + points_per_face;
-
-                // encode element and face into element_face.
-                uint64 element_face = facestart + face;
-
-#if 0
-                cout << "elem=" << elem << ", face=" << face
-                     << ", element_face=" << element_face;
-                cout << ", pts={";
-                for(int q = 0; q < points_per_face; q++)
-                    cout << std::setw(2) << face_pts_start[q] << ", ";
-                cout << "}, sort={";
-#endif
-                std::sort(face_pts_start, face_pts_end); // Better 4 item sort
-                uint64 faceid = hash_ids(face_pts_start, points_per_face);
-#if 0
-                for(int q = 0; q < points_per_face; q++)
-                    cout << std::setw(2) << face_pts_start[q] << ", ";
-                cout << "}, faceid=" << faceid << endl;
-#endif
-
-                // Store the faceid and ef values.
-                faceid_to_ef[element_face] = std::make_pair(faceid, element_face);
-            }
-        }
-
-#ifdef DEBUG_PRINT
-        cout << "faceid_to_ef = " << faceid_to_ef << endl;
-#endif
-
-        // Sort faceid_to_ef so any like faces will be sorted, first by their
-        // general faceid, then by their elemface "ef", which should keep the
-        // elements in order.
-        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY faceid_to_ef.begin(), faceid_to_ef.end());
-#ifdef DEBUG_PRINT
-        cout << "faceid_to_ef.sorted = " << faceid_to_ef << endl;
-#endif
-
-        // Faces are sorted. We probably do not want to necessarily create faces
-        // in this order though since it would create faces in random order.
-        // The spans with like ids should only be 1 or 2 faces long, assuming the
-        // hashing did its job correctly.
-        std::vector<std::pair<uint64, uint64>> ef_to_unique(nelem_faces);
-        index_t unique = make_unique(faceid_to_ef, ef_to_unique);
-#ifdef DEBUG_PRINT
-        cout << "unique = " << unique << endl;
-        cout << "ef_to_unique = " << ef_to_unique << endl;
-#endif
-
-        // Sort on ef to get back to a ef->unique mapping.
-        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY
-                  ef_to_unique.begin(), ef_to_unique.end(),
-            [&](const std::pair<uint64, uint64> &lhs, const std::pair<uint64, uint64> &rhs)
-        {
-            // Only sort using the ef value.
-            return lhs.first < rhs.first;
-        });
-#ifdef DEBUG_PRINT
-        cout << "ef_to_unique.sorted = " << ef_to_unique << endl;
-#endif
-
-        // Store the new embed connectivity data in Conduit nodes.
-        conduit::Node &node = dim_topos[embed_shape.dim];
-        node["type"] = "unstructured";
-        node["coordset"] = coords->name();
-        node["elements/shape"] = embed_shape.type;
-        node["elements/connectivity"].set(conduit::DataType(index_t_id(), unique * points_per_face));
-        index_t *embed_conn = as_index_t_ptr(node["elements/connectivity"]);
-        index_t embed_conn_idx = 0;
-
-        // Now ef_to_unique contains a list of unique face ids but they are not
-        // expressed in element-creation order.
-        //
-        // elem 0 faces            elem 1 faces
-        // {99, 1, 4, 2, 11, 16}, {4, 22, 44, 67, 55, 12}, ...
-        //
-        // Now we want to iterate over the ef_to_unique in element face order 
-        // and renumber the faces in another pass.
-        //
-        // If the (3,2) or (2,1) association was requested then we do a little
-        // more work to save the map as we build the connectivity. Otherwise,
-        // the 2 code blocks do the same thing. We separate to remove branches.
-        std::vector<unsigned char> avail(unique, 1);
-        if(G[shape.dim][embed_shape.dim].requested)
-        {
-            // Association data. This is the set of indices that point to the
-            // embedded shapes from each input shape. Think of it like the set
-            // of polyhedral face ids for each element but it works for other
-            // dimensions too.
-            std::vector<index_t> face_reorder(unique);
-            auto &embed_refs = G[shape.dim][embed_shape.dim].data;
-            embed_refs.resize(nelem_faces, 0);
-#ifdef DEBUG_PRINT
-            cout << "Building G(" << shape.dim << ", " << embed_shape.dim << ")" << endl;
-            cout << "points_per_face=" << points_per_face << endl;
-            cout << "unique=" << unique << endl;
-            cout << "faces_per_elem=" << faces_per_elem << endl;
-            cout << "nelem_faces=" << nelem_faces << endl;
-#endif
-
-            // Save how many embedded shapes an element would have.
-            G[shape.dim][embed_shape.dim].single_size = shape.embed_count;
-
-            // Make the embedded connectivity (and map data)
-            index_t embed_refs_idx = 0, final_faceid = 0;
-            for(size_t ef = 0; ef < nelem_faces; ef++)
-            {
-                uint64 unique_face_id = ef_to_unique[ef].second;
-
-                if(avail[unique_face_id])
-                {
-                    // Store the map data.
-                    face_reorder[unique_face_id] = final_faceid++;
-                    embed_refs[embed_refs_idx++] = face_reorder[unique_face_id];
-
-                    avail[unique_face_id] = 0;
-
-                    // Emit the face definition (as defined by the first element
-                    // that referenced it.
-                    int faceelem = ef / faces_per_elem;
-                    int facecase = ef % faces_per_elem;
-                    index_t elemstart = faceelem * points_per_elem;
-                    index_t *embed = &shape.embedding[facecase * points_per_face];
-                    for(size_t i = 0; i < points_per_face; i++)
-                        embed_conn[embed_conn_idx++] = conn[elemstart + embed[i]];
-                }
-                else
-                {
-                    // Store the map data. The entity has already been output,
-                    // add its reordered number to the refs.
-                    embed_refs[embed_refs_idx++] = face_reorder[unique_face_id];
-                }
-            }
-#ifdef DEBUG_PRINT
-            cout << "final embed_refs_idx=" << embed_refs_idx << endl << endl;
-            cout << "embed_refs=" << embed_refs << endl;
-#endif
-        }
-        else
-        {
-            // Make the embedded connectivity
-            for(size_t ef = 0; ef < nelem_faces; ef++)
-            {
-                uint64 unique_face_id = ef_to_unique[ef].second;
-                if(avail[unique_face_id])
-                {
-                    avail[unique_face_id] = 0;
-
-                    // Emit the face definition (as defined by the first element
-                    // that referenced it.
-                    int faceelem = ef / faces_per_elem;
-                    int facecase = ef % faces_per_elem;
-                    index_t elemstart = faceelem * points_per_elem;
-                    index_t *embed = &shape.embedding[facecase * points_per_face];
-                    for(size_t i = 0; i < points_per_face; i++)
-                        embed_conn[embed_conn_idx++] = conn[elemstart + embed[i]];
-                }
-            }
-        }
-#if 1
-// It has to be done like this for the connectivity nodes to match the old TopologyMetadata.
-// We have to have offsets for the new topology to match what TopologyMetadata makes.
-// Otherwise we could turn it off and let the maps handle the offsets implicitly.
-
-        // Generate offsets in the output connectivity. Some downstream algorithms want it.
-        node["elements/offsets"].set(conduit::DataType(index_t_id(), unique));
-        index_t *offsets = as_index_t_ptr(node["elements/offsets"]);
-        for(size_t ei = 0; ei < unique; ei++)
-            offsets[ei] = points_per_face * ei;
-
-#else
-// I changed it to this to try and work around a valgrind bug that I saw somewhere.
-
-        // Generate offsets in the output connectivity. Some downstream algorithms want it.
-        node["elements/offsets"].set(conduit::DataType(index_t_id(), nelem_faces));
-        index_t *offsets = as_index_t_ptr(node["elements/offsets"]);
-        for(size_t ei = 0; ei < nelem_faces; ei++)
-            offsets[ei] = points_per_face * ei;
-#endif
-    }
+    class Implementation;
+    Implementation *impl;
 };
 
+
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::utils::detail::reference --
+// -- begin conduit::blueprint::mesh::utils::reference --
 //-----------------------------------------------------------------------------
 namespace reference
 {
 
 // Keep this older class as a reference for now. Remove it when the new
 // implementation is up to par.
-class CONDUIT_BLUEPRINT_API TopologyMetadata
+class CONDUIT_BLUEPRINT_API TopologyMetadata : public TopologyMetadataBase
 {
 public:
-    enum IndexType { GLOBAL = 0, LOCAL = 1 };
-
     // The 'IndexType' indicates the index space to be used when referring to
     // entities within this topological cascade. The types have the following
     // meanings:
@@ -844,6 +410,19 @@ public:
         return dim_leassocs_maps[dim].size() / tdim1;
     }
 
+    // Compatibility methods
+    int dimension() const { return topo_cascade.dim; }
+    const std::vector<conduit::Node> &get_topologies() const { return dim_topos; }
+    const std::vector<index_t> &get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim)
+    {
+        return get_entity_assocs(GLOBAL, entity_id, entity_dim, assoc_dim);
+    }
+    const std::vector<index_t> &get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim)
+    {
+        return get_entity_assocs(LOCAL, entity_id, entity_dim, assoc_dim);
+    }
+
+    // Data.
     const conduit::Node *topo, *cset;
     const conduit::DataType int_dtype, float_dtype;
     const ShapeCascade topo_cascade;
@@ -876,12 +455,7 @@ public:
 
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::utils::detail::reference --
-//-----------------------------------------------------------------------------
-
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::utils::detail --
+// -- end conduit::blueprint::mesh::utils::reference --
 //-----------------------------------------------------------------------------
 
 }
@@ -889,12 +463,10 @@ public:
 // -- end conduit::blueprint::mesh::utils --
 //-----------------------------------------------------------------------------
 
-//-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh --
 //-----------------------------------------------------------------------------
-
 
 }
 //-----------------------------------------------------------------------------
