@@ -468,6 +468,12 @@ TEST(conduit_blueprint_topology_metadata, hexs)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, hexs_poly)
+{
+    test_mesh_type("hexs_poly");
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_tets)
 {
     test_mesh_type("custom_tets");
