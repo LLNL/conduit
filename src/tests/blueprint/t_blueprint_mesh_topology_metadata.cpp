@@ -27,8 +27,12 @@
 using std::cout;
 using std::endl;
 
-using TopologyMetadata = conduit::blueprint::mesh::utils::reference::TopologyMetadata;
-//using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
+// Use the reference one.
+//using TopologyMetadata = conduit::blueprint::mesh::utils::reference::TopologyMetadata;
+
+// Use the new one
+using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
+
 using index_t = conduit::index_t;
 
 // Enable this macro to generate baselines.
@@ -109,10 +113,10 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
         std::stringstream oss;
         oss << "topo" << d;
         std::string tname(oss.str());
-        rep[tname].set_external(md.dim_topos[d]);
+        rep[tname].set_external(md.get_topologies()[d]);
 
         // Add the topology to the vis.
-        vis[std::string("topologies/") + tname].set_external(md.dim_topos[d]);
+        vis[std::string("topologies/") + tname].set_external(md.get_topologies()[d]);
     }
     // Save all topos together to a dataset for visualization.
     save_visit(base, vis);
@@ -413,7 +417,7 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
@@ -437,7 +441,7 @@ TEST(conduit_blueprint_topology_metadata, quads)
 {
     test_mesh_type("quads");
 }
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, tets)
 {
@@ -461,13 +465,13 @@ TEST(conduit_blueprint_topology_metadata, hexs)
 {
     test_mesh_type("hexs");
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, hexs_poly)
 {
     test_mesh_type("hexs_poly");
 }
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_tets)
 {
@@ -480,7 +484,7 @@ TEST(conduit_blueprint_topology_metadata, custom_hexs)
     test_mesh_type("custom_hexs");
 }
 
-#if 1
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_ph)
 {

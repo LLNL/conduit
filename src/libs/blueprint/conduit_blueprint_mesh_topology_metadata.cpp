@@ -1282,11 +1282,19 @@ cout << "copy_keys = " << copy_keys << endl;
     {
         if(topo->has_path(key))
         {
-cout << "Copying " << key << " as index_t." << endl;
             const conduit::Node &src = (*topo)[key];
             conduit::Node &dest = node[key];
-            dest.set(DataType::index_t(src.dtype().number_of_elements()));
-            src.to_data_type(DataType::index_t().id(), dest);
+            if(src.dtype().id() != DataType::index_t().id())
+            {
+cout << "Copying " << key << " as index_t. It was " << src.dtype().name() << endl;
+                dest.set(DataType::index_t(src.dtype().number_of_elements()));
+                src.to_data_type(DataType::index_t().id(), dest);
+            }
+            else
+            {
+cout << "Copying " << key << " - it was already index_t." << endl;
+                dest.set(src);
+            }
         }
     }
 
@@ -1309,17 +1317,17 @@ cout << "Copying " << key << " as index_t." << endl;
     conduit::Node &offsets = node["elements/offsets"];
     if(src_offsets.dtype().id() != DataType::index_t().id())
     {
-cout << "Copying src_offsets to offsets as index_t. It was " << src_offsets.dtype().id() << endl;
+cout << "Copying elements/offsets as index_t. It was " << src_offsets.dtype().name() << endl;
         index_t nvalues = src_offsets.dtype().number_of_elements();
         offsets.set(DataType::index_t(nvalues));
         src_offsets.to_data_type(DataType::index_t().id(), offsets);
     }
     else
     {
-cout << "offsets.set(src_offsets) it was already index_t." << endl;
+cout << "Copying elements/offsets - it was already index_t." << endl;
         offsets.set(src_offsets);
     }
-node.print_detailed();
+//node.print_detailed();
 }
 
 //---------------------------------------------------------------------------
