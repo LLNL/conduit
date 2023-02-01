@@ -48,7 +48,7 @@ using ::conduit::utils::join_path;
 namespace bputils = conduit::blueprint::mesh::utils;
 typedef bputils::ShapeType ShapeType;
 typedef bputils::ShapeCascade ShapeCascade;
-typedef bputils::TopologyMetadata TopologyMetadata;
+typedef bputils::reference::TopologyMetadata TopologyMetadata;
 
 //-----------------------------------------------------------------------------
 // -- begin internal helpers --
@@ -4581,16 +4581,20 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                 // by creating elements as follows:
                 // - 2D: Face-Line Start => Face-Line End => Face Center
                 // - 3D: Cell-Face-Line Start => Cell-Face-Line End => Cell-Face Center => Cell Center
-                for(index_t ei = 0; ei < (index_t)embed_ids.size(); ei++)
+                const auto local_to_global_lower = topo_data.get_local_to_global_map(embed_dim - 1);
+                const auto num_embed_ids = static_cast<index_t>(embed_ids.size());
+                for(index_t ei = 0; ei < num_embed_ids; ei++)
                 {
-                    index_t point_id = topo_data.dim_le2ge_maps[embed_dim - 1][embed_ids[ei]];
+                    index_t point_id = local_to_global_lower[embed_ids[ei]];
                     side_data_raw[ei] = point_id;
                 }
-                for(index_t pi = 0; pi < (index_t)embed_parents.size(); pi++)
+                const auto num_embed_parents = static_cast<index_t>(embed_parents.size());
+                for(index_t pi = 0; pi < num_embed_parents; pi++)
                 {
-                    index_t parent_index = embed_parents[embed_parents.size() - pi - 1];
+                    index_t parent_index = embed_parents[num_embed_parents - pi - 1];
                     index_t parent_dim = embed_dim + pi + 1;
-                    index_t parent_id = topo_data.dim_le2ge_maps[parent_dim][parent_index];
+                    const auto local_to_global_parent = topo_data.get_local_to_global_map(parent_dim);
+                    index_t parent_id = local_to_global_parent[parent_index];
                     side_data_raw[2 + pi] = dim_coord_offsets[parent_dim] + parent_id;
                 }
 
@@ -5716,6 +5720,10 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     std::vector<int64> d2s_idx_data_raw, d2s_size_data_raw;
     std::map< std::set<index_t>, index_t > subconn_topo_set;
 
+    const auto face_local_to_global_map = topo_data.get_local_to_global_map(face_shape.dim);
+    const auto line_local_to_global_map = topo_data.get_local_to_global_map(line_shape.dim);
+    const auto point_local_to_global_map = topo_data.get_local_to_global_map(point_shape.dim);
+
     for(index_t elem_index = 0, corner_index = 0; elem_index < topo_num_elems; elem_index++)
     {
         // per-face, per-line orientations for this element, i.e. {(f_gi, l_gj) => (v_gk, v_gl)}
@@ -5726,19 +5734,19 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             for(index_t fi = 0; fi < (index_t)elem_faces.size(); fi++)
             {
                 const index_t face_lid = elem_faces[fi];
-                const index_t face_gid = topo_data.dim_le2ge_maps[face_shape.dim][face_lid];
+                const index_t face_gid = face_local_to_global_map[face_lid];
 
                 const auto face_lines = topo_data.get_local_association(
                     face_lid, face_shape.dim, line_shape.dim);
                 for(index_t li = 0; li < (index_t)face_lines.size(); li++)
                 {
                     const index_t line_lid = face_lines[li];
-                    const index_t line_gid = topo_data.dim_le2ge_maps[line_shape.dim][line_lid];
+                    const index_t line_gid = line_local_to_global_map[line_lid];
 
                     const auto line_points = topo_data.get_local_association(
                         line_lid, line_shape.dim, point_shape.dim);
-                    const index_t start_gid = topo_data.dim_le2ge_maps[point_shape.dim][line_points[0]];
-                    const index_t end_gid = topo_data.dim_le2ge_maps[point_shape.dim][line_points[1]];
+                    const index_t start_gid = point_local_to_global_map[line_points[0]];
+                    const index_t end_gid = point_local_to_global_map[line_points[1]];
 
                     elem_orient[std::make_pair(face_gid, line_gid)] =
                         std::make_pair(start_gid, end_gid);

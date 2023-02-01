@@ -334,6 +334,7 @@ public:
      */
     bool get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
 
+    //-----------------------------------------------------------------------
     /**
      @brief Gets the length of the topology as specified by dimension. If
             dim is -1 then the length of all topologies are summed.
@@ -344,18 +345,21 @@ public:
      */
     index_t get_length(index_t dim = -1) const;
 
+    //-----------------------------------------------------------------------
     /**
      @brief The the preferred integer storage data type.
      @return The preferred integer storage data type.
      */
     const DataType &get_int_dtype() const;
 
+    //-----------------------------------------------------------------------
     /**
      @brief The the preferred float storage data type.
      @return The preferred float storage data type.
      */
     const DataType &get_float_dtype() const;
 
+    //-----------------------------------------------------------------------
     /**
      @brief Gets the total number of embeddings for each entity at the top level
             to the embedding level.
@@ -364,6 +368,29 @@ public:
      @return The total number of embeddings.
      */
     index_t get_embed_length(index_t entity_dim, index_t embed_dim) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Make a representation of the metadata in the supplied node.
+     @param rep The node that will contain the representation.
+     */
+    void make_node(conduit::Node &rep) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Turn the metadata into a JSON string and return it.
+     @return A string that contains a JSON representation of the metadata.
+     */
+    std::string to_json() const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Return a vector that lets us map local entity ids to global ids.
+     @param dim The dimension of the map we want.
+     @return The map for the requested dimension.
+     */
+    const std::vector<index_t> &get_local_to_global_map(index_t dim) const;
+
 private:
     class Implementation;
     Implementation *impl;
@@ -454,18 +481,30 @@ public:
 
     // Compatibility methods
     int dimension() const { return topo_cascade.dim; }
+
     const std::vector<conduit::Node> &get_topologies() const { return dim_topos; }
-    const std::vector<index_t> &get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim)
+
+    const std::vector<index_t> &
+    get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const
     {
         return get_entity_assocs(GLOBAL, entity_id, entity_dim, assoc_dim);
     }
-    const std::vector<index_t> &get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim)
+
+    const std::vector<index_t> &
+    get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const
     {
         return get_entity_assocs(LOCAL, entity_id, entity_dim, assoc_dim);
     }
+
     const DataType &get_int_dtype() const { return int_dtype; }
+
     const DataType &get_float_dtype() const { return float_dtype; }
-   
+
+    const std::vector<index_t> &get_local_to_global_map(index_t dim) const
+    {
+        return dim_le2ge_maps[dim];
+    }
+
     // Data.
     const conduit::Node *topo, *cset;
     const conduit::DataType int_dtype, float_dtype;

@@ -400,6 +400,27 @@ public:
      */
     index_t get_embed_length(index_t entity_dim, index_t embed_dim) const;
 
+    //-----------------------------------------------------------------------
+    /**
+     @brief Make a representation of the metadata in the supplied node.
+     @param rep The node that will contain the representation.
+     */
+    void make_node(conduit::Node &rep) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Turn the metadata into a JSON string and return it.
+     @return A string that contains a JSON representation of the metadata.
+     */
+    std::string to_json() const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Return a vector that lets us map local entity ids to global ids.
+     @param dim The dimension of the map we want.
+     @return The map for the requested dimension.
+     */
+    const std::vector<index_t> &get_local_to_global_map(index_t) const;
 private:
 
     //-----------------------------------------------------------------------
@@ -2703,6 +2724,60 @@ TopologyMetadata::Implementation::get_embed_length(index_t entity_dim, index_t e
 }
 
 //---------------------------------------------------------------------------
+void
+TopologyMetadata::Implementation::make_node(conduit::Node &rep) const
+{
+    auto maxdim = dimension();
+
+    // Add all topologies to the rep.
+    for(index_t d = maxdim; d >= 0; d--)
+    {
+        std::stringstream oss;
+        oss << "topo" << d;
+        std::string tname(oss.str());
+        rep[tname].set_external(dim_topos[d]);
+    }
+
+    // Get all the maps and add them to the rep.
+    for(int e = maxdim; e >= 0; e--)
+    for(int a = maxdim; a >= 0; a--)
+    {
+        {
+            std::stringstream oss;
+            oss << "global/map" << e << a;
+            std::string mname(oss.str());
+            get_dim_map(GLOBAL, e, a, rep[mname]);
+        }
+        {
+            std::stringstream oss;
+            oss << "local/map" << e << a;
+            std::string mname(oss.str());
+            get_dim_map(LOCAL, e, a, rep[mname]);
+        }
+    }
+
+    // TODO: Add the le2ge maps.
+}
+
+//---------------------------------------------------------------------------
+std::string
+TopologyMetadata::Implementation::to_json() const
+{
+    conduit::Node rep;
+    make_node(rep);
+    return std::move(rep.to_json());
+}
+
+//---------------------------------------------------------------------------
+const std::vector<index_t> &
+TopologyMetadata::Implementation::get_local_to_global_map(index_t dim) const
+{
+    // TODO do something.
+    std::vector<index_t> foo; // obviously bad.
+    return foo;
+}
+
+//---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 // Public interface for TopologyMetadata.
 
@@ -2806,6 +2881,27 @@ index_t
 TopologyMetadata::get_embed_length(index_t entity_dim, index_t embed_dim) const
 {
     return impl->get_embed_length(entity_dim, embed_dim);
+}
+
+//---------------------------------------------------------------------------
+void
+TopologyMetadata::make_node(conduit::Node &rep) const
+{
+    impl->make_node(rep);
+}
+
+//---------------------------------------------------------------------------
+std::string
+TopologyMetadata::to_json() const
+{
+    return std::move(impl->to_json());
+}
+
+//---------------------------------------------------------------------------
+const std::vector<index_t> &
+TopologyMetadata::get_local_to_global_map(index_t dim) const
+{
+    return impl->get_local_to_global_map(dim);
 }
 
 //-----------------------------------------------------------------------------

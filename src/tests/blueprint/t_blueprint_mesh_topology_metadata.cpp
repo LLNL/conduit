@@ -12,6 +12,7 @@
 #include "conduit_relay.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_mesh_topology_metadata.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
@@ -26,7 +27,8 @@
 using std::cout;
 using std::endl;
 
-using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
+using TopologyMetadata = conduit::blueprint::mesh::utils::reference::TopologyMetadata;
+//using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
 using index_t = conduit::index_t;
 
 // Enable this macro to generate baselines.
@@ -97,13 +99,6 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
 
     // This node will hold a representation of the metadata.
     conduit::Node rep;
-
-    // Compute topology lengths.
-    index_t lengths[4] = {0,0,0,0};
-    for(index_t d = maxdim; d >= 0; d--)
-    {
-        lengths[d] = conduit::blueprint::mesh::utils::topology::length(md.dim_topos[d]);
-    }
 
     // Add all topos to a vis node.
     conduit::Node vis;
@@ -363,6 +358,9 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
         conduit::blueprint::mesh::examples::braid(type, dims[0],dims[1],dims[2], node);
     }
     conduit::Node &topo = node["topologies/mesh"];
+    std::cout << type << " length: "
+              << conduit::blueprint::mesh::utils::topology::length(topo)
+              << std::endl;
 
     // Make sure that these items are the requested data type (if they exist).
     std::vector<std::string> copy_keys{"elements/connectivity",
