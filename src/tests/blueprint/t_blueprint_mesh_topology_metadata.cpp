@@ -27,7 +27,7 @@
 using std::cout;
 using std::endl;
 
-// Use the reference one.
+// Use the reference one. (for setting baselines initially)
 //using TopologyMetadata = conduit::blueprint::mesh::utils::reference::TopologyMetadata;
 
 // Use the new one
@@ -111,15 +111,25 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
     {
         // Add the topology to the rep.
         std::stringstream oss;
-        oss << "topo" << d;
+        oss << "topologies/topo" << d;
         std::string tname(oss.str());
         rep[tname].set_external(md.get_topologies()[d]);
 
         // Add the topology to the vis.
-        vis[std::string("topologies/") + tname].set_external(md.get_topologies()[d]);
+        vis[tname].set_external(md.get_topologies()[d]);
     }
     // Save all topos together to a dataset for visualization.
     save_visit(base, vis);
+
+    for(int d = maxdim; d >= 0; d--)
+    {
+        std::stringstream oss;
+        oss << "lengths/topo" << d;
+        std::string mname(oss.str());
+        rep[mname].set(conduit::blueprint::mesh::utils::topology::length(md.get_topologies()[d]));
+    }
+
+    std::vector<std::string> mapkeys{"values", "sizes", "offsets"};
 
     // Get all the maps and add them to the rep.
     for(int e = maxdim; e >= 0; e--)
@@ -127,16 +137,57 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
     {
         {
             std::stringstream oss;
-            oss << "global/map" << e << a;
+            oss << "associations/global/map" << e << a << "/data";
             std::string mname(oss.str());
             md.get_dim_map(TopologyMetadata::GLOBAL, e, a, rep[mname]);
+
+            // Add some lengths so we do not have to count when looking at the output.
+            for(const auto &key : mapkeys)
+            {
+                if(rep[mname].has_child(key))
+                {
+                    std::stringstream oss2;
+                    oss2 << "associations/global/map" << e << a << "/sizes/" << key;
+                    std::string mname2(oss2.str());
+                    rep[mname2].set(rep[mname][key].dtype().number_of_elements());
+                }
+            }
         }
         {
             std::stringstream oss;
-            oss << "local/map" << e << a;
+            oss << "associations/local/map" << e << a << "/data";
             std::string mname(oss.str());
             md.get_dim_map(TopologyMetadata::LOCAL, e, a, rep[mname]);
+
+            // Add some lengths so we do not have to count when looking at the output.
+            for(const auto &key : mapkeys)
+            {
+                if(rep[mname].has_child(key))
+                {
+                    std::stringstream oss2;
+                    oss2 << "associations/local/map" << e << a << "/sizes/" << key;
+                    std::string mname2(oss2.str());
+                    rep[mname2].set(rep[mname][key].dtype().number_of_elements());
+                }
+            }
         }
+    }
+
+    for(int d = maxdim; d >= 0; d--)
+    {
+        const std::vector<index_t> &le2ge = md.get_local_to_global_map(d);
+
+        std::stringstream oss;
+        oss << "local_to_global/map" << d << "/data";
+        std::string mname(oss.str());
+        conduit::Node &m = rep[mname];
+        m.set(le2ge);
+
+        std::stringstream oss2;
+        oss2 << "local_to_global/map" << d << "/size";
+        std::string mname2(oss2.str());
+        conduit::Node &s = rep[mname2];
+        s.set(le2ge.size());
     }
 
     std::string b = baseline_file(base);
@@ -435,13 +486,13 @@ TEST(conduit_blueprint_topology_metadata, tris)
 {
     test_mesh_type("tris");
 }
-
+#endif
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, quads)
 {
     test_mesh_type("quads");
 }
-#endif
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, tets)
 {
@@ -465,13 +516,13 @@ TEST(conduit_blueprint_topology_metadata, hexs)
 {
     test_mesh_type("hexs");
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, hexs_poly)
 {
     test_mesh_type("hexs_poly");
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_tets)
 {
@@ -484,7 +535,6 @@ TEST(conduit_blueprint_topology_metadata, custom_hexs)
     test_mesh_type("custom_hexs");
 }
 
-#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_ph)
 {

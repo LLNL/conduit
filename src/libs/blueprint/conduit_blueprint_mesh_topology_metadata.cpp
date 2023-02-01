@@ -2741,30 +2741,77 @@ TopologyMetadata::Implementation::make_node(conduit::Node &rep) const
     for(index_t d = maxdim; d >= 0; d--)
     {
         std::stringstream oss;
-        oss << "topo" << d;
+        oss << "topologies/topo" << d;
         std::string tname(oss.str());
         rep[tname].set_external(dim_topos[d]);
     }
+    for(index_t d = maxdim; d >= 0; d--)
+    {
+        std::stringstream oss;
+        oss << "lengths/topo" << d;
+        std::string tname(oss.str());
+        rep[tname].set(dim_topo_lengths[d]);
+    }
 
     // Get all the maps and add them to the rep.
+    std::vector<std::string> mapkeys{"values", "sizes", "offsets"};
     for(int e = maxdim; e >= 0; e--)
     for(int a = maxdim; a >= 0; a--)
     {
         {
             std::stringstream oss;
-            oss << "global/map" << e << a;
+            oss << "associations/global/map" << e << a << "/data";
             std::string mname(oss.str());
-            get_dim_map(GLOBAL, e, a, rep[mname]);
+            get_dim_map(TopologyMetadata::GLOBAL, e, a, rep[mname]);
+
+            // Add some lengths so we do not have to count when looking at the output.
+            for(const auto &key : mapkeys)
+            {
+                if(rep[mname].has_child(key))
+                {
+                    std::stringstream oss2;
+                    oss2 << "associations/global/map" << e << a << "/sizes/" << key;
+                    std::string mname2(oss2.str());
+                    rep[mname2].set(rep[mname][key].dtype().number_of_elements());
+                }
+            }
         }
         {
             std::stringstream oss;
-            oss << "local/map" << e << a;
+            oss << "associations/local/map" << e << a << "/data";
             std::string mname(oss.str());
-            get_dim_map(LOCAL, e, a, rep[mname]);
+            get_dim_map(TopologyMetadata::LOCAL, e, a, rep[mname]);
+
+            // Add some lengths so we do not have to count when looking at the output.
+            for(const auto &key : mapkeys)
+            {
+                if(rep[mname].has_child(key))
+                {
+                    std::stringstream oss2;
+                    oss2 << "associations/local/map" << e << a << "/sizes/" << key;
+                    std::string mname2(oss2.str());
+                    rep[mname2].set(rep[mname][key].dtype().number_of_elements());
+                }
+            }
         }
     }
 
-    // TODO: Add the le2ge maps.
+    for(int d = maxdim; d >= 0; d--)
+    {
+        const std::vector<index_t> &le2ge = get_local_to_global_map(d);
+
+        std::stringstream oss;
+        oss << "local_to_global/map" << d << "/data";
+        std::string mname(oss.str());
+        conduit::Node &m = rep[mname];
+        m.set(le2ge);
+
+        std::stringstream oss2;
+        oss2 << "local_to_global/map" << d << "/size";
+        std::string mname2(oss2.str());
+        conduit::Node &s = rep[mname2];
+        s.set(le2ge.size());
+    }
 }
 
 //---------------------------------------------------------------------------
