@@ -15,6 +15,7 @@
 #include <algorithm>
 #include <limits>
 #include <numeric>
+#include <cstring>
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -242,6 +243,7 @@ class TopologyMetadata::Implementation : public TopologyMetadataBase
         inline std::pair<index_t *, index_t> get_data(index_t entity_id) const;
         inline index_t get_size(index_t entity_id) const;
         inline index_t get_offset(index_t entity_id) const;
+        inline index_t sum_sizes(index_t num_entities) const;
     };
 
     // Data members
@@ -255,6 +257,7 @@ class TopologyMetadata::Implementation : public TopologyMetadataBase
     conduit::Node dim_topos[MAX_ENTITY_DIMS];
     index_t dim_topo_lengths[MAX_ENTITY_DIMS];
     association G[MAX_ENTITY_DIMS][MAX_ENTITY_DIMS];  
+    std::vector<index_t> local_to_global[MAX_ENTITY_DIMS];
 
 public:
     //-----------------------------------------------------------------------
@@ -544,6 +547,12 @@ private:
     index_t
     make_unique(const std::vector<std::pair<uint64, uint64>> &faceid_to_ef, 
                 std::vector<std::pair<uint64, uint64>> &ef_to_unique) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Build local to global maps.
+     */
+    void build_local_to_global();
 
     //-----------------------------------------------------------------------
     /**
@@ -990,6 +999,58 @@ TopologyMetadata::Implementation::association::get_data(const index_t *&array,
 }
 
 //---------------------------------------------------------------------------
+bool
+TopologyMetadata::Implementation::association::get_sizes(const index_t *&array,
+    index_t &arraylen) const
+{
+    bool retval = false;
+    if(sizes_ptr)
+    {
+        array = sizes_ptr;
+        arraylen = sizes_ptr_size;
+        retval = true;
+    }
+    else if(!sizes.empty())
+    {
+        array = &sizes[0];
+        arraylen = sizes.size();
+        retval = true;
+    }
+    else
+    {
+        array = nullptr;
+        arraylen = 0;
+    }
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+bool
+TopologyMetadata::Implementation::association::get_offsets(const index_t *&array,
+    index_t &arraylen) const
+{
+    bool retval = false;
+    if(offsets_ptr)
+    {
+        array = offsets_ptr;
+        arraylen = offsets_ptr_size;
+        retval = true;
+    }
+    else if(!offsets.empty())
+    {
+        array = &offsets[0];
+        arraylen = offsets.size();
+        retval = true;
+    }
+    else
+    {
+        array = nullptr;
+        arraylen = 0;
+    }
+    return retval;
+}
+
+//---------------------------------------------------------------------------
 /**
  @brief Get the data for one entity.
 
@@ -1047,55 +1108,23 @@ TopologyMetadata::Implementation::association::get_offset(index_t entity_id) con
 }
 
 //---------------------------------------------------------------------------
-bool
-TopologyMetadata::Implementation::association::get_sizes(const index_t *&array,
-    index_t &arraylen) const
+index_t
+TopologyMetadata::Implementation::association::sum_sizes(index_t num_entities) const
 {
-    bool retval = false;
-    if(sizes_ptr)
+    index_t sum = 0;
+    const index_t *values = nullptr;
+    index_t len;
+    if(get_sizes(values, len))
     {
-        array = sizes_ptr;
-        arraylen = sizes_ptr_size;
-        retval = true;
-    }
-    else if(!sizes.empty())
-    {
-        array = &sizes[0];
-        arraylen = sizes.size();
-        retval = true;
+        for(index_t i = 0; i < len; i++)
+            sum += values[i];
     }
     else
     {
-        array = nullptr;
-        arraylen = 0;
+        // single size case.
+        sum = num_entities * single_size;
     }
-    return retval;
-}
-
-//---------------------------------------------------------------------------
-bool
-TopologyMetadata::Implementation::association::get_offsets(const index_t *&array,
-    index_t &arraylen) const
-{
-    bool retval = false;
-    if(offsets_ptr)
-    {
-        array = offsets_ptr;
-        arraylen = offsets_ptr_size;
-        retval = true;
-    }
-    else if(!offsets.empty())
-    {
-        array = &offsets[0];
-        arraylen = offsets.size();
-        retval = true;
-    }
-    else
-    {
-        array = nullptr;
-        arraylen = 0;
-    }
-    return retval;
+    return sum;
 }
 
 //---------------------------------------------------------------------------
@@ -1161,7 +1190,7 @@ TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t,
     if(lowest_cascade_dim == 0)
         make_point_topology();
 
-    // If we have lines or faces to make, make them.
+    // If we have lines or faces to make, do it.
     if(lowest_cascade_dim < static_cast<size_t>(topo_shape.dim) && topo_shape.dim > 1)
     {
         if(topo_shape.is_polyhedral())
@@ -1178,6 +1207,7 @@ TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t,
     }
 
     build_associations();
+    build_local_to_global();
 }
 
 //------------------------------------------------------------------------------
@@ -1285,7 +1315,6 @@ TopologyMetadata::Implementation::make_highest_topology()
         copy_keys.push_back("subelements/sizes");
         copy_keys.push_back("subelements/offsets");
     }
-cout << "copy_keys = " << copy_keys << endl;
     for(const auto &key : copy_keys)
     {
         if(topo->has_path(key))
@@ -1294,13 +1323,11 @@ cout << "copy_keys = " << copy_keys << endl;
             conduit::Node &dest = node[key];
             if(src.dtype().id() != DataType::index_t().id())
             {
-cout << "Copying " << key << " as index_t. It was " << src.dtype().name() << endl;
                 dest.set(DataType::index_t(src.dtype().number_of_elements()));
                 src.to_data_type(DataType::index_t().id(), dest);
             }
             else
             {
-cout << "Copying " << key << " - it was already index_t." << endl;
                 dest.set(src);
             }
         }
@@ -1325,17 +1352,14 @@ cout << "Copying " << key << " - it was already index_t." << endl;
     conduit::Node &offsets = node["elements/offsets"];
     if(src_offsets.dtype().id() != DataType::index_t().id())
     {
-cout << "Copying elements/offsets as index_t. It was " << src_offsets.dtype().name() << endl;
         index_t nvalues = src_offsets.dtype().number_of_elements();
         offsets.set(DataType::index_t(nvalues));
         src_offsets.to_data_type(DataType::index_t().id(), offsets);
     }
     else
     {
-cout << "Copying elements/offsets - it was already index_t." << endl;
         offsets.set(src_offsets);
     }
-//node.print_detailed();
 }
 
 //---------------------------------------------------------------------------
@@ -1676,7 +1700,9 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
                 edge_count[edgeid]++;
             }
         }
-        
+
+        // TODO: build local_to_global[0] and local_to_global[1]
+
         // We're done with this element. Zero out the counts for the edges
         // and points that we saw in this element.
         for(index_t edge_index = 0; edge_index < map31.sizes[ei]; edge_index++)
@@ -1793,6 +1819,14 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
         map30.offsets.resize(nelem, 0);
     }
 
+    // Reserve space so we can build the local_to_global[0] and
+    // local_to_global[1] maps too. We do it here since they need much of the
+    // same infrastructure as the G(3,1) and G(3,0) maps.
+    local_to_global[1].reserve(2 * nelem * edges_per_elem);
+    local_to_global[0].reserve(coords_length + 2 * 2 * nelem * edges_per_elem);
+    for(index_t i = 0; i < coords_length; i++)
+        local_to_global[0].push_back(i);
+
     // Iterate over the elements, applying the edge template to make unique
     // edges for the element. We look up the edge in edge_key_to_id to get
     // its id.
@@ -1847,9 +1881,41 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
             index_t elem_edge = ei * edges_per_elem + edge_index;
             map31.data[elem_edge] = edgeid;
         }
-
         map31.sizes[ei] = edges_per_elem;
         map31.offsets[ei] = ei * edges_per_elem;
+
+        // To build the local_to_global maps, we need to iterate all edges of
+        // the element - not just the unique ones.
+        const ShapeType embed_shape = topo_cascade.get_shape(2);
+        for(index_t fi = 0; fi < topo_shape.embed_count; fi++)
+        {
+            index_t face_start = fi * embed_shape.indices;
+            for(index_t pi = 0; pi < embed_shape.indices; pi++)
+            {
+                index_t pi_next = (pi + 1) % embed_shape.indices;
+                index_t embed_pt0 = topo_shape.embedding[face_start + pi];
+                index_t embed_pt1 = topo_shape.embedding[face_start + pi_next];
+
+                index_t edge[2];
+                edge[0] = conn3D[elem_offset + embed_pt0];
+                edge[1] = conn3D[elem_offset + embed_pt1];
+
+                // Build the local_to_global[0] map (before possible swap)
+                local_to_global[0].push_back(edge[0]);
+                local_to_global[0].push_back(edge[1]);
+
+                // Make a key from the edge.
+                if(edge[1] > edge[0])
+                    std::swap(edge[0], edge[1]);
+                uint64 key = hash_ids(edge, 2);
+
+                // Look up the edge id in our list of real edges.
+                index_t edgeid = lookup_id(key);
+
+                // Build the local_to_global[1] map.
+                local_to_global[1].push_back(edgeid);
+            }
+        }
     }
 
     // If the G(3,0) map was requested then build its sizes and offsets.
@@ -2582,9 +2648,107 @@ TopologyMetadata::Implementation::to_json() const
 const std::vector<index_t> &
 TopologyMetadata::Implementation::get_local_to_global_map(index_t dim) const
 {
-    // TODO do something.
-    std::vector<index_t> foo; // obviously bad.
-    return foo;
+    return local_to_global[dim];
+}
+
+//---------------------------------------------------------------------------
+void
+TopologyMetadata::Implementation::build_local_to_global()
+{
+    int dim = dimension();
+
+    // NOTE: Some cases uses G(e,a) maps. If they were not requested, some levels
+    //       of the local_to_global maps will not be built.
+
+    if(dim == 0)
+    {
+        // Copy topo 0's connectivity into the map. Prepend point indices.
+        const conduit::Node &conn = dim_topos[0].fetch_existing("elements/connectivity");
+        const index_t *src = conn.as_index_t_ptr();
+
+        auto &map0 = local_to_global[0];
+        map0.resize(coords_length + dim_topo_lengths[0]);
+        std::iota(map0.begin(), map0.begin() + coords_length, 0);
+        memcpy(&map0[0] + coords_length, src, sizeof(index_t) * dim_topo_lengths[0]);
+    }
+    else if(dim == 1)
+    {
+        // The highest level the same as the global element ordering.
+        auto &map1 = local_to_global[1];
+        map1.resize(dim_topo_lengths[1]);
+        std::iota(map1.begin(), map1.end(), 0);
+
+        // Copy topo 1's connectivity into the map. Prepend point indices.
+        const conduit::Node &conn = dim_topos[1].fetch_existing("elements/connectivity");
+        index_t len = conn.dtype().number_of_elements();
+        const index_t *src = conn.as_index_t_ptr();
+
+        auto &map0 = local_to_global[0];
+        map0.resize(coords_length + len);
+        std::iota(map0.begin(), map0.begin() + coords_length, 0);
+        memcpy(&map0[0] + coords_length, src, sizeof(index_t) * len);
+    }
+    else if(dim == 2)
+    {
+        // The highest level the same as the global element ordering.
+        auto &map2 = local_to_global[2];
+        map2.resize(dim_topo_lengths[2]);
+        std::iota(map2.begin(), map2.end(), 0);
+
+        // The next level down matches G(2,1) - it's the edge ids used by the 
+        // 2D elements.
+        if(G[2][1].requested)
+        {
+            auto &map1 = local_to_global[1];
+            map1 = G[2][1].data;
+        }
+
+        // The final level here needs traverse elements in point order (since
+        // they are 2D) and walk around the element. The point ids are prepended.
+        //
+        // We don't use edges because they can be backwards if they were
+        // originally made by different element.
+        //
+        // NOTE: We could use topo2 connectivity instead of G(2,0) for 2D
+        //       since they are the same.
+        if(G[2][0].requested)
+        {
+            auto &map0 = local_to_global[0];
+            index_t nelem = dim_topo_lengths[2];
+            map0.reserve(coords_length + G[2][0].sum_sizes(nelem));
+            for(index_t i = 0; i < coords_length; i++)
+                map0.push_back(i);
+            for(index_t ei = 0; ei < nelem; ei++)
+            {
+                const auto elem_pts = G[2][0].get_data(ei);
+                for(index_t i = 0; i < elem_pts.second; i++)
+                {
+                    index_t nexti = (i + 1) % elem_pts.second;
+                    map0.push_back(elem_pts.first[i]);
+                    map0.push_back(elem_pts.first[nexti]);
+                }
+            }
+        }
+    }
+    else if(dim == 3)
+    {
+        // The highest level the same as the global element ordering.
+        auto &map3 = local_to_global[3];
+        map3.resize(dim_topo_lengths[3]);
+        std::iota(map3.begin(), map3.end(), 0);
+
+        // The next level down matches G(3,2) - it's the face ids used by the 
+        // 3D elements.
+        if(G[3][2].requested)
+        {
+            auto &map2 = local_to_global[2];
+            map2 = G[3][2].data;
+        }
+
+        // local_to_global[1] and local_to_global[0] are built under
+        // build_association_3_1_and_3_0 since they can piggyback off of
+        // those algorithms.
+    }
 }
 
 //---------------------------------------------------------------------------

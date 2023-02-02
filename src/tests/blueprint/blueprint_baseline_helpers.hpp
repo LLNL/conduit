@@ -69,10 +69,11 @@ load_baseline(const std::string &filename, conduit::Node &n)
 
 //-----------------------------------------------------------------------------
 inline bool
-compare_baseline(const std::string &filename, const conduit::Node &n)
+compare_baseline(const std::string &filename, const conduit::Node &n,
+    conduit::Node &baseline)
 {
     const double tolerance = 1.e-6;
-    conduit::Node baseline, info;
+    conduit::Node info;
     conduit::relay::io::load(filename, "yaml", baseline);
 
     // Node::diff returns true if the nodes are different. We want not different.
@@ -80,12 +81,20 @@ compare_baseline(const std::string &filename, const conduit::Node &n)
 
     if(!equal)
     {
-       const char *line = "*************************************************************";
-       std::cout << "Difference!" << std::endl;
-       std::cout << line << std::endl;
-       info.print();
+        const char *line = "*************************************************************";
+        std::cout << "Difference!" << std::endl;
+        std::cout << line << std::endl;
+        info.print();
     }
     return equal;
+}
+
+//-----------------------------------------------------------------------------
+inline bool
+compare_baseline(const std::string &filename, const conduit::Node &n)
+{
+    conduit::Node baseline;
+    return compare_baseline(filename, n, baseline);
 }
 
 //-----------------------------------------------------------------------------

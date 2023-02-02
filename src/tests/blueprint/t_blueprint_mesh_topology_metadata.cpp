@@ -194,7 +194,16 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
 #ifdef GENERATE_BASELINES
     make_baseline(b, rep);
 #else
-    EXPECT_EQ(compare_baseline(b, rep), true);
+    conduit::Node baseline_rep;
+    bool pass = compare_baseline(b, rep, baseline_rep);
+    if(!pass)
+    {
+        std::cout << "BASELINE: " << b << endl;
+        yaml_print(std::cout, baseline_rep);
+        std::cout << "CURRENT:" << endl;
+        yaml_print(std::cout, rep);
+    }
+    EXPECT_EQ(pass, true);
 #endif
 }
 
@@ -413,9 +422,9 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
         conduit::blueprint::mesh::examples::braid(type, dims[0],dims[1],dims[2], node);
     }
     conduit::Node &topo = node["topologies/mesh"];
-    std::cout << type << " length: "
-              << conduit::blueprint::mesh::utils::topology::length(topo)
-              << std::endl;
+    //std::cout << type << " length: "
+    //          << conduit::blueprint::mesh::utils::topology::length(topo)
+    //          << std::endl;
 
     // Make sure that these items are the requested data type (if they exist).
     std::vector<std::string> copy_keys{"elements/connectivity",
@@ -468,10 +477,14 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
+    // NOTE: When the reference::TopologyMetadata is used to make this baseline,
+    //       it makes double the connectivity for topo0 (all points specified
+    //       twice). That does not seem right. The baselines for this test case
+    //       have only one copy of the points.
     test_mesh_type("points");
 }
 
@@ -486,13 +499,13 @@ TEST(conduit_blueprint_topology_metadata, tris)
 {
     test_mesh_type("tris");
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, quads)
 {
     test_mesh_type("quads");
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, tets)
 {
@@ -518,12 +531,6 @@ TEST(conduit_blueprint_topology_metadata, hexs)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_topology_metadata, hexs_poly)
-{
-    test_mesh_type("hexs_poly");
-}
-
-//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_tets)
 {
     test_mesh_type("custom_tets");
@@ -533,6 +540,15 @@ TEST(conduit_blueprint_topology_metadata, custom_tets)
 TEST(conduit_blueprint_topology_metadata, custom_hexs)
 {
     test_mesh_type("custom_hexs");
+}
+
+#if 0
+// PH cases
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, hexs_poly)
+{
+    test_mesh_type("hexs_poly");
 }
 
 //-----------------------------------------------------------------------------
