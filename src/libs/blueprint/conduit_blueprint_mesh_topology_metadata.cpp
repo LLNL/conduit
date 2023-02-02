@@ -507,6 +507,14 @@ private:
      */
     bool get_global_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const;
     bool get_local_dim_map(index_t src_dim, index_t dst_dim, Node &map_node) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Returns the number of entities for L(e,a) so we can iterate through them.
+     @param e The entity dimension
+     @param a The association dimension
+     @return The number of entities in L(e,a).
+     */
     index_t get_local_association_entity_range(int e, int a) const;
 
     //-----------------------------------------------------------------------
@@ -2314,6 +2322,8 @@ TopologyMetadata::Implementation::get_global_association(index_t entity_id,
 index_t
 TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim, int dst_dim) const
 {
+    index_t dim = dimension();
+
     index_t ne;
     index_t mapcase = EA_INDEX(src_dim, dst_dim);
     switch(mapcase)
@@ -2325,7 +2335,14 @@ TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim
     case EA_INDEX(0,2):
         // Falls through
     case EA_INDEX(0,3):
-        ne = dim_topo_lengths[3] * G[3][2].single_size * G[2][1].single_size * G[1][0].single_size + coords_length;
+        if(dim == 3)
+            ne = dim_topo_lengths[3] * G[3][2].single_size * G[2][1].single_size * G[1][0].single_size + coords_length;
+        else if(dim == 2)
+            ne = dim_topo_lengths[2] * G[2][1].single_size * G[1][0].single_size + coords_length;
+        else if(dim == 1)
+            ne = dim_topo_lengths[1] * G[1][0].single_size + coords_length;
+        else if(dim == 0)
+            ne = dim_topo_lengths[0] + coords_length;
         break;
 
     case EA_INDEX(1,0):
@@ -2335,8 +2352,14 @@ TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim
     case EA_INDEX(1,2):
         // Falls through
     case EA_INDEX(1,3):
-        // This needs to be 96 for hex.  4cells * 6faces/cell * 4lines/face
-        ne = dim_topo_lengths[3] * G[3][2].single_size * G[2][1].single_size;
+        if(dim == 3)
+            ne = dim_topo_lengths[3] * G[3][2].single_size * G[2][1].single_size;
+        else if(dim == 2)
+            ne = dim_topo_lengths[2] * G[2][1].single_size;
+        else if(dim == 1)
+            ne = dim_topo_lengths[1];
+        else if(dim == 0)
+            ne = dim_topo_lengths[0];
         break;
 
     case EA_INDEX(2,0):
@@ -2346,9 +2369,14 @@ TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim
     case EA_INDEX(2,2):
         // Falls through
     case EA_INDEX(2,3):
-        //  4                    * 6
-        ne = dim_topo_lengths[3] * G[3][2].single_size;
-        // This could also be sum(G[3][2].sizes)
+        if(dim == 3)
+            ne = dim_topo_lengths[3] * G[3][2].single_size;
+        else if(dim == 2)
+            ne = dim_topo_lengths[2];
+        else if(dim == 1)
+            ne = dim_topo_lengths[1];
+        else if(dim == 0)
+            ne = dim_topo_lengths[0];
         break;
 
     case EA_INDEX(3,0):
