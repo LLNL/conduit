@@ -68,7 +68,11 @@ static const char *SPHERICAL_LABELS[] = {"r", "theta", "phi"};
 //    Allow / since we'll get rid of them using another method where we use
 //    them to create directories.
 //
+//  TODO we don't like this function - rewrite this to be very simple
 // ****************************************************************************
+// std::string sanitize_silo_varname(const std::string)
+
+
 static const char *VN(const std::string &n)
 {
     static int k = 0;
@@ -314,217 +318,6 @@ silo_generate_state_optlist(const Node &n)
     return res;
 }
 
-
-//---------------------------------------------------------------------------//
-void
-silo_write_field(DBfile *dbfile,
-                 const std::string &var_name,
-                 const Node &n_var,
-                 Node &n_mesh_info)
-{
-
-    if (!n_var.has_path("topology"))
-    {
-        CONDUIT_ERROR( "Missing linked topology! "
-                        << "fields/"
-                        << var_name
-                        << "/topology");
-    }
-
-    std::vector<std::string> topos;
-    if(n_var["topology"].number_of_children() > 0)
-    {
-        // TODO this seems wrong
-        // NOTE: this case doesn't seem to make sense WRT the blueprint web doc.
-        NodeConstIterator fld_topos_itr = n_var["topology"].children();
-        while(fld_topos_itr.has_next())
-        {
-            std::string topo_name = fld_topos_itr.next().as_string();
-            topos.push_back(topo_name);
-        }
-    }
-    else
-    {
-        topos.push_back(n_var["topology"].as_string());
-    }
-
-    for(size_t i = 0; i < topos.size(); ++i)
-    {
-        const std::string &topo_name = topos[i];
-
-        if(!n_mesh_info.has_path(topo_name))
-        {
-            CONDUIT_ERROR( "Invalid linked topology! "
-                            << "fields/"
-                            << var_name << "/topology: "
-                            << topo_name);
-        }
-
-        std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
-        int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
-        int num_pts   = n_mesh_info[topo_name]["num_pts"].to_value();;
-
-
-        int centering  = 0;
-        int num_values = 0;
-
-        if (!n_var.has_path("association"))
-        {
-            CONDUIT_ERROR( "Missing association! "
-                           << "fields/"
-                           << var_name << "/association");
-        }
-
-        if (n_var["association"].as_string() == "element")
-        {
-            centering  = DB_ZONECENT;
-            num_values = num_elems;
-        }
-
-        if (n_var["association"].as_string() == "vertex")
-        {
-            centering  = DB_NODECENT;
-            num_values = num_pts;
-        }
-
-        if (!n_var.has_path("values"))
-        {
-            CONDUIT_ERROR( "Missing field data ! "
-                           << "fields/"
-                           << var_name << "/values");
-        }
-
-        // we compact to support a strided array cases
-        Node n_values;
-        n_var["values"].compact_to(n_values);
-
-        // create a name
-        int vals_type = 0;
-        void *vals_ptr = NULL;
-
-        DataType dtype = n_var["values"].dtype();
-
-        if( dtype.is_float() )
-        {
-            vals_type = DB_FLOAT;
-            vals_ptr = (void*)n_values.as_float_ptr();
-        }
-        else if( dtype.is_double() )
-        {
-            vals_type = DB_DOUBLE;
-            vals_ptr = (void*)n_values.as_double_ptr();
-        }
-        else if( dtype.is_int() )
-        {
-            vals_type = DB_INT;
-            vals_ptr = (void*)n_values.as_int_ptr();
-        }
-        else if( dtype.is_long() )
-        {
-            vals_type = DB_LONG;
-            vals_ptr = (void*)n_values.as_long_ptr();
-        }
-        else if( dtype.is_long_long() )
-        {
-            vals_type = DB_LONG_LONG;
-            vals_ptr = (void*)n_values.as_long_long_ptr();
-        }
-        else if( dtype.is_char() )
-        {
-            vals_type = DB_CHAR;
-            vals_ptr = (void*)n_values.as_char_ptr();
-        }
-        else if( dtype.is_short() )
-        {
-            vals_type = DB_SHORT;
-            vals_ptr = (void*)n_values.as_short_ptr();
-        }
-        else
-        {
-            // skip the field if we don't support its type
-            CONDUIT_INFO( "skipping field "
-                           << var_name
-                           << ", since its type is not implemented, found "
-                           << dtype.name() );
-            continue;
-        }
-
-        int silo_error = 0;
-
-        if(mesh_type == "unstructured")
-        {
-            silo_error = DBPutUcdvar1(dbfile,
-                                      var_name.c_str(),
-                                      topo_name.c_str(),
-                                      vals_ptr,
-                                      num_values,
-                                      NULL,
-                                      0,
-                                      vals_type,
-                                      centering,
-                                      NULL);
-        }
-        else if(mesh_type == "rectilinear" ||
-                mesh_type == "uniform" ||
-                mesh_type == "structured")
-        {
-            int ele_dims[3] = {0,0,0};
-            int pts_dims[3] = {1,1,1};
-
-            int num_dims = 2;
-
-            ele_dims[0] = n_mesh_info[topo_name]["elements/i"].value();
-            ele_dims[1] = n_mesh_info[topo_name]["elements/j"].value();
-
-            pts_dims[0] = ele_dims[0] + 1;
-            pts_dims[1] = ele_dims[1] + 1;
-
-            if(n_mesh_info[topo_name]["elements"].has_path("k"))
-            {
-                num_dims = 3;
-                ele_dims[2] = n_mesh_info[topo_name]["elements/k"].value();
-                pts_dims[2] = ele_dims[2] + 1;
-            }
-
-
-            int *dims = ele_dims;
-            if(centering == DB_NODECENT)
-            {
-                dims = pts_dims;
-            }
-
-            silo_error = DBPutQuadvar1(dbfile,
-                                       var_name.c_str(),
-                                       topo_name.c_str(),
-                                       vals_ptr,
-                                       dims,
-                                       num_dims,
-                                       NULL,
-                                       0,
-                                       vals_type,
-                                       centering,
-                                       NULL);
-        }
-        else if( mesh_type == "points")
-        {
-
-            silo_error = DBPutPointvar1(dbfile,            // dbfile Database file pointer.
-                                        var_name.c_str(),  // variable name
-                                        topo_name.c_str(), // mesh name
-                                        vals_ptr,          // data values
-                                        num_pts,           // Number of elements (points).
-                                        vals_type,         // Datatype of the variable.
-                                        NULL);
-        }
-        else
-        {
-            CONDUIT_ERROR( "only DBPutQuadvar1 + DBPutUcdvar1 var are supported");
-        }
-
-        CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " after creating field " << var_name);
-    }// end field topologies itr while
-}
 
 //---------------------------------------------------------------------------//
 void
@@ -966,152 +759,6 @@ silo_write_quad_rect_mesh(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 void
-silo_write_quad_uniform_mesh(DBfile *dbfile,
-                             const std::string &topo_name,
-                             const Node &n_coords,
-                             DBoptlist *state_optlist,
-                             Node &n_mesh_info)
-{
-    // TODO: USE XFORM expand uniform coords to rect-style
-
-    // silo doesn't have a direct path for a uniform mesh
-    // we need to convert its implicit uniform coords to
-    // implicit rectilinear coords
-
-    index_t npts_x = 0;
-    index_t npts_y = 0;
-    index_t npts_z = 0;
-
-    float64 x0 = 0.0;
-    float64 y0 = 0.0;
-    float64 z0 = 0.0;
-
-    float64 dx =1;
-    float64 dy =1;
-    float64 dz =1;
-
-    if(!n_coords.has_path("dims"))
-    {
-        CONDUIT_ERROR("uniform mesh missing 'dims'")
-    }
-
-    const Node &n_dims = n_coords["dims"];
-
-    if( n_dims.has_path("i") )
-    {
-        npts_x = n_dims["i"].to_value();
-    }
-
-    if( n_dims.has_path("j") )
-    {
-        npts_y = n_dims["j"].to_value();
-    }
-
-    if( n_dims.has_path("k") )
-    {
-        npts_z = n_dims["k"].to_value();
-    }
-
-
-    if(n_coords.has_path("origin"))
-    {
-        const Node &n_origin = n_coords["origin"];
-
-        if( n_origin.has_path("x") )
-        {
-            x0 = n_origin["x"].to_value();
-        }
-
-        if( n_origin.has_path("y") )
-        {
-            y0 = n_origin["y"].to_value();
-        }
-
-        if( n_origin.has_path("z") )
-        {
-            z0 = n_origin["z"].to_value();
-        }
-    }
-
-    if(n_coords.has_path("spacing"))
-    {
-        const Node &n_spacing = n_coords["spacing"];
-
-        if( n_spacing.has_path("dx") )
-        {
-            dx = n_spacing["dx"].to_value();
-        }
-
-        if( n_spacing.has_path("dy") )
-        {
-            dy = n_spacing["dy"].to_value();
-        }
-
-        if( n_spacing.has_path("dz") )
-        {
-            dz = n_spacing["dz"].to_value();
-        }
-    }
-
-    Node n_rect_coords;
-
-
-    n_rect_coords["type"] = "rectilinear";
-    Node &n_rect_coord_vals = n_rect_coords["values"];
-    n_rect_coord_vals["x"].set(DataType::float64(npts_x));
-    n_rect_coord_vals["y"].set(DataType::float64(npts_y));
-
-    if(npts_z > 1)
-    {
-        n_rect_coord_vals["z"].set(DataType::float64(npts_z));
-    }
-
-
-    float64 *x_coords_ptr = n_rect_coord_vals["x"].value();
-    float64 *y_coords_ptr = n_rect_coord_vals["y"].value();
-    float64 *z_coords_ptr = NULL;
-
-    if(npts_z > 1)
-    {
-        z_coords_ptr = n_rect_coord_vals["z"].value();
-    }
-
-    float64 cv = x0;
-    for(index_t i=0; i < npts_x; i++)
-    {
-        x_coords_ptr[i] = cv;
-        cv += dx;
-    }
-
-    cv = y0;
-    for(index_t i=0; i < npts_y; i++)
-    {
-        y_coords_ptr[i] = cv;
-        cv += dy;
-    }
-
-    if(npts_z > 1)
-    {
-        cv = z0;
-        for(index_t i=0; i < npts_z; i++)
-        {
-            z_coords_ptr[i] = cv;
-            cv += dz;
-        }
-    }
-
-
-    silo_write_quad_rect_mesh(dbfile,
-                              topo_name,
-                              n_rect_coords,
-                              state_optlist,
-                              n_mesh_info);
-
-}
-
-
-//---------------------------------------------------------------------------//
-void
 silo_write_structured_mesh(DBfile *dbfile,
                            const std::string &topo_name,
                            const Node &n_topo,
@@ -1235,166 +882,6 @@ silo_write_structured_mesh(DBfile *dbfile,
 }
 
 
-
-//---------------------------------------------------------------------------//
-void
-silo_mesh_write(const Node &n,
-                DBfile *dbfile,
-                const std::string &silo_obj_path)
-{
-    int silo_error = 0;
-    char silo_prev_dir[256];
-
-    if(!silo_obj_path.empty())
-    {
-        silo_error += DBGetDir(dbfile,silo_prev_dir);
-        silo_error += DBMkDir(dbfile,silo_obj_path.c_str());
-        silo_error += DBSetDir(dbfile,silo_obj_path.c_str());
-
-        CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " failed to make silo directory:"
-                                 << silo_obj_path);
-    }
-
-    DBoptlist *state_optlist = silo_generate_state_optlist(n);
-
-    Node n_mesh_info; // helps with bookkeeping for all topos
-
-    NodeConstIterator topo_itr = n["topologies"].children();
-    while(topo_itr.has_next())
-    {
-        const Node &n_topo = topo_itr.next();
-
-        std::string topo_name = topo_itr.name();
-
-        std::string topo_type = n_topo["type"].as_string();
-
-        n_mesh_info[topo_name]["type"].set(topo_type);
-
-
-        if(topo_type == "unstructured")
-        {
-
-            std::string ele_shape = n_topo["elements/shape"].as_string();
-            if( ele_shape != "point")
-            {
-                // we need a zone list for a ucd mesh
-                silo_write_ucd_zonelist(dbfile,
-                                        topo_name,
-                                        n_topo,
-                                        n_mesh_info);
-            }
-            else
-            {
-                topo_type = "points";
-                n_mesh_info[topo_name]["type"].set(topo_type);
-            }
-        }
-
-        // make sure we have coordsets
-
-        if(!n.has_path("coordsets"))
-        {
-             CONDUIT_ERROR( "mesh missing: coordsets");
-        }
-
-        // get this topo's coordset name
-        std::string coordset_name = n_topo["coordset"].as_string();
-
-        n_mesh_info[topo_name]["coordset"].set(coordset_name);
-
-        // obtain the coordset with the name
-        if(!n["coordsets"].has_path(coordset_name))
-        {
-             CONDUIT_ERROR( "mesh is missing coordset named "
-                            << coordset_name
-                            << " for topology named "
-                            << topo_name );
-        }
-
-        const Node &n_coords = n["coordsets"][coordset_name];
-
-        if(topo_type == "unstructured")
-        {
-            silo_write_ucd_mesh(dbfile,
-                                topo_name,
-                                n_coords,
-                                state_optlist,
-                                n_mesh_info);
-        }
-        else if (topo_type == "rectilinear")
-        {
-            silo_write_quad_rect_mesh(dbfile,
-                                      topo_name,
-                                      n_coords,
-                                      state_optlist,
-                                      n_mesh_info);
-        }
-        else if (topo_type == "uniform")
-        {
-            // TODO if this code sticks around, we need to convert to 
-            // rectilinear HERE and then deprecate silo_write_quad_uniform_mesh
-            silo_write_quad_uniform_mesh(dbfile,
-                                         topo_name,
-                                         n_coords,
-                                         state_optlist,
-                                         n_mesh_info);
-
-        }
-        else if (topo_type == "structured")
-        {
-            silo_write_structured_mesh(dbfile,
-                                       topo_name,
-                                       n_topo,
-                                       n_coords,
-                                       state_optlist,
-                                       n_mesh_info);
-        }
-        else if (topo_type == "points")
-        {
-            silo_write_pointmesh(dbfile,
-                                 topo_name,
-                                 n_coords,
-                                 state_optlist,
-                                 n_mesh_info);
-        }
-    }
-
-    if (n.has_path("fields"))
-    {
-        NodeConstIterator itr = n["fields"].children();
-
-        while(itr.has_next())
-        {
-            const Node &n_var = itr.next();
-            std::string var_name = itr.name();
-
-            silo_write_field(dbfile,
-                             var_name,
-                             n_var,
-                             n_mesh_info);
-
-        }
-    }
-
-    if(state_optlist)
-    {
-        silo_error = DBFreeOptlist(state_optlist);
-    }
-
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " freeing state optlist.");
-
-    if(!silo_obj_path.empty())
-    {
-        silo_error = DBSetDir(dbfile,silo_prev_dir);
-
-        CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " changing silo directory to previous path");
-    }
-}
-
-
 //---------------------------------------------------------------------------//
 void
 silo_mesh_write(const Node &node,
@@ -1425,7 +912,7 @@ void silo_mesh_write(const Node &node,
 
     if(dbfile)
     {
-        silo_mesh_write(node,dbfile,silo_obj_path);
+        silo::silo_mesh_write(node,dbfile,silo_obj_path);
     }
     else
     {
@@ -2450,23 +1937,16 @@ silo_generate_state_optlist(const Node &n,
 std::pair<int, const char *const *>
 get_coordset_type_labels(const Node &values)
 {
-
     std::string sys =
         conduit::blueprint::mesh::utils::coordset::coordsys(values);
     if (sys == "cartesian")
-    {
         return std::make_pair(DB_CARTESIAN, CARTESIAN_LABELS);
-    }
     else if (sys == "cylindrical")
-    {
         return std::make_pair(DB_CYLINDRICAL, CYLINDRICAL_LABELS);
-    }
-    else
-    {
-        CONDUIT_ASSERT(sys == "spherical",
-                       "Unrecognized coordinate system " << sys);
+    else if (sys == "spherical")
         return std::make_pair(DB_SPHERICAL, SPHERICAL_LABELS);
-    }
+    else
+        CONDUIT_ERROR("Unrecognized coordinate system " << sys);
 }
 
 //---------------------------------------------------------------------------//
@@ -2482,192 +1962,173 @@ void silo_write_field(DBfile *dbfile,
                       << "fields/" << var_name << "/topology");
     }
 
-    std::vector<std::string> topos;
-    if (n_var["topology"].number_of_children() > 0) 
+    const std::string topo_name = n_var["topology"].as_string();
+
+    if (!n_mesh_info.has_path(topo_name))
     {
-        // NOTE: this case doesn't seem to make sense WRT the blueprint web doc.
-        NodeConstIterator fld_topos_itr = n_var["topology"].children();
-        while (fld_topos_itr.has_next()) 
-        {
-            std::string topo_name = fld_topos_itr.next().as_string();
-            topos.push_back(topo_name);
-        }
+        CONDUIT_ERROR("Invalid linked topology! "
+                      << "fields/" << var_name
+                      << "/topology: " << topo_name);
+    }
+
+    std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
+    int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
+    int num_pts = n_mesh_info[topo_name]["num_pts"].to_value();
+
+    int centering = 0;
+    int num_values = 0;
+
+    if (!n_var.has_path("association"))
+    {
+        CONDUIT_ERROR("Missing association! "
+                      << "fields/" << var_name << "/association");
+    }
+
+    const std::string association = n_var["association"].as_string();
+    if (association == "element")
+    {
+        centering = DB_ZONECENT;
+        num_values = num_elems;
+    }
+    else if (association == "vertex")
+    {
+        centering = DB_NODECENT;
+        num_values = num_pts;
     }
     else
     {
-        topos.push_back(n_var["topology"].as_string());
+        CONDUIT_ERROR("Unknown association in " << association);
     }
 
-    for (size_t i = 0; i < topos.size(); ++i)
+    if (!n_var.has_path("values"))
     {
-        const std::string &topo_name = topos[i];
+        CONDUIT_ERROR("Missing field data ! "
+                      << "fields/" << var_name << "/values");
+    }
 
-        if (!n_mesh_info.has_path(topo_name))
+    // we compact to support a strided array cases
+    Node n_values;
+    n_var["values"].compact_to(n_values);
+
+    // create a name
+    int vals_type = 0;
+    void *vals_ptr = NULL;
+
+    DataType dtype = n_var["values"].dtype();
+
+    if (dtype.is_float())
+    {
+        vals_type = DB_FLOAT;
+        vals_ptr = (void *)n_values.as_float_ptr();
+    }
+    else if (dtype.is_double())
+    {
+        vals_type = DB_DOUBLE;
+        vals_ptr = (void *)n_values.as_double_ptr();
+    }
+    else if (dtype.is_int())
+    {
+        vals_type = DB_INT;
+        vals_ptr = (void *)n_values.as_int_ptr();
+    }
+    else if (dtype.is_long())
+    {
+        vals_type = DB_LONG;
+        vals_ptr = (void *)n_values.as_long_ptr();
+    }
+    else if (dtype.is_long_long())
+    {
+        vals_type = DB_LONG_LONG;
+        vals_ptr = (void *)n_values.as_long_long_ptr();
+    }
+    else if (dtype.is_char())
+    {
+        vals_type = DB_CHAR;
+        vals_ptr = (void *)n_values.as_char_ptr();
+    }
+    else if (dtype.is_short())
+    {
+        vals_type = DB_SHORT;
+        vals_ptr = (void *)n_values.as_short_ptr();
+    }
+    else
+    {
+        // skip the field if we don't support its type
+        CONDUIT_INFO("skipping field "
+                     << var_name
+                     << ", since its type is not implemented, found "
+                     << dtype.name());
+        continue;
+    }
+
+    int silo_error = 0;
+
+    if (mesh_type == "unstructured")
+    {
+        silo_error = DBPutUcdvar1(dbfile, 
+                                  var_name.c_str(),
+                                  topo_name.c_str(),
+                                  vals_ptr,
+                                  num_values,
+                                  NULL,
+                                  0,
+                                  vals_type,
+                                  centering,
+                                  NULL);
+    }
+    else if (mesh_type == "rectilinear" || 
+             mesh_type == "uniform" ||
+             mesh_type == "structured")
+    {
+        int dims[3] = {0, 0, 0};
+        int num_dims = 2;
+
+        dims[0] = n_mesh_info[topo_name]["elements/i"].value();
+        dims[1] = n_mesh_info[topo_name]["elements/j"].value();
+
+        if (n_mesh_info[topo_name]["elements"].has_path("k"))
         {
-            CONDUIT_ERROR("Invalid linked topology! "
-                          << "fields/" << var_name
-                          << "/topology: " << topo_name);
+            num_dims = 3;
+            dims[2] = n_mesh_info[topo_name]["elements/k"].value();
         }
 
-        std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
-        int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
-        int num_pts = n_mesh_info[topo_name]["num_pts"].to_value();
-
-        int centering = 0;
-        int num_values = 0;
-
-        if (!n_var.has_path("association"))
+        if (centering == DB_NODECENT)
         {
-            CONDUIT_ERROR("Missing association! "
-                          << "fields/" << var_name << "/association");
+            dims[0] += 1;
+            dims[1] += 1;
+            dims[2] += 1;
         }
 
-        if (n_var["association"].as_string() == "element")
-        {
-            centering = DB_ZONECENT;
-            num_values = num_elems;
-        }
+        silo_error = DBPutQuadvar1( dbfile,
+                                    var_name.c_str(),
+                                    topo_name.c_str(),
+                                    vals_ptr,
+                                    dims,
+                                    num_dims,
+                                    NULL,
+                                    0,
+                                    vals_type,
+                                    centering,
+                                    NULL);
+    }
+    else if (mesh_type == "points") 
+    {
 
-        if (n_var["association"].as_string() == "vertex")
-        {
-            centering = DB_NODECENT;
-            num_values = num_pts;
-        }
+        silo_error = DBPutPointvar1(dbfile, // dbfile Database file pointer.
+                                    var_name.c_str(),  // variable name
+                                    topo_name.c_str(), // mesh name
+                                    vals_ptr,          // data values
+                                    num_pts, // Number of elements (points).
+                                    vals_type, // Datatype of the variable.
+                                    NULL);
+    }
+    else
+    {
+        CONDUIT_ERROR("only DBPutQuadvar1 + DBPutUcdvar1 + DBPutPointvar1 var are supported");
+    }
 
-        if (!n_var.has_path("values"))
-        {
-            CONDUIT_ERROR("Missing field data ! "
-                          << "fields/" << var_name << "/values");
-        }
-
-        // we compact to support a strided array cases
-        Node n_values;
-        n_var["values"].compact_to(n_values);
-
-        // create a name
-        int vals_type = 0;
-        void *vals_ptr = NULL;
-
-        DataType dtype = n_var["values"].dtype();
-
-        if (dtype.is_float())
-        {
-            vals_type = DB_FLOAT;
-            vals_ptr = (void *)n_values.as_float_ptr();
-        }
-        else if (dtype.is_double())
-        {
-            vals_type = DB_DOUBLE;
-            vals_ptr = (void *)n_values.as_double_ptr();
-        }
-        else if (dtype.is_int())
-        {
-            vals_type = DB_INT;
-            vals_ptr = (void *)n_values.as_int_ptr();
-        }
-        else if (dtype.is_long())
-        {
-            vals_type = DB_LONG;
-            vals_ptr = (void *)n_values.as_long_ptr();
-        }
-        else if (dtype.is_long_long())
-        {
-            vals_type = DB_LONG_LONG;
-            vals_ptr = (void *)n_values.as_long_long_ptr();
-        }
-        else if (dtype.is_char())
-        {
-            vals_type = DB_CHAR;
-            vals_ptr = (void *)n_values.as_char_ptr();
-        }
-        else if (dtype.is_short())
-        {
-            vals_type = DB_SHORT;
-            vals_ptr = (void *)n_values.as_short_ptr();
-        }
-        else
-        {
-            // skip the field if we don't support its type
-            CONDUIT_INFO("skipping field "
-                         << var_name
-                         << ", since its type is not implemented, found "
-                         << dtype.name());
-            continue;
-        }
-
-        int silo_error = 0;
-
-        if (mesh_type == "unstructured")
-        {
-            silo_error = DBPutUcdvar1(dbfile, var_name.c_str(),
-                                      topo_name.c_str(),
-                                      vals_ptr,
-                                      num_values,
-                                      NULL,
-                                      0,
-                                      vals_type,
-                                      centering,
-                                      NULL);
-        }
-        else if (mesh_type == "rectilinear" || 
-                 mesh_type == "uniform" ||
-                 mesh_type == "structured")
-        {
-            int ele_dims[3] = {0, 0, 0};
-            int pts_dims[3] = {1, 1, 1};
-
-            int num_dims = 2;
-
-            ele_dims[0] = n_mesh_info[topo_name]["elements/i"].value();
-            ele_dims[1] = n_mesh_info[topo_name]["elements/j"].value();
-
-            pts_dims[0] = ele_dims[0] + 1;
-            pts_dims[1] = ele_dims[1] + 1;
-
-            if (n_mesh_info[topo_name]["elements"].has_path("k"))
-            {
-                num_dims = 3;
-                ele_dims[2] = n_mesh_info[topo_name]["elements/k"].value();
-                pts_dims[2] = ele_dims[2] + 1;
-            }
-
-            int *dims = ele_dims;
-            if (centering == DB_NODECENT)
-            {
-                dims = pts_dims;
-            }
-
-            silo_error = DBPutQuadvar1( dbfile,
-                                        var_name.c_str(),
-                                        topo_name.c_str(),
-                                        vals_ptr,
-                                        dims,
-                                        num_dims,
-                                        NULL,
-                                        0,
-                                        vals_type,
-                                        centering,
-                                        NULL);
-        }
-        else if (mesh_type == "points") 
-        {
-
-            silo_error = DBPutPointvar1(dbfile, // dbfile Database file pointer.
-                                        var_name.c_str(),  // variable name
-                                        topo_name.c_str(), // mesh name
-                                        vals_ptr,          // data values
-                                        num_pts, // Number of elements (points).
-                                        vals_type, // Datatype of the variable.
-                                        NULL);
-        }
-        else
-        {
-            CONDUIT_ERROR("only DBPutQuadvar1 + DBPutUcdvar1 + DBPutPointvar1 var are supported");
-        }
-
-        CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " after creating field " << var_name);
-    } // end field topologies itr while
+    CONDUIT_CHECK_SILO_ERROR(silo_error,
+                             " after creating field " << var_name);
 }
 
 //---------------------------------------------------------------------------//
@@ -2968,7 +2429,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
                                           &coordsys_type_labels.first),
-                              "Failed to create coodsystem labels");
+                              "Failed to create coordsystem labels");
 
     Node n_coords_compact;
     // compaction is necessary to support ragged arrays
@@ -3107,8 +2568,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
 //---------------------------------------------------------------------------//
 void silo_mesh_write(const Node &n, 
                      DBfile *dbfile,
-                     const std::string &silo_obj_path,
-                     std::vector<int> &silo_mesh_types)
+                     const std::string &silo_obj_path)
 {
     int silo_error = 0;
     char silo_prev_dir[256];
@@ -3119,16 +2579,16 @@ void silo_mesh_write(const Node &n,
         silo_error += DBMkDir(dbfile, silo_obj_path.c_str());
         silo_error += DBSetDir(dbfile, silo_obj_path.c_str());
 
-        CONDUIT_CHECK_SILO_ERROR(
-            silo_error, " failed to make silo directory:" << silo_obj_path);
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " failed to make silo directory:"
+                                 << silo_obj_path);
     }
 
-    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
-        silo_generate_state_optlist(n, 5), &DBFreeOptlist};
+    DBoptlist *state_optlist = silo_generate_state_optlist(n);
 
-    Node n_mesh_info; // helps with bookkeeping for all topos
+    Node n_mesh_info;
 
-    NodeConstIterator topo_itr = n["topologies"].children();
+    auto topo_itr = n["topologies"].children();
     while (topo_itr.has_next())
     {
         const Node &n_topo = topo_itr.next();
@@ -3141,12 +2601,14 @@ void silo_mesh_write(const Node &n,
 
         if (topo_type == "unstructured")
         {
-
             std::string ele_shape = n_topo["elements/shape"].as_string();
-            if (ele_shape != "point")
+            if( ele_shape != "point")
             {
                 // we need a zone list for a ucd mesh
-                silo_write_ucd_zonelist(dbfile, topo_name, n_topo, n_mesh_info);
+                silo_write_ucd_zonelist(dbfile,
+                                        topo_name,
+                                        n_topo,
+                                        n_mesh_info);
             }
             else
             {
@@ -3179,20 +2641,16 @@ void silo_mesh_write(const Node &n,
 
         if (topo_type == "unstructured")
         {
-            silo_mesh_types.push_back(DB_UCDMESH);
             silo_write_ucd_mesh(dbfile, topo_name, n_coords,
-                                state_optlist.get(), n_mesh_info);
+                                state_optlist, n_mesh_info);
         }
         else if (topo_type == "rectilinear") 
         {
-            silo_mesh_types.push_back(DB_QUADMESH);
             silo_write_quad_rect_mesh(dbfile, topo_name, n_coords,
-                                      state_optlist.get(), n_mesh_info);
+                                      state_optlist, n_mesh_info);
         }
         else if (topo_type == "uniform") 
         {
-            silo_mesh_types.push_back(DB_QUADMESH);
-
             // silo doesn't have a direct path for a uniform mesh
             // we need to convert its implicit uniform coords to
             // implicit rectilinear coords
@@ -3204,27 +2662,24 @@ void silo_mesh_write(const Node &n,
                 n_topo, n_rect_topo, n_rect_coords);
 
             silo_write_quad_rect_mesh(dbfile, topo_name, n_rect_coords,
-                                      state_optlist.get(), n_mesh_info);
+                                      state_optlist, n_mesh_info);
 
         }
         else if (topo_type == "structured")
         {
-            silo_mesh_types.push_back(DB_QUADMESH);
             silo_write_structured_mesh(dbfile, topo_name, n_topo, n_coords,
-                                       state_optlist.get(), n_mesh_info);
+                                       state_optlist, n_mesh_info);
         }
         else if (topo_type == "points")
         {
-            silo_mesh_types.push_back(DB_POINTMESH);
             silo_write_pointmesh(dbfile, topo_name, n_coords,
-                                 state_optlist.get(), n_mesh_info);
+                                 state_optlist, n_mesh_info);
         }
     }
 
     if (n.has_path("fields")) 
     {
-        NodeConstIterator itr = n["fields"].children();
-
+        auto itr = n["fields"].children();
         while (itr.has_next())
         {
             const Node &n_var = itr.next();
@@ -3233,6 +2688,14 @@ void silo_mesh_write(const Node &n,
             silo_write_field(dbfile, var_name, n_var, n_mesh_info);
         }
     }
+
+    if(state_optlist)
+    {
+        silo_error = DBFreeOptlist(state_optlist);
+    }
+
+    CONDUIT_CHECK_SILO_ERROR(silo_error,
+                             " freeing state optlist.");
 
     if (!silo_obj_path.empty()) 
     {
@@ -3497,8 +2960,745 @@ parse_type_option(const std::string &path,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
+                                  const conduit::Node &opts,
+                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+    // The assumption here is that everything is multi domain
+
+    std::string opts_file_style = "default";
+    std::string opts_suffix     = "default";
+    std::string opts_mesh_name  = "mesh";
+    int         opts_num_files  = -1;
+    bool        opts_truncate   = false;
+    bool        overlink        = false;
+
+    // check for + validate file_style option
+    if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
+    {
+        opts_file_style = opts["file_style"].as_string();
+
+        if(opts_file_style != "default" && 
+           opts_file_style != "root_only" &&
+           opts_file_style != "multi_file" &&
+           opts_file_style != "overlink")
+        {
+            CONDUIT_ERROR("write_mesh invalid file_style option: \"" 
+                          << opts_file_style << "\"\n"
+                          " expected: \"default\", \"root_only\", "
+                          "\"multi_file\", or \"overlink\",");
+        }
+
+    }
+
+    // check for + validate silo_type option
+    // TODO
+
+    // check for + validate suffix option
+    if(opts.has_child("suffix") && opts["suffix"].dtype().is_string())
+    {
+        opts_suffix = opts["suffix"].as_string();
+
+        if(opts_suffix != "default" && 
+           opts_suffix != "cycle" &&
+           opts_suffix != "none" )
+        {
+            CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
+                          << opts_suffix << "\"\n"
+                          " expected: \"default\", \"cycle\", or \"none\"");
+        }
+    }
+    
+    // check for + validate mesh_name option
+    if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
+    {
+        opts_mesh_name = opts["mesh_name"].as_string();
+    }
+    
+
+    // check for number_of_files, 0 or -1 implies #files => # domains
+    if(opts.has_child("number_of_files") && opts["number_of_files"].dtype().is_integer())
+    {
+        opts_num_files = (int) opts["number_of_files"].to_int();
+    }
+
+    // check for truncate (overwrite)
+    if(opts.has_child("truncate") && opts["truncate"].dtype().is_string())
+    {
+        const std::string ow_string = opts["truncate"].as_string();
+        if(ow_string == "true")
+            opts_truncate = true;
+    }
+
+    // special logic for overlink
+    if (overlink = opts_file_style == "overlink")
+    {
+        opts_mesh_name = "MMESH";
+        opts_file_style == "multi_file";
+    }
+
+    int num_files = opts_num_files;
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    // nodes used for MPI comm (share them for many operations)
+    Node n_local, n_reduced;
+#endif
+
+    // -----------------------------------------------------------
+    // make sure some MPI task has data
+    // -----------------------------------------------------------
+    Node multi_dom;
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    bool is_valid = detail::clean_mesh(mesh, multi_dom, mpi_comm);
+#else
+    bool is_valid = detail::clean_mesh(mesh, multi_dom);
+#endif
+
+    int par_rank = 0;
+    int par_size = 1;
+    // we may not have any domains so init to max
+    int cycle = std::numeric_limits<int>::max();
+
+    int local_boolean = is_valid ? 1 : 0;
+    int global_boolean = local_boolean;
+
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    par_rank = relay::mpi::rank(mpi_comm);
+    par_size = relay::mpi::size(mpi_comm);
+
+    // reduce to check to see if any valid data exists
+
+    n_local = (int)cycle;
+    relay::mpi::sum_all_reduce(n_local,
+                               n_reduced,
+                               mpi_comm);
+
+    global_boolean = n_reduced.as_int();
+
+#endif
+
+    if(global_boolean == 0)
+    {
+      CONDUIT_INFO("Silo save: no valid data exists. Skipping save");
+      return;
+    }
+
+    // -----------------------------------------------------------
+    // get the number of local domains and the cycle info
+    // -----------------------------------------------------------
+
+    int local_num_domains = (int)multi_dom.number_of_children();
+    // figure out what cycle we are
+    if(local_num_domains > 0 && is_valid)
+    {
+        Node dom = multi_dom.child(0);
+        if(!dom.has_path("state/cycle"))
+        {
+            if(opts_suffix == "cycle")
+            {
+                static std::map<std::string,int> counters;
+                CONDUIT_INFO("Silo save: no 'state/cycle' present."
+                             " Defaulting to counter");
+                cycle = counters[path];
+                counters[path]++;
+            }
+            else
+            {
+                opts_suffix = "none";
+            }
+        }
+        else if(opts_suffix == "default")
+        {
+            cycle = dom["state/cycle"].to_int();
+            opts_suffix = "cycle";
+        }
+    }
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    // reduce to get the cycle (some tasks might not have domains)
+    n_local = (int)cycle;
+
+    relay::mpi::min_all_reduce(n_local,
+                               n_reduced,
+                               mpi_comm);
+
+    cycle = n_reduced.as_int();
+#endif
+    
+    // -----------------------------------------------------------
+    // find the # of global domains
+    // -----------------------------------------------------------
+    int global_num_domains = (int)local_num_domains;
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    n_local = local_num_domains;
+
+    relay::mpi::sum_all_reduce(n_local,
+                               n_reduced,
+                               mpi_comm);
+
+    global_num_domains = n_reduced.as_int();
+#endif
+
+    if(global_num_domains == 0)
+    {
+      if(par_rank == 0)
+      {
+          CONDUIT_WARN("There no data to save. Doing nothing.");
+      }
+      return;
+    }
+
+    std::string output_dir = "";
+
+    // resolve file_style == default
+    // 
+    // default implies multi_file if more than one domain
+    if(opts_file_style == "default")
+    {
+        if( global_num_domains > 1)
+        {
+            opts_file_style = "multi_file";
+        }
+        else // other wise, use root only
+        {
+            opts_file_style = "root_only";
+        }
+    }
+
+    // ----------------------------------------------------
+    // if using multi_file, create output dir
+    // ----------------------------------------------------
+    if(opts_file_style == "multi_file")
+    {
+        // setup the directory
+        output_dir = path;
+        // at this point for suffix, we should only see
+        // cycle or none -- default has been resolved
+        if(opts_suffix == "cycle")
+        {
+            // TODO check with cyrus - do we want to have cycle_649320 in the dir name?
+            output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
+        }
+
+        bool dir_ok = false;
+
+        // let rank zero handle dir creation
+        if(par_rank == 0)
+        {
+            // check if the dir exists
+            dir_ok = utils::is_directory(output_dir);
+            if(!dir_ok)
+            {
+                // if not try to let rank zero create it
+                dir_ok = utils::create_directory(output_dir);
+            }
+        }
+
+        // make sure everyone knows if dir creation was successful 
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+        // use an mpi sum to check if the dir exists
+        n_local = dir_ok ? 1 : 0;
+
+        relay::mpi::sum_all_reduce(n_local,
+                                   n_reduced,
+                                   mpi_comm);
+
+        dir_ok = (n_reduced.as_int() == 1);
+#endif
+
+        if(!dir_ok)
+        {
+            CONDUIT_ERROR("Error: failed to create directory " << output_dir);
+        }
+    }
+
+
+    // ----------------------------------------------------
+    // setup root file name
+    // ----------------------------------------------------
+    std::string root_filename = path;
+
+    // at this point for suffix, we should only see 
+    // cycle or none -- default has been resolved
+    if(opts_suffix == "cycle")
+    {
+        root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
+    }
+
+    root_filename += ".silo";
+
+    // zero or negative (default cases), use one file per domain
+    if(num_files <= 0)
+    {
+        num_files = global_num_domains;
+    }
+
+    // if global domains > num_files, warn and use one file per domain
+    if(global_num_domains < num_files)
+    {
+        CONDUIT_INFO("Requested more files than actual domains, "
+                     "writing one file per domain");
+        num_files = global_num_domains;
+    }
+
+    // at this point for file_style,
+    // default has been resolved, we need to just handle:
+    //   root_only, multi_file
+    if(opts_file_style == "root_only")
+    {
+        // if truncate, first touch needs to open the file with
+        //          open_opts["mode"] = "wt";
+
+        // write out local domains, since all tasks will
+        // write to single file in this case, we need baton.
+        // the outer loop + par_rank == current_writer implements
+        // the baton.
+        
+        Node local_root_file_created;
+        Node global_root_file_created;
+        local_root_file_created.set((int)0);
+        global_root_file_created.set((int)0);
+
+        for(int current_writer=0; current_writer < par_size; current_writer++)
+        {
+            if(par_rank == current_writer)
+            {
+                for(int i = 0; i < local_num_domains; ++i)
+                {
+                    // if truncate, first rank to touch the file needs
+                    // to open at
+                    Node open_opts;
+                    if( (global_root_file_created.as_int() == 0) 
+                        && opts_truncate)
+                    {
+                        Node open_opts;
+                        open_opts["mode"] = "wt";
+                        // TODO I need a way to support truncate?
+                        // How to open a file with opts for silo?
+                        hnd.open(root_filename,file_protocol,open_opts);
+                        local_root_file_created.set((int)1);
+                    }
+                    
+                    if(!hnd.is_open())
+                    {
+                        hnd.open(root_filename,file_protocol);
+                    }
+
+                    const Node &dom = multi_dom.child(i);
+                    // figure out the proper mesh path the file
+                    std::string mesh_path = "";
+
+                    if(global_num_domains == 1)
+                    {
+                        // no domain prefix, write to mesh name
+                        mesh_path = opts_mesh_name;
+                    }
+                    else
+                    {
+                        // multiple domains, we need to use a domain prefix
+                        uint64 domain = dom["state/domain_id"].to_uint64();
+                        mesh_path = conduit_fmt::format("domain_{:06d}/{}",
+                                                        domain,
+                                                        opts_mesh_name);
+                    }
+                    hnd.write(dom,mesh_path);
+                }
+            }
+
+        // Reduce to sync up (like a barrier) and solve first writer need
+        #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+            mpi::max_all_reduce(local_root_file_created,
+                                global_root_file_created,
+                                mpi_comm);
+        #else
+            global_root_file_created.set(local_root_file_created);
+        #endif
+        }
+    }
+    else if(global_num_domains == num_files)
+    {
+        // write out each domain
+        // writes are independent, so no baton here
+        for(int i = 0; i < local_num_domains; ++i)
+        {
+            const Node &dom = multi_dom.child(i);
+            uint64 domain = dom["state/domain_id"].to_uint64();
+
+            std::string output_file  = conduit::utils::join_file_path(output_dir,
+                                                conduit_fmt::format("domain_{:06d}.{}:{}",
+                                                                    domain,
+                                                                    file_protocol,
+                                                                    opts_mesh_name));
+            // properly support truncate vs non truncate
+            if(opts_truncate)
+            {
+                relay::io::save(dom, output_file);
+            }
+            else
+            {
+                relay::io::save_merged(dom, output_file);
+            }
+        }
+    }
+    else // more complex case, N domains to M files
+    {
+        //
+        // recall: we have re-labeled domain ids from 0 - > N-1, however
+        // some mpi tasks may have no data.
+        //
+
+        // books we keep:
+        Node books;
+        books["local_domain_to_file"].set(DataType::int32(local_num_domains));
+        books["local_domain_status"].set(DataType::int32(local_num_domains));
+
+        // batons
+        books["local_file_batons"].set(DataType::int32(num_files));
+        books["global_file_batons"].set(DataType::int32(num_files));
+
+        // used to track first touch
+        books["local_file_created"].set(DataType::int32(num_files));
+        books["global_file_created"].set(DataType::int32(num_files));
+
+        // size local # of domains
+        int32_array local_domain_to_file = books["local_domain_to_file"].value();
+        int32_array local_domain_status  = books["local_domain_status"].value();
+
+        // size num total files
+        /// batons
+        int32_array local_file_batons    = books["local_file_batons"].value();
+        int32_array global_file_batons   = books["global_file_batons"].value();
+        /// file created flags
+        int32_array local_file_created    = books["local_file_created"].value();
+        int32_array global_file_created   = books["global_file_created"].value();
+
+
+        Node d2f_map;
+        detail::gen_domain_to_file_map(global_num_domains,
+                                       num_files,
+                                       books);
+        int32_array global_d2f = books["global_domain_to_file"].value();
+
+        // init our local map and status array
+        for(int d = 0; d < local_num_domains; ++d)
+        {
+            const Node &dom = multi_dom.child(d);
+            uint64 domain = dom["state/domain_id"].to_uint64();
+            // local domain index to file map
+            local_domain_to_file[d] = global_d2f[domain];
+            local_domain_status[d] = 1; // pending (1), vs done (0)
+        }
+
+        //
+        // Round and round we go, will we deadlock I believe no :-)
+        //
+        // Here is how this works:
+        //  At each round, if a rank has domains pending to write to a file,
+        //  we put the rank id in the local file_batons vec.
+        //  This vec is then mpi max'ed, and the highest rank
+        //  that needs access to each file will write this round.
+        //
+        //  When a rank does not need to write to a file, we
+        //  put -1 for this rank.
+        //
+        //  During each round, max of # files writers are participating
+        //
+        //  We are done when the mpi max of the batons is -1 for all files.
+        //
+
+        bool another_twirl = true;
+        int twirls = 0;
+
+        int local_all_is_good  = 1;
+        int global_all_is_good = 1;
+
+        books["local_all_is_good"].set_external(&local_all_is_good,1);
+        books["global_all_is_good"].set_external(&global_all_is_good,1);
+
+        std::string local_io_exception_msg = "";
+
+        while(another_twirl)
+        {
+            // update baton requests
+            for(int f = 0; f < num_files; ++f)
+            {
+                for(int d = 0; d < local_num_domains; ++d)
+                {
+                    if(local_domain_status[d] == 1)
+                        local_file_batons[f] = par_rank;
+                    else
+                        local_file_batons[f] = -1;
+                }
+            }
+
+            // mpi max file batons array
+            #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+                mpi::max_all_reduce(books["local_file_batons"],
+                                    books["global_file_batons"],
+                                    mpi_comm);
+            #else
+                global_file_batons.set(local_file_batons);
+            #endif
+
+            // mpi max file created array
+            #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+                mpi::max_all_reduce(books["local_file_created"],
+                                    books["global_file_created"],
+                                    mpi_comm);
+            #else
+                global_file_created.set(local_file_created);
+            #endif
+
+
+            // we now have valid batons (global_file_batons)
+            for(int f = 0; f < num_files && local_all_is_good == 1 ; ++f)
+            {
+                // check if this rank has the global baton for this file
+                if( global_file_batons[f] == par_rank )
+                {
+                    // check the domains this rank has pending
+                    for(int d = 0; d < local_num_domains && local_all_is_good == 1; ++d)
+                    {
+                        // reuse this handle for all domains in the file
+                        relay::io::IOHandle hnd;
+                        if(local_domain_status[d] == 1 &&  // pending
+                           local_domain_to_file[d] == f) // destined for this file
+                        {
+                            // now is the time to write!
+                            // pattern is:
+                            //  file_%06llu.{protocol}:/domain_%06llu/...
+                            const Node &dom = multi_dom.child(d);
+                            uint64 domain_id = dom["state/domain_id"].to_uint64();
+
+                            // construct file name
+                            std::string file_name = conduit_fmt::format(
+                                                        "file_{:06d}.{}",
+                                                        f,
+                                                        file_protocol);
+
+                            std::string output_file = conduit::utils::join_file_path(output_dir,
+                                                                                     file_name);
+
+                            // now the path in the file, and domain id
+                            std::string curr_path = conduit_fmt::format(
+                                                            "domain_{:06d}/{}",
+                                                             domain_id,
+                                                             opts_mesh_name);
+
+                            try
+                            {
+                                // if truncate == true check if this is the first time we are
+                                // touching file, and use wt
+                                Node open_opts;
+                                if(opts_truncate && global_file_created[f] == 0)
+                                {
+                                   open_opts["mode"] = "wt";
+
+                                   local_file_created[f]  = 1;
+                                   global_file_created[f] = 1;
+                                }
+
+                                if(!hnd.is_open())
+                                {
+                                    hnd.open(output_file, open_opts);
+                                }
+
+                                // CONDUIT_INFO("rank " << par_rank << " output_file"
+                                //              << output_file << " path " << path);
+
+                                hnd.write(dom, curr_path);
+                                
+                                // update status, we are done with this doman
+                                local_domain_status[d] = 0;
+                            }
+                            catch(conduit::Error &e)
+                            {
+                                local_all_is_good = 0;
+                                local_io_exception_msg = e.message();
+                            }
+                        }
+                    }
+                }
+            }
+
+            // if any I/O errors happened stop and have all
+            // tasks bail out with an exception (to avoid hangs)
+            #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+                mpi::min_all_reduce(books["local_all_is_good"],
+                                    books["global_all_is_good"],
+                                    mpi_comm);
+            #else
+                global_all_is_good = local_all_is_good;
+            #endif
+
+            if(global_all_is_good == 0)
+            {
+                std::string emsg = "Failed to write mesh data on one more more ranks.";
+
+                if(!local_io_exception_msg.empty())
+                {
+                     emsg += conduit_fmt::format("Exception details from rank {}: {}.",
+                                                 par_rank, local_io_exception_msg);
+                }
+                CONDUIT_ERROR(emsg);
+            }
+            // If you  need to debug the baton alog:
+            // std::cout << "[" << par_rank << "] "
+            //              << " twirls: " << twirls
+            //              << " details\n"
+            //              << books.to_yaml();
+
+            // check if we have another round
+            // stop when all batons are -1
+            another_twirl = false;
+
+            for(int f = 0; f < num_files && !another_twirl; ++f)
+            {
+                // if any entry is not -1, we still have more work to do
+                if(global_file_batons[f] != -1)
+                {
+                    another_twirl = true;
+                    twirls++;
+                }
+            }
+        }
+    }
+
+    int root_file_writer = 0;
+    if(local_num_domains == 0)
+    {
+        root_file_writer = -1;
+    }
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    // Rank 0 could have an empty domain, so we have to check
+    // to find someone with a data set to write out the root file.
+    Node out;
+    out = local_num_domains;
+    Node rcv;
+
+    mpi::all_gather_using_schema(out, rcv, mpi_comm);
+    root_file_writer = -1;
+    int* res_ptr = (int*)rcv.data_ptr();
+    for(int i = 0; i < par_size; ++i)
+    {
+        if(res_ptr[i] != 0)
+        {
+            root_file_writer = i;
+            break;
+        }
+    }
+
+    MPI_Barrier(mpi_comm);
+#endif
+
+    if(root_file_writer == -1)
+    {
+        // this should not happen. global doms is already 0
+        CONDUIT_WARN("Relay: there are no domains to write out");
+    }
+
+    // root_file_writer will now write out the root file
+    if(par_rank == root_file_writer)
+    {
+        std::string output_dir_base, output_dir_path;
+        conduit::utils::rsplit_file_path(output_dir,
+                                         output_dir_base,
+                                         output_dir_path);
+
+        std::string output_tree_pattern;
+        std::string output_file_pattern;
+
+        if(opts_file_style == "root_only")
+        {
+            output_file_pattern = root_filename;
+            if(global_num_domains == 1)
+            {
+                output_tree_pattern = "/";
+            }
+            else
+            {
+                output_tree_pattern = "/domain_%06d/";
+            }
+        }
+        else if(global_num_domains == num_files)
+        {
+            output_tree_pattern = "/";
+            output_file_pattern = conduit::utils::join_file_path(
+                                                output_dir_base,
+                                                "domain_%06d." + file_protocol);
+        }
+        else
+        {
+            output_tree_pattern = "/domain_%06d";
+            output_file_pattern = conduit::utils::join_file_path(
+                                                output_dir_base,
+                                                "file_%06d." + file_protocol);
+        }
+
+        Node root;
+        Node &bp_idx = root["blueprint_index"];
+
+        // TODO: Use MPI ver vs providing the domains?
+        ::conduit::blueprint::mesh::generate_index(multi_dom.child(0),
+                                                   opts_mesh_name,
+                                                   global_num_domains,
+                                                   bp_idx[opts_mesh_name]);
+
+        // work around conduit and manually add state fields
+        if(multi_dom.child(0).has_path("state/cycle"))
+        {
+          bp_idx[ opts_mesh_name + "/state/cycle"] = multi_dom.child(0)["state/cycle"].to_int32();
+        }
+
+        if(multi_dom.child(0).has_path("state/time"))
+        {
+          bp_idx[opts_mesh_name + "/state/time"] = multi_dom.child(0)["state/time"].to_double();
+        }
+
+        root["protocol/name"]    = file_protocol;
+        root["protocol/version"] = CONDUIT_VERSION;
+
+        root["number_of_files"]  = num_files;
+        root["number_of_trees"]  = global_num_domains;
+
+        // TODO: make sure this is relative
+        root["file_pattern"]     = output_file_pattern;
+        root["tree_pattern"]     = output_tree_pattern;
+
+        relay::io::IOHandle hnd;
+
+        // if not root only, this is the first time we are writing 
+        // to the root file -- make sure to properly support truncate
+        Node open_opts;
+        if(opts_file_style != "root_only" && opts_truncate)
+        {
+            open_opts["mode"] = "wt";
+        }
+
+        hnd.open(root_filename, file_protocol, open_opts);
+        hnd.write(root);
+        hnd.close();
+    }
+
+    // barrier at end of work to avoid file system race
+    // (non root task could write the root file in write_mesh, 
+    // but root task is always the one to read the root file
+    // in read_mesh.
+
+    #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+        MPI_Barrier(mpi_comm);
+    #endif
+}
+
+
+void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
+                                  const std::string &path,
                                   const conduit::Node &opts)
 {
+    // TODO scrap this and use the blueprint version instead, fill in where it uses iohandle for silo calls
+
     int i, type, ndomains, nfiles;
     std::string mmesh_name = "mesh";
     bool overlink = false;
@@ -3585,6 +3785,15 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             get_mesh_domain_name(
                     (*dom)["topologies"],
                     overlink));
+
+        // TODO
+        // instead of renaming everything to domain_000000 + lalalala
+        // we want to make subdirectories called domain_000000 and then put the things in there
+        // we don't need to change the topo names
+
+        // maybe just rework this entirely so that it does "write_topo" and then "write_field"
+
+        // see blueprint write mesh too! - steal it and change this up to work for silo
 
         std::string mesh_type = (*dom)["topologies"].children().next()["type"].as_string();
         int var_type;
@@ -3707,8 +3916,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         silo_mesh_write(*dom,
                         get_or_create(filemap, domain_file, type), 
-                        silo_dir,
-                        silo_mesh_types);
+                        silo_dir);
 
         if (domain_file == path) 
         {
@@ -3756,7 +3964,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
-                                  const std::string &path) {
+                                  const std::string &path) 
+{
+    // empty opts
     Node opts;
     write_mesh(mesh, path, opts);
 }
@@ -3772,7 +3982,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
-                                 const std::string &path) {
+                                 const std::string &path) 
+{
+    // empty opts
     Node opts;
     save_mesh(mesh, path, opts);
 }
@@ -3786,7 +3998,8 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
-                                 const conduit::Node &opts) {
+                                 const conduit::Node &opts) 
+{
     conduit::utils::remove_path_if_exists(path);
     write_mesh(mesh, path, opts);
 }

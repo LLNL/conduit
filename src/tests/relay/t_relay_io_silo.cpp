@@ -136,19 +136,20 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 // TODO: add tests for fields, matsets, etc.
 TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
-    bool i_wanna_print = false;
+    bool i_wanna_print = true;
 
     const std::vector<std::string> mesh_types = {
     // TODO: the following types fail
-         "uniform", /*"rectilinear", "structured",
-        "tris", "quads"*/};
+         /*"uniform",*/ /*"rectilinear",*/ /*"structured",*/
+        "tris", "quads"};
     for (int i = 0; i < mesh_types.size(); ++i)
     {
         for (int nx = 2; nx < 3; ++nx) 
         // for (int nx = 2; nx < 4; ++nx) 
         {
             Node save_mesh;
-            blueprint::mesh::examples::basic(mesh_types[i], nx, nx, (nx - 2) * 2, save_mesh);
+            blueprint::mesh::examples::basic(mesh_types[i], 
+                nx, nx, (nx - 2) * 2 + (mesh_types[i] == "structured" ? 1 : 0), save_mesh);
 
             Node info;
 
@@ -245,6 +246,10 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             save_mesh[child]["topologies"]["topo"]["coordset"] = "topo";
             save_mesh[child]["fields"].rename_child("dist", "domain_00000" + std::to_string(child) + "_dist");
         }
+
+        save_mesh.print();
+
+        load_mesh.print();
 
         // the loaded mesh will be in the multidomain format
         // (it will be a list containing a single mesh domain)
