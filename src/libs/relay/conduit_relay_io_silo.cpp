@@ -33,10 +33,6 @@
 //-----------------------------------------------------------------------------
 #include <silo.h>
 
-static const char *CARTESIAN_LABELS[] = {"x", "y", "z"};
-static const char *CYLINDRICAL_LABELS[] = {"r", "z", NULL};
-static const char *SPHERICAL_LABELS[] = {"r", "theta", "phi"};
-
 //-----------------------------------------------------------------------------
 //
 /// The CONDUIT_CHECK_SILO_ERROR macro is used to check error codes from silo.
@@ -52,44 +48,6 @@ static const char *SPHERICAL_LABELS[] = {"r", "theta", "phi"};
         CONDUIT_ERROR( silo_err_oss.str());                         \
     }                                                               \
 }                                                                   \
-
-// ****************************************************************************
-//  Function: VN (Valid Silo Variable Name) 
-//
-//  Purpose: Ensure a given object name being passed to Silo is a valid name
-//      for a silo object. The function is desgined to be used 'in-place' in
-//      a Silo function call where it may be used for multiple args in the 
-///     call. 
-//
-//  Programmer: Mark C. Miller, Tue Aug 26 14:18:13 PDT 2008
-//
-//  Modifications:
-//    Brad Whitlock, Fri Mar 6 09:56:33 PDT 2009
-//    Allow / since we'll get rid of them using another method where we use
-//    them to create directories.
-//
-//  TODO we don't like this function - rewrite this to be very simple
-// ****************************************************************************
-// std::string sanitize_silo_varname(const std::string)
-
-
-static const char *VN(const std::string &n)
-{
-    static int k = 0;
-    static std::string vn[10];
-    int km = k % 10;
-
-    k++;
-    vn[km] = n;
-    for (size_t i = 0; i < vn[km].size(); i++)
-    {
-        if (isalnum(vn[km][i]) || vn[km][i] == '_' || vn[km][i] == '/')
-            continue;
-        vn[km][i] = '_';
-    }
-
-    return vn[km].c_str();
-}
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -280,42 +238,6 @@ void silo_read(DBfile *dbfile,
 
     delete [] schema;
     delete [] data;
-}
-
-
-//---------------------------------------------------------------------------//
-DBoptlist *
-silo_generate_state_optlist(const Node &n)
-{
-    DBoptlist *res = NULL;
-
-    if (n.has_path("state"))
-    {
-        int silo_error = 0;
-        const Node &n_state = n["state"];
-        res = DBMakeOptlist(2);
-
-        if(n.has_path("cycle"))
-        {
-            int cyc_value = n_state["cycle"].to_int();
-            silo_error += DBAddOption(res,
-                                      DBOPT_CYCLE,
-                                      &cyc_value);
-        }
-
-        if(n.has_path("time"))
-        {
-            double time_value =  n_state["time"].to_double();
-            silo_error += DBAddOption(res,
-                                      DBOPT_DTIME,
-                                      &time_value);
-        }
-
-        CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " creating state optlist (time, cycle) ");
-    }
-
-    return res;
 }
 
 
@@ -933,6 +855,17 @@ void silo_mesh_write(const Node &node,
 namespace silo
 {
 
+std::string sanitize_silo_varname(const std::string &varname)
+{
+    std::string newvarname = "";
+    std::for_each(varname.begin(), varname.end(), 
+        [](char const &c)
+        {
+            newvarname += (std::isalnum(c) || strchr("_", c) ? c : "_");
+        });
+    return newvarname;
+}
+
 //-----------------------------------------------------------------------------
 // Fetch the DBfile * associated with 'filename' from 'filemap'.
 // If the map does not contain an entry for 'filename', open
@@ -1063,14 +996,14 @@ copy_point_coords(void *coords[3],
 {
 
     ndims = ndims < 3 ? ndims : 3;
-    const char **labels;
+    const std::vector<std::string> labels;
     if (coord_sys == DB_CARTESIAN)
     {
-        labels = CARTESIAN_LABELS;
+        labels = CARTESIAN_AXES;
     }
     else if (coord_sys == DB_CYLINDRICAL)
     {
-        labels = CYLINDRICAL_LABELS;
+        labels = CYLINDRICAL_AXES;
         if (ndims >= 3)
         {
             CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");
@@ -1078,7 +1011,7 @@ copy_point_coords(void *coords[3],
     }
     else if (coord_sys == DB_SPHERICAL)
     {
-        labels = SPHERICAL_LABELS;
+        labels = SPHERICAL_AXES;
     }
     else
     {
@@ -1901,50 +1834,53 @@ load_mesh(const std::string &root_file_path,
 
 //---------------------------------------------------------------------------//
 DBoptlist *
-silo_generate_state_optlist(const Node &n,
-                            int nopts)
+silo_generate_state_optlist(const Node &n)
 {
-    DBoptlist *res = DBMakeOptlist(nopts);
-    CONDUIT_ASSERT(res != NULL, "Error creating optlist");
+    DBoptlist *res = NULL;
 
     if (n.has_path("state"))
     {
+        int silo_error = 0;
         const Node &n_state = n["state"];
+        res = DBMakeOptlist(2);
 
-        if (n.has_path("cycle"))
+        if(n.has_path("cycle"))
         {
             int cyc_value = n_state["cycle"].to_int();
-            CONDUIT_CHECK_SILO_ERROR(DBAddOption(res,
-                                                 DBOPT_CYCLE,
-                                                 &cyc_value),
-                                     "TODO");
+            silo_error += DBAddOption(res,
+                                      DBOPT_CYCLE,
+                                      &cyc_value);
         }
-        if (n.has_path("time"))
+
+        if(n.has_path("time"))
         {
-            double time_value = n_state["time"].to_double();
-            CONDUIT_CHECK_SILO_ERROR(DBAddOption(res,
-                                                 DBOPT_DTIME,
-                                                 &time_value),
-                                     "TODO");
+            double time_value =  n_state["time"].to_double();
+            silo_error += DBAddOption(res,
+                                      DBOPT_DTIME,
+                                      &time_value);
         }
+
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " creating state optlist (time, cycle) ");
     }
+
     return res;
 }
 
 //---------------------------------------------------------------------------//
 // return a pair where the first entry is the coordset type
 // and the second is the labels for the coordinates
-std::pair<int, const char *const *>
+std::pair<int, const std::vector<std::string>>
 get_coordset_type_labels(const Node &values)
 {
     std::string sys =
         conduit::blueprint::mesh::utils::coordset::coordsys(values);
     if (sys == "cartesian")
-        return std::make_pair(DB_CARTESIAN, CARTESIAN_LABELS);
+        return std::make_pair(DB_CARTESIAN, CARTESIAN_AXES);
     else if (sys == "cylindrical")
-        return std::make_pair(DB_CYLINDRICAL, CYLINDRICAL_LABELS);
+        return std::make_pair(DB_CYLINDRICAL, CYLINDRICAL_AXES);
     else if (sys == "spherical")
-        return std::make_pair(DB_SPHERICAL, SPHERICAL_LABELS);
+        return std::make_pair(DB_SPHERICAL, SPHERICAL_AXES);
     else
         CONDUIT_ERROR("Unrecognized coordinate system " << sys);
 }
@@ -2136,7 +2072,7 @@ int
 assign_coords_ptrs(void *coords_ptrs[3],
                    int ndims,
                    conduit::Node &n_coords_compact,
-                   const char *const *coordsys_labels)
+                   const std::vector<std::string> &coordsys_labels)
 {
 
     DataType dtype = n_coords_compact[coordsys_labels[0]].dtype();
@@ -2187,8 +2123,7 @@ void silo_write_pointmesh(DBfile *dbfile,
 {
 
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    std::pair<int, const char *const *> coordsys_type_labels =
-        get_coordset_type_labels(n_coords);
+    auto coordsys_type_labels = get_coordset_type_labels(n_coords);
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
                                           &coordsys_type_labels.first),
@@ -2371,7 +2306,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    std::pair<int, const char *const *> coordsys_type_labels = get_coordset_type_labels(n_coords);
+    auto coordsys_type_labels = get_coordset_type_labels(n_coords);
 
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
@@ -2397,10 +2332,14 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 
     std::string zlist_name = topo_name + "_connectivity";
 
+    char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
+                                        coordsys_type_labels.second[1].c_str(),
+                                        coordsys_type_labels.second[2].c_str()};
+
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
                                   topo_name.c_str(),           // mesh name
                                   ndims,                       // number of dims
-                                  coordsys_type_labels.second, // coord names
+                                  coordnames, // coord names
                                   coords_ptrs,                 // coords values
                                   num_pts,            // number of points
                                   num_elems,          // number of elements
@@ -2424,7 +2363,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    std::pair<int, const char *const *> coordsys_type_labels =
+    auto coordsys_type_labels =
         get_coordset_type_labels(n_coords);
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
@@ -2465,10 +2404,14 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                           n_coords_compact,
                                           coordsys_type_labels.second);
 
+    char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
+                                        coordsys_type_labels.second[1].c_str(),
+                                        coordsys_type_labels.second[2].c_str()};
+
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
                       topo_name.c_str(),           // mesh name
-                      coordsys_type_labels.second, // coord names
+                      coordnames, // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
                       ndims,                       // number of dims
@@ -2494,7 +2437,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
 
     CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
-    std::pair<int, const char *const *> coordsys_type_labels = get_coordset_type_labels(n_coords);
+    auto coordsys_type_labels = get_coordset_type_labels(n_coords);
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
                                           &coordsys_type_labels.first),
@@ -2551,10 +2494,14 @@ void silo_write_structured_mesh(DBfile *dbfile,
         pts_dims[2] = ele_dims[2] + 1;
     }
 
+    char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
+                                        coordsys_type_labels.second[1].c_str(),
+                                        coordsys_type_labels.second[2].c_str()};
+
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
                       topo_name.c_str(),           // mesh name
-                      coordsys_type_labels.second, // coord names
+                      coordnames, // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
                       ndims,                       // number of dims
@@ -3273,12 +3220,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     if( (global_root_file_created.as_int() == 0) 
                         && opts_truncate)
                     {
-                        Node open_opts;
-                        open_opts["mode"] = "wt";
-                        // TODO I need a way to support truncate?
-                        // How to open a file with opts for silo?
-                        hnd.open(root_filename,file_protocol,open_opts);
-                        local_root_file_created.set((int)1);
+                        CONDUIT_ERROR("TODO Truncate case not yet implemented");
+                        // Node open_opts;
+                        // open_opts["mode"] = "wt";
+                        // // TODO I need a way to support truncate?
+                        // // How to open a file with opts for silo?
+                        // hnd.open(root_filename,file_protocol,open_opts);
+                        // local_root_file_created.set((int)1);
                     }
                     
                     if(!hnd.is_open())
@@ -3303,7 +3251,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                         domain,
                                                         opts_mesh_name);
                     }
-                    hnd.write(dom,mesh_path);
+                    // TODO help where did my dbfile come from!
+                    silo_mesh_write(dom, dbfile, mesh_path);
                 }
             }
 
@@ -3334,6 +3283,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             // properly support truncate vs non truncate
             if(opts_truncate)
             {
+                // TODO help I'm scared
                 relay::io::save(dom, output_file);
             }
             else
@@ -3508,7 +3458,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
                                 //              << output_file << " path " << path);
 
-                                hnd.write(dom, curr_path);
+                                // TODO help me get a dbfile!
+                                silo_mesh_write(dom, dbfile, curr_path);
                                 
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
@@ -3679,6 +3630,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         hnd.open(root_filename, file_protocol, open_opts);
         hnd.write(root);
+        // TODO here is where we write multimesh and multivars
         hnd.close();
     }
 
@@ -3795,18 +3747,7 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
 
         // see blueprint write mesh too! - steal it and change this up to work for silo
 
-        std::string mesh_type = (*dom)["topologies"].children().next()["type"].as_string();
         int var_type;
-        if (mesh_type == "unstructured")
-            var_type = DB_UCDVAR;
-        else if (mesh_type == "rectilinear" || 
-                 mesh_type == "uniform" ||
-                 mesh_type == "structured")
-            var_type = DB_QUADVAR;
-        else if (mesh_type == "points")
-            var_type = DB_POINTVAR;
-        else
-            CONDUIT_ERROR("Unsupported mesh type in " << mesh_type);
 
         // prepare multivar paths
         if (dom->has_path("fields"))
@@ -3840,79 +3781,6 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
             }
         }
         // TODO material paths as well
-
-        auto dom_itr = dom->children();
-        while (dom_itr.has_next())
-        {
-            const Node &curr_child = dom_itr.next();
-            std::string child_name = dom_itr.name();
-            if (child_name != "fields")
-            {
-                replace_field_names[child_name].set_external(curr_child);
-            }
-        }
-        dom = &replace_field_names;
-
-        // we want to prevent naming collisions
-        // TODO should this always happen? Or only in the single file case? Same goes for the fields I guess
-        if (mesh_domain_name == mmesh_name)
-        {
-            std::string new_mesh_domain_name = "domain_00000" + std::to_string(i) + "_" + mesh_domain_name;
-            
-            // we iterate over the current domain's children
-            dom_itr = dom->children();
-            while (dom_itr.has_next())
-            {
-                const Node &curr_child = dom_itr.next();
-                std::string child_name = dom_itr.name();
-
-                if (child_name == "topologies")
-                {
-                    // we have to rename the topo to avoid a name collision
-                    CONDUIT_ASSERT((*dom)["topologies"].number_of_children() == 1,
-                                   "Multiple topologies not supported");
-                    fix_name_collisions["topologies"][new_mesh_domain_name].set_external(curr_child[mesh_domain_name]);
-                }
-                else if (child_name == "fields")
-                {
-                    // since we renamed the topo, we have to change which topo the fields reference.
-                    // we iterate over the fields
-                    auto field_itr = curr_child.children();
-                    while (field_itr.has_next())
-                    {
-                        const Node &curr_field = field_itr.next();
-                        std::string field_name = field_itr.name();
-                        if (curr_field["topology"].as_string() == mesh_domain_name)
-                        {
-                            fix_name_collisions["fields"][field_name]["topology"] = new_mesh_domain_name;
-                            auto field_child_itr = curr_field.children();
-                            while (field_child_itr.has_next())
-                            {
-                                const Node &curr_field_child = field_child_itr.next();
-                                std::string field_child_name = field_child_itr.name();
-                                if (field_child_name != "topology")
-                                    fix_name_collisions["fields"][field_name][field_child_name].set_external(curr_field_child);
-                            }
-                        }
-                        else
-                        {
-                            // If the field somehow refers to another topo...
-                            // This shouldn't happen, but if it does, we will not handle it here
-                            // Just pass it through.
-                            fix_name_collisions["fields"][field_name].set_external(curr_field);
-                        }
-                    }
-                }
-                else
-                {
-                    fix_name_collisions[child_name].set_external(curr_child);
-                }
-            }
-
-            // (*dom)["topologies"].rename_child(mesh_domain_name, "domain_00000" + std::to_string(i) + "_" + mesh_domain_name);
-            mesh_domain_name = new_mesh_domain_name;
-            dom = &fix_name_collisions;
-        }
 
         silo_mesh_write(*dom,
                         get_or_create(filemap, domain_file, type), 
