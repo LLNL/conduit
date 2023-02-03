@@ -648,10 +648,10 @@ private:
         }
         else
         {
-            // The shape is said to contain polygons so we have to be a bit more
+            // The shape contain polygons so we have to be a bit more
             // general in how we traverse the connectivity. We want sizes/offsets.
-
-            // TODO: write make_embedded_connectivity_mixed
+            // Make lines.
+            make_embedded_connectivity_polygons_to_lines(shape, conn, connlen);
         }
     }
 
@@ -948,26 +948,193 @@ private:
                 }
             }
         }
-#if 1
-// It has to be done like this for the connectivity nodes to match the old TopologyMetadata.
-// We have to have offsets for the new topology to match what TopologyMetadata makes.
-// Otherwise we could turn it off and let the maps handle the offsets implicitly.
 
         // Generate offsets in the output connectivity. Some downstream algorithms want it.
         node["elements/offsets"].set(DataType::index_t(unique));
         index_t *offsets = node["elements/offsets"].as_index_t_ptr();
         for(index_t ei = 0; ei < unique; ei++)
             offsets[ei] = points_per_face * ei;
+    }
 
-#else
-// I changed it to this to try and work around a valgrind bug that I saw somewhere.
+    //-----------------------------------------------------------------------
+    /**
+     @brief This methods makes embedded connectivity 2D->1D but uses sizes/
+            offsets to access the shape data.
+
+            It's really only used to go from 2D polygons to 1D lines.
+     */
+    template <typename ConnType>
+    void
+    make_embedded_connectivity_polygons_to_lines(const ShapeType &shape,
+        const ConnType &conn, index_t connlen)
+    {
+        int embed_dim = shape.dim - 1;
+
+#ifdef DEBUG_PRINT
+        cout << "=======================================================" << endl;
+        cout << "make_embedded_connectivity_polygons_to_lines:" << endl;
+        cout << "=======================================================" << endl;
+#endif
+
+        index_t_accessor sizes = topo->fetch_existing("elements/sizes").value();
+        index_t_accessor offsets = topo->fetch_existing("elements/offsets").value();
+        index_t nelem = sizes.number_of_elements();
+
+        // Iterate over each polygon and make unique edges.
+        index_t nelem_edges = sizes.sum();
+        std::vector<std::pair<uint64, uint64>> edgeid_to_ee(nelem_edges);
+        std::vector<std::pair<index_t, index_t>> ee_to_edge(nelem_edges);
+#pragma omp parallel for
+        for(size_t elem = 0; elem < nelem; elem++)
+        {
+            constexpr size_t MAX_VERTS = 32;
+
+            // Get the element points, storing them in pts.
+            index_t elem_size = sizes[elem];
+            index_t elem_offset = offsets[elem];
+            index_t pts[MAX_VERTS];
+            for(size_t i = 0; i < elem_size; i++)
+                pts[i] = conn[elem_offset + i];
+
+            // Make a unique id for each edge.
+            for(size_t edge_index = 0; edge_index < elem_size; edge_index++)
+            {
+                // encode element and edge into element_edge.
+                uint64 elem_edge = elem_offset + edge_index;
+
+                // Make the edge.
+                index_t next_edge_index = (edge_index + 1) % elem_size;
+                index_t edge[2];
+                edge[0] = pts[edge_index];
+                edge[1] = pts[next_edge_index];
+                ee_to_edge[elem_edge] = std::make_pair(edge[0], edge[1]);
+
+                // Store the edgeid.
+                if(edge[0] > edge[1])
+                    std::swap(edge[0], edge[1]);
+                uint64 edgeid = hash_ids(edge, 2);
+                edgeid_to_ee[elem_edge] = std::make_pair(edgeid, elem_edge);
+            }
+        }
+
+#ifdef DEBUG_PRINT
+        cout << "edgeid_to_ee = " << edgeid_to_ee << endl;
+#endif
+
+        // Sort edgeid_to_ee so any like edges will be sorted.
+        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY edgeid_to_ee.begin(), edgeid_to_ee.end());
+#ifdef DEBUG_PRINT
+        cout << "edgeid_to_ee.sorted = " << edgeid_to_ee << endl;
+#endif
+
+        // Edges are sorted. Pick out the unique edge ids.
+        std::vector<std::pair<uint64, uint64>> ee_to_unique(nelem_edges);
+        index_t unique = make_unique(edgeid_to_ee, ee_to_unique);
+#ifdef DEBUG_PRINT
+        cout << "unique = " << unique << endl;
+        cout << "ee_to_unique = " << ee_to_unique << endl;
+#endif
+
+        // Sort on ef to get back to a ef->unique mapping.
+        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY
+                  ee_to_unique.begin(), ee_to_unique.end(),
+            [&](const std::pair<uint64, uint64> &lhs, const std::pair<uint64, uint64> &rhs)
+        {
+            // Only sort using the ee value.
+            return lhs.first < rhs.first;
+        });
+#ifdef DEBUG_PRINT
+        cout << "ee_to_unique.sorted = " << ee_to_unique << endl;
+#endif
+
+        // Store the new embed connectivity data in Conduit nodes.
+        conduit::Node &node = dim_topos[1];
+        node["type"] = "unstructured";
+        node["coordset"] = coords->name();
+        node["elements/shape"] = "line";
+        node["elements/connectivity"].set(DataType::index_t(unique * 2));
+        index_t *embed_conn = node["elements/connectivity"].as_index_t_ptr();
+        index_t embed_conn_idx = 0;
+
+        // Now ee_to_unique contains a list of unique edge ids.
+        std::vector<unsigned char> avail(unique, 1);
+        if(G[2][1].requested)
+        {
+            // Association data. This is the set of indices that point to the
+            // embedded shapes from each input shape. Think of it like the set
+            // of polyhedral face ids for each element but it works for other
+            // dimensions too.
+            std::vector<index_t> edge_reorder(unique);
+            auto &embed_refs = G[2][1].data;
+            embed_refs.resize(nelem_edges, 0);
+
+            // Make the embedded connectivity (and map data)
+            index_t embed_refs_idx = 0, final_edgeid = 0;
+            for(size_t ee = 0; ee < nelem_edges; ee++)
+            {
+                uint64 elem_edge = ee_to_unique[ee].first;
+                uint64 unique_edge_id = ee_to_unique[ee].second;
+
+                if(avail[unique_edge_id])
+                {
+                    // Store the map data.
+                    edge_reorder[unique_edge_id] = final_edgeid++;
+                    embed_refs[embed_refs_idx++] = edge_reorder[unique_edge_id];
+
+                    avail[unique_edge_id] = 0;
+
+                    // Emit the edge definition (as defined by the first element
+                    // that referenced it).
+                    embed_conn[embed_conn_idx++] = ee_to_edge[elem_edge].first;
+                    embed_conn[embed_conn_idx++] = ee_to_edge[elem_edge].second;
+                }
+                else
+                {
+                    // Store the map data. The entity has already been output,
+                    // add its reordered number to the refs.
+                    embed_refs[embed_refs_idx++] = edge_reorder[unique_edge_id];
+                }
+            }
+#ifdef DEBUG_PRINT
+            cout << "final embed_refs_idx=" << embed_refs_idx << endl << endl;
+            cout << "embed_refs=" << embed_refs << endl;
+#endif
+
+            // Make sizes/offsets for G(2,1).
+            auto &embed_sizes = G[2][1].sizes;
+            auto &embed_offsets = G[2][1].offsets;
+            embed_sizes.resize(nelem);
+            embed_offsets.resize(nelem);
+            for(index_t elem = 0; elem < nelem; elem++)
+            {
+                embed_sizes[elem] = sizes[elem];
+                embed_offsets[elem] = offsets[elem];
+            }
+        }
+        else
+        {
+            // Make the embedded connectivity
+            for(size_t ee = 0; ee < nelem_edges; ee++)
+            {
+                uint64 elem_edge = ee_to_unique[ee].first;
+                uint64 unique_edge_id = ee_to_unique[ee].second;
+                if(avail[unique_edge_id])
+                {
+                    avail[unique_edge_id] = 0;
+
+                    // Emit the face definition (as defined by the first element
+                    // that referenced it).
+                    embed_conn[embed_conn_idx++] = ee_to_edge[elem_edge].first;
+                    embed_conn[embed_conn_idx++] = ee_to_edge[elem_edge].second;
+                }
+            }
+        }
 
         // Generate offsets in the output connectivity. Some downstream algorithms want it.
-        node["elements/offsets"].set(DataType::index_t(nelem_faces));
-        index_t *offsets = node["elements/offsets"].as_index_t_ptr();
-        for(index_t ei = 0; ei < nelem_faces; ei++)
-            offsets[ei] = points_per_face * ei;
-#endif
+        node["elements/offsets"].set(DataType::index_t(unique));
+        index_t *line_offsets = node["elements/offsets"].as_index_t_ptr();
+        for(size_t ei = 0; ei < unique; ei++)
+            line_offsets[ei] = 2 * ei;
     }
 };
 
@@ -1982,9 +2149,13 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
 
     // NOTE: It is possible for the mapPC association to have its data
     //       stored in the connectivity. Thus, we have to use the association's
-    //       data_ptr if we really want data.
-    const index_t *mapPC_data = mapPC.data_ptr ? mapPC.data_ptr : &mapPC.data[0];
-    size_t mapPC_data_size = mapPC.data_ptr ? mapPC.data_ptr_size : mapPC.data.size();
+    //       data_ptr.
+    const index_t *mapPC_data = nullptr, *mapPC_sizes = nullptr, *mapPC_offsets = nullptr;
+    index_t mapPC_data_size, mapPC_sizes_size, mapPC_offsets_size;
+    mapPC.get_data(mapPC_data, mapPC_data_size);
+    mapPC.get_sizes(mapPC_sizes, mapPC_sizes_size);
+    mapPC.get_offsets(mapPC_offsets, mapPC_offsets_size);
+
     mapCP.sizes.resize(dim_topo_lengths[e], 0);
     mapCP.offsets.resize(dim_topo_lengths[e], 0);
 
@@ -2013,25 +2184,25 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     // parent/child ids.
     std::vector<std::pair<index_t, index_t>> p2c(mapPC_data_size);
     size_t idx = 0;
-    if(mapPC.sizes.empty())
+    if(mapPC_sizes != nullptr)
     {
-        for(; idx < mapPC_data_size; idx++)
-        {
-            p2c[idx] = std::make_pair(idx / mapPC.single_size, // parent id
-                                      mapPC_data[idx]);        // child id
-        }
-    }
-    else
-    {
-        auto mapPC_sizes_size = static_cast<index_t>(mapPC.sizes.size());
         for(index_t id = 0; id < mapPC_sizes_size; id++)
         {
-            for(index_t i = 0; i < mapPC.sizes[id]; i++)
+            for(index_t i = 0; i < mapPC_sizes[id]; i++)
             {
                 p2c[idx].first = id;               // parent id
                 p2c[idx].second = mapPC_data[idx]; // child id
                 idx++;
             }
+        }
+    }
+    else
+    {
+        // Single shape case.
+        for(; idx < mapPC_data_size; idx++)
+        {
+            p2c[idx] = std::make_pair(idx / mapPC.single_size, // parent id
+                                      mapPC_data[idx]);        // child id
         }
     }
 #ifdef DEBUG_PRINT
