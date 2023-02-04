@@ -38,6 +38,7 @@
 #include "conduit_blueprint_mesh_topology_metadata.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
+#include "conduit_annotations.hpp"
 
 using namespace conduit;
 // Easier access to the Conduit logging functions
@@ -49,6 +50,7 @@ namespace bputils = conduit::blueprint::mesh::utils;
 typedef bputils::ShapeType ShapeType;
 typedef bputils::ShapeCascade ShapeCascade;
 typedef bputils::reference::TopologyMetadata TopologyMetadata;
+//typedef bputils::TopologyMetadata TopologyMetadata;
 
 //-----------------------------------------------------------------------------
 // -- begin internal helpers --
@@ -1620,6 +1622,8 @@ calculate_unstructured_centroids(const conduit::Node &topo,
                                  conduit::Node &dest,
                                  conduit::Node &cdest)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // NOTE(JRC): This is a stand-in implementation for the method
     // 'mesh::topology::unstructured::generate_centroids' that exists because there
     // is currently no good way in Blueprint to create mappings with sparse data.
@@ -4340,6 +4344,8 @@ mesh::topology::unstructured::generate_points(const Node &topo,
                                               Node &s2dmap,
                                               Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4359,6 +4365,8 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
                                              Node &s2dmap,
                                              Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4378,6 +4386,8 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
                                              Node &s2dmap,
                                              Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4398,6 +4408,8 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
                                                  Node &s2dmap,
                                                  Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4427,6 +4439,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                                              Node &s2dmap,
                                              Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // Retrieve Relevent Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -5478,6 +5492,8 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
                                              conduit::Node &d2smap,
                                              const conduit::Node &options)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     std::string field_prefix = "";
     std::vector<std::string> field_names;
     const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
@@ -5621,6 +5637,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &s2dmap,
                                                Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // Retrieve Relevent Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");

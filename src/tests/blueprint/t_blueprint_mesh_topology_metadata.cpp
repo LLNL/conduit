@@ -15,6 +15,7 @@
 #include "conduit_blueprint_mesh_topology_metadata.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
+#include "conduit_annotations.hpp"
 
 #include <math.h>
 #include <iostream>
@@ -459,6 +460,7 @@ test_dtype_ids()
 void
 test_mesh_type(const std::string &type)
 {
+    CONDUIT_ANNOTATE_MARK_SCOPE((std::string("test_mesh_type: ") + type).c_str());
 #ifdef USE_ERROR_HANDLER
     conduit::utils::set_error_handler(tmp_err_handler);
 #endif
@@ -468,8 +470,10 @@ test_mesh_type(const std::string &type)
     auto dtypes = test_dtype_ids();
     for(auto dtid : dtypes)
     {
-        conduit::Node node;
         conduit::DataType dtype(dtid);
+        CONDUIT_ANNOTATE_MARK_SCOPE(dtype.name().c_str());
+
+        conduit::Node node;
         make_dataset(node, type, dtype);
         // Now do the test.
         std::stringstream oss;
@@ -566,3 +570,46 @@ TEST(conduit_blueprint_topology_metadata, custom_ph)
     test_mesh_type("custom_ph");
 }
 #endif
+
+//-----------------------------------------------------------------------------
+int main(int argc, char* argv[])
+{
+    int result = 0;
+
+    ::testing::InitGoogleTest(&argc, argv);
+
+#if defined(CONDUIT_USE_CALIPER)
+    std::string tout_file = "tout_blueprint_mesh_topology_metadata.txt";
+    if(conduit::annotations::supported())
+    {
+        // clean up output file if it exists
+        conduit::utils::remove_path_if_exists(tout_file);
+    }
+    conduit::Node opts;
+    opts["config"] = "runtime-report";
+    opts["output_file"] = tout_file;
+    // Allow setting / overrides.
+    std::vector<std::string> keys{"config", "services", "output_file"};
+    for(int i = 1; i < argc; i++)
+    {
+        for(const auto &key : keys)
+        {
+            std::string arg(std::string("-") + key);
+            if(arg == argv[i] && (i+1) < argc)
+            {
+                opts[key] = argv[i+1];
+                ++i;
+                break;
+            }
+        }
+    }
+    conduit::annotations::initialize(opts);
+#endif
+
+    result = RUN_ALL_TESTS();
+
+#if defined(CONDUIT_USE_CALIPER)
+    conduit::annotations::finalize();
+#endif
+    return result;
+}

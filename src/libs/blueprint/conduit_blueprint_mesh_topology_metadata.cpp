@@ -23,6 +23,7 @@
 #include "conduit_blueprint_mesh_topology_metadata.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_annotations.hpp"
 
 #ifdef _OPENMP
 #include <omp.h>
@@ -686,6 +687,8 @@ private:
                                   const ConnType &sizes,
                                   size_t sizeslen)
     {
+        CONDUIT_ANNOTATE_MARK_FUNCTION;
+
         const int embed_dim = 2;
 
         // Use the subelement information from the PH mesh as the embedded
@@ -744,6 +747,8 @@ private:
     void
     make_embedded_connectivity(const ShapeType &shape, const ConnType &conn, index_t connlen)
     {
+        CONDUIT_ANNOTATE_MARK_FUNCTION;
+
         int embed_dim = shape.dim - 1;
         ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
 
@@ -778,6 +783,7 @@ private:
         // Iterate over each hex cell and compute a faceid for it. Store
         // these in faceid_to_ef. The "ef" stands for element face, which
         // is the element id * faces_per_elem + face.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Labeling");
         std::vector<std::pair<uint64, uint64>> faceid_to_ef(nelem_faces);
 
 #pragma omp parallel for
@@ -825,6 +831,7 @@ private:
                 faceid_to_ef[element_face] = std::make_pair(faceid, element_face);
             }
         }
+        CONDUIT_ANNOTATE_MARK_END("Labeling");
 
 #ifdef DEBUG_PRINT
         cout << "faceid_to_ef = " << faceid_to_ef << endl;
@@ -833,7 +840,9 @@ private:
         // Sort faceid_to_ef so any like faces will be sorted, first by their
         // general faceid, then by their elemface "ef", which should keep the
         // elements in order.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Sort labels");
         std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY faceid_to_ef.begin(), faceid_to_ef.end());
+        CONDUIT_ANNOTATE_MARK_END("Sort labels");
 #ifdef DEBUG_PRINT
         cout << "faceid_to_ef.sorted = " << faceid_to_ef << endl;
 #endif
@@ -842,6 +851,7 @@ private:
         // in this order though since it would create faces in random order.
         // The spans with like ids should only be 1 or 2 faces long, assuming the
         // hashing did its job correctly.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Sort ef->unique");
         std::vector<std::pair<uint64, uint64>> ef_to_unique(nelem_faces);
         index_t unique = make_unique(faceid_to_ef, ef_to_unique);
 #ifdef DEBUG_PRINT
@@ -857,6 +867,7 @@ private:
             // Only sort using the ef value.
             return lhs.first < rhs.first;
         });
+        CONDUIT_ANNOTATE_MARK_END("Sort ef->unique");
 #ifdef DEBUG_PRINT
         cout << "ef_to_unique.sorted = " << ef_to_unique << endl;
 #endif
@@ -885,6 +896,8 @@ private:
         std::vector<unsigned char> avail(unique, 1);
         if(G[shape.dim][embed_shape.dim].requested)
         {
+            CONDUIT_ANNOTATE_MARK_SCOPE("Build connectivity and map");
+
             // Association data. This is the set of indices that point to the
             // embedded shapes from each input shape. Think of it like the set
             // of polyhedral face ids for each element but it works for other
@@ -940,6 +953,8 @@ private:
         }
         else
         {
+            CONDUIT_ANNOTATE_MARK_SCOPE("Build connectivity");
+
             // Make the embedded connectivity
             for(index_t ef = 0; ef < nelem_faces; ef++)
             {
@@ -961,10 +976,12 @@ private:
         }
 
         // Generate offsets in the output connectivity. Some downstream algorithms want it.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Build offsets");
         node["elements/offsets"].set(DataType::index_t(unique));
         index_t *offsets = node["elements/offsets"].as_index_t_ptr();
         for(index_t ei = 0; ei < unique; ei++)
             offsets[ei] = points_per_face * ei;
+        CONDUIT_ANNOTATE_MARK_END("Build offsets");
     }
 
     //-----------------------------------------------------------------------
@@ -979,6 +996,8 @@ private:
     make_embedded_connectivity_polygons_to_lines(const ShapeType &shape,
         const ConnType &conn, index_t connlen)
     {
+        CONDUIT_ANNOTATE_MARK_FUNCTION;
+
         int embed_dim = shape.dim - 1;
 
 #ifdef DEBUG_PRINT
@@ -992,6 +1011,7 @@ private:
         index_t nelem = sizes.number_of_elements();
 
         // Iterate over each polygon and make unique edges.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Labeling");
         index_t nelem_edges = sizes.sum();
         std::vector<std::pair<uint64, uint64>> edgeid_to_ee(nelem_edges);
         std::vector<std::pair<index_t, index_t>> ee_to_edge(nelem_edges);
@@ -1027,18 +1047,21 @@ private:
                 edgeid_to_ee[elem_edge] = std::make_pair(edgeid, elem_edge);
             }
         }
-
+        CONDUIT_ANNOTATE_MARK_END("Labeling");
 #ifdef DEBUG_PRINT
         cout << "edgeid_to_ee = " << edgeid_to_ee << endl;
 #endif
 
         // Sort edgeid_to_ee so any like edges will be sorted.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Sort labels");
         std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY edgeid_to_ee.begin(), edgeid_to_ee.end());
+        CONDUIT_ANNOTATE_MARK_END("Sort labels");
 #ifdef DEBUG_PRINT
         cout << "edgeid_to_ee.sorted = " << edgeid_to_ee << endl;
 #endif
 
         // Edges are sorted. Pick out the unique edge ids.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Sort ef->unique");
         std::vector<std::pair<uint64, uint64>> ee_to_unique(nelem_edges);
         index_t unique = make_unique(edgeid_to_ee, ee_to_unique);
 #ifdef DEBUG_PRINT
@@ -1054,6 +1077,7 @@ private:
             // Only sort using the ee value.
             return lhs.first < rhs.first;
         });
+        CONDUIT_ANNOTATE_MARK_END("Sort ef->unique");
 #ifdef DEBUG_PRINT
         cout << "ee_to_unique.sorted = " << ee_to_unique << endl;
 #endif
@@ -1071,6 +1095,8 @@ private:
         std::vector<unsigned char> avail(unique, 1);
         if(G[2][1].requested)
         {
+            CONDUIT_ANNOTATE_MARK_SCOPE("Build connectivity and map");
+
             // Association data. This is the set of indices that point to the
             // embedded shapes from each input shape. Think of it like the set
             // of polyhedral face ids for each element but it works for other
@@ -1124,6 +1150,8 @@ private:
         }
         else
         {
+            CONDUIT_ANNOTATE_MARK_SCOPE("Build connectivity");
+
             // Make the embedded connectivity
             for(size_t ee = 0; ee < nelem_edges; ee++)
             {
@@ -1142,10 +1170,12 @@ private:
         }
 
         // Generate offsets in the output connectivity. Some downstream algorithms want it.
+        CONDUIT_ANNOTATE_MARK_BEGIN("Build offsets");
         node["elements/offsets"].set(DataType::index_t(unique));
         index_t *line_offsets = node["elements/offsets"].as_index_t_ptr();
         for(size_t ei = 0; ei < unique; ei++)
             line_offsets[ei] = 2 * ei;
+        CONDUIT_ANNOTATE_MARK_END("Build offsets");
     }
 
     //-----------------------------------------------------------------------
@@ -1267,6 +1297,8 @@ TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
 void
 TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t, size_t> > &desired)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // The lowest cascade dim is less than or equal to the topo_shape.dim.
     if(lowest_cascade_dim > static_cast<size_t>(topo_shape.dim))
     {
@@ -1321,6 +1353,8 @@ TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t,
 void
 TopologyMetadata::Implementation::convert_topology_dtype()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // NOTE: If we change the get_topologies() method to get_topology(int) then
     //       we could do these things there lazily.
 
@@ -1435,6 +1469,8 @@ TopologyMetadata::Implementation::dispatch_connectivity(const ShapeType &shape,
 void
 TopologyMetadata::Implementation::make_highest_topology()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // Copy the top level topo into dim_topos as index_t.
     conduit::Node &node = dim_topos[topo_shape.dim];
     copy_topology(*topo, topo_shape, DataType::index_t(), node);
@@ -1445,6 +1481,8 @@ void
 TopologyMetadata::Implementation::copy_topology(const conduit::Node &src_topo,
     const ShapeType &shape, const DataType &dest_type, conduit::Node &dest_topo)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // Reuse the input topology as the highest dimension's topology.
     dest_topo["type"] = "unstructured";
     dest_topo["coordset"] = coords->name();
@@ -1515,6 +1553,8 @@ TopologyMetadata::Implementation::copy_topology(const conduit::Node &src_topo,
 void
 TopologyMetadata::Implementation::make_point_topology()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     conduit::Node &node = dim_topos[0];
     node["type"] = "unstructured";
     node["coordset"] = coords->name();
@@ -1534,8 +1574,9 @@ TopologyMetadata::Implementation::make_unique(
     const std::vector<std::pair<uint64, uint64>> &faceid_to_ef,
     std::vector<std::pair<uint64, uint64>> &ef_to_unique) const
 {
-    size_t nids = faceid_to_ef.size();
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    size_t nids = faceid_to_ef.size();
     index_t unique = 0;
     size_t start = 0;
     for(size_t i = 1; i < nids; i++)
@@ -1559,6 +1600,8 @@ TopologyMetadata::Implementation::make_unique(
 void
 TopologyMetadata::Implementation::build_associations()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // Some maps will need lengths of the topologies that were produced.
 #ifdef DEBUG_PRINT
     cout << "build_associations: topo_shape.dim=" << topo_shape.dim << endl;
@@ -1699,6 +1742,8 @@ TopologyMetadata::Implementation::build_associations()
 void
 TopologyMetadata::Implementation::build_association_e_0(int e)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     auto copy_as_index_t = [&](const conduit::Node &node, const std::string &key,
                                std::vector<index_t> &dest)
     {
@@ -1724,6 +1769,8 @@ TopologyMetadata::Implementation::build_association_e_0(int e)
 std::vector<index_t>
 TopologyMetadata::Implementation::embedding_3_1_edges(const ShapeType &shape) const
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     std::vector<index_t> retval;
     std::set<std::pair<index_t, index_t>> edges;
     auto npts_per_face = TOPO_SHAPE_INDEX_COUNTS[shape.embed_id];
@@ -1761,6 +1808,8 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0()
 void
 TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // G(3,2) contains the PH faces.
     const association &map32 = G[3][2];
     index_t nelem = dim_topo_lengths[3];
@@ -1869,6 +1918,8 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
 void
 TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // This is the non PH method.
 
 // Q: can we assume that we have index_t connectivity at this stage?
@@ -2089,6 +2140,8 @@ TopologyMetadata::Implementation::print_association(int e, int a) const
 void
 TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     const association &mapPC = G[a][e]; // parent to child (already exists)
     association &mapCP = G[e][a];       // child to parent (what we're making).
 
@@ -2456,6 +2509,8 @@ bool
 TopologyMetadata::Implementation::get_global_dim_map(index_t src_dim, index_t dst_dim,
     conduit::Node &map_node) const
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     const association &assoc = G[src_dim][dst_dim];
     if(assoc.requested)
     {
@@ -2525,6 +2580,8 @@ bool
 TopologyMetadata::Implementation::get_local_dim_map(index_t src_dim, index_t dst_dim,
     conduit::Node &map_node) const
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     bool requested = G[src_dim][dst_dim].requested;
     if(requested)
     {
@@ -2609,6 +2666,8 @@ TopologyMetadata::Implementation::get_float_dtype() const
 index_t
 TopologyMetadata::Implementation::get_embed_length(index_t entity_dim, index_t embed_dim) const
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // NOTE: The default version of 'get_embed_length' gets the total number of
     // embeddings for each entity at the top level to the embedding level. The
     // parameterized version just fetches the number of embeddings for one
@@ -2775,6 +2834,8 @@ TopologyMetadata::Implementation::get_local_to_global_map(index_t dim) const
 void
 TopologyMetadata::Implementation::build_local_to_global()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     int dim = dimension();
 
     // NOTE: Some cases uses G(e,a) maps. If they were not requested, some levels
@@ -3014,6 +3075,9 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     float_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_FLOAT_DTYPE)),
     topo_cascade(topology), topo_shape(topology)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    CONDUIT_ANNOTATE_MARK_BEGIN("Stage 1");
     // NOTE(JRC): This type current only works at forming associations within
     // an unstructured topology's hierarchy.
     Node topo_offsets, topo_suboffsets;
@@ -3045,12 +3109,14 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     dim_geassocs_maps.resize(topo_shape.dim + 1);
     dim_leassocs_maps.resize(topo_shape.dim + 1);
     dim_le2ge_maps.resize(topo_shape.dim + 1);
+    CONDUIT_ANNOTATE_MARK_END("Stage 1");
 
     // Start out reserving space for the association spines. These multiples
     // were calibrated using a 2D dataset. Other topological dims may need
     // different values. These were determined using the final sizes of the
     // dim_leassocs_maps, dim_geassocs_maps and comparing to topo_num_elems.
     // 
+    CONDUIT_ANNOTATE_MARK_BEGIN("Stage 2");
     size_t le_est_size_multiples[] = {9, 4, 1, 1};
     size_t ge_est_size_multiples[] = {1, 2, 1, 1};
     for(index_t dim = 0; dim <= topo_shape.dim; dim++)
@@ -3081,6 +3147,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     {
         dim_topos[topo_shape.dim]["subelements/offsets"].set(topo_suboffsets);
     }
+    CONDUIT_ANNOTATE_MARK_END("Stage 2");
 
     // Prepare Initial Values for Processing //
 
@@ -3088,6 +3155,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     // associated conversations (data).
     Node temp, data;
 
+    CONDUIT_ANNOTATE_MARK_BEGIN("Stage 3");
     // NOTE(JRC): A 'deque' is used so that queue behavior (FIFO)
     // is responsible for ordering the identifiers in the cascade of entities,
     // which more closely follows the average intuition.
@@ -3112,7 +3180,9 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     dim_buffers[0].reserve(topo_num_coords);
     for(index_t pi = 0; pi < topo_num_coords; pi++)
         dim_buffers[0].push_back(pi);
+    CONDUIT_ANNOTATE_MARK_BEGIN("Stage 3");
 
+    CONDUIT_ANNOTATE_MARK_BEGIN("Stage 4");
     // Add entities for the top-level elements (these will be refined later).
     const Node &topo_elem_conn = dim_topos[topo_shape.dim]["elements/connectivity"];
     const Node &topo_elem_offsets = dim_topos[topo_shape.dim]["elements/offsets"];
@@ -3152,9 +3222,11 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
         std::vector<int64> &elem_indices = entity_index_bag[bi];
         dim_buffers_topo.insert(dim_buffers_topo.end(), elem_indices.begin(), elem_indices.end());
     }
+    CONDUIT_ANNOTATE_MARK_END("Stage 4");
 
     constexpr index_t ENTITY_REQUIRES_ID = -1;
 
+    CONDUIT_ANNOTATE_MARK_BEGIN("Stage 5");
     while(!entity_index_bag.empty())
     {
         // Pop some work off of the deques
@@ -3322,9 +3394,11 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
             }
         }
     }
+    CONDUIT_ANNOTATE_MARK_END("Stage 5");
 
     // Move Topological Data into Per-Dim Nodes //
 
+    CONDUIT_ANNOTATE_MARK_BEGIN("Stage 6");
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         Node &dim_conn = dim_topos[di]["elements/connectivity"];
@@ -3359,6 +3433,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
 
         topology::unstructured::generate_offsets_inline(dim_topos[di]);
     }
+    CONDUIT_ANNOTATE_MARK_END("Stage 6");
 }
 
 //---------------------------------------------------------------------------//
