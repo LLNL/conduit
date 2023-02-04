@@ -543,6 +543,15 @@ TEST(conduit_blueprint_topology_metadata, custom_hexs)
 }
 
 #if 0
+// Polygon cases
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, hexs_poly)
+{
+// I think this one just needs local maps.
+    test_mesh_type("quads_poly");
+}
+
 // PH cases
 
 //-----------------------------------------------------------------------------

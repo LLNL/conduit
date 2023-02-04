@@ -224,21 +224,9 @@ class TopologyMetadata::Implementation : public TopologyMetadataBase
         std::vector<index_t> data;
         std::vector<index_t> sizes;
         std::vector<index_t> offsets;
-        // The association is using data from a topology.
-        index_t    *data_ptr{nullptr};
-        index_t    *sizes_ptr{nullptr};
-        index_t    *offsets_ptr{nullptr};
-        index_t     data_ptr_size{0};
-        index_t     sizes_ptr_size{0};
-        index_t     offsets_ptr_size{0};
         // Other fields
         int                  single_size{1};
         bool                 requested{false};
-
-        // Helper methods.
-        bool get_data(const index_t *&array, index_t &arraylen) const;
-        bool get_sizes(const index_t *&array, index_t &arraylen) const;
-        bool get_offsets(const index_t *&array, index_t &arraylen) const;
 
         inline std::pair<index_t *, index_t> get_data(index_t entity_id) const;
         inline index_t get_size(index_t entity_id) const;
@@ -255,6 +243,7 @@ class TopologyMetadata::Implementation : public TopologyMetadataBase
     DataType int_dtype;
     DataType float_dtype;
     conduit::Node dim_topos[MAX_ENTITY_DIMS];
+    conduit::Node dim_topos_int_dtype[MAX_ENTITY_DIMS];
     index_t dim_topo_lengths[MAX_ENTITY_DIMS];
     association G[MAX_ENTITY_DIMS][MAX_ENTITY_DIMS];  
     std::vector<index_t> local_to_global[MAX_ENTITY_DIMS];
@@ -298,10 +287,10 @@ public:
 
     //-----------------------------------------------------------------------
     /**
-     @brief Get the topologies array.
+     @brief Get the topologies array (the possibly int_dtype converted version)
      @return The topologies array.
      */
-    const conduit::Node *get_topologies() const { return dim_topos; }
+    const conduit::Node *get_topologies() const { return dim_topos_int_dtype; }
 
     //-----------------------------------------------------------------------
     /**
@@ -526,6 +515,28 @@ private:
             The method makes sure that the topology will have offsets too.
      */
     void make_highest_topology();
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Sets up the dim_topos_int_dtype topologies, converting types
+            if needed.
+     */
+    void convert_topology_dtype();
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Copy a source topology into a destination node and convert the
+            types of important connectivity arrays to the specified dest_type.
+
+     @param src_topo  The source topology node.
+     @param shape     The shape that describes the src_topo.
+     @param dest_type The destination type.
+     @param dest_topo The destination topology node.
+     */
+    void copy_topology(const conduit::Node &src_topo,
+                       const ShapeType &shape,
+                       const DataType &dest_type,
+                       conduit::Node &dest_topo);
 
     //-----------------------------------------------------------------------
     /**
@@ -1136,87 +1147,32 @@ private:
         for(size_t ei = 0; ei < unique; ei++)
             line_offsets[ei] = 2 * ei;
     }
+
+    //-----------------------------------------------------------------------
+    template <typename T>
+    void
+    copy_local_map(int src_dim, int dst_dim,
+        T *values_ptr,
+        T *sizes_ptr,
+        T *offsets_ptr, index_t N) const
+    {
+        // Do another pass to store the data in the nodes.
+        index_t off = 0;
+        for(index_t eid = 0; eid < N; eid++)
+        {
+            auto lm = get_local_association(eid, src_dim, dst_dim);
+            // Copy lm values into values array.
+            for(auto lmval : lm)
+                *values_ptr++ = static_cast<T>(lmval);
+
+            sizes_ptr[eid] = static_cast<T>(lm.size());
+            offsets_ptr[eid] = static_cast<T>(off);
+            off += lm.size();
+        }
+    }
 };
 
 //---------------------------------------------------------------------------
-//---------------------------------------------------------------------------
-bool
-TopologyMetadata::Implementation::association::get_data(const index_t *&array,
-    index_t &arraylen) const
-{
-    bool retval = false;
-    if(data_ptr)
-    {
-        array = data_ptr;
-        arraylen = data_ptr_size;
-        retval = true;
-    }
-    else if(!data.empty())
-    {
-        array = &data[0];
-        arraylen = data.size();
-        retval = true;
-    }
-    else
-    {
-        array = nullptr;
-        arraylen = 0;
-    }
-    return retval;
-}
-
-//---------------------------------------------------------------------------
-bool
-TopologyMetadata::Implementation::association::get_sizes(const index_t *&array,
-    index_t &arraylen) const
-{
-    bool retval = false;
-    if(sizes_ptr)
-    {
-        array = sizes_ptr;
-        arraylen = sizes_ptr_size;
-        retval = true;
-    }
-    else if(!sizes.empty())
-    {
-        array = &sizes[0];
-        arraylen = sizes.size();
-        retval = true;
-    }
-    else
-    {
-        array = nullptr;
-        arraylen = 0;
-    }
-    return retval;
-}
-
-//---------------------------------------------------------------------------
-bool
-TopologyMetadata::Implementation::association::get_offsets(const index_t *&array,
-    index_t &arraylen) const
-{
-    bool retval = false;
-    if(offsets_ptr)
-    {
-        array = offsets_ptr;
-        arraylen = offsets_ptr_size;
-        retval = true;
-    }
-    else if(!offsets.empty())
-    {
-        array = &offsets[0];
-        arraylen = offsets.size();
-        retval = true;
-    }
-    else
-    {
-        array = nullptr;
-        arraylen = 0;
-    }
-    return retval;
-}
-
 //---------------------------------------------------------------------------
 /**
  @brief Get the data for one entity.
@@ -1227,16 +1183,11 @@ TopologyMetadata::Implementation::association::get_offsets(const index_t *&array
 std::pair<index_t *, index_t>
 TopologyMetadata::Implementation::association::get_data(index_t entity_id) const
 {
-    index_t size = get_size(entity_id);
-    index_t offset = get_offset(entity_id);
-
     std::pair<index_t *, index_t> retval;
-    if(data_ptr)
+    if(!data.empty())
     {
-        retval = std::make_pair(const_cast<index_t *>(data_ptr + offset), size);
-    }
-    else if(!data.empty())
-    {
+        index_t size = get_size(entity_id);
+        index_t offset = get_offset(entity_id);
         retval = std::make_pair(const_cast<index_t *>(&data[offset]), size);
     }
     else
@@ -1250,28 +1201,14 @@ TopologyMetadata::Implementation::association::get_data(index_t entity_id) const
 index_t
 TopologyMetadata::Implementation::association::get_size(index_t entity_id) const
 {
-    index_t retval = 0;
-    if(sizes_ptr)
-        retval = sizes_ptr[entity_id];
-    else if(!sizes.empty())
-        retval = sizes[entity_id];
-    else
-        retval = single_size;
-    return retval;
+    return sizes.empty() ? single_size : sizes[entity_id];
 }
 
 //---------------------------------------------------------------------------
 index_t
 TopologyMetadata::Implementation::association::get_offset(index_t entity_id) const
 {
-    index_t retval = 0;
-    if(offsets_ptr)
-        retval = offsets_ptr[entity_id];
-    else if(!offsets.empty())
-        retval = offsets[entity_id];
-    else
-        retval = entity_id * single_size;
-    return retval;
+    return offsets.empty() ? (entity_id * single_size) : offsets[entity_id];
 }
 
 //---------------------------------------------------------------------------
@@ -1279,17 +1216,15 @@ index_t
 TopologyMetadata::Implementation::association::sum_sizes(index_t num_entities) const
 {
     index_t sum = 0;
-    const index_t *values = nullptr;
-    index_t len;
-    if(get_sizes(values, len))
-    {
-        for(index_t i = 0; i < len; i++)
-            sum += values[i];
-    }
-    else
+    if(sizes.empty())
     {
         // single size case.
         sum = num_entities * single_size;
+    }
+    else
+    {
+        for(size_t i = 0; i < sizes.size(); i++)
+            sum += sizes[i];
     }
     return sum;
 }
@@ -1301,7 +1236,7 @@ TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
     const conduit::Node &coordset) : TopologyMetadataBase(),
     topo(&topology), coords(&coordset), topo_cascade(topology), topo_shape(topology),
     lowest_cascade_dim(0), coords_length(0),
-    int_dtype(DataType::index_t()),
+    int_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_INT_DTYPES)),
     float_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_FLOAT_DTYPE))
 {
     // Select all maps that could be valid for this shape.
@@ -1322,7 +1257,7 @@ TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
     TopologyMetadataBase(),
     topo(&topology), coords(&coordset), topo_cascade(topology), topo_shape(topology),
     lowest_cascade_dim(lowest_dim), coords_length(0),
-    int_dtype(DataType::index_t()),
+    int_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_INT_DTYPES)),
     float_dtype(find_widest_dtype(link_nodes(topology, coordset), DEFAULT_FLOAT_DTYPE))
 {
     initialize(desired);
@@ -1375,6 +1310,41 @@ TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t,
 
     build_associations();
     build_local_to_global();
+
+    // Topologies were built using index_t so the internal code can assume a
+    // single type. If that is not the type we need for the output int_dtype,
+    // convert the topologies.
+    convert_topology_dtype();
+}
+
+//------------------------------------------------------------------------------
+void
+TopologyMetadata::Implementation::convert_topology_dtype()
+{
+    // NOTE: If we change the get_topologies() method to get_topology(int) then
+    //       we could do these things there lazily.
+
+    int dim = dimension();
+    if(int_dtype.id() == DataType::index_t().id())
+    {
+        // The topologies are already in the desired int_dtype. Reference them
+        // in the dim_topos_int_dtype nodes.
+        for(int i = 0; i <= dim; i++)
+        {
+            dim_topos_int_dtype[i].set_external(dim_topos[i]);
+        }
+    }
+    else
+    {
+        // The topologies are not in the desired int_dtype. Convert them.
+        for(int i = 0; i <= dim; i++)
+        {
+            const ShapeType shape(dim_topos[i]);
+            copy_topology(dim_topos[i], shape, int_dtype, dim_topos_int_dtype[i]);
+            // We probably don't need this topology anymore.
+            dim_topos[i].reset();
+        }
+    }
 }
 
 //------------------------------------------------------------------------------
@@ -1465,18 +1435,27 @@ TopologyMetadata::Implementation::dispatch_connectivity(const ShapeType &shape,
 void
 TopologyMetadata::Implementation::make_highest_topology()
 {
-    // Reuse the input topology as the highest dimension's topology.
+    // Copy the top level topo into dim_topos as index_t.
     conduit::Node &node = dim_topos[topo_shape.dim];
-    node["type"] = "unstructured";
-    node["coordset"] = coords->name();
-    node["elements/shape"] = topo_shape.type;
+    copy_topology(*topo, topo_shape, DataType::index_t(), node);
+}
+
+//---------------------------------------------------------------------------
+void
+TopologyMetadata::Implementation::copy_topology(const conduit::Node &src_topo,
+    const ShapeType &shape, const DataType &dest_type, conduit::Node &dest_topo)
+{
+    // Reuse the input topology as the highest dimension's topology.
+    dest_topo["type"] = "unstructured";
+    dest_topo["coordset"] = coords->name();
+    dest_topo["elements/shape"] = shape.type;
 
     // Copy data as index_t.
     std::vector<std::string> copy_keys{"elements/connectivity",
                                        "elements/sizes",
                                        "elements/offsets"
                                       };
-    if(topo_shape.is_polyhedral())
+    if(shape.is_polyhedral())
     {
         copy_keys.push_back("subelements/connectivity");
         copy_keys.push_back("subelements/sizes");
@@ -1484,14 +1463,14 @@ TopologyMetadata::Implementation::make_highest_topology()
     }
     for(const auto &key : copy_keys)
     {
-        if(topo->has_path(key))
+        if(src_topo.has_path(key))
         {
-            const conduit::Node &src = (*topo)[key];
-            conduit::Node &dest = node[key];
-            if(src.dtype().id() != DataType::index_t().id())
+            const conduit::Node &src = src_topo[key];
+            conduit::Node &dest = dest_topo[key];
+            if(src.dtype().id() != dest_type.id())
             {
-                dest.set(DataType::index_t(src.dtype().number_of_elements()));
-                src.to_data_type(DataType::index_t().id(), dest);
+                dest.set(DataType(dest_type.id(), src.dtype().number_of_elements()));
+                src.to_data_type(dest_type.id(), dest);
             }
             else
             {
@@ -1500,32 +1479,35 @@ TopologyMetadata::Implementation::make_highest_topology()
         }
     }
 
-    // Make sure we have offsets. The Conduit helper routines make them
-    // in various precisions. We want index_t.
-    conduit::Node src_offsets;
-    if(topo_shape.is_polyhedral())
+    // Make sure we have offsets if they are not there. The Conduit helper
+    // routines make them in various precisions.
+    conduit::Node n_offsets;
+    if(!dest_topo.has_path("elements/offsets"))
     {
-        conduit::Node &topo_suboffsets = node["subelements/offsets"];
-        topology::unstructured::generate_offsets(*topo,
-                                                 src_offsets,
-                                                 topo_suboffsets);
-    }
-    else
-    {
-        topology::unstructured::generate_offsets(*topo, src_offsets);
-    }
+        if(shape.is_polyhedral())
+        {
+            conduit::Node &topo_suboffsets = dest_topo["subelements/offsets"];
+            topology::unstructured::generate_offsets(dest_topo,
+                                                     n_offsets,
+                                                     topo_suboffsets);
+        }
+        else
+        {
+            topology::unstructured::generate_offsets(dest_topo, n_offsets);
+        }
 
-    // Make offsets if they do not exist or if they were not index_t.
-    conduit::Node &offsets = node["elements/offsets"];
-    if(src_offsets.dtype().id() != DataType::index_t().id())
-    {
-        index_t nvalues = src_offsets.dtype().number_of_elements();
-        offsets.set(DataType::index_t(nvalues));
-        src_offsets.to_data_type(DataType::index_t().id(), offsets);
-    }
-    else
-    {
-        offsets.set(src_offsets);
+        // Convert the types if needed.
+        conduit::Node &offsets = dest_topo["elements/offsets"];
+        if(n_offsets.dtype().id() != dest_type.id())
+        {
+            index_t nvalues = n_offsets.dtype().number_of_elements();
+            offsets.set(DataType(dest_type.id(), nvalues));
+            n_offsets.to_data_type(dest_type.id(), offsets);
+        }
+        else
+        {
+            offsets.set(n_offsets);
+        }
     }
 }
 
@@ -1717,30 +1699,25 @@ TopologyMetadata::Implementation::build_associations()
 void
 TopologyMetadata::Implementation::build_association_e_0(int e)
 {
-    conduit::Node &node = dim_topos[e];
-    static const std::string keys[]{"elements/connectivity",
-                                    "elements/sizes",
-                                    "elements/offsets"};
+    auto copy_as_index_t = [&](const conduit::Node &node, const std::string &key,
+                               std::vector<index_t> &dest)
+    {
+        if(node.has_path(key))
+        {
+            const conduit::Node &n = node[key];
+            index_t_accessor src = n.as_index_t_accessor();
+            size_t sz = static_cast<size_t>(src.number_of_elements());
+            dest.resize(sz);
+            for(size_t i = 0; i < sz; i++)
+                dest[i] = src[i];
+        }
+    };
 
-    // Save some pointers from the connectivity in the association.
-    if(node.has_path(keys[0]))
-    {
-        conduit::Node &n = node[keys[0]];
-        G[e][0].data_ptr = n.as_index_t_ptr();
-        G[e][0].data_ptr_size = n.dtype().number_of_elements();
-    }
-    if(node.has_path(keys[1]))
-    {
-        conduit::Node &n = node[keys[1]];
-        G[e][0].sizes_ptr = n.as_index_t_ptr();
-        G[e][0].sizes_ptr_size = n.dtype().number_of_elements();
-    }
-    if(node.has_path(keys[2]))
-    {
-        conduit::Node &n = node[keys[2]];
-        G[e][0].offsets_ptr = n.as_index_t_ptr();
-        G[e][0].offsets_ptr_size = n.dtype().number_of_elements();
-    }
+    // Save connectivity data in the association.
+    association &assoc = G[e][0];
+    copy_as_index_t(dim_topos[e], "elements/connectivity", assoc.data);
+    copy_as_index_t(dim_topos[e], "elements/sizes", assoc.sizes);
+    copy_as_index_t(dim_topos[e], "elements/offsets", assoc.offsets);
 }
 
 //---------------------------------------------------------------------------
@@ -2104,30 +2081,6 @@ TopologyMetadata::Implementation::print_association(int e, int a) const
     cout << "\tdata=" << assoc.data << endl;
     cout << "\tsizes=" << assoc.sizes << endl;
     cout << "\toffsets=" << assoc.offsets << endl;
-    cout << "\tdata_ptr=" << (void*)assoc.data_ptr << "{";
-    if(assoc.data_ptr)
-    {
-        for(int i = 0; i < assoc.data_ptr_size; i++)
-            cout << assoc.data_ptr[i] << ", ";
-    }
-    cout << "}" << endl;
-    cout << "\tsizes_ptr=" << (void*)assoc.sizes_ptr << "{";
-    if(assoc.sizes_ptr)
-    {
-        for(int i = 0; i < assoc.sizes_ptr_size; i++)
-            cout << assoc.sizes_ptr[i] << ", ";
-    }
-    cout << "}" << endl;
-    cout << "\toffsets_ptr=" << (void*)assoc.offsets_ptr << "{";
-    if(assoc.offsets_ptr)
-    {
-        for(int i = 0; i < assoc.offsets_ptr_size; i++)
-            cout << assoc.offsets_ptr[i] << ", ";
-    }
-    cout << "}" << endl;
-    cout << "\tdata_ptr_size=" << assoc.data_ptr_size << endl;
-    cout << "\tsizes_ptr_size=" << assoc.sizes_ptr_size << endl;
-    cout << "\toffsets_ptr_size=" << assoc.offsets_ptr_size << endl;
     cout << "\tsingle_size=" << assoc.single_size << endl;
     cout << "\trequested=" << assoc.requested << endl;
 }
@@ -2147,21 +2100,12 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     print_association(a,e);
 #endif
 
-    // NOTE: It is possible for the mapPC association to have its data
-    //       stored in the connectivity. Thus, we have to use the association's
-    //       data_ptr.
-    const index_t *mapPC_data = nullptr, *mapPC_sizes = nullptr, *mapPC_offsets = nullptr;
-    index_t mapPC_data_size, mapPC_sizes_size, mapPC_offsets_size;
-    mapPC.get_data(mapPC_data, mapPC_data_size);
-    mapPC.get_sizes(mapPC_sizes, mapPC_sizes_size);
-    mapPC.get_offsets(mapPC_offsets, mapPC_offsets_size);
-
     mapCP.sizes.resize(dim_topo_lengths[e], 0);
     mapCP.offsets.resize(dim_topo_lengths[e], 0);
 
     // Make sizes by counting how many times an id occurs.
-    for(size_t i = 0; i < mapPC_data_size; i++)
-        mapCP.sizes[mapPC_data[i]]++;
+    for(size_t i = 0; i < mapPC.data.size(); i++)
+        mapCP.sizes[mapPC.data[i]]++;
 
     // Make offsets from sizes
     int off = 0;
@@ -2172,7 +2116,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     }
 
 #ifdef DEBUG_PRINT
-    cout << "mapPC_data_size=" << mapPC_data_size << endl;
+    cout << "mapPC_data_size=" << mapPC.data.size() << endl;
     for(int i =0 ; i < 4; i++)
         cout << i << ", topolen=" << dim_topo_lengths[i] << endl;
     cout << "mapCP.sizes=" << mapCP.sizes << endl;
@@ -2182,16 +2126,18 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     // make a pattern like: 0,1,2,3...  or 0,0,0,0,1,1,1,1,2,2,2,2,...
     // according to the size values. We use this to make pairs of
     // parent/child ids.
+    auto mapPC_sizes_size = static_cast<index_t>(mapPC.sizes.size());
+    auto mapPC_data_size = static_cast<index_t>(mapPC.data.size());
     std::vector<std::pair<index_t, index_t>> p2c(mapPC_data_size);
     size_t idx = 0;
-    if(mapPC_sizes != nullptr)
+    if(!mapPC.sizes.empty())
     {
         for(index_t id = 0; id < mapPC_sizes_size; id++)
         {
-            for(index_t i = 0; i < mapPC_sizes[id]; i++)
+            for(index_t i = 0; i < mapPC.sizes[id]; i++)
             {
                 p2c[idx].first = id;               // parent id
-                p2c[idx].second = mapPC_data[idx]; // child id
+                p2c[idx].second = mapPC.data[idx]; // child id
                 idx++;
             }
         }
@@ -2202,7 +2148,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
         for(; idx < mapPC_data_size; idx++)
         {
             p2c[idx] = std::make_pair(idx / mapPC.single_size, // parent id
-                                      mapPC_data[idx]);        // child id
+                                      mapPC.data[idx]);        // child id
         }
     }
 #ifdef DEBUG_PRINT
@@ -2516,58 +2462,60 @@ TopologyMetadata::Implementation::get_global_dim_map(index_t src_dim, index_t ds
         // Copy the vectors out.
 
         conduit::Node &values = map_node["values"];
-        if(assoc.data_ptr)
+        if(int_dtype.id() != DataType::index_t().id())
         {
-            // Copy data from the connectivity
-            values.set(dim_topos[src_dim]["elements/connectivity"]);
+            conduit::Node wrap;
+            wrap.set_external(const_cast<index_t *>(&assoc.data[0]), assoc.data.size());
+            wrap.to_data_type(int_dtype.id(), values);
         }
         else
         {
             values.set(assoc.data);
         }
 
+        // Copy sizes out in the desired int_dtype.
         conduit::Node &sizes = map_node["sizes"];
-        if(assoc.sizes_ptr)
+        std::vector<index_t> tmp;
+        const std::vector<index_t> *src_sizes = &assoc.sizes;
+        if(assoc.sizes.empty())
         {
-            // Copy sizes from the connectivity
-            sizes.set(dim_topos[src_dim]["elements/sizes"]);
-        }
-        else if(assoc.sizes.empty())
-        {
-            // Shapes were all the same size. Make new values.
+            src_sizes = &tmp;
             size_t nembed = dim_topo_lengths[src_dim];
-            sizes.set(DataType::index_t(nembed));
-            index_t *ptr = sizes.as_index_t_ptr();
-            index_t sz = assoc.single_size;
-            for(size_t i = 0; i < nembed; i++)
-                ptr[i] = sz;
+            tmp.resize(nembed, assoc.single_size);
+        }
+        if(int_dtype.id() != DataType::index_t().id())
+        {
+            conduit::Node wrap;
+            wrap.set_external(const_cast<index_t *>(&src_sizes->operator[](0)), src_sizes->size());
+            wrap.to_data_type(int_dtype.id(), sizes);
         }
         else
         {
-            sizes.set(G[src_dim][dst_dim].sizes);
+            sizes.set(*src_sizes);
         }
 
+        // Copy offsets out in the desired int_dtype.
         conduit::Node &offsets = map_node["offsets"];
-        if(assoc.offsets_ptr)
+        const std::vector<index_t> *src_offsets = &assoc.offsets;
+        if(assoc.offsets.empty())
         {
-            // Copy offsets from the connectivity
-            offsets.set(dim_topos[src_dim]["elements/offsets"]);
-        }
-        else if(assoc.offsets.empty())
-        {
-            // Shapes were all the same size. Make new values.
+            src_offsets = &tmp;
             size_t nembed = dim_topo_lengths[src_dim];
-            offsets.set(DataType::index_t(nembed));
-            index_t *ptr = offsets.as_index_t_ptr();
+            tmp.resize(nembed);
             index_t sz = assoc.single_size;
             for(size_t i = 0; i < nembed; i++)
-                ptr[i] = i * sz;
+                tmp[i] = i * sz;
+        }
+        if(int_dtype.id() != DataType::index_t().id())
+        {
+            conduit::Node wrap;
+            wrap.set_external(const_cast<index_t *>(&src_offsets->operator[](0)), src_offsets->size());
+            wrap.to_data_type(int_dtype.id(), offsets);
         }
         else
         {
-            offsets.set(G[src_dim][dst_dim].offsets);
+            offsets.set(*src_offsets);
         }
-        // We could do that trick to wrap a node and then bulk convert to the desired type...
     }
     return assoc.requested;
 }
@@ -2594,26 +2542,27 @@ TopologyMetadata::Implementation::get_local_dim_map(index_t src_dim, index_t dst
         conduit::Node &sizes = map_node["sizes"];
         conduit::Node &offsets = map_node["offsets"];
 
-        values.set(DataType::index_t(total_size));
-        sizes.set(DataType::index_t(N));
-        offsets.set(DataType::index_t(N));
+        // Allocate the data using the appropriate int_dtype.
+        values.set(DataType(int_dtype.id(), total_size));
+        sizes.set(DataType(int_dtype.id(), N));
+        offsets.set(DataType(int_dtype.id(), N));
 
-        index_t *values_ptr = values.as_index_t_ptr();
-        index_t *sizes_ptr = sizes.as_index_t_ptr();
-        index_t *offsets_ptr = offsets.as_index_t_ptr();
-
-        // Do another pass to store the data in the nodes.
-        index_t off = 0;
-        for(index_t eid = 0; eid < N; eid++)
+        // Copy the local map data into the values, sizes, offsets arrays.
+        // NOTE: It is done this way because using to_data_type()
+        //       was not working as expected - maybe used incorrectly.
+        if(int_dtype.id() == DataType::index_t().id())
+            copy_local_map(src_dim, dst_dim, values.as_index_t_ptr(), sizes.as_index_t_ptr(), offsets.as_index_t_ptr(), N);
+        else if(int_dtype.id() == DataType::int32().id())
+            copy_local_map(src_dim, dst_dim, values.as_int32_ptr(), sizes.as_int32_ptr(), offsets.as_int32_ptr(), N);
+        else if(int_dtype.id() == DataType::int64().id())
+            copy_local_map(src_dim, dst_dim, values.as_int64_ptr(), sizes.as_int64_ptr(), offsets.as_int64_ptr(), N);
+        else if(int_dtype.id() == DataType::int16().id())
+            copy_local_map(src_dim, dst_dim, values.as_int16_ptr(), sizes.as_int16_ptr(), offsets.as_int16_ptr(), N);
+        else if(int_dtype.id() == DataType::int8().id())
+            copy_local_map(src_dim, dst_dim, values.as_int8_ptr(), sizes.as_int8_ptr(), offsets.as_int8_ptr(), N);
+        else
         {
-            auto lm = get_local_association(eid, src_dim, dst_dim);
-            // Copy lm values into values array.
-            for(auto lmval : lm)
-                *values_ptr++ = lmval;
-
-            sizes_ptr[eid] = lm.size();
-            offsets_ptr[eid] = off;
-            off += lm.size();
+            CONDUIT_ERROR("Unsupported map type " << int_dtype.name());
         }
     }
 
