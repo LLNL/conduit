@@ -247,6 +247,7 @@ class TopologyMetadata::Implementation : public TopologyMetadataBase
     conduit::Node dim_topos_int_dtype[MAX_ENTITY_DIMS];
     index_t dim_topo_lengths[MAX_ENTITY_DIMS];
     association G[MAX_ENTITY_DIMS][MAX_ENTITY_DIMS];  
+    association L[MAX_ENTITY_DIMS][MAX_ENTITY_DIMS];  // For explicit local maps
     std::vector<index_t> local_to_global[MAX_ENTITY_DIMS];
 
 public:
@@ -441,6 +442,12 @@ private:
      @brief Build any associations that were not produced during the cascade.
      */
     void build_associations();
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Build any local associations that were requested.
+     */
+    void build_local_associations();
 
     //-----------------------------------------------------------------------
     /**
@@ -1197,6 +1204,28 @@ private:
             off += lm.size();
         }
     }
+
+    //-----------------------------------------------------------------------
+    template <typename Func>
+    void iterate_global_map_levels(int entity_id,
+        const std::vector<std::vector<std::pair<int,int>>> &levels,
+        size_t level,
+        index_t *uIdx,
+        Func &&func)
+    {
+        int e = levels[level][0].first;
+        int a = levels[level][0].second;
+        auto ents = G[e][a].get_data(entity_id);
+        for(index_t j = 0; j < ents.second; j++)
+        {
+            index_t child_entity_id = ents.first[j];
+            func(levels[level], uIdx);
+            int nextLevel = level + 1;
+            if(nextLevel < static_cast<int>(levels.size()))
+                iterate_global_map_levels(child_entity_id, levels, nextLevel, uIdx, func);
+        }
+        uIdx[e]++;
+    }
 };
 
 //---------------------------------------------------------------------------
@@ -1390,29 +1419,29 @@ TopologyMetadata::Implementation::request_associations(const std::vector<std::pa
             CONDUIT_ERROR("An invalid (e,a) association index was selected: (" <<
                e << ", " << a << ")");
         }
-        G[e][a].requested = true;
+        G[e][a].requested = L[e][a].requested = true;
         if(e < a)
         {
             // This is a child to parent association.
             // Example: G[1][3] requested - all of the elements that contain
             //          edge i. G[1][3] relies on G[3][1] existing.
-            G[a][e].requested = true;
+            G[a][e].requested = L[e][a].requested = true;
         }
     }
 
     if(topo_shape.is_polyhedral())
     {
-        // A couple of our association cases are built using other associations.
+        // Some associations are built using other associations.
         if(G[3][1].requested)
         {
-            G[3][2].requested = true;
-            G[2][1].requested = true;
+            G[3][2].requested = L[3][2].requested = true;
+            G[2][1].requested = L[3][2].requested = true;
         }
         if(G[3][0].requested)
         {
-            G[3][2].requested = true;
-            G[2][1].requested = true;
-            G[1][0].requested = true;
+            G[3][2].requested = L[3][2].requested = true;
+            G[2][1].requested = L[2][1].requested = true;
+            G[1][0].requested = L[1][0].requested = true;
         }
     }
 }
@@ -1731,6 +1760,9 @@ TopologyMetadata::Implementation::build_associations()
             }
         }
     }
+
+    // Now that global associations are built, make any local associations.
+    build_local_associations();
 }
 
 //---------------------------------------------------------------------------
@@ -2240,6 +2272,180 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
 }
 
 //---------------------------------------------------------------------------
+void
+TopologyMetadata::Implementation::build_local_associations()
+{
+    auto build_offsets = [](const std::vector<index_t> &sizes,
+                            std::vector<index_t> &offsets)
+    {
+        size_t n = sizes.size();
+        offsets.resize(n);
+        index_t off = 0;
+        for(size_t i = 0; i < n; i++)
+        {
+            offsets[i] = off;
+            off += sizes[i];
+        }
+    };
+
+    auto buildcases = [&](const std::vector<std::pair<int,int>> &levels, index_t *uIdx)
+    {
+        for(size_t i = 0; i < levels.size(); i++)
+        {
+            int e = levels[i].first;
+            int a = levels[i].second;
+            index_t index = uIdx[e];
+            // parent to child
+            if(L[e][a].requested)
+            {
+                L[e][a].sizes[index]++;
+            }
+            // child to parent
+            if(L[a][e].requested)
+            {
+                L[a][e].data.push_back(index);
+                L[a][e].sizes.push_back(1);
+            }
+        }
+    };
+
+    // Resize the L(e,a) associations
+    auto resize = [&](int dim, index_t sizes[4])
+    {
+        for(int e = dim; e >= 0; e--)
+        for(int a = dim; a >= 0; a--)
+        {
+            if(L[e][a].requested)
+            {
+                if(e > a)
+                {
+cout << "L[" << e << "][" << a << "].sizes.resize(" << sizes[e] << ", 0)" << endl;
+                    // Parent to child.
+                    L[e][a].sizes.resize(sizes[e], 0);
+                }
+                else if(e == a)
+                {
+cout << "L[" << e << "][" << a << "].sizes.resize(" << sizes[e] << ", 1)" << endl;
+                    // Self
+                    L[e][a].sizes.resize(sizes[e], 1);
+                }
+                else
+                {
+cout << "L[" << e << "][" << a << "].data.reserve(" << sizes[e] << ")" << endl;
+cout << "L[" << e << "][" << a << "].sizes.reserve(" << sizes[e] << ")" << endl;
+
+                    // Child to parent
+                    L[e][a].data.reserve(sizes[e]);
+                    L[e][a].sizes.reserve(sizes[e]);
+                }
+            }
+        }
+    };
+
+    // The associations that need to be built at a given dimension.
+    std::vector<std::vector<std::vector<std::pair<int,int>>>> allLevels{
+        {
+            {}
+        },
+        {
+            {{1,0}}
+        },
+        {
+            {{2,1}},
+            {{1,0},{2,0}}
+        },
+        // dim 3
+        {
+            {{3,2}},
+            {{2,1},{3,1}},
+            {{1,0},{2,0},{3,0}}
+        }
+    };
+
+    // See if any associations are requested
+    int dim = dimension();
+    bool any_associations_requested = false;
+    for(int e = 0; e <= dim; e++)
+    for(int a = 0; a <= dim; a++)
+    {
+        any_associations_requested |= L[e][a].requested;
+    }
+
+    // We only need to do this work for polyhedral and polygonal topologies.
+    // Other topologies' local maps are handled implicitly.
+    if(topo_shape.is_poly() && any_associations_requested)
+    {
+        // Determine sizes.
+        index_t sizes[] = {0,0,0,0};
+        for(index_t ei = 0; ei < dim_topo_lengths[dim]; ei++)
+        {
+            iterate_global_map_levels(ei, allLevels[dim], 0, sizes,
+                [](const std::vector<std::pair<int,int>> &, index_t *){});
+        }
+        sizes[0] = 2 * sizes[1];
+#if 1
+cout << "sizes[] = {"
+     << sizes[0] << ", "
+     << sizes[1] << ", "
+     << sizes[2] << ", "
+     << sizes[3] << "}" << endl;
+#endif
+        // Resize the associations.
+        resize(dim, sizes);
+        // Populate the associations.
+        index_t uniqueIndices[] = {0,0,0,0};
+        for(index_t ei = 0; ei < dim_topo_lengths[dim]; ei++)
+            iterate_global_map_levels(ei, allLevels[dim], 0, uniqueIndices, buildcases);
+
+        // Build offsets for the local maps.
+        for(int e = 0; e <= dim; e++)
+        for(int a = 0; a <= dim; a++)
+        {
+            if(L[e][a].requested)
+                build_offsets(L[e][a].sizes, L[e][a].offsets);
+        }
+    }
+
+#if 0
+        for(index_t ei = 0; ei < nelem; ei++)
+        {
+            // Get the faces for the element then iterate over them.
+            auto faces = G[3][2].get_data(ei);
+            for(index_t fi = 0; fi < faces.second; fi++)
+            {
+                index_t faceid = faces.first[fi];
+
+                buildcases(level1, 1);
+
+                // Get the edges for the face then iterate over them.
+                auto edges = G[2][1].get_data(faceid);
+                for(index_t edge_index = 0; edge_index < edges.second; edge_index++)
+                {
+                    index_t edgeid = edges.first[edge_index];
+
+                    buildcases(level2, 2);
+
+                    // Iterate over points in the edge.
+                    auto points = G[1][0].get_data(edgeid);
+                    for(index_t pi = 0; pi < points.second; pi++)
+                    {
+                        index_t pointid = points.first[pi];
+
+                        buildcases(level3, 3);
+
+                        uniqueIndex[0]++;
+                    }
+                    uniqueIndex[1]++;
+                }
+                uniqueIndex[2]++;
+            }
+            uniqueIndex[3]++;
+        }
+
+#endif
+}
+
+//---------------------------------------------------------------------------
 bool
 TopologyMetadata::Implementation::association_requested(index_t entity_dim, index_t assoc_dim) const
 {
@@ -2280,9 +2486,12 @@ TopologyMetadata::Implementation::get_global_association(index_t entity_id,
 index_t
 TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim, int dst_dim) const
 {
-    index_t dim = dimension();
+    // Explicit maps case.
+    if(topo_shape.is_poly())
+        return L[src_dim][dst_dim].sizes.size();
 
-    index_t ne;
+    // Implicit maps case.
+    index_t ne, dim = dimension();
     index_t mapcase = EA_INDEX(src_dim, dst_dim);
     switch(mapcase)
     {
@@ -2355,18 +2564,35 @@ conduit::range_vector<index_t>
 TopologyMetadata::Implementation::get_local_association(index_t entity_id,
     index_t entity_dim, index_t assoc_dim) const
 {
+    const association &assoc = L[entity_dim][assoc_dim];
 #ifndef _NDEBUG
     if(entity_dim > topo_shape.dim || assoc_dim > topo_shape.dim)
     {
-        CONDUIT_ERROR("A local association map G(" << entity_dim << ", " << assoc_dim
+        CONDUIT_ERROR("A local association map L(" << entity_dim << ", " << assoc_dim
             << ") does not exist because one or more indices is invalid.");
     }
-    if(!G[entity_dim][assoc_dim].requested)
+    if(!assoc.requested)
     {
-        CONDUIT_ERROR("A local association map G(" << entity_dim << ", " << assoc_dim
+        CONDUIT_ERROR("A local association map L(" << entity_dim << ", " << assoc_dim
             << ") does not exist because it was not built during metadata initialization.");
     }
 #endif
+
+    // Explicit maps case
+    if(topo_shape.is_poly())
+    {
+        if(assoc.data.empty())
+        {
+            return conduit::range_vector<index_t>(assoc.offsets[entity_id],
+                                                  assoc.sizes[entity_id], 1);
+        }
+        // There was data. This is a child to parent association.
+        return conduit::range_vector<index_t>(assoc.data[assoc.offsets[entity_id]],
+                                              assoc.sizes[entity_id], 1);
+    }
+
+    // Implicit maps case
+
     // Sometimes we need size/offset information from the global association.
     conduit::range_vector<index_t> vec(entity_id, 1, 1);
 
@@ -2375,14 +2601,15 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
     //       so we multiply G[2][1].get_size(entity_id) * G[1][0].get_size(entity_id)
     //                        |                             |
     //                        -------------------------------
-
-    // NOTE: some of these entity_id * N look like they could be .get_offset(entity_id) * 2.
+    //
+    //       In the code below, an immediate 2 value is given in place of
+    //       G[1][0].single_size (number of vertices in an edge).
 
     index_t mapcase = EA_INDEX(entity_dim, assoc_dim);
     switch(mapcase)
     {
     // Self cases.
-    case EA_INDEX(0,0): break; // no-op
+    case EA_INDEX(0,0): break; // no-op (handled by vec default value)
     case EA_INDEX(1,1): break; // no-op
     case EA_INDEX(2,2): break; // no-op
     case EA_INDEX(3,3): break; // no-op
@@ -2391,21 +2618,21 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
     case EA_INDEX(1,0):
         {
             auto start = coords_length;
-            auto N = 2; // 2 = G[1][0].get_size(entity_id);
+            auto N = 2; // 2 = G[1][0].single_size;
             vec = conduit::range_vector<index_t>(start + entity_id * N, 1, N);
         }
         break;
     case EA_INDEX(2,0):
         {
             auto start = coords_length;
-            auto N = G[2][1].get_size(entity_id) * 2; // 2 = G[1][0].get_size(entity_id);
+            auto N = G[2][1].single_size * 2; // 2 = G[1][0].single_size;
             vec = conduit::range_vector<index_t>(start + entity_id * N, 1, N);
         }
         break;
     case EA_INDEX(3,0):
         {
             auto start = coords_length;
-            auto N = G[3][2].get_size(entity_id) * G[2][1].get_size(entity_id) * 2; // 2 = G[1][0].get_size(entity_id);
+            auto N = G[3][2].single_size * G[2][1].single_size * 2; // 2 = G[1][0].single_size;
             vec = conduit::range_vector<index_t>(start + entity_id * N, 1, N);
         }
         break;
@@ -2417,7 +2644,7 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
                 vec = conduit::range_vector<index_t>(0,0,0); // empty
             else
             {
-                auto start = (entity_id - coords_length) / 2; // 2 = G[1][0].get_size(entity_id);
+                auto start = (entity_id - coords_length) / 2; // 2 = G[1][0].single_size;
                 vec = conduit::range_vector<index_t>(start, 1, 1);
             }
         }
@@ -2428,7 +2655,7 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
                 vec = conduit::range_vector<index_t>(0,0,0); // empty
             else
             {
-               auto start = (entity_id - coords_length) / (G[2][1].get_size(entity_id) * 2); // 2= G[1][0].get_size(entity_id);
+               auto start = (entity_id - coords_length) / (G[2][1].single_size * 2); // 2= G[1][0].single_size;
                vec = conduit::range_vector<index_t>(start, 1, 1);
             }
         }
@@ -2439,33 +2666,33 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
                vec = conduit::range_vector<index_t>(0,0,0); // empty
            else
            {
-               auto start = (entity_id - coords_length) / (G[3][2].get_size(entity_id) * G[2][1].get_size(entity_id) * 2); // 2 = G[1][0].get_size(entity_id);
+               auto start = (entity_id - coords_length) / (G[3][2].single_size * G[2][1].single_size * 2); // 2 = G[1][0].single_size;
                vec = conduit::range_vector<index_t>(start, 1, 1);
            }
         }
         break;
     case EA_INDEX(1,2):
         {
-            index_t start = entity_id / G[2][1].get_size(entity_id);
+            index_t start = entity_id / G[2][1].single_size;
             vec = conduit::range_vector<index_t>(start, 0, 1);
         }
         break;
     case EA_INDEX(1,3):
         {
-            index_t start = entity_id / (G[3][2].get_size(entity_id) * G[2][1].get_size(entity_id));
+            index_t start = entity_id / (G[3][2].single_size * G[2][1].single_size);
             vec = conduit::range_vector<index_t>(start, 0, 1);
         }
         break;
     case EA_INDEX(2,3):
         {
-            index_t start = entity_id / G[3][2].get_size(entity_id);
+            index_t start = entity_id / G[3][2].single_size;
             vec = conduit::range_vector<index_t>(start, 0, 1);
         }
         break;
 
     case EA_INDEX(3,1):
         { // new scope
-            index_t N = G[3][1].get_size(entity_id) * 2; // 2 = G[1][0].get_size(entity_id);
+            index_t N = G[3][1].single_size * 2; // 2 = G[1][0].single_size;
             vec = conduit::range_vector<index_t>(entity_id * N, 1, N);
         } // end scope
         break;
@@ -2476,8 +2703,8 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
     case EA_INDEX(3,2):
         { // new scope
             const association &assoc = G[entity_dim][assoc_dim];
-            index_t gsize = assoc.get_size(entity_id);
-            index_t goffset = assoc.get_offset(entity_id);
+            index_t gsize = assoc.single_size;
+            index_t goffset = entity_id * assoc.single_size;
             vec = conduit::range_vector<index_t>(goffset, 1, gsize);
         } // end scope
         break;
@@ -2577,7 +2804,7 @@ TopologyMetadata::Implementation::get_local_dim_map(index_t src_dim, index_t dst
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    bool requested = G[src_dim][dst_dim].requested;
+    bool requested = L[src_dim][dst_dim].requested;
     if(requested)
     {
         // Do a sizing pass.
@@ -2706,9 +2933,8 @@ TopologyMetadata::Implementation::get_embed_length(index_t entity_dim, index_t e
             if(embed_set.find(entity_index) == embed_set.end())
             {
                 embed_length++;
-                embed_set.insert(entity_index); // This should be ok.
+                embed_set.insert(entity_index);
             }
-            //embed_set.insert(entity_index);
         }
         else
         {

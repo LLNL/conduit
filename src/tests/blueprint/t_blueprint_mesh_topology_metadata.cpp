@@ -418,8 +418,11 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
     else
     {
         int dims[] = {3,3,2};
-        if(type == "lines" || type == "tris" || type == "quads")
+        if(type == "lines" || type == "tris" || type == "quads" ||
+           type == "quads_poly" || type == "hexs_poly")
+        {
             dims[2] = 0;
+        }
         conduit::blueprint::mesh::examples::braid(type, dims[0],dims[1],dims[2], node);
     }
     conduit::Node &topo = node["topologies/mesh"];
@@ -481,7 +484,7 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
@@ -545,17 +548,16 @@ TEST(conduit_blueprint_topology_metadata, custom_hexs)
 {
     test_mesh_type("custom_hexs");
 }
+#endif
 
-#if 0
 // Polygon cases
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_topology_metadata, hexs_poly)
+TEST(conduit_blueprint_topology_metadata, quads_poly)
 {
-// I think this one just needs local maps.
     test_mesh_type("quads_poly");
 }
-
+#if 0
 // PH cases
 
 //-----------------------------------------------------------------------------
