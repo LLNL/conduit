@@ -663,7 +663,7 @@ private:
             // The shape contain polygons so we have to be a bit more
             // general in how we traverse the connectivity. We want sizes/offsets.
             // Make lines.
-            make_embedded_connectivity_polygons_to_lines(shape, conn, connlen);
+            make_embedded_connectivity_polygons_to_lines(conn);
         }
     }
 
@@ -993,12 +993,9 @@ private:
      */
     template <typename ConnType>
     void
-    make_embedded_connectivity_polygons_to_lines(const ShapeType &shape,
-        const ConnType &conn, index_t connlen)
+    make_embedded_connectivity_polygons_to_lines(const ConnType &conn)
     {
         CONDUIT_ANNOTATE_MARK_FUNCTION;
-
-        int embed_dim = shape.dim - 1;
 
 #ifdef DEBUG_PRINT
         cout << "=======================================================" << endl;
@@ -1016,7 +1013,7 @@ private:
         std::vector<std::pair<uint64, uint64>> edgeid_to_ee(nelem_edges);
         std::vector<std::pair<index_t, index_t>> ee_to_edge(nelem_edges);
 #pragma omp parallel for
-        for(size_t elem = 0; elem < nelem; elem++)
+        for(index_t elem = 0; elem < nelem; elem++)
         {
             constexpr size_t MAX_VERTS = 32;
 
@@ -1024,11 +1021,11 @@ private:
             index_t elem_size = sizes[elem];
             index_t elem_offset = offsets[elem];
             index_t pts[MAX_VERTS];
-            for(size_t i = 0; i < elem_size; i++)
+            for(index_t i = 0; i < elem_size; i++)
                 pts[i] = conn[elem_offset + i];
 
             // Make a unique id for each edge.
-            for(size_t edge_index = 0; edge_index < elem_size; edge_index++)
+            for(index_t edge_index = 0; edge_index < elem_size; edge_index++)
             {
                 // encode element and edge into element_edge.
                 uint64 elem_edge = elem_offset + edge_index;
@@ -1107,7 +1104,7 @@ private:
 
             // Make the embedded connectivity (and map data)
             index_t embed_refs_idx = 0, final_edgeid = 0;
-            for(size_t ee = 0; ee < nelem_edges; ee++)
+            for(index_t ee = 0; ee < nelem_edges; ee++)
             {
                 uint64 elem_edge = ee_to_unique[ee].first;
                 uint64 unique_edge_id = ee_to_unique[ee].second;
@@ -1153,7 +1150,7 @@ private:
             CONDUIT_ANNOTATE_MARK_SCOPE("Build connectivity");
 
             // Make the embedded connectivity
-            for(size_t ee = 0; ee < nelem_edges; ee++)
+            for(index_t ee = 0; ee < nelem_edges; ee++)
             {
                 uint64 elem_edge = ee_to_unique[ee].first;
                 uint64 unique_edge_id = ee_to_unique[ee].second;
@@ -1173,7 +1170,7 @@ private:
         CONDUIT_ANNOTATE_MARK_BEGIN("Build offsets");
         node["elements/offsets"].set(DataType::index_t(unique));
         index_t *line_offsets = node["elements/offsets"].as_index_t_ptr();
-        for(size_t ei = 0; ei < unique; ei++)
+        for(index_t ei = 0; ei < unique; ei++)
             line_offsets[ei] = 2 * ei;
         CONDUIT_ANNOTATE_MARK_END("Build offsets");
     }
@@ -2180,7 +2177,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     auto mapPC_sizes_size = static_cast<index_t>(mapPC.sizes.size());
     auto mapPC_data_size = static_cast<index_t>(mapPC.data.size());
     std::vector<std::pair<index_t, index_t>> p2c(mapPC_data_size);
-    size_t idx = 0;
+    index_t idx = 0;
     if(!mapPC.sizes.empty())
     {
         for(index_t id = 0; id < mapPC_sizes_size; id++)
