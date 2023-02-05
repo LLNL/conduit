@@ -1297,8 +1297,6 @@ TopologyMetadata::Implementation::Implementation(const conduit::Node &topology,
 void
 TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t, size_t> > &desired)
 {
-    CONDUIT_ANNOTATE_MARK_FUNCTION;
-
     // The lowest cascade dim is less than or equal to the topo_shape.dim.
     if(lowest_cascade_dim > static_cast<size_t>(topo_shape.dim))
     {
@@ -2939,6 +2937,7 @@ TopologyMetadata::Implementation::build_local_to_global()
 TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     const conduit::Node &coordset) : TopologyMetadataBase()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
     impl = new Implementation(topology, coordset);
 }
 
@@ -2949,6 +2948,7 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     const std::vector<std::pair<size_t,size_t> > &desired_maps) :
     TopologyMetadataBase()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
     impl = new Implementation(topology, coordset, lowest_dim, desired_maps);
 }
 

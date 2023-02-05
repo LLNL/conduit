@@ -28,7 +28,6 @@
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
-#include "conduit_annotations.hpp"
 
 // access one-to-many index types
 namespace O2MIndex = conduit::blueprint::o2mrelation;
@@ -1433,8 +1432,6 @@ topology::unstructured::generate_offsets(const Node &topo,
                                          Node &dest_ele_offsets,
                                          Node &dest_subele_offsets)
 {
-    CONDUIT_ANNOTATE_MARK_FUNCTION;
-
     const ShapeType topo_shape(topo);
     const DataType int_dtype = find_widest_dtype(topo, DEFAULT_INT_DTYPES);
     std::string key("elements/connectivity"), stream_key("elements/stream");
