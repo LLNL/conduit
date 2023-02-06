@@ -10,6 +10,7 @@
 # Core (conduit lib) Unit Tests
 ################################
 set(BASIC_TESTS t_conduit_smoke
+                t_conduit_version
                 t_conduit_endianness
                 t_conduit_char8_str
                 t_conduit_datatype_tests
@@ -17,6 +18,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_node_parent
                 t_conduit_node_compare
                 t_conduit_node_static_init
+                t_conduit_node_move_and_swap
                 t_conduit_serialize
                 t_conduit_array
                 t_conduit_list_of
@@ -31,6 +33,7 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_json_sanitize
                 t_conduit_yaml
                 t_conduit_generator
+                t_conduit_data_accessor
                 t_conduit_node_update
                 t_conduit_node_compact
                 t_conduit_node_info
@@ -41,6 +44,8 @@ set(BASIC_TESTS t_conduit_smoke
                 t_conduit_schema
                 t_conduit_error
                 t_conduit_log
+                t_conduit_utils
+                t_conduit_annotations
                 t_conduit_mem_allocator
                 t_conduit_intro_cpp_example)
 

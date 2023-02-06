@@ -74,12 +74,12 @@ if(NOT HDF5_INCLUDE_DIRS)
     if(HDF5_INCLUDE_DIR)
         set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
     else()
-        message(FATAL_ERROR "FindHDF5 did not provide HDF5_INCLUDE_DIRS or HDF5_INCLUDE_DIR.")
+        message(WARNING "FindHDF5 did not provide HDF5_INCLUDE_DIRS or HDF5_INCLUDE_DIR.")
     endif()
 endif()
 
 if(NOT HDF5_LIBRARIES)
-    message(FATAL_ERROR "FindHDF5 did not provide HDF5_LIBRARIES.")
+    message(WARNING "FindHDF5 did not provide HDF5_LIBRARIES.")
 endif()
 
 message(STATUS "HDF5_INCLUDE_DIRS=${HDF5_INCLUDE_DIRS}")
@@ -104,7 +104,7 @@ foreach(IDIR ${HDF5_INCLUDE_DIRS})
 endforeach()
 
 if(NOT check_hdf5_inc_dir_ok)
-    message(FATAL_ERROR " ${HDF5_INCLUDE_DIRS} does not include HDF5_DIR")
+    message(WARNING "HDF5_INCLUDE_DIRS (${HDF5_INCLUDE_DIRS}) does not include HDF5_DIR")
 endif()
 
 #
@@ -275,6 +275,7 @@ foreach(lib ${hdf5_tpl_lnk_libs_list})
     list(APPEND HDF5_LIBRARIES ${lib})
 endforeach()
 
+
 #
 # Display main hdf5 cmake vars
 #
@@ -297,7 +298,7 @@ if(HDF5_IS_PARALLEL)
 endif()
 
 #############
-# Note: MPI libraries and include dirs are not propgated for the config.mk case
+# Note: MPI libraries and include dirs are not propagated for the config.mk case
 #############
 
 message(STATUS "HDF5 Thirdparty Include Flags: ${hdf5_tpl_inc_flags}")
@@ -314,6 +315,16 @@ elseif(TARGET hdf5::hdf5-static)
     message(STATUS "HDF5 using hdf5::hdf5-static target")
     blt_register_library(NAME hdf5
                          LIBRARIES hdf5::hdf5-static)
+elseif(TARGET hdf5-shared AND BUILD_SHARED_LIBS)
+    # reg shared ver of imported lib target
+    message(STATUS "HDF5 using hdf5-shared target")
+    blt_register_library(NAME hdf5
+                         LIBRARIES hdf5-shared)
+elseif(TARGET hdf5-static)
+    # reg static ver of imported lib target
+     message(STATUS "HDF5 using hdf5-static target")
+     blt_register_library(NAME hdf5
+                          LIBRARIES hdf5-static)
 elseif(TARGET hdf5)
     # legacy hdf5 CMake build system support creates an hdf5 target we use directly
     message(STATUS "HDF5 using hdf5 target")
@@ -323,8 +334,11 @@ else()
     message(STATUS "HDF5_DEFINITIONS:  ${HDF5_DEFINITIONS}")
     message(STATUS "HDF5_INCLUDE_DIRS: ${HDF5_INCLUDE_DIRS}")
     message(STATUS "HDF5_LIBRARIES:    ${HDF5_LIBRARIES}")
+    message(STATUS "HDF5_LINK_FLAGS:   ${hdf5_tpl_lnk_flags}")
+
     blt_register_library(NAME hdf5
                          DEFINES   ${HDF5_DEFINITIONS}
                          INCLUDES  ${HDF5_INCLUDE_DIRS}
-                         LIBRARIES ${HDF5_LIBRARIES})
+                         LIBRARIES ${HDF5_LIBRARIES}
+                         LINK_FLAGS ${hdf5_tpl_lnk_flags})
 endif()

@@ -277,6 +277,79 @@ PyBlueprint_mesh_partition(PyObject *, //self
     Py_RETURN_NONE;
 }
 
+// doc str
+const char *PyBlueprint_mesh_flatten_doc_str =
+"flatten(mesh, options, output)\n"
+"\n"
+"Assumes mesh::verify() is True\n"
+"\n"
+"Flattens a mesh to a table and stores the result in output.\n"
+"\n"
+"Arguments:\n"
+"  mesh: Input node, a blueprint mesh. (conduit.Node instance)\n"
+"  options: Options node. (conduit.Node instance)\n"
+"  output: Output node, a blueprint table. (conduit.Node instance)\n";
+
+// py func
+static PyObject *
+PyBlueprint_mesh_flatten(PyObject *, //self
+                         PyObject *args,
+                         PyObject *kwargs)
+{
+
+    PyObject   *py_mesh     = NULL;
+    PyObject   *py_options  = NULL;
+    PyObject   *py_output   = NULL;
+
+    static const char *kwlist[] = {"mesh",
+                                   "options",
+                                   "output",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "OOO",
+                                     const_cast<char**>(kwlist),
+                                     &py_mesh,
+                                     &py_options,
+                                     &py_output))
+    {
+        return NULL;
+    }
+
+    if(!PyConduit_Node_Check(py_mesh))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'mesh' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    if(!PyConduit_Node_Check(py_options))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'options' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    if(!PyConduit_Node_Check(py_output))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'output' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    const Node &mesh = *PyConduit_Node_Get_Node_Ptr(py_mesh);
+    const Node &options = *PyConduit_Node_Get_Node_Ptr(py_options);
+    Node &output = *PyConduit_Node_Get_Node_Ptr(py_output);
+
+    blueprint::mesh::flatten(mesh, options, output);
+
+    Py_RETURN_NONE;
+}
+
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
 //---------------------------------------------------------------------------//
@@ -295,6 +368,10 @@ static PyMethodDef blueprint_mesh_python_funcs[] =
      (PyCFunction)PyBlueprint_mesh_partition,
       METH_VARARGS | METH_KEYWORDS,
       PyBlueprint_mesh_partition_doc_str},
+    {"flatten",
+     (PyCFunction)PyBlueprint_mesh_flatten,
+     METH_VARARGS | METH_KEYWORDS,
+     PyBlueprint_mesh_flatten_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//

@@ -57,6 +57,17 @@ about(Node &n)
 {
     n.reset();
     n["protocols/mesh"] = "enabled";
+
+// advertise features
+    n["features/mesh/partition"] = "enabled";
+    n["features/mesh/flatten"] = "enabled";
+
+#ifdef CONDUIT_BLUEPRINT_MPI_PARMETIS_ENABLED
+    n["features/mesh/parmetis"] = "enabled";
+#else
+    n["features/mesh/parmetis"] = "disabled";
+#endif
+
 }
 
 //---------------------------------------------------------------------------//

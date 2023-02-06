@@ -19,7 +19,6 @@ TEST(conduit_smoke, basic_use)
     EXPECT_EQ(sizeof(conduit::uint32),4);
     EXPECT_EQ(sizeof(conduit::uint64),8);
     EXPECT_EQ(sizeof(conduit::float64),8);
-    
+
     std::cout << conduit::about() << std::endl;
-    
 }

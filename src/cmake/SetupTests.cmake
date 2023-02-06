@@ -120,6 +120,14 @@ function(add_python_test )
                      APPEND
                      PROPERTY
                      ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
+        # NOTE: windows python 3.8 and newer ignore PATH when loading DLLs
+        #   https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew
+        #   https://docs.python.org/3/library/os.html#os.add_dll_directory
+        # we set CONDUIT_DLL_DIR so that the python module can find the our DLLs
+        set_property(TEST ${args_TEST}
+                     APPEND
+                     PROPERTY
+                     ENVIRONMENT "CONDUIT_DLL_DIR=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
     endif()
 
 endfunction(add_python_test)
@@ -174,6 +182,14 @@ function(add_python_mpi_test)
                      APPEND
                      PROPERTY
                      ENVIRONMENT "PATH=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
+        # NOTE: windows python 3.8 and newer ignore PATH when loading DLLs
+        #   https://docs.python.org/3/whatsnew/3.8.html#bpo-36085-whatsnew
+        #   https://docs.python.org/3/library/os.html#os.add_dll_directory
+        # we set CONDUIT_DLL_DIR so that the python module can find the our DLLs
+        set_property(TEST ${args_TEST}
+                     APPEND
+                     PROPERTY
+                     ENVIRONMENT "CONDUIT_DLL_DIR=${CMAKE_BINARY_DIR}/bin/${ENV_PATH_SEP}${CMAKE_BINARY_DIR}/bin/$<CONFIG>/${ENV_PATH_SEP}$ENV{PATH}")
     endif()
 
     ###########################################################################

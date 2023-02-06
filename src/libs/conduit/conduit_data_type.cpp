@@ -61,22 +61,36 @@ namespace conduit
 {
 
 
+//-----------------------------------------------------------------------------
 DataType 
 DataType::empty()
 {
     return DataType(EMPTY_ID);
 }
 
+//-----------------------------------------------------------------------------
 DataType 
 DataType::object()
 {
     return DataType(OBJECT_ID);
 }
 
+//-----------------------------------------------------------------------------
 DataType 
 DataType::list()
 {
     return DataType(LIST_ID);
+}
+
+//-----------------------------------------------------------------------------
+int
+DataType::sizeof_index_t()
+{
+#ifdef CONDUIT_INDEX_32
+    return 4;
+#else
+    return 8;
+#endif
 }
 
 

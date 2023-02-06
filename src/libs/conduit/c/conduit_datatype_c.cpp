@@ -15,6 +15,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+#ifdef CONDUIT_PLATFORM_WINDOWS
+#define _conduit_strdup _strdup
+#else
+#define _conduit_strdup strdup
+#endif
+
 //-----------------------------------------------------------------------------
 // -- begin extern C
 //-----------------------------------------------------------------------------
@@ -23,6 +29,11 @@ extern "C" {
 
 using namespace conduit;
 
+int conduit_datatype_sizeof_index_t()
+{
+    return DataType::sizeof_index_t();
+}
+
 conduit_index_t conduit_datatype_id(const conduit_datatype *cdatatype)
 {
     return cpp_datatype_ref(cdatatype).id();
@@ -30,8 +41,7 @@ conduit_index_t conduit_datatype_id(const conduit_datatype *cdatatype)
 
 char* conduit_datatype_name(const conduit_datatype *cdatatype)
 {
-    auto name = cpp_datatype_ref(cdatatype).name();
-    return strdup(name.c_str());
+    return _conduit_strdup(cpp_datatype_ref(cdatatype).name().c_str());
 }
 
 void conduit_datatype_name_destroy(char *name)
@@ -59,7 +69,7 @@ conduit_index_t conduit_datatype_element_bytes(const conduit_datatype *cdatatype
     return cpp_datatype_ref(cdatatype).element_bytes();
 }
 
-conduit_index_t conduit_datatype_endianess(const conduit_datatype *cdatatype)
+conduit_index_t conduit_datatype_endianness(const conduit_datatype *cdatatype)
 {
     return cpp_datatype_ref(cdatatype).endianness();
 }

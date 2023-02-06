@@ -71,11 +71,11 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_synth)
         io::hdf5_set_options(opts["hdf5"]);
     }
     
-    CONDUIT_INFO("options:" << opts.to_json());
+    CONDUIT_INFO("options:" << opts.to_yaml());
     
     Node rl_about;
-    relay::about(rl_about["io"]);
-    CONDUIT_INFO("hdf5 options:" << rl_about["io/options/hdf5"].to_json());
+    relay::io::about(rl_about["io"]);
+    CONDUIT_INFO("hdf5 options:" << rl_about["io/options/hdf5"].to_yaml());
     
     int num_obj =  opts["data/num_objects"].to_value();
     int num_l   =  opts["data/num_leaves"].to_value();
@@ -84,6 +84,8 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_synth)
     
     srand(opts["data/leaf_seed"].to_int());
     
+    conduit::utils::Timer t_setup;
+
     Node n;
     
     std::ostringstream oss;
@@ -106,15 +108,35 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_synth)
             rand_fill(vals);
         }
     }
-    
-    
-    CONDUIT_INFO("total data size = " << n.total_bytes_compact());
-    
-    std::string ofile = opts["output_file"].as_string();
-    
-    CONDUIT_INFO("Writing to " << ofile);
-    io::hdf5_write(n,ofile);
 
+    float tsetup_val = t_setup.elapsed();
+
+    CONDUIT_INFO("total data size = " << n.total_bytes_compact());
+
+    std::string ofile = opts["output_file"].as_string();
+
+    CONDUIT_INFO("Writing to " << ofile);
+    conduit::utils::Timer t_write;
+    io::hdf5_write(n,ofile);
+    float twrite_val = t_write.elapsed();
+
+    Node r;
+    Node & d = r["diagnostics"];
+    d["timings/setup"] = tsetup_val;
+    d["timings/write"] = twrite_val;
+    d["sizes/memory_bytes"] = n.total_bytes_compact();
+    d["sizes/memory_megabytes"] = d["sizes/memory_bytes"].to_double() / 1000000.0;
+    d["sizes/file_bytes"] = conduit::utils::file_size(ofile);
+    d["sizes/file_megabytes"] = d["sizes/file_bytes"].to_double() / 1000000.0;
+
+    d["rates/bytes_per_sec"] = d["sizes/file_bytes"].to_double() /
+                               d["timings/write"].to_double();
+    d["rates/megabytes_per_sec"] = d["sizes/file_megabytes"].to_double() /
+                                   d["timings/write"].to_double();
+
+    r.print();
+
+    r.save("tout_hdf5_opts_diagnostics.yaml");
 }
 
 

@@ -21,25 +21,33 @@
 #include <deque>
 #include <cmath>
 #include <cstring>
+#include <limits>
 #include <memory>
 #include <set>
 #include <vector>
 #include <cstddef>
 #include <type_traits>
 #include <map>
+#include <unordered_set>
+#include <numeric>
 
 //-----------------------------------------------------------------------------
 // conduit includes
 //-----------------------------------------------------------------------------
 #include "conduit_node.hpp"
+#include "conduit_data_accessor.hpp"
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_mesh_utils_iterate_elements.hpp"
 #include "conduit_blueprint_mesh.hpp"
+#include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_log.hpp"
 
+#include "conduit_fmt/conduit_fmt.h"
+
 // Uncomment to enable some debugging output from partitioner.
-//#define CONDUIT_DEBUG_PARTITIONER
+// #define CONDUIT_DEBUG_PARTITIONER
 
 // Toggles debug prints for point merge
 // #define DEBUG_POINT_MERGE
@@ -1742,6 +1750,9 @@ Partitioner::options_get_target(const conduit::Node &options,
             CONDUIT_INFO("Nonnumber passed as selection target.");
         }
     }
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Partition called with target " << value << std::endl;
+#endif
     return retval;
 }
 
@@ -1750,6 +1761,8 @@ bool
 Partitioner::initialize(const conduit::Node &n_mesh,
                         const conduit::Node &options)
 {
+    auto global_domids = get_global_domids(n_mesh);
+
     auto doms = conduit::blueprint::mesh::domains(n_mesh);
 
     // Iterate over the selections in the options and check them against the
@@ -1776,16 +1789,8 @@ Partitioner::initialize(const conduit::Node &n_mesh,
                     auto n = static_cast<index_t>(doms.size());
                     for(index_t di = 0; di < n; di++)
                     {
-                        // Get the overall index for this domain if it exists.
-                        // Otherwise, we use the position in the list.
-                        index_t domid = di;
-                        if(doms[di]->has_path("state/domain_id"))
-                        {
-                            bool ok = false;
-                            index_t tmp = get_index_t(doms[di]->operator[]("state/domain_id"), ok);
-                            if(ok)
-                                domid = tmp;
-                        }
+                        // Get the global id for this domain.
+                        index_t domid = global_domids[di];
 
                         // NOTE: A selection is tied to a single domain at present.
                         //       The field selection could apply to multiple domains
@@ -1847,15 +1852,7 @@ Partitioner::initialize(const conduit::Node &n_mesh,
         for(size_t i = 0; i < doms.size(); i++)
         {
             auto sel = create_selection_all_elements(*doms[i]);
-            // If the mesh has a domain_id then use that as the domain number.
-            index_t domid = i;
-            if(doms[i]->has_path("state/domain_id"))
-            {
-                bool ok = false;
-                index_t tmp = get_index_t(doms[i]->operator[]("state/domain_id"), ok);
-                if(ok)
-                    domid = tmp;
-            }
+            index_t domid = global_domids[i];
             sel->set_domain(domid);
             selections.push_back(sel);
             meshes.push_back(doms[i]);
@@ -1911,6 +1908,27 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     // If we made it to the end then we will have created any applicable
     // selections. Some ranks may have created no selections. That is ok.
     return true; //!selections.empty();
+}
+
+//---------------------------------------------------------------------------
+std::vector<index_t>
+Partitioner::get_global_domids(const conduit::Node& n_mesh)
+{
+    const auto doms = conduit::blueprint::mesh::domains(n_mesh);
+    std::vector<index_t> domids(doms.size(), -1);
+    for(size_t i = 0; i < doms.size(); i++)
+    {
+        domids[i] = i;
+        // If the mesh has a domain_id then use that as the domain number.
+        if(doms[i]->has_path("state/domain_id"))
+        {
+            bool ok = false;
+            index_t tmp = get_index_t(doms[i]->operator[]("state/domain_id"), ok);
+            if(ok)
+                domids[i] = tmp;
+        }
+    }
+    return domids;
 }
 
 //---------------------------------------------------------------------------
@@ -2021,6 +2039,540 @@ Partitioner::split_selections()
 }
 
 //---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_volume_fractions(
+    const std::vector<index_t> &element_ids,
+    const Node &in_data,
+    Node &out_data)
+{
+    out_data.set_dtype(conduit::DataType(in_data.dtype().id(), element_ids.size()));
+
+    const conduit::DataArray<FloatType> in_values(in_data.element_ptr(0), in_data.dtype());
+    conduit::DataArray<FloatType> out_values(out_data.element_ptr(0), out_data.dtype());
+
+    // Iterate over desired element ids
+    index_t out_idx = 0;
+    for(const auto elem_id : element_ids)
+    {
+        out_values[out_idx++] = in_values[elem_id];
+    }
+}
+
+//---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_volume_fractions_o2m(
+    const std::vector<index_t> &element_ids,
+    const Node &in_data,
+    Node &out_data)
+{
+    // In data is o2m, need to extract "values" to get data
+    conduit::blueprint::o2mrelation::O2MIterator indexer(in_data);
+    const conduit::Node &n_in_values = in_data["values"];
+    out_data.set_dtype(conduit::DataType(in_data["values"].dtype().id(), element_ids.size()));
+
+    const conduit::DataArray<FloatType> in_values(n_in_values.element_ptr(0), n_in_values.dtype());
+    conduit::DataArray<FloatType> out_values(out_data.element_ptr(0), out_data.dtype());
+
+    // Iterate over desired element ids
+    index_t out_idx = 0;
+    for(const auto elem_id : element_ids)
+    {
+        indexer.to(elem_id);
+        const auto index = indexer.index();
+        out_values[out_idx++] = in_values[index];
+    }
+}
+
+//---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_uni_buffer_matset_impl(
+    const std::vector<index_t> &element_ids,
+    const conduit::Node &n_matset,
+    conduit::Node &out_matset)
+{
+    const index_t num_elements = (index_t)element_ids.size();
+
+    // Determine output size and sizes/offsets
+    index_t out_size = 0;
+    if(n_matset.has_child("sizes"))
+    {
+        // Element based matset will have an entry for each element, should be able to safely index by element id
+        const conduit::DataAccessor<index_t> size_access = n_matset.fetch_existing("sizes").value();
+        out_matset["sizes"].set_dtype(conduit::DataType::index_t(num_elements));
+        out_matset["offsets"].set_dtype(conduit::DataType::index_t(num_elements));
+        DataArray<index_t> out_sizes   = out_matset["sizes"].value();
+        DataArray<index_t> out_offsets = out_matset["offsets"].value();
+
+        // Build output sizes / offsets, while computing size of output data array
+        bool need_offsets_sizes = false;
+        for(index_t i = 0; i < num_elements; i++)
+        {
+            const index_t id = element_ids[i];
+            const index_t s  = size_access[id];
+            if(s != 1)
+            {
+                need_offsets_sizes = true;
+            }
+            out_offsets[i] = out_size;
+            out_sizes[i]   = s;
+            out_size      += s;
+        }
+
+        // If each entry in the O2M was 1 then we don't need the auxillary arrays
+        if(!need_offsets_sizes)
+        {
+            out_matset.remove("sizes");
+            out_matset.remove("offsets");
+        }
+    }
+    else
+    {
+        out_size = num_elements;
+    }
+
+    // Allocate output arrays
+    out_matset["material_ids"].set_dtype(conduit::DataType::index_t(out_size));
+    out_matset["volume_fractions"].set_dtype(
+        conduit::DataType(n_matset.fetch_existing("volume_fractions").dtype().id(), out_size));
+    DataArray<index_t> out_material_ids = out_matset.fetch_existing("material_ids").value();
+    DataArray<FloatType> out_volume_fractions = out_matset.fetch_existing("volume_fractions").value();
+
+    const DataAccessor<index_t> in_material_ids = n_matset.fetch_existing("material_ids").value();
+    const DataArray<FloatType> in_volume_fractions = n_matset.fetch_existing("volume_fractions").value();
+    conduit::blueprint::o2mrelation::O2MIterator indexer(n_matset);
+    index_t offset = 0;
+
+    for(index_t i = 0; i < num_elements; i++)
+    {
+        // Point the o2m iterator at (element_id, 0)
+        const auto element_id = element_ids[i];
+        indexer.to(element_id, conduit::blueprint::o2mrelation::ONE);
+        indexer.to(0, conduit::blueprint::o2mrelation::MANY);
+
+        // Get the number of "many" elements for this element_id
+        const index_t size = indexer.elements(conduit::blueprint::o2mrelation::MANY);
+        index_t idx  = indexer.index(conduit::blueprint::o2mrelation::DATA);
+
+#if 0
+        std::cout << "element_id = " << element_id
+            << "\nsize = " << size
+            << "\nidx = " << idx << std::endl;
+#endif
+
+        // Copy each item in the O2M relation
+        for(index_t j = 0; j < size; j++)
+        {
+            out_material_ids[offset]     = in_material_ids[idx];
+            out_volume_fractions[offset] = in_volume_fractions[idx];
+            idx++;
+            offset++;
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+static void
+copy_uni_buffer_matset(
+    const std::vector<index_t> &element_ids,
+    const conduit::Node &n_matset,
+    conduit::Node &out_matset)
+{
+    // Determine floating point type
+    const auto &dtype = n_matset.fetch_existing("volume_fractions").dtype();
+    if(dtype.is_float())
+    {
+        copy_uni_buffer_matset_impl<float>(element_ids, n_matset, out_matset);
+    }
+    else if(dtype.is_double())
+    {
+        copy_uni_buffer_matset_impl<double>(element_ids, n_matset, out_matset);
+    }
+#if CONDUIT_USE_LONG_DOUBLE
+    else if(dtype.is_long_double())
+    {
+        copy_uni_buffer_matset_impl<long double>(element_ids, n_matset, out_matset);
+    }
+#endif
+
+}
+
+//---------------------------------------------------------------------------
+static void
+copy_multi_buffer_matset(
+    const std::vector<index_t> &element_ids,
+    const conduit::Node &n_matset,
+    conduit::Node &out_matset)
+{
+    const conduit::Node &n_vfracts = n_matset["volume_fractions"];
+    conduit::Node &out_vfracts = out_matset.add_child("volume_fractions");
+    auto vfract_itr = n_vfracts.children();
+    while(vfract_itr.has_next())
+    {
+        const conduit::Node &n_vfract = vfract_itr.next();
+        conduit::Node &out_vfract = out_vfracts.add_child(n_vfract.name());
+        bool is_o2m = n_vfract.dtype().is_object();
+        if(is_o2m)
+        {
+            const auto data_paths = blueprint::o2mrelation::data_paths(n_vfract);
+            if(data_paths.empty())
+            {
+                CONDUIT_ERROR("volume_fractions appears to be an o2m relation but has no data_paths.");
+                return;
+            }
+            std::string data_name = data_paths[0];
+
+            const auto &dtype = n_vfract[data_name].dtype();
+            if(dtype.is_float())
+            {
+                copy_volume_fractions_o2m<float>(element_ids, n_vfract, out_vfract);
+            }
+            else if(dtype.is_double())
+            {
+                copy_volume_fractions_o2m<double>(element_ids, n_vfract, out_vfract);
+            }
+#if CONDUIT_USE_LONG_DOUBLE
+            else if(dtype.is_long_double())
+            {
+                copy_volume_fractions_o2m<long double>(element_ids, n_vfract, out_vfract);
+            }
+#endif
+        }
+        else
+        {
+            const auto &dtype = n_vfract.dtype();
+            if(dtype.is_float())
+            {
+                copy_volume_fractions<float>(element_ids, n_vfract, out_vfract);
+            }
+            else if(dtype.is_double())
+            {
+                copy_volume_fractions<double>(element_ids, n_vfract, out_vfract);
+            }
+#if CONDUIT_USE_LONG_DOUBLE
+            else if(dtype.is_long_double())
+            {
+                copy_volume_fractions<long double>(element_ids, n_vfract, out_vfract);
+            }
+#endif
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+/**
+ @brief Populate unordered map of topological element_ids -> matset data indicies
+*/
+static void
+create_element_to_material_map(const conduit::DataAccessor<index_t> &mat_element_ids,
+                               std::unordered_map<index_t, index_t> &out)
+{
+    const auto mat_nelem = mat_element_ids.number_of_elements();
+    out.clear();
+    out.reserve(mat_nelem);
+    for(index_t i = 0; i < mat_nelem; i++)
+    {
+        // Map the actual element id to an index
+        out.insert({mat_element_ids[i], i});
+    }
+}
+
+//---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_material_based_volume_fractions(const std::vector<index_t> &element_ids,
+                                     const conduit::Node &n_vfract,
+                                     const std::unordered_map<index_t, index_t> &elem_map,
+                                     conduit::Node &out_matset)
+{
+    // Figure out if vfract is o2m, create iterator if it is
+    const bool is_o2m = n_vfract.dtype().is_object();
+
+    std::string o2m_data_name;
+    if(is_o2m)
+    {
+        auto paths = blueprint::o2mrelation::data_paths(n_vfract);
+        if(paths.empty())
+        {
+            CONDUIT_ERROR("volume_fraction appears to be an o2m relation but it contains no data paths.");
+            return;
+        }
+        o2m_data_name = paths[0];
+    }
+    const conduit::DataArray<FloatType> vfracts = (is_o2m) ? n_vfract[o2m_data_name].value() : n_vfract.value();
+
+    const std::string &mat_name = n_vfract.name();
+    conduit::Node &out_mat_vfract = out_matset["volume_fractions"].add_child(mat_name);
+    conduit::Node &out_mat_elems  = out_matset["element_ids"].add_child(mat_name);
+
+    std::vector<FloatType> out_vfracts;
+    std::vector<index_t> out_elems;
+    const index_t nelem = (index_t)element_ids.size();
+    if(is_o2m)
+    {
+        conduit::blueprint::o2mrelation::O2MIterator indexer(n_vfract);
+        for(index_t i = 0; i < nelem; i++)
+        {
+            const index_t id = element_ids[i];
+            const auto itr = elem_map.find(id);
+            if(itr != elem_map.end())
+            {
+                const index_t one_idx = itr->second;
+                indexer.to(one_idx, conduit::blueprint::o2mrelation::ONE);
+                indexer.to(0, conduit::blueprint::o2mrelation::MANY);
+                const index_t data_idx = indexer.index();
+                out_vfracts.push_back(vfracts[data_idx]);
+                out_elems.push_back(i);
+            }
+        }
+    }
+    else
+    {
+        for(index_t i = 0; i < nelem; i++)
+        {
+            const index_t id = element_ids[i];
+            const auto itr = elem_map.find(id);
+            if(itr != elem_map.end())
+            {
+                const index_t data_idx = itr->second;
+                out_vfracts.push_back(vfracts[data_idx]);
+                out_elems.push_back(i);
+            }
+        }
+    }
+
+    // For baseline consistency
+    if(out_vfracts.size() > 0)
+    {
+        out_mat_vfract.set(out_vfracts);
+        out_mat_elems.set(out_elems);
+    }
+}
+
+//---------------------------------------------------------------------------
+template<typename FloatType>
+static void
+copy_material_based_uni_buffer(const std::vector<index_t> &element_ids,
+                               const conduit::Node &n_matset,
+                               const std::unordered_map<index_t, index_t> &elem_map,
+                               conduit::Node &out_matset)
+{
+    const conduit::DataAccessor<index_t> in_material_ids     = n_matset["material_ids"].value();
+    const conduit::DataArray<FloatType>  in_volume_fractions = n_matset["volume_fractions"].value();
+    const index_t num_elements = (index_t)element_ids.size();
+
+    // Make a first pass to determine sizes, offsets, and new element ids
+    // Also build "one_idxs" so we don't have to query the map again on the second pass
+    std::vector<index_t> one_idxs;
+    one_idxs.reserve(num_elements);
+    index_t out_size = 0;
+    if(n_matset.has_child("sizes"))
+    {
+        // Element based matset will have an entry for each element, should be able to safely index by element id
+        const conduit::DataAccessor<index_t> size_access = n_matset.fetch_existing("sizes").value();
+        std::vector<index_t> out_sizes;
+        std::vector<index_t> out_offsets;
+        std::vector<index_t> out_elem_ids;
+        out_sizes.reserve(num_elements);
+        out_offsets.reserve(num_elements);
+        out_elem_ids.reserve(num_elements);
+
+        // Build output sizes / offsets, while computing size of output data array
+        bool need_offsets_sizes = false;
+        for(index_t i = 0; i < num_elements; i++)
+        {
+            const index_t id = element_ids[i];
+            const auto itr   = elem_map.find(id);
+            if(itr != elem_map.end())
+            {
+                const index_t idx = itr->second;
+                one_idxs.push_back(idx);
+                out_elem_ids.push_back(i);
+                const index_t s  = size_access[idx];
+                if(s != 1)
+                {
+                    need_offsets_sizes = true;
+                }
+                out_offsets.push_back(out_size);
+                out_sizes.push_back(s);
+                out_size += s;
+            }
+        }
+
+        out_matset["element_ids"].set(out_elem_ids);
+        // Only copy sizes/offsets if they are actually needed
+        if(need_offsets_sizes)
+        {
+            out_matset["sizes"].set(out_sizes);
+            out_matset["offsets"].set(out_offsets);
+        }
+    }
+    else
+    {
+        std::vector<index_t> out_elem_ids;
+        out_elem_ids.reserve(num_elements);
+        for(index_t i = 0; i < num_elements; i++)
+        {
+            const index_t id = element_ids[i];
+            const auto itr   = elem_map.find(id);
+            if(itr != elem_map.end())
+            {
+                one_idxs.push_back(itr->second);
+                out_elem_ids.push_back(i);
+            }
+        }
+        out_size = (index_t)out_elem_ids.size();
+        out_matset["element_ids"].set(out_elem_ids);
+    }
+
+    // Allocate output
+    out_matset["material_ids"].set_dtype(conduit::DataType::index_t(out_size));
+    out_matset["volume_fractions"].set_dtype(conduit::DataType(in_volume_fractions.dtype().id(), out_size));
+
+    conduit::blueprint::o2mrelation::O2MIterator indexer(n_matset);
+    conduit::DataArray<index_t>   out_mat_ids = out_matset.fetch_existing("material_ids").value();
+    conduit::DataArray<FloatType> out_vfracts = out_matset.fetch_existing("volume_fractions").value();
+    index_t offset = 0;
+    for(const index_t one_idx : one_idxs)
+    {
+        // Point the o2m iterator at (element_id, 0)
+        indexer.to(one_idx, conduit::blueprint::o2mrelation::ONE);
+        indexer.to(0, conduit::blueprint::o2mrelation::MANY);
+
+        // Get the number of "many" elements for this element_id
+        const index_t size = indexer.elements(conduit::blueprint::o2mrelation::MANY);
+        index_t idx  = indexer.index(conduit::blueprint::o2mrelation::DATA);
+
+        // Copy each item in the O2M relation
+        for(index_t j = 0; j < size; j++)
+        {
+            out_mat_ids[offset] = in_material_ids[idx];
+            out_vfracts[offset] = in_volume_fractions[idx];
+            idx++;
+            offset++;
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+static void
+copy_material_based_matset(const std::vector<index_t> &element_ids,
+                           const conduit::Node &n_matset,
+                           conduit::Node &out_matset)
+{
+    const conduit::Node &n_elem_ids = n_matset["element_ids"];
+    const conduit::Node &n_volume_fractions = n_matset["volume_fractions"];
+    std::unordered_map<index_t, index_t> elem_map;
+    // Material based matsets can also be multi or uni buffer
+    if(blueprint::mesh::matset::is_multi_buffer(n_matset))
+    {
+        auto itr = n_volume_fractions.children();
+        while(itr.has_next())
+        {
+            const conduit::Node &n_mat_vfract = itr.next();
+            const conduit::Node &n_mat_elems = n_elem_ids[n_mat_vfract.name()];
+            const conduit::DataAccessor<index_t> mat_elems = n_mat_elems.value();
+            create_element_to_material_map(mat_elems, elem_map);
+
+            const auto &dtype = n_mat_vfract.dtype();
+            if(dtype.is_float())
+            {
+                copy_material_based_volume_fractions<float>(element_ids, n_mat_vfract,
+                    elem_map, out_matset);
+            }
+            else if(dtype.is_double())
+            {
+                copy_material_based_volume_fractions<double>(element_ids, n_mat_vfract,
+                    elem_map, out_matset);
+            }
+#if CONDUIT_USE_LONG_DOUBLE
+            else if(dtype.is_long_double())
+            {
+                copy_material_based_volume_fractions<long double>(element_ids, n_mat_vfract,
+                    elem_map, out_matset);
+            }
+#endif
+        }
+    }
+    else
+    {
+        const conduit::DataAccessor<index_t> mat_elems = n_elem_ids.value();
+        create_element_to_material_map(mat_elems, elem_map);
+
+        const auto &dtype = n_volume_fractions.dtype();
+        if(dtype.is_float())
+        {
+            copy_material_based_uni_buffer<float>(element_ids, n_matset,
+                elem_map, out_matset);
+        }
+        else if(dtype.is_double())
+        {
+            copy_material_based_uni_buffer<double>(element_ids, n_matset,
+                elem_map, out_matset);
+        }
+#if CONDUIT_USE_LONG_DOUBLE
+        else if(dtype.is_long_double())
+        {
+            copy_material_based_volume_fractions<long double>(element_ids, n_mat_vfract,
+                elem_map, out_matset);
+        }
+#endif
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+Partitioner::copy_matsets(const std::string &topology,
+                          const std::vector<index_t> &element_ids,
+                          const conduit::Node &n_mesh,
+                          conduit::Node &n_output) const
+{
+    // If there are no matsets then there is nothing to do.
+    if(!n_mesh.has_child("matsets"))
+        return;
+
+    // n_output.schema().print();
+    const conduit::Node &n_matsets = n_mesh["matsets"];
+    conduit::Node &out_matsets = n_output["matsets"];
+    auto matset_itr = n_matsets.children();
+    while(matset_itr.has_next())
+    {
+        // Only transfer matsets on the active topology
+        const conduit::Node &n_matset = matset_itr.next();
+        if(n_matset["topology"].as_string() != topology)
+        {
+            continue;
+        }
+        conduit::Node &out_matset = out_matsets.add_child(n_matset.name());
+        out_matset["topology"].set(topology);
+
+        // "material_map" is required by uni_buffer and optional for multi bugffer
+        if(n_matset.has_child("material_map"))
+        {
+            out_matset["material_map"].set(n_matset["material_map"]);
+        }
+
+        // Check if material based
+        if(n_matset.has_child("element_ids"))
+        {
+            copy_material_based_matset(element_ids, n_matset, out_matset);
+        }
+        else if(blueprint::mesh::matset::is_multi_buffer(n_matset))
+        {
+            // Element based
+            copy_multi_buffer_matset(element_ids, n_matset, out_matset);
+        }
+        else
+        {
+            // Element based
+            copy_uni_buffer_matset(element_ids, n_matset, out_matset);
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
 void
 Partitioner::copy_fields(index_t domain, const std::string &topology,
     const std::vector<index_t> &vertex_ids,
@@ -2040,7 +2592,8 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
                 if(n_field.has_child("association"))
                 {
                     auto association = n_field["association"].as_string();
-                    if(association == "vertex")
+                    auto assoc_topo = n_field["topology"].as_string();
+                    if(association == "vertex" && topology == assoc_topo)
                     {
                         copy_field(n_field, vertex_ids, n_output_fields);
                     }
@@ -2070,7 +2623,8 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
                 if(n_field.has_child("association"))
                 {
                     auto association = n_field["association"].as_string();
-                    if(association == "element")
+                    auto assoc_topo = n_field["topology"].as_string();
+                    if(association == "element" && topology == assoc_topo)
                     {
                         copy_field(n_field, element_ids, n_output_fields);
                     }
@@ -2353,7 +2907,9 @@ Partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
             if(n_topo.has_path("elements/offsets"))
                 n_topo["elements/offsets"].to_unsigned_int_array(n_offsets);
             else
+            {
                 conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(n_topo, n_offsets);
+            }
             auto offsets = n_offsets.as_unsigned_int_array();
 #else
             if(n_topo.has_path("elements/offsets"))
@@ -2493,7 +3049,7 @@ index_t_set_to_vector(const std::set<index_t> &src, std::vector<index_t> &dest)
 
 //---------------------------------------------------------------------------
 conduit::Node *
-Partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
+Partitioner::extract(size_t idx, const conduit::Node &n_mesh, std::vector<index_t>& vertex_ids_out) const
 {
     if(idx >= selections.size())
         return nullptr;
@@ -2571,12 +3127,18 @@ Partitioner::extract(size_t idx, const conduit::Node &n_mesh) const
                 element_ids, vertex_ids, n_new_topos[n_topo.name()]);
         }
 
+        // Create new matsets
+        copy_matsets(n_topo.name(), element_ids, n_mesh, n_output);
+
         // Create new fields.
         copy_fields(selections[idx]->get_domain(), n_topo.name(),
             vertex_ids, element_ids, n_mesh, n_output);
+
+        vertex_ids_out = std::move(vertex_ids);
     }
-    catch(conduit::Error &)
+    catch(conduit::Error &e)
     {
+        e.print();
         delete retval;
         retval = nullptr;
     }
@@ -3171,6 +3733,531 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
 }
 
 //---------------------------------------------------------------------------
+static const conduit::Node* get_associated_topo_adjset(const conduit::Node& domain,
+                                                       const std::string& topo)
+{
+    if (!domain.has_child("adjsets"))
+    {
+        return nullptr;
+    }
+    for (const conduit::Node& adjset : domain["adjsets"].children())
+    {
+        const std::string& adjset_topo = adjset["topology"].as_string();
+        const std::string& adjset_assoc = adjset["association"].as_string();
+        if (topo == adjset_topo && adjset_assoc == "vertex")
+        {
+            return &adjset;
+        }
+    }
+    return nullptr;
+}
+
+//---------------------------------------------------------------------------
+void
+Partitioner::build_intradomain_adjsets(const std::vector<int>& chunk_offsets,
+                                       const DomainToChunkMap& dom_2_chunks,
+                                       std::vector<conduit::Node*>& adjset_data)
+{
+    index_t chunk_offset = chunk_offsets[rank];
+    for (const auto& it : dom_2_chunks)
+    {
+        // Get the chunk ids in the current domain.
+        const auto& chunks_2_verts = it.second;
+        std::vector<index_t> chunk_ids;
+        for (const auto& kv : chunks_2_verts)
+        {
+            chunk_ids.push_back(kv.first);
+        }
+
+        // Loop over pairs of chunks.
+        for (size_t ci = 0; ci < chunk_ids.size(); ci++)
+        {
+            for (size_t cj = ci+1; cj < chunk_ids.size(); cj++)
+            {
+                index_t i_chunk = chunk_ids[ci];
+                index_t j_chunk = chunk_ids[cj];
+
+                const std::vector<index_t>& i_verts = chunks_2_verts.find(i_chunk)->second;
+                const std::vector<index_t>& j_verts = chunks_2_verts.find(j_chunk)->second;
+
+                std::vector<index_t> i_shared, j_shared;
+
+                size_t ividx = 0, jvidx = 0;
+
+                // Perform the intersection between the two vertex sets.
+                // NOTE: these arrays should be sorted since they're initialized
+                // from std::sets - if they aren't, the below won't work
+                while (ividx < i_verts.size() && jvidx < j_verts.size())
+                {
+                    if (i_verts[ividx] < j_verts[jvidx])
+                    {
+                        ividx++;
+                    }
+                    else if (i_verts[ividx] > j_verts[jvidx])
+                    {
+                        jvidx++;
+                    }
+                    else // i_verts[ividx] == j_verts[jvidx]
+                    {
+                        i_shared.push_back(ividx);
+                        j_shared.push_back(jvidx);
+                        ividx++;
+                        jvidx++;
+                    }
+                }
+
+                if (adjset_data[i_chunk] == nullptr || adjset_data[j_chunk] == nullptr)
+                {
+                    continue;
+                }
+
+                // Add the chunk intersections to their corresponding adjsets.
+                for (Node& adjset_i : adjset_data[i_chunk]->children())
+                {
+                    Node& adjset_groups_i = adjset_i["groups"];
+                    Node& new_set = adjset_groups_i.append();
+                    new_set["neighbors"].set(chunk_offset + j_chunk);
+                    new_set["values"].set(i_shared);
+                }
+
+                for (Node& adjset_j : adjset_data[j_chunk]->children())
+                {
+                    Node& adjset_groups_j = adjset_j["groups"];
+                    Node& new_set = adjset_groups_j.append();
+                    new_set["neighbors"].set(chunk_offset + i_chunk);
+                    new_set["values"].set(j_shared);
+                }
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+Partitioner::init_chunk_adjsets(const std::vector<const Node*>& chunk_assoc_adjset,
+                                std::vector<Node*>& adjset_data)
+{
+    for (size_t icnk = 0; icnk < chunk_assoc_adjset.size(); icnk++)
+    {
+        if (!chunk_assoc_adjset[icnk]) { continue; }
+        const Node& adjset = *chunk_assoc_adjset[icnk];
+        const std::string adjset_name = adjset.name();
+        const std::string adjset_topo = adjset["topology"].as_string();
+        const std::string adjset_assoc = adjset["association"].as_string();
+
+        Node& new_adjset = adjset_data[icnk]->fetch(adjset_name);
+        new_adjset["association"].set("vertex");
+        new_adjset["topology"].set(adjset_topo);
+    }
+}
+
+
+//---------------------------------------------------------------------------
+void
+Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                   const DomainToChunkMap& chunks,
+                                   const std::map<index_t, const Node*>& domain_map,
+                                   std::vector<Node>& adjset_chunk_maps)
+{
+    index_t chunk_offset = chunk_offsets[rank];
+
+    // This might be alloced by the derived ParallelPartitioner calling into
+    // this function; otherwise, we allocate based on the largest local domain
+    // index
+    if (domain_map.size() > 0)
+    {
+        if ( static_cast<index_t>(adjset_chunk_maps.size()) <
+             static_cast<index_t>(domain_map.rbegin()->first + 1))
+        {
+            adjset_chunk_maps.resize(domain_map.rbegin()->first + 1);
+        }
+    }
+
+    // Build adjset-to-chunk maps for all of our local domains.
+    for (const auto& dom_it : domain_map)
+    {
+        const Node& domain = *(dom_it.second);
+        const index_t dom_idx = dom_it.first;
+        if (!domain.has_child("adjsets"))
+        {
+            continue;
+        }
+        const ChunkToVertsMap& domain_chunks = chunks.find(&domain)->second;
+        Node& dom_out = adjset_chunk_maps[dom_idx];
+        // Create map of old vertex ids to chunk ids
+        std::vector<std::vector<index_t>> vtx_to_cnkid;
+        size_t max_verts = 0;
+        if (domain_chunks.size() != 1)
+        {
+            for (const auto& cnk : domain_chunks)
+            {
+                // Ensure enough space is in the map this chunks vertices
+                max_verts = std::max<size_t>(max_verts, *(cnk.second.rbegin())+1);
+                vtx_to_cnkid.resize(max_verts);
+                for (index_t idx : cnk.second)
+                {
+                    vtx_to_cnkid[idx].push_back(cnk.first + chunk_offset);
+                }
+            }
+        }
+
+        // loop over all adjsets in the current domain
+        for (const Node& adjset : domain["adjsets"].children())
+        {
+            const std::string adjset_topo = adjset["topology"].as_string();
+            const std::string adjset_assoc = adjset["association"].as_string();
+            // TODO: check adjset for vertex associativity, correct topology
+            // also pairwise only
+            Node& out_adjset_map = dom_out[adjset.name()];
+            for (const Node& group : adjset["groups"].children())
+            {
+                index_t_accessor neighbor_vals = group["neighbors"].as_index_t_accessor();
+                if (neighbor_vals.number_of_elements() != 1)
+                {
+                    CONDUIT_ERROR("Expected pairwise adjset: 1 neighbor per group, got "
+                            << neighbor_vals.number_of_elements());
+                }
+                index_t dst_dom = neighbor_vals[0];
+                index_t_accessor adj_vals = group["values"].as_index_t_accessor();
+                size_t nvals = adj_vals.number_of_elements();
+
+                std::vector<index_t> offsets;
+                std::vector<index_t> csr_vtx_map;
+                if (vtx_to_cnkid.size() == 0)
+                {
+                    // single chunk comprises the whole domain
+                    index_t dst_cnk = domain_chunks.begin()->first + chunk_offset;
+                    offsets.resize(nvals);
+                    std::iota(offsets.begin(), offsets.end(), 0);
+                    csr_vtx_map = std::vector<index_t>(nvals, dst_cnk);
+                }
+                else
+                {
+                    index_t curr_offset = 0;
+                    for (size_t i = 0; i < nvals; i++)
+                    {
+                        index_t old_vtx = adj_vals[i];
+                        offsets.push_back(curr_offset);
+                        curr_offset += vtx_to_cnkid[old_vtx].size();
+                        csr_vtx_map.insert(csr_vtx_map.end(),
+                                           vtx_to_cnkid[old_vtx].begin(),
+                                           vtx_to_cnkid[old_vtx].end());
+                    }
+                }
+
+                // Index by destination domain to make it a little easier to find.
+                const std::string dst_key = std::to_string(dst_dom);
+                out_adjset_map["to_dom"][dst_key]["group_name"] = group.name();
+                out_adjset_map["to_dom"][dst_key]["cnk_offsets"].set(offsets);
+                out_adjset_map["to_dom"][dst_key]["vtx_map"].set(csr_vtx_map);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
+                                       const DomainToChunkMap& dom_2_chunks,
+                                       const std::map<index_t, const Node*>& domain_map,
+                                       std::vector<conduit::Node*>& adjset_data)
+{
+    index_t chunk_offset = chunk_offsets[rank];
+    std::unordered_map<const conduit::Node*,
+        std::unordered_map<index_t, std::vector<conduit::Node*>>> remap_to_chunk_vid;
+
+    std::vector<Node> dom_adjset_maps;
+    get_prelb_adjset_maps(chunk_offsets, dom_2_chunks, domain_map, dom_adjset_maps);
+
+    // Iterate over all local domains to generate new chunk-based adjsets.
+    for (const auto& dom_it : domain_map)
+    {
+        const Node& domain = *(dom_it.second);
+        const index_t dom_idx = dom_it.first;
+        if (!domain.has_child("adjsets"))
+        {
+            continue;
+        }
+        for (const Node& adjset_node : domain["adjsets"].children())
+        {
+            const std::string adjset_name = adjset_node.name();
+            const std::string adjset_topo = adjset_node["topology"].as_string();
+            const std::string adjset_assoc = adjset_node["association"].as_string();
+            const Node& adjset_maps = dom_adjset_maps[dom_idx][adjset_name];
+            // Maps (local_chunk, remote_chunk) -> shared vtx on local chunk
+            std::map<std::pair<index_t, index_t>, std::vector<index_t>> new_adjsets;
+            for (const Node& adj_group : adjset_node["groups"].children())
+            {
+                index_t_accessor neighbor_vals = adj_group["neighbors"].as_index_t_accessor();
+                if (neighbor_vals.number_of_elements() != 1)
+                {
+                    CONDUIT_ERROR("Expected pairwise adjset: 1 neighbor per group, got "
+                            << neighbor_vals.number_of_elements());
+                }
+                index_t nbr_idx = neighbor_vals[0];
+                const std::string nbr_key = std::to_string(nbr_idx);
+
+                // 1. Get map of points in our current adjset group to destination chunks.
+                const Node& group_adj_map = adjset_maps["to_dom"][nbr_key];
+
+                if (group_adj_map["group_name"].as_string() != adj_group.name())
+                {
+                    CONDUIT_ERROR("Group name does not match up with adjset map entry.");
+                }
+
+                index_t_array src_cnk_offsets = group_adj_map["cnk_offsets"].as_index_t_array();
+                index_t_array src_cnk_map = group_adj_map["vtx_map"].as_index_t_array();
+
+                // 2. Get map of points in corresponding adjset group in other domain.
+                const std::string this_key = std::to_string(dom_idx);
+                const Node& other_group_map
+                    = dom_adjset_maps[nbr_idx][adjset_name]["to_dom"][this_key];
+
+                index_t_array dst_cnk_offsets = other_group_map["cnk_offsets"].as_index_t_array();
+                index_t_array dst_cnk_map = other_group_map["vtx_map"].as_index_t_array();
+
+                // 3. Get our local shared vertex ids in the adjset group.
+                index_t_accessor local_adj_vals = adj_group["values"].as_index_t_accessor();
+
+                if (local_adj_vals.number_of_elements() != src_cnk_offsets.number_of_elements())
+                {
+                    CONDUIT_ERROR("Local vertex-to-chunk map does not contain the same number "
+                                  "of vertices as the local adjset.");
+                }
+
+                if (local_adj_vals.number_of_elements() != src_cnk_offsets.number_of_elements())
+                {
+                    CONDUIT_ERROR("Local vertex-to-chunk map does not contain the same number "
+                                  "of vertices as the local adjset.");
+                }
+
+                index_t nvals = local_adj_vals.number_of_elements();
+                // 4. Iterate through values in the adjset group to create new groups
+                // for each chunk.
+                for (index_t ipair = 0; ipair < nvals; ipair++)
+                {
+                    index_t src_cnk_begin = src_cnk_offsets[ipair];
+                    index_t dst_cnk_begin = dst_cnk_offsets[ipair];
+                    index_t src_cnk_end, dst_cnk_end;
+                    if (ipair+1 < nvals)
+                    {
+                        src_cnk_end = src_cnk_offsets[ipair+1];
+                        dst_cnk_end = dst_cnk_offsets[ipair+1];
+                    }
+                    else
+                    {
+                        src_cnk_end = src_cnk_map.number_of_elements();
+                        dst_cnk_end = dst_cnk_map.number_of_elements();
+                    }
+
+                    for (index_t srci = src_cnk_begin; srci < src_cnk_end; srci++)
+                    {
+                        for (index_t dsti = dst_cnk_begin; dsti < dst_cnk_end; dsti++)
+                        {
+                            index_t src_cnk = src_cnk_map[srci];
+                            index_t dst_cnk = dst_cnk_map[dsti];
+                            std::pair<index_t, index_t> src_2_dst {src_cnk, dst_cnk};
+                            new_adjsets[src_2_dst].push_back(local_adj_vals[ipair]);
+                        }
+                    }
+
+                }
+            }
+            // 5. We now have adjsets for each chunk. Insert them into the adjset
+            //    nodes for each corresponding chunk.
+            for (const auto& adjset : new_adjsets)
+            {
+                // Get local chunk id
+                index_t chunk_id = adjset.first.first - chunk_offset;
+                index_t chunk_nbr = adjset.first.second;
+                if (!adjset_data[chunk_id] || !adjset_data[chunk_id]->has_child(adjset_name))
+                {
+                    continue;
+                }
+                Node& adjset_groups = adjset_data[chunk_id]->fetch(adjset_name + "/groups");
+                Node& new_set = adjset_groups.append();
+                new_set["neighbors"].set(chunk_nbr);
+                new_set["values"].set(adjset.second);
+                // If we are not the only chunk in the local adjset, the values
+                // are relative to the original domain - flag for remap.
+                if (dom_2_chunks.find(&domain)->second.size() > 1)
+                {
+                    remap_to_chunk_vid[&domain][chunk_id].push_back(&new_set);
+                }
+            }
+        }
+    }
+
+    // 6. Map original domain vids to corresponding chunk vids for any chunks
+    //    that aren't just the original domain.
+    for (auto& domain_coll : remap_to_chunk_vid)
+    {
+        const ChunkToVertsMap& chunk_2_verts = dom_2_chunks.find(domain_coll.first)->second;
+        // Iterate over all chunks in the domain with adjsets needing to be
+        // remapped.
+        for (auto& chunk_adjs : domain_coll.second)
+        {
+            index_t local_chunk_id = chunk_adjs.first;
+            const std::vector<index_t>& vert_set = chunk_2_verts.find(local_chunk_id)->second;
+            std::unordered_map<index_t, index_t> old_to_new;
+            // Build a map of domain-relative vids to chunk vids
+            for (size_t new_vid = 0; new_vid < vert_set.size(); new_vid++)
+            {
+                old_to_new[vert_set[new_vid]] = new_vid;
+            }
+            // Remap adjsets with chunk-specific vids
+            for (conduit::Node* aset : chunk_adjs.second)
+            {
+                index_t_array aset_values = (*aset)["values"].value();
+                for (index_t i = 0; i < aset_values.number_of_elements(); i++)
+                {
+                    aset_values[i] = old_to_new[aset_values[i]];
+                }
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+static void
+attach_chunk_adjset_to_single_dom(conduit::Node& dom, index_t src_chunk, const conduit::Node* chunk_adjs = nullptr)
+{
+    Node tmp_node;
+    if (chunk_adjs == nullptr)
+    {
+        if (!dom.has_child("adjsets"))
+        {
+            return;
+        }
+        tmp_node = dom.fetch("adjsets");
+        dom.remove("adjsets");
+        chunk_adjs = &tmp_node;
+    }
+
+    // TODO: should we create adjsets in the single-dom case? (ie no pre-existing adjset)
+    for (const auto& adjsets : chunk_adjs->children())
+    {
+        if (!dom["adjsets"].has_child(adjsets.name()))
+        {
+            // Just take the entire first chunk adjset group, which should have
+            // elem/vert association and topology set
+            Node& output_adjset = dom["adjsets"][adjsets.name()];
+            output_adjset.set(adjsets);
+            for (auto& group : output_adjset["groups"].children())
+            {
+                group["src_chunk"].set(src_chunk);
+            }
+        }
+        else
+        {
+            Node& output_adjset = dom["adjsets"][adjsets.name()];
+            Node& output_adjset_groups = output_adjset["groups"];
+            // TODO: check that we have same associativity/topology?
+            for (const auto& group : adjsets["groups"].children())
+            {
+                // Add each group to the output adjset
+                Node& new_grp = output_adjset_groups.append();
+                new_grp.set(group);
+                new_grp["src_chunk"].set(src_chunk);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+static void
+merge_chunked_adjsets(conduit::Node& dom_adjsets, const std::vector<int>& chunks_2_doms)
+{
+    // We'll use this to lexicographically sort our nodes for a given target domain
+    // based on the pair (min(src_cnk, dst_cnk), max(src_cnk, dst_cnk))
+    // This ensures that we get a consistent ordering of chunk-based adjset groups
+    // on corresponding domains if they're on different ranks.
+    using SortedGrpMap = std::map<std::pair<index_t, index_t>, const Node*>;
+    index_t domain_id = -1;
+    for (auto& adjset : dom_adjsets.children())
+    {
+        std::unordered_map<index_t, SortedGrpMap> new_adjset_doms;
+        for (const auto& grp : adjset["groups"].children())
+        {
+            index_t src_cnk = grp["src_chunk"].to_index_t();
+            index_t dst_cnk = grp["neighbors"].to_index_t();
+            index_t src_dom = chunks_2_doms[src_cnk];
+            index_t dst_dom = chunks_2_doms[dst_cnk];
+            if (dst_dom == src_dom)
+            {
+                // Don't add self-referencing adjsets
+                continue;
+            }
+            if (domain_id == -1)
+            {
+                // Save our current domain id
+                domain_id = src_dom;
+            }
+            std::pair<index_t, index_t> adj_ord = { std::min(src_cnk, dst_cnk),
+                                                    std::max(src_cnk, dst_cnk) };
+            new_adjset_doms[dst_dom][adj_ord] = &grp;
+        }
+        Node& new_grps = adjset["new_groups"];
+        for (const auto& domain : new_adjset_doms)
+        {
+            // Add a new group, with a defined name.
+            std::string group_name = "group";
+            {
+                index_t min_dom = std::min(domain_id, domain.first);
+                index_t max_dom = std::max(domain_id, domain.first);
+                group_name += "_";
+                group_name += std::to_string(min_dom);
+                group_name += "_";
+                group_name += std::to_string(max_dom);
+            }
+            Node& dom_grp = new_grps[group_name];
+            // We want to add the neighbor as an array of index_t
+            dom_grp["neighbors"].set({domain.first});
+            std::vector<index_t> vals;
+            std::unordered_set<index_t> unique_vals;
+            bool first_set = true;
+            // Iterate over the chunk-based adjsets, taking all unique shared vertices.
+            // This should be equivalent on both domains since duplicated vertices on
+            // this domain should correspond to duplicated vertices on the other domain
+            // as well.
+            for (const auto& grp_it : domain.second)
+            {
+                const Node chunk_grp = *grp_it.second;
+                index_t_array cnk_vals = chunk_grp["values"].as_index_t_array();
+                if (first_set)
+                {
+                    // We'll add the entire first group we encounter, since there
+                    // shouldn't be any duplicates.
+                    vals.resize(cnk_vals.number_of_elements());
+                    for (int idx = 0; idx < cnk_vals.number_of_elements(); idx++)
+                    {
+                        vals[idx] = cnk_vals[idx];
+                    }
+                    unique_vals = std::unordered_set<index_t>(vals.begin(), vals.end());
+                    first_set = false;
+                }
+                else
+                {
+                    for (int idx = 0; idx < cnk_vals.number_of_elements(); idx++)
+                    {
+                        // Filter out any vertices that were already present in previous chunks.
+                        if (unique_vals.find(cnk_vals[idx]) == unique_vals.end())
+                        {
+                            vals.push_back(cnk_vals[idx]);
+                            unique_vals.insert(cnk_vals[idx]);
+                        }
+                    }
+                }
+            }
+            dom_grp["values"].set(vals);
+        }
+        // Drop the old adjset groups.
+        adjset.remove_child("groups");
+        adjset.rename_child("new_groups", "groups");
+    }
+}
+
+//---------------------------------------------------------------------------
 void
 Partitioner::execute(conduit::Node &output)
 {
@@ -3178,6 +4265,14 @@ Partitioner::execute(conduit::Node &output)
     // the participating ranks. Now, we need to process the selections to
     // make chunks.
     std::vector<Chunk> chunks;
+    std::vector<conduit::Node*> adjset_data;
+    std::vector<const conduit::Node*> chunk_assoc_aset;
+
+    // Maps each pre-load balance mesh domain to a set of vertex lists for each chunk.
+    // This is used in constructing the intermediate chunk adjsets within a domain.
+    DomainToChunkMap domain_to_chunk_map;
+    std::map<index_t, const conduit::Node*> domain_id_to_node;
+
     for(size_t i = 0; i < selections.size(); i++)
     {
         // Get destination rank, domain if the selection has any. If not, it
@@ -3185,24 +4280,52 @@ Partitioner::execute(conduit::Node &output)
         int dr = selections[i]->get_destination_rank();
         int dd = selections[i]->get_destination_domain();
 
+        index_t sr = selections[i]->get_domain();
+
+        domain_id_to_node[sr] = meshes[i];
         if(selections[i]->get_whole(*meshes[i]))
         {
             // We had a selection that spanned the entire mesh so we'll take
             // the whole mesh rather than extracting. If we are using "mapping"
             // then we will be wrapping the mesh so we can add vertex and element
             // maps to it without changing the input mesh.
-            if(mapping)
+            const conduit::Node* assoc_aset = nullptr;
+            conduit::Node* wrapped_adjset = nullptr;
+            if(mapping || meshes[i]->has_child("adjsets"))
             {
                 conduit::Node *c = wrap(i, *meshes[i]);
                 chunks.push_back(Chunk(c, true, dr, dd));
+                assoc_aset = get_associated_topo_adjset(*meshes[i], selections[i]->get_topology());
+                if (assoc_aset)
+                {
+                    wrapped_adjset = c->fetch_ptr("adjsets");
+                }
             }
             else
+            {
                 chunks.push_back(Chunk(meshes[i], false, dr, dd));
+            }
+            chunk_assoc_aset.push_back(assoc_aset);
+            adjset_data.push_back(wrapped_adjset);
+            domain_to_chunk_map[meshes[i]][i] = {};
         }
         else
         {
-            conduit::Node *c = extract(i, *meshes[i]);
+            std::vector<index_t> vert_ids;
+            conduit::Node *c = extract(i, *meshes[i], vert_ids);
             chunks.push_back(Chunk(c, true, dr, dd));
+            const conduit::Node* assoc_aset
+                = get_associated_topo_adjset(*meshes[i], selections[i]->get_topology());
+            chunk_assoc_aset.push_back(assoc_aset);
+            if (assoc_aset)
+            {
+                adjset_data.push_back(c->fetch_ptr("adjsets"));
+            }
+            else
+            {
+                adjset_data.push_back(nullptr);
+            }
+            domain_to_chunk_map[meshes[i]][i] = std::move(vert_ids);
         }
     }
 
@@ -3211,17 +4334,33 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
 
+    init_chunk_adjsets(chunk_assoc_aset, adjset_data);
+    build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
+    build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
+
     // Communicate chunks to the right destination ranks
     std::vector<Chunk> chunks_to_assemble;
     std::vector<int> chunks_to_assemble_domains;
+    std::vector<int> chunks_to_assemble_gids;
     communicate_chunks(chunks, dest_rank, dest_domain, offsets,
-        chunks_to_assemble, chunks_to_assemble_domains);
+        chunks_to_assemble,
+        chunks_to_assemble_domains,
+        chunks_to_assemble_gids);
 
     // Now that we have all the parts we need in chunks_to_assemble, combine
     // the chunks.
     std::set<int> unique_doms;
     for(size_t i = 0; i < chunks_to_assemble_domains.size(); i++)
+    {
         unique_doms.insert(chunks_to_assemble_domains[i]);
+    }
+
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "unique_doms:\n";
+    for(auto dom = unique_doms.begin(); dom != unique_doms.end(); dom++)
+        std::cout << "  " << (int)*dom << "\n";
+    std::cout << std::endl;
+#endif
 
     if(!chunks_to_assemble.empty())
     {
@@ -3230,40 +4369,41 @@ Partitioner::execute(conduit::Node &output)
         {
             // Get the chunks for this output domain.
             std::vector<const Node *> this_dom_chunks;
+            std::vector<index_t> this_dom_cnkid;
             for(size_t i = 0; i < chunks_to_assemble_domains.size(); i++)
             {
                 if(chunks_to_assemble_domains[i] == *dom)
+                {
                     this_dom_chunks.push_back(chunks_to_assemble[i].mesh);
+                    this_dom_cnkid.push_back(chunks_to_assemble_gids[i]);
+                }
             }
 
+            conduit::Node* new_dom;
+            if (unique_doms.size() > 1)
+            {
+                new_dom = &(output.append());
+            }
+            else
+            {
+                new_dom = &output;
+            }
             if(this_dom_chunks.size() == 1)
             {
-                if(unique_doms.size() > 1)
-                {
-                    // There are multiple domains in the output.
-                    conduit::Node &n = output.append();
-                    n.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
-                }
-                else
-                {
-                    // There is one domain in the output.
-                    output.set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
-                }
+                new_dom->set(*this_dom_chunks[0]); // Could we transfer ownership if we own the chunk?
+                new_dom->set_path("state/domain_id", (int)*dom);
+
+                attach_chunk_adjset_to_single_dom(*new_dom, this_dom_cnkid[0]);
             }
             else if(this_dom_chunks.size() > 1)
             {
-                // Combine the chunks for this domain and add to output or to
-                // a list in output.
-                if(unique_doms.size() > 1)
-                {
-                    // There are multiple domains in the output.
-                    combine(*dom, this_dom_chunks, output.append());
-                }
-                else
-                {
-                    // There is one domain in the output.
-                    combine(*dom, this_dom_chunks, output);
-                }
+                // Combine the chunks for this domain and add to a list in output.
+                combine(*dom, this_dom_chunks, this_dom_cnkid, *new_dom);
+            }
+
+            if (new_dom->has_child("adjsets"))
+            {
+                merge_chunked_adjsets((*new_dom)["adjsets"], dest_domain);
             }
         }
     }
@@ -3273,6 +4413,22 @@ Partitioner::execute(conduit::Node &output)
         chunks[i].free();
     for(size_t i = 0; i < chunks_to_assemble.size(); i++)
         chunks_to_assemble[i].free();
+
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Partition output domains:\n";
+    if(blueprint::mesh::is_multi_domain(output))
+    {
+        for(index_t i = 0; i < output.number_of_children(); i++)
+        {
+            std::cout << "  " << output[i]["state/domain_id"].to_int() << "\n";
+        }
+        std::cout << std::endl;
+    }
+    else
+    {
+        std::cout << "  " << output["state/domain_id"].to_int() << "\n" << std::endl;
+    }
+#endif
 }
 
 //-------------------------------------------------------------------------
@@ -3296,11 +4452,11 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
     dest_ranks.resize(chunks.size());
     for(size_t i = 0; i < chunks.size(); i++)
         dest_ranks[i] = rank;
-#ifdef CONDUIT_DEBUG_PARTITIONER
-    cout << "map_chunks:" << endl;
-    for(size_t i = 0; i < chunks.size(); i++)
-        chunks[i].mesh->print();
-#endif
+// #ifdef CONDUIT_DEBUG_PARTITIONER
+//     cout << "map_chunks:" << endl;
+//     for(size_t i = 0; i < chunks.size(); i++)
+//         chunks[i].mesh->print();
+// #endif
 
     // Determine average chunk size.
     std::vector<index_t> chunk_sizes;
@@ -3314,12 +4470,14 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
         total_len += len;
         chunk_sizes.push_back(len);
     }
-    index_t len_per_target = total_len / std::max(1u,target);
+
 #ifdef CONDUIT_DEBUG_PARTITIONER
     cout << "map_chunks: chunks.size=" << chunks.size()
          << ", total_len = " << total_len
-         << ", target=" << target
-         << ", len_per_target=" << len_per_target << endl;
+         << ", target=" << target << endl;
+    cout << "chunk_sizes={";
+    for(const index_t s : chunk_sizes) cout << s << ", ";
+    cout << "}" << endl;
 #endif
     // Come up with a list of domain ids to avoid in our numbering.
     std::set<int> reserved_dd;
@@ -3347,7 +4505,9 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
     // We have a certain number of chunks but determine how many targets
     // that makes. It ought to be equal to target.
     auto targets_from_chunks = static_cast<unsigned int>(count_targets());
-
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "targets_from_chunks: " << targets_from_chunks << std::endl;
+#endif
     if(targets_from_chunks == target)
     {
         // The number of targets we'd make from the chunks is the same
@@ -3381,24 +4541,44 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
         //       while trying to target a certain number of cells per domain.
         //       We may someday also want to consider the bounding boxes so
         //       we group chunks that are close spatially.
+        // NOTE: I updated the logic for grouping domains with a "free"
+        //       destination domain. Same idea but now the "len_per_target"
+        //       is recomputed based off how many cells are left divided by
+        //       how many more domains need to be created.
 
+        index_t remaining_len  = total_len;
+        index_t len_per_target = total_len / std::max(target, 1u);
+        index_t remaining_target = target - 1;
         index_t running_len = 0;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+        std::cout << "len_per_target={" << len_per_target << ", ";
+#endif
         for(size_t i = 0; i < chunks.size(); i++)
         {
             int dd = chunks[i].destination_domain;
             if(dd == Selection::FREE_DOMAIN_ID)
             {
+                const index_t remaining_chunks = (chunks.size() - 1) - i;
+                dest_domain.push_back(domid);
                 running_len += chunk_sizes[i];
-                if(running_len > len_per_target)
+                remaining_len -= chunk_sizes[i];
+                if(remaining_chunks != 0 &&
+                    (running_len >= len_per_target
+                        || remaining_chunks == remaining_target))
                 {
+                    // Update new len per target
                     running_len = 0;
+                    len_per_target = remaining_len / std::max(remaining_target, (index_t)1);
+                    remaining_target--;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+                    std::cout << len_per_target << ", ";
+#endif
+
                     // Get the next domain id.
                     while(reserved_dd.find(domid) != reserved_dd.end())
                         domid++;
                     reserved_dd.insert(domid);
                 }
-
-                dest_domain.push_back(domid);
             }
             else
             {
@@ -3406,6 +4586,9 @@ Partitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
                 dest_domain.push_back(dd);
             }
         }
+#ifdef CONDUIT_DEBUG_PARTITIONER
+        std::cout << "}" << std::endl;
+#endif
     }
     else
     {
@@ -3432,7 +4615,8 @@ Partitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &chunks,
     const std::vector<int> &dest_domain,
     const std::vector<int> &/*offsets*/,
     std::vector<Partitioner::Chunk> &chunks_to_assemble,
-    std::vector<int> &chunks_to_assemble_domains)
+    std::vector<int> &chunks_to_assemble_domains,
+    std::vector<int> &chunks_to_assemble_gids)
 {
     // In serial, communicating the chunks among ranks means passing them
     // back in the output arguments. We mark them as not-owned so we do not
@@ -3441,8 +4625,24 @@ Partitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &chunks,
     {
         chunks_to_assemble.push_back(Chunk(chunks[i].mesh, false));
         chunks_to_assemble_domains.push_back(dest_domain[i]);
+        chunks_to_assemble_gids.push_back(i);
     }
 }
+
+//-------------------------------------------------------------------------
+void
+Partitioner::communicate_mapback(std::unordered_map<index_t, Node>& /*packed_fields*/)
+{
+    // implemented only in parallel case
+}
+
+//-------------------------------------------------------------------------
+void Partitioner::synchronize_gvids(const std::vector<std::vector<index_t>>& /*remap_to_local_doms*/,
+                                    std::map<index_t, std::vector<index_t>>& /*orig_dom_gvids*/)
+{
+    // implemented only in parallel case
+}
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::coordset --
@@ -4095,73 +5295,23 @@ template<typename OutDataArray>
 static index_t
 copy_node_data_impl(const Node &in, OutDataArray &out, index_t offset)
 {
-    const auto id = in.dtype().id();
+    const auto idt = in.dtype();
     index_t retval = offset;
-    switch(id)
+    if (idt.is_unsigned_integer())
     {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        retval = copy_node_data_impl2(in.as_uint64_accessor(), out, offset);
     }
-    case conduit::DataType::INT16_ID:
+    else if (idt.is_signed_integer())
     {
-        DataArray<int16> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        retval = copy_node_data_impl2(in.as_int64_accessor(), out, offset);
     }
-    case conduit::DataType::INT32_ID:
+    else if (idt.is_number())
     {
-        DataArray<int32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
+        retval = copy_node_data_impl2(in.as_float64_accessor(), out, offset);
     }
-    case conduit::DataType::INT64_ID:
+    else
     {
-        DataArray<int64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = in.value();
-        retval = copy_node_data_impl2(da, out, offset);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        CONDUIT_ERROR("Tried to iterate " << idt.name() << " as integer data!");
     }
     return retval;
 }
@@ -4242,12 +5392,54 @@ copy_node_data(const Node &in, Node &out, index_t offset = 0)
 }
 
 //-----------------------------------------------------------------------------
-template<typename LhsDataArray, typename RhsDataArray>
-static bool
-node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, double epsilon)
+static bool node_value_compare_int(const Node& lhs, const Node& rhs)
 {
-    const index_t nele = lhs.number_of_elements();
-    if(nele != rhs.number_of_elements())
+    int64_accessor lhs_data = lhs.as_int64_accessor();
+    int64_accessor rhs_data = rhs.as_int64_accessor();
+    const index_t nele = lhs_data.number_of_elements();
+    if(nele != rhs_data.number_of_elements())
+    {
+        return false;
+    }
+
+    // If one of lhs/rhs is int64 and the other is uint64, we need to check that
+    // neither of the pairwise-compared values have a sign bit set.
+    auto lhs_typeid = lhs_data.dtype().id();
+    auto rhs_typeid = rhs_data.dtype().id();
+
+    bool diff64 = (lhs_typeid == conduit::DataType::INT64_ID
+                   && rhs_typeid == conduit::DataType::UINT64_ID);
+
+    diff64 = diff64
+            || (lhs_typeid == conduit::DataType::UINT64_ID
+                && rhs_typeid == conduit::DataType::INT64_ID);
+
+    bool retval = true;
+    for(index_t i = 0; i < nele; i++)
+    {
+        if (lhs_data[i] != rhs_data[i])
+        {
+            retval = false;
+            break;
+        }
+        if (diff64 && lhs_data[i] < 0 && rhs_data[i] < 0)
+        {
+            retval = false;
+            break;
+        }
+    }
+    return retval;
+}
+
+
+//-----------------------------------------------------------------------------
+static bool
+node_value_compare_flt(const Node &lhs, const Node &rhs, double epsilon)
+{
+    float64_accessor lhs_data = lhs.as_float64_accessor();
+    float64_accessor rhs_data = rhs.as_float64_accessor();
+    const index_t nele = lhs_data.number_of_elements();
+    if(nele != rhs_data.number_of_elements())
     {
         return false;
     }
@@ -4255,9 +5447,7 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
     bool retval = true;
     for(index_t i = 0; i < nele; i++)
     {
-        double lhs_double = static_cast<double>(lhs[i]);
-        double rhs_double = static_cast<double>(rhs[i]);
-        const double diff = std::abs(lhs_double - rhs_double);
+        const double diff = std::abs(lhs_data[i] - rhs_data[i]);
         if(!(diff <= epsilon))
         {
             retval = false;
@@ -4268,152 +5458,33 @@ node_value_compare_impl2(const LhsDataArray &lhs, const RhsDataArray &rhs, doubl
 }
 
 //-----------------------------------------------------------------------------
-template<typename RhsDataArray>
-static bool
-node_value_compare_impl(const Node &lhs, const RhsDataArray &rhs,  double epsilon)
-{
-    const auto id = lhs.dtype().id();
-    bool retval = true;
-    switch(id)
-    {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT16_ID:
-    {
-        DataArray<int16> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT32_ID:
-    {
-        DataArray<int32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::INT64_ID:
-    {
-        DataArray<int64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = lhs.value();
-        retval = node_value_compare_impl2(da, rhs, epsilon);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
-    }
-    return retval;
-}
-
-//-----------------------------------------------------------------------------
 static bool
 node_value_compare(const Node &lhs, const Node &rhs, double epsilon = CONDUIT_EPSILON)
 {
-    const auto id = rhs.dtype().id();
+    const auto rid = rhs.dtype();
+    const auto lid = lhs.dtype();
     bool retval = true;
-    switch(id)
+
+    if (rid.is_integer() && lid.is_integer())
     {
-    case conduit::DataType::INT8_ID:
-    {
-        DataArray<int8> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
+        // test for integer types by converting to signed int64
+        retval = node_value_compare_int(lhs, rhs);
     }
-    case conduit::DataType::INT16_ID:
+    else if (rid.is_number() && lid.is_number())
     {
-        DataArray<int16> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
+        // default numeric case - convert to double
+        retval = node_value_compare_flt(lhs, rhs, epsilon);
     }
-    case conduit::DataType::INT32_ID:
+    else
     {
-        DataArray<int32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::INT64_ID:
-    {
-        DataArray<int64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT8_ID:
-    {
-        DataArray<uint8> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT16_ID:
-    {
-        DataArray<uint16> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT32_ID:
-    {
-        DataArray<uint32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::UINT64_ID:
-    {
-        DataArray<uint64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT32_ID:
-    {
-        DataArray<float32> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    case conduit::DataType::FLOAT64_ID:
-    {
-        DataArray<float64> da = rhs.value();
-        retval = node_value_compare_impl(lhs, da, epsilon);
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        if (!rid.is_number())
+        {
+            CONDUIT_ERROR("Tried to iterate " << rid.name() << " as integer data!");
+        }
+        else if (!lid.is_number())
+        {
+            CONDUIT_ERROR("Tried to iterate " << lid.name() << " as integer data!");
+        }
     }
     return retval;
 }
@@ -4623,9 +5694,9 @@ point_merge::append_data(const std::vector<Node> &coordsets,
         const auto append = [&](float64 *p, index_t)
         {
             old_to_new_ids[i].push_back(newid);
-            for(auto i = 0; i < dimension; i++)
+            for(auto j = 0; j < dimension; j++)
             {
-                new_coords.push_back(p[i]);
+                new_coords.push_back(p[j]);
             }
             newid++;
         };
@@ -4797,133 +5868,37 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
     if(xnode && ynode && znode)
     {
         // 3D
-        const auto xtype = xnode->dtype();
-        const auto ytype = ynode->dtype();
-        const auto ztype = znode->dtype();
-        if(xtype.is_float32() && ytype.is_float32() && ztype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        auto yarray = ynode->as_float64_accessor();
+        auto zarray = znode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            auto yarray = ynode->as_float32_array();
-            auto zarray = znode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-                func(p, 3);
-            }
-        }
-        else if(xtype.is_float64() && ytype.is_float64() && ztype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            auto yarray = ynode->as_float64_array();
-            auto zarray = znode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
-                func(p, 3);
-            }
-        }
-        else
-        {
-            Node xtemp, ytemp, ztemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const DataType ydt = DataType(ytype.id(), 1);
-            const DataType zdt = DataType(ztype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
-                ztemp.set_external(zdt, const_cast<void*>(znode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = ytemp.to_float64();
-                p[2] = ztemp.to_float64();
-                func(p, 3);
-            }
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = zarray[i];
+            func(p, 3);
         }
     }
     else if(xnode && ynode)
     {
         // 2D
-        const auto xtype = xnode->dtype();
-        const auto ytype = ynode->dtype();
-        if(xtype.is_float32() && ytype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        auto yarray = ynode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            auto yarray = ynode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-                func(p, 3);
-            }
-        }
-        else if(xtype.is_float64() && ytype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            auto yarray = ynode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
-                func(p, 2);
-            }
-        }
-        else
-        {
-            Node xtemp, ytemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const DataType ydt = DataType(ytype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                ytemp.set_external(ydt, const_cast<void*>(ynode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = ytemp.to_float64();
-                p[2] = 0.;
-                func(p, 2);
-            }
+            p[0] = xarray[i]; p[1] = yarray[i]; p[2] = 0.;
+            func(p, 2);
         }
     }
     else if(xnode)
     {
         // 1D
-        const auto xtype = xnode->dtype();
-        if(xtype.is_float32())
+        auto xarray = xnode->as_float64_accessor();
+        const index_t N = xarray.number_of_elements();
+        for(index_t i = 0; i < N; i++)
         {
-            auto xarray = xnode->as_float32_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-                func(p, 1);
-            }
-        }
-        else if(xtype.is_float64())
-        {
-            auto xarray = xnode->as_float64_array();
-            const index_t N = xarray.number_of_elements();
-            for(index_t i = 0; i < N; i++)
-            {
-                p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
-                func(p, 1);
-            }
-        }
-        else
-        {
-            Node xtemp;
-            const DataType xdt = DataType(xtype.id(), 1);
-            const index_t N = xtype.number_of_elements();
-            for(index_t  i = 0; i < N; i++)
-            {
-                xtemp.set_external(xdt, const_cast<void*>(xnode->element_ptr(i)));
-                p[0] = xtemp.to_float64();
-                p[1] = 0.;
-                p[2] = 0.;
-                func(p, 1);
-            }
+            p[0] = xarray[i]; p[1] = 0.; p[2] = 0.;
+            func(p, 1);
         }
     }
     else
@@ -5295,483 +6270,23 @@ point_merge::get_axes_for_system(coord_system cs)
 namespace topology
 {
 
-struct entity
-{
-    utils::ShapeType                  shape;
-    // utils::ShapeCascade               cascade; // User can make the cascade if they want using the shape
-    std::vector<index_t>              element_ids;
-    std::vector<std::vector<index_t>> subelement_ids;
-    index_t                           entity_id; // Local entity id.
-};
-
-// static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
-// Q: Should this exist in conduit_blueprint_mesh_utils.hpp ?
-enum class ShapeId : index_t
-{
-    Vertex     = 0,
-    Line       = 1,
-    Tri        = 2,
-    Quad       = 3,
-    Tet        = 4,
-    Hex        = 5,
-    Polygonal  = 6,
-    Polyhedral = 7
-};
-
-//-------------------------------------------------------------------------
-template<typename Func>
-static void iterate_elements(const Node &topo, Func &&func)
-{
-/*
-Multiple topology formats
-0. Single shape topology - Fixed celltype, polygonal celltype, polyhedral celltype
-  topo:
-    coordset: (String name of coordset)
-    type: unstructured
-    elements:
-      shape: (String name of shape)
-      connectivity: (Integer array of vertex ids)
-1. Mixed shape topology 1 - Fixed celltype, polygonal celltype, polyhedral celltype
-  topo:
-    coordset: (String name of coordset)
-    type: unstructured
-    elements:
-      -
-        shape: (String name of shape)
-        connectivity: (Integer array of vertex ids)
-2. Mixed shape topology 2 - Fixed celltype, polygonal celltype, polyhedral celltype
-  topo:
-    coordset: (String name of coordset)
-    type: unstructured
-    elements:
-      (String name):
-        shape: (String name of shape)
-        connectivity: (Integer array of vertex ids)
-3. Stream based toplogy 1
-  mesh: 
-    type: "unstructured"
-    coordset: "coords"
-    elements: 
-      element_types: 
-        (String name): (Q: Could this also be a list entry?) 
-          stream_id: (index_t id)
-          shape: (String name of shape)
-      element_index: 
-        stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
-        element_counts: (index_t array of element counts at a given index (IE 2 would mean 2 of the associated stream ID))
-      stream: (index_t array of vertex ids)
-4. Stream based topology 2
-  topo: 
-    type: unstructured
-    coordset: (String name of coordset)
-    elements: 
-      element_types: 
-        (String name): (Q: Could this also be a list entry?)
-          stream_id: (index_t id)
-          shape: (String name of shape)
-      element_index: 
-        stream_ids: (index_t array of stream ids, must be one of the ids listed in element_types)
-        offsets: (index_t array of offsets into stream for each element)
-      stream: (index_t array of vertex ids)
-*/
-
-    int case_num = -1;
-    // Determine case number
-    {
-        const Node *shape = topo.fetch_ptr("elements/shape");
-        if(shape)
-        {
-            // This is a single shape topology
-            const utils::ShapeType st(shape->as_string());
-            if(!st.is_valid())
-            {
-                CONDUIT_ERROR("Invalid topology passed to iterate_elements.");
-                return;
-            }
-            else
-            {
-                case_num = 0;
-            }
-        }
-        else
-        {
-            const Node *elements = topo.fetch_ptr("elements");
-            if(!elements)
-            {
-                CONDUIT_ERROR("Invalid topology passed to iterate elements, no \"elements\" node.");
-                return;
-            }
-
-            const Node *etypes = elements->fetch_ptr("element_types");
-            const Node *eindex = elements->fetch_ptr("element_index");
-            const Node *estream = elements->fetch_ptr("stream");
-            if(!etypes && !eindex && !estream)
-            {
-                // Not a stream based toplogy, either a list or object of element buckets
-                if(elements->dtype().is_list())
-                {
-                    case_num = 1;
-                }
-                else if(elements->dtype().is_object())
-                {
-                    case_num = 2;
-                }
-            }
-            else if(etypes && eindex && estream)
-            {
-                // Stream based topology, either offsets or counts
-                const Node *eoffsets = eindex->fetch_ptr("offsets");
-                const Node *ecounts  = eindex->fetch_ptr("element_counts");
-                if(ecounts)
-                {
-                    case_num = 3;
-                }
-                else if(eoffsets)
-                {
-                    case_num = 4;
-                }
-            }
-        }
-    }
-    if(case_num < 0)
-    {
-        CONDUIT_ERROR("Could not figure out the type of toplogy passed to iterate elements.");
-        return;
-    }
-
-    // Define the lambda functions to be invoked for each topology type
-    const auto traverse_fixed_elements = [&func](const Node &eles, const utils::ShapeType &shape, index_t &ent_id) {
-        // Single celltype
-        entity e;
-        e.shape = shape;
-        const auto ent_size = e.shape.indices;
-        e.element_ids.resize(ent_size, 0);
-
-        const Node &conn = eles["connectivity"];
-        const auto &conn_dtype = conn.dtype();
-        const auto &id_dtype = DataType(conn_dtype.id(), 1);
-        const index_t nents = conn_dtype.number_of_elements() / ent_size;
-        Node temp;
-        index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
-        {
-            e.entity_id = ent_id;
-            for(index_t j = 0; j < ent_size; j++)
-            {
-                // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
-                ei++;
-            }
-
-            func(e);
-            ent_id++;
-        }
-    };
-
-    const auto traverse_polygonal_elements = [&func](const Node &elements, index_t &ent_id) {
-        entity e;
-        e.shape = utils::ShapeType((index_t)ShapeId::Polygonal);
-        const Node &conn = elements["connectivity"];
-        const Node &sizes = elements["sizes"];
-        const auto &sizes_dtype = sizes.dtype();
-        const DataType size_dtype(sizes_dtype.id(), 1);
-        const DataType id_dtype(sizes.dtype().id(), 1);
-        const index_t nents = sizes_dtype.number_of_elements();
-        Node temp;
-        index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
-        {
-            e.entity_id = ent_id;
-            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
-            const index_t sz = temp.to_index_t();
-            e.element_ids.resize(sz);
-            for(index_t j = 0; j < sz; j++)
-            {
-                // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
-                ei++;
-            }
-
-            func(e);
-            ent_id++;
-        }
-    };
-
-    const auto traverse_polyhedral_elements = [&func](const Node &elements, const Node &subelements, index_t &ent_id) {
-        entity e;
-        e.shape = utils::ShapeType((index_t)ShapeId::Polyhedral);
-        const Node &conn = elements["connectivity"];
-        const Node &sizes = elements["sizes"];
-        const Node &subconn = subelements["connectivity"];
-        const Node &subsizes = subelements["sizes"];
-        const Node &suboffsets = subelements["offsets"];
-        const auto &sizes_dtype = sizes.dtype();
-        const DataType size_dtype(sizes_dtype.id(), 1);
-        const DataType id_dtype(sizes.dtype().id(), 1);
-        const DataType subid_dtype(subconn.dtype().id(), 1);
-        const DataType suboff_dtype(suboffsets.dtype().id(), 1);
-        const DataType subsize_dtype(subsizes.dtype().id(), 1);
-        const index_t nents = sizes_dtype.number_of_elements();
-        Node temp;
-        index_t ei = 0;
-        for(index_t i = 0; i < nents; i++)
-        {
-            e.entity_id = ent_id;
-            temp.set_external(size_dtype, const_cast<void*>(sizes.element_ptr(i)));
-            const index_t sz = temp.to_index_t();
-            e.element_ids.resize(sz);
-            for(index_t j = 0; j < sz; j++)
-            {
-                // Pull out vertex id at ei then cast to index_t
-                temp.set_external(id_dtype, const_cast<void*>(conn.element_ptr(ei)));
-                e.element_ids[j] = temp.to_index_t();
-                ei++;
-            }
-
-            e.subelement_ids.resize(sz);
-            for(index_t j = 0; j < sz; j++)
-            {
-                // Get the size of the subelement so we can define it in the proper index of subelement_ids
-                auto &subele = e.subelement_ids[j];
-                temp.set_external(subsize_dtype, const_cast<void*>(subsizes.element_ptr(e.element_ids[j])));
-                const index_t subsz = temp.to_index_t();
-                subele.resize(subsz);
-
-                // Find the offset of the face definition so we can write the vertex ids
-                temp.set_external(suboff_dtype, const_cast<void*>(suboffsets.element_ptr(e.element_ids[j])));
-                index_t offset = temp.to_index_t();
-                for(index_t k = 0; k < subsz; k++)
-                {
-                    temp.set_external(subid_dtype, const_cast<void*>(subconn.element_ptr(offset)));
-                    subele[k] = temp.to_index_t();
-                    offset++;
-                }
-            }
-
-            func(e);
-            ent_id++;
-        }
-    };
-
-    using id_elem_pair =  std::pair<index_t, entity>;
-    const auto build_element_vector = [](const Node &element_types, std::vector<id_elem_pair> &eles)
-    {
-    /*
-      element_types: 
-        (String name): (Q: Could this also be a list entry?) 
-          stream_id: (index_t id)
-          shape: (String name of shape)
-    */
-        eles.clear();
-        auto itr = element_types.children();
-        while(itr.has_next())
-        {
-            const Node &n = itr.next();
-            const index_t id = n["stream_id"].to_index_t();
-            const utils::ShapeType shape(n["shape"].as_string());
-            eles.push_back({{id}, {}});
-            eles.back().second.shape = shape;
-            if(!shape.is_poly())
-            {
-                eles.back().second.element_ids.resize(shape.indices);
-            }
-            else
-            {
-                CONDUIT_ERROR("I cannot handle a stream of polygonal/polyhedral elements!");
-                return;
-            }
-        }
-    };
-
-    index_t ent_id = 0;
-    switch(case_num)
-    {
-    case 0:
-    {
-        utils::ShapeType shape(topo);
-        if(shape.is_polyhedral())
-        {
-            traverse_polyhedral_elements(topo["elements"], topo["subelements"], ent_id);
-        }
-        else if(shape.is_polygonal())
-        {
-            traverse_polygonal_elements(topo["elements"], ent_id);
-        }
-        else // (known celltype case)
-        {
-            traverse_fixed_elements(topo["elements"], shape, ent_id);
-        }
-        break;
-    }
-    case 1: /* Fallthrough */
-    case 2:
-    {
-        // Mixed celltype
-        const Node &elements = topo["elements"];
-        auto ele_itr = elements.children();
-        while(ele_itr.has_next())
-        {
-            const Node &bucket = ele_itr.next();
-            const std::string &shape_name = bucket["shape"].as_string();
-            utils::ShapeType shape(shape_name);
-
-            if(shape.is_polyhedral())
-            {
-                // Need to find corresponding subelements
-                const std::string bucket_name = bucket.name();
-                if(!topo.has_child("subelements"))
-                {
-                    CONDUIT_ERROR("Invalid toplogy, shape == polygonal but no subelements node present.");
-                    return;
-                }
-                const Node &subelements = topo["subelements"];
-                if(!subelements.has_child(bucket_name))
-                {
-                    CONDUIT_ERROR("Invalid toplogy, shape == polygonal but no matching subelements node present.");
-                    return;
-                }
-                const Node &subbucket = subelements[bucket_name];
-                traverse_polyhedral_elements(bucket, subbucket, ent_id);
-            }
-            else if(shape.is_polygonal())
-            {
-                traverse_polygonal_elements(bucket, ent_id);
-            }
-            else
-            {
-                traverse_fixed_elements(bucket, shape, ent_id);
-            }
-        }
-        break;
-    }
-    case 3: /* Fallthrough */
-    case 4:
-    {
-        // Stream with element counts or offsets
-        const Node &elements = topo["elements"];
-        std::vector<id_elem_pair> etypes;
-        build_element_vector(elements["element_types"], etypes);
-        const Node &eindex = elements["element_index"];
-        const Node &stream = elements["stream"];
-        const Node &stream_ids = eindex["stream_ids"];
-        const Node *stream_offs = eindex.fetch_ptr("offsets");
-        const Node *stream_counts = eindex.fetch_ptr("element_counts");
-        const index_t nstream = stream_ids.dtype().number_of_elements();
-        const DataType sid_dtype(stream_ids.dtype().id(), 1);
-        const DataType stream_dtype(stream.dtype().id(), 1);
-        index_t ent_id = 0;
-        // For count based this number just keeps rising, for offset based it gets overwritten
-        //   by what is stored in the offsets node.
-        index_t idx = 0;
-        Node temp;
-        for(index_t i = 0; i < nstream; i++)
-        {
-            // Determine which shape we are working with
-            temp.set_external(sid_dtype, const_cast<void*>(stream_ids.element_ptr(i)));
-            const index_t stream_id = temp.to_index_t();
-            auto itr = std::find_if(etypes.begin(), etypes.end(), [=](const id_elem_pair &p){
-                return p.first == stream_id;
-            });
-            entity &e = itr->second;
-
-            // Determine how many elements are in this section of the stream
-            index_t start = 0, end = 0;
-            if(stream_offs)
-            {
-                const DataType dt(stream_offs->dtype().id(), 1);
-                temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i)));
-                start = temp.to_index_t();
-                if(i == nstream - 1)
-                {
-                    end = stream_offs->dtype().number_of_elements();
-                }
-                else
-                {
-                    temp.set_external(dt, const_cast<void*>(stream_offs->element_ptr(i+1)));
-                    end = temp.to_index_t();
-                }
-            }
-            else if(stream_counts)
-            {
-                const DataType dt(stream_counts->dtype().id(), 1);
-                temp.set_external(dt, const_cast<void*>(stream_counts->element_ptr(i)));
-                start = idx;
-                end   = start + (temp.to_index_t() * e.shape.indices);
-            }
-
-            // Iterate the elements in this section
-            idx = start;
-            while(idx < end)
-            {
-                const index_t sz = e.shape.indices;
-                for(index_t j = 0; j < sz; j++)
-                {
-                    temp.set_external(stream_dtype, const_cast<void*>(stream.element_ptr(idx)));
-                    e.element_ids[j] = temp.to_index_t();
-                    idx++;
-                }
-                e.entity_id = ent_id;
-                func(e);
-                ent_id++;
-            }
-            idx = end;
-        }
-        break;
-    }
-    default:
-        CONDUIT_ERROR("Unsupported topology passed to iterate_elements")
-        return;
-    }
-}
-
-//-----------------------------------------------------------------------------
-template<typename T, typename Func>
-static void iterate_int_data_impl(const conduit::Node &node, Func &&func)
-{
-    conduit::DataArray<T> int_da = node.value();
-    const index_t nele = int_da.number_of_elements();
-    for(index_t i = 0; i < nele; i++)
-    {
-        func((index_t)int_da[i]);
-    }
-}
-
 //-----------------------------------------------------------------------------
 template<typename Func>
 static void iterate_int_data(const conduit::Node &node, Func &&func)
 {
-    const auto id = node.dtype().id();
-    switch(id)
+    const auto dtype = node.dtype();
+    if (dtype.is_integer())
     {
-    case conduit::DataType::INT8_ID:
-        iterate_int_data_impl<int8>(node, func);
-        break;
-    case conduit::DataType::INT16_ID:
-        iterate_int_data_impl<int16>(node, func);
-        break;
-    case conduit::DataType::INT32_ID:
-        iterate_int_data_impl<int32>(node, func);
-        break;
-    case conduit::DataType::INT64_ID:
-        iterate_int_data_impl<int64>(node, func);
-        break;
-    case conduit::DataType::UINT8_ID:
-        iterate_int_data_impl<uint8>(node, func);
-        break;
-    case conduit::DataType::UINT16_ID:
-        iterate_int_data_impl<uint16>(node, func);
-        break;
-    case conduit::DataType::UINT32_ID:
-        iterate_int_data_impl<uint32>(node, func);
-        break;
-    case conduit::DataType::UINT64_ID:
-        iterate_int_data_impl<uint64>(node, func);
-        break;
-    default:
-        CONDUIT_ERROR("Tried to iterate " << conduit::DataType::id_to_name(id) << " as integer data!");
-        break;
+        index_t_accessor int_data = node.as_index_t_accessor();
+        const index_t nele = int_data.number_of_elements();
+        for(index_t i = 0; i < nele; i++)
+        {
+            func(int_data[i]);
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Tried to iterate " << dtype.name() << " as integer data!");
     }
 }
 
@@ -5783,6 +6298,7 @@ build_unstructured_output(const std::vector<const Node*> &topologies,
                           Node &output)
 {
     // std::cout << "Building unstructured output!" << std::endl;
+    using namespace utils::topology;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -5868,6 +6384,7 @@ build_polygonal_output(const std::vector<const Node*> &topologies,
                        Node &output)
 {
     // std::cout << "Building polygonal output!" << std::endl;
+    using namespace utils::topology;
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
     output["elements/shape"].set("polygonal");
@@ -5949,6 +6466,7 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
                        Node &output)
 {
     // std::cout << "Building polyhedral output!" << std::endl;
+    using namespace utils::topology;
     output.reset();
     output["type"].set("unstructured");
     output["coordset"].set(cset_name);
@@ -5983,17 +6501,17 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
                 const index_t offset = out_conn.size();
                 out_offsets.push_back(offset);
                 out_sizes.push_back(sz);
-                for(index_t i = 0; i < sz; i++)
+                for(index_t ii = 0; ii < sz; ii++)
                 {
                     const index_t subidx = out_subsizes.size();
-                    const index_t subsz = e.subelement_ids[i].size();
+                    const index_t subsz = e.subelement_ids[ii].size();
                     const index_t suboffset = out_subconn.size();
                     out_conn.push_back(subidx);
                     out_suboffsets.push_back(suboffset);
                     out_subsizes.push_back(subsz);
                     for(index_t j = 0; j < subsz; j++)
                     {
-                        out_subconn.push_back(pmap_da[e.subelement_ids[i][j]]);
+                        out_subconn.push_back(pmap_da[e.subelement_ids[ii][j]]);
                     }
                 }
             }
@@ -6190,10 +6708,12 @@ public:
                     n_new_topo["type"] = "structured";
                     n_new_topo["coordset"] = n_cset.name();
 
-                    auto logical_dims = utils::coordset::dim_lengths(n_cset);
-                    for(size_t ldi = 0; ldi < logical_dims.size(); ldi++)
+                    const index_t dim = utils::topology::dims(n_topo);
+                    std::array<index_t, MAXDIM> logical_dims_vals;
+                    utils::topology::logical_dims(n_topo, logical_dims_vals.data(), dim);
+                    for(index_t ldi = 0; ldi < dim; ldi++)
                     {
-                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims[ldi] - 1;
+                        n_new_topo["elements/dims/"+utils::LOGICAL_AXES[ldi]] = logical_dims_vals[ldi];
                     }
 
                     if(n_topo.has_path("elements/origin"))
@@ -6290,10 +6810,7 @@ private:
     */
     static double as_double(const Node &n_vals, index_t idx)
     {
-        Node temp;
-        temp.set_external(DataType(n_vals.dtype().id(), 1), 
-            const_cast<void*>(n_vals.element_ptr(idx)));
-        return temp.to_double();
+        return n_vals.as_float64_accessor()[idx];
     };
 
     //-------------------------------------------------------------------------
@@ -6350,15 +6867,9 @@ private:
             for(size_t i = 0; i < cset_axes.size(); i++)
             {
                 const Node &n_value = n_values[cset_axes[i]];
-                if(n_value.dtype().is_float32())
+                if(n_value.dtype().is_floating_point())
                 {
-                    DataArray<float32> da = n_value.value();
-                    offsets.push_back(
-                        mesh::coordset::utils::find_rectilinear_offset(da, exts[i*2], tolerance));
-                }
-                else if(n_value.dtype().is_float64())
-                {
-                    DataArray<float64> da = n_value.value();
+                    float64_accessor da = n_value.as_float64_accessor();
                     offsets.push_back(
                         mesh::coordset::utils::find_rectilinear_offset(da, exts[i*2], tolerance));
                 }
@@ -6398,56 +6909,18 @@ private:
             for(index_t di = 0; di < dimension; di++)
             {
                 std::array<index_t, MAXDIM> ijk{0, 0, 0};
-                const Node &n_value = n_values[axes[di]];
-                const index_t N = n_value.dtype().number_of_elements();
+                const float64_accessor n_value = n_values[axes[di]].as_float64_accessor();
                 index_t local_id = 0;
                 bool found = false;
-                if(n_value.dtype().is_float32())
+                for(index_t vi = 0; vi < n_value.number_of_elements(); vi++)
                 {
-                    DataArray<float32> da = n_value.value();
-                    for(index_t vi = 0; vi < N; vi++)
+                    ijk[di] = vi;
+                    grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
+                    if(std::abs(n_value[vi] - start_values[di]) <= tolerance)
                     {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                else if(n_value.dtype().is_float64())
-                {
-                    DataArray<float64> da = n_value.value();
-                    for(index_t vi = 0; vi < N; vi++)
-                    {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        if(std::abs(da[vi] - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-                else
-                {
-                    Node temp;
-                    for(index_t vi = 0; vi < N; vi++)
-                    {
-                        ijk[di] = vi;
-                        grid_ijk_to_id(ijk.data(), sub_dims.data(), local_id);
-                        temp.set_external(DataType(n_value.dtype().id(), 1),
-                            const_cast<void*>(n_value.element_ptr(local_id)));
-                        double val = temp.to_double();
-                        if(std::abs(val - start_values[di]) <= tolerance)
-                        {
-                            offsets.push_back(vi);
-                            found = true;
-                            break;
-                        }
+                        offsets.push_back(vi);
+                        found = true;
+                        break;
                     }
                 }
 
@@ -7229,7 +7702,7 @@ private:
 
                             if(mode == CombineImplicitMode::Uniform)
                             {
-                                std::cout << "Handling uniform combine" << std::endl;
+                                // std::cout << "Handling uniform combine" << std::endl;
 
                                 std::vector<double> spacing{1.,1.,1.};
                                 if(output.has_path(cset_path + "/spacing"))
@@ -7267,7 +7740,7 @@ private:
                             }
                             else if(mode == CombineImplicitMode::Rectilinear)
                             {
-                                std::cout << "Handling rectilinear combine" << std::endl;
+                                // std::cout << "Handling rectilinear combine" << std::endl;
                                 // We need to further check that the spacing along the matched edge/plane is okay
                                 const Node &n_cseti = n_meshi->fetch_existing(cset_path);
                                 const Node &n_csetj = n_meshj->fetch_existing(cset_path);
@@ -7290,7 +7763,7 @@ private:
                                         ok = mesh::coordset::utils::node_value_compare(n_vals0, n_vals1);
                                         if(!ok)
                                         {
-                                            std::cout << "Incompatible rectilinear domains" << std::endl;
+                                            // std::cout << "Incompatible rectilinear domains" << std::endl;
                                             break;
                                         }
                                     }
@@ -8188,7 +8661,7 @@ determine_schema(const Node &in,
     }
     else
     {
-        out_ncomps = 1;
+        out_ncomps = 0;
         out_schema.set(DataType(in.dtype().id(), ntuples));
     }
 }
@@ -8221,7 +8694,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // out_node.print();
 
     const index_t npmaps = (index_t)pointmaps.size();
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t fi = 0; fi < npmaps; fi++)
         {
@@ -8284,7 +8757,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // out_schema.print();
     // out_node.print();
 
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t i = 0; i < num_verticies; i++)
         {
@@ -8332,7 +8805,7 @@ map_element_field(const std::vector<const Node*> &in_nodes,
     Schema out_schema;
     determine_schema(in_nodes[0]->child("values"), nelements, ncomps, out_schema);
     out_node.set(out_schema);
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t out_idx = 0; out_idx < nelements; out_idx++)
         {
@@ -8419,6 +8892,357 @@ combine(const std::vector<const Node*> &in_fields,
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::fields --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::adjset --
+//-----------------------------------------------------------------------------
+namespace adjset
+{
+
+static void
+map_adjset_group(const Node& adjset,
+                 const std::unordered_map<index_t, index_t>& local_cnk_map,
+                 const std::vector<DataArray<index_t>>& pointmaps,
+                 Node& out_adjset)
+{
+    // Remap the vertex ids of each intermediate chunk group
+    for (const auto& group : adjset["groups"].children())
+    {
+        Node& tgt_group = out_adjset["groups"].append();
+        index_t src_chunk = group["src_chunk"].to_index_t();
+        tgt_group["src_chunk"].set(src_chunk);
+        tgt_group["neighbors"].set(group["neighbors"].to_index_t());
+
+        // Get the chunk-to-domain vertex id map for the given chunk gid
+        auto local_cnk_id = local_cnk_map.find(src_chunk);
+        if (local_cnk_id == local_cnk_map.end())
+        {
+            CONDUIT_ERROR("Could not map source adjset chunk id "
+                         << src_chunk << " to a chunk in this domain.");
+        }
+        const index_t_array& pmap = pointmaps[local_cnk_id->second];
+
+        index_t_array orig_shared_nodes = group["values"].as_index_t_array();
+        std::vector<index_t> new_shared_nodes(orig_shared_nodes.number_of_elements());
+        for (index_t inode = 0; inode < orig_shared_nodes.number_of_elements(); inode++)
+        {
+            index_t new_vert_idx = pmap[orig_shared_nodes[inode]];
+            new_shared_nodes[inode] = new_vert_idx;
+        }
+        tgt_group["values"].set(new_shared_nodes);
+    }
+}
+
+//-----------------------------------------------------------------------------
+static void
+combine(const std::vector<const Node*>& in_adjsets,
+        const std::vector<index_t>& in_chunk_ids,
+        const Node& topologies,
+        const Node& coordsets,
+        Node& out_adjsets)
+{
+    // Map of global chunk id to their local index on this domain
+    std::unordered_map<index_t, index_t> local_cnk_idx;
+    Node tmp_dom;
+    for(size_t iadj = 0; iadj < in_adjsets.size(); iadj++)
+    {
+        const Node& adjset = *in_adjsets[iadj];
+        local_cnk_idx[in_chunk_ids[iadj]] = iadj;
+        attach_chunk_adjset_to_single_dom(tmp_dom, in_chunk_ids[iadj], &adjset);
+    }
+
+    for (const auto& adjset : tmp_dom["adjsets"].children())
+    {
+        const std::string adjset_name = adjset.name();
+        const std::string assoc_topo = adjset["topology"].as_string();
+        const std::string set_assoc = adjset["association"].as_string();
+        if (set_assoc != utils::ASSOCIATIONS[0])
+        {
+            CONDUIT_WARN("Only vertex-associated adjsets are supported");
+            continue;
+        }
+
+        // Make sure we have an output topology for the given adjset
+        if (!topologies.has_child(assoc_topo))
+        {
+            CONDUIT_ERROR("Adjset " << adjset_name << " references topology "
+                         << assoc_topo << " which doesn't exist.");
+        }
+        const Node& topo_for_aset = topologies[assoc_topo];
+
+        // Look up the associated coordset for the topology
+        const std::string assoc_cset = topo_for_aset["coordset"].as_string();
+        if (!coordsets.has_child(assoc_cset))
+        {
+            CONDUIT_ERROR("Topology " << assoc_topo << " for adjset "
+                          << adjset_name << " references coordset "
+                          << assoc_cset << " which doesn't exist.");
+        }
+        const Node& coordset_for_aset = coordsets[assoc_cset];
+
+        // Vertex association
+        // Need to use pointmaps to map this field
+        // Get the point map
+        const Node *pointmaps = coordset_for_aset.fetch_ptr("pointmaps");
+        if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
+
+        if(!pointmaps->dtype().is_object())
+        {
+            std::vector<DataArray<index_t>> pmaps;
+            if(!pointmaps) { CONDUIT_ERROR("No pointmap for coordset"); return; }
+            for(index_t pi = 0; pi < pointmaps->number_of_children(); pi++)
+            {
+                pmaps.emplace_back(pointmaps->child(pi).value());
+            }
+            map_adjset_group(adjset, local_cnk_idx, pmaps, out_adjsets[adjset_name]);
+        }
+        else
+        {
+            // Structured combine produces a pointmap with 2 components
+            DataArray<index_t> orig_domains = pointmaps->child("domains").value();
+            DataArray<index_t> orig_ids     = pointmaps->child("ids").value();
+            CONDUIT_ERROR("Adjset merge unimplemented for structured combine case");
+        }
+        out_adjsets[adjset_name]["topology"] = assoc_topo;
+        out_adjsets[adjset_name]["association"] = set_assoc;
+    }
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::adjset --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::matset --
+//-----------------------------------------------------------------------------
+namespace matset
+{
+
+typedef std::pair<std::vector<double>, std::vector<index_t>> vf_id_pair_t;
+
+//-----------------------------------------------------------------------------
+template<bool is_elem_based>
+static void
+handle_uni_buffer(const Node &n_matset,
+                  const std::vector<index_t> &elem_map,
+                  std::map<index_t, std::string> material_map,
+                  std::map<std::string, vf_id_pair_t> &out_vfracts_eids)
+{
+    // If this is material based then we must read element_ids
+    std::unique_ptr<DataAccessor<index_t>> element_ids{nullptr};
+    if(!is_elem_based)
+    {
+        element_ids.reset(new DataAccessor<index_t>(n_matset["element_ids"].value()));
+    }
+
+    const DataAccessor<index_t> material_ids = n_matset["material_ids"].value();
+    const DataAccessor<double> volume_fractions = n_matset["volume_fractions"].value();
+    index_t local_elem_id = 0;
+    blueprint::o2mrelation::O2MIterator o2m_itr(n_matset);
+    // Question: Why does o2m_itr.has_next(o2mrelaton::ONE) contain different logic
+    //  than the implementation of o2m_itr.next(o2mrelation::ONE)?
+    //  For instance, if we have an o2m relation with 1 item has_next(ONE) will always
+    //  return false - even if we called o2m_itr.to_front() first.
+    while(o2m_itr.has_next())
+    {
+        o2m_itr.next(blueprint::o2mrelation::ONE);
+        o2m_itr.to_front(blueprint::o2mrelation::MANY);
+
+        while(o2m_itr.has_next(blueprint::o2mrelation::MANY))
+        {
+            o2m_itr.next(blueprint::o2mrelation::MANY);
+            const index_t o2m_idx = o2m_itr.index();
+            const std::string &mat_name = material_map[material_ids[o2m_idx]];
+            auto &pair = out_vfracts_eids[mat_name];
+            pair.first.push_back(volume_fractions[o2m_idx]);
+            if(!is_elem_based)
+            {
+                pair.second.push_back(elem_map[element_ids->element(local_elem_id)]);
+            }
+            else // if(is_elem_based)
+            {
+                pair.second.push_back(elem_map[local_elem_id]);
+            }
+        }
+        local_elem_id++;
+    }
+}
+
+//-----------------------------------------------------------------------------
+template<bool is_elem_based>
+static void
+handle_multi_buffer(const Node &n_matset,
+                    const std::vector<index_t> &elem_map,
+                    std::map<std::string, vf_id_pair_t> &out_vfracts_eids)
+{
+    auto vfract_itr = n_matset["volume_fractions"].children();
+    while(vfract_itr.has_next())
+    {
+        const Node &n_volume_fractions = vfract_itr.next();
+        const std::string mat_name = n_volume_fractions.name();
+
+        if(n_volume_fractions.dtype().is_empty())
+        {
+            continue;
+        }
+
+        // If this is material based then we must read element_ids
+        std::unique_ptr<DataAccessor<index_t>> element_ids{nullptr};
+        if(!is_elem_based)
+        {
+            const Node &n_element_ids = n_matset["element_ids"];
+            if(n_element_ids.has_child(mat_name))
+            {
+                element_ids.reset(new DataAccessor<index_t>(n_element_ids[mat_name].value()));
+            }
+        }
+
+        // NOTE: According the spec, the volume_fractions could be an o2m relation
+        Node temp_vfracts;
+        if(n_volume_fractions.dtype().is_object())
+        {
+            temp_vfracts.set_external(n_volume_fractions);
+        }
+        else // if(!n_volume_fractions.dtype().is_object())
+        {
+            temp_vfracts["values"].set_external(n_volume_fractions);
+        }
+
+        // Temporary node that points to volume fraction data array.
+        Node vfract_data;
+        {
+            const std::string data_path =
+                blueprint::o2mrelation::data_paths(temp_vfracts).front();
+            vfract_data.set_external(temp_vfracts[data_path]);
+        }
+        const DataAccessor<double> volume_fractions = vfract_data.value();
+
+        if(!is_elem_based && (element_ids.get() != nullptr)
+            && volume_fractions.number_of_elements() != element_ids->number_of_elements())
+        {
+            CONDUIT_ERROR("element_ids and volume_fractions to not contain the same "
+                << "number of elements for matset " << conduit::utils::log::quote(mat_name));
+            continue;
+        }
+
+        auto &out_pair = out_vfracts_eids[mat_name];
+        blueprint::o2mrelation::O2MIterator itr(temp_vfracts);
+        itr.to_front();
+        // Iterate the volume fraction data, still need i for indexing into element ids
+        for(index_t i = 0; itr.has_next(); i++)
+        {
+            itr.next();
+            const index_t idx = itr.index();
+            out_pair.first.push_back(volume_fractions[idx]);
+            // Material based will use element_ids array
+            if(!is_elem_based && (element_ids.get() != nullptr))
+            {
+                out_pair.second.push_back(elem_map[element_ids->element(i)]);
+            }
+            else
+            {
+                out_pair.second.push_back(elem_map[i]);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Combine input matsets using n_topo as a reference topology.
+        Each matset in the inputs vector must have an additional "domain_id" field.
+*/
+static void
+combine(const std::vector<Node> &inputs,
+        const std::vector<const Node*> &in_topos,
+        const Node &out_topo,
+        Node &out_matset)
+{
+    const index_t nin = (index_t)inputs.size();
+    // n_topo.print();
+
+    // Elem map is an array of index_t [domain0 ele0 domain0 ele1 ...]
+    // The structure of this data needs to be changed
+    std::vector<std::vector<index_t>> elem_map;
+    elem_map.resize(in_topos.size());
+    {
+        // Resize vectors to the correct size for each domain
+        for(index_t i = 0; i < (index_t)in_topos.size(); i++)
+        {
+            elem_map[i].resize(blueprint::mesh::topology::length(*in_topos[i]));
+        }
+
+        const DataArray<index_t> orig_elem_map = out_topo["element_map"].value();
+        const index_t N = orig_elem_map.number_of_elements();
+        for(index_t i = 0; i < N; i += 2)
+        {
+            elem_map[orig_elem_map[i]][orig_elem_map[i+1]] = i / 2;
+        }
+    }
+
+    // Output will always be multi-buffer, material dominant
+    std::map<std::string, vf_id_pair_t> out_vfracts_eids;
+    std::map<index_t, std::string> material_map;
+    for(index_t in_idx = 0; in_idx < nin; in_idx++)
+    {
+        const Node &n_matset = inputs[in_idx];
+        const std::string name = n_matset.name();
+        const bool is_uni_buffer = blueprint::mesh::matset::is_uni_buffer(n_matset);
+        const bool is_elem_based = blueprint::mesh::matset::is_element_dominant(n_matset);
+        const index_t dom_idx = n_matset["domain_id"].to_index_t();
+
+        // Build up the material map
+        if(n_matset.has_child("material_map"))
+        {
+            auto itr = n_matset["material_map"].children();
+            while(itr.has_next())
+            {
+                const Node &n = itr.next();
+                material_map[n.to_index_t()] = n.name();
+            }
+        }
+
+        if(is_uni_buffer)
+        {
+            if(is_elem_based)
+            {
+                handle_uni_buffer<true>(n_matset, elem_map[dom_idx], material_map, out_vfracts_eids);
+            }
+            else
+            {
+                handle_uni_buffer<false>(n_matset, elem_map[dom_idx], material_map, out_vfracts_eids);
+            }
+        }
+        else // if(!is_uni_buffer)
+        {
+            if(is_elem_based)
+            {
+                handle_multi_buffer<true>(n_matset, elem_map[dom_idx], out_vfracts_eids);
+            }
+            else
+            {
+                handle_multi_buffer<false>(n_matset, elem_map[dom_idx], out_vfracts_eids);
+            }
+        }
+    }
+
+    out_matset["topology"].set(out_topo.name());
+    for(const auto &pair : out_vfracts_eids)
+    {
+        const std::string &name = pair.first;
+        const std::vector<double> &volume_fractions = pair.second.first;
+        const std::vector<index_t> &element_ids = pair.second.second;
+
+        out_matset["volume_fractions"][name].set(volume_fractions);
+        out_matset["element_ids"][name].set(element_ids);
+    }
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::matset --
 //-----------------------------------------------------------------------------
 
 //-------------------------------------------------------------------------
@@ -8621,19 +9445,22 @@ group_topologies(const std::vector<const Node *> &inputs)
 void
 Partitioner::combine(int domain,
     const std::vector<const Node *> &inputs,
+    const std::vector<index_t> &chunk_ids,
     Node &output)
 {
     // NOTE: Some decisions upstream, for the time being, make all the chunks
     //       unstructured. We will try to relax that so we might end up
     //       trying to combine multiple uniform,rectilinear,structured
     //       topologies.
-    // Handle trivial cases
-    // std::cout << "domain " << domain << " size " << inputs.size() << std::endl;
+#ifdef CONDUIT_DEBUG_PARTITIONER
+    std::cout << "Combining domain " << domain << " size " << inputs.size() << std::endl;
     // std::cout << "INPUTS:";
     // for(const Node *in : inputs)
     // {
-    //     in->print();
+    //     in->schema().print();
     // }
+#endif
+    // Handle trivial cases
     output.reset();
     const auto sz = inputs.size();
     if(sz == 0)
@@ -8707,7 +9534,90 @@ Partitioner::combine(int domain,
     Node &output_topologies = output["topologies"];
     Node &output_coordsets  = output["coordsets"];
 
-    // std::cout << "Recommended approach: " << rt << std::endl;
+    // Handle material sets
+    bool have_matsets = false;
+    for(const Node *n : inputs)
+    {
+        if(n->has_child("matsets"))
+        {
+            have_matsets = true;
+            break;
+        }
+    }
+    if(have_matsets)
+    {
+        std::map<std::string, std::vector<Node>> matsets_to_combine;
+        for(index_t i = 0; i < (index_t)inputs.size(); i++)
+        {
+            const Node *n = inputs[i];
+            const Node *n_matsets = n->fetch_ptr("matsets");
+            if(n_matsets)
+            {
+                auto itr = n_matsets->children();
+                while(itr.has_next())
+                {
+                    const Node &n_matset = itr.next();
+                    auto &matset_vec = matsets_to_combine[n_matset.name()];
+                    matset_vec.emplace_back();
+                    matset_vec.back().set_external(n_matset);
+                    // Add domain id along to be used for mapping
+                    matset_vec.back()["domain_id"].set((index_t)i);
+                }
+            }
+        }
+
+        Node &out_matsets = output["matsets"];
+        for(const auto &pair : matsets_to_combine)
+        {
+            bool ok = !pair.second.empty();
+            // Should never happen
+            if(!ok)
+            {
+                CONDUIT_ERROR("matsets_to_combine conatins an empty entry!");
+                continue;
+            }
+
+            // Verify that all the matsets reference the same topology
+            const std::string mset_topo_name = pair.second[0].fetch("topology").as_string();
+            for(const Node &n_matset : pair.second)
+            {
+                if(mset_topo_name != n_matset.fetch("topology").as_string())
+                {
+                    ok = false;
+                    break;
+                }
+            }
+            if(!ok)
+            {
+                CONDUIT_ERROR("Unable to combine matset " << conduit::utils::log::quote(pair.first)
+                    << " because the input domains do not agree upon a topology.");
+                continue;
+            }
+
+            // Fetch the referenced topology
+            ok = output_topologies.has_child(mset_topo_name);
+            if(!ok)
+            {
+                CONDUIT_ERROR("Unable to combine matset " << conduit::utils::log::quote(pair.first)
+                    << " because it references an unknown topology " << conduit::utils::log::quote(mset_topo_name));
+                continue;
+            }
+
+            // We will also need the input topo group to help map original elements
+            auto topo_itr = std::find_if(topo_groups.begin(), topo_groups.end(),
+                    [&mset_topo_name](const topo_group_t &g) {
+                return g.first == mset_topo_name;
+            });
+            if(topo_itr == topo_groups.end())
+            {
+                CONDUIT_ERROR("Unable to combine matset " << conduit::utils::log::quote(pair.first)
+                    << " because it references an unknown topology " << conduit::utils::log::quote(mset_topo_name));
+                continue;
+            }
+            matset::combine(pair.second, topo_itr->second, output_topologies[mset_topo_name], out_matsets[pair.first]);
+        }
+    }
+
 
     // All inputs must have a fields object to merge fields
     bool have_fields = true;
@@ -8732,19 +9642,19 @@ Partitioner::combine(int domain,
             auto itr = fields.children();
             while(itr.has_next())
             {
-                const Node &n = itr.next();
-                auto itr = std::find_if(field_groups.begin(), field_groups.end(), [&](const field_group_t &g) {
-                    return g.first == n.name();
+                const Node &n_child = itr.next();
+                auto field_groups_itr_pos = std::find_if(field_groups.begin(), field_groups.end(), [&](const field_group_t &g) {
+                    return g.first == n_child.name();
                 });
-                if(itr != field_groups.end())
+                if(field_groups_itr_pos != field_groups.end())
                 {
-                    itr->second.push_back(&n);
+                    field_groups_itr_pos->second.push_back(&n_child);
                 }
                 else
                 {
                     field_groups.emplace_back();
-                    field_groups.back().first = n.name();
-                    field_groups.back().second.push_back(&n);
+                    field_groups.back().first = n_child.name();
+                    field_groups.back().second.push_back(&n_child);
                 }
             }
         }
@@ -8796,6 +9706,26 @@ Partitioner::combine(int domain,
         }
     }
 
+
+    bool have_adjsets = false;
+    std::vector<const Node*> adjsets;
+    for(const Node *n : inputs)
+    {
+        if (n->has_child("adjsets"))
+        {
+            adjsets.push_back(n->fetch_ptr("adjsets"));
+            have_adjsets = true;
+        }
+        else
+        {
+            adjsets.push_back(nullptr);
+        }
+    }
+    if (have_adjsets)
+    {
+        adjset::combine(adjsets, chunk_ids, output_topologies, output_coordsets, output["adjsets"]);
+    }
+
     // Cleanup the output node, add original cells/verticies in needed
     if(!output_fields.has_child("original_element_ids"))
     {
@@ -8807,10 +9737,10 @@ Partitioner::combine(int domain,
         out_field["association"].set("element");
         Schema s;
         const DataType &dt = n_elem_map.dtype();
-        const index_t sz = dt.number_of_elements() / 2;
-        s["domains"].set(DataType(dt.id(), sz, 0, 
+        const index_t half_sz = dt.number_of_elements() / 2;
+        s["domains"].set(DataType(dt.id(), half_sz, 0,
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
-        s["ids"].set(DataType(dt.id(), sz, 1*dt.element_bytes(),
+        s["ids"].set(DataType(dt.id(), half_sz, 1*dt.element_bytes(),
             2*dt.element_bytes(), dt.element_bytes(), dt.endianness()));
         out_field["values"].set(s);
 
@@ -8875,8 +9805,8 @@ Partitioner::combine(int domain,
 
         if(!n_pointmaps.dtype().is_object())
         {
-            const index_t sz = mesh::coordset::length(output_coordsets[coordset_name]);
-            const DataType dt(pointmaps[0].dtype().id(), sz);
+            const index_t coordset_sz = mesh::coordset::length(output_coordsets[coordset_name]);
+            const DataType dt(pointmaps[0].dtype().id(), coordset_sz);
             out_field["values"]["domains"].set(dt);
             out_field["values"]["ids"].set(dt);
             DataArray<index_t> out_domains = out_field["values/domains"].value();
@@ -8918,6 +9848,280 @@ Partitioner::combine(int domain,
     for(index_t i = 0; i < output_coordsets.number_of_children(); i++)
     {
         output_coordsets[i].remove("pointmaps");
+    }
+}
+
+//-------------------------------------------------------------------------
+void
+Partitioner::map_back_fields(const conduit::Node& repart_mesh,
+                             const conduit::Node& options,
+                             Node& orig_mesh)
+{
+    using namespace std;
+    auto repart_doms = mesh::domains(repart_mesh);
+    auto orig_doms = mesh::domains(orig_mesh);
+    // the below should also init dom_to_rank_map in mpi partitioner
+    auto orig_dom_ids = get_global_domids(orig_mesh);
+
+    unordered_map<index_t, Node*> gid_to_orig_dom;
+    for (size_t idom = 0; idom < orig_doms.size(); idom++)
+    {
+        gid_to_orig_dom[orig_dom_ids[idom]] = orig_doms[idom];
+    }
+
+    vector<string> field_names;
+    for (const Node& field : options["fields"].children())
+    {
+        field_names.emplace_back(field.as_string());
+    }
+    bool has_vert_fields = false;
+    if (!repart_doms.empty())
+    {
+        const conduit::Node& dom = *repart_doms[0];
+        // check domain fields from the first domain we encounter
+        for (const Node& field : dom["fields"].children())
+        {
+            if (std::find(field_names.begin(),
+                          field_names.end(),
+                          field.name()) == field_names.end())
+            {
+                continue;
+            }
+            if (field["association"].as_string() == "vertex")
+            {
+                has_vert_fields = true;
+            }
+        }
+    }
+
+    // map repart domid -> orig domids
+    vector<vector<index_t>> map_tgt_domains(repart_doms.size());
+    // map repart domid -> orig domid -> original elem/vertex ids
+    vector<unordered_map<index_t, vector<index_t>>>
+        map_tgt_elems(repart_doms.size()), map_tgt_verts(repart_doms.size());
+    // map repart domid -> orig domid -> repart elem/vertex ids
+    vector<unordered_map<index_t, vector<index_t>>>
+        map_sel_elems(repart_doms.size()), map_sel_verts(repart_doms.size());
+    for (size_t idom = 0; idom < repart_doms.size(); idom++)
+    {
+        const conduit::Node& dom = *repart_doms[idom];
+
+        if (dom["fields"].has_child("original_element_ids"))
+        {
+            const Node& orig_v_node = dom["fields/original_element_ids/values"];
+            const index_t_accessor orig_elems_vals = orig_v_node["ids"].value();
+            const index_t_accessor orig_doms_vals = orig_v_node["domains"].value();
+            for (index_t ielem = 0; ielem < orig_elems_vals.number_of_elements(); ielem++)
+            {
+                map_tgt_elems[idom][orig_doms_vals[ielem]].push_back(orig_elems_vals[ielem]);
+                map_sel_elems[idom][orig_doms_vals[ielem]].push_back(ielem);
+            }
+            for (const auto& slice_map : map_tgt_elems[idom])
+            {
+                // Keep a set of all source domains
+                map_tgt_domains[idom].emplace_back(slice_map.first);
+            }
+        }
+        else
+        {
+            CONDUIT_ERROR(
+                "Map-back requires that mesh repartitioning is performed with "
+                "the mapping option enabled. (missing original_element_ids)");
+        }
+    }
+
+    // TODO: this is a lot of bookkeeping to do if we aren't mapping back a
+    // vertex-centered field. we should probably check if we have vertex fields
+    // first.
+    if (has_vert_fields)
+    {
+        // map of orig domid -> global vert ids
+        map<index_t, vector<index_t>> orig_dom_gvids;
+        for (const auto& dom_ent : gid_to_orig_dom)
+        {
+            index_t orig_idx = dom_ent.first;
+            const Node& orig_dom = *dom_ent.second;
+            vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
+            if (orig_dom["fields"].has_child("global_vertex_ids"))
+            {
+                const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
+                orig_gvids.resize(gvids.number_of_elements());
+                for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
+                {
+                    orig_gvids[ivert] = gvids[ivert];
+                }
+            }
+            else
+            {
+                CONDUIT_ERROR(
+                    "Map-back of a vertex-centered field requires that a global "
+                    "vertex numbering is generated. (missing global_vertex_ids)");
+            }
+        }
+
+        // communicate domain gvids to ranks that need them
+        synchronize_gvids(map_tgt_domains, orig_dom_gvids);
+
+        for (index_t repart_idx = 0; repart_idx < static_cast<index_t>(repart_doms.size()); repart_idx++)
+        {
+            const conduit::Node& dom = *repart_doms[repart_idx];
+
+            std::unordered_map<index_t, index_t> gvid_to_repart_vid;
+            if (dom["fields"].has_child("global_vertex_ids"))
+            {
+                const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
+                const index_t_accessor gvids = global_vid_node.value();
+                for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
+                {
+                    gvid_to_repart_vid[gvids[ivert]] = ivert;
+                }
+            }
+            for (const index_t orig_idx : map_tgt_domains[repart_idx])
+            {
+                if (orig_dom_gvids.count(orig_idx) == 0)
+                {
+                    CONDUIT_ERROR(
+                        conduit_fmt::format("No vertex gid data (rank: {}, domid: {})",
+                                            rank, orig_idx));
+                }
+                // Get current slice of orig dom
+                auto& orig_gvids = orig_dom_gvids[orig_idx];
+                // Loop over all vertices in the original domain
+                for (size_t ivert = 0; ivert < orig_gvids.size(); ivert++)
+                {
+                    index_t global_vid = orig_gvids[ivert];
+                    if (gvid_to_repart_vid.count(global_vid) != 0)
+                    {
+                        index_t repart_vid = gvid_to_repart_vid.find(global_vid)->second;
+                        map_tgt_verts[repart_idx][orig_idx].push_back(ivert);
+                        map_sel_verts[repart_idx][orig_idx].push_back(repart_vid);
+                    }
+                }
+            }
+        }
+    }
+
+    // map of original domid -> sliced data
+    unordered_map<index_t, Node> packed_fields;
+    // schema of each node
+    // [remap_dom0]:
+    //  - vert_map: [orig_vert_ids0]
+    //  - elem_map: [orig_elem_ids0]
+    //  - fields:
+    //    - field0: [sliced field]
+    //    - field1: [sliced field]
+    //    ...
+    // [remap_dom1]:
+    //  - vert_map: [orig_vert_ids1]
+    //  - elem_map: [orig_elem_ids1]
+    //  - fields:
+    //     - field0: [sliced field]
+    //     - field1: [sliced field]
+    //     ...
+    for (size_t idom = 0; idom < repart_doms.size(); idom++)
+    {
+        const Node& dom = *repart_doms[idom];
+        for (const index_t tgt_dom : map_tgt_domains[idom])
+        {
+            Node& remap_dom_ent = packed_fields[tgt_dom].append();
+            // Copy field with source element indices
+            const vector<index_t>& sel_elems = map_sel_elems[idom][tgt_dom];
+            const vector<index_t>& sel_verts = map_sel_verts[idom][tgt_dom];
+            for (const std::string& field_name : field_names)
+            {
+                const Node& field = dom["fields"][field_name];
+                const std::string& assoc = field["association"].as_string();
+                if (assoc == "vertex")
+                {
+                    copy_field(field, sel_verts, remap_dom_ent["fields"]);
+                }
+                else if (assoc == "element")
+                {
+                    copy_field(field, sel_elems, remap_dom_ent["fields"]);
+                }
+                else
+                {
+                    CONDUIT_ERROR(
+                        conduit_fmt::format("Encountered field with unsupported association."
+                                            " (field: {} association: {}", field_name, assoc));
+                }
+            }
+            // Add target element indices to the node
+            remap_dom_ent["elem_map"].set(map_tgt_elems[idom][tgt_dom]);
+            remap_dom_ent["vert_map"].set(map_tgt_verts[idom][tgt_dom]);
+        }
+    }
+
+    // If we're multi-process, redistribute target field chunks to original
+    // domain homes
+    communicate_mapback(packed_fields);
+
+    // bool first_warn = true; // unused
+    for (const auto& orig_dom : packed_fields)
+    {
+        // Precompute final element count
+        index_t nelems = 0;
+        for (const Node& src_chunk : orig_dom.second.children())
+        {
+            DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
+            nelems += cnk_map.number_of_elements();
+        }
+
+        int cnk_id = 0;
+        vector<index_t> tgt_elem_map(nelems * 2);
+        vector<DataArray<index_t>> tgt_vert_maps(orig_dom.second.number_of_children());
+        unordered_map<string, vector<const Node*>> field_groups;
+        for (const Node& src_chunk : orig_dom.second.children())
+        {
+            // Group common field nodes together by name
+            for (const Node& field : src_chunk["fields"].children())
+            {
+                field_groups[field.name()].push_back(&field);
+            }
+            // Build element map
+            DataArray<index_t> cnk_map = src_chunk["elem_map"].value();
+            for (index_t i = 0; i < cnk_map.number_of_elements(); i++)
+            {
+                index_t out_idx = cnk_map[i];
+                tgt_elem_map[2*out_idx] = cnk_id;
+                tgt_elem_map[2*out_idx + 1] = i;
+            }
+            // map_vertex_field expects a collection of vertex maps for each
+            // chunk, instead of a single unified map
+            tgt_vert_maps[cnk_id] = src_chunk["vert_map"].value();
+            cnk_id++;
+        }
+        // map_element_field expects a DataArray
+        DataArray<index_t> elem_map_arr;
+        {
+            Node tmp;
+            tmp.set_external(tgt_elem_map);
+            elem_map_arr = tmp.value();
+        }
+        Node& tgt_dom = *gid_to_orig_dom[orig_dom.first];
+        for (const auto& fg : field_groups)
+        {
+            const vector<const Node*>& src_fields = fg.second;
+            const string& field_name = fg.first;
+            const string& assoc = src_fields[0]->child("association").as_string();
+            const string& assoc_topo = src_fields[0]->child("topology").as_string();
+
+            Node& output = tgt_dom["fields"][field_name];
+            output["association"] = assoc;
+            output["topology"] = assoc_topo;
+            if (assoc == "vertex")
+            {
+                const std::string& assoc_cset = tgt_dom["topologies"][assoc_topo]["coordset"].as_string();
+                const Node& assoc_coordset = tgt_dom["coordsets"][assoc_cset];
+                index_t nverts = coordset::length(assoc_coordset);
+                fields::map_vertex_field(src_fields, tgt_vert_maps, nverts, output["values"]);
+            }
+            else if (assoc == "element")
+            {
+                fields::map_element_field(src_fields, elem_map_arr, output["values"]);
+            }
+        }
+        // first_warn = false; // unused
     }
 }
 

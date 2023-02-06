@@ -24,6 +24,15 @@ using namespace conduit;
 using namespace conduit::utils;
 namespace bputils = conduit::blueprint::mesh::utils;
 
+//-----------------------------------------------------------------------------
+bool
+check_if_hdf5_enabled()
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
+}
+
 /// Testing Constants ///
 
 typedef void (*XformCoordsFun)(const Node&, Node&);
@@ -32,13 +41,33 @@ typedef bool (*VerifyFun)(const Node&, Node&);
 
 /// Testing Helpers ///
 
+index_t braid_bound_npts_z(const std::string &mesh_type, index_t npts_z)
+{
+    if(mesh_type == "tris"  ||
+       mesh_type == "quads" ||
+       mesh_type == "quads_poly" ||
+       mesh_type == "quads_and_tris" ||
+       mesh_type == "quads_and_tris_offsets")
+    {
+        return 0;
+    }
+    else
+    {
+        return npts_z;
+    }
+}
+
 std::string get_braid_type(const std::string &mesh_type)
 {
     std::string braid_type;
     try
     {
         Node mesh;
-        blueprint::mesh::examples::braid(mesh_type,2,2,2,mesh);
+        blueprint::mesh::examples::braid(mesh_type,
+                                         2,
+                                         2,
+                                         braid_bound_npts_z(mesh_type,2),
+                                         mesh);
         braid_type = mesh_type;
     }
     catch(conduit::Error &) // actual exception is unused
@@ -48,6 +77,8 @@ std::string get_braid_type(const std::string &mesh_type)
 
     return braid_type;
 }
+
+
 
 // TODO(JRC): It would be useful to eventually have this type of procedure
 // available as an abstracted iteration strategy within Conduit (e.g. leaf iterate).
@@ -127,7 +158,11 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
         Node imesh;
-        blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
+        blueprint::mesh::examples::braid(icoordset_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(icoordset_braid,4),
+                                         imesh);
         const Node &icoordset = imesh["coordsets"].child(0);
 
         for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
@@ -140,7 +175,11 @@ TEST(conduit_blueprint_mesh_transform, coordset_transforms)
                 jcoordset_type << "..." << std::endl;
 
             Node jmesh;
-            blueprint::mesh::examples::braid(jcoordset_braid,2,3,4,jmesh);
+            blueprint::mesh::examples::braid(jcoordset_braid,
+                                             2,
+                                             3,
+                                             braid_bound_npts_z(jcoordset_braid,4),
+                                             jmesh);
             Node &jcoordset = jmesh["coordsets"].child(0);
 
             XformCoordsFun to_new_coordset = xform_funs[xi][xj];
@@ -170,7 +209,11 @@ TEST(conduit_blueprint_mesh_transform, coordset_transform_dtypes)
         const std::string icoordset_braid = get_braid_type(icoordset_type);
 
         Node imesh;
-        blueprint::mesh::examples::braid(icoordset_braid,2,3,4,imesh);
+        blueprint::mesh::examples::braid(icoordset_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(icoordset_braid,4),
+                                         imesh);
         const Node &icoordset = imesh["coordsets"].child(0);
 
         for(size_t xj = xi + 1; xj < bputils::COORD_TYPES.size(); xj++)
@@ -235,7 +278,11 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
         const std::string itopology_braid = get_braid_type(itopology_type);
 
         Node imesh;
-        blueprint::mesh::examples::braid(itopology_braid,2,3,4,imesh);
+        blueprint::mesh::examples::braid(itopology_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(itopology_braid,4),
+                                         imesh);
         const Node &itopology = imesh["topologies"].child(0);
         const Node &icoordset = imesh["coordsets"].child(0);
 
@@ -249,7 +296,11 @@ TEST(conduit_blueprint_mesh_transform, topology_transforms)
                 jtopology_type << "..." << std::endl;
 
             Node jmesh;
-            blueprint::mesh::examples::braid(jtopology_braid,2,3,4,jmesh);
+            blueprint::mesh::examples::braid(jtopology_braid,
+                                             2,
+                                             3,
+                                             braid_bound_npts_z(jtopology_braid,4),
+                                             jmesh);
             Node &jtopology = jmesh["topologies"].child(0);
             Node &jcoordset = jmesh["coordsets"].child(0);
 
@@ -302,7 +353,11 @@ TEST(conduit_blueprint_mesh_transform, topology_transform_dtypes)
         // NOTE(JRC): For the data type checks, we're only interested in the parts
         // of the subtree that are being transformed; we cull all other data.
         Node ibase;
-        blueprint::mesh::examples::braid(itopology_braid,2,3,4,ibase);
+        blueprint::mesh::examples::braid(itopology_braid,
+                                         2,
+                                         3,
+                                         braid_bound_npts_z(itopology_braid,4),
+                                         ibase);
         {
             Node temp;
             temp["coordsets"].set(ibase["coordsets"]);
@@ -375,7 +430,10 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 
         Node topo_mesh, info;
         blueprint::mesh::examples::braid(topo_type,
-            MESH_DIMS[0],MESH_DIMS[1],MESH_DIMS[2],topo_mesh);
+                                         MESH_DIMS[0],
+                                         MESH_DIMS[1],
+                                         braid_bound_npts_z(topo_type,MESH_DIMS[2]),
+                                         topo_mesh);
         const Node &topo_node = topo_mesh["topologies"].child(0);
 
         Node topo_poly;
@@ -500,6 +558,26 @@ TEST(conduit_blueprint_mesh_transform, polygonal_transforms)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, to_poly_alias_call)
+{
+
+    Node topo_mesh, info;
+    blueprint::mesh::examples::braid("hexs",
+                                     5,
+                                     5,
+                                     5,
+                                     topo_mesh);
+    const Node &topo_node = topo_mesh["topologies"].child(0);
+
+    Node topo_poly_call1, topo_poly_call2;
+    blueprint::mesh::topology::unstructured::to_polygonal(topo_node,
+                                                          topo_poly_call1);
+    blueprint::mesh::topology::unstructured::to_polytopal(topo_node,
+                                                          topo_poly_call2);
+    EXPECT_FALSE(topo_poly_call1.diff(topo_poly_call2, info));
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_transform, adjset_transforms)
 {
     // run test -> pairwise, then test -> pairwise -> maxshare
@@ -507,7 +585,7 @@ TEST(conduit_blueprint_mesh_transform, adjset_transforms)
     // {{2, 1, 1}, {2, 2, 1}, {2, 2, 2}}
     const std::string ADJSET_ELEM_TYPES[4]      = {"quads", "quads", "hexs", "hexs"};
     const index_t ADJSET_DOM_DIMS[4][3]         = {{2, 1, 1}, {2, 2, 1}, {2, 2, 1}, {2, 2, 2}};
-    const index_t ADJSET_POINT_DIMS[4][3]       = {{3, 3, 1}, {3, 3, 1}, {3, 3, 3}, {3, 3, 3}};
+    const index_t ADJSET_POINT_DIMS[4][3]       = {{3, 3, 0}, {3, 3, 0}, {3, 3, 3}, {3, 3, 3}};
 
     for(index_t ai = 0; ai < 4; ai++)
     {
@@ -581,7 +659,7 @@ TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
         const std::string &xform_type = xform_types[xi];
 
         Node ibase, info;
-        blueprint::mesh::examples::grid("quads",2,2,1,2,2,1,ibase);
+        blueprint::mesh::examples::grid("quads",2,2,0,2,2,1,ibase);
 
         for(size_t ii = 0; ii < bputils::INT_DTYPES.size(); ii++)
         {
@@ -607,4 +685,186 @@ TEST(conduit_blueprint_mesh_transform, adjset_transform_dtypes)
             EXPECT_TRUE(verify_node_data(jmesh, bputils::INT_DTYPES[ii]));
         }
     }
+}
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_transform, paint_adjset)
+{
+    std::string protocol = "hdf5";
+    if(!check_if_hdf5_enabled())
+    {
+        protocol = "yaml";
+    }
+
+    conduit::Node mesh;
+    blueprint::mesh::examples::grid("quads",10,10,0,3,3,1,mesh);
+    blueprint::mesh::paint_adjset("mesh_adj",
+                                  "adjset_vals",
+                                  mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple_2d",protocol);
+
+    mesh.reset();
+    blueprint::mesh::examples::grid("hexs",5,5,5,2,2,2,mesh);
+    blueprint::mesh::paint_adjset("mesh_adj",
+                                  "adjset_vals",
+                                  mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,"tout_paint_adjset_simple_3d",protocol);
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, generate_sad_face)
+{
+    // this tests demos an issue with face (line) generation + adjsets
+    // the line between the x's is falsely identified as a shared face
+    // b/c it is defined by two shared vertices
+    //
+
+    /*
+      ----------------
+      |    |    |    |
+      | d1 | d1 | d1 |
+      |    |    |    |
+      ----------------
+      |    |    |    |
+      | d1 | d0 | d1 |
+      |    |    |    |
+      -----x----x-----
+      |    |    |    |
+      | d0 | d0 | d0 |
+      |    |    |    |
+      ----------------
+    */
+    
+    /*
+      Domain 0 Vertex Ids:
+           ------
+           8    9
+           ------
+           |    |
+           | d0 |
+           |    |
+      -----x----x-----
+      4    5    6    7
+      -----x----x-----
+      |    |    |    |
+      | d0 | d0 | d0 |
+      |    |    |    |
+      ----------------
+      0    1    2    3
+      ----------------
+    */
+
+    /*
+      Domain 1 Vertex Ids:
+
+      ----------------
+      8    9    10   11
+      ----------------
+      |    |    |    |
+      | d1 | d1 | d1 |
+      |    |    |    |
+      ----------------
+      4    5    6    7
+      ----------------
+      |    |    |    |
+      | d1 |    | d1 |
+      |    |    |    |
+      ----------------
+      0    1    2    3
+      ----------------
+    */
+
+
+    Node res;
+    Node &d0 = res["domain0"];
+    Node &d1 = res["domain1"];
+
+    d0["state/domain_id"] = 0;
+    d0["coordsets/coords/type"] = "explicit";
+                                      /* 0    1    2    3         4    5    6    7         8   9 */ 
+    d0["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0, /**/ 0.0, 1.0, 2.0, 3.0, /**/ 1.0, 2.0 };
+ 
+    d0["coordsets/coords/values/y"] = { 0.0, 0.0, 0.0, 0.0, /**/ 1.0, 1.0, 1.0, 1.0, /**/ 2.0, 2.0 };
+
+    d0["topologies/main/type"] = "unstructured";
+    d0["topologies/main/coordset"] = "coords";
+    d0["topologies/main/elements/shape"] = "quad";
+    d0["topologies/main/elements/connectivity"] = {0, 1, 5, 4,
+                                                   1, 2, 6, 5,
+                                                   2, 3, 7, 6,
+                                                   5, 6, 9, 8};
+    d1["state/domain_id"] = 1;
+    d1["coordsets/coords/type"] = "explicit";
+                                      /* 0    1    2    3         4    5    6    7          8   9    10   11 */ 
+    d1["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0, /**/ 0.0, 1.0, 2.0, 3.0, /**/ 0.0, 1.0, 2.0, 3.0 };
+ 
+    d1["coordsets/coords/values/y"] = { 1.0, 1.0, 1.0, 1.0, /**/ 2.0, 2.0, 2.0, 2.0, /**/ 3.0, 3.0, 3.0, 3.0 };
+
+    d1["topologies/main/type"] = "unstructured";
+    d1["topologies/main/coordset"] = "coords";
+    d1["topologies/main/elements/shape"] = "quad";
+    d1["topologies/main/elements/connectivity"] = {0, 1, 5, 4,
+                                                   2, 3, 7, 6,
+                                                   4, 5, 9, 8,
+                                                   5, 6, 10, 9,
+                                                   6, 7, 11, 10 };
+
+    // add adjsets
+    d0["adjsets/main_adjset/association"] = "vertex";
+    d0["adjsets/main_adjset/topology"] = "main";
+    d0["adjsets/main_adjset/groups/group_0_1/neighbors"] = 1;
+    d0["adjsets/main_adjset/groups/group_0_1/values"] = {4,5,8,9,6,7};
+
+    // add adjsets
+    d1["adjsets/main_adjset/association"] = "vertex";
+    d1["adjsets/main_adjset/topology"] = "main";
+    d1["adjsets/main_adjset/groups/group_0_1/neighbors"] = 0;
+    d1["adjsets/main_adjset/groups/group_0_1/values"] = {0, 1, 5, 6, 2, 3};
+
+    Node maps;
+    conduit::blueprint::mesh::generate_lines(res,
+                                             "main_adjset",
+                                             "main_face_adjset",
+                                             "main_faces",
+                                             maps["s2d"],
+                                             maps["d2s"]);
+
+    blueprint::mesh::paint_adjset("main_adjset",
+                                  "main_adjset_vals",
+                                  res);
+
+    blueprint::mesh::paint_adjset("main_face_adjset",
+                                  "main_face_adjset_vals",
+                                  res);
+    res.print();
+    
+    // this issue is fixed when:
+    // domain0, main_face element 6 main_face_adjset_vals == 0 && 
+    // element 6 is not in the faces adjset as a group entry for domain 0
+
+    index_t_accessor fadj_vals= res.fetch_existing("domain0/adjsets/main_face_adjset/groups")[0]["values"].value();
+    EXPECT_EQ(fadj_vals.count(6),0);
+    index_t_accessor fadj_count= res.fetch_existing("domain0/fields/main_face_adjset_vals_group_count/values").value();
+    EXPECT_EQ(fadj_count[6],0);
+
+
+    Node info;
+    if(!conduit::blueprint::mesh::verify(res,info))
+    {
+        info.print();
+    }
+
+    std::string protocol = "hdf5";
+    if(!check_if_hdf5_enabled())
+    {
+        protocol = "yaml";
+    }
+
+    conduit::relay::io::blueprint::save_mesh(res,"sad_face",protocol);
 }

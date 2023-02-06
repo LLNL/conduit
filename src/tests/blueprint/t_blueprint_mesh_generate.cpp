@@ -66,6 +66,22 @@ const static index_t COMPLEX_GRID[] = {4, 4, 4};
 typedef std::vector<index_t> index_list;
 
 /// Testing Helpers ///
+index_t braid_bound_npts_z(const std::string &mesh_type, index_t npts_z)
+{
+    if(mesh_type == "tris"  ||
+       mesh_type == "quads" ||
+       mesh_type == "quads_poly" ||
+       mesh_type == "quads_and_tris" ||
+       mesh_type == "quads_and_tris_offsets")
+    {
+        return 0;
+    }
+    else
+    {
+        return npts_z;
+    }
+}
+
 
 // NOTE(JRC): This is basically an implementation of the combinatorical concept
 // of "n choose i" with all results being returned as lists over index space.
@@ -164,7 +180,11 @@ struct GridMesh
     GridMesh(index_t type, const index_t *npts, bool poly = false)
     {
         Node info;
-        mesh::examples::braid(ELEM_TYPE_LIST[type], npts[0], npts[1], npts[2], mesh);
+        mesh::examples::braid(ELEM_TYPE_LIST[type],
+                              npts[0],
+                              npts[1],
+                              braid_bound_npts_z(ELEM_TYPE_LIST[type],npts[2]),
+                              mesh);
 
         Node &topo = mesh["topologies"].child(0);
         mesh::topology::unstructured::generate_offsets(topo, topo["elements/offsets"]);
@@ -930,8 +950,9 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_nonpoly)
         Node grid_offsets;
         mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
         const DataType offset_dtype = grid_offsets.dtype();
-
-        EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
+        
+        // relax exact type req, conn transforms will become index_t
+        //EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
         EXPECT_EQ(offset_dtype.number_of_elements(), grid_mesh.elems());
 
         Node expected_offsets_int64(DataType::int64(grid_mesh.elems()));
@@ -965,8 +986,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
         Node grid_offsets;
         mesh::topology::unstructured::generate_offsets(grid_topo, grid_offsets);
         const DataType offset_dtype = grid_offsets.dtype();
-
-        EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(offset_dtype.id(), grid_conn.dtype().id());
         EXPECT_EQ(offset_dtype.number_of_elements(), grid_mesh.elems());
 
         Node expected_offsets_int64(DataType::int64(grid_mesh.elems()));
@@ -981,6 +1002,137 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
 
         Node info;
         EXPECT_FALSE(grid_offsets.diff(expected_offsets, info));
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+make_ph_topo(conduit::Node &topo, bool add_offsets, bool add_sub_offsets)
+{
+    std::vector<int> conn{0, 1, 2, 3, 4, 5,
+                          2, 6, 7, 8, 9, 10,
+                          11, 3, 12, 13, 14, 15,
+                          12, 8, 16, 17, 18, 19,
+                          20, 21, 22, 23, 5, 24,
+                          22, 25, 26, 27, 10, 28,
+                          29, 23, 30, 31, 15, 32,
+                          30, 27, 33, 34, 19, 35};
+    std::vector<int> sizes{6, 6, 6, 6, 6, 6, 6, 6};
+    std::vector<int> offsets{0, 6, 12, 18, 24, 30, 36, 42};
+
+    std::vector<int> subconn{0, 9, 12, 3,
+                             0, 1, 10, 9,
+                             1, 4, 13, 10,
+                             3, 12, 13, 4,
+                             0, 3, 4, 1,
+                             9, 10, 13, 12,
+                             1, 2, 11, 10,
+                             2, 5, 14, 11,
+                             4, 13, 14, 5,
+                             1, 4, 5, 2,
+                             10, 11, 14, 13,
+                             3, 12, 15, 6,
+                             4, 7, 16, 13,
+                             6, 15, 16, 7,
+                             3, 6, 7, 4,
+                             12, 13, 16, 15,
+                             5, 8, 17, 14,
+                             7, 16, 17, 8,
+                             4, 7, 8, 5,
+                             13, 14, 17, 16,
+                             9, 18, 21, 12,
+                             9, 10, 19, 18,
+                             10, 13, 22, 19,
+                             12, 21, 22, 13,
+                             18, 19, 22, 21,
+                             10, 11, 20, 19,
+                             11, 14, 23, 20,
+                             13, 22, 23, 14,
+                             19, 20, 23, 22,
+                             12, 21, 24, 15,
+                             13, 16, 25, 22,
+                             15, 24, 25, 16,
+                             21, 22, 25, 24,
+                             14, 17, 26, 23,
+                             16, 25, 26, 17,
+                             22, 23, 26, 25};
+    std::vector<int> subsizes{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                              4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                              4, 4, 4, 4};
+    std::vector<int> suboffsets{0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
+                                48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88,
+                                92, 96, 100, 104, 108, 112, 116, 120, 124,
+                                128, 132, 136, 140};
+
+    topo["coordset"] = "coords";
+    topo["type"] = "unstructured";
+
+    topo["elements/shape"] = "polyhedral";
+    topo["elements/connectivity"].set(conn);
+    topo["elements/sizes"].set(sizes);
+    if(add_offsets)
+        topo["elements/offsets"].set(offsets);
+
+    topo["subelements/shape"] = "polygonal";
+    topo["subelements/connectivity"].set(subconn);
+    topo["subelements/sizes"].set(subsizes);
+    if(add_sub_offsets)
+        topo["subelements/offsets"].set(suboffsets);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_offsets_types)
+{
+    // Make a PH topo that has element/offsets and subelement/offsets. The
+    // types should not change.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, true, true);
+        auto &offsets = topo["elements/offsets"];
+        int t0 = offsets.dtype().id();
+        int st0 = topo["subelements/offsets"].dtype().id();
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        int t1 = topo["elements/offsets"].dtype().id();
+        int st1 = topo["subelements/offsets"].dtype().id();
+        // The types better be equal
+        EXPECT_EQ(t0, t1);
+        EXPECT_EQ(st0, st1);
+    }
+
+    // Make a PH topo with no offsets.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, false, false);
+        auto &offsets = topo["elements/offsets"];
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        EXPECT_EQ(topo["elements"].has_child("offsets"), true);
+    }
+
+    // Make a PH topo with element/offsets.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, true, false);
+        auto &offsets = topo["elements/offsets"];
+        int t0 = offsets.dtype().id();
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        EXPECT_EQ(topo["elements"].has_child("offsets"), true);
+        int t1 = topo["elements/offsets"].dtype().id();
+        // The types better be equal
+        EXPECT_EQ(t0, t1);
+    }
+
+    // Make a PH topo with subelements/offsets. Make sure we generate elements/offsets.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, false, true);
+        auto &offsets = topo["elements/offsets"];
+        int st0 = topo["subelements/offsets"].dtype().id();
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        EXPECT_EQ(topo["elements"].has_child("offsets"), true);
+        EXPECT_EQ(topo["subelements"].has_child("offsets"), true);
+        int st1 = topo["subelements/offsets"].dtype().id();
+        // The types better be equal
+        EXPECT_EQ(st0, st1);
     }
 }
 
@@ -1027,7 +1179,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
         Node &cent_conn = cent_topo["elements/connectivity"];
 
         EXPECT_EQ(cent_topo["coordset"].as_string(), CENTROID_COORDSET_NAME);
-        EXPECT_EQ(cent_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        //EXPECT_EQ(cent_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(cent_conn.dtype().number_of_elements(), grid_mesh.elems());
 
         // Verify Data Integrity //
@@ -1041,7 +1194,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_centroids)
         for(index_t mi = 0; mi < 2; mi++)
         {
             conduit::Node& map_node = *map_nodes[mi];
-            EXPECT_EQ(map_node.dtype().id(), grid_conn.dtype().id());
+            // relax exact type req, conn transforms will become index_t
+            //EXPECT_EQ(map_node.dtype().id(), grid_conn.dtype().id());
             EXPECT_EQ(map_node.dtype().number_of_elements(), 2 * grid_mesh.elems());
 
             std::vector<index_t> map_values, expected_values;
@@ -1096,7 +1250,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
         const Node &grid_conn = grid_topo["elements/connectivity"];
         Node &point_conn = point_topo["elements/connectivity"];
 
-        EXPECT_EQ(point_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(point_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(point_conn.dtype().number_of_elements(), grid_points);
 
         // Content Consistency Checks //
@@ -1126,7 +1281,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_points)
             for(const std::string &o2m_path : O2M_PATHS)
             {
                 EXPECT_TRUE(map_node.has_child(o2m_path));
-                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
         }
 
@@ -1182,7 +1336,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
         const Node &grid_conn = grid_topo["elements/connectivity"];
         Node &line_conn = line_topo["elements/connectivity"];
 
-        EXPECT_EQ(line_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(line_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(line_conn.dtype().number_of_elements(), 2 * grid_mesh.lines());
 
         // Content Consistency Checks //
@@ -1199,7 +1354,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
             for(const std::string &o2m_path : O2M_PATHS)
             {
                 EXPECT_TRUE(map_node.has_child(o2m_path));
-                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
         }
 
@@ -1261,7 +1415,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
 
         EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
         EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
-        EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(face_off.dtype().number_of_elements(), grid_mesh.faces());
 
         // Content Consistency Checks //
@@ -1278,7 +1433,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
             for(const std::string &o2m_path : O2M_PATHS)
             {
                 EXPECT_TRUE(map_node.has_child(o2m_path));
-                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
         }
 
@@ -1359,7 +1513,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
 
         EXPECT_EQ(side_topo["coordset"].as_string(), SIDE_COORDSET_NAME);
         EXPECT_EQ(side_topo["elements/shape"].as_string(), side_type_name);
-        EXPECT_EQ(side_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(side_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(side_off.dtype().number_of_elements(), grid_sides);
 
         // Validate Correctness of Element Integrity //
@@ -1385,7 +1540,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
             for(const std::string &o2m_path : O2M_PATHS)
             {
                 EXPECT_TRUE(map_node.has_child(o2m_path));
-                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
         }
 
@@ -1456,6 +1610,40 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides)
 }
 
 //-----------------------------------------------------------------------------
+void
+test_save_mesh_helper(const conduit::Node &dsets,
+                      const std::string &base_name)
+{
+    Node opts;
+    opts["file_style"] = "root_only";
+    opts["suffix"] = "none";
+
+    relay::io::blueprint::save_mesh(dsets, base_name + "_yaml", "yaml", opts);
+}
+
+TEST(conduit_blueprint_generate_structured, gen_corners)
+{
+    Node mesh;
+    const index_t nx = 2;
+    const index_t ny = 3;
+    const index_t nz = 2;
+
+    mesh::examples::basic("quads", nx, ny, nz, mesh);
+
+    test_save_mesh_helper(mesh, "before_corners");
+
+    Node corner_mesh, t2c_map, c2t_map;
+    Node & topo = mesh["topologies/mesh"];
+    Node & corner_coords = corner_mesh["coordsets/ccoords"];
+    Node & corner_topo = corner_mesh["topologies/ctopo"];
+
+    mesh::topology::unstructured::generate_corners(
+        topo, corner_topo, corner_coords, t2c_map, c2t_map);
+
+    test_save_mesh_helper(corner_mesh, "after_corners");
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_corners)
 {
     const std::string CORNER_COORDSET_NAME = "ccoords";
@@ -1483,11 +1671,15 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         const index_t grid_corners = grid_elems * corners_per_elem;
         const float64 corner_volume = grid_mesh.elem_volume() / corners_per_elem;
 
+        test_save_mesh_helper(grid_mesh.mesh, "mesh_before_corners");
+
         Node corner_mesh, t2c_map, c2t_map;
         Node &corner_coords = corner_mesh["coordsets"][CORNER_COORDSET_NAME];
         Node &corner_topo = corner_mesh["topologies"][CORNER_TOPOLOGY_NAME];
         mesh::topology::unstructured::generate_corners(
             grid_topo, corner_topo, corner_coords, t2c_map, c2t_map);
+
+        test_save_mesh_helper(grid_mesh.mesh, "mesh_with_corners");
 
         Node info;
         EXPECT_TRUE(mesh::coordset::_explicit::verify(corner_coords, info));
@@ -1518,7 +1710,8 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
 
         EXPECT_EQ(corner_topo["coordset"].as_string(), CORNER_COORDSET_NAME);
         EXPECT_EQ(corner_topo["elements/shape"].as_string(), corner_type_name);
-        EXPECT_EQ(corner_conn.dtype().id(), grid_conn.dtype().id());
+        // relax exact type req, conn transforms will become index_t
+        // EXPECT_EQ(corner_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(corner_off.dtype().number_of_elements(), grid_corners);
 
         // Validate Correctness of Element Integrity //
@@ -1544,7 +1737,6 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
             for(const std::string &o2m_path : O2M_PATHS)
             {
                 EXPECT_TRUE(map_node.has_child(o2m_path));
-                EXPECT_EQ(map_node[o2m_path].dtype().id(), grid_conn.dtype().id());
             }
         }
 

@@ -111,7 +111,7 @@ def hostname(full=True):
 def sexe(cmd,ret_output=False,echo = False):
     """ Helper for executing shell commands. """
     if echo:
-        print "[exe: %s]" % cmd
+        print("[exe: %s]" % cmd)
     if ret_output:
         p = subprocess.Popen(cmd,
                              shell=True,
@@ -237,7 +237,7 @@ def tunnel(opts):
                                                               user = user,
                                                               host = host)
     print("")
-    print "[opening ssh tunnel]"
+    print("[opening ssh tunnel]")
     sexe(cmd,echo=True) 
 
 

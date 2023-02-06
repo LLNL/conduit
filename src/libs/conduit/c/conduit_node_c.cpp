@@ -108,6 +108,28 @@ conduit_node_number_of_children(conduit_node *cnode)
 }
 
 //-----------------------------------------------------------------------------
+void
+conduit_node_reset(conduit_node *cnode)
+{
+    cpp_node(cnode)->reset();
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_move(conduit_node *cnode_a, conduit_node *cnode_b)
+{
+    cpp_node_ref(cnode_a).move(cpp_node_ref(cnode_b));
+}
+
+//-----------------------------------------------------------------------------
+void
+conduit_node_swap(conduit_node *cnode_a, conduit_node *cnode_b)
+{
+    cpp_node_ref(cnode_a).swap(cpp_node_ref(cnode_b));
+}
+
+
+//-----------------------------------------------------------------------------
 conduit_index_t
 conduit_node_number_of_elements(conduit_node *cnode)
 {
@@ -424,6 +446,80 @@ conduit_node_load(conduit_node *cnode,
 }
 
 //-----------------------------------------------------------------------------
+// to_json
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+char*
+conduit_node_to_json(const conduit_node *cnode)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_json().c_str());
+}
+
+//-----------------------------------------------------------------------------
+char*
+conduit_node_to_json_with_options(const conduit_node *cnode,
+                                  const conduit_node *copts)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_json(cpp_node_ref(copts)).c_str());
+}
+
+//-----------------------------------------------------------------------------
+// to_yaml
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+char*
+conduit_node_to_yaml(const conduit_node *cnode)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_yaml().c_str());
+}
+
+//-----------------------------------------------------------------------------
+char*
+conduit_node_to_yaml_with_options(const conduit_node *cnode,
+                                  const conduit_node *copts)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_yaml(cpp_node_ref(copts)).c_str());
+}
+
+//-----------------------------------------------------------------------------
+// to_string
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+char*
+conduit_node_to_string(const conduit_node *cnode)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_string().c_str());
+}
+
+//-----------------------------------------------------------------------------
+char*
+conduit_node_to_string_with_options(const conduit_node *cnode,
+                                    const conduit_node *copts)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_string(cpp_node_ref(copts)).c_str());
+}
+
+//-----------------------------------------------------------------------------
+// to_summary_string
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+char* conduit_node_to_summary_string(const conduit_node *cnode)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_summary_string().c_str());
+}
+
+//-----------------------------------------------------------------------------
+char* conduit_node_to_summary_string_with_options(const conduit_node *cnode,
+                                                  const conduit_node *copts)
+{
+    return _conduit_strdup(cpp_node(cnode)->to_summary_string(cpp_node_ref(copts)).c_str());
+}
+
+//-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // -- set variants -- 
@@ -511,6 +607,17 @@ conduit_node_set_external_char8_str(conduit_node *cnode,
                                     char *value)
 {
     cpp_node(cnode)->set_external_char8_str(value);
+}
+
+//-----------------------------------------------------------------------------
+// string set_path_external
+//-----------------------------------------------------------------------------
+void
+conduit_node_set_path_external_char8_str(conduit_node *cnode,
+                                         const char *path,
+                                         char *value)
+{
+    cpp_node(cnode)->set_path_external_char8_str(path, value);
 }
 
 //-----------------------------------------------------------------------------
@@ -3910,8 +4017,8 @@ conduit_node_element_ptr(conduit_node *cnode,
 // fetch direct data pointer access 
 //-----------------------------------------------------------------------------
 void *
-conduit_fetch_node_data_ptr(conduit_node *cnode,
-                            const char* path)
+conduit_node_fetch_path_data_ptr(conduit_node *cnode,
+                                 const char* path)
 {
     return cpp_node(cnode)->fetch(path).data_ptr();
 }
@@ -3920,9 +4027,9 @@ conduit_fetch_node_data_ptr(conduit_node *cnode,
 // fetch element pointer access 
 //-----------------------------------------------------------------------------
 void *
-conduit_fetch_node_element_ptr(conduit_node *cnode,
-                               const char *path,
-                               conduit_index_t idx)
+conduit_node_fetch_path_element_ptr(conduit_node *cnode,
+                                    const char *path,
+                                    conduit_index_t idx)
 {
     return cpp_node(cnode)->fetch(path).element_ptr(idx);
 }

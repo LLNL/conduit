@@ -338,8 +338,10 @@ typedef conduit_int64 conduit_index64_t;
 /// use a 64-bit index, unless CONDUIT_INDEX_32 is defined.
 #ifdef CONDUIT_INDEX_32
 typedef conduit_index32_t conduit_index_t;
+#define CONDUIT_SIZEOF_INDEX_T 4
 #else
 typedef conduit_index64_t conduit_index_t;
+#define CONDUIT_SIZEOF_INDEX_T 8
 #endif 
 
 //-----------------------------------------------------------------------------

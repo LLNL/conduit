@@ -27,31 +27,6 @@
 // versions.
 //-----------------------------------------------------------------------------
 
-// helper macros for dealing with deprecated tp_print field in 
-// python 3.8. If you don't define it, you get an un-inited warning
-// if you do define it, you get a deprecated warning :-)
-// we suppress the deprecated warning only in 3.8.
-// 
-
-#if PY_VERSION_HEX >= 0x03080000 && \
-    PY_VERSION_HEX < 0x03090000 && \
-    !defined(CONDUIT_PLATFORM_WINDOWS)
-#define PRAGMA_PUSH_DEP_DECL \
-     _Pragma("GCC diagnostic push") \
-     _Pragma("GCC diagnostic ignored \"-Wdeprecated-declarations\"")
-#else
-#define PRAGMA_PUSH_DEP_DECL
-#endif
-
-#if PY_VERSION_HEX >= 0x03080000 && \
-    PY_VERSION_HEX < 0x03090000 && \
-    !defined(CONDUIT_PLATFORM_WINDOWS)
-#define PRAGMA_POP_DEP_DECL _Pragma("GCC diagnostic pop")
-#else
-#define PRAGMA_POP_DEP_DECL
-#endif
-
-
 #ifdef Py_TPFLAGS_HAVE_FINALIZE
     // python 3.8 adds tp_vectorcall, at end and special slot for tp_print
     // python 3.9 removes tp_print special slot
@@ -3181,7 +3156,6 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -3236,7 +3210,6 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *
@@ -3456,7 +3429,6 @@ static PyMethodDef PyConduit_Generator_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -3511,7 +3483,6 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static int
@@ -4027,6 +3998,20 @@ PyConduit_Schema_number_of_children(PyConduit_Schema *self)
 }
 
 //---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_name(PyConduit_Schema *self)
+{
+    return PyString_FromString(self->schema->name().c_str());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_path(PyConduit_Schema *self)
+{
+    return PyString_FromString(self->schema->path().c_str());
+}
+
+//---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Schema_has_path(PyConduit_Schema *self,
                           PyObject* args)
@@ -4429,10 +4414,21 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
     (PyCFunction)PyConduit_Schema_remove,
     METH_VARARGS | METH_KEYWORDS,
     "Remove a child by index or path"},
+    //-----------------------------------------------------------------------//
     {"number_of_children",
       (PyCFunction)PyConduit_Schema_number_of_children,
       METH_NOARGS, 
       "Number of child schemas"},
+    //-----------------------------------------------------------------------//
+    {"name",
+      (PyCFunction)PyConduit_Schema_name,
+      METH_NOARGS, 
+      "This schema's name"},
+    //-----------------------------------------------------------------------//
+    {"path",
+      (PyCFunction)PyConduit_Schema_path,
+      METH_NOARGS, 
+      "Path to this schema"},
     //-----------------------------------------------------------------------//
     {"has_path",
      (PyCFunction)PyConduit_Schema_has_path,
@@ -4483,7 +4479,6 @@ static PyMappingMethods PyConduit_Schema_as_mapping = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -4538,7 +4533,6 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyObject *
@@ -4847,7 +4841,6 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -4902,7 +4895,6 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 static PyConduit_NodeIterator *
@@ -5090,7 +5082,7 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
 static PyObject *
 PyConduit_Node_str(PyConduit_Node* self)
 {
-   return (Py_BuildValue("s", self->node->to_string().c_str()));
+   return (Py_BuildValue("s", self->node->to_summary_string().c_str()));
 }
 
 //---------------------------------------------------------------------------//
@@ -5577,6 +5569,20 @@ static PyObject *
 PyConduit_Node_number_of_children(PyConduit_Node *self)
 {
     return PyLong_FromSsize_t((Py_ssize_t)self->node->number_of_children());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_name(PyConduit_Node *self)
+{
+    return PyString_FromString(self->node->name().c_str());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_path(PyConduit_Node *self)
+{
+    return PyString_FromString(self->node->path().c_str());
 }
 
 //---------------------------------------------------------------------------//
@@ -6085,17 +6091,108 @@ PyConduit_Node_reset(PyConduit_Node *self)
 
 //---------------------------------------------------------------------------//
 static PyObject *
+PyConduit_Node_move(PyConduit_Node *self,
+                    PyObject *args,
+                    PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    self->node->move(n_other);
+    Py_RETURN_NONE;
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_swap(PyConduit_Node *self,
+                    PyObject *args,
+                    PyObject *kwargs)
+{
+    PyObject   *py_node  = NULL;
+
+    static const char *kwlist[] = {"other",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'other' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    self->node->swap(n_other);
+    Py_RETURN_NONE;
+}
+
+
+//---------------------------------------------------------------------------//
+static PyObject *
 PyConduit_Node_set(PyConduit_Node* self,
                    PyObject* args)
 {
-    PyObject* value = NULL;
+    PyObject* py_value = NULL;
+    PyObject* py_buff  = NULL;
     
-    if (!PyArg_ParseTuple(args, "O", &value))
+    if (!PyArg_ParseTuple(args, "O|O", &py_value,&py_buff))
     {
          return (NULL);
     }
 
-    if (PyConduit_Node_Set_From_Python(*self->node, value))
+    // check for schema and buffer case
+    if(PyConduit_Schema_Check(py_value) && py_buff != NULL )
+    {   
+        if( !PyObject_CheckBuffer(py_buff) )
+        {
+            PyErr_SetString(PyExc_TypeError,
+            "Node set with schema requires buffer argument");
+            return NULL;
+        }
+
+        Schema &schema = *((PyConduit_Schema*)py_value)->schema;
+
+        Py_buffer buff_view;
+        PyObject_GetBuffer(py_buff, &buff_view, PyBUF_WRITE);
+        unsigned char *ptr = reinterpret_cast<unsigned char*>(buff_view.buf);
+
+        self->node->set(schema,ptr);
+        Py_RETURN_NONE;
+    }
+    
+
+    if (PyConduit_Node_Set_From_Python(*self->node, py_value))
     {
          return (NULL);
     }
@@ -6110,27 +6207,52 @@ static PyObject *
 PyConduit_Node_set_external(PyConduit_Node* self,
                             PyObject* args)
 {
-    PyObject* value = NULL;
+    PyObject* py_value = NULL;
+    PyObject* py_buff  = NULL;
 
-    if( !PyArg_ParseTuple(args, "O", &value) ||
-        ( !PyConduit_Node_Check(value) && !PyArray_Check(value) ) )
+    if( !PyArg_ParseTuple(args, "O|O", &py_value, &py_buff) ||
+        ( !PyConduit_Node_Check(py_value) && // not a node
+          !PyConduit_Schema_Check(py_value) && // not a schema
+          !PyArray_Check(py_value) ) ) // not a numpy array
     {
         PyErr_SetString(PyExc_TypeError,
-                        "set_external requires a numpy array or conduit Node");
+        "set_external requires a numpy array, conduit Node, or conduit Schema and Buffer");
         return NULL;
     }
 
-    // node case
-    if(PyConduit_Node_Check(value))
-    {
-        Node &n_other = *PyConduit_Node_Get_Node_Ptr(value);
-        self->node->update_external(n_other);
+    // schema + buffer cases
+    if(PyConduit_Schema_Check(py_value))
+    {    
+        if( py_buff == NULL || !PyObject_CheckBuffer(py_buff))
+        {
+            PyErr_SetString(PyExc_TypeError,
+            "set_external requires a numpy array, conduit Node, or conduit Schema and Buffer");
+            return NULL;
+        }
+
+        Schema &schema = *((PyConduit_Schema*)py_value)->schema;
+
+        Py_buffer buff_view;
+        PyObject_GetBuffer(py_buff, &buff_view, PyBUF_WRITE);
+        unsigned char *ptr = reinterpret_cast<unsigned char*>(buff_view.buf);
+
+        self->node->set_external(schema,ptr);
         Py_RETURN_NONE;
     }
 
+    // node case
+    if(PyConduit_Node_Check(py_value))
+    {
+        Node &n_other = *PyConduit_Node_Get_Node_Ptr(py_value);
+        self->node->update_external(n_other);
+        Py_RETURN_NONE;
+    }
+    
+    // buffer cases (scheam)
+
     // numpy array case
-    PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)value);
-    PyArrayObject *py_arr = (PyArrayObject*)value;
+    PyArray_Descr *desc = PyArray_DESCR((PyArrayObject*)py_value);
+    PyArrayObject *py_arr = (PyArrayObject*)py_value;
     npy_intp num_ele = PyArray_SIZE(py_arr);
     index_t offset = 0;
     index_t stride = (index_t) PyArray_STRIDE(py_arr, 0);
@@ -6785,6 +6907,16 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       METH_NOARGS, 
       "Number of child nodes"},
     //-----------------------------------------------------------------------//
+    {"name",
+      (PyCFunction)PyConduit_Node_name,
+      METH_NOARGS, 
+      "This node's name"},
+    //-----------------------------------------------------------------------//
+    {"path",
+      (PyCFunction)PyConduit_Node_path,
+      METH_NOARGS, 
+      "Path to this node"},
+    //-----------------------------------------------------------------------//
     {"has_path",
      (PyCFunction)PyConduit_Node_has_path,
      METH_VARARGS, 
@@ -6830,6 +6962,17 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
      (PyCFunction)PyConduit_Node_child,
      METH_VARARGS | METH_KEYWORDS,
      "Access existing direct child by index or name"},
+    //-----------------------------------------------------------------------//
+    {"move", 
+     (PyCFunction)PyConduit_Node_move,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Move the contents of passed node into this node."
+     " Passed node is empty after the move."},
+    //-----------------------------------------------------------------------//
+    {"swap", 
+     (PyCFunction)PyConduit_Node_swap,
+     METH_VARARGS | METH_KEYWORDS, 
+     "Swap contents of this node with those of the passed node"},
     //-----------------------------------------------------------------------//
     {"remove", 
      (PyCFunction)PyConduit_Node_remove,
@@ -6992,7 +7135,6 @@ static PyMappingMethods node_as_mapping = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Node_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -7047,7 +7189,6 @@ static PyTypeObject PyConduit_Node_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 // conduit:::about
@@ -7929,7 +8070,6 @@ static PyMethodDef PyConduit_Endianness_METHODS[] =
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
-PRAGMA_PUSH_DEP_DECL
 
 static PyTypeObject PyConduit_Endianness_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -7984,7 +8124,6 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
    PyVarObject_TAIL
 };
 
-PRAGMA_POP_DEP_DECL
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//

@@ -76,12 +76,52 @@ static const std::vector<std::string> COORD_TYPES = {"uniform", "rectilinear", "
 static const std::vector<std::string> COORD_SYSTEMS = {"cartesian", "cylindrical", "spherical"};
 
 static const std::vector<std::string> TOPO_TYPES = {"points", "uniform", "rectilinear", "structured", "unstructured"};
-static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", "tet", "hex", "polygonal", "polyhedral"};
-static const std::vector<std::string> TOPO_SHAPE_IDS = {"p", "l", "f", "f", "c", "c", "f", "c"};
-static const std::vector<index_t> TOPO_SHAPE_DIMS = {0, 1, 2, 2, 3, 3, 2, 3};
-static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {1, 2, 3, 4, 4, 8, -1, -1};
-static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {-1, 0, 1, 1, 2, 3, 1, 6};
-static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {0, 2, 3, 4, 4, 6, -1, -1};
+
+// Note: To add a new topo shape type, you must do the following:
+//  1) Add an entry to TOPO_SHAPES, TOPO_SHAPE_IDS, TOPO_SHAPE_DIMS, TOPO_SHAPE_INDEX_COUNTS, 
+//     TOPO_SHAPE_EMBED_TYPES, TOPO_SHAPE_EMBED_COUNTS, and TOPO_SHAPE_EMBEDDINGS. These arrays
+//     are indexed by the same values, so be very careful to add elements in the same place
+//     in each array.
+//  2) If you are adding elements in the middle of these arrays, then make sure that for 
+//     TOPO_SHAPE_EMBED_TYPES, you update the indices of any shapes that come after the ones
+//     you are adding.
+//  3) Head over to conduit_blueprint_mesh_utils_iterate_elements.hpp and find the enum class ShapeId.
+//     Add an element for your shape there, and update the others if adding in the middle.
+
+static const std::vector<std::string> TOPO_SHAPES = {"point", "line", "tri", "quad", 
+    "tet", "hex", "wedge", "pyramid", "polygonal", "polyhedral", "mixed"};
+
+// "p" is for point
+// "l" is for line
+// "f" is for face
+// "c" is for cell
+static const std::vector<std::string> TOPO_SHAPE_IDS = {/*point*/ "p", /*line*/ "l", /*tri*/ "f", /*quad*/ "f", 
+    /*tet*/ "c", /*hex*/ "c", /*wedge*/ "c", /*pyramid*/ "c", /*polygonal*/ "f", /*polyhedral*/ "c"};
+
+// The dimensions for each element in TOPO_SHAPES
+static const std::vector<index_t> TOPO_SHAPE_DIMS = {/*point*/ 0, /*line*/ 1, /*tri*/ 2, /*quad*/ 2, 
+    /*tet*/ 3, /*hex*/ 3, /*wedge*/ 3, /*pyramid*/ 3, /*polygonal*/ 2, /*polyhedral*/ 3, /*mixed*/ -1};
+
+// How many points are in each element in TOPO_SHAPES
+static const std::vector<index_t> TOPO_SHAPE_INDEX_COUNTS = {/*point*/ 1, /*line*/ 2, /*tri*/ 3, /*quad*/ 4, 
+    /*tet*/ 4, /*hex*/ 8, /*wedge*/ 6, /*pyramid*/ 5, /*polygonal*/ -1, /*polyhedral*/ -1, /*mixed*/ -1};
+
+// For each element in TOPO_SHAPES, the index into TOPO_SHAPES of the underlying shape. 
+// Points have no underlying shape so they get -1.
+// Lines have points under the hood so they get 0.
+// Triangles are made of lines so they get 1.
+// Hexahedrons are made of quads so they get 3.
+static const std::vector<index_t> TOPO_SHAPE_EMBED_TYPES = {/*point*/ -1, /*line*/ 0, /*tri*/ 1, /*quad*/ 1, 
+    /*tet*/ 2, /*hex*/ 3, /*wedge*/ 2, /*pyramid*/ 2, /*polygonal*/ 1, /*polyhedral*/ 8, /*mixed*/ -1};
+
+// How many of those underlying shapes are there?
+// Lines are made of two points so they get 2.
+// Triangles are made of three lines so they get 3.
+// Hexahedrons are made of 6 quads so they get 6.
+// Wedges are made of two end caps (tris) plus three quad sides each split into two tris, so they get 8.
+// Pyramids are made of four triangular sides plus a quad base split into two tris, so they get 6.
+static const std::vector<index_t> TOPO_SHAPE_EMBED_COUNTS = {/*point*/ 0, /*line*/ 2, /*tri*/ 3, /*quad*/ 4, 
+    /*tet*/ 4, /*hex*/ 6, /*wedge*/ 8, /*pyramid*/ 6, /*polygonal*/ -1, /*polyhedral*/ -1, /*mixed*/ -1};
 
 // TODO(JRC): These orientations currently assume the default Conduit-Blueprit
 // windings are used for the input geometry, which happens to be the case
@@ -102,10 +142,17 @@ static const index_t TOPO_TET_EMBEDDING[4][3] = {
 static const index_t TOPO_HEX_EMBEDDING[6][4] = {
     {0, 3, 2, 1}, {0, 1, 5, 4}, {1, 2, 6, 5},
     {2, 3, 7, 6}, {3, 0, 4, 7}, {4, 5, 6, 7}};
+static const index_t TOPO_WEDGE_EMBEDDING[8][3] = {
+    {0, 1, 2}, {0, 1, 3}, {1, 3, 4}, {1, 2, 4},
+    {2, 4, 5}, {2, 0, 5}, {0, 5, 3}, {3, 4, 5}};
+static const index_t TOPO_PYRAMID_EMBEDDING[6][3] = {
+    {0, 1, 2}, {3, 2, 0}, {0, 1, 4},
+    {1, 2, 4}, {2, 3, 4}, {3, 0, 4}};
 static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
     &TOPO_POINT_EMBEDDING[0][0], &TOPO_LINE_EMBEDDING[0][0],
     &TOPO_TRI_EMBEDDING[0][0], &TOPO_QUAD_EMBEDDING[0][0],
     &TOPO_TET_EMBEDDING[0][0], &TOPO_HEX_EMBEDDING[0][0],
+    &TOPO_WEDGE_EMBEDDING[0][0], &TOPO_PYRAMID_EMBEDDING[0][0],
     NULL, NULL};
 
 //-----------------------------------------------------------------------------
@@ -204,9 +251,9 @@ struct CONDUIT_BLUEPRINT_API TopologyMetadata
 
     void add_entity_assoc(IndexType type, index_t e0_id, index_t e0_dim, index_t e1_id, index_t e1_dim);
 
+    std::vector<index_t> &get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim);
     const std::vector<index_t> &get_entity_assocs(IndexType type, index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
     void get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
-    void get_entity_data(IndexType type, index_t entity_id, index_t entity_dim, Node &data) const;
     void get_point_data(IndexType type, index_t point_id, Node &data) const;
 
     index_t get_length(index_t dim = -1) const;
@@ -214,19 +261,44 @@ struct CONDUIT_BLUEPRINT_API TopologyMetadata
 
     std::string to_json() const;
 
+    void expand_assoc_capacity(IndexType type, index_t idx, index_t dim);
+    inline index_t next_global_id(index_t dim) const
+    {
+        index_t tdim1 = topo_shape.dim + 1;
+        return dim_geassocs_maps[dim].size() / tdim1;
+    }
+    inline index_t next_local_id(index_t dim) const
+    {
+        index_t tdim1 = topo_shape.dim + 1;
+        return dim_leassocs_maps[dim].size() / tdim1;
+    }
+
     const conduit::Node *topo, *cset;
     const conduit::DataType int_dtype, float_dtype;
     const ShapeCascade topo_cascade;
     const ShapeType topo_shape;
 
+    /*
+      dim_geassocs_maps[dim][element * (topodims+1) + dim] -> associates vector
+          [dim 0]
+          [dim 1]--->elements
+          [dim 2]      [ei=0, dim=0]
+          [dim 3]      [ei=0, dim=1]
+                       [ei=0, dim=2]--->associates {1,3,5}
+                       [ei=0, dim=3]
+                       [ei=1, dim=0]
+                       [ei=1, dim=1]
+                       ...
+                       [ei=nelem-1, dim=3]
+
+     */
+
     // per-dimension topology nodes (mapped onto 'cset' coordinate set)
     std::vector< conduit::Node > dim_topos;
-    // per-dimension maps from an entity's point id set to its global entity id
-    std::vector< std::map< std::set<index_t>, index_t > > dim_geid_maps;
     // per-dimension maps from global entity ids to per-dimension global associate ids
-    std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_geassocs_maps;
+    std::vector< std::vector< std::vector<index_t> > > dim_geassocs_maps;
     // per-dimension maps from local entity ids to per-dimension local associate ids
-    std::vector< std::vector< std::vector< std::pair< std::vector<index_t>, std::set<index_t> > > > > dim_leassocs_maps;
+    std::vector< std::vector< std::vector<index_t> > > dim_leassocs_maps;
     // per-dimension mapping from local entity ids to global entity ids (delegates)
     std::vector< std::vector<index_t> > dim_le2ge_maps;
 };
@@ -249,6 +321,66 @@ CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const s
 index_t CONDUIT_BLUEPRINT_API find_domain_id(const Node &node);
 
 //-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::connectivity --
+//-----------------------------------------------------------------------------
+namespace connectivity
+{
+    //-------------------------------------------------------------------------
+    typedef std::vector<index_t> ElemType;
+    typedef std::map< index_t, std::vector<index_t> > SubelemMap;
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API make_element_2d(std::vector<index_t>& elem,
+                                               index_t element,
+                                               index_t iwidth);
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API make_element_3d(ElemType& connect,
+                                               index_t element,
+                                               index_t iwidth,
+                                               index_t jwidth,
+                                               index_t kwidth,
+                                               SubelemMap& faces);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API create_elements_2d(const Node& ref_win,
+                                                  index_t i_lo,
+                                                  index_t j_lo,
+                                                  index_t iwidth,
+                                                  std::map<index_t, std::vector<index_t> >& elems);
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API create_elements_3d(const Node& ref_win,
+                                                  index_t i_lo,
+                                                  index_t j_lo,
+                                                  index_t k_lo,
+                                                  index_t iwidth,
+                                                  index_t jwidth,
+                                                  index_t kwidth,
+                                                  std::map<index_t, ElemType>& elems,
+                                                  SubelemMap& faces);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API connect_elements_2d(const Node& ref_win,
+                                                   index_t i_lo,
+                                                   index_t j_lo,
+                                                   index_t iwidth,
+                                                   index_t ratio,
+                                                   index_t& new_vertex,
+                                                   std::map<index_t, std::vector<index_t> >& elems);
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API connect_elements_3d(const Node& ref_win,
+                                                   index_t i_lo,
+                                                   index_t j_lo,
+                                                   index_t k_lo,
+                                                   index_t iwidth,
+                                                   index_t jwidth,
+                                                   index_t& new_vertex,
+                                                   std::map<index_t, ElemType>& elems);
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::connectivity --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::coordset --
 //-----------------------------------------------------------------------------
 namespace coordset
@@ -267,10 +399,11 @@ namespace coordset
 
     //-----------------------------------------------------------------------------
     /**
-    @brief Returns the number of verticies in each dimension for the given coordset.
-    @return A vector of index_t in the format {d0_nverts, ... , dNnverts}
+    @brief Updates array d to hold the number of verticies in each dimension
+        for the given coordset. Explicit coordsets will just report their
+        number_of_elements() in d[0].
     */
-    std::vector<index_t> dim_lengths(const conduit::Node &n);
+    void logical_dims(const conduit::Node &n, index_t *d, index_t maxdims);
 
     //-----------------------------------------------------------------------------
     /**
@@ -308,7 +441,7 @@ namespace coordset
     //-------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::utils::coorset --
+// -- end conduit::blueprint::mesh::utils::coordset --
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -325,19 +458,40 @@ namespace topology
     //-------------------------------------------------------------------------
     index_t CONDUIT_BLUEPRINT_API length(const conduit::Node &topo);
 
+    // return the coordset for this topology
+    const Node & coordset(const conduit::Node &topo);
+
+    //-------------------------------------------------------------------------
+    /**
+     * @brief Reindexes the vertices in a topology to be associated with a new
+     * coordset, based on a global vertex ID numbering.
+     * The old coordset must be a subset of the new coordset.
+     */
+    void CONDUIT_BLUEPRINT_API reindex_coords(const conduit::Node& topo,
+                                              const conduit::Node& new_coordset,
+                                              const conduit::Node& old_gvids,
+                                              const conduit::Node& new_gvids,
+                                              conduit::Node& out_topo);
+
     //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::topology::unstructured --
     //-------------------------------------------------------------------------
     namespace unstructured
     {
-        // TODO(JRC): Expose this 'cache' version of the function publicly?
         //-------------------------------------------------------------------------
-        void CONDUIT_BLUEPRINT_API generate_offsets(Node &topo,
+        // Generates element offsets for given topo
+        void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
                                                     Node &dest);
 
         //-------------------------------------------------------------------------
+        // Generates element and subelement offsets for given topo
         void CONDUIT_BLUEPRINT_API generate_offsets(const Node &topo,
-                                                    Node &dest);
+                                                    Node &dest_ele_offsets,
+                                                    Node &dest_subele_offsets);
+
+        //-------------------------------------------------------------------------
+        // Adds offsets to given topo
+        void CONDUIT_BLUEPRINT_API generate_offsets_inline(Node &topo);
 
         //-------------------------------------------------------------------------
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,

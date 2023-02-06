@@ -87,6 +87,31 @@ namespace conduit
 class Generator::Parser
 {
 public:
+
+//-----------------------------------------------------------------------------
+// Shared string parsing helpers
+// TODO: try to inline these helpers? Not sure it matters since
+// they call other routines?
+//-----------------------------------------------------------------------------
+    // checks if c-string is a null pointer or empty
+    static bool string_is_empty(const char *txt_value);
+
+    // checks if input c-string is an integer or a double
+    static bool string_is_number(const char *txt_value);
+
+    // checks if input string holds something that converts
+    // to a double (integer c-string will pass this check )
+    static bool string_is_double(const char *txt_value);
+
+    // checks if input c-string holds something that converts
+    // to an integer
+    static bool string_is_integer(const char *txt_value);
+
+    // converts c-string to double
+    static double string_to_double(const char *txt_value);
+    // converts c-string to long
+    static long int string_to_long(const char *txt_value);
+
 //-----------------------------------------------------------------------------
 // Generator::Parser::JSON handles parsing via rapidjson.
 // We want to isolate the conduit API from the rapidjson headers
@@ -223,28 +248,6 @@ public:
     // with the yaml parser
     //
 
-    // TODO: try to inline these helpers? Not sure it matters since
-    // they call other routines
-
-    // checks if c-string is a null pointer or empty
-    static bool string_is_empty(const char *txt_value);
-
-    // checks if input c-string is an integer or a double
-    static bool string_is_number(const char *txt_value);
-
-    // checks if input string holds something that converts
-    // to a double (integer c-string will pass this check )
-    static bool string_is_double(const char *txt_value);
-
-    // checks if input c-string holds something that converts
-    // to an integer
-    static bool string_is_integer(const char *txt_value);
-
-    // converts c-string to double
-    static double string_to_double(const char *txt_value);
-    // converts c-string to long
-    static long int string_to_long(const char *txt_value);
-
     // assumes res is already inited to DataType::int64 w/ proper size
     static void parse_yaml_int64_array(yaml_document_t *yaml_doc,
                                        yaml_node_t *yaml_node,
@@ -294,6 +297,74 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+// -- begin conduit::Generator::Parser:: --
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+// checks if input string is a null pointer or empty
+bool
+Generator::Parser::string_is_empty(const char *txt_value)
+{
+    if(txt_value == NULL)
+        return true;
+    return strlen(txt_value) == 0;
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string holds something that converts
+// to a double (integer strings will pass this check )
+bool
+Generator::Parser::string_is_number(const char *txt_value)
+{
+    return string_is_integer(txt_value) || string_is_double(txt_value);
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string holds something that converts
+// to a double (integer strings will pass this check )
+bool
+Generator::Parser::string_is_double(const char *txt_value)
+{
+    // TODO: inline check for empty ?
+    if(string_is_empty(txt_value))
+        return false;
+    char *val_end = NULL;
+    strtod(txt_value,&val_end);
+    return *val_end == 0;
+}
+
+//---------------------------------------------------------------------------//
+// checks if input string holds something that converts
+// to an integer
+bool
+Generator::Parser::string_is_integer(const char *txt_value)
+{
+    // TODO: inline check for empty ?
+    if(string_is_empty(txt_value))
+        return false;
+    char *val_end = NULL;
+    strtol(txt_value,&val_end,10);
+    return *val_end == 0;
+}
+
+//---------------------------------------------------------------------------//
+double 
+Generator::Parser::string_to_double(const char *txt_value)
+{
+    char *val_end = NULL;
+    return strtod(txt_value,&val_end);
+}
+
+//---------------------------------------------------------------------------//
+long int
+Generator::Parser::string_to_long(const char *txt_value)
+{
+    char *val_end = NULL;
+    return strtol(txt_value,&val_end,10);
+}
+
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::Generator::Parser::JSON --
 //-----------------------------------------------------------------------------
 
@@ -318,7 +389,14 @@ Generator::Parser::JSON::json_to_numeric_dtype(const conduit_rapidjson::Value &j
         } 
         // else -- value already inited to EMPTY_ID
     }
-    
+    else if(jvalue.IsString()) // we may have strings that are nan, inf, etc
+    {
+        if(string_is_double(jvalue.GetString()))
+        {
+            res  = DataType::FLOAT64_ID;
+        }
+    }
+
     return res;
 }
 
@@ -332,6 +410,9 @@ Generator::Parser::JSON::check_homogenous_json_array(const conduit_rapidjson::Va
 
     if(jvalue.Size() == 0)
         return DataType::EMPTY_ID;
+    
+    // we could also have string reps of nan, infinity, etc.
+    // json_to_numeric_dtype handles that case fo us
 
     index_t val_type = json_to_numeric_dtype(jvalue[(conduit_rapidjson::SizeType)0]); 
     bool homogenous  = (val_type != DataType::EMPTY_ID);
@@ -517,7 +598,20 @@ Generator::Parser::JSON::parse_json_float64_array(const conduit_rapidjson::Value
     res.resize(jvalue.Size(),0);
     for (conduit_rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
     {
-        res[i] = jvalue[i].GetDouble();
+        if(jvalue[i].IsNumber())
+        {
+            res[i] = jvalue[i].GetDouble();
+        }
+        else if(jvalue[i].IsString()) // could be an inline string with nan,inf,etc
+        {
+            res[i] = string_to_double(jvalue[i].GetString());
+        }
+        else
+        {
+            CONDUIT_ERROR("JSON Generator error:\n"
+                           << "parse_json_float64_array: unexpected JSON value type "
+                           << "at index" << i);
+        }
     }
 }
 
@@ -529,7 +623,20 @@ Generator::Parser::JSON::parse_json_float64_array(const conduit_rapidjson::Value
     // for efficiency - assumes res is already alloced to proper size
     for (conduit_rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
     {
-       res[i] = jvalue[i].GetDouble();
+        if(jvalue[i].IsNumber())
+        {
+            res[i] = jvalue[i].GetDouble();
+        }
+        else if(jvalue[i].IsString()) // could be an inline string with nan,inf,etc
+        {
+            res[i] = string_to_double(jvalue[i].GetString());
+        }
+        else
+        {
+            CONDUIT_ERROR("JSON Generator error:\n"
+                           << "parse_json_float64_array: unexpected JSON value type "
+                           << "at index" << i);
+        }
     }
 }
 
@@ -910,6 +1017,12 @@ Generator::Parser::JSON::parse_inline_value(const conduit_rapidjson::Value &jval
         else if(hval_type == DataType::FLOAT64_ID)
         {
             parse_json_float64_array(jvalue,node);
+        }
+        else if(hval_type == DataType::EMPTY_ID)
+        {
+            // we need to allow this case but do nothing.
+            // for conduit_json cases, the node will
+            // have the right data type
         }
         else
         {
@@ -1441,6 +1554,7 @@ Generator::Parser::JSON::parse_error_details(const std::string &json,
        << " json:\n"     << json << "\n"; 
 }
 
+
 //-----------------------------------------------------------------------------
 // -- end conduit::Generator::Parser::JSON --
 //-----------------------------------------------------------------------------
@@ -1541,69 +1655,6 @@ Generator::Parser::YAML::YAMLParserWrapper::yaml_doc_root_ptr()
 //-----------------------------------------------------------------------------
 // -- end conduit::Generator::YAML::YAMLParserWrapper --
 //-----------------------------------------------------------------------------
-
-//---------------------------------------------------------------------------//
-// checks if input string is a null pointer or empty
-bool
-Generator::Parser::YAML::string_is_empty(const char *txt_value)
-{
-    if(txt_value == NULL)
-        return true;
-    return strlen(txt_value) == 0;
-}
-
-//---------------------------------------------------------------------------//
-// checks if input string holds something that converts
-// to a double (integer strings will pass this check )
-bool
-Generator::Parser::YAML::string_is_number(const char *txt_value)
-{
-    return string_is_integer(txt_value) || string_is_double(txt_value);
-}
-
-//---------------------------------------------------------------------------//
-// checks if input string holds something that converts
-// to a double (integer strings will pass this check )
-bool
-Generator::Parser::YAML::string_is_double(const char *txt_value)
-{
-    // TODO: inline check for empty ?
-    if(string_is_empty(txt_value))
-        return false;
-    char *val_end = NULL;
-    strtod(txt_value,&val_end);
-    return *val_end == 0;
-}
-
-//---------------------------------------------------------------------------//
-// checks if input string holds something that converts
-// to an integer
-bool
-Generator::Parser::YAML::string_is_integer(const char *txt_value)
-{
-    // TODO: inline check for empty ?
-    if(string_is_empty(txt_value))
-        return false;
-    char *val_end = NULL;
-    strtol(txt_value,&val_end,10);
-    return *val_end == 0;
-}
-
-//---------------------------------------------------------------------------//
-double 
-Generator::Parser::YAML::string_to_double(const char *txt_value)
-{
-    char *val_end = NULL;
-    return strtod(txt_value,&val_end);
-}
-
-//---------------------------------------------------------------------------//
-long int
-Generator::Parser::YAML::string_to_long(const char *txt_value)
-{
-    char *val_end = NULL;
-    return strtol(txt_value,&val_end,10);
-}
 
 //---------------------------------------------------------------------------//
 index_t 

@@ -17,11 +17,10 @@
 #include "conduit.hpp"
 
 #include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_config.h"
 
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_examples.hpp"
-#include "conduit_blueprint_mesh_examples_julia.hpp"
-#include "conduit_blueprint_mesh_examples_venn.hpp"
 
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_examples.hpp"
@@ -31,6 +30,9 @@
 #include "conduit_blueprint_mcarray_examples.hpp"
 
 #include "conduit_blueprint_zfparray.hpp"
+
+#include "conduit_blueprint_table.hpp"
+#include "conduit_blueprint_table_examples.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

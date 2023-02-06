@@ -50,6 +50,34 @@ if(WIN32 AND BUILD_SHARED_LIBS)
     set(CONDUIT_WINDOWS_DLL_EXPORTS TRUE)
 endif()
 
+
+################################
+# Extra RPath Settings
+################################
+# BLT sets this when BUILD_SHARED_LIBS == TRUE
+# We always want to apply rpath settings b/c even if we are building our own
+# static libs, tpls may be shared libs
+if(NOT BUILD_SHARED_LIBS)
+    # use, i.e. don't skip the full RPATH for the build tree
+    set(CMAKE_SKIP_BUILD_RPATH  FALSE)
+
+    # when building, don't use the install RPATH already
+    # (but later on when installing)
+    set(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
+    set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+    set(CMAKE_INSTALL_NAME_DIR "${CMAKE_INSTALL_PREFIX}/lib")
+
+    # add the automatically determined parts of the RPATH
+    # which point to directories outside the build tree to the install RPATH
+    set(CMAKE_INSTALL_RPATH_USE_LINK_PATH TRUE)
+
+    # the RPATH to be used when installing, but only if it's not a system directory
+    list(FIND CMAKE_PLATFORM_IMPLICIT_LINK_DIRECTORIES "${CMAKE_INSTALL_PREFIX}/lib" isSystemDir)
+    if("${isSystemDir}" STREQUAL "-1")
+        set(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/lib")
+    endif()
+endif()
+
 if( BLT_CXX_STD STREQUAL "c++98" )
     message(FATAL_ERROR "Conduit now requires C++11 support."
                         "\nPlease set BLT_CXX_STD to c++11 or newer.")
@@ -129,7 +157,7 @@ if(GIT_FOUND)
     message(STATUS "git executable: ${GIT_EXECUTABLE}")
     # try to get sha1
     execute_process(COMMAND
-        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=40 --dirty
+        "${GIT_EXECUTABLE}" rev-parse HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         OUTPUT_VARIABLE CONDUIT_GIT_SHA1
         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -137,10 +165,18 @@ if(GIT_FOUND)
     if("${CONDUIT_GIT_SHA1}" STREQUAL "")
        set(CONDUIT_GIT_SHA1 "unknown")
     endif()
+    execute_process(COMMAND
+        "${GIT_EXECUTABLE}" diff --quiet HEAD
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        RESULT_VARIABLE res
+        OUTPUT_QUIET ERROR_QUIET)
+    if (res)
+       string(APPEND CONDUIT_GIT_SHA1 "-dirty")
+    endif ()
     message(STATUS "git SHA1: " ${CONDUIT_GIT_SHA1})
 
     execute_process(COMMAND
-        "${GIT_EXECUTABLE}" describe --match=NeVeRmAtCh --always --abbrev=5 --dirty
+        "${GIT_EXECUTABLE}" rev-parse --short HEAD
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         OUTPUT_VARIABLE CONDUIT_GIT_SHA1_ABBREV
         ERROR_QUIET OUTPUT_STRIP_TRAILING_WHITESPACE)

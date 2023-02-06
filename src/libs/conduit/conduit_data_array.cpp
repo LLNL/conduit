@@ -389,9 +389,9 @@ DataArray<T>::min()  const
 //---------------------------------------------------------------------------// 
 template <typename T>
 T
-DataArray<T>::max()  const
+DataArray<T>::max() const
 {
-    T res = std::numeric_limits<T>::min();
+    T res = std::numeric_limits<T>::lowest();
     for(index_t i = 0; i < number_of_elements(); i++)
     {
         const T &val = element(i);
@@ -408,7 +408,7 @@ DataArray<T>::max()  const
 //---------------------------------------------------------------------------// 
 template <typename T>
 T
-DataArray<T>::sum()  const
+DataArray<T>::sum() const
 {
     T res =0;
     for(index_t i = 0; i < number_of_elements(); i++)
@@ -423,7 +423,7 @@ DataArray<T>::sum()  const
 //---------------------------------------------------------------------------// 
 template <typename T>
 float64
-DataArray<T>::mean()  const
+DataArray<T>::mean() const
 {
     float64 res =0;
     for(index_t i = 0; i < number_of_elements(); i++)
@@ -436,6 +436,21 @@ DataArray<T>::mean()  const
     return res;
 }
 
+//---------------------------------------------------------------------------// 
+template <typename T>
+index_t
+DataArray<T>::count(T val) const
+{
+    index_t res= 0;
+    for(index_t i = 0; i < number_of_elements(); i++)
+    {
+        if(element(i) == val)
+        {
+            res++;
+        }
+    }
+    return res;
+}
 
 //---------------------------------------------------------------------------// 
 template <typename T>
@@ -503,7 +518,10 @@ void
 DataArray<T>::to_json_stream(std::ostream &os) const 
 { 
     index_t nele = number_of_elements();
-    if(nele > 1)
+    // note: nele == 0 case: 
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
         os << "[";
 
     bool first=true;
@@ -559,8 +577,10 @@ DataArray<T>::to_json_stream(std::ostream &os) const
         }
         first=false;
     }
-
-    if(nele > 1)
+    // note: nele == 0 case: 
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
         os << "]";
 }
 
@@ -1753,9 +1773,9 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
     else
     {
         // if above threshold only show threshold # of values
-        int half = threshold / 2;
-        int bottom = half;
-        int top = half;
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
 
         //
         // if odd, show 1/2 +1 first
@@ -1770,7 +1790,7 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
             os << "[";
 
         bool done  = (nele == 0);
-        int idx = 0;
+        index_t idx = 0;
 
         while(!done)
         {
@@ -1901,6 +1921,10 @@ template class DataArray<float>;
 
 #ifndef CONDUIT_USE_DOUBLE
 template class DataArray<double>;
+#endif
+
+#ifdef CONDUIT_USE_LONG_DOUBLE
+    ltemplate class DataArray<long double>;
 #endif
 
 }

@@ -44,6 +44,7 @@ set(conduit_headers
     conduit_core.hpp
     conduit_endianness.hpp
     conduit_data_array.hpp
+    conduit_data_accessor.hpp
     conduit_data_type.hpp
     conduit_node.hpp
     conduit_generator.hpp
@@ -52,6 +53,7 @@ set(conduit_headers
     conduit_schema.hpp
     conduit_log.hpp
     conduit_utils.hpp
+    conduit_annotations.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
     conduit_config.hpp
@@ -78,12 +80,14 @@ set(conduit_sources
     conduit_endianness.cpp
     conduit_data_type.cpp
     conduit_data_array.cpp
+    conduit_data_accessor.cpp
     conduit_generator.cpp
     conduit_node.cpp
     conduit_node_iterator.cpp
     conduit_schema.cpp
     conduit_log.cpp
     conduit_utils.cpp
+    conduit_annotations.cpp
     )
 
 #
@@ -125,6 +129,7 @@ if(FORTRAN_FOUND)
 
 endif()
 
+
 #
 # Setup the conduit lib
 #
@@ -136,6 +141,15 @@ add_compiled_library(NAME   conduit
                              $<TARGET_OBJECTS:conduit_libyaml>
                      HEADERS_DEST_DIR include/conduit
                      FOLDER libs)
+
+if(CALIPER_FOUND)
+    target_link_libraries(conduit caliper)
+endif()
+
+target_include_directories(conduit
+                           PUBLIC
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 
 
 #################################

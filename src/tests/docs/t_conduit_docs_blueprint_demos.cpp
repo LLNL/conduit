@@ -19,6 +19,15 @@ using namespace conduit;
 
 /// Helper Functions ///
 
+//-----------------------------------------------------------------------------
+bool
+check_if_hdf5_enabled()
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    return io_protos["io/protocols/hdf5"].as_string() == "enabled";
+}
+
 // NOTE(JRC): This function is necessary since the Blueprint examples produce
 // results with arbitrary data types (e.g. int32, uint32) while JSON-read values
 // always use the biggest available data types (e.g. int64, float64), so the
@@ -61,7 +70,7 @@ void make_mesh_json_compatible(const Node &mesh, Node &emesh)
 }
 
 void validate_basic_example(const std::string &name,
-                            const Node &mesh,
+                            Node &mesh,
                             const std::string &ref_str)
 {
     CONDUIT_INFO("Testing Basic Example '" << name << "'");
@@ -87,8 +96,15 @@ void validate_basic_example(const std::string &name,
         CONDUIT_INFO(info.to_json());
     }
 
+    mesh["topologies/mesh_points/type"] = "points";
+    mesh["topologies/mesh_points/coordset"] = "coords";
 
     relay::io::blueprint::save_mesh(mesh, "basic_" + name + "_yaml", "yaml");
+
+    if(check_if_hdf5_enabled())
+    {
+        relay::io::blueprint::save_mesh(mesh, "basic_" + name + "_hdf5", "hdf5");
+    }
 }
 
 /// Test Functions ///
@@ -102,7 +118,7 @@ TEST(conduit_docs, blueprint_demo_basic_uniform)
     // generate simple uniform 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("uniform", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_uniform");
 
     const std::string mesh_json = R"(
@@ -162,7 +178,7 @@ TEST(conduit_docs, blueprint_demo_basic_rectilinear)
     // generate simple rectilinear 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("rectilinear", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_rectilinear");
 
     const std::string mesh_json = R"(
@@ -212,7 +228,7 @@ TEST(conduit_docs, blueprint_demo_basic_structured)
     // generate simple structured 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("structured", 3, 3, 1, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_structured");
 
     const std::string mesh_json = R"(
@@ -270,7 +286,7 @@ TEST(conduit_docs, blueprint_demo_basic_tris)
     // generate simple explicit tri-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("tris", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_tris");
 
     const std::string mesh_json = R"(
@@ -325,7 +341,7 @@ TEST(conduit_docs, blueprint_demo_basic_quads)
     // generate simple explicit quad-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("quads", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_quads");
 
     const std::string mesh_json = R"(
@@ -380,7 +396,7 @@ TEST(conduit_docs, blueprint_demo_basic_tets)
     // generate simple explicit tri-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("tets", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_tets");
     
     const std::string mesh_json = R"(
@@ -436,7 +452,7 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
     // generate simple explicit quad-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("hexs", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_hexs");
 
     const std::string mesh_json = R"(
@@ -484,6 +500,118 @@ TEST(conduit_docs, blueprint_demo_basic_hexs)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_basic_wedges)
+{
+    BEGIN_EXAMPLE("blueprint_demo_basic_wedges");
+    // create container node
+    Node mesh;
+    // generate simple explicit wedge-based 3d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("wedges", 3, 3, 3, mesh);
+    // print out results
+    std::cout << mesh.to_yaml() << std::endl;
+    END_EXAMPLE("blueprint_demo_basic_wedges");
+
+    const std::string mesh_json = R"(
+    {
+      "coordsets": 
+      {
+        "coords": 
+        {
+          "type": "explicit",
+          "values": 
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0],
+            "z": [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+          }
+        }
+      },
+      "topologies": 
+      {
+        "mesh": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements": 
+          {
+            "shape": "wedge",
+            "connectivity": [0, 1, 4, 9, 10, 13, 0, 3, 4, 9, 12, 13, 1, 2, 5, 10, 11, 14, 1, 4, 5, 10, 13, 14, 3, 4, 7, 12, 13, 16, 3, 6, 7, 12, 15, 16, 4, 5, 8, 13, 14, 17, 4, 7, 8, 13, 16, 17, 9, 10, 13, 18, 19, 22, 9, 12, 13, 18, 21, 22, 10, 11, 14, 19, 20, 23, 10, 13, 14, 19, 22, 23, 12, 13, 16, 21, 22, 25, 12, 15, 16, 21, 24, 25, 13, 14, 17, 22, 23, 26, 13, 16, 17, 22, 25, 26]
+          }
+        }
+      },
+      "fields": 
+      {
+        "field": 
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("wedges",mesh,mesh_json);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_basic_pyramids)
+{
+    BEGIN_EXAMPLE("blueprint_demo_basic_pyramids");
+    // create container node
+    Node mesh;
+    // generate simple explicit pyramid-based 3d 'basic' mesh
+    conduit::blueprint::mesh::examples::basic("pyramids", 3, 3, 3, mesh);
+    // print out results
+    std::cout << mesh.to_yaml() << std::endl;
+    END_EXAMPLE("blueprint_demo_basic_pyramids");
+
+    const std::string mesh_json = R"(
+    {
+      "coordsets": 
+      {
+        "coords": 
+        {
+          "type": "explicit",
+          "values": 
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -5.0, 5.0, -5.0, 5.0, -5.0, 5.0, -5.0, 5.0],
+            "y": [-10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, -5.0, -5.0, 5.0, 5.0, -5.0, -5.0, 5.0, 5.0],
+            "z": [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0, -5.0, -5.0, -5.0, -5.0, 5.0, 5.0, 5.0, 5.0]
+          }
+        }
+      },
+      "topologies": 
+      {
+        "mesh": 
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements": 
+          {
+            "shape": "pyramid",
+            "connectivity": [0, 3, 4, 1, 27, 0, 1, 10, 9, 27, 1, 4, 13, 10, 27, 4, 3, 12, 13, 27, 3, 0, 9, 12, 27, 9, 10, 13, 12, 27, 1, 4, 5, 2, 28, 1, 2, 11, 10, 28, 2, 5, 14, 11, 28, 5, 4, 13, 14, 28, 4, 1, 10, 13, 28, 10, 11, 14, 13, 28, 3, 6, 7, 4, 29, 3, 4, 13, 12, 29, 4, 7, 16, 13, 29, 7, 6, 15, 16, 29, 6, 3, 12, 15, 29, 12, 13, 16, 15, 29, 4, 7, 8, 5, 30, 4, 5, 14, 13, 30, 5, 8, 17, 14, 30, 8, 7, 16, 17, 30, 7, 4, 13, 16, 30, 13, 14, 17, 16, 30, 9, 12, 13, 10, 31, 9, 10, 19, 18, 31, 10, 13, 22, 19, 31, 13, 12, 21, 22, 31, 12, 9, 18, 21, 31, 18, 19, 22, 21, 31, 10, 13, 14, 11, 32, 10, 11, 20, 19, 32, 11, 14, 23, 20, 32, 14, 13, 22, 23, 32, 13, 10, 19, 22, 32, 19, 20, 23, 22, 32, 12, 15, 16, 13, 33, 12, 13, 22, 21, 33, 13, 16, 25, 22, 33, 16, 15, 24, 25, 33, 15, 12, 21, 24, 33, 21, 22, 25, 24, 33, 13, 16, 17, 14, 34, 13, 14, 23, 22, 34, 14, 17, 26, 23, 34, 17, 16, 25, 26, 34, 16, 13, 22, 25, 34, 22, 23, 26, 25, 34]
+          }
+        }
+      },
+      "fields": 
+      {
+        "field": 
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0, 21.0, 22.0, 23.0, 24.0, 25.0, 26.0, 27.0, 28.0, 29.0, 30.0, 31.0, 32.0, 33.0, 34.0, 35.0, 36.0, 37.0, 38.0, 39.0, 40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 46.0, 47.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("pyramids",mesh,mesh_json);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_docs, blueprint_demo_basic_polygons)
 {
     BEGIN_EXAMPLE("blueprint_demo_basic_polygons");
@@ -492,7 +620,7 @@ TEST(conduit_docs, blueprint_demo_basic_polygons)
     // generate simple explicit poly-based 2d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("polygons", 3, 3, 0, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_polygons");
 
     const std::string mesh_json = R"(
@@ -549,7 +677,7 @@ TEST(conduit_docs, blueprint_demo_basic_polyhedra)
     // generate simple explicit poly-based 3d 'basic' mesh
     conduit::blueprint::mesh::examples::basic("polyhedra", 3, 3, 3, mesh);
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     END_EXAMPLE("blueprint_demo_basic_polyhedra");
 
     const std::string mesh_json = R"(
@@ -665,7 +793,7 @@ TEST(conduit_docs, blueprint_demo_basic_uniform_complete)
     }
 
     // print out results
-    mesh.print();
+    std::cout << mesh.to_yaml() << std::endl;
     
     // save our mesh to a file that can be read by VisIt
     //

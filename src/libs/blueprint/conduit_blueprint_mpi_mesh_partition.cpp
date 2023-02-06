@@ -17,6 +17,14 @@
 
 #include "conduit_relay_mpi.hpp"
 #include <mpi.h>
+
+#include "conduit_fmt/conduit_fmt.h"
+
+#include <algorithm>
+#include <numeric>
+#include <unordered_set>
+#include <unordered_map>
+
 using Partitioner = conduit::blueprint::mesh::Partitioner;
 using Selection   = conduit::blueprint::mesh::Selection;
 
@@ -68,6 +76,73 @@ ParallelPartitioner::ParallelPartitioner(MPI_Comm c)
 ParallelPartitioner::~ParallelPartitioner()
 {
     free_chunk_info_dt();
+}
+
+//---------------------------------------------------------------------------
+std::vector<index_t>
+ParallelPartitioner::get_global_domids(const conduit::Node& n_mesh)
+{
+    const auto doms = conduit::blueprint::mesh::domains(n_mesh);
+    std::vector<index_t> domids(doms.size(), -1);
+    bool have_domids = true;
+    for(size_t i = 0; i < doms.size(); i++)
+    {
+        domids[i] = i;
+        // If the mesh has a domain_id then use that as the domain number.
+        if(doms[i]->has_path("state/domain_id"))
+        {
+            domids[i] = doms[i]->operator[]("state/domain_id").to_index_t();
+        }
+        else
+        {
+            have_domids = false;
+        }
+    }
+
+    int64 prob_ndoms = 0;
+    if (!have_domids)
+    {
+        // We had to generate local domain IDs in the range [0, ndoms)
+        // Offset these for global IDs
+        int64_t ndoms_local = doms.size();
+        std::vector<int64_t> ndoms_all(size);
+        ndoms_all[rank] = ndoms_local;
+        // Gather all domain counts across ranks
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                      ndoms_all.data(), 1, MPI_INT64_T, comm);
+        index_t offset = 0;
+        for (index_t irnk = 0; irnk < rank; irnk++)
+        {
+            offset += ndoms_all[irnk];
+        }
+        for (size_t idom = 0; idom < doms.size(); idom++)
+        {
+            domids[idom] += offset;
+        }
+        prob_ndoms = std::accumulate(ndoms_all.begin(), ndoms_all.end(), 0);
+    }
+    else
+    {
+        if (domids.size() > 0)
+        {
+            prob_ndoms = *std::max_element(domids.begin(), domids.end());
+        }
+        MPI_Allreduce(MPI_IN_PLACE, &prob_ndoms, 1, MPI_INT64_T,
+                      MPI_MAX, comm);
+        // increment max domid to get number of domains in problem
+        prob_ndoms++;
+    }
+    // Generate domain-to-rank map here
+    domain_to_rank_map.resize(prob_ndoms, -1);
+    for (index_t domid : domids)
+    {
+        domain_to_rank_map[domid] = rank;
+    }
+    MPI_Allreduce(MPI_IN_PLACE,
+                  domain_to_rank_map.data(),
+                  domain_to_rank_map.size(),
+                  MPI_INT64_T, MPI_MAX, comm);
+    return domids;
 }
 
 //---------------------------------------------------------------------------
@@ -511,7 +586,8 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
     const std::vector<int> &dest_domain,
     const std::vector<int> &offsets,
     std::vector<Partitioner::Chunk> &chunks_to_assemble,
-    std::vector<int> &chunks_to_assemble_domains)
+    std::vector<int> &chunks_to_assemble_domains,
+    std::vector<int> &chunks_to_assemble_gids)
 {
     const int PARTITION_TAG_BASE = 12000;
 
@@ -603,10 +679,12 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
                 // Save the chunk "wrapper" that has its own state.
                 chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
 #else
                 // Pass the chunk through since we already own it on this rank.
                 chunks_to_assemble.push_back(Chunk(chunks[local_i].mesh, false));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
 #endif
             }
             else
@@ -625,6 +703,7 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
                 // Save the received chunk and indicate we own it for later.
                 chunks_to_assemble.push_back(Chunk(n_recv, true));
                 chunks_to_assemble_domains.push_back(dest_domain[i]);
+                chunks_to_assemble_gids.push_back(gidx);
             }
         }
     }
@@ -643,6 +722,325 @@ ParallelPartitioner::communicate_chunks(const std::vector<Partitioner::Chunk> &c
 }
 
 //-----------------------------------------------------------------------------
+void
+ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                           const DomainToChunkMap& chunks,
+                                           const std::map<index_t, const Node*>& domain_map,
+                                           std::vector<Node>& adjset_chunk_maps)
+{
+    const int PARTITION_TAG_BASE = 14000;
+
+    adjset_chunk_maps.resize(domain_to_rank_map.size());
+
+    Partitioner::get_prelb_adjset_maps(chunk_offsets, chunks, domain_map, adjset_chunk_maps);
+
+    // 1. Compute the ranks to send/receive data from for each domain
+    std::unordered_map<index_t, std::unordered_set<int>> send_rank;
+    std::unordered_map<index_t, int> recv_rank;
+
+    for (const auto& dom_it : domain_map)
+    {
+        const Node& domain = *(dom_it.second);
+        const index_t dom_idx = dom_it.first;
+        if (!domain.has_child("adjsets"))
+        {
+            continue;
+        }
+
+        // loop over all adjsets in the current domain
+        for (const Node& adjset : domain["adjsets"].children())
+        {
+            for (const Node& group : adjset["groups"].children())
+            {
+                index_t_accessor neighbor_vals = group["neighbors"].as_index_t_accessor();
+                index_t dst_dom = neighbor_vals[0];
+                int nbr_rank = domain_to_rank_map[dst_dom];
+
+                // For each corresponding pair of domains linked by adjsets, we
+                // need a matched pair of send/recvs
+                send_rank[dom_idx].insert(nbr_rank);
+                recv_rank[dst_dom] = nbr_rank;
+            }
+        }
+    }
+
+    conduit::relay::mpi::communicate_using_schema C(comm);
+    C.set_logging(true);
+
+    // 2. Setup nonblocking sends.
+    for (const auto& send_dom : send_rank)
+    {
+        index_t dom_to_send = send_dom.first;
+        int tag = PARTITION_TAG_BASE + dom_to_send;
+
+        for (int dst_rank : send_dom.second)
+        {
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+            cout << rank << ": add_isend(dest="
+                 << dst_rank << ", dom=" << dom_to_send << ")" << endl;
+#endif
+            C.add_isend(adjset_chunk_maps[dom_to_send], dst_rank, tag);
+        }
+    }
+
+    // 3. Setup nonblocking recvs.
+    for (const auto& recv_dom : recv_rank)
+    {
+        index_t dom_to_recv = recv_dom.first;
+        int src_rank = recv_dom.second;
+        int tag = PARTITION_TAG_BASE + dom_to_recv;
+#ifdef CONDUIT_DEBUG_COMMUNICATE_CHUNKS
+            cout << rank << ": add_irecv(src="
+                 << src_rank << ", dom=" << dom_to_recv << ")" << endl;
+#endif
+        C.add_irecv(adjset_chunk_maps[dom_to_recv], src_rank, tag);
+    }
+
+    C.execute();
+}
+
+//-----------------------------------------------------------------------------
+void
+ParallelPartitioner::communicate_mapback(std::unordered_map<index_t, Node>& packed_fields)
+{
+    // Get source ranks for domains homed on this processor
+    std::unordered_map<index_t, std::vector<index_t>> dom_to_recv_rnk;
+    {
+        // Get number of outgoing chunks
+        int64 nchunks = packed_fields.size();
+        std::vector<int> cnks_per_proc(size, 0);
+        cnks_per_proc[rank] = nchunks;
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                      cnks_per_proc.data(), 1, MPI_INT, comm);
+
+        int64 ncnks = std::accumulate(cnks_per_proc.begin(),
+                                      cnks_per_proc.end(), 0);
+        std::vector<int> displs(size, 0);
+        for (int irnk = 1; irnk < size; irnk++)
+        {
+            displs[irnk] = displs[irnk - 1] + cnks_per_proc[irnk - 1];
+        }
+
+        std::vector<int64> all_doms(ncnks, -1), all_src_rnks(ncnks, -1);
+        // We'll allgather corresponding domain ids and source ranks from each
+        // processor
+        size_t offset = displs[rank];
+        for (const auto& dom_field : packed_fields)
+        {
+            index_t tgt_domain = dom_field.first;
+            all_doms[offset] = tgt_domain;
+            all_src_rnks[offset] = rank;
+            offset++;
+        }
+        size_t expected_max = (rank + 1 == size) ? ncnks : displs[rank + 1];
+        if (offset != expected_max)
+        {
+            CONDUIT_ERROR(
+              conduit_fmt::format("Displacement error: (rank = {} offset = {} "
+                                  "bound = {}", rank, offset, expected_max));
+        }
+
+        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                       all_doms.data(), cnks_per_proc.data(), displs.data(),
+                       MPI_INT64_T, comm);
+
+        MPI_Allgatherv(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                       all_src_rnks.data(), cnks_per_proc.data(), displs.data(),
+                       MPI_INT64_T, comm);
+
+        // Put everything we own in dom_to_recv_rnk
+        for (int64 icnk = 0; icnk < ncnks; icnk++)
+        {
+            int64 dom_id = all_doms[icnk];
+            int64 src_rnk = all_src_rnks[icnk];
+            if (domain_to_rank_map[dom_id] == rank && src_rnk != rank)
+            {
+                dom_to_recv_rnk[dom_id].push_back(src_rnk);
+            }
+        }
+    }
+
+    conduit::relay::mpi::communicate_using_schema C(comm);
+    C.set_logging(true);
+
+    constexpr int MAPBACK_TAG_BASE = 16000;
+
+    // Setup nonblocking sends.
+    for (const auto& dom_field : packed_fields)
+    {
+        index_t tgt_domain = dom_field.first;
+        index_t tgt_rank = domain_to_rank_map[tgt_domain];
+        if (tgt_rank != rank)
+        {
+            const int tag = MAPBACK_TAG_BASE + tgt_domain;
+            C.add_isend(dom_field.second, tgt_rank, tag);
+        }
+    }
+
+    // Compute the total number of receive nodes to allocate.
+    // This avoids vector resizes invalidating any stored references to nodes
+    // in the communication object.
+    index_t ntotal_recvs = 0;
+    for (const auto& dom_recv_pair : dom_to_recv_rnk)
+    {
+        ntotal_recvs += dom_recv_pair.second.size();
+    }
+
+    // Setup nonblocking receives.
+    std::vector<std::pair<index_t, Node>> pending_recvs(ntotal_recvs);
+    for (const auto& dom_recv_pair : dom_to_recv_rnk)
+    {
+        index_t tgt_domain = dom_recv_pair.first;
+        const int tag = MAPBACK_TAG_BASE + tgt_domain;
+        for (index_t src_rank : dom_recv_pair.second)
+        {
+            pending_recvs.emplace_back(tgt_domain, Node{});
+            Node& recv_node = pending_recvs.rbegin()->second;
+            C.add_irecv(recv_node, src_rank, tag);
+        }
+    }
+
+    C.execute();
+
+    // Append received chunks to original domain chunk map
+    for (const auto& recv_result : pending_recvs)
+    {
+        index_t tgt_domain = recv_result.first;
+        for (const Node& cnk : recv_result.second.children())
+        {
+            packed_fields[tgt_domain].append().set(cnk);
+        }
+    }
+
+    // Remove domains not homed on this rank
+    std::vector<index_t> to_remove;
+    for (const auto& dom_nodes : packed_fields)
+    {
+        index_t tgt_domain = dom_nodes.first;
+        if (domain_to_rank_map[tgt_domain] != rank)
+        {
+            to_remove.push_back(tgt_domain);
+        }
+    }
+    for (index_t domid : to_remove)
+    {
+        packed_fields.erase(domid);
+    }
+}
+
+void
+ParallelPartitioner::synchronize_gvids(
+    const std::vector<std::vector<index_t>>& remap_to_local_doms,
+    std::map<index_t, std::vector<index_t>>& orig_dom_gvids)
+{
+    std::vector<int64> orig_domain_nverts(domain_to_rank_map.size(), 0);
+    for (const auto& orig_dom_verts : orig_dom_gvids)
+    {
+        index_t domid = orig_dom_verts.first;
+        orig_domain_nverts[domid] = orig_dom_verts.second.size();
+    }
+    // Get the number of verts in each domain
+    MPI_Allreduce(MPI_IN_PLACE,
+                  orig_domain_nverts.data(),
+                  orig_domain_nverts.size(),
+                  MPI_INT64_T, MPI_MAX, comm);
+
+    // First, figure out the unique domains that we need to receive on this rank
+    std::unordered_set<index_t> orig_doms_required;
+    for (const auto& orig_domset : remap_to_local_doms)
+    {
+        for (index_t domid : orig_domset)
+        {
+            if (domain_to_rank_map[domid] != rank)
+            {
+                orig_doms_required.insert(domid);
+            }
+        }
+    }
+
+    MPI_Datatype index_mpi_dtype
+        = relay::mpi::conduit_dtype_to_mpi_dtype(conduit::DataType::index_t());
+    std::vector<std::pair<int, index_t>> domain_sends;
+    // Determine ranks that we need to send domains to
+    {
+        std::vector<int> counts(size, 0);
+        counts[rank] = orig_doms_required.size();
+        MPI_Allgather(MPI_IN_PLACE, 0, MPI_DATATYPE_NULL,
+                      counts.data(), 1, MPI_INT,
+                      comm);
+
+        std::vector<int> offsets(size, 0);
+        for (int irnk = 1; irnk < size; irnk++)
+        {
+            offsets[irnk] = offsets[irnk-1] + counts[irnk-1];
+        }
+        int64 total_counts = offsets[size-1] + counts[size-1];
+        std::vector<int64> all_doms(total_counts);
+        std::copy(orig_doms_required.begin(), orig_doms_required.end(),
+                  all_doms.begin() + offsets[rank]);
+        MPI_Allgatherv(MPI_IN_PLACE,
+                       0,
+                       MPI_DATATYPE_NULL,
+                       all_doms.data(),
+                       counts.data(),
+                       offsets.data(),
+                       index_mpi_dtype, comm);
+        // Add domains which other ranks will need to receive from us
+        for (int irnk = 0; irnk < size; irnk++)
+        {
+            for (int ireq = 0; ireq < counts[irnk]; ireq++)
+            {
+                size_t realIdx = offsets[irnk] + ireq;
+                index_t domid = all_doms[realIdx];
+                if (domain_to_rank_map[domid] == rank)
+                {
+                    domain_sends.emplace_back(irnk, domid);
+                }
+            }
+        }
+    }
+
+    std::vector<MPI_Request> pending_reqs(orig_doms_required.size()
+                                          + domain_sends.size());
+    const int GVID_TAG = 227000;
+    int req_id = 0;
+    // Start any receives of required domains
+    for (index_t domid : orig_doms_required)
+    {
+        int src_rnk = domain_to_rank_map[domid];
+        CONDUIT_ASSERT((src_rnk != rank),
+            conduit_fmt::format("Rank {}: Unnecessary recv of original domain {}",
+                                rank, domid));
+        orig_dom_gvids[domid].resize(orig_domain_nverts[domid]);
+        MPI_Irecv(orig_dom_gvids[domid].data(),
+                  orig_dom_gvids[domid].size(),
+                  index_mpi_dtype,
+                  src_rnk,
+                  GVID_TAG + domid,
+                  comm,
+                  &pending_reqs[req_id]);
+        req_id++;
+    }
+    for (const auto& incoming_req : domain_sends)
+    {
+        int dst_rank = incoming_req.first;
+        int64 domid = incoming_req.second;
+        CONDUIT_ASSERT((domain_to_rank_map[domid] == rank),
+            conduit_fmt::format("Rank {}: domain id {} doesn't exist on this rank",
+                                rank, domid));
+        MPI_Isend(orig_dom_gvids[domid].data(),
+                  orig_dom_gvids[domid].size(),
+                  index_mpi_dtype,
+                  dst_rank,
+                  GVID_TAG + domid,
+                  comm,
+                  &pending_reqs[req_id]);
+        req_id++;
+    }
+
+    MPI_Waitall(pending_reqs.size(), pending_reqs.data(), MPI_STATUSES_IGNORE);
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mpi::mesh --

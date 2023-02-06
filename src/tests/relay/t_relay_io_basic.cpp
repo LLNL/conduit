@@ -231,6 +231,64 @@ TEST(conduit_relay_io_basic, identify_file_type)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, save_load_subpath)
+{
+    std::vector<std::string> protos = { "conduit_bin",
+                                        "json",
+                                        "conduit_json",
+                                        "conduit_base64_json",
+                                        "yaml"};
+    for(size_t i=0;i<protos.size();i++)
+    {
+        Node n, n_load;
+        n["my/data/is/here"] = 42;
+        n.print();
+        io::save(n, "test_conduit_relay_io_save_load_subpath." + protos[i]);
+        io::load("test_conduit_relay_io_save_load_subpath." + protos[i] + ":my/data/is/here",n_load);
+        EXPECT_EQ(n["my/data/is/here"].to_int64(),n_load.to_int64());
+
+        n = 2;
+        n.print();
+        // now save with subpath
+        io::save(n,"test_conduit_relay_io_save_load_subpath." + protos[i] + ":my/data/is/here");
+        io::load("test_conduit_relay_io_save_load_subpath." + protos[i],n_load);
+        EXPECT_EQ(n.to_int64(),n_load["my/data/is/here"].to_int64());
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, save_merged_load_merged_subpath)
+{
+    std::vector<std::string> protos = { "conduit_bin",
+                                        "json",
+                                        "conduit_json",
+                                        "conduit_base64_json",
+                                        "yaml"};
+    for(size_t i=0;i<protos.size();i++)
+    {
+        std::string obase = "test_conduit_relay_io_save_merged_load_merged_subpath.";
+        Node n, n_load;
+        n["my/data/is/here"] = 42;
+        n.print();
+        io::save(n, obase + protos[i]);
+        n_load["my/data/is/there"] = 62;
+        io::load_merged(obase + protos[i] + ":my/data/is", n_load["my/data/is"]);
+        n_load.print();
+        EXPECT_EQ(n_load["my/data/is/here"].to_int64(),42);
+        EXPECT_EQ(n_load["my/data/is/there"].to_int64(),62);
+
+        n.reset();
+        n["where"] = 2;
+        // now save with subpath
+        io::save_merged(n,obase + protos[i] + ":my/data/is");
+        io::load(obase + protos[i],n_load);
+        n_load.print();
+        EXPECT_EQ(n_load["my/data/is/where"].to_int64(),2);
+    }
+}
+
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, save_empty)
 {

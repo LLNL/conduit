@@ -13,10 +13,10 @@ about the Mesh Blueprint. Lots of them.
 
 These docs provide the main reference for all of the components of
 the Mesh Blueprint protocol and details about :ref:`examples`
-that are included in the Conduit Blueprint Library. 
+that are included in the Conduit Blueprint Library.
 
 
-Conduit docs don't have a Mesh Blueprint tutorial yet, if you are looking to 
+Conduit docs don't have a Mesh Blueprint tutorial yet, if you are looking to
 wrap your mind around the basic mechanics of describing a mesh:
 
 * The Ascent tutorial includes section on `creating Meshes using Conduit <https://ascent.readthedocs.io/en/latest/Tutorial_Intro_Conduit_Blueprint.html>`_. This is the best reference for getting started and includes C++ and Python code examples.
@@ -32,7 +32,14 @@ Protocol
 
 
 The Blueprint protocol defines a single-domain computational mesh using one or more Coordinate Sets (via child ``coordsets``), one or more Topologies (via child  ``topologies``), zero or more Materials Sets (via child ``matsets``), zero or more Fields (via child ``fields``), optional Adjacency Set information (via child ``adjsets``), and optional State information (via child ``state``).
-The protocol defines multi-domain meshes as *Objects* that contain one or more single-domain mesh entries.
+The protocol defines multi-domain meshes as *Objects* that contain zero or more single-domain mesh entries.
+
+.. note::
+   Since the multi-domain protocol accepts zero or more single-domain mesh entries, an empty Conduit Node is
+   considered a valid multi-domain mesh. The change to accept an empty Node was introduced in Conduit 0.8.0.
+   To check if you have a mesh with data, you can screen with `dtype().is_empty()`, or by using mesh blueprint property
+   methods (i.e. `number_of_domains()`).
+
 For simplicity, the descriptions below are structured relative to a single-domain mesh *Object* that contains one Coordinate Set named ``coords``, one Topology named ``topo``, and one Material Set named ``matset``.
 
 
@@ -47,15 +54,15 @@ The mesh blueprint protocol supports sets of spatial coordinates from three coor
 * Cylindrical: {r,z}
 * Spherical: {r,theta,phi}
 
-The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``, ``rectilinear``, and ``explicit``.  To conform to the protocol, each entry under ``coordsets`` must be an *Object* with entries from one of the cases outlined below: 
+The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``, ``rectilinear``, and ``explicit``.  To conform to the protocol, each entry under ``coordsets`` must be an *Object* with entries from one of the cases outlined below:
 
 * **uniform**
 
    An implicit coordinate set defined as the cartesian product of i,j,k dimensions starting at an ``origin`` (ex: {x,y,z}) using a given ``spacing`` (ex: {dx,dy,dz}).
 
   * Cartesian
-  
-  
+
+
     * coordsets/coords/type: “uniform”
     * coordsets/coords/dims/{i,j,k}
     * coordsets/coords/origin/{x,y,z} (optional, default = {0.0, 0.0, 0.0})
@@ -63,8 +70,8 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
 
 
   * Cylindrical
-  
-  
+
+
     * coordsets/coords/type: “uniform”
     * coordsets/coords/dims/{i,j}
     * coordsets/coords/origin/{r,z} (optional, default = {0.0, 0.0})
@@ -72,26 +79,26 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
 
 
   * Spherical
-  
-  
+
+
     * coordsets/coords/type: “uniform”
     * coordsets/coords/dims/{i,j}
     * coordsets/coords/origin/{r,theta,phi} (optional, default = {0.0, 0.0, 0.0})
     * coordsets/coords/spacing/{dr,dtheta, dphi} (optional, default = {1.0, 1.0, 1.0})
 
 
-* **rectilinear** 
+* **rectilinear**
 
   An implicit coordinate set defined as the cartesian product of passed coordinate arrays.
-  
+
   * Cartesian
-  
-  
+
+
     * coordsets/coords/type: “rectilinear”
     * coordsets/coords/values/{x,y,z}
 
   * Cylindrical:
-  
+
     * coordsets/coords/type: “rectilinear”
     * coordsets/coords/values/{r,z}
 
@@ -107,20 +114,20 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
   An explicit set of coordinates, which includes ``values`` that conforms to the  **mcarray** blueprint protocol.
 
   * Cartesian
-  
-  
+
+
     * coordsets/coords/type: “explicit”
     * coordsets/coords/values/{x,y,z}
 
   * Cylindrical
-  
-  
+
+
     * coordsets/coords/type: “explicit”
     * coordsets/coords/values/{r,z}
 
   * Spherical
-  
-  
+
+
     * coordsets/coords/type: “explicit”
     * coordsets/coords/values/{r,theta,phi}
 
@@ -137,12 +144,12 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
 
        Figure of ``spherical`` coordinate conventions (courtesy of `Wikipedia <https://en.wikipedia.org/wiki/Spherical_coordinate_system>`_)
 
-Toplogies
+Topologies
 ++++++++++++++++++++
 The next entry required to describe a computational mesh is its topology. To conform to the protocol, each entry under *topologies* must be an *Object* that contains one of the topology descriptions outlined below.
 
 
-Topology Nomenclature 
+Topology Nomenclature
 ====================================
 
 The mesh blueprint protocol describes meshes in terms of ``vertices``, ``edges``, ``faces``, and ``elements``.
@@ -160,12 +167,16 @@ tet         tetrahedron       indices to 4 coordinate tuples
 hex         hexahedron        indices to 8 coordinate tuples
 polygonal   polygon           indices to N end-to-end coordinate tuples
 polyhedral  polyhedron        indices to M polygonal faces
+mixed       mixed             indices to coordinate tuples and/or polygonal faces
 ========== ================  ===================================================
 
 .. note
-   The expected index ordering with in an element (also referred to as a winding order) is not specified by the blueprint. 
+   The expected index ordering with in an element (also referred to as a winding order) is not specified by the blueprint.
    In the future, we plan to provide transforms to help convert between orderings, are not likely to specify specific orderings.
 ..
+
+.. note
+   The ``mixed`` shape is only supported in the unstructured mixed protocol (see below).
 
 Association with a Coordinate Set
 ====================================
@@ -187,23 +198,23 @@ Implicit Topology
 
 The mesh blueprint protocol accepts four implicit ways to define a topology on a coordinate set. The first simply uses all the points in a given coordinate set and the rest define grids of elements on top of a coordinate set. For the grid cases with a coordinate set with 1D coordinate tuples, *line* elements are used, for sets with 2D coordinate tuples *quad* elements are used, and for 3D coordinate tuples *hex* elements are used.
 
-* **points**: An implicit topology using all of the points in a coordinate set. 
-   
+* **points**: An implicit topology using all of the points in a coordinate set.
+
    * topologies/topo/coordset: "coords"
    * topologies/topo/type: "points"
 
-* **uniform**: An implicit topology that defines a grid of elements on top of a *uniform* coordinate set. 
-   
+* **uniform**: An implicit topology that defines a grid of elements on top of a *uniform* coordinate set.
+
    * topologies/topo/coordset: "coords"
    * topologies/topo/type: “uniform”
    * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
-   
-* **rectilinear**: An implicit topology that defines a grid of elements on top of a *rectilinear* coordinate set. 
-   
+
+* **rectilinear**: An implicit topology that defines a grid of elements on top of a *rectilinear* coordinate set.
+
    * topologies/topo/coordset: "coords"
    * topologies/topo/type: “rectilinear”
    * topologies/topo/elements/origin/{i,j,k} (optional, default = {0,0,0})
-  
+
 
 .. .. attention::
 ..    (can we collapse uniform + rectilinear?)
@@ -214,7 +225,7 @@ The mesh blueprint protocol accepts four implicit ways to define a topology on a
 
 
 * **structured**: An implicit topology that defines a grid of elements on top of an *explicit* coordinate set.
-  
+
   * topologies/topo/coordset: "coords"
   * topologies/topo/type = “structured”
   * topologies/topo/elements/dims/{i,j,k}
@@ -229,7 +240,7 @@ Explicit (Unstructured) Topology
 Single Shape Topologies
 ************************
 
-For topologies using a homogenous collection of element shapes (eg: all hexs), the topology can be specified by 
+For topologies using a homogenous collection of element shapes (eg: all hexs), the topology can be specified by
 a connectivity array and a shape name.
 
   * topologies/topo/coordset: "coords"
@@ -239,58 +250,29 @@ a connectivity array and a shape name.
 
 
 
-Mixed Shape Toplogies 
+Mixed Shape Toplogies
 ************************
 
-For topologies using a non-homogenous collections of element shapes (eg: hexs and tets), the topology can 
-specified using a single shape topology for each element shape.
+For topologies using a non-homogenous collections of element shapes (eg: hexs and tets), the topology can
+specified using a single shape topology for each element shape, or with the mixed shapes protocol.
 
-* **list** - A Node in the *List* role, that contains a children that conform to the *Single Shape Topology* case. 
+* **list** - A Node in the *List* role, that contains a children that conform to the *Single Shape Topology* case.
 
-* **object** - A Node in the *Object* role, that contains a children that conform to the *Single Shape Topology* case. 
+* **object** - A Node in the *Object* role, that contains a children that conform to the *Single Shape Topology* case.
 
-.. note::
-   Future version of the mesh blueprint will expand support to include mixed elements types in a single array with related
-   index arrays.
+* **shapes** - A Node ``shapes`` that has an ``o2mrelation`` with connectivity (see below).
 
 
 Element Windings
 ^^^^^^^^^^^^^^^^^^^^^^
 
-The mesh blueprint does yet not have a prescribed winding convention (a way to order the association of vertices to elements) or more generally to 
+The mesh blueprint does yet not have a prescribed winding convention (a way to order the association of vertices to elements) or more generally to
 outline a topology's `dimensional cascade`  (how elements are related to faces, faces are related to edges, and edges are related to vertices. )
 
 This is a gap we are working to solve in future versions of the mesh blueprint, with a goal of providing transforms to
 help convert between different winding or cascade schemes.
 
-That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, or Ascent when using Blueprint data.
-
-
-.. * **stream** - (strem description)
-..   (specifying stream ids and stream connectivity)
-..
-..
-..   * topologies/topo/elements/element_types: ()
-..   * topologies/topo/elements/stream: ()
-..
-.. Indexed Streams
-.. ^^^^^^^^^^^^^^^^^^^
-..
-.. * Stream of Indexed Elements
-..
-..
-..     * topology/elements/element_types: ()
-..     * topology/elements/element_index/stream_ids: ()
-..     * topology/elements/element_index/offsets: ()
-..     * topology/elements/stream: ()
-..
-.. * Stream of Contiguous Segments of Element Types
-..
-..
-..     * topology/elements/element_types: ()
-..     * topology/elements/segment_index/stream_ids: ()
-..     * topology/elements/segment_index/element_counts: ()
-..     * topology/elements/stream: ()
+That said VTK (and VTK-m) winding conventions are assumed by MFEM, VisIt, VTK or Ascent when using Blueprint data.
 
 
 Polygonal/Polyhedral Topologies
@@ -399,6 +381,60 @@ The following diagram illustrates a simple **polyhedral** topology:
             offsets: [0, 4, 7, 10, 13, 16, 19, 22, 25]
 
 
+Mixed topologies with shapes/shape_map
+++++++++++++++++++++
+
+The schema for a **mixed** shapes topology is as follows:
+
+  * topologies/topo/coordset: "coords"
+  * topologies/topo/coordset: “unstructured”
+  * topologies/topo/elements: (o2mrelation object)
+  * topologies/topo/elements/shape: "mixed"
+  * topologies/topo/elements/shape_map: (shape map node)
+  * topologies/topo/elements/shapes : (shapes array)
+  * topologies/topo/elements/sizes : (sizes array)
+  * topologies/topo/elements/offsets : (offsets array)
+  * topologies/topo/elements/connectivity : (connectivity array)
+  * topologies/topo/subelements: (o2mrelation object)
+  * topologies/topo/subelements/shape: "mixed"
+  * topologies/topo/subelements/shape_map: (shape map node)
+  * topologies/topo/subelements/shapes : (shapes array)
+  * topologies/topo/subelements/sizes : (sizes array)
+  * topologies/topo/subelements/offsets : (offsets array)
+  * topologies/topo/subelements/connectivity : (connectivity array)
+
+
+The ``topologies/topo/subelements`` node is optional and only needed if
+the ``elements array`` contains polyhedra. The schemas for ``elements``
+and ``subelements`` is identical and contains the following items:
+
+``shape_map``, a map that relates known element type strings, e.g. "hex",
+"tet" and "quad", to numeric element types in the ``shapes`` arrray:
+
+  * shape_map/hex : (numeric entry for hexahedron, e.g. 12 - VTK_HEXAHEDRON)
+  * shape_map/tet : (numeric entry for tetrahedron, e.g. 10 - VTK_TETRA)
+  * shape_map/polyhedron : (numeric entry for polyhedron, e.g. 42 - VTK_POLYHEDRON)
+  * shape_map/quad : (numeric entry for quadrilateral, e.g. 9 - VTK_QUAD)
+  * shape_map/tri : (numeric entry for triangle, e.g. 5 - VTK_TRIANGLE)
+  * shape_map/polygon: (numeric entry for polygon, e.g. 7 - VTK_POLYGON)
+
+``shapes`` array contains the numeric element type for each element.
+
+``sizes`` array contains the number of indices in the ``connectivity`` array.
+
+``connectivity`` array contains path the vertex index sequences
+(relative to ``coordset``) for each element in the topology. In case of a polyhedral
+element, the indices in the ``connectivity`` array indexes into the ``subelements``
+array of faces.
+
+.. note::
+  The ``mixed`` protocol can be used to specify a mixture of element types. It is recommended
+  that the elements of different dimensionality are not used in the same definition, unless
+  the downstream processing code can handle this. If topologically 2D and 3D elements need to
+  be specified, it is recommended to use two different topologies for this.
+
+
+
 Material Sets
 ++++++++++++++++++++
 
@@ -465,7 +501,7 @@ Multi-Buffer Material Sets
 
 A **multi-buffer** material set is a material set variant wherein the volume fraction data is split such that one buffer exists per material.
 The schema for this variant dictates that each material be presented as an *Object* entry of the ``volume_fractions`` field with the material name as the entry key and the material volume fractions as the entry value.
-**Multi-buffer** material sets also support an optional ``material_map``, which is an *Object* that maps human-readable material names to unique integer material identifiers. 
+**Multi-buffer** material sets also support an optional ``material_map``, which is an *Object* that maps human-readable material names to unique integer material identifiers.
 If omitted, the map from material names to ids is inferred from the order of the material names in the ``volume_fractions`` node.
 
 Optionally, the value for each such entry can be specified as an **o2mrelation** instead of a flat array to enable greater specification flexibility.
@@ -591,7 +627,7 @@ Thus, to conform to protocol, each entry under the ``fields`` section must be an
 
  * Material-Independent Fields:
 
-   * fields/field/association: "vertex" | "element" 
+   * fields/field/association: "vertex" | "element"
    * fields/field/grid_function: (mfem-style finite element collection name) (replaces "association")
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/topology: "topo"
@@ -799,7 +835,7 @@ Max-Share Adjacency Sets
 A **max-share** adjacency set is one with groups that "maximally share" index data.
 In other words, these adjacency sets present index data so that it isn't duplicated between groups.
 
-The following diagram illustrates a simple **pairwise** material set example:
+The following diagram illustrates a simple **max-share** material set example:
 
   .. code:: yaml
 
@@ -895,6 +931,10 @@ supported values for this parameter and their corresponding effects are outlined
 | `tets <Tets_>`_                | 3d                 | explicit          | explicit          | tet              |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `hexs <Hexs_>`_                | 3d                 | explicit          | explicit          | hex              |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `wedges <Wedges_>`_            | 3d                 | explicit          | explicit          | wedge            |
++--------------------------------+--------------------+-------------------+-------------------+------------------+
+| `pyramids <Pyramids_>`_        | 3d                 | explicit          | explicit          | pyramid          |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
 | `polyhedra <Polyhedra_>`_      | 3d                 | explicit          | explicit          | polyhedron       |
 +--------------------------------+--------------------+-------------------+-------------------+------------------+
@@ -1111,6 +1151,58 @@ Hexs
 
     Pseudocolor plot of ``basic`` (mesh type 'hexs')
 
+Wedges
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_wedges")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_wedges")
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_wedges")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_wedges")
+   :language: yaml
+
+* **Visual**
+
+.. figure:: basic_wedge_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (mesh type 'wedges')
+
+Pyramids
+====================================
+
+* **Usage Example**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_blueprint_demos.cpp
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_pyramids")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_pyramids")
+   :language: cpp
+   :dedent: 4
+
+* **Result**
+
+.. literalinclude:: t_conduit_docs_blueprint_demos_out.txt
+   :start-after: BEGIN_EXAMPLE("blueprint_demo_basic_pyramids")
+   :end-before:  END_EXAMPLE("blueprint_demo_basic_pyramids")
+   :language: yaml
+
+* **Visual**
+
+.. figure:: basic_pyramid_3d_render.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of ``basic`` (mesh type 'pyramids')
+
 Polyhedra
 ====================================
 
@@ -1146,7 +1238,7 @@ braid
     :align: center
 
     Pseudocolor plot of a 3D braid example ``braid`` field
-    
+
 The ``braid()`` generates example meshes that cover the range of coordinate sets and topologies supported by the Mesh Blueprint.
 
 The example datasets include a vertex-centered scalar field ``braid``, an element-centered scalar field ``radial`` and
@@ -1192,6 +1284,18 @@ Here is a list of valid strings for the ``mesh_type`` argument:
 | hexs          | 3d unstructured mesh of hexahedral elements   |
 |               | (explicit coords, explicit topology)          |
 +---------------+-----------------------------------------------+
+| wedges        | 3d unstructured mesh of wedge elements        |
+|               | (explicit coords, explicit topology)          |
++---------------+-----------------------------------------------+
+| pyramids      | 3d unstructured mesh of pyramid elements      |
+|               | (explicit coords, explicit topology)          |
++---------------+-----------------------------------------------+
+| mixed_2d      | 2d unstructured mesh of mixed elements        |
+|               | (explicit coords, explicit topology)          |
++---------------+-----------------------------------------------+
+| mixed         | 3d unstructured mesh of mixed elements        |
+|               | (explicit coords, explicit topology)          |
++---------------+-----------------------------------------------+
 
 ``nx``, ``ny``, ``nz`` specify the number of elements in the x, y, and z directions.
 
@@ -1208,11 +1312,11 @@ spiral
 
     Pseudocolor and Contour plots of the spiral example ``dist`` field.
 
-The ``sprial()`` function generates a multi-domain mesh composed of 2D square 
-domains with the area of successive fibonacci numbers. The result estimates the 
+The ``spiral()`` function generates a multi-domain mesh composed of 2D square
+domains with the area of successive fibonacci numbers. The result estimates the
 `Golden spiral <https://en.wikipedia.org/wiki/Golden_spiral>`_.
 
-The example dataset provides a vertex-centered scalar field ``dist`` that estimates the distance from 
+The example dataset provides a vertex-centered scalar field ``dist`` that estimates the distance from
 each vertex to the Golden spiral.
 
 .. code:: cpp
@@ -1234,7 +1338,7 @@ julia
     :align: center
 
     Pseudocolor plot of the julia example ``iter`` field
-    
+
 
 The ``julia()`` function creates a uniform grid that visualizes
 `Julia set fractals <https://en.wikipedia.org/wiki/Julia_set>`_.
@@ -1242,7 +1346,7 @@ The ``julia()`` function creates a uniform grid that visualizes
 
 The example dataset provides an element-centered scalar field ``iter`` that represents the number of iterations
 for each point tested or zero if not found in the set.
- 
+
 
 .. code:: cpp
 
@@ -1359,7 +1463,7 @@ The ``venn()`` function creates meshes that use three overlapping circle regions
 
 Here is a list of valid strings for the ``matset_type`` argument:
 
-.. list-table:: 
+.. list-table::
    :widths: 10 15
    :header-rows: 1
 
@@ -1412,12 +1516,12 @@ polytess
 The ``polytess()`` function generates a polygonal tessellation in the 2D
 plane comprised of octagons and squares (known formally as a `two-color
 truncated square tiling <https://en.wikipedia.org/wiki/Truncated_square_tiling>`_).
-This can be extended into 3D using the ``nz`` parameter, which, if greater than 1, 
-will stack polytessalations on top of one another as follows: first, a polytess is 
-placed into 3D space, and then a copy of it is placed into a plane parallel to the 
-original. Then "walls" are added, and finally polyhedra are specified that use 
-faces from the original polytess, the reflected copy, and the walls. An ``nz`` value 
-of 3 or more will simply add layers to this setup, essentially stacking "sheets" of 
+This can be extended into 3D using the ``nz`` parameter, which, if greater than 1,
+will stack polytessalations on top of one another as follows: first, a polytess is
+placed into 3D space, and then a copy of it is placed into a plane parallel to the
+original. Then "walls" are added, and finally polyhedra are specified that use
+faces from the original polytess, the reflected copy, and the walls. An ``nz`` value
+of 3 or more will simply add layers to this setup, essentially stacking "sheets" of
 polytess on top of one another.
 
 The scalar element-centered field ``level`` defined in the result mesh associates each element with its
@@ -1503,7 +1607,7 @@ Save a mesh to disk using a specific protocol and options:
     ///            when # of domains == 1,  "default"   ==> "root_only"
     ///            else,                    "default"   ==> "multi_file"
     ///
-    ///      suffix: "default", "cycle", "none" 
+    ///      suffix: "default", "cycle", "none"
     ///            when # of domains == 1,  "default"   ==> "none"
     ///            else,                    "default"   ==> "cycle"
     ///
@@ -1522,7 +1626,7 @@ Save a mesh to disk using a specific protocol and options:
 Loading Meshes from Files
 ==========================
 
-If you have a mesh written to a set of blueprint files, you can load them by 
+If you have a mesh written to a set of blueprint files, you can load them by
 passing the root file path to the following ``conduit::relay::io::blueprint``
 library functions:
 

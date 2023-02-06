@@ -177,6 +177,9 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_generate_offsets)
 {
     Node n, ref, info;
 
+    const float64 epsilon = CONDUIT_EPSILON;
+    const bool relaxint = true;
+
     EXPECT_FALSE(blueprint::o2mrelation::generate_offsets(n, info));
 
     n["test"].set("value");
@@ -187,7 +190,7 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_generate_offsets)
     n.remove("offsets");
     EXPECT_TRUE(blueprint::o2mrelation::generate_offsets(n, info));
     EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
-    EXPECT_FALSE(ref.diff(n, info));
+    EXPECT_FALSE(ref.diff(n, info, epsilon, relaxint));
 
     blueprint::o2mrelation::examples::uniform(ref, 5, 3, 4);
     n.set(ref);
@@ -198,7 +201,7 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_generate_offsets)
 
     blueprint::o2mrelation::examples::uniform(ref, 5, 3, 3);
     EXPECT_FALSE(ref["sizes"].diff(n["sizes"], info));
-    EXPECT_FALSE(ref["offsets"].diff(n["offsets"], info));
+    EXPECT_FALSE(ref["offsets"].diff(n["offsets"], info, epsilon, relaxint));
 }
 
 //-----------------------------------------------------------------------------

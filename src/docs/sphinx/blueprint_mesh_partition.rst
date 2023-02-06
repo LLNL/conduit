@@ -142,7 +142,7 @@ Selection Type  Topologies                      Description
 =============== =============================== =============================================
 logical          uniform,rectilinear,structured Identifies start and end logical IJK ranges to select sub-bricks of uniform, rectilinear, or structured topologies. This selection is not compatible with other topologies.
 explicit         all                            Identifies an explicit list of element ids and it works with all topologies.
-range            all                            Identifies ranges of element ids, provided as pairs so the user can select multiple contiguous blocks of elements. This selection works with all topologies
+ranges           all                            Identifies ranges of element ids, provided as pairs so the user can select multiple contiguous blocks of elements. This selection works with all topologies
 field            all                            Uses a specified field to indicate destination domain for each element.
 =============== =============================== =============================================
 
@@ -222,9 +222,9 @@ The output will result in an explicit topology.
      elements: [0,1,2,3,100,101,102]
 
 
-Range Selection
-***************
-The range selection is similar to the explicit selection except that it identifies
+Ranges Selection
+****************
+The ranges selection is similar to the explicit selection except that it identifies
 ranges of elements using pairs of numbers. The list of ranges must be a multiple of
 2 in length. The output will result in an explicit topology.
 
@@ -232,8 +232,8 @@ ranges of elements using pairs of numbers. The list of ranges must be a multiple
 
   selections:
     -
-     type: range
-     range: [0,3,100,102]
+     type: ranges
+     ranges: [0,3,100,102]
 
 Field Selection
 ***************

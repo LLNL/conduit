@@ -44,19 +44,19 @@ contains
         nindex = conduit_node_create()
         info = conduit_node_create()
     
-        call assert_true( conduit_blueprint_mesh_verify(nempty,info) .eqv. .true. , "verify true on empty")
+        call assert_true( logical(conduit_blueprint_mesh_verify(nempty,info) .eqv. .true.), "verify true on empty")
         call conduit_blueprint_mesh_examples_braid("hexs",3_8,3_8,3_8,n)
-        call assert_true( conduit_blueprint_mesh_verify(n,info) .eqv. .true., "verify true on braid hexs")
+        call assert_true( logical(conduit_blueprint_mesh_verify(n,info) .eqv. .true.), "verify true on braid hexs")
 
 
         ntopo = conduit_node_fetch(n,"topologies/mesh")
 
-        call assert_true( conduit_blueprint_mesh_verify_sub_protocol("topology",ntopo,info) .eqv. .true.)
+        call assert_true( logical(conduit_blueprint_mesh_verify_sub_protocol("topology",ntopo,info) .eqv. .true.))
         call conduit_node_print(info)
-        call assert_true( conduit_blueprint_mesh_verify_sub_protocol("coordset",ntopo,info) .eqv. .false.)
+        call assert_true( logical(conduit_blueprint_mesh_verify_sub_protocol("coordset",ntopo,info) .eqv. .false.))
         
         call conduit_blueprint_mesh_generate_index(n," ",1_8,nindex)
-        call assert_true( conduit_blueprint_mesh_verify_sub_protocol("index",nindex,info) .eqv. .true.)
+        call assert_true( logical(conduit_blueprint_mesh_verify_sub_protocol("index",nindex,info) .eqv. .true.))
         
 
         call conduit_node_destroy(n)

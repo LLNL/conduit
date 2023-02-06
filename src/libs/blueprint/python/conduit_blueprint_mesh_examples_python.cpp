@@ -65,6 +65,8 @@ const char *PyBlueprint_mesh_examples_basic_doc_str =
 "    \"polygons\"\n"
 "    \"tets\"\n"
 "    \"hexs\"\n"
+"    \"wedges\"\n"
+"    \"pyramids\"\n"
 "    \"polyhedra\"\n"
 " dest: Mesh output (conduit.Node instance)\n";
 
@@ -145,6 +147,8 @@ const char *PyBlueprint_mesh_examples_braid_doc_str =
 "    \"quads\"\n"
 "    \"tets\"\n"
 "    \"hexs\"\n"
+"    \"wedges\"\n"
+"    \"pyramids\"\n"
 " dest: Mesh output (conduit.Node instance)\n";
 
 // python func
@@ -642,7 +646,7 @@ PyBlueprint_mesh_examples_polytess(PyObject *, //self
 }
 
 //---------------------------------------------------------------------------//
-// conduit::blueprint::mesh::examples::polytess
+// conduit::blueprint::mesh::examples::polychain
 //---------------------------------------------------------------------------//
 
 // doc string
@@ -695,6 +699,55 @@ PyBlueprint_mesh_examples_polychain(PyObject *, //self
     Py_RETURN_NONE;
 }
 
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::polystar
+//---------------------------------------------------------------------------//
+
+// doc string
+const char *PyBlueprint_mesh_examples_polystar_doc_str =
+"polystar(dest)\n"
+"\n"
+"Generates a mesh with a polyhedral star pattern that demonstrates "
+"hanging vertices in a topology. Includes various fields that "
+"count element to vertex and vertex to element relationships.\n"
+"Also generates corner and side meshes from the main topology.\n";
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_polystar(PyObject *, //self
+                                   PyObject *args,
+                                   PyObject *kwargs)
+{
+    PyObject *py_node  = NULL;
+
+    static const char *kwlist[] = {"dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "O",
+                                     const_cast<char**>(kwlist),
+                                     &py_node))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &node = *PyConduit_Node_Get_Node_Ptr(py_node);
+
+    blueprint::mesh::examples::polystar(node);
+
+    Py_RETURN_NONE;
+}
+
+
 
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
@@ -746,6 +799,12 @@ static PyMethodDef blueprint_mesh_examples_python_funcs[] =
      (PyCFunction)PyBlueprint_mesh_examples_polychain,
       METH_VARARGS | METH_KEYWORDS,
       PyBlueprint_mesh_examples_polychain_doc_str},
+    //-----------------------------------------------------------------------//
+    {"polystar",
+     (PyCFunction)PyBlueprint_mesh_examples_polystar,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_polystar_doc_str},
+
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//

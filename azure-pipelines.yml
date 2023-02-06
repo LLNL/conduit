@@ -8,7 +8,8 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  ubuntu18_tag: alpinedav/ascent-ci:ubuntu-18-devel
+  ubuntu_18_tag: alpinedav/ascent-ci:ubuntu-18-devel
+  ubuntu_21_10_tag: alpinedav/ascent-ci:ubuntu-21.10-devel
 
 # only build merge target pr to develop
 trigger: none
@@ -34,7 +35,7 @@ stages:
           # run our sanity check script
           #######################################
           git fetch
-          python scripts/ci/check_blt_time_travel.py
+          python3 scripts/ci/check_blt_time_travel.py
         displayName: 'BLT Time Travel Check'
 
 # main checks
@@ -50,14 +51,15 @@ stages:
   #  using the standard Ubuntu 18 container.
   #
   ###############################################################################
-  - job: Ubuntu_18
+  - job: Ubuntu
     pool:
       vmImage: 'ubuntu-latest'
-    container: ${{ variables.ubuntu18_tag }}
+    container: ${{ variables.ubuntu_18_tag }}
     timeoutInMinutes: 0
     strategy:
       matrix:
-        shared_minimal:
+        ub_18_shared_minimal:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -69,6 +71,9 @@ stages:
           ENABLE_MPI: OFF
           ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: OFF
+          ENABLE_HDF5: OFF
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
           ENABLE_SILO: OFF
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: OFF
@@ -78,7 +83,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py27:
+        ub_18_shared_py27:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -90,6 +96,9 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: ON
@@ -101,7 +110,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        static_py27:
+        ub_18_static_py27:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -113,6 +123,9 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
@@ -124,7 +137,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py37:
+        ub_18_shared_py37:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -136,6 +150,9 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
@@ -146,7 +163,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py38_cmake20:
+        ub_18_shared_py38_cmake20:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -158,6 +176,9 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
@@ -168,7 +189,8 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_py38_cmake21:
+        ub_18_shared_py38_cmake21:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -180,6 +202,9 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
@@ -190,7 +215,90 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        shared_mpi_compilers_direct:
+        ub_18_shared_py38_cmake_21_hdf5_1_10:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: OFF
+          HDF5_SPEC: "hdf5@1.10.7~mpi"
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PARMETIS: ON
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.8.8
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
+
+        ub_18_shared_py38_cmake_21_hdf5_1_12:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: OFF
+          HDF5_SPEC: "hdf5@1.12.0~mpi"
+          # silo requires hdf5 1.10, so for now we can't
+          # test both silo and hdf5 1.12 support
+          ENABLE_SILO: OFF
+          ENABLE_ADIOS: OFF
+          ENABLE_PARMETIS: ON
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.8.8
+          CMAKE_VERSION: 3.20.0
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
+
+        ub_18_shared_py310_cmake_24_hdf5_1_14:
+          containerImage: ${{ variables.ubuntu_18_tag }}
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: OFF
+          HDF5_SPEC: "hdf5@1.14.0~mpi"
+          # silo requires hdf5 1.10, so for now we can't
+          # test both silo and hdf5 1.14 support
+          ENABLE_SILO: OFF
+          ENABLE_ADIOS: OFF
+          ENABLE_PARMETIS: ON
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.10.6
+          CMAKE_VERSION: 3.24.2
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
+
+        ub_18_shared_mpi_compilers_direct:
+          containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: mpicc
           COMPILER_CXX: mpic++
           COMPILER_FC: mpif90
@@ -201,12 +309,42 @@ stages:
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
           ENABLE_SILO: ON
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: OFF
           CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: OFF
+
+        ub_21_10_shared_py38_cmake21:
+          containerImage: ${{ variables.ubuntu_21_10_tag }}
+          COMPILER_CC: gcc
+          COMPILER_CXX: g++
+          COMPILER_FC: gfortran
+          COMPILER_SPEC: gcc
+          FORCE_COMPILERS: OFF
+          BUILD_SHARED_LIBS: ON
+          CMAKE_BUILD_TYPE: Debug
+          ENABLE_COVERAGE: OFF
+          ENABLE_MPI: ON
+          ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_HDF5: ON
+          ENABLE_HDF5_COMPAT: ON
+          HDF5_SPEC: "hdf5~mpi"
+          ENABLE_SILO: ON
+          ENABLE_ADIOS: OFF
+          ENABLE_PARMETIS: ON
+          ENABLE_PYTHON: ON
+          ENABLE_PYTHON2: OFF
+          PYTHON_VERSION: 3.8.8
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++11
+          BLT_ENABLE_FIND_MPI: ON
+
     steps:
       - checkout: self
         clean: boolean
@@ -218,32 +356,9 @@ stages:
            ##################
            # output env
            cat etc/*rel*
-           env
-           sudo apt-get update
-           # list pkgs we need
-           export APT_PKGS=binutils
-           export APT_PKGS="$APT_PKGS gcc"
-           export APT_PKGS="$APT_PKGS g++"
-           export APT_PKGS="$APT_PKGS gfortran"
-           export APT_PKGS="$APT_PKGS python"
-           export APT_PKGS="$APT_PKGS git"
-           export APT_PKGS="$APT_PKGS curl"
-           export APT_PKGS="$APT_PKGS unzip"
-           export APT_PKGS="$APT_PKGS wget"
-           export APT_PKGS="$APT_PKGS build-essential"
-           export APT_PKGS="$APT_PKGS libncurses-dev"
-           export APT_PKGS="$APT_PKGS libssl-dev"
-           export APT_PKGS="$APT_PKGS libblas-dev"
-           export APT_PKGS="$APT_PKGS liblapack-dev"
-           export APT_PKGS="$APT_PKGS zlib1g-dev"
-           export APT_PKGS="$APT_PKGS libgdbm-dev"
-           export APT_PKGS="$APT_PKGS libreadline-dev"
-           export APT_PKGS="$APT_PKGS libsqlite3-dev"
-           export APT_PKGS="$APT_PKGS libbz2-dev"
-           export APT_PKGS="$APT_PKGS openmpi-bin"
-           export APT_PKGS="$APT_PKGS libopenmpi-dev"
            # install pkgs we need
-           sudo apt-get -y install $APT_PKGS
+           sudo apt-get update && sudo apt-get -y install python3
+           env
         displayName: 'Prepare build env'
 
       - script: |
@@ -254,15 +369,20 @@ stages:
            pwd
            # echo system python details
            which python
-           python --version
+           python3 --version
            # setup spack spec
            export SPACK_SPEC="%${COMPILER_SPEC}"
            # mpi
            if [ $ENABLE_MPI  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+mpi"; fi
            if [ $ENABLE_MPI  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~mpi"; fi
+           # hdf5
+           if [ $ENABLE_HDF5_COMPAT = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~hdf5_compat"; fi
            # silo
            if [ $ENABLE_SILO  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+silo"; fi
            if [ $ENABLE_SILO  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~silo"; fi
+           # parmetis
+           if [ $ENABLE_PARMETIS = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+parmetis"; fi
+           if [ $ENABLE_PARMETIS = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~parmetis"; fi
            # adios
            if [ $ENABLE_ADIOS  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+adios~zfp"; fi
            if [ $ENABLE_ADIOS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~adios"; fi
@@ -274,13 +394,18 @@ stages:
            if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
+           # python constraints
+           if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
+           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
+           # hdf5 constraints
+           if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^${HDF5_SPEC}"; fi
+           # silo constraints
            if [ $ENABLE_SILO = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^silo~mpi"; fi
-           # turn off hdf5 mpi support
-           export SPACK_SPEC="${SPACK_SPEC} ^hdf5~mpi"
            # show final spec
+           echo "SPACK SPEC:"
            echo $SPACK_SPEC
            # run uber to build tpls
-           python scripts/uberenv/uberenv.py -k --pull --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18_devel/
+           python3 scripts/uberenv/uberenv.py -k --spack-allow-deprecated --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -314,11 +439,15 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FIND_MPI=${BLT_ENABLE_FIND_MPI}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           # this is now getting set to the uberenv-pkg loc by spack, ignore for ci
+           export CMAKE_OPTS="${CMAKE_OPTS} -DPYTHON_MODULE_INSTALL_PREFIX=IGNORE"
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${COMPILER_CC}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_CXX_COMPILER=${COMPILER_CXX}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_Fortran_COMPILER=${COMPILER_FC}"; fi
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DMPIEXEC_NUMPROC_FLAG=-n"; fi
            # configure
+           echo "CMAKE OPTIONS:"
+           echo ${CMAKE_OPTS}
            cmake ${CMAKE_OPTS} ../src
         displayName: 'Configure with CMake'
 
@@ -434,7 +563,7 @@ stages:
           make VERBOSE=1
           mpiexec -n 1 ./conduit_mpi_example
         displayName: 'Test vs Install (using-with-cmake-mpi)'
-        condition: eq(variables['ENABLE_MPI'], 'ON')
+        condition: and(succeeded(),eq(variables['ENABLE_MPI'], 'ON'))
 
       - script: |
           ################################
@@ -443,6 +572,9 @@ stages:
           # only run this when python is enabled
           # (there might be a better way to do this with an azure `condition:` stmt)
           if [ $ENABLE_PYTHON = 'OFF' ]; then exit 0; fi
+          export CC=${COMPILER_CC}
+          export CXX=${COMPILER_CXX}
+          export FC=${COMPILER_FC}
           pwd
           ls -l
           # find spack installed cmake
@@ -455,6 +587,19 @@ stages:
           # add conduit module to python path
           export PYTHONPATH=${ROOT_DIR}/install/python-modules/
           echo $PYTHONPATH
+          # CI LD_LIB FIX
+          # NOTE: 
+          #  THIS LD+_LIB FIX FOR AN ISSUE THAT OCCURED IN A CI PYTHON 2.7 STATIC LIBS TEST CASE
+          #  Since the issue is related to hdf5 (not python!) we should investigate further.
+          #
+          export HDF5_ROOT_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/hdf5*/`
+          export LD_LIBRARY_PATH="${HDF5_ROOT_DIR}/lib"
+          if [ $ENABLE_SILO = 'ON' ]; then export SILO_ROOT_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/silo*/`; fi
+          if [ $ENABLE_SILO = 'ON' ]; then export LD_LIBRARY_PATH="${LD_LIBRARY_PATH}:${SILO_ROOT_DIR}/lib"; fi
+          #
+          # make sure we can import conduit from python before we try our compiled example
+          $PYTHON_EXE -c "import conduit;print(conduit.about());"
+          #
           which cmake
           # lets build
           cd install/examples/conduit/cpp_fort_and_py
@@ -472,6 +617,9 @@ stages:
           ################################################
           # using with cmake example vs reloc-ed install
           ################################################
+          export CC=${COMPILER_CC}
+          export CXX=${COMPILER_CXX}
+          export FC=${COMPILER_FC}
           pwd
           ls -l
           # find spack installed cmake

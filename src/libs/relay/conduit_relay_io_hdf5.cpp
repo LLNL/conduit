@@ -14,6 +14,8 @@
     #include "conduit_relay_io_hdf5.hpp"
 #endif
 
+#include "conduit_fmt/conduit_fmt.h"
+
 //-----------------------------------------------------------------------------
 // standard lib includes
 //-----------------------------------------------------------------------------
@@ -146,11 +148,18 @@ public:
     static std::string compression_method;
     static int         compression_level;
 
+    static std::string libver;
+
 public:
 
     //------------------------------------------------------------------------
     static void set(const Node &opts)
     {
+
+        if(opts.has_child("libver"))
+        {
+            libver = opts["libver"].as_string();
+        }
 
         if(opts.has_child("compact_storage"))
         {
@@ -217,12 +226,29 @@ public:
                 }
             }
         }
+
     }
 
     //------------------------------------------------------------------------
     static void about(Node &opts)
     {
         opts.reset();
+
+        // report hdf5_library_version
+        unsigned int major_num=0;
+        unsigned int minor_num=0;
+        unsigned int release_num=0;
+
+        herr_t h5_status = H5get_libversion(&major_num, &minor_num,&release_num);
+
+        CONDUIT_CHECK_HDF5_ERROR(h5_status,
+                                 "Failed to fetch HDF5 library version info ");
+
+        opts["hdf5_library_version"] = conduit_fmt::format("v{0}.{1}.{2}",
+                                                           major_num,
+                                                           minor_num,
+                                                           release_num);
+        opts["libver"] = libver;
 
         if(compact_storage_enabled)
         {
@@ -252,6 +278,7 @@ public:
         {
             opts["chunking/compression/level"] = compression_level;
         }
+
     }
 };
 
@@ -267,6 +294,7 @@ int         HDF5Options::chunk_threshold    = 2000000; // 2 mb
 std::string HDF5Options::compression_method = "gzip";
 int         HDF5Options::compression_level  = 5;
 
+std::string HDF5Options::libver             = "default";
 
 //-----------------------------------------------------------------------------
 void
@@ -407,11 +435,13 @@ hid_t create_hdf5_group_for_conduit_node(const Node &node,
                                          const std::string &ref_path,
                                          hid_t hdf5_parent_group_id,
                                          const std::string &hdf5_child_group_name);
-
+//-----------------------------------------------------------------------------
+// Note: Options may cause the dataset to be recreated,
+// this is why the hdf5_dset_id is passed as a reference.
 //-----------------------------------------------------------------------------
 void  write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                          const std::string &ref_path,
-                                         hid_t hdf5_dset_id,
+                                         hid_t &hdf5_dset_id,
                                          const Node &opts);
 
 //-----------------------------------------------------------------------------
@@ -845,7 +875,11 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
     bool res = true;
     H5O_info_t h5_obj_info;
 
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
+#else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
+#endif
 
     // make sure it is a dataset ...
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
@@ -985,7 +1019,12 @@ check_if_conduit_object_is_compatible_with_hdf5_tree(const Node &node,
     // make sure we have a group ...
 
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
+#else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
+#endif
 
     // make sure it is a group ...
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
@@ -1055,7 +1094,12 @@ check_if_conduit_list_is_compatible_with_hdf5_tree(const Node &node,
     // make sure we have a group ...
 
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info, H5O_INFO_ALL);
+#else
     herr_t h5_status = H5Oget_info(hdf5_id, &h5_obj_info);
+#endif
 
     // make sure it is a group ...
     if( CONDUIT_HDF5_STATUS_OK(h5_status) &&
@@ -1503,7 +1547,7 @@ create_hdf5_group_for_conduit_node(const Node &node,
 void
 write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                    const std::string &ref_path,
-                                   hid_t hdf5_dset_id,
+                                   hid_t &hdf5_dset_id,
                                    const Node &opts)
 {
     DataType dt = node.dtype();
@@ -1639,6 +1683,7 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
 
             hdf5_dset_id = H5Oopen(hdf5_id,
                 hdf5_dset_path.c_str(), H5P_DEFAULT);
+
             H5Fclose(hdf5_id);
 
             H5Dclose(dataspace);
@@ -1719,13 +1764,30 @@ write_conduit_leaf_to_hdf5_group(const Node &node,
                                  const Node &opts)
 {
     // data set case ...
-
     // check if the dataset exists
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
+                                                 hdf5_dset_name.c_str(),
+                                                 &h5_obj_info,
+                                                 H5O_INFO_ALL,
+                                                 H5P_DEFAULT);
+#else
     herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                  hdf5_dset_name.c_str(),
                                                  &h5_obj_info,
                                                  H5P_DEFAULT);
+#endif
+
+
+
+    // NOTE: legacy H5Gget_objinfo might be better to use
+    // https://github.com/PyTables/PyTables/issues/402#issuecomment-75051913
+    // herr_t h5_info_status =  H5Gget_objinfo(hdf5_group_id,
+    //                                         hdf5_dset_name.c_str(),
+    //                                         0,
+    //                                         NULL);
 
     hid_t h5_child_id = -1;
 
@@ -1794,10 +1856,19 @@ write_conduit_empty_to_hdf5_group(hid_t hdf5_group_id,
 
     // check if the dataset exists
     H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
+                                                 hdf5_dset_name.c_str(),
+                                                 &h5_obj_info,
+                                                 H5O_INFO_ALL,
+                                                 H5P_DEFAULT);
+#else
     herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                  hdf5_dset_name.c_str(),
                                                  &h5_obj_info,
                                                  H5P_DEFAULT);
+#endif
 
     hid_t h5_child_id = -1;
 
@@ -1899,10 +1970,19 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
             // check if the HDF5 group has child with same name
             // as the node's child
             H5O_info_t h5_obj_info;
+
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+            herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
+                                                         child_name.c_str(),
+                                                         &h5_obj_info,
+                                                         H5O_INFO_ALL,
+                                                         H5P_DEFAULT);
+#else
             herr_t h5_info_status =  H5Oget_info_by_name(hdf5_group_id,
                                                          child_name.c_str(),
                                                          &h5_obj_info,
                                                          H5P_DEFAULT);
+#endif
 
             hid_t h5_child_id = -1;
 
@@ -1959,7 +2039,7 @@ write_conduit_node_children_to_hdf5_group(const Node &node,
 void
 write_conduit_node_to_hdf5_tree(const Node &node,
                                 const std::string &ref_path,
-                                hid_t hdf5_id,
+                                hid_t &hdf5_id,
                                 const Node &opts)
 {
 
@@ -2121,9 +2201,14 @@ remove_conduit_hdf5_list_attribute(hid_t hdf5_group_id,
 struct h5_read_opdata
 {
     unsigned                recurs;      /* Recursion level.  0=root */
-    struct h5_read_opdata   *prev;        /* Pointer to previous opdata */
-    haddr_t                 addr;        /* Group address */
+    struct h5_read_opdata   *prev;       /* Pointer to previous opdata */
 
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    H5O_token_t            *token;       /* Group token */
+#else
+    haddr_t                 addr;        /* Group address */
+#endif
+    
     // pointer to conduit node, anchors traversal to
     Node            *node;
     const Node      *opts;
@@ -2143,10 +2228,45 @@ struct h5_read_opdata
 //  target_addr.  Returns 1 if a match is found, and 0
 //  otherwise.
 //---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// -- hdf5 1.12 implementation
+//---------------------------------------------------------------------------//
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+int
+h5_group_check(h5_read_opdata *od,
+               hid_t h5_id,
+               H5O_token_t *target_token)
+{
+
+    int cmp = -1;
+    H5Otoken_cmp(h5_id, od->token, target_token, &cmp);
+
+    if (cmp == 0)
+    {
+        /* Addresses match */
+        return 1;
+    }
+    else if (!od->recurs)
+    {
+        /* Root group reached with no matches */
+        return 0;
+    }
+    else
+    {
+        /* Recursively examine the next node */
+        return h5_group_check(od->prev, h5_id, target_token);
+    }
+}
+#else
+//---------------------------------------------------------------------------//
+// -- pre hdf5 1.12 implementation
+//---------------------------------------------------------------------------//
 int
 h5_group_check(h5_read_opdata *od,
                haddr_t target_addr)
 {
+    
     if (od->addr == target_addr)
     {
         /* Addresses match */
@@ -2163,7 +2283,7 @@ h5_group_check(h5_read_opdata *od,
         return h5_group_check(od->prev, target_addr);
     }
 }
-
+#endif
 
 //---------------------------------------------------------------------------//
 Node *
@@ -2239,10 +2359,19 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
      * The name of the object is passed to this function by
      * the Library.
      */
+
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    h5_status = H5Oget_info_by_name(hdf5_id,
+                                    hdf5_path,
+                                    &h5_info_buf,
+                                    H5O_INFO_ALL,
+                                    H5P_DEFAULT);
+#else
     h5_status = H5Oget_info_by_name(hdf5_id,
                                     hdf5_path,
                                     &h5_info_buf,
                                     H5P_DEFAULT);
+#endif
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                     hdf5_id,
@@ -2262,6 +2391,13 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
     {
         case H5O_TYPE_GROUP:
         {
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+            /*
+             * With 1.12, we compare tokens, with the hope this provides
+             * the same cycle avoidance.
+             */
+            if ( h5_group_check (h5_od, hdf5_id, &h5_info_buf.token) )
+#else
             /*
              * Check group address against linked list of operator
              * data structures.  We will always run the check, as the
@@ -2274,6 +2410,7 @@ h5l_iterate_traverse_op_func(hid_t hdf5_id,
              * H5Odecr_refcount.
              */
             if ( h5_group_check (h5_od, h5_info_buf.addr) )
+#endif
             {
                 // skip cycles in the graph ...
             }
@@ -2367,8 +2504,14 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 {
     // get info, we need to get the obj addr for cycle tracking
     H5O_info_t h5_info_buf;
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_status = H5Oget_info(hdf5_group_id,
+                                   &h5_info_buf,
+                                   H5O_INFO_ALL);
+#else
     herr_t h5_status = H5Oget_info(hdf5_group_id,
                                    &h5_info_buf);
+#endif 
 
     // Check if this is a list or an object case
     if(check_if_hdf5_group_has_conduit_list_attribute(hdf5_group_id,
@@ -2388,7 +2531,11 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
     // setup linked list tracking that allows us to detect cycles
     h5_od.recurs = 0;
     h5_od.prev = NULL;
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    h5_od.token = &h5_info_buf.token;
+#else
     h5_od.addr = h5_info_buf.addr;
+#endif
     // attach the pointer to our node
     h5_od.node = &dest;
     h5_od.opts = &opts;
@@ -2700,10 +2847,14 @@ read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
                                  const Node &opts,
                                  Node &dest)
 {
-    herr_t     h5_status = 0;
     H5O_info_t h5_info_buf;
 
-    h5_status = H5Oget_info(hdf5_id,&h5_info_buf);
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf,H5O_INFO_ALL);
+#else
+    herr_t h5_status = H5Oget_info(hdf5_id,&h5_info_buf);
+#endif 
+
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                     hdf5_id,
@@ -2814,11 +2965,57 @@ create_hdf5_file_access_plist()
     // https://forum.hdfgroup.org/t/seconding-the-request-for-h5pset-libver-bounds-1-8-x-file-compat-option/4056
     // so only enable H5F_LIBVER_LATEST if we are using hdf5 1.8
 
-    if(major_num == 1 && minor_num == 8)
+    if(major_num == 1 && minor_num >= 8)
     {
-        h5_status = H5Pset_libver_bounds(h5_fa_props,
-                                         H5F_LIBVER_LATEST,
-                                         H5F_LIBVER_LATEST);
+#if H5_VERSION_GE(1, 10, 2)
+        if(HDF5Options::libver == "default" ||
+           HDF5Options::libver == "v108")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_V18, H5F_LIBVER_V18);
+        }
+        else if(HDF5Options::libver == "v1110")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_V18, H5F_LIBVER_V110);
+        }
+        else if(HDF5Options::libver == "latest")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_V18, H5F_LIBVER_LATEST);
+        }
+        else if( HDF5Options::libver == "none" )
+        {
+            // no op
+        }
+        else
+        {
+            // unknown or unsupported libver
+            CONDUIT_ERROR("HDF5 libver option: '"
+                          << HDF5Options::libver 
+                          << "' is unknown or unsupported with HDF5 v"
+                          << major_num << "." << major_num << "." << release_num
+                          );
+        }
+#else
+        // for 1.8, we map def, v108, and latest to H5F_LIBVER_LATEST
+        if(HDF5Options::libver == "default" ||
+           HDF5Options::libver == "v108" ||
+           HDF5Options::libver == "latest")
+        {
+            h5_status = H5Pset_libver_bounds(h5_fa_props, H5F_LIBVER_LATEST, H5F_LIBVER_LATEST);
+        }
+        else if( HDF5Options::libver == "none" )
+        {
+            // no op
+        }
+        else
+        {
+            // unknown or unsupported libver
+            CONDUIT_ERROR("HDF5 libver option: '"
+                          << HDF5Options::libver 
+                          << "' is unknown or unsupported with HDF5 v"
+                          << major_num << "." << major_num << "." << release_num
+                          );
+        }
+#endif
 
         CONDUIT_CHECK_HDF5_ERROR(h5_status,
                                  "Failed to set libver options for "
@@ -2915,7 +3112,7 @@ hdf5_write(const Node &node,
 //---------------------------------------------------------------------------//
 void
 hdf5_write(const Node &node,
-           hid_t hdf5_id,
+           hid_t &hdf5_id,
            const std::string &hdf5_path,
            const Node &opts)
 {
@@ -3016,7 +3213,7 @@ hdf5_write(const Node &node,
 //---------------------------------------------------------------------------//
 void
 hdf5_write(const Node &node,
-           hid_t hdf5_id,
+           hid_t &hdf5_id,
            const Node &opts)
 {
     // disable hdf5 error stack
@@ -3666,11 +3863,21 @@ void hdf5_group_list_child_names(hid_t hdf5_id,
 
     H5O_info_t h5_info_buf;
 
-    // Get type of the object
+
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+    herr_t h5_status = H5Oget_info_by_name(hdf5_id,
+                                           hdf5_path.c_str(),
+                                           &h5_info_buf,
+                                           H5O_INFO_ALL,
+                                           H5P_DEFAULT);
+#else
     herr_t h5_status = H5Oget_info_by_name(hdf5_id,
                                            hdf5_path.c_str(),
                                            &h5_info_buf,
                                            H5P_DEFAULT);
+#endif
+
+    // Get type of the object
 
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
                                                     hdf5_id,
@@ -3777,7 +3984,151 @@ void hdf5_group_list_child_names(hid_t hdf5_id,
 
    // restore hdf5 error stack
 }
+//-----------------------------------------------------------------------------
+void
+hdf5_identifier_report(Node &out)
+{
+    hdf5_identifier_report(H5F_OBJ_ALL,out);
+}
 
+//-----------------------------------------------------------------------------
+void
+hdf5_identifier_report(hid_t hdf5_id, Node &out)
+{
+    out.reset();
+    int h5_num_objs = H5Fget_obj_count(hdf5_id, H5F_OBJ_ALL);
+
+    if(h5_num_objs > 0)
+    {
+        // get ids
+        std::vector<hid_t> h5_obj_ids(h5_num_objs);
+        H5Fget_obj_ids(H5F_OBJ_ALL,
+                       H5F_OBJ_ALL,
+                       h5_num_objs,
+                       h5_obj_ids.data());
+
+        // everything should be named
+        int unnamed_counter = 0;
+        // store name to id map in conduit node
+        for (int i = 0; i < h5_num_objs; i++)
+        {
+            hid_t h5_obj_id = h5_obj_ids[i];
+            // get size of the name first
+            std::string name = "";
+            ssize_t obj_name_size = H5Iget_name(h5_obj_id, NULL,4096);
+            if(obj_name_size > 0)
+            {
+                std::vector<char> name_buff(obj_name_size + 1);
+                H5Iget_name(h5_obj_id, name_buff.data(), obj_name_size+1);
+                name = std::string(name_buff.data());
+            }
+
+            if(name == "")
+            {
+                name = conduit_fmt::format("_unnamed_{:d}",unnamed_counter);
+                unnamed_counter++;
+            }
+
+            Node &ent =  out.add_child(name);
+
+            // is valid
+            htri_t h5_is_valid = H5Iis_valid(h5_obj_id);
+            if(h5_is_valid > 0)
+            {
+                ent["valid"] = "true";
+            }
+            else if(h5_is_valid == 0)
+            {
+                ent["valid"] = "false";
+            }
+            else
+            {
+                ent["valid"] = "unknown";
+            }
+
+            // provide ref count
+            ent["ref_count"] = H5Iget_ref(h5_obj_id);
+
+            // provide type info
+            H5I_type_t h5_obj_type = H5Iget_type(h5_obj_id);
+
+            ent["id"] = h5_obj_ids[i];
+            switch(h5_obj_type)
+            {
+                case H5I_UNINIT:
+                    ent["type"] = "uninitialized";
+                    break;
+                case H5I_BADID:
+                    ent["type"] = "invalid";
+                    break;
+                case H5I_FILE:
+                    ent["type"] ="file";
+                    break;
+                case H5I_GROUP:
+                    ent["type"] ="group";
+                    break;
+                case H5I_DATATYPE:
+                    ent["type"] ="datatype";
+                    break;
+                case H5I_DATASPACE:
+                    ent["type"] ="dataspace";
+                    break;
+                case H5I_DATASET:
+                    ent["type"] ="dataset";
+                    break;
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+                // 1.12 +
+                case H5I_MAP:
+                    ent["type"] ="map";
+                    break;
+#endif
+                case H5I_ATTR:
+                    ent["type"] ="attribute";
+                    break;
+#if H5_VERSION_LE(1, 10, 99)
+                // deprecated -- removed in 1.12
+                case H5I_REFERENCE:
+                    ent["type"] ="reference";
+                    break;
+#endif
+                case H5I_VFL:
+                    ent["type"] ="vfl";
+                    break;
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+                // 1.12 +
+                case H5I_VOL:
+                    ent["type"] ="vol";
+                    break;
+#endif
+                case H5I_GENPROP_CLS:
+                    ent["type"] ="genprop_class";
+                    break;
+                case H5I_GENPROP_LST:
+                    ent["type"] ="genprop_list";
+                    break;
+                case H5I_ERROR_CLASS:
+                    ent["type"] ="error_class";
+                    break;
+                case H5I_ERROR_MSG:
+                    ent["type"] ="error_message";
+                    break;
+                case H5I_ERROR_STACK:
+                    ent["type"] ="error_stack";
+                    break;
+#if H5_VERSION_GE(1, 12, 0) && !defined(H5_USE_18_API)
+                // 1.12 +
+                case H5I_SPACE_SEL_ITER:
+                    ent["type"] ="dataspace_selection_iterator";
+                    break;
+#endif
+                default:
+                    ent["type"] ="unknown";
+                    break;
+            }
+
+        }
+    }
+}
 
 
 }

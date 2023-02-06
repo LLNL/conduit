@@ -71,6 +71,13 @@ module conduit_obj
         procedure :: remove_child_by_name  => conduit_node_obj_remove_child_by_name
 
         !----------------------------------------------------------------------
+        procedure :: reset => conduit_node_obj_reset
+
+        !----------------------------------------------------------------------
+        procedure :: move => conduit_node_obj_move
+        procedure :: swap => conduit_node_obj_swap
+
+        !----------------------------------------------------------------------
         !----------------------------------------------------------------------
         ! begin node cases
         !----------------------------------------------------------------------
@@ -194,7 +201,7 @@ module conduit_obj
         !----------------------------------------------------------------------
 
         !----------------------------------------------------------------------
-        
+
         generic :: remove  => remove_path
 
         generic :: remove_child  => remove_child_by_index, &
@@ -347,6 +354,32 @@ contains
         logical(C_BOOL) :: res
         res = conduit_node_diff_compatible(obj%cnode, other%cnode, info%cnode, epsilon)
     end function conduit_node_obj_diff_compatible
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_reset(obj)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj
+        call conduit_node_reset(obj%cnode)
+    end subroutine conduit_node_obj_reset
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_move(obj_a,obj_b)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj_a
+        class(node) :: obj_b
+        call conduit_node_move(obj_a%cnode,obj_b%cnode)
+    end subroutine conduit_node_obj_move
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_obj_swap(obj_a,obj_b)
+        use iso_c_binding
+        implicit none
+        class(node) :: obj_a
+        class(node) :: obj_b
+        call conduit_node_swap(obj_a%cnode,obj_b%cnode)
+    end subroutine conduit_node_obj_swap
 
     !--------------------------------------------------------------------------
     subroutine conduit_node_obj_update(obj,other)

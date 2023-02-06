@@ -376,6 +376,149 @@ TEST(c_conduit_node, c_save_load)
     conduit_node_destroy(n2);
 }
 
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_to_json)
+{
+    conduit_node *n = conduit_node_create();
+    conduit_node_parse(n,"{\"a\": 42.0}","json");
+
+    char* res = conduit_node_to_json(n);
+    std::string res_str = res;
+    EXPECT_EQ(res_str, "\n{\n  \"a\": 42.0\n}");
+
+    free(res);
+    
+    // now with opts
+    
+    conduit_node *nopts = conduit_node_create();
+    conduit_node_set_path_int(nopts,"depth",1);
+    conduit_node_set_path_char8_str(nopts,"pad"," PAD ");
+    conduit_node_set_path_char8_str(nopts,"eoe"," EOE\n ");
+
+    conduit_node_print(nopts);
+
+    res = conduit_node_to_json_with_options(n,nopts);
+    res_str  =res;
+
+    std::cout << res_str << std::endl;
+
+    std::string texpect = R"ST( EOE
+  PAD  PAD { EOE
+  PAD  PAD  PAD  PAD "a": 42.0 EOE
+  PAD  PAD })ST";
+
+    EXPECT_EQ(res_str, texpect);
+
+    free(res);
+    conduit_node_destroy(n);
+    conduit_node_destroy(nopts);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_to_yaml)
+{
+    conduit_node *n = conduit_node_create();
+    conduit_node_parse(n,"a: 42.0\n","yaml");
+
+    char* res = conduit_node_to_yaml(n);
+    std::string res_str = res;
+    std::cout << res_str << std::endl;
+    EXPECT_EQ(res_str, "\na: 42.0\n");
+
+    free(res);
+ 
+    // now with opts
+ 
+    conduit_node *nopts = conduit_node_create();
+    conduit_node_set_path_int(nopts,"depth",1);
+    conduit_node_set_path_char8_str(nopts,"pad"," PAD ");
+    conduit_node_set_path_char8_str(nopts,"eoe"," EOE\n ");
+
+    conduit_node_print(nopts);
+
+    res = conduit_node_to_yaml_with_options(n,nopts);
+    res_str = res;
+
+    std::cout << res_str << std::endl;
+
+    std::string texpect = R"ST( EOE
+  PAD  PAD a: 1 EOE
+ )ST";
+ 
+    free(res);
+    conduit_node_destroy(n);
+    conduit_node_destroy(nopts);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_to_string)
+{
+    conduit_node *n = conduit_node_create();
+    conduit_node_parse(n,"a: 42.0\n","yaml");
+
+    char* res = conduit_node_to_string(n);
+    std::string res_str = res;
+    std::cout << res_str << std::endl;
+    EXPECT_EQ(res_str, "\na: 42.0\n");
+
+    free(res);
+ 
+    // now with opts
+ 
+    conduit_node *nopts = conduit_node_create();
+    conduit_node_set_path_char8_str(nopts,"protocol","yaml");
+    conduit_node_set_path_int(nopts,"depth",1);
+    conduit_node_set_path_char8_str(nopts,"pad"," PAD ");
+    conduit_node_set_path_char8_str(nopts,"eoe"," EOE\n ");
+
+    res = conduit_node_to_string_with_options(n,nopts);
+    res_str = res;
+
+    std::cout << res_str << std::endl;
+
+    std::string texpect = R"ST( EOE
+  PAD  PAD a: 1 EOE
+ )ST";
+ 
+    free(res);
+    conduit_node_destroy(n);
+    conduit_node_destroy(nopts);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_to_summary_string)
+{
+    conduit_node *n = conduit_node_create();
+    conduit_node_parse(n,"a: 42.0\n","yaml");
+
+    char* res = conduit_node_to_summary_string(n);
+    std::string res_str = res;
+    std::cout << res_str << std::endl;
+    EXPECT_EQ(res_str, "\na: 42.0\n");
+
+    free(res);
+ 
+    // now with opts
+ 
+    conduit_node *nopts = conduit_node_create();
+    conduit_node_set_path_char8_str(nopts,"protocol","yaml");
+    conduit_node_set_path_int(nopts,"depth",1);
+    conduit_node_set_path_char8_str(nopts,"pad"," PAD ");
+    conduit_node_set_path_char8_str(nopts,"eoe"," EOE\n ");
+
+    res = conduit_node_to_summary_string_with_options(n,nopts);
+    res_str = res;
+
+    std::cout << res_str << std::endl;
+
+    std::string texpect = R"ST( EOE
+  PAD  PAD a: 1 EOE
+ )ST";
+ 
+    free(res);
+    conduit_node_destroy(n);
+    conduit_node_destroy(nopts);
+}
 
 //-----------------------------------------------------------------------------
 TEST(c_conduit_node, c_child_with_embedded_slashes)
@@ -427,6 +570,58 @@ TEST(c_conduit_node, c_fetch_existing)
     
 
     conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_reset)
+{
+    conduit_node *n = conduit_node_create();
+
+    conduit_node *n_1 = conduit_node_fetch(n,"normal/path");
+    conduit_node_set_int(n_1,10);
+
+    // check number of children
+    EXPECT_EQ(conduit_node_number_of_children(n),1);
+    const conduit_datatype *dtype = conduit_node_dtype(n);
+    EXPECT_EQ(conduit_datatype_is_object(dtype),1);
+
+    conduit_node_reset(n);
+
+    EXPECT_EQ(conduit_node_number_of_children(n),0);
+
+    // check that dtype is empty
+    dtype = conduit_node_dtype(n);
+    EXPECT_EQ(conduit_datatype_is_empty(dtype),1);
+
+    conduit_node_destroy(n);
+}
+
+//-----------------------------------------------------------------------------
+TEST(c_conduit_node, c_move_and_swap)
+{
+    conduit_node *n_a = conduit_node_create();
+    conduit_node *n_b = conduit_node_create();
+
+    conduit_node_set_path_int(n_a,"data",10);
+    conduit_node_set_path_int(n_b,"data",20);
+
+    conduit_node_swap(n_a,n_b);
+
+    EXPECT_EQ(conduit_node_fetch_path_as_int(n_a,"data"),20);
+    EXPECT_EQ(conduit_node_fetch_path_as_int(n_b,"data"),10);
+
+    // now move b into a, b will be reset as a result
+    conduit_node_move(n_a,n_b);
+
+    EXPECT_EQ(conduit_node_number_of_children(n_b),0);
+    // check that dtype is empty
+    const conduit_datatype *dtype = conduit_node_dtype(n_b);
+    EXPECT_EQ(conduit_datatype_is_empty(dtype),1);
+
+    EXPECT_EQ(conduit_node_fetch_path_as_int(n_a,"data"),10);
+    
+    conduit_node_destroy(n_a);
+    conduit_node_destroy(n_b);
 }
 
 

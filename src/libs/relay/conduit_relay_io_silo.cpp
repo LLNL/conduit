@@ -659,6 +659,32 @@ read_quadmesh_domain(DBfile *file,
     }
 }
 
+
+//---------------------------------------------------------------------------//
+template<typename T>
+void
+conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
+{
+    const int conn_size = n_mesh_conn.dtype().number_of_elements();
+    T *conn_ptr = n_mesh_conn.value();
+    for (int i = 0; i < conn_size; i += 6)
+    {
+        auto conn0 = conn_ptr[i + 0];
+        auto conn1 = conn_ptr[i + 1];
+        auto conn2 = conn_ptr[i + 2];
+        auto conn3 = conn_ptr[i + 3];
+        auto conn4 = conn_ptr[i + 4];
+        auto conn5 = conn_ptr[i + 5];
+        conn_ptr[i + 2] = conn0;
+        conn_ptr[i + 1] = conn1;
+        conn_ptr[i + 5] = conn2;
+        conn_ptr[i + 3] = conn3;
+        conn_ptr[i + 0] = conn4;
+        conn_ptr[i + 4] = conn5;
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
@@ -1641,7 +1667,40 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 
         std::string topo_shape = shape_block->fetch("shape").as_string();
 
-        const Node &n_mesh_conn = shape_block->fetch("connectivity");
+        Node n_mesh_conn;
+        
+        // We are using the vtk ordering for our wedges; silo wedges (prisms)
+        // expect a different ordering. Thus before we output to silo, we must
+        // change the ordering of each of our wedges.
+        if (topo_shape == "wedge")
+        {
+            n_mesh_conn.set(shape_block->fetch("connectivity"));
+            // swizzle the connectivity
+            if (n_mesh_conn.dtype().is_uint64())
+            {
+                conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
+            }
+            else if (n_mesh_conn.dtype().is_uint32())
+            {
+                conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
+            }
+            else if (n_mesh_conn.dtype().is_int64())
+            {
+                conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
+            }
+            else if (n_mesh_conn.dtype().is_int32())
+            {
+                conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
+            }
+            else
+            {
+                CONDUIT_ERROR("Unsupported connectivity type in " << n_mesh_conn.dtype().to_yaml());
+            }
+        }
+        else
+        {
+            n_mesh_conn.set_external(shape_block->fetch("connectivity"));
+        }
 
         // convert to compact ints ...
         if (shape_list)
@@ -1691,6 +1750,24 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
             shapecnt[i] = num_elems;
             total_num_elems += num_elems;
         }
+        else if( topo_shape == "wedge")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 6;
+            shapetype[i] = DB_ZONETYPE_PRISM;
+            shapesize[i] = 6;
+            shapecnt[i]  = num_elems;
+            total_num_elems  += num_elems;
+        }
+        else if( topo_shape == "pyramid")
+        {
+            // TODO: check for explicit # of elems
+            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 5;
+            shapetype[i] = DB_ZONETYPE_PYRAMID;
+            shapesize[i] = 5;
+            shapecnt[i]  = num_elems;
+            total_num_elems  += num_elems;
+        }
         else if (topo_shape == "line")
         {
             // TODO: check for explicit # of elems
@@ -1739,7 +1816,6 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                          DBoptlist *state_optlist,
                          Node &n_mesh_info)
 {
-
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
     auto coordsys_type_labels = get_coordset_type_labels(n_coords);

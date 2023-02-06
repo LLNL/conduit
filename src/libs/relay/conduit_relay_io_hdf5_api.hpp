@@ -195,8 +195,14 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id,
                                   const std::string &hdf5_path);
 
+//
+// hdf5_write support with options may require us to convert datasets
+// from fixed to extendible. This removes and closes the existing dataset.
+// To support this, hdf5_id is passed as a reference and is updated
+// as needed.
+//
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
-                                  hid_t hdf5_id,
+                                  hid_t &hdf5_id,
                                   const std::string &hdf5_path,
                                   const Node &opts);
 
@@ -209,8 +215,14 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
                                   hid_t hdf5_id);
 
+//
+// hdf5_write support with options may require us to convert datasets
+// from fixed to extendible. This removes and closes the existing dataset.
+// To support this, hdf5_id is passed as a reference and is updated
+// as needed.
+//
 void CONDUIT_RELAY_API hdf5_write(const Node &node,
-                                  hid_t hdf5_id,
+                                  hid_t &hdf5_id,
                                   const Node &opts);
 
 
@@ -395,5 +407,13 @@ void CONDUIT_RELAY_API hdf5_set_options(const Node &opts);
 /// Get a Node that contains hdf5 i/o options.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API hdf5_options(Node &opts);
+
+//-----------------------------------------------------------------------------
+/// Get a node that describes open hdf5 handles
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API hdf5_identifier_report(Node &out);
+
+void CONDUIT_RELAY_API hdf5_identifier_report(hid_t hdf5_id, Node &out);
+
 
 #endif

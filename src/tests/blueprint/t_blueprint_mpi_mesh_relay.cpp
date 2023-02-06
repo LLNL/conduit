@@ -322,7 +322,7 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_1dom)
 
     // globally, expect par_size domains
     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),1);
-    
+
 
 }
 
@@ -471,7 +471,7 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
             std::cout << " checking: " << fcheck << std::endl;
             EXPECT_TRUE(conduit::utils::is_file(fcheck));
         }
-        
+
         // read the mesh back in diff to make sure we have the same data
         Node n_read, info;
         relay::mpi::io::blueprint::read_mesh(output_base + ".cycle_000000.root",
@@ -489,16 +489,118 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
         EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read, comm), 7);
 
         std::cout << "par_rank " << par_rank << "  read # of children " << n_read.number_of_children();
-        // in all cases we expect 7 domains to match 
+        // in all cases we expect 7 domains to match
         for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
         {
             EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
         }
-        
+
     }
 
     // read this back using read_mesh
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_relay, spiral_root_only)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // only run this test if hdf5 is enabled
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("hdf5 is disabled, skipping hdf5 dependent test");
+        return;
+    }
+
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    CONDUIT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    //
+    // Create an example mesh, spiral , with 7 domains
+    //
+    Node data, verify_info;
+
+    conduit::blueprint::mesh::examples::spiral(7,data);
+
+    // rank 0 gets first 4 domains, rank 1 gets the rest
+    if(par_rank == 0)
+    {
+        data.remove(4);
+        data.remove(4);
+        data.remove(4);
+    }
+    else if(par_rank == 1)
+    {
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+        data.remove(0);
+    }
+    else
+    {
+        // cyrus was wrong about 2 mpi ranks.
+        EXPECT_TRUE(false);
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+
+    // try root only mode
+    
+    Node opts;
+    opts["suffix"] = "none";
+    opts["file_style"] = "root_only";
+    std::string tout_base = "tout_relay_mpi_spiral_root_only_hdf5";
+
+    remove_path_if_exists(tout_base + ".root");
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  tout_base,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".root"));
+
+
+
+    // read the mesh back in diff to make sure we have the same data
+    Node n_read, info;
+    relay::mpi::io::blueprint::read_mesh(tout_base + ".root",
+                                         n_read,
+                                         comm);
+
+    // rank 0 will have 4, rank 1 wil have 3
+    int num_local_domains = 4;
+    if(par_rank != 0)
+    {
+        num_local_domains = 3;
+    }
+
+    // total doms should be 7
+    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read, comm), 7);
+
+    std::cout << "par_rank " << par_rank << "  read # of children " << n_read.number_of_children();
+    // in all cases we expect 7 domains to match
+    for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+    {
+        EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
+    }
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(blueprint_mpi_relay, test_write_error_hang)
@@ -519,7 +621,7 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
 
 
     std::string output_base = "tout_relay_mpi_mesh_save_load_truncate";
-    
+
     Node data;
 
     // 6 doms (2 per mpi task)
@@ -612,12 +714,284 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
     // total doms should be 6,
     EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read,comm), 6);
 
-    // each task has 3 local doms, check them 
+    // each task has 3 local doms, check them
     for(int dom_idx=0; dom_idx < 3; dom_idx++)
     {
         EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
         info.print();
     }
+
+}
+
+//-----------------------------------------------------------------------------
+// note: sparse topo tests are from ascent usecases
+TEST(blueprint_mpi_relay, test_sparse_domains_case_1)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping test_sparse_domains_case_1 test");
+        return;
+    }
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    Node data;
+    ostringstream oss;
+
+    // create mesh where each rank has three domains with different topos
+    for(index_t d =0; d<3; d++)
+    {
+        Node &mesh = data.append();
+
+        mesh["state/cycle"] = 0;
+
+        oss.str("");
+        oss << "my_coords_rank_" <<  par_rank << "_" << d;
+        std::string c_name = oss.str();
+
+        oss.str("");
+        oss << "my_topo_rank_" <<  par_rank << "_" << d;
+        std::string t_name = oss.str();
+
+        oss.str("");
+        oss << "my_field_rank_" <<  par_rank << "_" << d;
+        std::string f_name = oss.str();
+
+        // create the coordinate set
+        mesh["coordsets"][c_name]["type"] = "uniform";
+        mesh["coordsets"][c_name]["dims/i"] = 3;
+        mesh["coordsets"][c_name]["dims/j"] = 3;
+        mesh["coordsets"][c_name]["origin/x"] = -10.0;
+        mesh["coordsets"][c_name]["origin/y"] = -10.0;
+        mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+        mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+        mesh["topologies"][t_name]["type"] = "uniform";
+        mesh["topologies"][t_name]["coordset"] = c_name;
+
+        mesh["fields"][f_name]["association"] =  "element";
+        mesh["fields"][f_name]["topology"] =  t_name;
+        mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+        float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+        for(int i=0;i<4;i++)
+        {
+            ele_vals_ptr[i] = float64(d);
+        }
+    }
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    
+    Node opts; // empty for now
+    std::string tout_base = "tout_relay_mpi_sparse_case_1_hdf5";
+
+    remove_path_if_exists(tout_base + ".cycle_000000.root");
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  tout_base,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".cycle_000000.root"));
+    
+}
+
+//-----------------------------------------------------------------------------
+// note: sparse topo tests are from ascent usecases
+TEST(blueprint_mpi_relay, test_sparse_domains_case_2)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping test_sparse_domains_case_2 test");
+        return;
+    }
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+    ostringstream oss;
+
+    // rank 1 have 3 domains, rank zero none
+    if(par_rank > 0)
+    {
+        // three domains with different topos
+        for(index_t d =0; d<3; d++)
+        {
+            Node &mesh = data.append();
+
+            mesh["state/cycle"] = 0;
+
+            oss.str("");
+            oss << "my_coords_rank_" <<  par_rank << "_" << d;
+            std::string c_name = oss.str();
+
+            oss.str("");
+            oss << "my_topo_rank_" <<  par_rank << "_" << d;
+            std::string t_name = oss.str();
+
+            oss.str("");
+            oss << "my_field_rank_" <<  par_rank << "_" << d;
+            std::string f_name = oss.str();
+
+            // create the coordinate set
+            mesh["coordsets"][c_name]["type"] = "uniform";
+            mesh["coordsets"][c_name]["dims/i"] = 3;
+            mesh["coordsets"][c_name]["dims/j"] = 3;
+            // add origin and spacing to the coordset (optional)
+            mesh["coordsets"][c_name]["origin/x"] = -10.0;
+            mesh["coordsets"][c_name]["origin/y"] = -10.0;
+            mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+            mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+            // add the topology
+            // this case is simple b/c it's implicitly derived from the coordinate set
+            mesh["topologies"][t_name]["type"] = "uniform";
+            // reference the coordinate set by name
+            mesh["topologies"][t_name]["coordset"] = c_name;
+
+            // add a simple element-associated field
+            mesh["fields"][f_name]["association"] =  "element";
+            // reference the topology this field is defined on by name
+            mesh["fields"][f_name]["topology"] =  t_name;
+            // set the field values, for this case we have 4 elements
+            mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+            float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+            for(int i=0;i<4;i++)
+            {
+                ele_vals_ptr[i] = float64(d);
+            }
+        }
+
+        Node verify_info;
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    }
+
+    Node opts; // empty for now
+    std::string tout_base = "tout_relay_mpi_sparse_case_2_hdf5";
+
+    remove_path_if_exists(tout_base + ".cycle_000000.root");
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  tout_base,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".cycle_000000.root"));
+
+
+
+}
+
+//-----------------------------------------------------------------------------
+// note: sparse topo tests are from ascent usecases
+TEST(blueprint_mpi_relay, test_sparse_domains_case_3)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+    if(!hdf5_enabled)
+    {
+        CONDUIT_INFO("HDF5 disabled, skipping test_sparse_domains_case_3 test");
+        return;
+    }
+
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+    ostringstream oss;
+
+    // rank 1 have 3 domains, rank zero none
+    if(par_rank > 0)
+    {
+        // three domains with different topos
+        for(index_t d =0; d<3; d++)
+        {
+            Node &mesh = data.append();
+
+            mesh["state/cycle"] = 0;
+
+            oss.str("");
+            oss << "my_coords_rank_" <<  par_rank << "_" << d;
+            std::string c_name = oss.str();
+
+            oss.str("");
+            oss << "my_topo_rank_" <<  par_rank << "_" << d;
+            std::string t_name = oss.str();
+
+            oss.str("");
+            oss << "my_field_rank_" <<  par_rank << "_" << d;
+            std::string f_name = oss.str();
+
+            // create the coordinate set
+            mesh["coordsets"][c_name]["type"] = "uniform";
+            mesh["coordsets"][c_name]["dims/i"] = 3;
+            mesh["coordsets"][c_name]["dims/j"] = 3;
+            // add origin and spacing to the coordset (optional)
+            mesh["coordsets"][c_name]["origin/x"] = -10.0;
+            mesh["coordsets"][c_name]["origin/y"] = -10.0;
+            mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+            mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+            // add the topology
+            // this case is simple b/c it's implicitly derived from the coordinate set
+            mesh["topologies"][t_name]["type"] = "uniform";
+            // reference the coordinate set by name
+            mesh["topologies"][t_name]["coordset"] = c_name;
+
+            // add a simple element-associated field
+            mesh["fields"][f_name]["association"] =  "element";
+            // reference the topology this field is defined on by name
+            mesh["fields"][f_name]["topology"] =  t_name;
+            // set the field values, for this case we have 4 elements
+            mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+            float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+            for(int i=0;i<4;i++)
+            {
+                ele_vals_ptr[i] = float64(d);
+            }
+        }
+
+        Node verify_info;
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    }
+
+    Node opts;
+    opts["suffix"] = "cycle";
+    std::string tout_base = "tout_relay_mpi_sparse_case_3_hdf5";
+
+    remove_path_if_exists(tout_base + ".cycle_000000.root");
+    conduit::relay::mpi::io::blueprint::save_mesh(data,
+                                                  tout_base,
+                                                  "hdf5",
+                                                  opts,
+                                                  comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".cycle_000000.root"));
+
+
 
 }
 

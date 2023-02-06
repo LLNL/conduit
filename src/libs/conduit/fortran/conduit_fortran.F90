@@ -391,6 +391,32 @@ module conduit
             type(C_PTR), value, intent(IN) :: cdest
          end subroutine conduit_node_info
 
+        !--------------------------------------------------------------------------
+        subroutine conduit_node_reset(cnode) &
+                 bind(C, name="conduit_node_reset")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: cnode
+        end subroutine conduit_node_reset
+
+        !--------------------------------------------------------------------------
+        subroutine conduit_node_move(cnode_a, cnode_b) &
+                 bind(C, name="conduit_node_move")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: cnode_a
+            type(C_PTR), value, intent(IN) :: cnode_b
+        end subroutine conduit_node_move
+
+        !--------------------------------------------------------------------------
+        subroutine conduit_node_swap(cnode_a, cnode_b) &
+                 bind(C, name="conduit_node_swap")
+            use iso_c_binding
+            implicit none
+            type(C_PTR), value, intent(IN) :: cnode_a
+            type(C_PTR), value, intent(IN) :: cnode_b
+        end subroutine conduit_node_swap
+
      !--------------------------------------------------------------------------
      ! node update methods
      !--------------------------------------------------------------------------

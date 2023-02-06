@@ -61,6 +61,9 @@ public:
     virtual ~ParallelPartitioner();
 
 protected:
+
+    virtual std::vector<index_t> get_global_domids(const conduit::Node& n_mesh) override;
+
     virtual long get_total_selections() const override;
 
     /**
@@ -106,7 +109,18 @@ protected:
                                     const std::vector<int> &dest_domain,
                                     const std::vector<int> &offsets,
                                     std::vector<Chunk> &chunks_to_assemble,
-                                    std::vector<int> &chunks_to_assemble_domains) override;
+                                    std::vector<int> &chunks_to_assemble_domains,
+                                    std::vector<int> &chunks_to_assemble_gids) override;
+
+    virtual void get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
+                                       const DomainToChunkMap& chunks,
+                                       const std::map<index_t, const Node*>& domain_map,
+                                       std::vector<Node>& adjset_chunk_maps) override;
+
+    virtual void communicate_mapback(std::unordered_map<index_t, Node>& packed_fields) override;
+
+    virtual void synchronize_gvids(const std::vector<std::vector<index_t>>& remap_to_local_doms,
+                                   std::map<index_t, std::vector<index_t>>& orig_dom_gvids) override;
 
 private:
     /**
@@ -121,6 +135,7 @@ private:
 
     MPI_Comm     comm;
     MPI_Datatype chunk_info_dt;
+    std::vector<int64> domain_to_rank_map;
 };
 
 //-----------------------------------------------------------------------------

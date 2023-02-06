@@ -606,3 +606,72 @@ TEST(conduit_yaml, to_yaml_leaf_nl)
 
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, empty_leaves)
+{
+    Node n;
+    n["values/a"].set(DataType::int64(0));
+    std::string  r_yaml = n.to_yaml();
+    std::cout << r_yaml << std::endl;
+
+    Node n_parse;
+    n_parse.parse(r_yaml,"yaml");
+
+    std::cout << n_parse.to_yaml() << std::endl;
+    // round trip will differ
+    // "values/a" will be a list instead of an array
+    Node info;
+    EXPECT_TRUE(n.diff(n_parse,info));
+    info.print();
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, nan_and_inf_strings_parse)
+{
+    Node n;
+    std::string yaml_src = "[\"nan\", 0.0, 1.0]";
+    n.parse(yaml_src,"yaml");
+    n.print();
+    EXPECT_TRUE(n.dtype().is_number());
+    EXPECT_TRUE(n.dtype().is_float64());
+    std::string yaml_rtrip = n.to_json();
+    EXPECT_EQ(yaml_src,yaml_rtrip);
+
+    yaml_src = "[\"-inf\", 0.0, 1.0]";
+    n.parse(yaml_src,"yaml");
+    n.print();
+    EXPECT_TRUE(n.dtype().is_number());
+    EXPECT_TRUE(n.dtype().is_float64());
+    yaml_rtrip = n.to_json();
+    EXPECT_EQ(yaml_src,yaml_rtrip);
+
+    yaml_src = "[0.0, 1.0, \"inf\"]";
+    n.parse(yaml_src,"yaml");
+    n.print();
+    EXPECT_TRUE(n.dtype().is_number());
+    EXPECT_TRUE(n.dtype().is_float64());
+    yaml_rtrip = n.to_json();
+    EXPECT_EQ(yaml_src,yaml_rtrip);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_yaml, to_yaml_opts)
+{
+    Node n;
+    n["a"] = 1;
+
+    Node opts;
+    opts["depth"] = 1;
+    opts["pad"] = " PAD ";
+    opts["eoe"] = " EOE\n ";
+
+    std::string res = n.to_yaml(opts);
+    std::cout << res << std::endl;
+    std::string texpect = R"ST( EOE
+  PAD  PAD a: 1 EOE
+ )ST";
+
+    EXPECT_EQ(res,texpect);
+}

@@ -6,47 +6,248 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Added
+
+#### General
+
+- Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
+
+## [0.8.6] - Released 2023-01-11
 
 ### Added
 
 #### General
+- Added C++ `int DataType::sizeof_index_t()` and C `int conduit_datatype_sizeof_index_t()` methods to provide a stable ABI to determine configured size (number of bytes) of Conduit's index_t type.
+
+### Fixed
+
+#### General
+- Build fixes for Conda Forge (mpi -fallow-argument-mismatch clang protection)
+
+#### Relay
+- Fixed a directory creation bug in `relay::io::blueprint::{save_mesh|write_mesh}` that occurred with sparse topologies with no domains on rank 0. 
+- Fixed a bug in `relay::io::blueprint::{save_mesh|write_mesh}` with the `suffix=cycle` option that could cause int max to erroneously be used as the cycle number in the output directory.
+
+
+## [0.8.5] - Released 2022-12-22
+
+### Added
+#### General
+- Added Node::move and Node::swap methods, which provide efficient ways to help build Node trees by consuming other Nodes.
+- Added Node::reset methods to C and Fortran interfaces.
+- Added initial optional support for Caliper performance annotations.
+- Added Python support for `Node.set` and `Node.set_external` with a schema and external buffer.
+
+#### Blueprint
+- Added support for Wedges and Pyramids.
+- Added helper function `blueprint::mesh::generate_strip` to generate a 2D "strip mesh" topology, and dependent other Blueprint mesh parts, from a 1D mesh.
+
+### Changed
+#### General
+- Changed `Schema::has_path()` (and transitively `Node::has_path()` ) to ignore leading `/` s.
+- Updated to BLT v0.5.2
+
+#### Relay
+- When using HDF5 1.10 or newer, default to use libver 1.8 when creating HDF5 files for wider read compatibly. This setting can be controlled via the hdf5 relay option `libver`, accepted values: `default`, `none`, `latest`, `v108`, and `v110`.
+
+
+#### Relay
+- Updated C++ and Python tutorial docs for Compatible Schemas with a new example to outline the most common use case.
+
+### Fixed
+
+#### Blueprint
+- Fixed bug with `blueprint::mesh::examples::strided_structured` so it correctly generates a coordset with padding
+- Fixes (correctness and performance) to `topology::unstructured::generate_offsets`
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to use improved logic to auto detect the format (hdf5 ,yaml, or json) of mesh blueprint root files.
+- Leading `/` s in mesh tree paths no longer undermine `conduit.relay.io.blueprint.{load_mesh|read_mesh}` reading json and yaml flavored files.
+- Fixed indexing and offsets in blueprint mixed element topology examples.
+
+#### Relay
+- Leading `/` s in tree paths no longer undermine io::IOHandle reads for conduit_bin, json, conduit_json, conduit_base64_json, and yaml flavored files.
+- Updated `conduit.relay.io.blueprint.{load_mesh|read_mesh}` to only the read the necessary subset of root file entries. Updated MPI version to only read root file entries on rank 0 and broadcast them to other ranks.
+- Fixed write compatibly check in `relay::mpi::gather`, `relay::mpi::all_gather`, and `relay::mpi::broadcast_using_schema`. Node compatible check is not commutative and checks in leaf zero-copy logic were reversed.
+
+
+## [0.8.4] - Released 2022-08-22
+
+### Added
+#### General
+- Added variants of `Node::to_json`, `Node::to_yaml`, and `Node::to_string` that take formatting options via a Conduit Node.
+- Added C API methods `conduit_node_to_json`, `conduit_node_to_yaml`, `conduit_node_to_string`, and `conduit_node_to_summary_string`.
+- Added `DataArray::count` method.
+- Added `DataAccessor::{min,max,sum,mean,count}` methods.
+- Added Schema and Python Buffer variants to Python `Node.set()` and `Node.set_external()`.
+
+#### Blueprint
+- Added `blueprint::mesh::paint_adjset`, which paints fields that encode adjacency set counts and ordering details.
+- Added `blueprint::mesh::examples::strided_structured` which creates a structured mesh with arbitrarily strided vertex and element fields.
+- Added support for mixed element topologies to the mesh blueprint.
+- Added `blueprint::mesh::examples::braid` examples with mixed element topologies (`mesh_type={"mixed", "mixed_2d"}`)
+- Added 1D mesh example support to `blueprint::mesh::examples::basic()`.
+- Added adjacency set aware generate functions (`genearte_points()`, etc) to the non-mpi blueprint library.
+- Added `generate_offsets_inline(Node &)` for cases where we want topology offsets created in an existing tree.
+- Added support to write and read per-mesh blueprint index entires with `partition_pattern` and `partition_map`.
+
+
+
+#### Relay
+- Added any source, any tag variants of mpi receive functions: `recv`, `recv_using_schema`, and `irecv`.
+- Added subpath support for `relay::io::{save,load,save_merged,load_merged}` for basic protocols (json, yaml, etc).
+
+### Changed
+
+#### Blueprint
+- Removed field `type` entries from braid examples, since that info is not required by the Mesh Blueprint.
+- Fixed a const-ignoring crime related to polyhedral element and subelement offset generation.
+- Refactored unstructured case in `blueprint::mesh::topology::logical_dims` calculation to directly calculate number of elements instead of generating offsets.
+
+#### Relay
+- Changed HDF5 CMake sanity checks to issue `WARNING` instead of `FATAL_ERROR`, since Cray system HDF5 installs do not always present the info we use for sanity checks.
+- Changed HDF5 version guards to also check requested HDF5 API.
+
+
+### Fixed
+
+#### General
+- Fixed bug with `to_json()` where leaf arrays of size 0 lead to malformed json.
+- Fixed parsing issue with `conduit_json` protocol for leaf arrays of size 0.
+- Fixed roundtrip parsing of numeric arrays with nan, infs, etc for JSON cases (`Node::to_json()` followed by `Node::parse(...,"json")`).
+
+#### Blueprint
+- Fixed a bug with `blueprint::mesh::index::generate`, where a uniform grid with no origin would lead to invalid coordinate system name `logical` in the resulting index. This case now defaults to `cartesian`.
+- Improved `relay::io::blueprint::{save_mesh|write_mesh}` blueprint index generation for cases where fields do not exist on all domains.
+- Fixed a bug that labeled internal faces as shared in generated adjsets.
+
+#### Relay
+- Fixed a bug with blueprint root file creation, where the `file_pattern` was not relative to the root file location
+- Fixed missing header include for relay io csv support.
+- Fixed a bug with relay mpi all reduce.
+
+## [0.8.3] - Released 2022-04-14
+
+### Added
+
+#### General 
+- Added C/C++ version macros `CONDUIT_VERSION_MAJOR`, `CONDUIT_VERSION_MINOR`, `CONDUIT_VERSION_PATCH` and these values as separate entries in `conduit::about()` to provide more support for compile time and runtime conduit version detection.
+
+
+#### Blueprint
+- Added `blueprint::mesh::examples::polystar`, which creates a mesh with a polyhedral star pattern that demonstrates hanging vertices in a topology, along with its representations from `generate_sides` and `generate_corners`.
+- Added `blueprint::mesh::examples::related_boundary`, which creates a multi-domain mesh with a related boundary topology and several fileds that encode relationships between the main topology and the boundary.
+- Expanded `blueprint::mpi::mesh::generate_partition_field` to support all topology types.
+
+
+### Fixed
+
+#### Blueprint
+- Fixed a bug with `conduit::blueprint::mesh::examples::braid`, where 2D cases for points and structured examples would create coordsets with all entries being zero.
+
+### Changed
+
+#### General
+- Improved pip install logic
+
+#### Relay
+- Added szip and zlib linking fix for older version of HDF5 (1.8.14)
+- Fixed a bug with `relay::io::blueprint::write_mesh` and `relay::io::blueprint::save_mesh` for the multi domain case, removing unintended `:mesh` file name suffix for json and yaml domain files.
+
+## [0.8.2] - Released 2022-02-01
+
+### Fixed
+
+#### Blueprint
+- Fixed missing C++ include used by Blueprint Parmetis support.
+
+## [0.8.1] - Released 2022-01-25
+
+### Added
+#### General
+- Added `CONDUIT_DLL_DIR` env var support on windows, for cases where Conduit DLLs are not installed directly inside the Python Module.
+
+#### Blueprint
+- Allow adjsets to be used in `blueprint::mesh::partition` to determine global vertex ids.
+- Added partial matset support to `blueprint::mesh::partition` and `blueprint::mesh::combine`.
+
+### Fixed
+
+#### General
+- Fixed CMake bug with `ENABLE_RELAY_WEBSERVER` option.
+- Fixed build and test issues with Python >= 3.8  on Windows.
+
+#### Blueprint
+- Fixed a bug in `blueprint::mesh::partition` where adjsets could be missing in new domains.
+- Fixed a bug with `blueprint::mesh::matset::to_silo` and uni-buffer matsets.
+
+
+## [0.8.0] - Released 2021-12-20
+
+
+### Added
+
+#### General
+- Added `setup.py` for building and installing Conduit and its Python module via pip
+- Added DataAccessor class that helps write generic algorithms that consume data arrays using expected types.
 - Added support to register custom memory allocators and a custom data movement handler. This allows conduit to move trees of data between heterogenous memory spaces (e.g. CPU and GPU memory). See conduit_utils.hpp for API details.
 
 #### Blueprint
-- Added the `blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
-- Added to the `blueprint::mesh::examples::polytess` example. Now `polytess` takes a new argument, called `nz`, which allows it to be extended into 3 dimensions. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess) for more details.
+- Added `conduit::blueprint::{mpi}::partition` function that provides a general N-to-M partition capability for Blueprint Meshes. This helps with load balancing and other use cases, including fusing multi-domain data to simplifying post processing. This capability supports several options, see (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh_partition.html) for more details.
+- Added a `Table` blueprint used to represent tables of numeric data. See (https://llnl-conduit.readthedocs.io/en/latest/blueprint_table.html) more details.
+- Added `conduit::blueprint::{mpi}::flatten` which transforms Blueprint Meshes into Blueprint Tables. This transforms Mesh Blueprint data into a form that is more easily digestible in machine learning applications.
+- Added `conduit::blueprint::mpi::generate_partition_field`, which uses Parmetis to create a field that identifies how to load balance an input mesh elements.  This field can be used as a Field selection input to `conduit::blueprint::mpi::partition` function.
+- Added the`blueprint::mesh::examples::polychain` example. It is an example of a polyhedral mesh. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polychain) for more details.
 - Added a new function signature for `blueprint::mesh::topology::unstructured::generate_sides`, which performs the same task as the original and also takes fields from the original topology and maps them onto the new topology.
+- Added `blueprint::mpi::mesh::to_polygonal`, which provides a MPI aware conversion Blueprint Structured AMR meshes to a Blueprint Polyhedral meshes.
 - Added a host of `conduit::blueprint::mpi::mesh::generate_*` methods, which are the MPI parallel equivalents of the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions.
 - Added the `conduit::blueprint::mpi::mesh::find_delegate_domain` function, which returns a single delegate domain for the given mesh across MPI ranks (useful when all ranks need mesh information and some ranks can have empty meshes).
 - Added check and transform functions for the newly-designated `pairwise` and `maxshare` variants of `adjsets`. For more information, see the `conduit::blueprint::mesh::adjset` namespace.
+- Added `mesh::topology::unstructured::to_polytopal` as an alias to `mesh::topology::unstructured::to_polygonal`, to reflect that both polygonal and polyhedral are supported.
+- Added `conduit::blueprint::mpi::mesh::to_polytopal` as an alias to `conduit::blueprint::mpi::mesh::to_polygonal` and `conduit::blueprint::mpi::mesh::to_polyhedral`.
+
+
+#### Relay
+- Added `conduit::relay::io::hdf5_identifier_report` methods, which create conduit nodes that describes active hdf5 resource handles.
+
 
 ### Changed
 
 #### General
 - Updated CMake logic to provide more robust Python detection and better support for HDF5 installs that were built with CMake.
 - Improved Node::diff and Node::diff_compatible to show string values when strings differ.
+- `conduit::Node::print()` and in Python Node `repr` and `str` now use `to_summary_string()`. This reduces the output for large Nodes. Full output is still supported via `to_string()`, `to_yaml()`, etc methods.
 
 #### Blueprint
+- The `blueprint::mesh::examples::polytess` function now takes a new argument, called `nz`, which allows it to be extended into 3 dimensions. See Mesh Blueprint Examples docs (https://llnl-conduit.readthedocs.io/en/latest/blueprint_mesh.html#polytess) for more details.
 - Added support for both `const` and non-`const` inputs to the `conduit::blueprint::mesh::domains` function.
+- Improved mesh blueprint index generation logic (local and MPI) to support domains with different topos, fields, etc. 
+- Deprecated accepting `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. They issue a `CONDUIT_INFO` message when this detected and future versions will issue a `CONDUIT_ERROR`.
+- An empty Conduit Node is now considered a valid multi-domain mesh. This change was made to make serial uses cases better match sparse MPI multi-domain use cases. Existing code that relied `mesh::verify` to exclude empty Nodes will now need an extra check to see if an input mesh has data.
+- Added MPI communicator argument to `conduit::blueprint::mpi::mesh::to_polygonal` and `conduit::blueprint::mpi::mesh::to_polyhedral`.
+
+
 
 #### Relay
 - Added CMake option (`ENABLE_RELAY_WEBSERVER`, default = `ON`) to control if Conduit's Relay Web Server support is built. Down stream codes can check for support via header ifdef `CONDUIT_RELAY_WEBSERVER_ENABLED` or at runtime in `conduit::relay::about`.
+- Added support to compile against HDF5 1.12.
 
 ### Fixed
 
 #### General
 - Avoid compile issue with using `_Pragma()` with Python 3.8 on Windows
 - `conduit_node` and `conduit_datatype` in the C API are no longer aliases to `void` so that callers cannot pass just any pointer to the APIs.
-- Fixed overread issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
+- Fixed memory over read issue with Fortran API due to int vs bool binding error. Fortran API still provides logical returns for methods like conduit_node_has_path() however the binding implementation now properly translates C_INT return codes into logical values.
 - Fixed a subtle bug with Node fetch and Object role initialization.
 
 #### Blueprint
 - Fixed a bug that was causing the `conduit::blueprint::mesh::topology::unstructured::generate_*` functions to produce bad results for polyhedral input topologies with heterogeneous elements (e.g. tets and hexs).
 - Fixed a bug with `conduit::relay::io::blueprint::write_mesh` that undermined `truncate=true` option for root-only style output.
-
+- Fixed options parsing bugs and improved error messages for the `conduit_blueprint_verify` exe.
 
 #### Relay
 - Changed HDF5 offset support to use 64-bit unsigned integers for offsets, strides, and sizes.
+- Fixed a bug with `conduit::relay::mpi::io::blueprint::save_mesh` where `file_style=root_only` could crash or truncate output files.
+- Fixed a bug with inconsistent HDF5 handles being used in some cases when converting existing HDF5 Datasets from fixed to extendable.
+
 
 ## [0.7.2] - Released 2021-05-19
 
@@ -537,7 +738,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.5...HEAD
+[0.8.5]: https://github.com/llnl/conduit/compare/v0.8.4...v0.8.5
+[0.8.4]: https://github.com/llnl/conduit/compare/v0.8.3...v0.8.4
+[0.8.3]: https://github.com/llnl/conduit/compare/v0.8.2...v0.8.3
+[0.8.2]: https://github.com/llnl/conduit/compare/v0.8.1...v0.8.2
+[0.8.1]: https://github.com/llnl/conduit/compare/v0.8.0...v0.8.1
+[0.8.0]: https://github.com/llnl/conduit/compare/v0.7.2...v0.8.0
+[0.7.2]: https://github.com/llnl/conduit/compare/v0.7.1...v0.7.2
 [0.7.1]: https://github.com/llnl/conduit/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/llnl/conduit/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/llnl/conduit/compare/v0.5.1...v0.6.0

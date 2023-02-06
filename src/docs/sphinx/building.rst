@@ -73,60 +73,106 @@ The core Conduit library has no dependencies outside of the repo, however Condui
 
 Conduit's build system supports the following CMake options:
 
-* **BUILD_SHARED_LIBS** - Controls if shared (ON) or static (OFF) libraries are built. *(default = ON)* 
-* **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
-* **ENABLE_EXAMPLES** - Controls if examples are built. *(default = ON)* 
-* **ENABLE_UTILS** - Controls if utilities are built. *(default = ON)* 
-* **ENABLE_TESTS** - Controls if unit tests are built. *(default = ON)* 
-* **ENABLE_DOCS** - Controls if the Conduit documentation is built (when sphinx and doxygen are found ). *(default = ON)*
-* **ENABLE_COVERAGE** - Controls if code coverage compiler flags are used to build Conduit. *(default = OFF)*
-* **ENABLE_PYTHON** - Controls if the Conduit Python module is built. *(default = OFF)*
-* **CONDUIT_ENABLE_TESTS** - Extra control for if Conduit unit tests are built. Useful for in cases where Conduit is pulled into a larger CMake project  *(default = ON)*
+Main CMake Options
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. list-table::
+   :header-rows: 1
+
+   * - Option
+     - Description
+     - Default
+
+   * - ``BUILD_SHARED_LIBS``
+     - Controls if shared (ON) or static (OFF) libraries are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_FORTRAN``
+     - Controls if Fortran components of Conduit are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_PYTHON``
+     - Controls if the Conduit Python module and related tests are built.
+     - *(default = OFF)*
+
+   * - ``ENABLE_MPI``
+     - Controls if Conduit MPI features are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_TESTS``
+     - Controls if unit tests are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_EXAMPLES``
+     - Controls if Conduit examples are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_UTILS``
+     - Controls if Conduit utilities are built.
+     - *(default = ON)*
+
+   * - ``ENABLE_DOCS``
+     - Controls if the Conduit documentation is built (when sphinx is available).
+     - *(default = ON)*
+
+   * - ``ENABLE_COVERAGE``
+     - Controls if code coverage compiler flags are used to build Conduit.
+     - *(default = OFF)*
+
+   * - ``CONDUIT_ENABLE_TESTS``
+     - Extra control for if Conduit unit tests are built. Useful for in cases where Conduit is pulled into a larger CMake project
+     - *(default = ON)*
 
 
-The Conduit Python module can be built for Python 2 or Python 3. To select a specific Python, set the CMake variable **PYTHON_EXECUTABLE** to path of the desired python binary. The Conduit Python module requires Numpy. The selected Python instance must provide Numpy, or PYTHONPATH must be set to include a Numpy install compatible with the selected Python install.
-Note: You can not use compiled Python modules built with Python 2 in Python 3 and vice versa. You need to compile against the version you expect to use. 
+CMake Options for Third-party Library Paths
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-* **ENABLE_MPI** - Controls if the conduit_relay_mpi library is built. *(default = OFF)*
+.. list-table::
+   :header-rows: 1
 
- We are using CMake's standard FindMPI logic. To select a specific MPI set the CMake variables **MPI_C_COMPILER** and **MPI_CXX_COMPILER**, or the other FindMPI options for MPI include paths and MPI libraries.
+   * - Name
+     - Description
 
- To run the mpi unit tests on LLNL's LC platforms, you may also need change the CMake variables **MPIEXEC** and **MPIEXEC_NUMPROC_FLAG**, so you can use srun and select a partition. (for an example see: src/host-configs/chaos_5_x86_64.cmake)
+   * - ``HDF5_DIR``
+     - Path to a HDF5 install (optional). Controls if HDF5 I/O support is built into *conduit_relay*.
 
-.. warning::
-  Starting in CMake 3.10, the FindMPI **MPIEXEC** variable was changed to **MPIEXEC_EXECUTABLE**. FindMPI will still set **MPIEXEC**, but any attempt to change it before calling FindMPI with your own cached value of **MPIEXEC** will not survive, so you need to set **MPIEXEC_EXECUTABLE** `[reference] <https://cmake.org/cmake/help/v3.10/module/FindMPI.html>`_. 
+   * - ``SILO_DIR``
+     - Path to a Silo install (optional). Controls if Silo I/O support is built into *conduit_relay*. Requires HDF5.
 
-* **HDF5_DIR** - Path to a HDF5 install *(optional)*. 
+   * - ``CALIPER_DIR``
+     - Path to a Caliiper install (optional). Controls if Caliper performance annotation support.
 
- Controls if HDF5 I/O support is built into *conduit_relay*.
+   * - ``ADIAK_DIR``
+     - Path to a Adiak install (optional). (Caliper support depends on Adiak)
 
-* **SILO_DIR** - Path to a Silo install *(optional)*. 
-
- Controls if Silo I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
- 
- * **HDF5_DIR** - Path to a HDF5 install. (Silo support depends on HDF5) 
-
-* **ADIOS_DIR** - Path to an ADIOS install *(optional)*. 
-
- Controls if ADIOS I/O support is built into *conduit_relay*. When used, the following CMake variables must also be set:
- 
- * **HDF5_DIR** - Path to a HDF5 install. (ADIOS support depends on HDF5) 
-
-
-* **BLT_SOURCE_DIR** - Path to BLT.  *(default = "blt")*
-
- Defaults to "blt", where we expect the blt submodule. The most compelling reason to override is to share a single instance of BLT across multiple projects.
-  
+   * - ``BLT_SOURCE_DIR``
+     - Path to a BLT install (default = ``blt``)
 
 Installation Path Options
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Conduit's build system provides an **install** target that installs the Conduit libraires, headers, python modules, and documentation. These CMake options allow you to control install destination paths:
 
-* **CMAKE_INSTALL_PREFIX** - Standard CMake install path option *(optional)*.
+.. list-table::
+   :header-rows: 1
 
-* **PYTHON_MODULE_INSTALL_PREFIX** - Path to install Python modules into *(optional)*.
+   * - Option
+     - Description
 
- When present and **ENABLE_PYTHON** is ON, Conduit's Python modules will be installed to ``${PYTHON_MODULE_INSTALL_PREFIX}`` directory instead of ``${CMAKE_INSTALL_PREFIX}/python-modules``.
+   * - ``CMAKE_INSTALL_PREFIX``
+     - Standard CMake install path option (optional).
+
+   * - ``PYTHON_MODULE_INSTALL_PREFIX``
+     - Path to install Python modules into (optional).
+
+
+Additional Build Notes
+^^^^^^^^^^^^^^^^^^^^^^
+
+* **Python** - The Conduit Python module builds for both Python 2 and Python 3. To select a specific Python, set the CMake variable PYTHON_EXECUTABLE to path of the desired python binary. When ``PYTHON_MODULE_INSTALL_PREFIX`` is set and ``ENABLE_PYTHON=ON``, Conduit's Python modules will be installed to ``${PYTHON_MODULE_INSTALL_PREFIX}`` directory instead of ``${CMAKE_INSTALL_PREFIX}/python-modules``.
+
+* **MPI** - We use CMake's standard FindMPI logic. To select a specific MPI set the CMake variables ``MPI_C_COMPILER`` and ``MPI_CXX_COMPILER``, or the other FindMPI options for MPI include paths and MPI libraries. To run the mpi unit tests, you may also need change the CMake variables ``MPIEXEC_EXECUTABLE`` and ``MPIEXEC_NUMPROC_FLAG``, so you can use a different launcher, such as srun and set number of MPI tasks used.
+
+* **BLT** - Conduit uses BLT (https://github.com/llnl/blt) as the foundation of its CMake-based build system. It is included as a submodule in Conduit's git repo, and also available in our release tarballs. The ``BLT_SOURCE_DIR`` CMake option defaults to ``src/blt``, where we expect the blt submodule. The most compelling reason to override is to share a single instance of BLT across multiple projects.
 
 
 Host Config Files
@@ -181,7 +227,7 @@ On OSX and Linux, you can use ``scripts/uberenv/uberenv.py`` to help setup your 
 .. code:: bash
     
     #build third party libs using spack
-    python scripts/uberenv/uberenv.py
+    python3 scripts/uberenv/uberenv.py
     
     # run the configure helper script and give it the 
     # path to a host-config file 
@@ -190,7 +236,7 @@ On OSX and Linux, you can use ``scripts/uberenv/uberenv.py`` to help setup your 
 
 
 Uberenv Options for Building Third Party Dependencies
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 ``uberenv.py`` has a few options that allow you to control how dependencies are built:
 
@@ -221,31 +267,31 @@ Default invocation on Linux:
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %gcc 
+    python3 scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                       --spec %gcc 
 
 Default invocation on OSX:
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --prefix uberenv_libs \
-                                      --spec %clang \
-                                      --spack-config-dir scripts/uberenv_configs/spack_configs/configs/darwin/
+    python3 scripts/uberenv/uberenv.py --prefix uberenv_libs \
+                                       --spec %clang \
+                                       --spack-config-dir scripts/uberenv_configs/spack_configs/configs/darwin/
 
 
 The uberenv `--install` installs conduit\@develop (not just the development dependencies):
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --install
+    python3 scripts/uberenv/uberenv.py --install
 
 
 To run tests during the build process to validate the build and install, you can use the ``--run_tests`` option:
 
 .. code:: bash
 
-    python scripts/uberenv/uberenv.py --install \
-                                      --run_tests
+    python3 scripts/uberenv/uberenv.py --install \
+                                       --run_tests
 
 For details on Spack's spec syntax, see the `Spack Specs & dependencies <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ documentation.
 
@@ -360,6 +406,43 @@ Building Conduit in a Docker Container
 
 Under ``src/examples/docker/ubuntu`` there is an example ``Dockerfile`` which can be used to create an ubuntu-based docker image with a build of the Conduit. There is also a script that demonstrates how to build a Docker image from the Dockerfile (``example_build.sh``) and a script that runs this image in a Docker container (``example_run.sh``). The Conduit repo is cloned into the image's file system at ``/conduit``, the build directory is ``/conduit/build-debug``, and the install directory is ``/conduit/install-debug``.
 
+.. _building_with_pip:
+
+Building Conduit with pip
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Conduit provides a setup.py that allows pip to use CMake to build and install
+Conduit and the Conduit Python module. This script assumes that CMake is in your path.
+
+Example Basic Build:
+
+.. code:: bash
+
+    pip install . --user 
+
+Or for those with certificate woes:
+
+.. code:: bash
+
+    pip install  --trusted-host pypi.org --trusted-host files.pythonhosted.org . --user
+
+
+You can enable Conduit features using the following environment variables:
+
+ ================== ========================================= ======================================
+  Option              Description                              Default
+ ================== ========================================= ======================================
+  **HDF5_DIR**        Path to HDF5 install for HDF5 Support    IGNORE
+  **ENABLE_MPI**      Build Conduit with MPI  Support          OFF
+ ================== ========================================= ======================================
+
+
+Example Build with MPI and HDF5 Support:
+
+.. code:: bash
+
+    env ENABLE_MPI=ON HDF5_DIR={path/to/hdf5/install} pip install . --user
+
+
 
 Notes for Cray systems
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -379,6 +462,16 @@ You can avoid related linking warnings by adding the ``-dynamic`` compiler flag,
 `Shared Memory Maps are read only <https://pubs.cray.com/content/S-0005/CLE%206.0.UP02/xctm-series-dvs-administration-guide-cle-60up02-s-0005/dvs-caveats>`_
 on Cray systems, so updates to data using ``Node::mmap`` will not be seen between processes.
 
+
+
+Notes for using OpenMPI in a container as root
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+By default OpenMPI prevents the root user from launching MPI jobs. If you are running as root in a container you can use the following env vars to turn off this restriction:
+
+.. code:: bash
+
+    OMPI_ALLOW_RUN_AS_ROOT=1
+    OMPI_ALLOW_RUN_AS_ROOT_CONFIRM=1
 
 
 

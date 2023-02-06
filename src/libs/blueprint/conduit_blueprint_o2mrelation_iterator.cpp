@@ -48,6 +48,9 @@ namespace o2mrelation
 O2MIterator::O2MIterator()
 : m_node(NULL),
   m_data_node(NULL),
+  m_sizes_node(NULL),
+  m_indices_node(NULL),
+  m_offsets_node(NULL),
   m_one_index(0),
   m_many_index(0)
 {
@@ -57,11 +60,21 @@ O2MIterator::O2MIterator()
 //---------------------------------------------------------------------------//
 O2MIterator::O2MIterator(const Node *node)
 : m_node(node),
+  m_sizes_node(NULL),
+  m_indices_node(NULL),
+  m_offsets_node(NULL),
   m_one_index(0),
   m_many_index(0)
 {
     std::vector<std::string> paths = conduit::blueprint::o2mrelation::data_paths(*node);
     m_data_node = &node->fetch_existing(paths.front());
+
+    if(m_node->has_child("sizes"))
+        m_sizes_node = m_node->fetch_ptr("sizes");
+    if(m_node->has_child("indices"))
+        m_indices_node = m_node->fetch_ptr("indices");
+    if(m_node->has_child("offsets"))
+        m_offsets_node = m_node->fetch_ptr("offsets");
 }
 
 //---------------------------------------------------------------------------//
@@ -76,6 +89,9 @@ O2MIterator::O2MIterator(const Node &node)
 O2MIterator::O2MIterator(const O2MIterator &itr)
 : m_node(itr.m_node),
   m_data_node(itr.m_data_node),
+  m_sizes_node(itr.m_sizes_node),
+  m_indices_node(itr.m_indices_node),
+  m_offsets_node(itr.m_offsets_node),
   m_one_index(itr.m_one_index),
   m_many_index(itr.m_many_index)
 {
@@ -98,6 +114,9 @@ O2MIterator::operator=(const O2MIterator &itr)
         m_data_node = itr.m_data_node;
         m_one_index = itr.m_one_index;
         m_many_index = itr.m_many_index;
+        m_sizes_node = itr.m_sizes_node;
+        m_indices_node = itr.m_indices_node;
+        m_offsets_node = itr.m_offsets_node;
     }
     return *this;
 }
@@ -402,23 +421,15 @@ O2MIterator::index(index_t one_index, index_t many_index, IndexType itype) const
     if(itype == DATA)
     {
         index_t offset = one_index;
-        if(m_node->has_child("offsets"))
+        if(m_offsets_node)
         {
-            const conduit::Node &offsets_node = m_node->fetch_existing("offsets");
-            const conduit::Node offset_node(
-                conduit::DataType(offsets_node.dtype().id(), 1),
-                (void*)offsets_node.element_ptr(one_index), true);
-            offset = offset_node.to_index_t();
+            offset = m_offsets_node->as_index_t_accessor()[one_index];
         }
 
         index = offset;
-        if(m_node->has_child("indices"))
+        if(m_indices_node)
         {
-            const conduit::Node &indices_node = m_node->fetch_existing("indices");
-            const conduit::Node index_node(
-                conduit::DataType(indices_node.dtype().id(), 1),
-                (void*)indices_node.element_ptr(offset), true);
-            index = index_node.to_index_t();
+            index = m_indices_node->as_index_t_accessor()[offset];
         }
 
         index += (many_index - 1);
@@ -444,22 +455,29 @@ O2MIterator::elements(index_t one_index, IndexType itype) const
 
     if(itype == DATA)
     {
-        for(index_t oi = 0; oi < elements(0, ONE); oi++)
+        // Old: (left to show the code's intent)
+        // for(index_t oi = 0; oi < elements(0, ONE); oi++)
+        //     nelements += elements(oi, MANY);
+
+        // New: This version skips a lot of recursive calls to elements.
+        if(m_sizes_node)
         {
-            nelements += elements(oi, MANY);
+            nelements = m_sizes_node->as_index_t_accessor().sum();
+        }
+        else
+        {
+            nelements = elements(0, ONE);
         }
     }
     else if(itype == ONE)
     {
-        if(m_node->has_child("sizes"))
+        if(m_sizes_node)
         {
-            const conduit::Node &sizes_node = m_node->fetch_existing("sizes");
-            nelements = sizes_node.dtype().number_of_elements();
+            nelements = m_sizes_node->dtype().number_of_elements();
         }
-        else if(m_node->has_child("indices"))
+        else if(m_indices_node)
         {
-            const conduit::Node &indices_node = m_node->fetch_existing("indices");
-            nelements = indices_node.dtype().number_of_elements();
+            nelements = m_indices_node->dtype().number_of_elements();
         }
         else
         {
@@ -471,13 +489,9 @@ O2MIterator::elements(index_t one_index, IndexType itype) const
         // if the one index is too high, we return 0
         if(one_index < elements(0, ONE))
         {
-            if(m_node->has_child("sizes"))
+            if(m_sizes_node)
             {
-                const conduit::Node &sizes_node = m_node->fetch_existing("sizes");
-                const conduit::Node size_node(
-                    conduit::DataType(sizes_node.dtype().id(), 1),
-                    (void*)sizes_node.element_ptr(one_index), true);
-                nelements = size_node.to_index_t();
+                nelements = m_sizes_node->as_index_t_accessor()[one_index];
             }
             else
             {

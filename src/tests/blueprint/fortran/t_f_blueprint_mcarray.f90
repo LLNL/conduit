@@ -44,32 +44,32 @@ contains
         info = conduit_node_create()
     
         call conduit_blueprint_mcarray_examples_xyz("interleaved",10_8,n)
-        call assert_true( conduit_blueprint_mcarray_verify(n,info) .eqv. .true. )
-        call assert_true( conduit_blueprint_mcarray_is_interleaved(n) .eqv. .true. );
+        call assert_true( logical(conduit_blueprint_mcarray_verify(n,info) .eqv. .true. ))
+        call assert_true( logical(conduit_blueprint_mcarray_is_interleaved(n) .eqv. .true. ))
 
-        call assert_true( conduit_blueprint_mcarray_to_contiguous(n,nxform) .eqv. .true. )
-        call assert_true( conduit_blueprint_mcarray_is_interleaved(nxform) .eqv. .false. );
-        call assert_true( conduit_node_is_contiguous(nxform) .eqv. .true. )
+        call assert_true( logical(conduit_blueprint_mcarray_to_contiguous(n,nxform) .eqv. .true. ))
+        call assert_true( logical(conduit_blueprint_mcarray_is_interleaved(nxform) .eqv. .false. ))
+        call assert_true( logical(conduit_node_is_contiguous(nxform) .eqv. .true. ))
 
         call conduit_blueprint_mcarray_examples_xyz("separate",10_8,n)
-        call assert_true( conduit_blueprint_mcarray_verify(n,info) .eqv. .true. )
-        call assert_true( conduit_blueprint_mcarray_verify(n,info) .eqv. .true. )
+        call assert_true( logical(conduit_blueprint_mcarray_verify(n,info) .eqv. .true. ))
+        call assert_true( logical(conduit_blueprint_mcarray_verify(n,info) .eqv. .true. ))
 
 
         call conduit_blueprint_mcarray_examples_xyz("contiguous",10_8,n)
-        call assert_true( conduit_blueprint_mcarray_verify(n,info) .eqv. .true. )
-        call assert_true( conduit_node_is_contiguous(n) .eqv. .true. )
-        call assert_true( conduit_blueprint_mcarray_is_interleaved(n) .eqv. .false. );
+        call assert_true( logical(conduit_blueprint_mcarray_verify(n,info) .eqv. .true. ))
+        call assert_true( logical(conduit_node_is_contiguous(n) .eqv. .true. ))
+        call assert_true( logical(conduit_blueprint_mcarray_is_interleaved(n) .eqv. .false. ))
 
 
-        call assert_true( conduit_blueprint_mcarray_to_interleaved(n,nxform) .eqv. .true. )
-        call assert_true( conduit_blueprint_mcarray_is_interleaved(nxform) .eqv. .true. );
+        call assert_true( logical(conduit_blueprint_mcarray_to_interleaved(n,nxform) .eqv. .true. ))
+        call assert_true( logical(conduit_blueprint_mcarray_is_interleaved(nxform) .eqv. .true. ))
 
         call conduit_blueprint_mcarray_examples_xyz("interleaved_mixed",10_8,n)
-        call assert_true( conduit_blueprint_mcarray_verify(n,info) .eqv. .true. )
-        call assert_true( conduit_blueprint_mcarray_verify_sub_protocol("sub",nempty,info) .eqv. .false. )
+        call assert_true( logical(conduit_blueprint_mcarray_verify(n,info) .eqv. .true. ))
+        call assert_true( logical(conduit_blueprint_mcarray_verify_sub_protocol("sub",nempty,info) .eqv. .false. ))
 
-        call assert_true( conduit_blueprint_mcarray_verify(nempty,info) .eqv. .false. )
+        call assert_true( logical(conduit_blueprint_mcarray_verify(nempty,info) .eqv. .false. ))
 
 
         call conduit_node_destroy(n);

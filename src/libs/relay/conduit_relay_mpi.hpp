@@ -87,6 +87,11 @@ namespace mpi
                                int tag,
                                MPI_Comm comm);
 
+    // any source, any tag variant
+    int CONDUIT_RELAY_API recv(Node &node,
+                               MPI_Comm comm);
+
+
     int CONDUIT_RELAY_API send_using_schema(const Node &node,
                                             int dest,
                                             int tag,
@@ -96,6 +101,11 @@ namespace mpi
                                             int source,
                                             int tag,
                                             MPI_Comm comm);
+
+    // any source, any tag variant
+    int CONDUIT_RELAY_API recv_using_schema(Node &node,
+                                            MPI_Comm comm);
+
 
 //-----------------------------------------------------------------------------
 /// MPI Reduce
@@ -190,6 +200,11 @@ namespace mpi
     int CONDUIT_RELAY_API irecv(Node &node,
                                 int src,
                                 int tag,
+                                MPI_Comm comm,
+                                Request *request);
+
+    // any source, any tag variant
+    int CONDUIT_RELAY_API irecv(Node &node,
                                 MPI_Comm comm,
                                 Request *request);
 

@@ -16,6 +16,7 @@
   state: 
     time: 3.1415
     cycle: 100
+    domain_id: 0
   fields: 
     braid: 
       association: "vertex"
@@ -60,6 +61,7 @@
   state: 
     time: 3.1415
     cycle: 100
+    domain_id: 1
   fields: 
     braid: 
       association: "vertex"
@@ -104,6 +106,7 @@
   state: 
     time: 3.1415
     cycle: 100
+    domain_id: 2
   fields: 
     braid: 
       association: "vertex"
@@ -148,6 +151,7 @@
   state: 
     time: 3.1415
     cycle: 100
+    domain_id: 3
   fields: 
     braid: 
       association: "vertex"
@@ -192,6 +196,7 @@
   state: 
     time: 3.1415
     cycle: 100
+    domain_id: 4
   fields: 
     braid: 
       association: "vertex"

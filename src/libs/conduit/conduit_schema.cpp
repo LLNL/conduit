@@ -1263,12 +1263,24 @@ Schema::has_path(const std::string &path) const
     if(m_dtype.id() != DataType::OBJECT_ID)
         return false;
 
+    std::string p_input;
+
+    // if there is a leading slash, we want to ignore
+    // so check for and adjust if we have this case
+    if(path.size() > 0 && path[0] == '/')
+    {
+        p_input = path.substr(1,path.size()-1);
+    }
+    else
+    {
+        p_input = path;
+    }
+
     std::string p_curr;
     std::string p_next;
-    utils::split_path(path,p_curr,p_next);
-    
+    utils::split_path(p_input,p_curr,p_next);
+
     // handle parent case (..)
-    
     const std::map<std::string,index_t> &ents = object_map();
 
     if(ents.find(p_curr) == ents.end())
@@ -1627,6 +1639,22 @@ Schema::children() const
 }
 
 //---------------------------------------------------------------------------//
+index_t
+Schema::child_index(Schema *schema_ptr) const
+{
+    // find the index of schema_ptr
+    index_t nchld = number_of_children();
+    for(index_t i=0; i < nchld; i++)
+    {
+        if(child_ptr(i) == schema_ptr )
+        {
+            return i;
+        }
+    }
+    return -1;
+}
+
+//---------------------------------------------------------------------------//
 const std::map<std::string, index_t> &
 Schema::object_map() const
 {
@@ -1640,6 +1668,9 @@ Schema::object_order() const
 {
     return object_hierarchy()->object_order;
 }
+
+
+
 
 //---------------------------------------------------------------------------//
 void

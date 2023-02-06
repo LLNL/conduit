@@ -1,0 +1,149 @@
+Running main() from /Users/harrison37/Work/github/llnl/conduit/src/blt/thirdparty_builtin/googletest-master-2020-01-07/googletest/src/gtest_main.cc
+[==========] Running 2 tests from 1 test suite.
+[----------] Global test environment set-up.
+[----------] 2 tests from conduit_tutorial
+[ RUN      ] conduit_tutorial.move
+BEGIN_EXAMPLE("move")
+- Before Move -
+n_a contents:
+
+n_a memory details:
+
+total_bytes_allocated: 0
+total_bytes_mmaped: 0
+total_bytes_compact: 0
+total_strided_bytes: 0
+
+n_b contents:
+
+path: 
+  to: 
+    data: 42
+
+n_b memory details:
+
+mem_spaces: 
+  0x7fdbaae04470: 
+    path: "path/to/data"
+    type: "allocated"
+    bytes: 4
+    allocator_id: 0
+total_bytes_allocated: 4
+total_bytes_mmaped: 0
+total_bytes_compact: 4
+total_strided_bytes: 4
+
+- After Move -
+n_a contents:
+
+path: 
+  to: 
+    data: 42
+
+n_a memory details:
+
+mem_spaces: 
+  0x7fdbaae04470: 
+    path: "path/to/data"
+    type: "allocated"
+    bytes: 4
+    allocator_id: 0
+total_bytes_allocated: 4
+total_bytes_mmaped: 0
+total_bytes_compact: 4
+total_strided_bytes: 4
+
+n_b contents:
+
+n_b memory details:
+
+total_bytes_allocated: 0
+total_bytes_mmaped: 0
+total_bytes_compact: 0
+total_strided_bytes: 0
+
+END_EXAMPLE("move")
+[       OK ] conduit_tutorial.move (1 ms)
+[ RUN      ] conduit_tutorial.swap
+BEGIN_EXAMPLE("swap")
+- Before Swap -
+n_a contents:
+
+data: 10
+
+n_a memory details:
+
+mem_spaces: 
+  0x7fdbaaf043d0: 
+    path: "data"
+    type: "allocated"
+    bytes: 4
+    allocator_id: 0
+total_bytes_allocated: 4
+total_bytes_mmaped: 0
+total_bytes_compact: 4
+total_strided_bytes: 4
+
+n_b contents:
+
+path: 
+  to: 
+    data: 20
+
+n_b memory details:
+
+mem_spaces: 
+  0x7fdbaaf04830: 
+    path: "path/to/data"
+    type: "allocated"
+    bytes: 4
+    allocator_id: 0
+total_bytes_allocated: 4
+total_bytes_mmaped: 0
+total_bytes_compact: 4
+total_strided_bytes: 4
+
+- After Swap -
+n_a contents:
+
+path: 
+  to: 
+    data: 20
+
+n_a memory details:
+
+mem_spaces: 
+  0x7fdbaaf04830: 
+    path: "path/to/data"
+    type: "allocated"
+    bytes: 4
+    allocator_id: 0
+total_bytes_allocated: 4
+total_bytes_mmaped: 0
+total_bytes_compact: 4
+total_strided_bytes: 4
+
+n_b contents:
+
+data: 10
+
+n_b memory details:
+
+mem_spaces: 
+  0x7fdbaaf043d0: 
+    path: "data"
+    type: "allocated"
+    bytes: 4
+    allocator_id: 0
+total_bytes_allocated: 4
+total_bytes_mmaped: 0
+total_bytes_compact: 4
+total_strided_bytes: 4
+
+END_EXAMPLE("swap")
+[       OK ] conduit_tutorial.swap (0 ms)
+[----------] 2 tests from conduit_tutorial (1 ms total)
+
+[----------] Global test environment tear-down
+[==========] 2 tests from 1 test suite ran. (1 ms total)
+[  PASSED  ] 2 tests.

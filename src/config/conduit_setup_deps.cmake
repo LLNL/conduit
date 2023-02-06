@@ -4,18 +4,72 @@
 
 include(CMakeFindDependencyMacro)
 
+# calc the proper relative install root
+get_filename_component(_IMPORT_PREFIX "${CMAKE_CURRENT_LIST_FILE}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+get_filename_component(_IMPORT_PREFIX "${_IMPORT_PREFIX}" PATH)
+
+if(_IMPORT_PREFIX STREQUAL "/")
+  set(_IMPORT_PREFIX "")
+endif()
+
+# we want the import root, which is right above the "lib" prefix
+get_filename_component(_IMPORT_ROOT "${_IMPORT_PREFIX}" PATH)
+
+if(POLICY CMP0074)
+    #policy for <PackageName>_ROOT variables
+    cmake_policy(PUSH)
+    cmake_policy(SET CMP0074 NEW)
+endif()
+
 ###############################################################################
 # Setup Threads
 ###############################################################################
 if(UNIX AND NOT APPLE)
-    if(CONDUIT_RELAY_WEBSERVER_ENABLED)
-        # we depend on Threads::Threads in our exported targets
-        # so we need to bootstrap that here
+    # if built web server support, we depend on Threads::Threads
+    # in our exported targets so we need to bootstrap that here
+    if(EXISTS ${_IMPORT_ROOT}/include/conduit/conduit_relay_web.hpp)
+
         if(NOT TARGET Threads::Threads)
             find_package( Threads REQUIRED )
         endif()
     endif()
 endif()
+
+###############################################################################
+# Setup Caliper
+###############################################################################
+if(NOT CALIPER_DIR)
+    set(CALIPER_DIR ${CONDUIT_CALIPER_DIR})
+endif()
+
+if(CALIPER_DIR)
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Conduit was built with Caliper Support")
+    endif()
+
+    if(NOT ADIAK_DIR)
+        set(ADIAK_DIR ${CONDUIT_ADIAK_DIR})
+    endif()
+
+    if(ADIAK_DIR)
+        if(NOT Conduit_FIND_QUIETLY)
+            message(STATUS "Looking for Adiak at: ${ADIAK_DIR}/lib/cmake/adiak")
+        endif()
+        # find adiak first
+        find_package(adiak REQUIRED
+                     NO_DEFAULT_PATH
+                     PATHS ${ADIAK_DIR}/lib/cmake/adiak)
+    endif()
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Looking for Caliper at: ${CALIPER_DIR}/share/cmake/caliper")
+    endif()
+    # find caliper
+    find_package(caliper REQUIRED
+                 NO_DEFAULT_PATH
+                 PATHS ${CALIPER_DIR}/share/cmake/caliper)
+endif()
+
 
 ###############################################################################
 # Setup HDF5
@@ -40,12 +94,6 @@ if(CONDUIT_HDF5_DIR)
         message(STATUS "Looking for HDF5 at: " ${HDF5_DIR_REAL})
     endif()
 
-    if(POLICY CMP0074)
-        #policy for <PackageName>_ROOT variables
-        cmake_policy(PUSH)
-        cmake_policy(SET CMP0074 NEW)
-    endif()
-
     # CMake's FindHDF5 module uses the HDF5_ROOT env var
     set(HDF5_ROOT ${HDF5_DIR_REAL})
 
@@ -67,11 +115,6 @@ if(CONDUIT_HDF5_DIR)
                            ${HDF5_DIR}/lib/cmake/hdf5
                            ${HDF5_DIR}/share/cmake/hdf5
                            ${HDF5_DIR}/cmake)
-    endif()
-
-    if(POLICY CMP0074)
-        # clear CMP0074
-        cmake_policy(POP)
     endif()
 
     # FindHDF5/find_package sets HDF5_DIR to it's installed CMake info if it exists
@@ -104,7 +147,9 @@ if(CONDUIT_HDF5_DIR)
         if(HDF5_INCLUDE_DIR)
             set(HDF5_INCLUDE_DIRS ${HDF5_INCLUDE_DIR})
         else()
-            message(FATAL_ERROR "FindHDF5 did not provide HDF5_INCLUDE_DIRS or HDF5_INCLUDE_DIR.")
+            if(NOT Conduit_FIND_QUIETLY)
+                message(WARNING "FindHDF5 did not provide HDF5_INCLUDE_DIRS or HDF5_INCLUDE_DIR.")
+            endif()
         endif()
     endif()
 
@@ -137,7 +182,9 @@ if(CONDUIT_HDF5_DIR)
     endforeach()
 
     if(NOT check_hdf5_inc_dir_ok)
-        message(FATAL_ERROR " ${HDF5_INCLUDE_DIRS} does not include HDF5_DIR")
+        if(NOT Conduit_FIND_QUIETLY)
+            message(WARNING "HDF5_INCLUDE_DIRS (${HDF5_INCLUDE_DIRS}) does not include HDF5_DIR")
+        endif()
     endif()
 
     #
@@ -182,5 +229,10 @@ else()
     if(NOT Conduit_FIND_QUIETLY)
         message(STATUS "Conduit was NOT built with HDF5 Support")
     endif()
+endif()
+
+if(POLICY CMP0074)
+    # clear CMP0074
+    cmake_policy(POP)
 endif()
 

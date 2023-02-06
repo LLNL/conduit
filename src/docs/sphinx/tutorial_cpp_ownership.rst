@@ -22,11 +22,15 @@ The **Node::set** methods support creating **owned** data and copying data value
 
 .. # from t_conduit_docs_tutorial_ownership: mem_ownership_external
 
+* **C++ Example:**
+
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_ownership.cpp
    :start-after: BEGIN_EXAMPLE("mem_ownership_external")
    :end-before: END_EXAMPLE("mem_ownership_external")
    :language: cpp
    :dedent: 4
+
+* **Output:**
 
 .. literalinclude:: t_conduit_docs_tutorial_ownership_out.txt
    :start-after: BEGIN_EXAMPLE("mem_ownership_external")

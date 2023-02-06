@@ -123,7 +123,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     // can be overridden via command line
     index_t npts_x = OUTPUT_NUM_AXIS_POINTS;
     index_t npts_y = OUTPUT_NUM_AXIS_POINTS;
-    index_t npts_z = 1; // 2D examples ...
+    index_t npts_z = 0; // 2D examples ...
 
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,
@@ -185,6 +185,12 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["points_implicit"]);
 
+    blueprint::mesh::examples::braid("mixed_2d",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["mixed_2d"]);
+
     Node info;
     NodeConstIterator itr = dsets.children();
     while(itr.has_next())
@@ -198,7 +204,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     // meshes so they don't have to be removed before outputting mesh data.
     dsets.remove("quads_and_tris");
     dsets.remove("quads_and_tris_offsets");
-    dsets.remove("points_implicit");
+    dsets.remove("mixed_2d");
 
     braid_save_helper(dsets,"braid_2d_examples");
 
@@ -218,7 +224,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             //   std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if( name == "quads_and_tris" || name == "quads_and_tris_offsets" )
+            if( name == "quads_and_tris" || name == "quads_and_tris_offsets" || name == "mixed_2d")
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
                 CONDUIT_INFO("feature is unavailable for mixed element meshes")
@@ -303,6 +309,24 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["hexs_and_tets"]);
 
+    blueprint::mesh::examples::braid("mixed",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["mixed"]);
+
+    blueprint::mesh::examples::braid("wedges",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["wedges"]);
+
+    blueprint::mesh::examples::braid("pyramids",
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     dsets["pyramids"]);
+
     Node info;
     NodeConstIterator itr = dsets.children();
     while(itr.has_next())
@@ -315,7 +339,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     // TODO: Add VisIt support for rendering mixed element and implicit point
     // meshes so they don't have to be removed before outputting mesh data.
     dsets.remove("hexs_and_tets");
-    dsets.remove("points_implicit");
+    dsets.remove("mixed");
 
     braid_save_helper(dsets,"braid_3d_examples");
 
@@ -335,7 +359,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
             //              std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if(name == "hexs_and_tets")
+            if(name == "hexs_and_tets" || name == "mixed")
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
                 CONDUIT_INFO("feature is unavailable for mixed element meshes")
@@ -370,6 +394,8 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
 
     braid_type_strings.push_back("tets");
     braid_type_strings.push_back("hexs");
+    braid_type_strings.push_back("wedges");
+    braid_type_strings.push_back("pyramids");
 
     Node mesh;
 
@@ -398,6 +424,157 @@ TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
         Node info;
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
     }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, strided_structured_2d)
+{
+    Node res;
+    Node desc;
+    blueprint::mesh::examples::strided_structured(desc, 4, 3, 0, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
+
+    test_save_mesh_helper(res, "strided_structured_2d");
+
+    res.reset();
+    desc.reset();
+    info.reset();
+
+    desc["vertex_data/shape"].set(DataType::index_t(3));
+    index_t_array vertex_shape = desc["vertex_data/shape"].as_index_t_array();
+    vertex_shape[0] = 7;
+    vertex_shape[1] = 8;
+    vertex_shape[2] = 0;
+    desc["vertex_data/origin"].set(DataType::index_t(3));
+    index_t_array vertex_origin = desc["vertex_data/origin"].as_index_t_array();
+    vertex_origin[0] = 2;
+    vertex_origin[1] = 1;
+    vertex_origin[2] = 0;
+    desc["element_data/shape"].set(DataType::index_t(3));
+    index_t_array element_shape = desc["element_data/shape"].as_index_t_array();
+    element_shape[0] = 6;
+    element_shape[1] = 4;
+    element_shape[2] = 0;
+    desc["element_data/origin"].set(DataType::index_t(3));
+    index_t_array element_origin = desc["element_data/origin"].as_index_t_array();
+    element_origin[0] = 1;
+    element_origin[1] = 1;
+    element_origin[2] = 0;
+
+    blueprint::mesh::examples::strided_structured(desc, 4, 3, 0, res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
+
+    test_save_mesh_helper(res, "strided_structured_2d_pad");
+}
+
+TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
+{
+    Node res;
+    Node desc;
+    blueprint::mesh::examples::strided_structured(desc, 6, 5, 3, res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
+
+    test_save_mesh_helper(res, "strided_structured_3d");
+
+    res.reset();
+    desc.reset();
+    info.reset();
+
+    desc["vertex_data/shape"].set(DataType::index_t(3));
+    index_t_array vertex_shape = desc["vertex_data/shape"].as_index_t_array();
+    vertex_shape[0] = 10;
+    vertex_shape[1] = 8;
+    vertex_shape[2] = 3;
+    desc["vertex_data/origin"].set(DataType::index_t(3));
+    index_t_array vertex_origin = desc["vertex_data/origin"].as_index_t_array();
+    vertex_origin[0] = 2;
+    vertex_origin[1] = 1;
+    vertex_origin[2] = 0;
+    desc["element_data/shape"].set(DataType::index_t(3));
+    index_t_array element_shape = desc["element_data/shape"].as_index_t_array();
+    element_shape[0] = 6;
+    element_shape[1] = 4;
+    element_shape[2] = 2;
+    desc["element_data/origin"].set(DataType::index_t(3));
+    index_t_array element_origin = desc["element_data/origin"].as_index_t_array();
+    element_origin[0] = 1;
+    element_origin[1] = 1;
+    element_origin[2] = 0;
+
+    blueprint::mesh::examples::strided_structured(desc, 4, 3, 2, res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    // also add a topo that shows the orig points
+    // and fields assoced with orig points for debugging
+    res["topologies/orig_pts/type"] = "points";
+    res["topologies/orig_pts/coordset"] = "coords";
+    
+    res["fields/orig_vert_vals"] = res["fields/vert_vals"];
+    res["fields/orig_vert_vals"].remove("offsets");
+    res["fields/orig_vert_vals"].remove("strides");
+    res["fields/orig_vert_vals/topology"] = "orig_pts";
+
+    res["fields/orig_ele_vals"] = res["fields/ele_vals"];
+    res["fields/orig_ele_vals"].remove("offsets");
+    res["fields/orig_ele_vals"].remove("strides");
+    res["fields/orig_ele_vals/topology"] = "orig_pts";
+
+    test_save_mesh_helper(res, "strided_structured_3d_pad");
+
 }
 
 
@@ -785,6 +962,43 @@ TEST(conduit_blueprint_mesh_examples, save_adjset_uniform)
     relay::io::save(mesh,"adj_uniform_example.blueprint_root","json");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, related_boundary)
+{
+
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    bool hdf5_enabled =io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // skip if we don't have hdf5 since this example has several domains
+    if(!hdf5_enabled)
+        return;
+
+    Node mesh;
+    index_t base_grid_ele_i = 10;
+    index_t base_grid_ele_j = 5;
+
+    conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
+                                                         base_grid_ele_j,
+                                                         mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             "related_boundary_base_i_10_j_5",
+                                             "hdf5");
+
+    mesh.reset();
+    base_grid_ele_i = 9;
+    base_grid_ele_j = 7;
+
+    conduit::blueprint::mesh::examples::related_boundary(base_grid_ele_i,
+                                                         base_grid_ele_j,
+                                                         mesh);
+
+    conduit::relay::io::blueprint::save_mesh(mesh,
+                                             "related_boundary_base_i_9_j_7",
+                                             "hdf5");
+
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
@@ -795,6 +1009,12 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
     EXPECT_THROW(blueprint::mesh::examples::basic("uniform",
                                                   -1,
                                                   2,
+                                                  -1,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("structured",
+                                                  2,
+                                                  1,
                                                   -1,
                                                   res),conduit::Error);
 
@@ -822,6 +1042,18 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                                   0,
                                                   res),conduit::Error);
 
+    EXPECT_THROW(blueprint::mesh::examples::basic("wedges",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::basic("pyramids",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
     EXPECT_THROW(blueprint::mesh::examples::basic("polyhedra",
                                                   2,
                                                   2,
@@ -829,6 +1061,18 @@ TEST(conduit_blueprint_mesh_examples, basic_bad_inputs)
                                                   res),conduit::Error);
 
     // a few ok
+    blueprint::mesh::examples::basic("uniform",
+                                     5,
+                                     0,
+                                     0,
+                                     res);
+
+    blueprint::mesh::examples::basic("rectilinear",
+                                     5,
+                                     0,
+                                     0,
+                                     res);
+
     blueprint::mesh::examples::basic("uniform",
                                      2,
                                      2,
@@ -953,6 +1197,18 @@ TEST(conduit_blueprint_mesh_examples, braid_bad_inputs)
                                                   0,
                                                   res),conduit::Error);
 
+    EXPECT_THROW(blueprint::mesh::examples::braid("wedges",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
+    EXPECT_THROW(blueprint::mesh::examples::braid("pyramids",
+                                                  2,
+                                                  2,
+                                                  0,
+                                                  res),conduit::Error);
+
     EXPECT_THROW(blueprint::mesh::examples::braid("hexs_poly",
                                                   2,
                                                   2,
@@ -1030,6 +1286,12 @@ TEST(conduit_blueprint_mesh_examples, braid_diff_dims)
     conduit::blueprint::mesh::examples::braid("hexs", 2, 3, 4, mesh);
     test_save_mesh_helper(mesh,"braid_hexs_2_3_4");
 
+    conduit::blueprint::mesh::examples::braid("wedges", 2, 3, 4, mesh);
+    test_save_mesh_helper(mesh,"braid_wedges_2_3_4");
+
+    conduit::blueprint::mesh::examples::braid("pyramids", 2, 3, 4, mesh);
+    test_save_mesh_helper(mesh,"braid_pyramids_2_3_4");
+
 }
 
 
@@ -1073,6 +1335,153 @@ TEST(conduit_blueprint_mesh_examples, polychain)
     test_save_mesh_helper(res,"polychain_example");
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, polystar)
+{
+    Node res;
+    blueprint::mesh::examples::polystar(res);
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res,info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res,"polystar_example");
+}
+
+//-----------------------------------------------------------------------------
+void add_oneD_matset_field(Node& mesh, const std::string& topo_name, int nele)
+{
+    Node& fields = mesh["fields"];
+    Node& matsets = mesh["matsets"];
+
+    Node& f1 = fields["f1"];
+    f1["association"] = "element";
+    f1["topology"] = topo_name;
+    f1["volume_dependent"] = "false";
+    f1["matset"] = "matset";
+    f1["matset_values/001"].set(DataType::float64(nele));
+    f1["values"].set(DataType::float64(nele));
+
+    Node& ms1 = matsets["matset"];
+    ms1["topology"] = topo_name;
+    ms1["volume_fractions/001"].set(DataType::float64(nele));
+
+    float64* f1ms001vals = f1["matset_values/001"].value();
+    float64* f1vals = f1["values"].value();
+    float64* ms1vfracs = ms1["volume_fractions/001"].value();
+
+    float64 dval = 1. / nele;
+
+    for (int i = 0; i < nele; ++i)
+    {
+        f1ms001vals[i] = 1. - i*dval;
+        f1vals[i] = 1. - i * dval;
+        ms1vfracs[i] = 1.0;
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, oneDtostrip)
+{
+    const int nvert = 5;
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("rectilinear", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
+
+        test_save_mesh_helper(mesh, "oneD_struct_orig");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
+
+        test_save_mesh_helper(mesh, "oneD_struct_strip");
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("uniform", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
+
+        test_save_mesh_helper(mesh, "oneD_unif_orig");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        blueprint::mesh::generate_strip(mesh, "mesh", "mesh_strip");
+
+        test_save_mesh_helper(mesh, "oneD_unif_strip");
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, oneDtostrip_fullfeatured)
+{
+    const int nvert = 5;
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("rectilinear", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
+
+        test_save_mesh_helper(mesh, "oneD_struct_orig_feature");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        conduit::Node options;
+        options["field_prefix"] = "strip_";
+        blueprint::mesh::generate_strip(mesh["topologies/mesh"],
+            mesh["topologies/strip_mesh"],
+            mesh["coordsets/strip_coords"],
+            mesh["fields"],
+            options);
+
+        test_save_mesh_helper(mesh, "oneD_struct_strip_feature");
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+
+    {
+        Node mesh;
+        blueprint::mesh::examples::basic("uniform", nvert, 0, 0, mesh);
+        add_oneD_matset_field(mesh, "mesh", nvert-1);
+
+        test_save_mesh_helper(mesh, "oneD_unif_orig_feature");
+
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::can_generate_strip(mesh, "mesh", info));
+        CONDUIT_INFO(info.to_yaml());
+
+        conduit::Node options;
+        options["field_prefix"] = "strip_";
+        blueprint::mesh::generate_strip(mesh["topologies/mesh"],
+            mesh["topologies/strip_mesh"],
+            mesh["coordsets/strip_coords"],
+            mesh["fields"],
+            options);
+
+        test_save_mesh_helper(mesh, "oneD_unif_strip_feature");
+
+        info.reset();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        CONDUIT_INFO(info.to_yaml());
+    }
+}
 
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])

@@ -52,7 +52,7 @@ TEST(conduit_blueprint_mesh_query, mesh_domains)
     { // Non-Empty Tests //
         { // Uni-Domain Test //
             Node mesh;
-            blueprint::mesh::examples::braid("quads",10,10,1,mesh);
+            blueprint::mesh::examples::braid("quads",10,10,0,mesh);
 
             const std::vector<Node *> domains = blueprint::mesh::domains(mesh);
             ASSERT_EQ(domains.size(), 1);
@@ -61,7 +61,7 @@ TEST(conduit_blueprint_mesh_query, mesh_domains)
 
         { // Multi-Domain Test //
             Node mesh;
-            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,2,2,1,mesh);
 
             std::set<Node *> ref_domains;
             for(const std::string &child_name : mesh.child_names())
@@ -86,7 +86,7 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
         { // Empty Test //
             Node mesh, info;
 
-            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,2,2,1,mesh);
 
             for(Node *domain : blueprint::mesh::domains(mesh))
             {
@@ -102,7 +102,7 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
         { // Positive Test //
             Node mesh, info;
 
-            blueprint::mesh::examples::grid("quads",10,10,1,2,1,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,2,1,1,mesh);
             for(const Node *domain : blueprint::mesh::domains(mesh))
             {
                 const Node &domain_adjset = (*domain)["adjsets"].child(0);
@@ -110,7 +110,7 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
                 ASSERT_TRUE(blueprint::mesh::adjset::is_pairwise(domain_adjset));
             }
 
-            blueprint::mesh::examples::grid("quads",10,10,1,4,1,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,4,1,1,mesh);
             for(const Node *domain : blueprint::mesh::domains(mesh))
             {
                 const Node &domain_adjset = (*domain)["adjsets"].child(0);
@@ -122,7 +122,7 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
         { // Negative Test //
             Node mesh, info;
 
-            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,2,2,1,mesh);
             for(const Node *domain : blueprint::mesh::domains(mesh))
             {
                 const Node &domain_adjset = (*domain)["adjsets"].child(0);
@@ -144,7 +144,7 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
         { // Empty Test //
             Node mesh, info;
 
-            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,2,2,1,mesh);
 
             for(Node *domain : blueprint::mesh::domains(mesh))
             {
@@ -160,7 +160,7 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
         { // Positive Test //
             Node mesh, info;
 
-            blueprint::mesh::examples::grid("quads",10,10,1,2,1,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,2,1,1,mesh);
             for(const Node *domain : blueprint::mesh::domains(mesh))
             {
                 const Node &domain_adjset = (*domain)["adjsets"].child(0);
@@ -168,7 +168,7 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
                 ASSERT_TRUE(blueprint::mesh::adjset::is_maxshare(domain_adjset));
             }
 
-            blueprint::mesh::examples::grid("quads",10,10,1,2,2,1,mesh);
+            blueprint::mesh::examples::grid("quads",10,10,0,2,2,1,mesh);
             for(const Node *domain : blueprint::mesh::domains(mesh))
             {
                 const Node &domain_adjset = (*domain)["adjsets"].child(0);

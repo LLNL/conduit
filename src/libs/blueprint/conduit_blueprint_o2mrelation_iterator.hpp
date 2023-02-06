@@ -137,6 +137,17 @@ private:
     /// pointer to an internal data Node for the 'o2mrelation'
     const Node *m_data_node;
 
+    /// The following 3 members are used so we can look them up once and then
+    /// use the existence of the pointer instead of expensive calls that look
+    /// up the child in m_node while we use the iterator.
+
+    /// pointer to an internal sizes Node for the 'o2mrelation'
+    const Node *m_sizes_node;
+    /// pointer to an internal indices Node for the 'o2mrelation'
+    const Node *m_indices_node;
+    /// pointer to an internal offsets Node for the 'o2mrelation'
+    const Node *m_offsets_node;
+
     /// current 'one' index in 'o2mrelation' space
     index_t  m_one_index;
     /// current 'many' index in 'one' space

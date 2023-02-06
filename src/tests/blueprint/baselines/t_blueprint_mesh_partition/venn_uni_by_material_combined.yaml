@@ -1,0 +1,83 @@
+
+state: 
+  domain_id: 0
+coordsets: 
+  coords: 
+    type: "rectilinear"
+    values: 
+      x: [0.0, 0.25, 0.5, 0.75, 1.0]
+      y: [0.0, 0.25, 0.5, 0.75, 1.0]
+topologies: 
+  topo: 
+    type: "rectilinear"
+    coordset: "coords"
+matsets: 
+  matset: 
+    topology: "topo"
+    volume_fractions: 
+      background: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      circle_a: [0.5, 1.0, 0.333333333333333, 0.5]
+      circle_b: [0.333333333333333, 0.5, 0.5, 1.0]
+      circle_c: [1.0, 0.5, 1.0, 1.0, 0.333333333333333, 0.5]
+    element_ids: 
+      background: [0, 1, 4, 8, 12, 2, 3]
+      circle_a: [9, 13, 10, 14]
+      circle_b: [10, 11, 14, 15]
+      circle_c: [5, 9, 6, 7, 10, 11]
+fields: 
+  original_vertex_ids: 
+    topology: "topo"
+    association: "vertex"
+    values: 
+      domains: [0, 0, 2, 2, 2, 0, 0, 2, 2, 2, 1, 1, 3, 3, 3, 1, 1, 3, 3, 3, 1, 1, 3, 3, 3]
+      ids: [0, 1, 0, 1, 2, 3, 4, 3, 4, 5, 0, 1, 0, 1, 2, 3, 4, 3, 4, 5, 6, 7, 6, 7, 8]
+  radius_a: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.186338998050447, 0.235702260371946, 0.0, 0.0, 0.117851130221328, 0.186338998184611, 0.0]
+  circle_a: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.5, 0.333333333333333, 0.0, 0.0, 1.0, 0.5, 0.0]
+  radius_b: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.235702260301235, 0.186338998095168, 0.0, 0.0, 0.186338998095168, 0.117851130292039]
+  circle_b: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.333333333333333, 0.5, 0.0, 0.0, 0.5, 1.0]
+  radius_c: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.263523138336824, 0.0833333333, 0.263523138336824, 0.0, 0.300462606307156, 0.1666666667, 0.300462606307156, 0.0, 0.0, 0.0, 0.0]
+  circle_c: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 0.5, 0.333333333333333, 0.5, 0.0, 0.0, 0.0, 0.0]
+  overlap: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 0.0, 2.0, 3.0, 2.0, 0.0, 1.0, 2.0, 1.0]
+  background: 
+    topology: "topo"
+    association: "element"
+    values: [1.0, 1.0, 1.0, 1.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
+  area: 
+    topology: "topo"
+    association: "element"
+    values: [0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625, 0.0625]
+  importance: 
+    topology: "topo"
+    association: "element"
+    values: [0.0, 0.25, 0.5, 0.75, 0.25, 0.600000023841858, 0.600000023841858, 0.600000023841858, 0.5, 0.350000012665987, 0.300000009437402, 0.400000013411045, 0.75, 0.100000001490116, 0.150000002235174, 0.200000002980232]
+  mat_check: 
+    topology: "topo"
+    association: "element"
+    values: [1, 1, 1, 1, 1, 4000, 4000, 4000, 1, 4020, 4320, 4300, 1, 20, 320, 300]
+  original_element_ids: 
+    topology: "topo"
+    association: "element"
+    values: 
+      domains: [0, 0, 2, 2, 0, 0, 2, 2, 1, 1, 3, 3, 1, 1, 3, 3]
+      ids: [0, 1, 0, 1, 2, 3, 2, 3, 0, 1, 0, 1, 2, 3, 2, 3]

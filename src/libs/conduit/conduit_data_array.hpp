@@ -110,8 +110,11 @@ public:
     ///
     T               min()  const;
     T               max()  const;
-    T               sum() const;
+    T               sum()  const;
     float64         mean() const;
+    
+    /// counts number of occurrences of given value
+    index_t         count(T value) const;
 
 //-----------------------------------------------------------------------------
 // Setters

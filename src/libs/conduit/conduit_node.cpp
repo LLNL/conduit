@@ -8700,6 +8700,85 @@ Node::update_external(Node &n_src)
     }
 }
 
+//-----------------------------------------------------------------------------
+// -- move and swap --
+//-----------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------//
+void
+Node::move(Node &n)
+{
+    // this is a good way to implement this for correctness.
+    reset();
+    swap(n);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::swap(Node &n_b)
+{
+    Schema *schema_a = m_schema;
+    Schema *schema_b = n_b.m_schema;
+
+    // check if node a has a parent Node
+    if(this->parent() != NULL)
+    {
+        // find index in parent schema
+        Schema *a_parent_schema = schema_a->parent();
+        index_t idx = a_parent_schema->child_index(schema_a);
+        // as we swap, we need to make sure the parent schema is updated
+        if(idx < 0)
+        {
+            // error
+            CONDUIT_ERROR("Node::swap internal error,"
+                         "failed to find schema child index in this Node's parent.");
+        }
+
+        a_parent_schema->children()[idx] = schema_b;
+    }
+
+    // check if node b has a parent Node
+    if(n_b.parent() != NULL)
+    {
+        // find index in parent schema
+        Schema *b_parent_schema = schema_b->parent();
+        index_t idx = b_parent_schema->child_index(schema_b);
+
+        // as we swap, we need to make sure the parent schema is updated
+        if(idx < 0)
+        {
+            // error
+            CONDUIT_ERROR("Node::swap internal error,"
+                         "failed to find schema child index in passed Node's parent.");
+
+        }
+
+        b_parent_schema->children()[idx] = schema_a;
+    }
+
+    // swap-o-rama
+    
+    // things we need to swap
+    // schema pointer
+    // data pointer and data size
+    // if data is allocated or not
+    // if data is memory mapped or not
+    // memory map
+    // the allocator id
+    // any children
+    std::swap(m_data,n_b.m_data);
+    std::swap(m_data_size,n_b.m_data_size);
+    std::swap(m_schema,n_b.m_schema);
+    std::swap(m_alloced,n_b.m_alloced);
+    std::swap(m_mmaped,n_b.m_mmaped);
+    std::swap(m_mmap,n_b.m_mmap);
+    std::swap(m_allocator_id,n_b.m_allocator_id);
+    // this should be an efficient O(1)
+    std::swap(m_children,n_b.m_children);
+
+}
+
+
 
 //-----------------------------------------------------------------------------
 // -- endian related --
@@ -11760,6 +11839,127 @@ Node::Value::operator long_double_array() const
 #endif
 //---------------------------------------------------------------------------//
 
+//---------------------------------------------------------------------------//
+// -- accessor casts --
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style signed accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator char_accessor() const
+{
+    return m_node->as_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_char_accessor() const
+{
+    return m_node->as_signed_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_short_accessor() const
+{
+    return m_node->as_signed_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_int_accessor() const
+{
+    return m_node->as_signed_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_long_accessor() const
+{
+    return m_node->as_signed_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator signed_long_long_accessor() const
+{
+    return m_node->as_signed_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_char_accessor() const
+{
+    return m_node->as_unsigned_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_short_accessor() const
+{
+    return m_node->as_unsigned_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_int_accessor() const
+{
+    return m_node->as_unsigned_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_long_accessor() const
+{
+    return m_node->as_unsigned_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::Value::operator unsigned_long_long_accessor() const
+{
+    return m_node->as_unsigned_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style floating point accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::Value::operator float_accessor() const
+{
+    return m_node->as_float_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::Value::operator double_accessor() const
+{
+    return m_node->as_double_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::Value::operator long_double_accessor() const
+{
+    return m_node->as_long_double_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
 //-----------------------------------------------------------------------------
 // -- ConstValue Helper class ---
 //-----------------------------------------------------------------------------
@@ -12171,6 +12371,127 @@ Node::ConstValue::operator const long_double_array() const
 #endif
 //---------------------------------------------------------------------------//
 
+
+//---------------------------------------------------------------------------//
+// -- accessor casts --
+// (no coercion)
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style signed accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator char_accessor() const
+{
+    return m_node->as_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_char_accessor() const
+{
+    return m_node->as_signed_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_short_accessor() const
+{
+    return m_node->as_signed_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_int_accessor() const
+{
+    return m_node->as_signed_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_long_accessor() const
+{
+    return m_node->as_signed_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator signed_long_long_accessor() const
+{
+    return m_node->as_signed_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style unsigned accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_char_accessor() const
+{
+    return m_node->as_unsigned_char_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_short_accessor() const
+{
+    return m_node->as_unsigned_short_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_int_accessor() const
+{
+    return m_node->as_unsigned_int_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_long_accessor() const
+{
+    return m_node->as_unsigned_long_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator unsigned_long_long_accessor() const
+{
+    return m_node->as_unsigned_long_long_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// c style floating point accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator float_accessor() const
+{
+    return m_node->as_float_accessor();
+}
+
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator double_accessor() const
+{
+    return m_node->as_double_accessor();
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+Node::ConstValue::operator long_double_accessor() const
+{
+    return m_node->as_long_double_accessor();
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 //-----------------------------------------------------------------------------
 // End Node::ConstValue
 //-----------------------------------------------------------------------------
@@ -12231,6 +12552,82 @@ Node::to_string_stream(const std::string &stream_path,
     ofs.close();
 }
 
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_string(const conduit::Node &opts)const
+{
+    std::ostringstream oss;
+    to_string_stream(oss,opts);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(std::ostream &os,
+                       const conduit::Node &opts) const
+{
+    // unpack options and enforce defaults
+    std::string protocol="yaml";
+    index_t indent = 2;
+    index_t depth = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    if(opts.has_child("protocol") &&
+       opts["protocol"].dtype().is_string())
+    {
+       protocol = opts["protocol"].as_string();
+    }
+
+    if(opts.has_child("indent") &&
+       opts["indent"].dtype().is_number())
+    {
+       indent = (index_t)opts["indent"].to_index_t();
+    }
+
+    if(opts.has_child("depth") &&
+       opts["depth"].dtype().is_number())
+    {
+       depth = (index_t)opts["depth"].to_index_t();
+    }
+
+    if(opts.has_child("pad") &&
+       opts["pad"].dtype().is_string())
+    {
+       pad = opts["pad"].as_string();
+    }
+
+    if(opts.has_child("eoe") &&
+       opts["eoe"].dtype().is_string())
+    {
+       eoe = opts["eoe"].as_string();
+    }
+
+    to_string_stream(os,
+                     protocol,
+                     indent,
+                     depth,
+                     pad,
+                     eoe);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_string_stream(const std::string &stream_path,
+                       const conduit::Node &opts) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_string_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_string_stream(ofs,opts);
+    ofs.close();
+}
+
 //-----------------------------------------------------------------------------
 std::string
 Node::to_string_default() const
@@ -12259,6 +12656,14 @@ Node::to_summary_string(const conduit::Node &opts)const
     std::ostringstream oss;
     to_summary_string_stream(oss,opts);
     return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_summary_string_stream(std::ostream &os) const
+{
+    Node opts;
+     to_summary_string_stream(os,opts);
 }
 
 //-----------------------------------------------------------------------------
@@ -12319,9 +12724,6 @@ Node::to_summary_string_stream(std::ostream &os,
                              eoe);
 }
 
-
-//-----------------------------------------------------------------------------
-//-- (private interface)
 //-----------------------------------------------------------------------------
 void
 Node::to_summary_string_stream(const std::string &stream_path,
@@ -12365,8 +12767,8 @@ Node::to_summary_string_stream(std::ostream &os,
     if(dtype().id() == DataType::OBJECT_ID)
     {
         os << eoe;
-        int nchildren = m_children.size();
-        int threshold = num_children_threshold;
+        index_t nchildren = static_cast<index_t>(m_children.size());
+        index_t threshold = num_children_threshold;
 
         // if we are neg or zero, show all children
         if(threshold <=0)
@@ -12375,10 +12777,10 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         // if above threshold only show threshold # of values
-        int half = threshold / 2;
-        int bottom = half;
-        int top = half;
-        int num_skipped = m_children.size() - threshold;
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
+        index_t num_skipped = static_cast<index_t>(m_children.size() - threshold);
 
         //
         // if odd, show 1/2 +1 first
@@ -12390,7 +12792,7 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         bool done  = (nchildren == 0);
-        int idx = 0;
+        index_t idx = 0;
 
         while(!done)
         {
@@ -12436,8 +12838,8 @@ Node::to_summary_string_stream(std::ostream &os,
     else if(dtype().id() == DataType::LIST_ID)
     {
         os << eoe;
-        int nchildren = m_children.size();
-        int threshold = num_children_threshold;
+        index_t nchildren = static_cast<index_t>(m_children.size());
+        index_t threshold = num_children_threshold;
 
         // if we are neg or zero, show all children
         if(threshold <=0)
@@ -12446,10 +12848,10 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         // if above threshold only show threshold # of values
-        int half = threshold / 2;
-        int bottom = half;
-        int top = half;
-        int num_skipped = m_children.size() - threshold;
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
+        index_t num_skipped = static_cast<index_t>(m_children.size() - threshold);
 
         //
         // if odd, show 1/2 +1 first
@@ -12461,7 +12863,7 @@ Node::to_summary_string_stream(std::ostream &os,
         }
 
         bool done  = (nchildren == 0);
-        int idx = 0;
+        index_t idx = 0;
 
         while(!done)
         {
@@ -12585,28 +12987,9 @@ Node::to_json(const std::string &protocol,
               const std::string &pad,
               const std::string &eoe) const
 {
-    if(protocol == "json")
-    {
-        return to_pure_json(indent,depth,pad,eoe);
-    }
-    else if(protocol == "conduit_json")
-    {
-        return to_detailed_json(indent,depth,pad,eoe);
-    }
-    else if(protocol == "conduit_base64_json")
-    {
-        return to_base64_json(indent,depth,pad,eoe);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " json\n"
-                      << " conduit_json\n"
-                      << " conduit_base64_json\n");
-    }
-
-    return "{}";
+    std::ostringstream oss;
+    to_json_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -12618,26 +13001,21 @@ Node::to_json_stream(const std::string &stream_path,
                      const std::string &pad,
                      const std::string &eoe) const
 {
-    if(protocol == "json")
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
     {
-        return to_pure_json(stream_path,indent,depth,pad,eoe);
+        CONDUIT_ERROR("<Node::to_json_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
     }
-    else if(protocol == "conduit_json")
-    {
-        return to_detailed_json(stream_path,indent,depth,pad,eoe);
-    }
-    else if(protocol == "conduit_base64_json")
-    {
-        return to_base64_json(stream_path,indent,depth,pad,eoe);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " json\n"
-                      << " conduit_json\n"
-                      << " conduit_base64_json\n");
-    }
+
+    to_json_stream(ofs,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -12663,12 +13041,87 @@ Node::to_json_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown Node::to_json protocol:" << protocol
+        CONDUIT_ERROR("Unknown Node::to_json protocol: " << protocol
                       << "\nSupported protocols:\n"
                       << " json\n"
                       << " conduit_json\n"
                       << " conduit_base64_json\n");
     }
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_json(const conduit::Node &opts)const
+{
+    std::ostringstream oss;
+    to_json_stream(oss,opts);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_json_stream(std::ostream &os,
+                     const conduit::Node &opts) const
+{
+    // unpack options and enforce defaults
+    std::string protocol="json";
+    index_t indent = 2;
+    index_t depth = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    if(opts.has_child("protocol") &&
+       opts["protocol"].dtype().is_string())
+    {
+       protocol = opts["protocol"].as_string();
+    }
+
+    if(opts.has_child("indent") &&
+       opts["indent"].dtype().is_number())
+    {
+       indent = opts["indent"].to_index_t();
+    }
+
+    if(opts.has_child("depth") &&
+       opts["depth"].dtype().is_number())
+    {
+       depth = opts["depth"].to_index_t();
+    }
+
+    if(opts.has_child("pad") &&
+       opts["pad"].dtype().is_string())
+    {
+       pad = opts["pad"].as_string();
+    }
+
+    if(opts.has_child("eoe") &&
+       opts["eoe"].dtype().is_string())
+    {
+       eoe = opts["eoe"].as_string();
+    }
+
+    to_json_stream(os,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_json_stream(const std::string &stream_path,
+                     const conduit::Node &opts) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_json_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_json_stream(ofs,opts);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -12690,18 +13143,9 @@ Node::to_yaml(const std::string &protocol,
               const std::string &pad,
               const std::string &eoe) const
 {
-    if(protocol == "yaml")
-    {
-        return to_pure_yaml(indent,depth,pad,eoe);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " yaml\n");
-    }
-
-    return "{}";
+    std::ostringstream oss;
+    to_yaml_stream(oss,protocol,indent,depth,pad,eoe);
+    return oss.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -12713,16 +13157,21 @@ Node::to_yaml_stream(const std::string &stream_path,
                      const std::string &pad,
                      const std::string &eoe) const
 {
-    if(protocol == "yaml")
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
     {
-        return to_pure_yaml(stream_path,indent,depth,pad,eoe);
+        CONDUIT_ERROR("<Node::to_yaml_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
     }
-    else
-    {
-        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
-                      << "\nSupported protocols:\n"
-                      << " yaml\n");
-    }
+
+    to_yaml_stream(ofs,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -12740,10 +13189,85 @@ Node::to_yaml_stream(std::ostream &os,
     }
     else
     {
-        CONDUIT_ERROR("Unknown Node::to_yaml protocol:" << protocol
+        CONDUIT_ERROR("Unknown Node::to_yaml protocol: " << protocol
                       << "\nSupported protocols:\n"
                       << " yaml\n");
     }
+}
+
+//-----------------------------------------------------------------------------
+std::string
+Node::to_yaml(const conduit::Node &opts)const
+{
+    std::ostringstream oss;
+    to_yaml_stream(oss,opts);
+    return oss.str();
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_yaml_stream(std::ostream &os,
+                     const conduit::Node &opts) const
+{
+    // unpack options and enforce defaults
+    std::string protocol="yaml";
+    index_t indent = 2;
+    index_t depth = 0;
+    std::string pad = " ";
+    std::string eoe = "\n";
+
+    if(opts.has_child("protocol") &&
+       opts["protocol"].dtype().is_string())
+    {
+       protocol = opts["protocol"].as_string();
+    }
+
+    if(opts.has_child("indent") &&
+       opts["indent"].dtype().is_number())
+    {
+       indent = (index_t)opts["indent"].to_index_t();
+    }
+
+    if(opts.has_child("depth") &&
+       opts["depth"].dtype().is_number())
+    {
+       depth = (index_t)opts["depth"].to_index_t();
+    }
+
+    if(opts.has_child("pad") &&
+       opts["pad"].dtype().is_string())
+    {
+       pad = opts["pad"].as_string();
+    }
+
+    if(opts.has_child("eoe") &&
+       opts["eoe"].dtype().is_string())
+    {
+       eoe = opts["eoe"].as_string();
+    }
+
+    to_yaml_stream(os,
+                   protocol,
+                   indent,
+                   depth,
+                   pad,
+                   eoe);
+}
+
+//-----------------------------------------------------------------------------
+void
+Node::to_yaml_stream(const std::string &stream_path,
+                     const conduit::Node &opts) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_yaml_stream> failed to open file: "
+                      << "\"" << stream_path << "\"");
+    }
+    to_yaml_stream(ofs,opts);
+    ofs.close();
 }
 
 //-----------------------------------------------------------------------------
@@ -13477,7 +14001,7 @@ Node::info()const
 void
 Node::print() const
 {
-    to_string_stream(std::cout);
+    to_summary_string_stream(std::cout);
     std::cout << std::endl;
 }
 
@@ -14696,6 +15220,99 @@ Node::as_string() const
     return std::string(as_char8_str());
 }
 
+
+
+//---------------------------------------------------------------------------//
+// signed integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+int8_accessor
+Node::as_int8_accessor() const
+{
+    return int8_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int16_accessor
+Node::as_int16_accessor() const
+{
+    return int16_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int32_accessor
+Node::as_int32_accessor() const
+{
+    return int32_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int64_accessor
+Node::as_int64_accessor() const
+{
+    return int64_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+// unsigned integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+uint8_accessor
+Node::as_uint8_accessor() const
+{
+    return uint8_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+uint16_accessor
+Node::as_uint16_accessor() const
+{
+    return uint16_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+uint32_accessor
+Node::as_uint32_accessor() const
+{
+    return uint32_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+uint64_accessor
+Node::as_uint64_accessor() const
+{
+    return uint64_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+// floating point accessor
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+float32_accessor
+Node::as_float32_accessor() const
+{
+    return float32_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+float64_accessor
+Node::as_float64_accessor() const
+{
+    return float64_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+index_t_accessor
+Node::as_index_t_accessor() const
+{
+    return index_t_accessor(m_data,dtype());
+}
+
+
+
 //---------------------------------------------------------------------------//
 // direct data pointer access
 void *
@@ -15313,7 +15930,7 @@ Node::as_signed_long_ptr() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_LONG_ID,
-                        "as_signed_ong_ptr() const",
+                        "as_signed_long_ptr() const",
                         NULL);
     return (signed long*)element_ptr(0);
 }
@@ -15807,7 +16424,7 @@ Node::as_signed_long_long_array() const
 {
     CONDUIT_CHECK_DTYPE(this,
                         CONDUIT_NATIVE_SIGNED_LONG_LONG_ID,
-                        "as_signed_ong_long_array() const",
+                        "as_signed_long_long_array() const",
                         signed_long_long_array());
     return signed_long_long_array(m_data,dtype());
 }
@@ -15969,6 +16586,188 @@ Node::allocator()
 //-----------------------------------------------------------------------------
 //
 // -- end definition of Node allocator selection methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// -- begin definition of Node as accessor methods --
+//
+//-----------------------------------------------------------------------------
+
+
+//---------------------------------------------------------------------------//
+// accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+char_accessor
+Node::as_char_accessor() const
+{
+    return char_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+short_accessor
+Node::as_short_accessor() const
+{
+    return short_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+int_accessor
+Node::as_int_accessor() const
+{
+    return int_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+long_accessor
+Node::as_long_accessor() const
+{
+    return long_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+long_long_accessor
+Node::as_long_long_accessor() const
+{
+    return long_long_accessor(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// signed integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+signed_char_accessor
+Node::as_signed_char_accessor() const
+{
+    return signed_char_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_short_accessor
+Node::as_signed_short_accessor() const
+{
+    return signed_short_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_int_accessor
+Node::as_signed_int_accessor() const
+{
+    return signed_int_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+signed_long_accessor
+Node::as_signed_long_accessor() const
+{
+    return signed_long_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+signed_long_long_accessor
+Node::as_signed_long_long_accessor() const
+{
+    return signed_long_long_accessor(m_data,dtype());
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// unsigned integer accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+unsigned_char_accessor
+Node::as_unsigned_char_accessor() const
+{
+    return unsigned_char_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+unsigned_short_accessor
+Node::as_unsigned_short_accessor() const
+{
+    return unsigned_short_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+unsigned_int_accessor
+Node::as_unsigned_int_accessor() const
+{
+    return unsigned_int_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+unsigned_long_accessor
+Node::as_unsigned_long_accessor() const
+{
+    return unsigned_long_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+unsigned_long_long_accessor
+Node::as_unsigned_long_long_accessor() const
+{
+    return unsigned_long_long_accessor(m_data,dtype());
+
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//---------------------------------------------------------------------------//
+// floating point accessors
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+float_accessor
+Node::as_float_accessor() const
+{
+    return float_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+double_accessor
+Node::as_double_accessor() const
+{
+    return double_accessor(m_data,dtype());
+
+}
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_USE_LONG_DOUBLE
+//---------------------------------------------------------------------------//
+long_double_accessor
+Node::as_long_double_accessor() const
+{
+    return long_double_accessor(m_data,dtype());
+}
+
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
+
+//-----------------------------------------------------------------------------
+//
+// -- end definition of Node as accessor methods --
 //
 //-----------------------------------------------------------------------------
 

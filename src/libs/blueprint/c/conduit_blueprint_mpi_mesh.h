@@ -37,6 +37,15 @@ CONDUIT_BLUEPRINT_API void conduit_blueprint_mpi_mesh_partition(const conduit_no
                                                                 const conduit_node *coptions,
                                                                 conduit_node *coutput,
                                                                 MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// Flatten a mesh to a table
+//-----------------------------------------------------------------------------
+CONDUIT_BLUEPRINT_API void conduit_blueprint_mpi_mesh_flatten(const conduit_node *cmesh,
+                                                              const conduit_node *coptions,
+                                                              conduit_node *coutput,
+                                                              MPI_Comm comm);
+
 #ifdef __cplusplus
 }
 #endif

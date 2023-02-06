@@ -10,6 +10,7 @@
 # conduit relay Unit Tests
 ################################
 set(RELAY_TESTS t_relay_smoke
+                t_relay_io_smoke
                 t_relay_io_basic
                 t_relay_io_file_sizes
                 t_relay_io_handle
@@ -22,15 +23,18 @@ set(RELAY_TESTS t_relay_smoke
 set(RELAY_WEBSERVER_TESTS  t_relay_node_viewer
                            t_relay_websocket)
 
-set(RELAY_MPI_TESTS      t_relay_mpi_smoke t_relay_mpi_test)
+set(RELAY_MPI_TESTS      t_relay_mpi_smoke
+                         t_relay_mpi_test)
 set(RELAY_SILO_TESTS     t_relay_io_silo)
 
 set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_read_and_print
                      t_relay_io_hdf5_slab
-                     t_relay_io_hdf5_opts)
+                     t_relay_io_hdf5_opts
+                     t_relay_io_hdf5_ident_report)
 
 
+set(RELAY_MPI_IO_TESTS t_relay_io_mpi_smoke)
 set(RELAY_ADIOS_TESTS t_relay_io_adios)
 set(RELAY_MPI_ADIOS_TESTS t_relay_mpi_io_adios)
 set(RELAY_ZFP_TESTS t_relay_zfp)
@@ -117,6 +121,14 @@ if(MPI_FOUND)
                          DEPENDS_ON conduit conduit_relay_mpi
                          FOLDER tests/relay)
     endforeach()
+    message(STATUS "MPI enabled: Adding conduit_relay_mpi_io unit tests")
+    foreach(TEST ${RELAY_MPI_IO_TESTS})
+        add_cpp_mpi_test(TEST ${TEST}
+                         NUM_MPI_TASKS 2
+                         DEPENDS_ON conduit conduit_relay_mpi_io
+                         FOLDER tests/relay)
+    endforeach()
+    
 else()
     message(STATUS "MPI disabled: Skipping conduit_relay_mpi tests")
 endif()

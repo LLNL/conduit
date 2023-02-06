@@ -76,6 +76,17 @@ CONDUIT_API conduit_index_t conduit_node_number_of_children(conduit_node *cnode)
 CONDUIT_API conduit_index_t conduit_node_number_of_elements(conduit_node *cnode);
 
 //-----------------------------------------------------------------------------
+CONDUIT_API void conduit_node_reset(conduit_node *cnode);
+
+//-----------------------------------------------------------------------------
+CONDUIT_API void conduit_node_move(conduit_node *cnode_a,
+                                   conduit_node *cnode_b);
+
+//-----------------------------------------------------------------------------
+CONDUIT_API void conduit_node_swap(conduit_node *cnode_a,
+                                   conduit_node *cnode_b);
+
+//-----------------------------------------------------------------------------
 /// remove path
 CONDUIT_API void conduit_node_remove_path(conduit_node *cnode,
                                           const char *path);
@@ -209,6 +220,40 @@ CONDUIT_API void conduit_node_save(conduit_node *cnode,
 CONDUIT_API void conduit_node_load(conduit_node *cnode,
                                    const char* path,
                                    const char* protocol);
+
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// Conduit Node to_string Methods
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+// caller must free the resulting string for all of these methods
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_json(const conduit_node *cnode);
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_json_with_options(const conduit_node *cnode,
+                                                    const conduit_node *copts);
+
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_yaml(const conduit_node *cnode);
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_yaml_with_options(const conduit_node *cnode,
+                                                    const conduit_node *copts);
+
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_string(const conduit_node *cnode);
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_string_with_options(const conduit_node *cnode,
+                                                      const conduit_node *copts);
+
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_summary_string(const conduit_node *cnode);
+// the caller must free the result
+CONDUIT_API char* conduit_node_to_summary_string_with_options(const conduit_node *cnode,
+                                                              const conduit_node *copts);
 
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
