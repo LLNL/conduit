@@ -2428,8 +2428,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string opts_mesh_name  = "mesh";
     int         opts_num_files  = -1;
     bool        opts_truncate   = false;
-    bool        overlink        = false; // TODO make sure this is honored
-    // TODO we don't need a bool for this just use the file_style adn compare to "overlink"
 
     // check for + validate file_style option
     if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
@@ -2489,10 +2487,11 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     }
 
     // special logic for overlink
-    if (overlink = opts_file_style == "overlink")
+    if (opts_file_style == "overlink")
     {
         opts_mesh_name = "MMESH";
         opts_file_style == "multi_file";
+        // TODO this isn't quite right - more stuff needs to happen for overlink
     }
 
     int num_files = opts_num_files;
@@ -2566,6 +2565,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 opts_suffix = "none";
             }
         }
+        else if(opts_suffix == "cycle")
+        {
+            cycle = dom["state/cycle"].to_int();
+        }
         else if(opts_suffix == "default")
         {
             cycle = dom["state/cycle"].to_int();
@@ -2582,6 +2585,46 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                mpi_comm);
 
     cycle = n_reduced.as_int();
+
+    // we also need to have all mpi tasks agree on the `opts_suffix`
+    // checking the first mpi task with domains should be sufficient.
+    // find first
+    n_local   = local_num_domains;
+    n_reduced.reset();
+    
+    relay::mpi::all_gather(n_local,
+                           n_reduced,
+                           mpi_comm);
+
+
+    index_t_accessor counts = n_reduced.value();
+    index_t idx = -1;
+    index_t i =0;
+    NodeConstIterator counts_itr = n_reduced.children();
+    while(counts_itr.has_next() && idx < 0)
+    {
+        const Node &curr = counts_itr.next();
+        index_t count = curr.to_index_t();
+        if(count > 0)
+        {
+            idx = i;
+        }
+        i++;
+    }
+
+    // now broadcast from idx
+    Node n_opts_suffix;
+    if(par_rank == idx)
+    {
+        n_opts_suffix = opts_suffix;
+    }
+
+    conduit::relay::mpi::broadcast_using_schema(n_opts_suffix,
+                                                idx,
+                                                mpi_comm);
+
+    opts_suffix = n_opts_suffix.as_string();
+
 #endif
     
     // -----------------------------------------------------------
@@ -2672,7 +2715,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
     }
 
-
     // ----------------------------------------------------
     // setup root file name
     // ----------------------------------------------------
@@ -2701,6 +2743,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         num_files = global_num_domains;
     }
 
+    // new style bp index partition_map
+    // NOTE: the part_map is inited during write process for N domains
+    // to M files case.
+    // Other cases are simpler and are created when root file is written
+    conduit::Node output_partition_map;
+
     // at this point for file_style,
     // default has been resolved, we need to just handle:
     //   root_only, multi_file
@@ -2713,7 +2761,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         // write to single file in this case, we need baton.
         // the outer loop + par_rank == current_writer implements
         // the baton.
-        
+
         Node local_root_file_created;
         Node global_root_file_created;
         local_root_file_created.set((int)0);
@@ -2727,8 +2775,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 {
                     // if truncate, first rank to touch the file needs
                     // to open at
-                    Node open_opts;
-                    if( (global_root_file_created.as_int() == 0) 
+                    if( !hnd.is_open()
+                        && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
                         CONDUIT_ERROR("TODO Truncate case not yet implemented");
@@ -2765,6 +2813,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     // TODO help where did my dbfile come from!
                     silo_mesh_write(dom, dbfile, mesh_path);
                 }
+
+                // NOTE: local file handle goes out of scope here
+                // and data is committed to file for handles that write
+                // on close
             }
 
         // Reduce to sync up (like a barrier) and solve first writer need
@@ -2787,20 +2839,24 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             uint64 domain = dom["state/domain_id"].to_uint64();
 
             std::string output_file  = conduit::utils::join_file_path(output_dir,
-                                                conduit_fmt::format("domain_{:06d}.{}:{}",
+                                                conduit_fmt::format("domain_{:06d}.{}",
                                                                     domain,
-                                                                    file_protocol,
-                                                                    opts_mesh_name));
+                                                                    file_protocol));
             // properly support truncate vs non truncate
+
+            relay::io::IOHandle hnd;
+            Node open_opts;
+            open_opts["mode"] = "w";
             if(opts_truncate)
             {
-                // TODO does silo have a truncate option?
-                relay::io::save(dom, output_file);
+                // TODO does silo support truncation
+               open_opts["mode"] = "wt";
             }
-            else
-            {
-                relay::io::save_merged(dom, output_file);
-            }
+
+            // open our handle
+            hnd.open(output_file, open_opts);
+            // write to  mesh name subpath
+            hnd.write(dom, opts_mesh_name);
         }
     }
     else // more complex case, N domains to M files
@@ -2812,35 +2868,46 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         // books we keep:
         Node books;
-        books["local_domain_to_file"].set(DataType::int32(local_num_domains));
-        books["local_domain_status"].set(DataType::int32(local_num_domains));
+        books["local_domain_to_file"].set(DataType::index_t(local_num_domains));
+        books["local_domain_status"].set(DataType::index_t(local_num_domains));
 
         // batons
-        books["local_file_batons"].set(DataType::int32(num_files));
-        books["global_file_batons"].set(DataType::int32(num_files));
+        books["local_file_batons"].set(DataType::index_t(num_files));
+        books["global_file_batons"].set(DataType::index_t(num_files));
 
         // used to track first touch
-        books["local_file_created"].set(DataType::int32(num_files));
-        books["global_file_created"].set(DataType::int32(num_files));
+        books["local_file_created"].set(DataType::index_t(num_files));
+        books["global_file_created"].set(DataType::index_t(num_files));
 
         // size local # of domains
-        int32_array local_domain_to_file = books["local_domain_to_file"].value();
-        int32_array local_domain_status  = books["local_domain_status"].value();
+        index_t_array local_domain_to_file = books["local_domain_to_file"].value();
+        index_t_array local_domain_status  = books["local_domain_status"].value();
 
         // size num total files
         /// batons
-        int32_array local_file_batons    = books["local_file_batons"].value();
-        int32_array global_file_batons   = books["global_file_batons"].value();
+        index_t_array local_file_batons    = books["local_file_batons"].value();
+        index_t_array global_file_batons   = books["global_file_batons"].value();
         /// file created flags
-        int32_array local_file_created    = books["local_file_created"].value();
-        int32_array global_file_created   = books["global_file_created"].value();
+        index_t_array local_file_created    = books["local_file_created"].value();
+        index_t_array global_file_created   = books["global_file_created"].value();
 
 
         Node d2f_map;
         detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
-        int32_array global_d2f = books["global_domain_to_file"].value();
+
+        //generate part map
+        // use global_d2f is what we need for "file" part of part_map
+        output_partition_map["file"] = books["global_domain_to_file"];
+        output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+        index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+        for(index_t i=0; i < global_num_domains; i++)
+        {
+            part_map_domain_vals[i] = i;
+        }
+
+        index_t_accessor global_d2f = books["global_domain_to_file"].value();
 
         // init our local map and status array
         for(int d = 0; d < local_num_domains; ++d)
@@ -2969,8 +3036,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
                                 //              << output_file << " path " << path);
 
-                                // TODO help me get a dbfile!
-                                silo_mesh_write(dom, dbfile, curr_path);
+                                hnd.write(dom, curr_path);
                                 
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
@@ -3061,6 +3127,41 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         CONDUIT_WARN("Relay: there are no domains to write out");
     }
 
+    // generate the bp index
+    Node local_bp_idx, bp_idx;
+    if(local_num_domains > 0)
+    {
+        ::conduit::blueprint::mesh::generate_index(multi_dom,
+                                                   opts_mesh_name,
+                                                   global_num_domains,
+                                                   local_bp_idx);
+    }
+    // handle mpi case. 
+    // this logic is from the mpi ver of mesh index gen
+    // it is duplicated here b/c we dont want a circular dep
+    // between conduit_blueprint_mpi and conduit_relay_io_mpi
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    // NOTE: do to save vs write cases, these updates should be
+    // single mesh only
+    Node gather_bp_idx;
+    relay::mpi::all_gather_using_schema(local_bp_idx,
+                                        gather_bp_idx,
+                                        mpi_comm);
+
+    // union all entries into final index that reps
+    // all domains
+    NodeConstIterator itr = gather_bp_idx.children();
+    while(itr.has_next())
+    {
+        const Node &curr = itr.next();
+        bp_idx[opts_mesh_name].update(curr);
+    }
+#else
+    // NOTE: do to save vs write cases, these updates should be
+    // single mesh only
+    bp_idx[opts_mesh_name] = local_bp_idx;
+#endif
+
     // root_file_writer will now write out the root file
     if(par_rank == root_file_writer)
     {
@@ -3071,53 +3172,133 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         std::string output_tree_pattern;
         std::string output_file_pattern;
+        // new style bp index partition spec
+        std::string output_partition_pattern;
+
+        // NOTE: 
+        // The file pattern needs to be relative to
+        // the root file. 
+        // reverse split the path
 
         if(opts_file_style == "root_only")
         {
-            output_file_pattern = root_filename;
+            // make sure this is relative to output dir
+            std::string tmp;
+            utils::rsplit_path(root_filename,
+                               output_file_pattern,
+                               tmp);
+
             if(global_num_domains == 1)
             {
                 output_tree_pattern = "/";
+                output_partition_pattern = output_file_pattern + ":/";
+                // NOTE: we don't need the part map entries for this case
             }
             else
             {
                 output_tree_pattern = "/domain_%06d/";
+                output_partition_pattern = root_filename + ":/domain_{domain:06d}";
+
+                //generate part map (we only need domain for this case)
+                output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+                index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+                for(index_t i=0; i < global_num_domains; i++)
+                {
+                    part_map_domain_vals[i] = i;
+                }
             }
         }
         else if(global_num_domains == num_files)
         {
-            output_tree_pattern = "/";
+            //generate part map
+            output_partition_map["file"].set(DataType::index_t(global_num_domains));
+            output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+            index_t_array part_map_file_vals   = output_partition_map["file"].value();
+            index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+
+            for(index_t i=0; i < global_num_domains; i++)
+            {
+                // file id == domain id
+                part_map_file_vals[i]   = i;
+                part_map_domain_vals[i] = i;
+            }
+
+            std::string tmp;
+            utils::rsplit_path(output_dir_base,
+                               output_file_pattern,
+                               tmp);
+
+            output_partition_pattern = conduit::utils::join_file_path(
+                                                output_file_pattern,
+                                                "domain_{domain:06d}." +
+                                                file_protocol +
+                                                ":/");
+
             output_file_pattern = conduit::utils::join_file_path(
-                                                output_dir_base,
+                                                output_file_pattern,
                                                 "domain_%06d." + file_protocol);
+            output_tree_pattern = "/";
         }
         else
         {
-            output_tree_pattern = "/domain_%06d";
+            std::string tmp;
+            utils::rsplit_path(output_dir_base,
+                               output_file_pattern,
+                               tmp);
+
+            output_partition_pattern = conduit::utils::join_file_path(
+                                                output_file_pattern,
+                                                "file_{file:06d}." +
+                                                file_protocol +
+                                                ":/domain_{domain:06d}");
+
             output_file_pattern = conduit::utils::join_file_path(
-                                                output_dir_base,
+                                                output_file_pattern,
                                                 "file_%06d." + file_protocol);
+            output_tree_pattern = "/domain_%06d";
+        }
+
+        /////////////////////////////
+        // mesh partition map
+        /////////////////////////////
+        // example of cases:
+        // root only, single domain
+        // partition_pattern: "out.root"
+        //
+        // root only, multi domain
+        // partition_pattern: "out.root:domain_{domain:06d}"
+        // partition_map:
+        //   domain: [0, 1, 2, 3, 4 ]
+        //
+        // # domains == # files:
+        // partition_pattern: "out/domain_{domain:06d}.hdf5"
+        // partition_map:
+        //   file:  [ 0, 1, 2, 3, 4 ]
+        //   domain: [ 0, 1, 2, 3, 4 ]
+        //
+        // N domains to M files:
+        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // partition_map:
+        //   file:  [ 0, 0, 1, 2, 2 ]
+        //   domain: [ 0, 1, 2, 3, 4 ]
+        //
+        // N domains to M files (non trivial domain order):
+        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // partition_map:
+        //    file:  [ 0, 0, 1, 2, 2 ]
+        //    domain: [ 4, 0, 3, 2, 1 ]
+        //
+        // NOTE: do to save vs write cases, these updates should be
+        // single mesh only
+        bp_idx[opts_mesh_name]["state/partition_pattern"] = output_partition_pattern;
+
+        if (output_partition_map.number_of_children() > 0 )
+        {
+            bp_idx[opts_mesh_name]["state/partition_map"] = output_partition_map;
         }
 
         Node root;
-        Node &bp_idx = root["blueprint_index"];
-
-        // TODO: Use MPI ver vs providing the domains?
-        ::conduit::blueprint::mesh::generate_index(multi_dom.child(0),
-                                                   opts_mesh_name,
-                                                   global_num_domains,
-                                                   bp_idx[opts_mesh_name]);
-
-        // work around conduit and manually add state fields
-        if(multi_dom.child(0).has_path("state/cycle"))
-        {
-          bp_idx[ opts_mesh_name + "/state/cycle"] = multi_dom.child(0)["state/cycle"].to_int32();
-        }
-
-        if(multi_dom.child(0).has_path("state/time"))
-        {
-          bp_idx[opts_mesh_name + "/state/time"] = multi_dom.child(0)["state/time"].to_double();
-        }
+        root["blueprint_index"].set(bp_idx);
 
         root["protocol/name"]    = file_protocol;
         root["protocol/version"] = CONDUIT_VERSION;
@@ -3125,9 +3306,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["number_of_files"]  = num_files;
         root["number_of_trees"]  = global_num_domains;
 
-        // TODO: make sure this is relative
-        root["file_pattern"]     = output_file_pattern;
-        root["tree_pattern"]     = output_tree_pattern;
+        root["file_pattern"] = output_file_pattern;
+        root["tree_pattern"] = output_tree_pattern;
 
         relay::io::IOHandle hnd;
 
@@ -3141,7 +3321,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         hnd.open(root_filename, file_protocol, open_opts);
         hnd.write(root);
-        // TODO here is where we write multimesh and multivars
         hnd.close();
     }
 
