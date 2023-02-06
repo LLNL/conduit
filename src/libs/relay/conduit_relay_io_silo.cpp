@@ -2320,7 +2320,10 @@ parse_type_option(const std::string &path,
 ///            when # of domains == 1,  "default"   ==> "root_only"
 ///            else,                    "default"   ==> "multi_file"
 ///
-///      silo_type: "default", "pdb", "hdf5", "hdf5_sec2", "hdf5_stdio",
+///      silo_type: "default", "pdb", "hdf5", ARE ALL WE WANT FOR NOW
+
+// these other ones are BONUS
+// "hdf5_sec2", "hdf5_stdio",
 ///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
 ///            when 'path' exists, "default" ==> "unknown"
 ///            else,               "default" ==> "hdf5"
@@ -2336,7 +2339,6 @@ parse_type_option(const std::string &path,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
-// TODO check that all opts are honored
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
@@ -2350,7 +2352,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string opts_mesh_name  = "mesh";
     int         opts_num_files  = -1;
     bool        opts_truncate   = false;
-    bool        overlink        = false;
+    bool        overlink        = false; // TODO make sure this is honored
+    // TODO we don't need a bool for this just use the file_style adn compare to "overlink"
 
     // check for + validate file_style option
     if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
@@ -2557,7 +2560,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         // cycle or none -- default has been resolved
         if(opts_suffix == "cycle")
         {
-            // TODO check with cyrus - do we want to have cycle_649320 in the dir name?
             output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
         }
 
@@ -2716,7 +2718,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             // properly support truncate vs non truncate
             if(opts_truncate)
             {
-                // TODO help I'm scared
+                // TODO does silo have a truncate option?
                 relay::io::save(dom, output_file);
             }
             else
