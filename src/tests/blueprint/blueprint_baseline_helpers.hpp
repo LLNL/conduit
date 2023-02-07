@@ -84,7 +84,11 @@ compare_baseline(const std::string &filename, const conduit::Node &n,
         const char *line = "*************************************************************";
         std::cout << "Difference!" << std::endl;
         std::cout << line << std::endl;
-        info.print();
+
+        conduit::Node opts;
+        opts["num_elements_threshold"] = 20;
+        opts["num_children_threshold"] = 10000;
+        info.to_summary_string_stream(std::cout, opts);
     }
     return equal;
 }

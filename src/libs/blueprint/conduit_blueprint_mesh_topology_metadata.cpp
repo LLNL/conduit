@@ -723,6 +723,9 @@ private:
         // from "polygon" types to tri, or quad.
         bool istri = sizes[0] == 3;
         bool isquad = sizes[0] == 4;
+cout << "embed_dim=" << embed_dim << endl;
+cout << "istri=" << istri << endl;
+cout << "isquad=" << isquad << endl;
         if(istri || isquad)
         {
             bool same = true;
@@ -731,13 +734,16 @@ private:
 
             if(same && istri)
             {
+                node["elements/shape"].reset(); // Workaround!
                 node["elements/shape"] = "tri";
             }
             else if(same && isquad)
             {
+                node["elements/shape"].reset(); // Workaround!
                 node["elements/shape"] = "quad";
             }
         }
+node.print();
 #endif
 
         // While we're at it, we can use the elements/connectivity as the
@@ -754,6 +760,7 @@ private:
             map32.sizes.resize(sizes.number_of_elements());
             for(index_t i = 0; i < sizes.number_of_elements(); i++)
                 map32.sizes[i] = sizes[i];
+
             if(topo->has_path("elements/offsets"))
             {
                 index_t_accessor offsets = topo->fetch_existing("elements/offsets").value();
@@ -1697,25 +1704,32 @@ TopologyMetadata::Implementation::build_associations()
     // that are grouped together.
     if(topo_shape.dim >= 3)
     {
-// TODO: special case PH?
+        // NOTE: For polyhedra, we don't use single_shape.
         G[3][3].single_size = 1;
-        G[3][2].single_size = topo_cascade.get_shape(3).embed_count;
-        G[3][1].single_size = embedding_3_1_edges(topo_shape).size() / 2; // #unique edges
-        G[3][0].single_size = topo_cascade.get_shape(3).indices;
+        if(!topo_shape.is_polyhedral())
+        {
+            G[3][2].single_size = topo_shape.embed_count;
+            G[3][1].single_size = embedding_3_1_edges(topo_shape).size() / 2; // #unique edges
+            G[3][0].single_size = topo_shape.indices;
+        }
     }
     if(topo_shape.dim >= 2)
     {
+        // Get the shape from the topology (in case we changed it).
+        ShapeType shape(dim_topos[2]);
         G[2][3].single_size = 1;
         G[2][2].single_size = 1;
-        G[2][1].single_size = topo_cascade.get_shape(2).embed_count; // This is probably wrong for PH cells when we switch to quad/tri.
-        G[2][0].single_size = topo_cascade.get_shape(2).indices;
+        G[2][1].single_size = shape.embed_count;
+        G[2][0].single_size = shape.indices;
     }
     if(topo_shape.dim >= 1)
     {
+        // Get the shape from the topology.
+        ShapeType shape(dim_topos[1]);
         G[1][3].single_size = 1;
         G[1][2].single_size = 1;
         G[1][1].single_size = 1;
-        G[1][0].single_size = topo_cascade.get_shape(1).indices;
+        G[1][0].single_size = shape.indices;
     }
     G[0][3].single_size = 1;
     G[0][2].single_size = 1;
@@ -1869,13 +1883,13 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0()
     else
         build_association_3_1_and_3_0_nonph();
 }
-
+void stophere() {}
 //---------------------------------------------------------------------------
 void
 TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
-
+stophere();
     // G(3,2) contains the PH faces.
     const association &map32 = G[3][2];
     index_t nelem = dim_topo_lengths[3];
@@ -1884,6 +1898,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
     const association &map21 = G[2][1];
     index_t nedges = dim_topo_lengths[1];
     std::vector<int> edge_count(nedges, 0);
+    std::vector<int> edge_count_ever(nedges, 0);
 
     // Assume hex ph, which have 12 edges per element. For ph elements that
     // do not fit the assumption, we'll just let the vector resize.
@@ -1905,6 +1920,16 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
         index_t npts = dim_topo_lengths[0];
         point_count.resize(npts, 0);
     }
+
+    // Reserve space so we can build the local_to_global[0] and
+    // local_to_global[1] maps too. We do it here since they need much of the
+    // same infrastructure as the G(3,1) and G(3,0) maps. We make some guesses.
+    index_t edges_per_elem = map32.get_size(0) * map21.get_size(0);
+    local_to_global[1].reserve(2 * nelem * edges_per_elem);
+    local_to_global[0].reserve(coords_length + 2 * 2 * nelem * edges_per_elem);
+cout << "build_association_3_1_and_3_0_ph: coords_length=" << coords_length << endl;
+    for(index_t i = 0; i < coords_length; i++)
+        local_to_global[0].push_back(i);
 
     // Iterate over the elements and then the faces for each element so we
     // build up a set of edges used in this element.
@@ -1939,28 +1964,41 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
                 {
                     map31.data.push_back(edgeid);
                     map31.sizes[ei]++;
-
-                    if(map30.requested)
-                    {
-                        // Iterate over this edge's points and add them if
-                        // they have not been seen in this element.
-                        auto edge_pts = map10.get_data(edgeid);
-                        for(index_t pi = 0; pi < 2; pi++)
-                        {
-                            if(point_count[edge_pts.first[pi]] == 0)
-                            {
-                                map30.data.push_back(edge_pts.first[pi]);
-                                map30.sizes[ei]++;
-                            }
-                            point_count[edge_pts.first[pi]]++;
-                        }
-                    }
                 }
+
+                // Iterate over this edge's points and add them if
+                // they have not been seen in this element.
+                auto edge_pts = map10.get_data(edgeid);
+                index_t edge_pt0 = edge_pts.first[0];
+                index_t edge_pt1 = edge_pts.first[1];
+
+                if(edge_count_ever[edgeid] > 0)
+                    std::swap(edge_pt0, edge_pt1);
+
+                if(map30.requested && point_count[edge_pt0] == 0)
+                {
+                    map30.data.push_back(edge_pt0);
+                    map30.sizes[ei]++;
+                    point_count[edge_pt0]++;
+                }
+                if(map30.requested && point_count[edge_pt1] == 0)
+                {
+                    map30.data.push_back(edge_pt1);
+                    map30.sizes[ei]++;
+                    point_count[edge_pt1]++;
+                }
+
+                // Build the local_to_global[0] map
+                local_to_global[0].push_back(edge_pt0);
+                local_to_global[0].push_back(edge_pt1);
+
                 edge_count[edgeid]++;
+                edge_count_ever[edgeid]++;
+
+                // Build the local_to_global[1] map.
+                local_to_global[1].push_back(edgeid);
             }
         }
-
-        // TODO: build local_to_global[0] and local_to_global[1]
 
         // We're done with this element. Zero out the counts for the edges
         // and points that we saw in this element.
@@ -2394,8 +2432,8 @@ TopologyMetadata::Implementation::build_local_associations()
                     L[e][a].data.reserve(sizes[e] + extra);
                     L[e][a].sizes.reserve(sizes[e] + extra);
 #ifdef REPRODUCE_REFERENCE
-                    // L(0,1) and L(0,2) do this.
-                    if(e == 0 && (a == 1 || a == 2))
+                    // L(0,1), L(0,2), L(0,3) do this.
+                    if(e == 0 && a >= 1)
                     {
                         for(index_t i = 0; i < nc; i++)
                             L[e][a].sizes.push_back(0);

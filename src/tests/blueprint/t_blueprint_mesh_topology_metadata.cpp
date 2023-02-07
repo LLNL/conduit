@@ -77,7 +77,7 @@ void barrier() { }
 void
 yaml_print(std::ostream &os, const conduit::Node &node)
 {
-    // Override these parameters so we 
+    // Override these parameters so we get more of our output.
     conduit::Node opts;
     opts["num_elements_threshold"] = 10000;
     opts["num_children_threshold"] = 10000;
@@ -585,6 +585,9 @@ TEST(conduit_blueprint_topology_metadata, rectilinear)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, hexs_poly)
 {
+    // NOTE: The topo2 elements/shape was modified in the baseline to "quad"
+    //       since the new TopologyMetadata class tries to make single shapes
+    //       if they happen to all be the same.
     test_mesh_type("hexs_poly");
 }
 #if 0
