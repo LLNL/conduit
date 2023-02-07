@@ -2026,6 +2026,8 @@ void silo_mesh_write(const Node &n,
                      DBfile *dbfile,
                      const std::string &silo_obj_path)
 {
+    // TODO is the silo_obj_path (as passed) the name of the topo?
+
     int silo_error = 0;
     char silo_prev_dir[256];
 
@@ -2426,8 +2428,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string opts_file_style = "default";
     std::string opts_suffix     = "default";
     std::string opts_mesh_name  = "mesh";
+    std::string opts_silo_type  = "unknown";
     int         opts_num_files  = -1;
     bool        opts_truncate   = false;
+    int         silo_type       = DB_UNKNOWN;
 
     // check for + validate file_style option
     if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
@@ -2442,13 +2446,52 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             CONDUIT_ERROR("write_mesh invalid file_style option: \"" 
                           << opts_file_style << "\"\n"
                           " expected: \"default\", \"root_only\", "
-                          "\"multi_file\", or \"overlink\",");
+                          "\"multi_file\", or \"overlink\"");
         }
 
     }
 
     // check for + validate silo_type option
     // TODO
+    if (opts.has_child("silo_type") && opts["silo_type"].dtype().is_string())
+    {
+        opts_silo_type = opts["silo_type"].as_string();
+
+        if(opts_silo_type != "default" && 
+           opts_silo_type != "pdb" &&
+           opts_silo_type != "hdf5" &&
+           opts_silo_type != "unknown" )
+        {
+            CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
+                          << opts_silo_type << "\"\n"
+                          " expected: \"default\", \"pdb\", \"hdf5\", or \"unknown\"");
+        }
+
+        if (opts_silo_type == "default")
+        {
+            if (conduit::utils::is_file(path)) 
+            {
+                silo_type = DB_UNKNOWN;
+            }
+            else
+            {
+                silo_type = DB_HDF5;
+            }
+        }
+        else if (opts_silo_type == "pdb")
+        {
+            silo_type = DB_PDB;
+        }
+        else if (opts_silo_type == "hdf5")
+        {
+            silo_type = DB_HDF5;
+        }
+        else if (opts_silo_type == "unknown") 
+        {
+            silo_type = DB_UNKNOWN;
+        }
+
+    }
 
     // check for + validate suffix option
     if(opts.has_child("suffix") && opts["suffix"].dtype().is_string())
@@ -2771,11 +2814,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             if(par_rank == current_writer)
             {
+                DBfile *dbfile;
+
                 for(int i = 0; i < local_num_domains; ++i)
                 {
                     // if truncate, first rank to touch the file needs
                     // to open at
-                    if( !hnd.is_open()
+                    if( !dbfile
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
@@ -2788,9 +2833,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         // local_root_file_created.set((int)1);
                     }
                     
-                    if(!hnd.is_open())
+                    if(!dbfile)
                     {
-                        hnd.open(root_filename,file_protocol);
+                        if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+                        {
+                            CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                            return;
+                        }
                     }
 
                     const Node &dom = multi_dom.child(i);
@@ -2810,13 +2859,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                         domain,
                                                         opts_mesh_name);
                     }
-                    // TODO help where did my dbfile come from!
                     silo_mesh_write(dom, dbfile, mesh_path);
                 }
 
-                // NOTE: local file handle goes out of scope here
-                // and data is committed to file for handles that write
-                // on close
+                if(DBClose(dbfile) != 0)
+                {
+                    CONDUIT_ERROR("Error closing Silo file: " << root_filename);
+                }
             }
 
         // Reduce to sync up (like a barrier) and solve first writer need
@@ -2844,7 +2893,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                                     file_protocol));
             // properly support truncate vs non truncate
 
-            relay::io::IOHandle hnd;
+            DBfile *dbfile;
+
             Node open_opts;
             open_opts["mode"] = "w";
             if(opts_truncate)
@@ -2852,11 +2902,25 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 // TODO does silo support truncation
                open_opts["mode"] = "wt";
             }
+            // TODO learn how to pass open these opts or do something else
+            // silo open instead of silo create maybe?
 
-            // open our handle
-            hnd.open(output_file, open_opts);
-            // write to  mesh name subpath
-            hnd.write(dom, opts_mesh_name);
+            if(!dbfile)
+            {
+                if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+                {
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                    return;
+                }
+            }
+
+            // write to mesh name subpath
+            silo_mesh_write(dom, dbfile, opts_mesh_name);
+
+            if(DBClose(dbfile) != 0)
+            {
+                CONDUIT_ERROR("Error closing Silo file: " << root_filename);
+            }
         }
     }
     else // more complex case, N domains to M files
@@ -2989,8 +3053,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     // check the domains this rank has pending
                     for(int d = 0; d < local_num_domains && local_all_is_good == 1; ++d)
                     {
-                        // reuse this handle for all domains in the file
-                        relay::io::IOHandle hnd;
                         if(local_domain_status[d] == 1 &&  // pending
                            local_domain_to_file[d] == f) // destined for this file
                         {
@@ -3017,6 +3079,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                             try
                             {
+                                DBfile *dbfile;
                                 // if truncate == true check if this is the first time we are
                                 // touching file, and use wt
                                 Node open_opts;
@@ -3028,15 +3091,26 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                    global_file_created[f] = 1;
                                 }
 
-                                if(!hnd.is_open())
+                                // TODO again we need truncate support
+
+                                if(!dbfile)
                                 {
-                                    hnd.open(output_file, open_opts);
+                                    if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+                                    {
+                                        CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                                        return;
+                                    }
                                 }
 
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
                                 //              << output_file << " path " << path);
 
-                                hnd.write(dom, curr_path);
+                                silo_mesh_write(dom, dbfile, curr_path);
+
+                                if(DBClose(dbfile) != 0)
+                                {
+                                    CONDUIT_ERROR("Error closing Silo file: " << root_filename);
+                                }
                                 
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
@@ -3309,7 +3383,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["file_pattern"] = output_file_pattern;
         root["tree_pattern"] = output_tree_pattern;
 
-        relay::io::IOHandle hnd;
+        DBfile *dbfile;
 
         // if not root only, this is the first time we are writing 
         // to the root file -- make sure to properly support truncate
@@ -3319,9 +3393,24 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             open_opts["mode"] = "wt";
         }
 
-        hnd.open(root_filename, file_protocol, open_opts);
-        hnd.write(root);
-        hnd.close();
+        // TODO use opts
+        if(!dbfile)
+        {
+            if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+            {
+                CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                return;
+            }
+        }
+
+        write_multimesh();
+        write_multivar();
+        write_multimaterial();
+
+        if(DBClose(dbfile) != 0)
+        {
+            CONDUIT_ERROR("Error closing Silo file: " << root_filename);
+        }
     }
 
     // barrier at end of work to avoid file system race
