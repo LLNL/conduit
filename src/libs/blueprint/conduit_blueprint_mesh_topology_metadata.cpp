@@ -621,7 +621,7 @@ private:
     {
         const int embed_dim = 2;
 
-        // Make faces from the PH faces.
+        // Use PH faces to make 2D faces.
         make_embedded_connectivity_ph(subel, sizes, sizeslen);
 
         // Make lines. Note that we get the embed shape from the 2D topo
@@ -709,6 +709,9 @@ private:
         node["type"] = "unstructured";
         node["coordset"] = coords->name();
         node["elements/shape"] = subel["shape"].as_string();
+
+// I think we need to convert to index_t.
+
         node["elements/connectivity"].set_external(subel["connectivity"]);
         // PH geometries should have sizes and offsets too.
         if(subel.has_child("sizes"))
@@ -736,6 +739,29 @@ private:
             }
         }
 #endif
+
+        // While we're at it, we can use the elements/connectivity as the
+        // G(3,2) map.
+        association &map32 = G[3][2];
+        if(map32.requested)
+        {
+            index_t_accessor conn = topo->fetch_existing("elements/connectivity").value();
+            map32.data.resize(conn.number_of_elements());
+            for(index_t i = 0; i < conn.number_of_elements(); i++)
+                map32.data[i] = conn[i];
+
+            index_t_accessor sizes = topo->fetch_existing("elements/sizes").value();
+            map32.sizes.resize(sizes.number_of_elements());
+            for(index_t i = 0; i < sizes.number_of_elements(); i++)
+                map32.sizes[i] = sizes[i];
+            if(topo->has_path("elements/offsets"))
+            {
+                index_t_accessor offsets = topo->fetch_existing("elements/offsets").value();
+                map32.offsets.resize(offsets.number_of_elements());
+                for(index_t i = 0; i < offsets.number_of_elements(); i++)
+                    map32.offsets[i] = offsets[i];
+            }
+        }
     }
 
     //-----------------------------------------------------------------------
@@ -1520,8 +1546,9 @@ TopologyMetadata::Implementation::copy_topology(const conduit::Node &src_topo,
     dest_topo["coordset"] = coords->name();
     dest_topo["elements/shape"] = shape.type;
 
-    // Copy data as index_t.
-    std::vector<std::string> copy_keys{"elements/connectivity",
+    // Names of fields to copy.
+    std::vector<std::string> copy_keys{"elements/shape",
+                                       "elements/connectivity",
                                        "elements/sizes",
                                        "elements/offsets"
                                       };
@@ -1529,16 +1556,20 @@ TopologyMetadata::Implementation::copy_topology(const conduit::Node &src_topo,
     {
         copy_keys.push_back("subelements/connectivity");
         copy_keys.push_back("subelements/sizes");
+        copy_keys.push_back("subelements/shape");
         copy_keys.push_back("subelements/offsets");
     }
+    // Copy keys that exist. If they are integer arrays, convert to the 
+    // desired int_dtype.
     for(const auto &key : copy_keys)
     {
         if(src_topo.has_path(key))
         {
             const conduit::Node &src = src_topo[key];
             conduit::Node &dest = dest_topo[key];
-            if(src.dtype().id() != dest_type.id())
+            if(src.dtype().is_integer() && src.dtype().id() != dest_type.id())
             {
+                // Bulk convert integer arrays
                 dest.set(DataType(dest_type.id(), src.dtype().number_of_elements()));
                 src.to_data_type(dest_type.id(), dest);
             }

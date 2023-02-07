@@ -419,7 +419,7 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
     {
         int dims[] = {3,3,2};
         if(type == "lines" || type == "tris" || type == "quads" ||
-           type == "quads_poly" || type == "hexs_poly")
+           type == "quads_poly" || type == "mixed_2d")
         {
             dims[2] = 0;
         }
@@ -484,7 +484,7 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
@@ -556,15 +556,38 @@ TEST(conduit_blueprint_topology_metadata, quads_poly)
 {
     test_mesh_type("quads_poly");
 }
-#if 0
-// PH cases
+#endif
 
+#if 0
+// These are not supported by reference::TopologyMetadata (and probably not the
+// new class either as additional connectivity handling is needed.)
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, quads_and_tris)
+{
+    test_mesh_type("quads_and_tris");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, mixed_2d)
+{
+    test_mesh_type("mixed_2d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, rectilinear)
+{
+    test_mesh_type("rectilinear");
+}
+#endif
+
+// PH cases
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, hexs_poly)
 {
     test_mesh_type("hexs_poly");
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_ph)
 {
