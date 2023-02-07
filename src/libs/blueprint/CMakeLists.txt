@@ -41,6 +41,7 @@ set(blueprint_headers
     conduit_blueprint_o2mrelation.hpp
     conduit_blueprint_o2mrelation_utils.hpp
     conduit_blueprint_o2mrelation_iterator.hpp
+    conduit_blueprint_o2mrelation_index.hpp
     conduit_blueprint_o2mrelation_examples.hpp
     conduit_blueprint_table.hpp
     conduit_blueprint_table_examples.hpp
@@ -80,6 +81,7 @@ set(blueprint_sources
     conduit_blueprint_o2mrelation.cpp
     conduit_blueprint_o2mrelation_utils.cpp
     conduit_blueprint_o2mrelation_iterator.cpp
+    conduit_blueprint_o2mrelation_index.cpp
     conduit_blueprint_o2mrelation_examples.cpp
     conduit_blueprint_table.cpp
     conduit_blueprint_table_examples.cpp

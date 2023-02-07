@@ -339,3 +339,43 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_iteration)
         EXPECT_EQ(ref_data, n_data);
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_index_properties)
+{
+    Node n, info;
+
+    // o2m:
+    //   data: [1.0, 2.0, -1.0, -1.0, 3.0, 4.0, -1.0, -1.0, 5.0, 6.0, -1.0, -1.0]
+    //   sizes: [2, 2, 2]
+    //   offsets: [0, 4, 8]
+    blueprint::o2mrelation::examples::uniform(n, 3, 2, 4);
+    std::cout << n.to_yaml() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n,info));
+
+    { // Size/offset Tests //
+        blueprint::o2mrelation::O2MIndex nidx(n);
+
+        EXPECT_EQ(nidx.size(), 3);
+        EXPECT_EQ(nidx.size(0), 2);
+        EXPECT_EQ(nidx.size(1), 2);
+        EXPECT_EQ(nidx.size(2), 2);
+        EXPECT_EQ(nidx.offset(0), 0);
+        EXPECT_EQ(nidx.offset(1), 4);
+        EXPECT_EQ(nidx.offset(2), 8);
+    }
+
+    { // Index Tests //
+        blueprint::o2mrelation::O2MIndex nidx(n);
+
+        // o2m:
+        //            0    1     2     3    4    5     6     7    8    9    10    11
+        //   data: [1.0, 2.0, -1.0, -1.0, 3.0, 4.0, -1.0, -1.0, 5.0, 6.0, -1.0, -1.0]
+        //   sizes: [2, 2, 2]
+        //   offsets: [0, 4, 8]
+
+        EXPECT_EQ(nidx.index(0, 1), 1);
+        EXPECT_EQ(nidx.index(1, 0), 4);
+        EXPECT_EQ(nidx.index(2, 3), 11);
+    }
+}
