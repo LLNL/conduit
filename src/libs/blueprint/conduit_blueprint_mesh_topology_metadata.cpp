@@ -481,6 +481,9 @@ private:
     void build_association_3_1_and_3_0();
     void build_association_3_1_and_3_0_ph();
     void build_association_3_1_and_3_0_nonph();
+    void build_edge_key_to_id(std::vector<std::pair<uint64, index_t>> &edge_key_to_id) const;
+    index_t lookup_edge_id(std::vector<std::pair<uint64, index_t>> &edge_key_to_id,
+                           const uint64 key) const;
 
     //-----------------------------------------------------------------------
     /**
@@ -550,6 +553,13 @@ private:
                        const ShapeType &shape,
                        const DataType &dest_type,
                        conduit::Node &dest_topo);
+
+    //-----------------------------------------------------------------------
+    void copy_convert(const std::vector<std::string> &src_keys,
+                      const conduit::Node &n_src,
+                      const DataType &dest_type,
+                      const std::vector<std::string> &dest_keys,
+                      conduit::Node &n_dest);
 
     //-----------------------------------------------------------------------
     /**
@@ -709,23 +719,17 @@ private:
         node["type"] = "unstructured";
         node["coordset"] = coords->name();
         node["elements/shape"] = subel["shape"].as_string();
+        // Copy these fields into the topo but convert to index_t.
+        std::vector<std::string> src_keys{"connectivity", "sizes", "offsets"};
+        std::vector<std::string> dest_keys{"elements/connectivity",
+                                           "elements/sizes",
+                                           "elements/offsets"};
+        copy_convert(src_keys, subel, DataType::index_t(), dest_keys, node);
 
-// I think we need to convert to index_t.
-
-        node["elements/connectivity"].set_external(subel["connectivity"]);
-        // PH geometries should have sizes and offsets too.
-        if(subel.has_child("sizes"))
-            node["elements/sizes"].set_external(subel["sizes"]);
-        if(subel.has_child("offsets"))
-            node["elements/offsets"].set_external(subel["offsets"]);
-#if 1
         // Check whether the sizes are the same. If they are then we can convert
         // from "polygon" types to tri, or quad.
         bool istri = sizes[0] == 3;
         bool isquad = sizes[0] == 4;
-cout << "embed_dim=" << embed_dim << endl;
-cout << "istri=" << istri << endl;
-cout << "isquad=" << isquad << endl;
         if(istri || isquad)
         {
             bool same = true;
@@ -743,8 +747,6 @@ cout << "isquad=" << isquad << endl;
                 node["elements/shape"] = "quad";
             }
         }
-node.print();
-#endif
 
         // While we're at it, we can use the elements/connectivity as the
         // G(3,2) map.
@@ -1543,6 +1545,36 @@ TopologyMetadata::Implementation::make_highest_topology()
 
 //---------------------------------------------------------------------------
 void
+TopologyMetadata::Implementation::copy_convert(
+    const std::vector<std::string> &src_keys,
+    const conduit::Node &n_src,
+    const DataType &dest_type,
+    const std::vector<std::string> &dest_keys,
+    conduit::Node &n_dest)
+{
+    size_t n = std::min(src_keys.size(), dest_keys.size());
+    for(size_t i = 0; i < n; i++)
+    {
+        if(n_src.has_path(src_keys[i]))
+        {
+            const conduit::Node &src = n_src[src_keys[i]];
+            conduit::Node &dest = n_dest[dest_keys[i]];
+            if(src.dtype().is_integer() && src.dtype().id() != dest_type.id())
+            {
+                // Bulk convert integer arrays
+                dest.set(DataType(dest_type.id(), src.dtype().number_of_elements()));
+                src.to_data_type(dest_type.id(), dest);
+            }
+            else
+            {
+                dest.set(src);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
 TopologyMetadata::Implementation::copy_topology(const conduit::Node &src_topo,
     const ShapeType &shape, const DataType &dest_type, conduit::Node &dest_topo)
 {
@@ -1566,26 +1598,8 @@ TopologyMetadata::Implementation::copy_topology(const conduit::Node &src_topo,
         copy_keys.push_back("subelements/shape");
         copy_keys.push_back("subelements/offsets");
     }
-    // Copy keys that exist. If they are integer arrays, convert to the 
-    // desired int_dtype.
-    for(const auto &key : copy_keys)
-    {
-        if(src_topo.has_path(key))
-        {
-            const conduit::Node &src = src_topo[key];
-            conduit::Node &dest = dest_topo[key];
-            if(src.dtype().is_integer() && src.dtype().id() != dest_type.id())
-            {
-                // Bulk convert integer arrays
-                dest.set(DataType(dest_type.id(), src.dtype().number_of_elements()));
-                src.to_data_type(dest_type.id(), dest);
-            }
-            else
-            {
-                dest.set(src);
-            }
-        }
-    }
+    // Copy keys that exist, converting to the destination type if needed.
+    copy_convert(copy_keys, src_topo, dest_type, copy_keys, dest_topo);
 
     // Make sure we have offsets if they are not there. The Conduit helper
     // routines make them in various precisions.
@@ -1898,7 +1912,7 @@ stophere();
     const association &map21 = G[2][1];
     index_t nedges = dim_topo_lengths[1];
     std::vector<int> edge_count(nedges, 0);
-    std::vector<int> edge_count_ever(nedges, 0);
+    //std::vector<int> edge_count_ever(nedges, 0);
 
     // Assume hex ph, which have 12 edges per element. For ph elements that
     // do not fit the assumption, we'll just let the vector resize.
@@ -1909,7 +1923,6 @@ stophere();
 
     // Prepare G(3,0)
     association &map30 = G[3][0];
-    const association &map10 = G[1][0];
     std::vector<int> point_count;
     if(map30.requested)
     {
@@ -1927,9 +1940,18 @@ stophere();
     index_t edges_per_elem = map32.get_size(0) * map21.get_size(0);
     local_to_global[1].reserve(2 * nelem * edges_per_elem);
     local_to_global[0].reserve(coords_length + 2 * 2 * nelem * edges_per_elem);
-cout << "build_association_3_1_and_3_0_ph: coords_length=" << coords_length << endl;
     for(index_t i = 0; i < coords_length; i++)
         local_to_global[0].push_back(i);
+
+    // Look through the edge connectivity and make a map that we can use to turn
+    // an edge expressed as global point ids into a unique edge id.
+    conduit::index_t_accessor conn1D = dim_topos[1]["elements/connectivity"].value();
+    std::vector<std::pair<uint64, index_t>> edge_key_to_id(nedges);
+    build_edge_key_to_id(edge_key_to_id);
+
+    const index_t *face_conn = dim_topos[2]["elements/connectivity"].value();
+    const index_t *face_sizes = dim_topos[2]["elements/sizes"].value();
+    const index_t *face_offsets = dim_topos[2]["elements/offsets"].value();
 
     // Iterate over the elements and then the faces for each element so we
     // build up a set of edges used in this element.
@@ -1945,55 +1967,47 @@ cout << "build_association_3_1_and_3_0_ph: coords_length=" << coords_length << e
         for(index_t fi = 0; fi < elemfaces.second; fi++)
         {
             index_t faceid = elemfaces.first[fi];
-            auto face_edges = map21.get_data(faceid);
-            // Iterate over this face's edges
-            for(index_t edge_index = 0; edge_index < face_edges.second; edge_index++)
+            index_t this_face_offset = face_offsets[faceid];
+            // Iterate over the edges in this face.
+            for(index_t pi = 0; pi < face_sizes[faceid]; pi++)
             {
-                // NOTE: We could decide to iterate the edges backwards if it's
-                //       the second time we see this face overall. This assumes
-                //       that the first element that defined the face would have
-                //       defined it suitable for itself. Polyhedra otherwise
-                //       do not maintain any starting point/edge in Conduit so
-                //       we should not need to worry about faces rotated relative
-                //       to different elements.
+                index_t pi_next = (pi + 1) % face_sizes[faceid];
 
-                index_t edgeid = face_edges.first[edge_index];
-                // If it is the first time this edge has been seen in this
-                // element, add it to the map.
+                // Make the edge.
+                index_t edge[2];
+                edge[0] = face_conn[this_face_offset + pi];
+                edge[1] = face_conn[this_face_offset + pi_next];
+
+                // Build the local_to_global[0] map (before possible swap)
+                local_to_global[0].push_back(edge[0]);
+                local_to_global[0].push_back(edge[1]);
+
+                if(map30.requested && point_count[edge[0]] == 0)
+                {
+                    map30.data.push_back(edge[0]);
+                    map30.sizes[ei]++;
+                    point_count[edge[0]]++;
+                }
+                if(map30.requested && point_count[edge[1]] == 0)
+                {
+                    map30.data.push_back(edge[1]);
+                    map30.sizes[ei]++;
+                    point_count[edge[1]]++;
+                }
+
+                // Look up the edge id in our list of real edges.
+                if(edge[1] > edge[0])
+                    std::swap(edge[1], edge[0]);
+                uint64 key = hash_ids(edge, 2);
+                index_t edgeid = lookup_edge_id(edge_key_to_id, key);
+
+                // Store the edge id in the map if it is the first time we've.
                 if(edge_count[edgeid] == 0)
                 {
                     map31.data.push_back(edgeid);
                     map31.sizes[ei]++;
+                    edge_count[edgeid]++;
                 }
-
-                // Iterate over this edge's points and add them if
-                // they have not been seen in this element.
-                auto edge_pts = map10.get_data(edgeid);
-                index_t edge_pt0 = edge_pts.first[0];
-                index_t edge_pt1 = edge_pts.first[1];
-
-                if(edge_count_ever[edgeid] > 0)
-                    std::swap(edge_pt0, edge_pt1);
-
-                if(map30.requested && point_count[edge_pt0] == 0)
-                {
-                    map30.data.push_back(edge_pt0);
-                    map30.sizes[ei]++;
-                    point_count[edge_pt0]++;
-                }
-                if(map30.requested && point_count[edge_pt1] == 0)
-                {
-                    map30.data.push_back(edge_pt1);
-                    map30.sizes[ei]++;
-                    point_count[edge_pt1]++;
-                }
-
-                // Build the local_to_global[0] map
-                local_to_global[0].push_back(edge_pt0);
-                local_to_global[0].push_back(edge_pt1);
-
-                edge_count[edgeid]++;
-                edge_count_ever[edgeid]++;
 
                 // Build the local_to_global[1] map.
                 local_to_global[1].push_back(edgeid);
@@ -2016,6 +2030,73 @@ cout << "build_association_3_1_and_3_0_ph: coords_length=" << coords_length << e
             }
         }
     }
+}
+
+//---------------------------------------------------------------------------
+void
+TopologyMetadata::Implementation::build_edge_key_to_id(
+    std::vector<std::pair<uint64, index_t>> &edge_key_to_id) const
+{
+    conduit::index_t_accessor conn1D = dim_topos[1]["elements/connectivity"].value();
+    index_t nedges = conn1D.number_of_elements() / 2;
+#ifdef DEBUG_PRINT
+    cout << "edges_key_to_id = {" << endl;
+#endif
+#pragma omp parallel for
+    for(index_t edge_index = 0; edge_index < nedges; edge_index++)
+    {
+        // Make a key for this edge.
+        index_t edge[2];
+        edge[0] = conn1D[edge_index * 2];
+        edge[1] = conn1D[edge_index * 2 + 1];
+        if(edge[1] > edge[0])
+            std::swap(edge[0], edge[1]);
+        uint64 key = hash_ids(edge, 2);
+        // Store the edge in the map.
+        edge_key_to_id[edge_index] = std::make_pair(key, edge_index);
+#ifdef DEBUG_PRINT
+        cout << std::setw(4) << edge_index << ": key=" <<  std::setw(20) << key
+             << ", pts=" << std::setw(8) << edge[0] << ", "
+             << std::setw(8) << edge[1] << endl;
+#endif
+    }
+#ifdef DEBUG_PRINT
+    cout << "}" << endl;
+#endif
+
+    // Sort the edges by the ids.
+    std::sort(edge_key_to_id.begin(), edge_key_to_id.end(),
+        [&](const std::pair<uint64, index_t> &lhs,
+            const std::pair<uint64, index_t> &rhs) 
+        {
+            return lhs.first < rhs.first;
+        });
+}
+
+//---------------------------------------------------------------------------
+    // This function looks up a key in edge_key_to_id to return the edge id.
+index_t
+TopologyMetadata::Implementation::lookup_edge_id(
+    std::vector<std::pair<uint64, index_t>> &edge_key_to_id,
+    const uint64 key) const
+{
+    index_t index = -1;
+    index_t left = 0;
+    index_t right = edge_key_to_id.size() - 1;
+    while(left <= right)
+    {
+        index_t m = (left + right) / 2;
+        if(edge_key_to_id[m].first < key)
+            left = m + 1;
+        else if(edge_key_to_id[m].first > key)
+            right = m - 1;
+        else
+        {
+            index = m;
+            break;
+        }
+    }
+    return edge_key_to_id[index].second;
 }
 
 //---------------------------------------------------------------------------
@@ -2043,64 +2124,13 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
     conduit::index_t_accessor conn1D = dim_topos[1]["elements/connectivity"].value();
     index_t nedges = conn1D.number_of_elements() / 2;
     std::vector<std::pair<uint64, index_t>> edge_key_to_id(nedges);
-#ifdef DEBUG_PRINT
-    cout << "edges_key_to_id = {" << endl;
-#endif
-#pragma omp parallel for
-    for(index_t edge_index = 0; edge_index < nedges; edge_index++)
-    {
-        // Make a key for this edge.
-        index_t edge[2];
-        edge[0] = conn1D[edge_index * 2];
-        edge[1] = conn1D[edge_index * 2 + 1];
-        if(edge[1] > edge[0])
-            std::swap(edge[0], edge[1]);
-        uint64 key = hash_ids(edge, 2);
-        // Store the edge in the map.
-        edge_key_to_id[edge_index] = std::make_pair(key, edge_index);
-#ifdef DEBUG_PRINT
-        cout << std::setw(4) << edge_index << ": key=" <<  std::setw(20) << key
-             << ", pts=" << std::setw(8) << edge[0] << ", "
-             << std::setw(8) << edge[1] << endl;
-#endif
-    }
-#ifdef DEBUG_PRINT
-    cout << "}" << endl;
-#endif
-    // Sort the edges by the ids.
-    std::sort(edge_key_to_id.begin(), edge_key_to_id.end(),
-        [&](const std::pair<uint64, index_t> &lhs,
-            const std::pair<uint64, index_t> &rhs) 
-        {
-            return lhs.first < rhs.first;
-        });
+    build_edge_key_to_id(edge_key_to_id);
 
     // Get the unique edges template for the element type.
     std::vector<index_t> elem_edges = embedding_3_1_edges(topo_shape);
 #ifdef DEBUG_PRINT
     cout << "elem_edges=" << elem_edges << endl;
 #endif
-    // This function looks up a key in edge_key_to_id to return the edge id.
-    auto lookup_id = [&](uint64 key) -> index_t
-    {
-        index_t index = -1;
-        index_t left = 0;
-        index_t right = edge_key_to_id.size() - 1;
-        while(left <= right)
-        {
-            index_t m = (left + right) / 2;
-            if(edge_key_to_id[m].first < key)
-                left = m + 1;
-            else if(edge_key_to_id[m].first > key)
-                right = m - 1;
-            else
-            {
-                index = m;
-                break;
-            }
-        }
-        return edge_key_to_id[index].second;
-    };
 
     // Prepare the G(3,1) association.
     index_t edges_per_elem = elem_edges.size() / 2;
@@ -2174,7 +2204,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
             uint64 key = hash_ids(edge, 2);
 
             // Look up the edge id in our list of real edges.
-            index_t edgeid = lookup_id(key);
+            index_t edgeid = lookup_edge_id(edge_key_to_id, key);
 
             // Store the edge id in the map.
             index_t elem_edge = ei * edges_per_elem + edge_index;
@@ -2209,7 +2239,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
                 uint64 key = hash_ids(edge, 2);
 
                 // Look up the edge id in our list of real edges.
-                index_t edgeid = lookup_id(key);
+                index_t edgeid = lookup_edge_id(edge_key_to_id, key);
 
                 // Build the local_to_global[1] map.
                 local_to_global[1].push_back(edgeid);
