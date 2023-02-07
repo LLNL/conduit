@@ -484,7 +484,7 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
@@ -548,7 +548,6 @@ TEST(conduit_blueprint_topology_metadata, custom_hexs)
 {
     test_mesh_type("custom_hexs");
 }
-#endif
 
 // Polygon cases
 
