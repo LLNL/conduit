@@ -481,7 +481,7 @@ private:
     /**
      @brief Print association G[e][a].
      */
-    void print_association(int e, int a) const;
+    void print_association(int e, int a, bool global = true) const;
 
     //-----------------------------------------------------------------------
     /**
@@ -1210,7 +1210,8 @@ private:
     void iterate_global_map_levels(int entity_id,
         const std::vector<std::vector<std::pair<int,int>>> &levels,
         size_t level,
-        index_t *uIdx,
+        index_t *globalIdx,
+        index_t *localIdx,
         Func &&func)
     {
         int e = levels[level][0].first;
@@ -1218,13 +1219,14 @@ private:
         auto ents = G[e][a].get_data(entity_id);
         for(index_t j = 0; j < ents.second; j++)
         {
+            globalIdx[a] = j;
             index_t child_entity_id = ents.first[j];
-            func(levels[level], uIdx);
+            func(levels[level], globalIdx, localIdx);
             int nextLevel = level + 1;
             if(nextLevel < static_cast<int>(levels.size()))
-                iterate_global_map_levels(child_entity_id, levels, nextLevel, uIdx, func);
+                iterate_global_map_levels(child_entity_id, levels, nextLevel, globalIdx, localIdx, func);
         }
-        uIdx[e]++;
+        localIdx[e]++;
     }
 };
 
@@ -2153,14 +2155,25 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
 
 //---------------------------------------------------------------------------
 void
-TopologyMetadata::Implementation::print_association(int e, int a) const
+TopologyMetadata::Implementation::print_association(int e, int a, bool global) const
 {
-    const association &assoc = G[e][a];
-    cout << "\tdata=" << assoc.data << endl;
-    cout << "\tsizes=" << assoc.sizes << endl;
-    cout << "\toffsets=" << assoc.offsets << endl;
-    cout << "\tsingle_size=" << assoc.single_size << endl;
-    cout << "\trequested=" << assoc.requested << endl;
+    if(global)
+    {
+        const association &assoc = G[e][a];
+        cout << "\tdata=" << assoc.data << endl;
+        cout << "\tsizes=" << assoc.sizes << endl;
+        cout << "\toffsets=" << assoc.offsets << endl;
+        cout << "\tsingle_size=" << assoc.single_size << endl;
+        cout << "\trequested=" << assoc.requested << endl;
+    }
+    else
+    {
+        const association &assoc = L[e][a];
+        cout << "\tdata=" << assoc.data << endl;
+        cout << "\tsizes=" << assoc.sizes << endl;
+        cout << "\toffsets=" << assoc.offsets << endl;
+        cout << "\trequested=" << assoc.requested << endl;
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -2288,35 +2301,45 @@ TopologyMetadata::Implementation::build_local_associations()
         }
     };
 
-    auto buildcases = [&](const std::vector<std::pair<int,int>> &levels, index_t *uIdx)
+    auto buildcases = [&](const std::vector<std::pair<int,int>> &levels,
+                          index_t *globalIdx, index_t *localIdx)
     {
         for(size_t i = 0; i < levels.size(); i++)
         {
+            // e > a in how we call it.
             int e = levels[i].first;
             int a = levels[i].second;
-            index_t index = uIdx[e];
+            index_t index = globalIdx[e];
             // parent to child
             if(L[e][a].requested)
             {
                 L[e][a].sizes[index]++;
+cout << "L[" << e << "][" << a << "].sizes[" << index << "]=" << L[e][a].sizes[index] << endl;
             }
             // child to parent
             if(L[a][e].requested)
             {
                 L[a][e].data.push_back(index);
                 L[a][e].sizes.push_back(1);
+cout << "L[" << a << "][" << e << "].data.push_back(" << index << ")" << endl;
             }
         }
     };
 
     // Resize the L(e,a) associations
-    auto resize = [&](int dim, index_t sizes[4])
+    auto resize = [&](int dim, index_t sizes[4], index_t nc)
     {
         for(int e = dim; e >= 0; e--)
         for(int a = dim; a >= 0; a--)
         {
             if(L[e][a].requested)
             {
+#define REPRODUCE_REFERENCE
+#ifdef REPRODUCE_REFERENCE
+                size_t extra = (e == 0 || a == 0) ? nc : 0;
+#else
+                constexpr size_t extra = 0;
+#endif
                 if(e > a)
                 {
 cout << "L[" << e << "][" << a << "].sizes.resize(" << sizes[e] << ", 0)" << endl;
@@ -2327,16 +2350,23 @@ cout << "L[" << e << "][" << a << "].sizes.resize(" << sizes[e] << ", 0)" << end
                 {
 cout << "L[" << e << "][" << a << "].sizes.resize(" << sizes[e] << ", 1)" << endl;
                     // Self
-                    L[e][a].sizes.resize(sizes[e], 1);
+                    L[e][a].sizes.resize(sizes[e] + extra, 1);
                 }
                 else
                 {
 cout << "L[" << e << "][" << a << "].data.reserve(" << sizes[e] << ")" << endl;
 cout << "L[" << e << "][" << a << "].sizes.reserve(" << sizes[e] << ")" << endl;
-
                     // Child to parent
-                    L[e][a].data.reserve(sizes[e]);
-                    L[e][a].sizes.reserve(sizes[e]);
+                    L[e][a].data.reserve(sizes[e] + extra);
+                    L[e][a].sizes.reserve(sizes[e] + extra);
+#ifdef REPRODUCE_REFERENCE
+                    // L(0,1) and L(0,2) do this.
+                    if(e == 0 && (a == 1 || a == 2))
+                    {
+                        for(index_t i = 0; i < nc; i++)
+                            L[e][a].sizes.push_back(0);
+                    }
+#endif 
                 }
             }
         }
@@ -2344,18 +2374,17 @@ cout << "L[" << e << "][" << a << "].sizes.reserve(" << sizes[e] << ")" << endl;
 
     // The associations that need to be built at a given dimension.
     std::vector<std::vector<std::vector<std::pair<int,int>>>> allLevels{
-        {
+        { // dim 0
             {}
         },
-        {
+        { // dim 1
             {{1,0}}
         },
-        {
+        { // dim 2
             {{2,1}},
             {{1,0},{2,0}}
         },
-        // dim 3
-        {
+        { // dim 3
             {{3,2}},
             {{2,1},{3,1}},
             {{1,0},{2,0},{3,0}}
@@ -2376,11 +2405,12 @@ cout << "L[" << e << "][" << a << "].sizes.reserve(" << sizes[e] << ")" << endl;
     if(topo_shape.is_poly() && any_associations_requested)
     {
         // Determine sizes.
-        index_t sizes[] = {0,0,0,0};
+        index_t sizes[] = {0,0,0,0}, globalIdx[] = {0,0,0,0};
         for(index_t ei = 0; ei < dim_topo_lengths[dim]; ei++)
         {
-            iterate_global_map_levels(ei, allLevels[dim], 0, sizes,
-                [](const std::vector<std::pair<int,int>> &, index_t *){});
+            globalIdx[3] = ei;
+            iterate_global_map_levels(ei, allLevels[dim], 0, globalIdx, sizes,
+                [](const std::vector<std::pair<int,int>> &, index_t *, index_t *){});
         }
         sizes[0] = 2 * sizes[1];
 #if 1
@@ -2391,18 +2421,27 @@ cout << "sizes[] = {"
      << sizes[3] << "}" << endl;
 #endif
         // Resize the associations.
-        resize(dim, sizes);
+        resize(dim, sizes, coords_length);
         // Populate the associations.
-        index_t uniqueIndices[] = {0,0,0,0};
+        index_t localIdx[] = {0,0,0,0};
+        globalIdx[3] = globalIdx[2] = globalIdx[1] = globalIdx[0] = 0;
         for(index_t ei = 0; ei < dim_topo_lengths[dim]; ei++)
-            iterate_global_map_levels(ei, allLevels[dim], 0, uniqueIndices, buildcases);
+        {
+            globalIdx[dim] = ei;
+            iterate_global_map_levels(ei, allLevels[dim], 0, globalIdx, localIdx, buildcases);
+        }
 
         // Build offsets for the local maps.
-        for(int e = 0; e <= dim; e++)
-        for(int a = 0; a <= dim; a++)
+        for(int e = dim; e >= 0; e--)
+        for(int a = dim; a >= 0; a--)
         {
             if(L[e][a].requested)
+            {
                 build_offsets(L[e][a].sizes, L[e][a].offsets);
+
+                cout << "L(" <<e << ", " << a << ")" << endl;
+                print_association(e,a,false);
+            }
         }
     }
 
@@ -2488,7 +2527,13 @@ TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim
 {
     // Explicit maps case.
     if(topo_shape.is_poly())
-        return L[src_dim][dst_dim].sizes.size();
+    {
+        cout << "get_local_association_entity_range(" << src_dim << ", " << dst_dim
+             <<"): sizes=" << L[src_dim][dst_dim].sizes.size()
+             << ", data=" << L[src_dim][dst_dim].data.size()
+             << endl;
+        return std::max(L[src_dim][dst_dim].sizes.size(), L[src_dim][dst_dim].data.size());
+    }
 
     // Implicit maps case.
     index_t ne, dim = dimension();
@@ -2583,12 +2628,18 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
     {
         if(assoc.data.empty())
         {
+cout << "Ls[" << entity_dim << "][" << assoc_dim << "](ent=" << entity_id
+     << "): range(" << assoc.offsets[entity_id] << ", " << assoc.sizes[entity_id] << ", 1)" << endl;
             return conduit::range_vector<index_t>(assoc.offsets[entity_id],
-                                                  assoc.sizes[entity_id], 1);
+                                                  1, assoc.sizes[entity_id]);
         }
+cout << "Ld[" << entity_dim << "][" << assoc_dim << "](ent=" << entity_id
+     << "): range(" << assoc.data[assoc.offsets[entity_id]]
+     << ", " << assoc.sizes[entity_id] << ", 1)" << endl;
+
         // There was data. This is a child to parent association.
         return conduit::range_vector<index_t>(assoc.data[assoc.offsets[entity_id]],
-                                              assoc.sizes[entity_id], 1);
+                                              1, assoc.sizes[entity_id]);
     }
 
     // Implicit maps case
