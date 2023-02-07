@@ -2309,7 +2309,7 @@ TopologyMetadata::Implementation::build_local_associations()
             // e > a in how we call it.
             int e = levels[i].first;
             int a = levels[i].second;
-            index_t index = globalIdx[e];
+            index_t index = localIdx[e]; //globalIdx[e];
             // parent to child
             if(L[e][a].requested)
             {
@@ -2423,7 +2423,7 @@ cout << "sizes[] = {"
         // Resize the associations.
         resize(dim, sizes, coords_length);
         // Populate the associations.
-        index_t localIdx[] = {0,0,0,0};
+        index_t localIdx[] = {0, 0, 0, 0};
         globalIdx[3] = globalIdx[2] = globalIdx[1] = globalIdx[0] = 0;
         for(index_t ei = 0; ei < dim_topo_lengths[dim]; ei++)
         {
