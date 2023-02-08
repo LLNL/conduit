@@ -44,6 +44,65 @@ namespace io
 // Functions are provided by this include file.
 #include "conduit_relay_io_silo_api.hpp"
 
+//-----------------------------------------------------------------------------
+// -- begin <>::silo --
+//-----------------------------------------------------------------------------
+namespace silo
+{
+
+//-----------------------------------------------------------------------------
+// Write a blueprint mesh to silo
+//-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
+/// Note: These methods use "write" semantics, they will append to existing
+///       files.
+///
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+                                  const std::string &path);
+
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+                                  const std::string &path,
+                                  const conduit::Node &opts);
+
+//-----------------------------------------------------------------------------
+// Save a blueprint mesh to silo
+//-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
+/// Note: These methods use "save" semantics, they will overwrite existing
+///       files.
+///
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path);
+
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path,
+                                 const conduit::Node &opts);
+
+}
+//-----------------------------------------------------------------------------
+// -- end <>::silo --
+//-----------------------------------------------------------------------------
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::io --

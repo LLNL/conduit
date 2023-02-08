@@ -27,11 +27,27 @@
 //-----------------------------------------------------------------------------
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_fmt/conduit_fmt.h"
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    #include "conduit_relay_mpi.hpp"
+    #include "conduit_relay_mpi_io_blueprint.hpp"
+#else
+    #include "conduit_relay_io_blueprint.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // external lib includes
 //-----------------------------------------------------------------------------
 #include <silo.h>
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+// Define an argument macro that adds the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) ,ARG
+#else
+// Define an argument macro that does not add the communicator argument.
+#define CONDUIT_RELAY_COMMUNICATOR_ARG(ARG) 
+#endif
 
 //-----------------------------------------------------------------------------
 //
@@ -295,13 +311,16 @@ namespace silo
 //-----------------------------------------------------------------------------
 std::string sanitize_silo_varname(const std::string &varname)
 {
-    std::string newvarname = "";
-    std::for_each(varname.begin(), varname.end(), 
-        [](char const &c)
-        {
-            newvarname += (std::isalnum(c) || strchr("_", c) ? c : "_");
-        });
-    return newvarname;
+    std::stringstream newvarname;
+    for (uint i = 0; i < varname.size(); i ++)
+    {
+        if (std::isalnum(varname[i]))
+            newvarname << varname[i];
+        else
+            newvarname << "_";
+        // newvarname << (std::isalnum(varname[i]) ? (varname[i]) : "_");
+    }
+    return newvarname.str();
 }
 
 //-----------------------------------------------------------------------------
@@ -434,14 +453,14 @@ copy_point_coords(void *coords[3],
 {
 
     ndims = ndims < 3 ? ndims : 3;
-    const std::vector<std::string> labels;
+    const std::vector<std::string> *labels;
     if (coord_sys == DB_CARTESIAN)
     {
-        labels = CARTESIAN_AXES;
+        labels = &conduit::blueprint::mesh::utils::CARTESIAN_AXES;
     }
     else if (coord_sys == DB_CYLINDRICAL)
     {
-        labels = CYLINDRICAL_AXES;
+        labels = &conduit::blueprint::mesh::utils::CYLINDRICAL_AXES;
         if (ndims >= 3)
         {
             CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");
@@ -449,7 +468,7 @@ copy_point_coords(void *coords[3],
     }
     else if (coord_sys == DB_SPHERICAL)
     {
-        labels = SPHERICAL_AXES;
+        labels = &conduit::blueprint::mesh::utils::SPHERICAL_AXES;
     }
     else
     {
@@ -462,7 +481,7 @@ copy_point_coords(void *coords[3],
         {
             copy_and_assign(static_cast<T *>(coords[i]),
                             dims[i],
-                            node[labels[i]]);
+                            node[(*labels)[i]]);
         }
         else
         {
@@ -1340,11 +1359,11 @@ get_coordset_type_labels(const Node &values)
     std::string sys =
         conduit::blueprint::mesh::utils::coordset::coordsys(values);
     if (sys == "cartesian")
-        return std::make_pair(DB_CARTESIAN, CARTESIAN_AXES);
+        return std::make_pair(DB_CARTESIAN, conduit::blueprint::mesh::utils::CARTESIAN_AXES);
     else if (sys == "cylindrical")
-        return std::make_pair(DB_CYLINDRICAL, CYLINDRICAL_AXES);
+        return std::make_pair(DB_CYLINDRICAL, conduit::blueprint::mesh::utils::CYLINDRICAL_AXES);
     else if (sys == "spherical")
-        return std::make_pair(DB_SPHERICAL, SPHERICAL_AXES);
+        return std::make_pair(DB_SPHERICAL, conduit::blueprint::mesh::utils::SPHERICAL_AXES);
     else
         CONDUIT_ERROR("Unrecognized coordinate system " << sys);
 }
@@ -1355,7 +1374,6 @@ void silo_write_field(DBfile *dbfile,
                       const Node &n_var,
                       Node &n_mesh_info)
 {
-
     if (!n_var.has_path("topology"))
     {
         CONDUIT_ERROR("Missing linked topology! "
@@ -1458,7 +1476,7 @@ void silo_write_field(DBfile *dbfile,
                      << var_name
                      << ", since its type is not implemented, found "
                      << dtype.name());
-        continue;
+        return;
     }
 
     int silo_error = 0;
@@ -2116,7 +2134,7 @@ void silo_mesh_write(const Node &n,
             Node n_rect;
             Node &n_rect_coords = n_rect["coordsets"][coordset_name];
             Node &n_rect_topo = n_rect["topologies"][topo_name];
-            blueprint::mesh::topology::uniform::to_rectilinear(
+            conduit::blueprint::mesh::topology::uniform::to_rectilinear(
                 n_topo, n_rect_topo, n_rect_coords);
 
             silo_write_quad_rect_mesh(dbfile, topo_name, n_rect_coords,
@@ -2420,7 +2438,7 @@ parse_type_option(const std::string &path,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
-                                  const conduit::Node &opts,
+                                  const conduit::Node &opts
                                   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     // The assumption here is that everything is multi domain
@@ -2549,9 +2567,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // -----------------------------------------------------------
     Node multi_dom;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    bool is_valid = detail::clean_mesh(mesh, multi_dom, mpi_comm);
+    bool is_valid = blueprint::detail::clean_mesh(mesh, multi_dom, mpi_comm);
 #else
-    bool is_valid = detail::clean_mesh(mesh, multi_dom);
+    bool is_valid = blueprint::detail::clean_mesh(mesh, multi_dom);
 #endif
 
     int par_rank = 0;
@@ -2829,15 +2847,15 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         // open_opts["mode"] = "wt";
                         // // TODO I need a way to support truncate?
                         // // How to open a file with opts for silo?
-                        // hnd.open(root_filename,file_protocol,open_opts);
+                        // hnd.open(root_filename,"silo",open_opts);
                         // local_root_file_created.set((int)1);
                     }
                     
                     if(!dbfile)
                     {
-                        if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+                        if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                         {
-                            CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                            CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                             return;
                         }
                     }
@@ -2888,9 +2906,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             uint64 domain = dom["state/domain_id"].to_uint64();
 
             std::string output_file  = conduit::utils::join_file_path(output_dir,
-                                                conduit_fmt::format("domain_{:06d}.{}",
-                                                                    domain,
-                                                                    file_protocol));
+                                                conduit_fmt::format("domain_{:06d}.silo",
+                                                                    domain));
             // properly support truncate vs non truncate
 
             DBfile *dbfile;
@@ -2907,9 +2924,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             if(!dbfile)
             {
-                if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+                if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                 {
-                    CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                     return;
                 }
             }
@@ -2957,7 +2974,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
 
         Node d2f_map;
-        detail::gen_domain_to_file_map(global_num_domains,
+        blueprint::detail::gen_domain_to_file_map(global_num_domains,
                                        num_files,
                                        books);
 
@@ -3064,9 +3081,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                             // construct file name
                             std::string file_name = conduit_fmt::format(
-                                                        "file_{:06d}.{}",
-                                                        f,
-                                                        file_protocol);
+                                                        "file_{:06d}.silo",
+                                                        f);
 
                             std::string output_file = conduit::utils::join_file_path(output_dir,
                                                                                      file_name);
@@ -3095,9 +3111,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                                 if(!dbfile)
                                 {
-                                    if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+                                    if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                                     {
-                                        CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                                        CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                                         return;
                                     }
                                 }
@@ -3304,13 +3320,11 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             output_partition_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
-                                                "domain_{domain:06d}." +
-                                                file_protocol +
-                                                ":/");
+                                                "domain_{domain:06d}.silo:/");
 
             output_file_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
-                                                "domain_%06d." + file_protocol);
+                                                "domain_%06d.silo");
             output_tree_pattern = "/";
         }
         else
@@ -3322,13 +3336,11 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             output_partition_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
-                                                "file_{file:06d}." +
-                                                file_protocol +
-                                                ":/domain_{domain:06d}");
+                                                "file_{file:06d}.silo:/domain_{domain:06d}");
 
             output_file_pattern = conduit::utils::join_file_path(
                                                 output_file_pattern,
-                                                "file_%06d." + file_protocol);
+                                                "file_%06d.silo");
             output_tree_pattern = "/domain_%06d";
         }
 
@@ -3374,7 +3386,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         Node root;
         root["blueprint_index"].set(bp_idx);
 
-        root["protocol/name"]    = file_protocol;
+        root["protocol/name"]    = "silo";
         root["protocol/version"] = CONDUIT_VERSION;
 
         root["number_of_files"]  = num_files;
@@ -3383,7 +3395,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["file_pattern"] = output_file_pattern;
         root["tree_pattern"] = output_tree_pattern;
 
-        DBfile *dbfile;
+        DBfile *dbfile = NULL;
 
         // if not root only, this is the first time we are writing 
         // to the root file -- make sure to properly support truncate
@@ -3396,16 +3408,17 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         // TODO use opts
         if(!dbfile)
         {
-            if(dbfile = DBCreate(root_filename, DB_CLOBBER, DB_LOCAL, NULL, silo_type))
+            if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
             {
-                CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
+                CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
                 return;
             }
         }
 
-        write_multimesh();
-        write_multivar();
-        write_multimaterial();
+        // TODO
+        // write_multimesh();
+        // write_multivar();
+        // write_multimaterial();
 
         if(DBClose(dbfile) != 0)
         {
@@ -3435,7 +3448,7 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
     bool overlink = false;
     DBfile *silofile;
     std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
-    std::vector<const conduit::Node *> domains = blueprint::mesh::domains(mesh);
+    std::vector<const conduit::Node *> domains = conduit::blueprint::mesh::domains(mesh);
     // nfiles is the number of non-root files, so 0 implies root-only
     // nfiles will == # domains unless:
     // a) root_only option passed
@@ -3538,7 +3551,7 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
                 const Node &curr_field = field_itr.next();
                 std::string var_name{field_itr.name()};
                 // TODO fix this so that it writes to fixed width of 6
-                std::string new_var_name{VN("domain_00000" + std::to_string(i) + "_" + var_name)};
+                std::string new_var_name{sanitize_silo_varname("domain_00000" + std::to_string(i) + "_" + var_name)};
 
                 replace_field_names["fields"][new_var_name].set_external(curr_field);
 
@@ -3611,11 +3624,16 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
-                                  const std::string &path) 
+                                  const std::string &path
+                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
     // empty opts
     Node opts;
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    write_mesh(mesh, path, opts, mpi_comm);
+#else
     write_mesh(mesh, path, opts);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -3629,11 +3647,16 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
-                                 const std::string &path) 
+                                 const std::string &path
+                                 CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
     // empty opts
     Node opts;
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    save_mesh(mesh, path, opts, mpi_comm);
+#else
     save_mesh(mesh, path, opts);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -3645,10 +3668,15 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
-                                 const conduit::Node &opts) 
+                                 const conduit::Node &opts
+                                 CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
     conduit::utils::remove_path_if_exists(path);
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    write_mesh(mesh, path, opts, mpi_comm);
+#else
     write_mesh(mesh, path, opts);
+#endif
 }
 
 }

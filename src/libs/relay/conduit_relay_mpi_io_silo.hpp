@@ -23,6 +23,8 @@
 #include "conduit_relay_exports.h"
 #include "conduit_relay_config.h"
 
+#include <mpi.h>
+
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
@@ -49,6 +51,69 @@ namespace io
 
 // Functions are provided by this include file.
 #include "conduit_relay_io_silo_api.hpp"
+
+//-----------------------------------------------------------------------------
+// -- begin <>::silo --
+//-----------------------------------------------------------------------------
+namespace silo
+{
+
+//-----------------------------------------------------------------------------
+// Write a blueprint mesh to silo
+//-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
+/// Note: These methods use "write" semantics, they will append to existing
+///       files.
+///
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+                                  const std::string &path,
+                                  MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+                                  const std::string &path,
+                                  const conduit::Node &opts,
+                                  MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+// Save a blueprint mesh to silo
+//-----------------------------------------------------------------------------
+/// These methods assume `mesh` is a valid blueprint mesh.
+///
+/// Note: These methods use "save" semantics, they will overwrite existing
+///       files.
+///
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path,
+                                 MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+/// The following options can be passed via the opts Node:
+//-----------------------------------------------------------------------------
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+                                 const std::string &path,
+                                 const conduit::Node &opts,
+                                 MPI_Comm comm);
+
+}
+//-----------------------------------------------------------------------------
+// -- end <>::silo --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------

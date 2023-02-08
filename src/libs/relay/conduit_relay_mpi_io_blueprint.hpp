@@ -56,6 +56,25 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
+// -- begin conduit::relay::io::blueprint::detail
+//-----------------------------------------------------------------------------
+namespace detail
+{
+
+void gen_domain_to_file_map(index_t num_domains,
+                            index_t num_files,
+                            Node &out);
+
+bool clean_mesh(const conduit::Node &data,
+                conduit::Node &output,
+                MPI_Comm comm);
+
+}
+//-----------------------------------------------------------------------------
+// -- end detail:: --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // Save a blueprint mesh to root + file set
 //-----------------------------------------------------------------------------
 /// Note: These methods use "save" semantics, they will overwrite existing
