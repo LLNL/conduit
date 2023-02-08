@@ -5978,15 +5978,22 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                     // unique faces in the subconnectivity for 3D corners, but
                     // this can be easily changed by modifying the logic below.
                     const std::set<index_t> corner_face_set(corner_face.begin(), corner_face.end());
-                    if(subconn_topo_set.find(corner_face_set) == subconn_topo_set.end())
+                    auto sts_it = subconn_topo_set.find(corner_face_set);
+                    index_t face_index;
+                    if(sts_it == subconn_topo_set.end())
                     {
                         const index_t next_face_index = subconn_topo_set.size();
+                        face_index = next_face_index;
                         subconn_topo_set[corner_face_set] = next_face_index;
                         subsize_data_raw.push_back(corner_face_set.size());
                         subconn_data_raw.insert(subconn_data_raw.end(),
                             corner_face.begin(), corner_face.end());
                     }
-                    const index_t face_index = subconn_topo_set.find(corner_face_set)->second;
+                    else
+                    {
+                        face_index = sts_it->second;
+                    }
+
                     conn_data_raw.push_back(face_index);
                 }
             }
