@@ -683,7 +683,7 @@ private:
         else
         {
             // The shape contain polygons so we have to be a bit more
-            // general in how we traverse the connectivity. We want sizes/offsets.
+            // general in how we traverse the connectivity.
             // Make lines.
             make_embedded_connectivity_polygons_to_lines(conn);
         }
@@ -719,12 +719,6 @@ private:
         node["type"] = "unstructured";
         node["coordset"] = coords->name();
         node["elements/shape"] = subel["shape"].as_string();
-        // Copy these fields into the topo but convert to index_t.
-        std::vector<std::string> src_keys{"connectivity", "sizes", "offsets"};
-        std::vector<std::string> dest_keys{"elements/connectivity",
-                                           "elements/sizes",
-                                           "elements/offsets"};
-        copy_convert(src_keys, subel, DataType::index_t(), dest_keys, node);
 
         // Check whether the sizes are the same. If they are then we can convert
         // from "polygon" types to tri, or quad.
@@ -748,9 +742,133 @@ private:
             }
         }
 
+cout << "!!!!!! make_embedded_connectivity_ph: istri=" << istri << endl;
+cout << "!!!!!! make_embedded_connectivity_ph: isquad=" << isquad << endl;
+cout << "!!!!!! make_embedded_connectivity_ph: shape=" << (node["elements/shape"].as_string()) << endl;
+
+        association &map32 = G[3][2];
+#ifdef REPRODUCE_REFERENCE
+        if(node["elements/shape"].as_string() == "polygonal")
+        {
+// This crashes!
+cout << "!!!!!!! polygon case" << endl;
+
+cout << "sizes={";
+for(size_t q=  0; q < sizeslen; q++)
+    cout << sizes[q] << ", ";
+cout << "}" << endl;
+
+            // Match the old TopologyMetadata, which unnecessarily reordered
+            // PH faces relative to the order in which they are used in elements.
+            index_t_accessor elem_conn = topo->fetch_existing("elements/connectivity").value();
+            index_t_accessor elem_sizes = topo->fetch_existing("elements/sizes").value();
+
+            index_t_accessor face_conn = subel["connectivity"].as_index_t_accessor();
+            index_t_accessor face_sizes = subel["sizes"].as_index_t_accessor();
+            index_t_accessor face_offsets = subel["offsets"].as_index_t_accessor();
+
+            index_t nelem = elem_sizes.number_of_elements();
+            index_t nfaces = face_sizes.number_of_elements();
+            std::vector<index_t> face_old_to_new(nfaces, -1);
+
+            // Sum the number of faces in the top PH elements. That is how many
+            // possible local faces there would be.
+            index_t nLocalFaces = elem_sizes.sum();
+            local_to_global[2].reserve(nLocalFaces);
+
+std::string mname("make_embedded_connectivity_ph: ");
+cout << mname << "nelem=" << nelem << endl;
+cout << mname << "nfaces=" << nfaces << endl;
+cout << mname << "elem_conn.size=" << elem_conn.number_of_elements() << endl;
+cout << mname << "face_conn.size=" << face_conn.number_of_elements() << endl;
+
+            conduit::Node &n_newface_conn = node["elements/connectivity"];
+            conduit::Node &n_newface_sizes = node["elements/sizes"];
+            conduit::Node &n_newface_offsets = node["elements/offsets"];
+            n_newface_conn.set(DataType::index_t(face_conn.number_of_elements()));
+            n_newface_sizes.set(DataType::index_t(nfaces));
+            n_newface_offsets.set(DataType::index_t(nfaces));
+            index_t *newface_conn = n_newface_conn.value();
+            index_t *newface_sizes = n_newface_sizes.value();
+            index_t *newface_offsets = n_newface_offsets.value();
+
+            // Iterate over the elements and each time we see a face for the
+            // first time, emit the face into the new connectivity.
+            index_t localFaceIdx = 0;
+            index_t globalFaceIndex = 0;
+            index_t ptIndex = 0;
+            index_t elem_offset = 0;
+            for(index_t ei = 0; ei < nelem; ei++)
+            {
+cout << "Element " << ei << endl;
+                index_t nelem_faces = elem_sizes[ei];
+
+                for(index_t fi = 0; fi < nelem_faces; fi++)
+                {
+                    index_t faceid = elem_conn[elem_offset + fi];
+cout << "\tFace " << faceid << endl;
+                    index_t newfaceid;
+                    if(face_old_to_new[faceid] == -1)
+                    {
+                        index_t face_size = face_sizes[faceid];
+
+                        newface_offsets[globalFaceIndex] = ptIndex;
+                        newface_sizes[globalFaceIndex] = face_size;
+cout << "\t\temitting at " << ptIndex << ": ";
+                        for(index_t pi = 0; pi < face_size; pi++)
+                        {
+cout << face_conn[face_offsets[faceid] + pi] << ", ";
+                            newface_conn[ptIndex++] = face_conn[face_offsets[faceid] + pi];
+                        }
+
+                        newfaceid = globalFaceIndex++;
+                        face_old_to_new[faceid] = newfaceid;
+cout << " -> new face " << newfaceid << endl;
+                    }
+                    else
+                    {
+                        newfaceid = face_old_to_new[faceid];
+                    }
+
+                    local_to_global[2].push_back(newfaceid);
+
+cout << "\t\tusing newfaceid " << newfaceid << endl;
+                }
+                elem_offset += nelem_faces;
+            }
+
+yaml_print(cout, node);
+            if(map32.requested)
+            {
+                map32.data.resize(local_to_global[2].size());
+                std::copy(local_to_global[2].begin(),
+                          local_to_global[2].end(),
+                          map32.data.begin());
+                map32.sizes.resize(nelem);
+                map32.offsets.resize(nelem);
+                index_t off = 0;
+                for(index_t ei = 0; ei < nelem; ei++)
+                {
+                    map32.sizes[ei] = elem_sizes[ei];
+                    map32.offsets[ei] = off;
+                    off += elem_sizes[ei];
+                }
+cout << "!!!!!!!!!!!!!!!!" << endl;
+print_association(3, 2);
+            }
+        }
+        else
+        {
+#endif
+        // Copy these fields into the topo but convert to index_t.
+        std::vector<std::string> src_keys{"connectivity", "sizes", "offsets"};
+        std::vector<std::string> dest_keys{"elements/connectivity",
+                                           "elements/sizes",
+                                           "elements/offsets"};
+        copy_convert(src_keys, subel, DataType::index_t(), dest_keys, node);
+
         // While we're at it, we can use the elements/connectivity as the
         // G(3,2) map.
-        association &map32 = G[3][2];
         if(map32.requested)
         {
             index_t_accessor conn = topo->fetch_existing("elements/connectivity").value();
@@ -771,6 +889,9 @@ private:
                     map32.offsets[i] = offsets[i];
             }
         }
+#ifdef REPRODUCE_REFERENCE
+        }
+#endif
     }
 
     //-----------------------------------------------------------------------
@@ -1050,8 +1171,8 @@ private:
         cout << "=======================================================" << endl;
 #endif
 
-        index_t_accessor sizes = topo->fetch_existing("elements/sizes").value();
-        index_t_accessor offsets = topo->fetch_existing("elements/offsets").value();
+        index_t_accessor sizes = dim_topos[2].fetch_existing("elements/sizes").value();
+        const index_t *offsets = dim_topos[2].fetch_existing("elements/offsets").value();
         index_t nelem = sizes.number_of_elements();
 
         // Iterate over each polygon and make unique edges.
@@ -1070,7 +1191,7 @@ private:
             index_t pts[MAX_VERTS];
             for(index_t i = 0; i < elem_size; i++)
                 pts[i] = conn[elem_offset + i];
-
+cout << elem << ": ";
             // Make a unique id for each edge.
             for(index_t edge_index = 0; edge_index < elem_size; edge_index++)
             {
@@ -1083,13 +1204,14 @@ private:
                 edge[0] = pts[edge_index];
                 edge[1] = pts[next_edge_index];
                 ee_to_edge[elem_edge] = std::make_pair(edge[0], edge[1]);
-
+cout << "(" << edge[0] << ", " << edge[1] << "), ";
                 // Store the edgeid.
                 if(edge[0] > edge[1])
                     std::swap(edge[0], edge[1]);
                 uint64 edgeid = hash_ids(edge, 2);
                 edgeid_to_ee[elem_edge] = std::make_pair(edgeid, elem_edge);
             }
+cout << endl;
         }
         CONDUIT_ANNOTATE_MARK_END("Labeling");
 #ifdef DEBUG_PRINT
@@ -1897,13 +2019,13 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0()
     else
         build_association_3_1_and_3_0_nonph();
 }
-void stophere() {}
+
 //---------------------------------------------------------------------------
 void
 TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
-stophere();
+
     // G(3,2) contains the PH faces.
     const association &map32 = G[3][2];
     index_t nelem = dim_topo_lengths[3];
