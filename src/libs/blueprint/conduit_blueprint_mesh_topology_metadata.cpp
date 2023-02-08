@@ -803,7 +803,6 @@ private:
 
             // Iterate over the elements and each time we see a face for the
             // first time, emit the face into the new connectivity.
-            index_t localFaceIdx = 0;
             index_t globalFaceIndex = 0;
             index_t ptIndex = 0;
             index_t elem_offset = 0;
@@ -1046,7 +1045,6 @@ private:
         // If the (3,2) or (2,1) association was requested then we do a little
         // more work to save the map as we build the connectivity. Otherwise,
         // the 2 code blocks do the same thing. We separate to remove branches.
-        std::vector<unsigned char> avail(unique, 1);
         if(G[shape.dim][embed_shape.dim].requested)
         {
             CONDUIT_ANNOTATE_MARK_SCOPE("Build connectivity and map");
@@ -1055,7 +1053,6 @@ private:
             // embedded shapes from each input shape. Think of it like the set
             // of polyhedral face ids for each element but it works for other
             // dimensions too.
-            std::vector<index_t> face_reorder(unique);
             auto &embed_refs = G[shape.dim][embed_shape.dim].data;
             embed_refs.resize(nelem_faces, 0);
 #ifdef DEBUG_PRINT
@@ -1071,17 +1068,17 @@ private:
 
             // Make the embedded connectivity (and map data)
             index_t embed_refs_idx = 0, final_faceid = 0;
+            constexpr index_t FACE_AVAILABLE = -1;
+            std::vector<index_t> face_reorder(unique, FACE_AVAILABLE);
             for(index_t ef = 0; ef < nelem_faces; ef++)
             {
                 uint64 unique_face_id = ef_to_unique[ef].second;
 
-                if(avail[unique_face_id])
+                if(face_reorder[unique_face_id] == FACE_AVAILABLE)
                 {
                     // Store the map data.
                     face_reorder[unique_face_id] = final_faceid++;
                     embed_refs[embed_refs_idx++] = face_reorder[unique_face_id];
-
-                    avail[unique_face_id] = 0;
 
                     // Emit the face definition (as defined by the first element
                     // that referenced it.
@@ -1109,6 +1106,7 @@ private:
             CONDUIT_ANNOTATE_MARK_SCOPE("Build connectivity");
 
             // Make the embedded connectivity
+            std::vector<unsigned char> avail(unique, 1);
             for(index_t ef = 0; ef < nelem_faces; ef++)
             {
                 uint64 unique_face_id = ef_to_unique[ef].second;
