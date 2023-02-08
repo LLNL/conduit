@@ -24,18 +24,13 @@
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_annotations.hpp"
+#include "conduit_execution.hpp"
 
 #ifdef _OPENMP
 #include <omp.h>
 #endif
 
 //#define DEBUG_PRINT
-
-// If we have parallel sorting in C++ 20, use it.
-//#include <execution>
-//#define OPTIONAL_PARALLEL_EXECUTION_POLICY std::execution::par,
-
-#define OPTIONAL_PARALLEL_EXECUTION_POLICY
 
 #define EA_INDEX(E,A) ((E)*(MAX_ENTITY_DIMS)+(A))
 
@@ -44,6 +39,7 @@
 // implementation.
 #define REPRODUCE_REFERENCE
 
+#define OPTIONAL_PARALLEL_EXECUTION_POLICY
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -67,6 +63,10 @@ namespace mesh
 //-----------------------------------------------------------------------------
 namespace utils
 {
+
+// We may tag certain algorithms as ParallelExec if it is safe to do so.
+using SerialExec = conduit::execution::SerialExec;
+using ParallelExec = conduit::execution::OpenMPExec;
 
 //---------------------------------------------------------------------------
 /**
@@ -984,8 +984,7 @@ private:
         CONDUIT_ANNOTATE_MARK_BEGIN("Labeling");
         std::vector<std::pair<uint64, uint64>> faceid_to_ef(nelem_faces);
 
-#pragma omp parallel for
-        for(index_t elem = 0; elem < nelem; elem++)
+        conduit::execution::for_all<ParallelExec>(0, nelem, [&](index_t elem)
         {
             // Get the element faces, storing them all in face_pts.
             index_t elemstart = elem * points_per_elem;
@@ -1010,7 +1009,7 @@ private:
                 // Store the faceid and ef values.
                 faceid_to_ef[element_face] = std::make_pair(faceid, element_face);
             }
-        }
+        });
         CONDUIT_ANNOTATE_MARK_END("Labeling");
 
 #ifdef DEBUG_PRINT

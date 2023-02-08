@@ -4,18 +4,17 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_execution.hpp
+/// file: conduit_execution_serial.hpp
 ///
 //-----------------------------------------------------------------------------
 
-#ifndef CONDUIT_EXECUTION_HPP
-#define CONDUIT_EXECUTION_HPP
+#ifndef CONDUIT_EXECUTION_SERIAL_HPP
+#define CONDUIT_EXECUTION_SERIAL_HPP
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
-#include "conduit_execution_serial.hpp"
-#include "conduit_execution_omp.hpp"
+#include "conduit.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -29,49 +28,43 @@ namespace conduit
 namespace execution
 {
 
-// NOTE: These are a start.
+//-----------------------------------------------------------------------------
+// -- begin conduit::execution::seq --
+//-----------------------------------------------------------------------------
+namespace seq
+{
 
 //---------------------------------------------------------------------------
-struct SerialExec
+struct for_policy
 {
-    using for_policy = seq::for_policy;
-    using sort_policy = seq::sort_policy;
+    template <typename Func>
+    inline void operator()(index_t begin, index_t end, Func &&func)
+    {
+        for(index_t i = begin; i < end; i++)
+            func(i);
+    }
 };
 
 //---------------------------------------------------------------------------
-struct OpenMPExec
+struct sort_policy
 {
-    using for_policy = omp::for_policy;
-    using sort_policy = omp::sort_policy;
+    template <typename Iterator>
+    inline void operator()(Iterator begin, Iterator end)
+    {
+        std::sort(begin, end);
+    }
+
+    template <typename Iterator, typename Predicate>
+    inline void operator()(Iterator begin, Iterator end, Predicate &&predicate)
+    {
+        std::sort(begin, end, predicate);
+    }
 };
 
-//---------------------------------------------------------------------------
-template <typename ExecutionPolicy, typename Func>
-inline void
-for_all(size_t begin, size_t end, Func &&func)
-{
-    using policy = typename ExecutionPolicy::for_policy;
-    policy exec;
-    exec(begin, end, func);
 }
-
-template <typename ExecutionPolicy, typename Iterator>
-inline void
-sort(Iterator begin, Iterator end)
-{
-    using policy = typename ExecutionPolicy::sort_policy;
-    policy exec;
-    exec(begin, end);
-}
-
-template <typename ExecutionPolicy, typename Iterator, typename Predicate>
-inline void
-sort(Iterator begin, Iterator end, Predicate &&predicate)
-{
-    using policy = typename ExecutionPolicy::sort_policy;
-    policy exec;
-    exec(begin, end, predicate);
-}
+//-----------------------------------------------------------------------------
+// -- end conduit::execution::seq --
+//-----------------------------------------------------------------------------
 
 }
 //-----------------------------------------------------------------------------
