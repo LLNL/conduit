@@ -171,11 +171,20 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
     if(par_rank == 0)
     {
         EXPECT_EQ(blueprint::mesh::number_of_domains(dset),3);
+        std::cout << "[rank 0] input domain ids: " << std::endl;
+        dset.child(0)["state/domain_id"].print();
+        dset.child(1)["state/domain_id"].print();
+        dset.child(2)["state/domain_id"].print();
     }
-    else
+    MPI_Barrier(comm);
+    if(par_rank == 1)
     {
         EXPECT_EQ(blueprint::mesh::number_of_domains(dset),2);
+        std::cout << "[rank 1] input domain ids: " << std::endl;
+        dset.child(0)["state/domain_id"].print();
+        dset.child(1)["state/domain_id"].print();
     }
+    MPI_Barrier(comm);
 
     // globally, expect 5 domains
     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(dset,comm),5);
@@ -200,7 +209,10 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
                                                   "hdf5",
                                                   comm);
 
-    // read this back using read_mesh, should diff clean
+    // read this back using read_mesh.
+    // note the domain ids will change, so we don't expect
+    // this to diff clean
+    
     string output_root = output_base + ".cycle_000000.root";
     Node n_read, n_diff_info;
     conduit::relay::mpi::io::blueprint::read_mesh(output_root,
@@ -213,19 +225,27 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
     if(par_rank == 0)
     {
         EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),3);
+        std::cout << "[rank 0] read domain ids: " << std::endl;
+        n_read.child(0)["state/domain_id"].print();
+        n_read.child(1)["state/domain_id"].print();
+        n_read.child(2)["state/domain_id"].print();
+        // expect we bring back domains 0 - 2
+        EXPECT_EQ(n_read.child(0)["state/domain_id"].to_index_t(),0);
+        EXPECT_EQ(n_read.child(1)["state/domain_id"].to_index_t(),1);
+        EXPECT_EQ(n_read.child(2)["state/domain_id"].to_index_t(),2);
     }
-    else
+    MPI_Barrier(comm);
+    if(par_rank == 1)
     {
         EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),2);
+        std::cout << "[rank 1] read domain ids: " << std::endl;
+        n_read.child(0)["state/domain_id"].print();
+        n_read.child(1)["state/domain_id"].print();
+        // expect we bring back domains 3 - 4
+        EXPECT_EQ(n_read.child(0)["state/domain_id"].to_index_t(),3);
+        EXPECT_EQ(n_read.child(1)["state/domain_id"].to_index_t(),4);
     }
-
-    EXPECT_EQ(dset.number_of_children(),n_read.number_of_children());
-    for(conduit::index_t i=0;i < dset.number_of_children();i++)
-    {
-        // diff == false, no diff == diff clean
-        EXPECT_FALSE(dset.child(i).diff(n_read.child(i),n_diff_info));
-    }
-
+    MPI_Barrier(comm);
 }
 
 //-----------------------------------------------------------------------------
@@ -687,9 +707,29 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
                                      data.append());
 
     // set the domain ids
-    data.child(0)["state/domain_id"] = 0 + (1 * par_rank);
-    data.child(1)["state/domain_id"] = 1 + (1 * par_rank);
-    data.child(2)["state/domain_id"] = 2 + (1 * par_rank);
+    data.child(0)["state/domain_id"] = 0 + (3 * par_rank);
+    data.child(1)["state/domain_id"] = 1 + (3 * par_rank);
+    data.child(2)["state/domain_id"] = 2 + (3 * par_rank);
+
+    if(par_rank == 0)
+    {
+        for(int i=0;i<3;i++)
+        {
+            std::cout << "[rank 0] child " << i << " domain id = ";
+            data.child(i)["state/domain_id"].print();
+        }
+    }
+    MPI_Barrier(comm);
+
+    if(par_rank == 1)
+    {
+        for(int i=0;i<3;i++)
+        {
+            std::cout << "[rank 1] child " << i << " domain id = ";
+            data.child(i)["state/domain_id"].print();
+        }
+    }
+    MPI_Barrier(comm);
 
     // non-trunk will error b/c leaf sizes aren't compat
     EXPECT_THROW( conduit::relay::mpi::io::blueprint::write_mesh(data,
@@ -718,9 +758,17 @@ TEST(blueprint_mpi_relay, test_write_error_hang)
     for(int dom_idx=0; dom_idx < 3; dom_idx++)
     {
         EXPECT_FALSE(data.child(dom_idx).diff(n_read.child(dom_idx),info));
-        info.print();
+        if(par_rank == 0)
+        {
+            info.print();
+        }
+        MPI_Barrier(comm);
+        if(par_rank == 1)
+        {
+            info.print();
+        }
+        MPI_Barrier(comm);
     }
-
 }
 
 //-----------------------------------------------------------------------------

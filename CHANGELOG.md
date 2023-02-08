@@ -4,13 +4,20 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## Unreleased 
 
 ### Added
 
 #### General
-
 - Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
+
+#### Blueprint
+- Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (supports moving domains and domain overloading)
+
+### Fixed
+#### Blueprint
+- Performance improvements to Mesh Blueprint topology metadata, used by `generate_points`, `generate_sides`, etc.
+- Performance improvements to O2M Iterators.
 
 ## [0.8.6] - Released 2023-01-11
 
@@ -738,7 +745,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.6...HEAD
+[0.8.6]: https://github.com/llnl/conduit/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/llnl/conduit/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/llnl/conduit/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/llnl/conduit/compare/v0.8.2...v0.8.3
