@@ -39,7 +39,6 @@
 // implementation.
 #define REPRODUCE_REFERENCE
 
-#define OPTIONAL_PARALLEL_EXECUTION_POLICY
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -1020,7 +1019,7 @@ private:
         // general faceid, then by their elemface "ef", which should keep the
         // elements in order.
         CONDUIT_ANNOTATE_MARK_BEGIN("Sort labels");
-        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY faceid_to_ef.begin(), faceid_to_ef.end());
+        conduit::execution::sort<ParallelExec>(faceid_to_ef.begin(), faceid_to_ef.end());
         CONDUIT_ANNOTATE_MARK_END("Sort labels");
 #ifdef DEBUG_PRINT
         std::cout << "faceid_to_ef.sorted = " << faceid_to_ef << std::endl;
@@ -1039,13 +1038,13 @@ private:
 #endif
 
         // Sort on ef to get back to a ef->unique mapping.
-        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY
-                  ef_to_unique.begin(), ef_to_unique.end(),
+        conduit::execution::sort<ParallelExec>(
+            ef_to_unique.begin(), ef_to_unique.end(),
             [&](const std::pair<uint64, uint64> &lhs, const std::pair<uint64, uint64> &rhs)
-        {
-            // Only sort using the ef value.
-            return lhs.first < rhs.first;
-        });
+            {
+                // Only sort using the ef value.
+                return lhs.first < rhs.first;
+            });
         CONDUIT_ANNOTATE_MARK_END("Sort ef->unique");
 #ifdef DEBUG_PRINT
         std::cout << "ef_to_unique.sorted = " << ef_to_unique << std::endl;
@@ -1191,8 +1190,8 @@ private:
         index_t nelem_edges = sizes.sum();
         std::vector<std::pair<uint64, uint64>> edgeid_to_ee(nelem_edges);
         std::vector<std::pair<index_t, index_t>> ee_to_edge(nelem_edges);
-#pragma omp parallel for
-        for(index_t elem = 0; elem < nelem; elem++)
+
+        conduit::execution::for_all<ParallelExec>(0, nelem, [&](index_t elem)
         {
             constexpr size_t MAX_VERTS = 32;
 
@@ -1222,7 +1221,7 @@ private:
                 uint64 edgeid = hash_ids(edge, 2);
                 edgeid_to_ee[elem_edge] = std::make_pair(edgeid, elem_edge);
             }
-        }
+        });
         CONDUIT_ANNOTATE_MARK_END("Labeling");
 #ifdef DEBUG_PRINT
         std::cout << "edgeid_to_ee = " << edgeid_to_ee << std::endl;
@@ -1230,7 +1229,7 @@ private:
 
         // Sort edgeid_to_ee so any like edges will be sorted.
         CONDUIT_ANNOTATE_MARK_BEGIN("Sort labels");
-        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY edgeid_to_ee.begin(), edgeid_to_ee.end());
+        conduit::execution::sort<ParallelExec>(edgeid_to_ee.begin(), edgeid_to_ee.end());
         CONDUIT_ANNOTATE_MARK_END("Sort labels");
 #ifdef DEBUG_PRINT
         std::cout << "edgeid_to_ee.sorted = " << edgeid_to_ee << std::endl;
@@ -1246,13 +1245,13 @@ private:
 #endif
 
         // Sort on ef to get back to a ef->unique mapping.
-        std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY
-                  ee_to_unique.begin(), ee_to_unique.end(),
+        conduit::execution::sort<ParallelExec>(
+            ee_to_unique.begin(), ee_to_unique.end(),
             [&](const std::pair<uint64, uint64> &lhs, const std::pair<uint64, uint64> &rhs)
-        {
-            // Only sort using the ee value.
-            return lhs.first < rhs.first;
-        });
+            {
+                // Only sort using the ee value.
+                return lhs.first < rhs.first;
+            });
         CONDUIT_ANNOTATE_MARK_END("Sort ef->unique");
 #ifdef DEBUG_PRINT
         std::cout << "ee_to_unique.sorted = " << ee_to_unique << std::endl;
@@ -2224,8 +2223,8 @@ TopologyMetadata::Implementation::build_edge_key_to_id(
 #ifdef DEBUG_PRINT
     std::cout << "edges_key_to_id = {" << std::endl;
 #endif
-#pragma omp parallel for
-    for(index_t edge_index = 0; edge_index < nedges; edge_index++)
+
+    conduit::execution::for_all<ParallelExec>(0, nedges, [&](index_t edge_index)
     {
         // Make a key for this edge.
         index_t edge[2];
@@ -2241,13 +2240,14 @@ TopologyMetadata::Implementation::build_edge_key_to_id(
              << ", pts=" << std::setw(8) << edge[0] << ", "
              << std::setw(8) << edge[1] << std::endl;
 #endif
-    }
+    });
 #ifdef DEBUG_PRINT
     std::cout << "}" << std::endl;
 #endif
 
     // Sort the edges by the ids.
-    std::sort(edge_key_to_id.begin(), edge_key_to_id.end(),
+    conduit::execution::sort<ParallelExec>(
+        edge_key_to_id.begin(), edge_key_to_id.end(),
         [&](const std::pair<uint64, index_t> &lhs,
             const std::pair<uint64, index_t> &rhs) 
         {
@@ -2341,8 +2341,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
     // Iterate over the elements, applying the edge template to make unique
     // edges for the element. We look up the edge in edge_key_to_id to get
     // its id.
-#pragma omp parallel for
-    for(index_t ei = 0; ei < nelem; ei++)
+    conduit::execution::for_all<ParallelExec>(0, nelem, [&](index_t ei)
     {
         index_t elem_offset = ei * points_per_elem;
 
@@ -2394,6 +2393,12 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
         }
         map31.sizes[ei] = edges_per_elem;
         map31.offsets[ei] = ei * edges_per_elem;
+     });
+
+     // This loop is not parallel safe because we append to local_to_global.
+     for(index_t ei = 0; ei < nelem; ei++)
+     {
+        index_t elem_offset = ei * points_per_elem;
 
         // To build the local_to_global maps, we need to iterate all edges of
         // the element - not just the unique ones.
@@ -2535,8 +2540,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     std::cout << "p2c=" << p2c << std::endl;
 #endif
     // Sort p2c by child.
-    std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY
-              p2c.begin(), p2c.end(),
+    conduit::execution::sort<ParallelExec>(p2c.begin(), p2c.end(),
         [&](const std::pair<index_t, index_t> &lhs,
             const std::pair<index_t, index_t> &rhs)
     {
@@ -2764,7 +2768,7 @@ TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim
     }
 
     // Implicit maps case.
-    index_t ne, dim = dimension();
+    index_t ne = 0, dim = dimension();
     index_t mapcase = EA_INDEX(src_dim, dst_dim);
     switch(mapcase)
     {
