@@ -26,10 +26,6 @@
 #include "conduit_annotations.hpp"
 #include "conduit_execution.hpp"
 
-#ifdef _OPENMP
-#include <omp.h>
-#endif
-
 //#define DEBUG_PRINT
 
 #define EA_INDEX(E,A) ((E)*(MAX_ENTITY_DIMS)+(A))
