@@ -44,11 +44,6 @@
 // implementation.
 #define REPRODUCE_REFERENCE
 
-// for now
-using std::cout;
-using std::endl;
-
-
 //-----------------------------------------------------------------------------
 // -- begin conduit --
 //-----------------------------------------------------------------------------
@@ -160,35 +155,37 @@ operator << (std::ostream &os, const std::vector<T> &obj)
     return os;
 }
 
+//---------------------------------------------------------------------------
 template <>
 std::ostream &
 operator << (std::ostream &os, const std::vector<std::pair<uint64, uint64>> &obj)
 {
-    os << "{" << endl;
+    os << "{" << std::endl;
     for(size_t i = 0; i < obj.size(); i++)
     {
         os << "[" << std::setw(2) << i << "]("
            << std::setw(20) << obj[i].first << ", "
            << std::setw(20) << obj[i].second << ")"
-           << ", " << endl;
+           << ", " << std::endl;
     }
-    os << "}" << endl;
+    os << "}" << std::endl;
     return os;
 }
 
+//---------------------------------------------------------------------------
 template <>
 std::ostream &
-operator << (std::ostream &os, const std::vector<std::pair<conduit::index_t, conduit::index_t>> &obj)
+operator << (std::ostream &os, const std::vector<std::pair<index_t, index_t>> &obj)
 {
-    os << "{" << endl;
+    os << "{" << std::endl;
     for(size_t i = 0; i < obj.size(); i++)
     {
         os << "[" << std::setw(2) << i << "]("
            << std::setw(20) << obj[i].first << ", "
            << std::setw(20) << obj[i].second << ")"
-           << ", " << endl;
+           << ", " << std::endl;
     }
-    os << "}" << endl;
+    os << "}" << std::endl;
     return os;
 }
 
@@ -210,7 +207,8 @@ operator << (std::ostream &os, const std::vector<std::pair<conduit::index_t, con
    so no Conduit casts are needed.
 
  * Associations are mostly created only when asked for (or indirectly needed)
-   and this is done largely after the cascade has been performed.
+   and this is done largely after the cascade has been performed. This is
+   a huge source of complexity but it lets us compute fewer maps.
 
  * Associations are stored contiguously in memory or are implicit.
 
@@ -499,7 +497,26 @@ private:
     void build_association_3_1_and_3_0();
     void build_association_3_1_and_3_0_ph();
     void build_association_3_1_and_3_0_nonph();
+
+    //-----------------------------------------------------------------------
+    /**
+     @param Build a map of edge keys to edge ids. The keys are the hashed endpoints.
+     @param[out] edge_key_to_id A sorted vector of pairs where each pair.first
+                                is the hashed edge key and pair.second is the
+                                edge's global index.
+     */
     void build_edge_key_to_id(std::vector<std::pair<uint64, index_t>> &edge_key_to_id) const;
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Look up an edge by key in the map by binary search and return its
+            edge id.
+
+     @param edge_key_to_id The map built by build_edge_key_to_id.
+     @param key            The edge key.
+
+     @return The edge id.
+     */
     index_t lookup_edge_id(std::vector<std::pair<uint64, index_t>> &edge_key_to_id,
                            const uint64 key) const;
 
@@ -578,6 +595,16 @@ private:
                        conduit::Node &dest_topo);
 
     //-----------------------------------------------------------------------
+    /**
+     @brief Convert a set of keys under one node to another node, converting
+            data types.
+
+     @param src_keys  The source keys in n_src.
+     @param n_src     The source node.
+     @param dest_type The type to use for conversion.
+     @param dest_keys The names of the new nodes in n_dest.
+     @param n_dest    The node to contain the converted data.
+     */
     void copy_convert(const std::vector<std::string> &src_keys,
                       const conduit::Node &n_src,
                       const DataType &dest_type,
@@ -802,7 +829,8 @@ private:
             index_t *newface_offsets = n_newface_offsets.value();
 
             // Iterate over the elements and each time we see a face for the
-            // first time, emit the face into the new connectivity.
+            // first time, emit the face into the new connectivity. Also
+            // build the local_to_global[2] map.
             index_t globalFaceIndex = 0;
             index_t ptIndex = 0;
             index_t elem_offset = 0;
@@ -913,7 +941,7 @@ private:
         const int*) for the connectivity.
 
       - The terms used in this method are "faces" but it is really whichever
-        entity has shape.dim-1
+        entity has shape.dim-1 in the shape cascade
     */
     template <typename ConnType>
     void
@@ -933,24 +961,24 @@ private:
         index_t nelem = connlen / points_per_elem;
         auto nelem_faces = nelem * faces_per_elem;
 #ifdef DEBUG_PRINT
-        cout << "=======================================================" << endl;
-        cout << "make_embedded_connectivity: shape_dim=" << shape.dim << endl;
-        cout << "=======================================================" << endl;
-        cout << "shape=" << shape.type << endl;
-        cout << "embed_shape=" << embed_shape.type << endl;
-        cout << "points_per_elem="<<points_per_elem<<endl;
-        cout << "faces_per_elem="<<faces_per_elem<<endl;
-        cout << "points_per_face="<<points_per_face<<endl;
-        cout << "nfacepts="<<nfacepts<<endl;
-        cout << "nelem="<<nelem<<endl;
-        cout << "nelem_faces="<<nelem_faces<<endl;
-        cout << "conn={";
+        std::cout << "=======================================================" << std::endl;
+        std::cout << "make_embedded_connectivity: shape_dim=" << shape.dim << std::endl;
+        std::cout << "=======================================================" << std::endl;
+        std::cout << "shape=" << shape.type << std::endl;
+        std::cout << "embed_shape=" << embed_shape.type << std::endl;
+        std::cout << "points_per_elem="<<points_per_elem<<std::endl;
+        std::cout << "faces_per_elem="<<faces_per_elem<<std::endl;
+        std::cout << "points_per_face="<<points_per_face<<std::endl;
+        std::cout << "nfacepts="<<nfacepts<<std::endl;
+        std::cout << "nelem="<<nelem<<std::endl;
+        std::cout << "nelem_faces="<<nelem_faces<<std::endl;
+        std::cout << "conn={";
         for(index_t i = 0; i < connlen; i++)
-            cout << conn[i] << ", ";
-        cout << "}" << endl << endl;
+            std::cout << conn[i] << ", ";
+        std::cout << "}" << endl << std::endl;
 #endif
 
-        // Iterate over each hex cell and compute a faceid for it. Store
+        // Iterate over each element and compute a faceid for it. Store
         // these in faceid_to_ef. The "ef" stands for element face, which
         // is the element id * faces_per_elem + face.
         CONDUIT_ANNOTATE_MARK_BEGIN("Labeling");
@@ -986,7 +1014,7 @@ private:
         CONDUIT_ANNOTATE_MARK_END("Labeling");
 
 #ifdef DEBUG_PRINT
-        cout << "faceid_to_ef = " << faceid_to_ef << endl;
+        std::cout << "faceid_to_ef = " << faceid_to_ef << std::endl;
 #endif
 
         // Sort faceid_to_ef so any like faces will be sorted, first by their
@@ -996,7 +1024,7 @@ private:
         std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY faceid_to_ef.begin(), faceid_to_ef.end());
         CONDUIT_ANNOTATE_MARK_END("Sort labels");
 #ifdef DEBUG_PRINT
-        cout << "faceid_to_ef.sorted = " << faceid_to_ef << endl;
+        std::cout << "faceid_to_ef.sorted = " << faceid_to_ef << std::endl;
 #endif
 
         // Faces are sorted. We probably do not want to necessarily create faces
@@ -1007,8 +1035,8 @@ private:
         std::vector<std::pair<uint64, uint64>> ef_to_unique(nelem_faces);
         index_t unique = make_unique(faceid_to_ef, ef_to_unique);
 #ifdef DEBUG_PRINT
-        cout << "unique = " << unique << endl;
-        cout << "ef_to_unique = " << ef_to_unique << endl;
+        std::cout << "unique = " << unique << std::endl;
+        std::cout << "ef_to_unique = " << ef_to_unique << std::endl;
 #endif
 
         // Sort on ef to get back to a ef->unique mapping.
@@ -1021,7 +1049,7 @@ private:
         });
         CONDUIT_ANNOTATE_MARK_END("Sort ef->unique");
 #ifdef DEBUG_PRINT
-        cout << "ef_to_unique.sorted = " << ef_to_unique << endl;
+        std::cout << "ef_to_unique.sorted = " << ef_to_unique << std::endl;
 #endif
 
         // Store the new embed connectivity data in Conduit nodes.
@@ -1056,11 +1084,11 @@ private:
             auto &embed_refs = G[shape.dim][embed_shape.dim].data;
             embed_refs.resize(nelem_faces, 0);
 #ifdef DEBUG_PRINT
-            cout << "Building G(" << shape.dim << ", " << embed_shape.dim << ")" << endl;
-            cout << "points_per_face=" << points_per_face << endl;
-            cout << "unique=" << unique << endl;
-            cout << "faces_per_elem=" << faces_per_elem << endl;
-            cout << "nelem_faces=" << nelem_faces << endl;
+            std::cout << "Building G(" << shape.dim << ", " << embed_shape.dim << ")" << std::endl;
+            std::cout << "points_per_face=" << points_per_face << std::endl;
+            std::cout << "unique=" << unique << std::endl;
+            std::cout << "faces_per_elem=" << faces_per_elem << std::endl;
+            std::cout << "nelem_faces=" << nelem_faces << std::endl;
 #endif
 
             // Save how many embedded shapes an element would have.
@@ -1097,8 +1125,8 @@ private:
                 }
             }
 #ifdef DEBUG_PRINT
-            cout << "final embed_refs_idx=" << embed_refs_idx << endl << endl;
-            cout << "embed_refs=" << embed_refs << endl;
+            std::cout << "final embed_refs_idx=" << embed_refs_idx << endl << std::endl;
+            std::cout << "embed_refs=" << embed_refs << std::endl;
 #endif
         }
         else
@@ -1150,9 +1178,9 @@ private:
         CONDUIT_ANNOTATE_MARK_FUNCTION;
 
 #ifdef DEBUG_PRINT
-        cout << "=======================================================" << endl;
-        cout << "make_embedded_connectivity_polygons_to_lines:" << endl;
-        cout << "=======================================================" << endl;
+        std::cout << "=======================================================" << std::endl;
+        std::cout << "make_embedded_connectivity_polygons_to_lines:" << std::endl;
+        std::cout << "=======================================================" << std::endl;
 #endif
 
         index_t_accessor sizes = dim_topos[2].fetch_existing("elements/sizes").value();
@@ -1198,7 +1226,7 @@ private:
         }
         CONDUIT_ANNOTATE_MARK_END("Labeling");
 #ifdef DEBUG_PRINT
-        cout << "edgeid_to_ee = " << edgeid_to_ee << endl;
+        std::cout << "edgeid_to_ee = " << edgeid_to_ee << std::endl;
 #endif
 
         // Sort edgeid_to_ee so any like edges will be sorted.
@@ -1206,7 +1234,7 @@ private:
         std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY edgeid_to_ee.begin(), edgeid_to_ee.end());
         CONDUIT_ANNOTATE_MARK_END("Sort labels");
 #ifdef DEBUG_PRINT
-        cout << "edgeid_to_ee.sorted = " << edgeid_to_ee << endl;
+        std::cout << "edgeid_to_ee.sorted = " << edgeid_to_ee << std::endl;
 #endif
 
         // Edges are sorted. Pick out the unique edge ids.
@@ -1214,8 +1242,8 @@ private:
         std::vector<std::pair<uint64, uint64>> ee_to_unique(nelem_edges);
         index_t unique = make_unique(edgeid_to_ee, ee_to_unique);
 #ifdef DEBUG_PRINT
-        cout << "unique = " << unique << endl;
-        cout << "ee_to_unique = " << ee_to_unique << endl;
+        std::cout << "unique = " << unique << std::endl;
+        std::cout << "ee_to_unique = " << ee_to_unique << std::endl;
 #endif
 
         // Sort on ef to get back to a ef->unique mapping.
@@ -1228,7 +1256,7 @@ private:
         });
         CONDUIT_ANNOTATE_MARK_END("Sort ef->unique");
 #ifdef DEBUG_PRINT
-        cout << "ee_to_unique.sorted = " << ee_to_unique << endl;
+        std::cout << "ee_to_unique.sorted = " << ee_to_unique << std::endl;
 #endif
 
         // Store the new embed connectivity data in Conduit nodes.
@@ -1282,8 +1310,8 @@ private:
                 }
             }
 #ifdef DEBUG_PRINT
-            cout << "final embed_refs_idx=" << embed_refs_idx << endl << endl;
-            cout << "embed_refs=" << embed_refs << endl;
+            std::cout << "final embed_refs_idx=" << embed_refs_idx << endl << std::endl;
+            std::cout << "embed_refs=" << embed_refs << std::endl;
 #endif
 
             // Make sizes/offsets for G(2,1).
@@ -1328,12 +1356,25 @@ private:
     }
 
     //-----------------------------------------------------------------------
+    /**
+     @brief Call the local association API to copy all of the local data for
+            a specific map into contiguous data arrays. This is used to
+            store the local map data into a Conduit node.
+
+     @param src_dim The entity dimension e
+     @param dst_dim The association dimension a
+     @param values_ptr The array that will hold the map values.
+     @param sizes_ptr The array that will hold the map sizes.
+     @param offsets_ptr The array that will hold the map offsets.
+     @param N The number of local map entities for L(e,a).
+     */
     template <typename T>
     void
     copy_local_map(int src_dim, int dst_dim,
         T *values_ptr,
         T *sizes_ptr,
-        T *offsets_ptr, index_t N) const
+        T *offsets_ptr,
+        index_t N) const
     {
         // Do another pass to store the data in the nodes.
         index_t off = 0;
@@ -1351,6 +1392,17 @@ private:
     }
 
     //-----------------------------------------------------------------------
+    /**
+     @brief This function is used to iterate over global map levels according
+            to the values stored in levels. At each level, we apply a function.
+            This is used to count local indices and to generate local maps.
+
+     @param entity_id The entity id.
+     @param levels    The vector e,a pairs for each level.
+     @param level     The current level.
+     @param localIdx  An array of local indices.
+     @param func      The function to apply to a set of e,a levels.
+     */
     template <typename Func>
     void iterate_global_map_levels(int entity_id,
         const std::vector<std::vector<std::pair<int,int>>> &levels,
@@ -1813,15 +1865,15 @@ TopologyMetadata::Implementation::build_associations()
 
     // Some maps will need lengths of the topologies that were produced.
 #ifdef DEBUG_PRINT
-    cout << "build_associations: topo_shape.dim=" << topo_shape.dim << endl;
+    std::cout << "build_associations: topo_shape.dim=" << topo_shape.dim << std::endl;
 #endif
     for(int dim = topo_shape.dim; dim >= 0; dim--)
     {
 #ifdef DEBUG_PRINT
-        cout << "topo " << dim << endl;
-        cout << "=======" << endl;
-        yaml_print(cout, dim_topos[dim]);
-        cout << endl;
+        std::cout << "topo " << dim << std::endl;
+        std::cout << "=======" << std::endl;
+        yaml_print(std::cout, dim_topos[dim]);
+        std::cout << std::endl;
 #endif
         conduit::Node info;
         if(conduit::blueprint::mesh::topology::verify(dim_topos[dim], info))
@@ -1879,8 +1931,8 @@ TopologyMetadata::Implementation::build_associations()
     for(int e = 3; e >= 0; e--)
     {
         for(int a = 3; a >= 0; a--)
-            cout << G[e][a].single_size << ", ";
-        cout << endl;
+            std::cout << G[e][a].single_size << ", ";
+        std::cout << std::endl;
     }
 #endif
 
@@ -1892,7 +1944,7 @@ TopologyMetadata::Implementation::build_associations()
         if(G[e][a].requested)
         {
 #ifdef DEBUG_PRINT
-            cout << "Building association " << e << ", " << a << endl;
+            std::cout << "Building association " << e << ", " << a << std::endl;
 #endif
             index_t mapcase = EA_INDEX(e,a);
             switch(mapcase)
@@ -2165,7 +2217,7 @@ TopologyMetadata::Implementation::build_edge_key_to_id(
     conduit::index_t_accessor conn1D = dim_topos[1]["elements/connectivity"].value();
     index_t nedges = conn1D.number_of_elements() / 2;
 #ifdef DEBUG_PRINT
-    cout << "edges_key_to_id = {" << endl;
+    std::cout << "edges_key_to_id = {" << std::endl;
 #endif
 #pragma omp parallel for
     for(index_t edge_index = 0; edge_index < nedges; edge_index++)
@@ -2180,13 +2232,13 @@ TopologyMetadata::Implementation::build_edge_key_to_id(
         // Store the edge in the map.
         edge_key_to_id[edge_index] = std::make_pair(key, edge_index);
 #ifdef DEBUG_PRINT
-        cout << std::setw(4) << edge_index << ": key=" <<  std::setw(20) << key
+        std::cout << std::setw(4) << edge_index << ": key=" <<  std::setw(20) << key
              << ", pts=" << std::setw(8) << edge[0] << ", "
-             << std::setw(8) << edge[1] << endl;
+             << std::setw(8) << edge[1] << std::endl;
 #endif
     }
 #ifdef DEBUG_PRINT
-    cout << "}" << endl;
+    std::cout << "}" << std::endl;
 #endif
 
     // Sort the edges by the ids.
@@ -2254,7 +2306,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
     // Get the unique edges template for the element type.
     std::vector<index_t> elem_edges = embedding_3_1_edges(topo_shape);
 #ifdef DEBUG_PRINT
-    cout << "elem_edges=" << elem_edges << endl;
+    std::cout << "elem_edges=" << elem_edges << std::endl;
 #endif
 
     // Prepare the G(3,1) association.
@@ -2390,19 +2442,19 @@ TopologyMetadata::Implementation::print_association(int e, int a, bool global) c
     if(global)
     {
         const association &assoc = G[e][a];
-        cout << "\tdata=" << assoc.data << endl;
-        cout << "\tsizes=" << assoc.sizes << endl;
-        cout << "\toffsets=" << assoc.offsets << endl;
-        cout << "\tsingle_size=" << assoc.single_size << endl;
-        cout << "\trequested=" << assoc.requested << endl;
+        std::cout << "\tdata=" << assoc.data << std::endl;
+        std::cout << "\tsizes=" << assoc.sizes << std::endl;
+        std::cout << "\toffsets=" << assoc.offsets << std::endl;
+        std::cout << "\tsingle_size=" << assoc.single_size << std::endl;
+        std::cout << "\trequested=" << assoc.requested << std::endl;
     }
     else
     {
         const association &assoc = L[e][a];
-        cout << "\tdata=" << assoc.data << endl;
-        cout << "\tsizes=" << assoc.sizes << endl;
-        cout << "\toffsets=" << assoc.offsets << endl;
-        cout << "\trequested=" << assoc.requested << endl;
+        std::cout << "\tdata=" << assoc.data << std::endl;
+        std::cout << "\tsizes=" << assoc.sizes << std::endl;
+        std::cout << "\toffsets=" << assoc.offsets << std::endl;
+        std::cout << "\trequested=" << assoc.requested << std::endl;
     }
 }
 
@@ -2416,10 +2468,10 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     association &mapCP = G[e][a];       // child to parent (what we're making).
 
 #ifdef DEBUG_PRINT
-    cout << "----------------------------------------" << endl;
-    cout << "build_child_to_parent_association(" << e << ", " << a <<")" << endl;
-    cout << "----------------------------------------" << endl;
-    cout << "mapPC:" << endl;
+    std::cout << "----------------------------------------" << std::endl;
+    std::cout << "build_child_to_parent_association(" << e << ", " << a <<")" << std::endl;
+    std::cout << "----------------------------------------" << std::endl;
+    std::cout << "mapPC:" << std::endl;
     print_association(a,e);
 #endif
 
@@ -2439,11 +2491,11 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     }
 
 #ifdef DEBUG_PRINT
-    cout << "mapPC_data_size=" << mapPC.data.size() << endl;
+    std::cout << "mapPC_data_size=" << mapPC.data.size() << std::endl;
     for(int i =0 ; i < 4; i++)
-        cout << i << ", topolen=" << dim_topo_lengths[i] << endl;
-    cout << "mapCP.sizes=" << mapCP.sizes << endl;
-    cout << "mapCP.offsets=" << mapCP.offsets << endl;
+        std::cout << i << ", topolen=" << dim_topo_lengths[i] << std::endl;
+    std::cout << "mapCP.sizes=" << mapCP.sizes << std::endl;
+    std::cout << "mapCP.offsets=" << mapCP.offsets << std::endl;
 #endif
     // Make a series of ids using the parent-child sizes vector. This will
     // make a pattern like: 0,1,2,3...  or 0,0,0,0,1,1,1,1,2,2,2,2,...
@@ -2475,7 +2527,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
         }
     }
 #ifdef DEBUG_PRINT
-    cout << "p2c=" << p2c << endl;
+    std::cout << "p2c=" << p2c << std::endl;
 #endif
     // Sort p2c by child.
     std::sort(OPTIONAL_PARALLEL_EXECUTION_POLICY
@@ -2486,7 +2538,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
         return lhs.second < rhs.second;
     });
 #ifdef DEBUG_PRINT
-    cout << "p2c.sorted=" << p2c << endl;
+    std::cout << "p2c.sorted=" << p2c << std::endl;
 #endif
 
     // Extract the permuted list of parents.
@@ -2494,7 +2546,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
     for(size_t i = 0; i < p2c.size(); i++)
         mapCP.data[i] = p2c[i].first;
 #ifdef DEBUG_PRINT
-    cout << "mapCP.data=" << mapCP.data << endl;
+    std::cout << "mapCP.data=" << mapCP.data << std::endl;
 #endif
 
     // Sort ids in each bin of parent ids.
@@ -2508,8 +2560,8 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
         }
     }
 #ifdef DEBUG_PRINT
-    cout << "mapCP.data.final=" << mapCP.data << endl;
-    cout << "mapCP" << endl;
+    std::cout << "mapCP.data.final=" << mapCP.data << std::endl;
+    std::cout << "mapCP" << std::endl;
     print_association(e, a);
 #endif
 }
@@ -2569,20 +2621,16 @@ TopologyMetadata::Implementation::build_local_associations()
 #endif
                 if(e > a)
                 {
-//cout << "L[" << e << "][" << a << "].sizes.resize(" << sizes[e] << ", 0)" << endl;
                     // Parent to child.
                     L[e][a].sizes.resize(sizes[e], 0);
                 }
                 else if(e == a)
                 {
-//cout << "L[" << e << "][" << a << "].sizes.resize(" << sizes[e] << ", 1)" << endl;
                     // Self
                     L[e][a].sizes.resize(sizes[e] + extra, 1);
                 }
                 else
                 {
-//cout << "L[" << e << "][" << a << "].data.reserve(" << sizes[e] << ")" << endl;
-//cout << "L[" << e << "][" << a << "].sizes.reserve(" << sizes[e] << ")" << endl;
                     // Child to parent
                     L[e][a].data.reserve(sizes[e] + extra);
                     L[e][a].sizes.reserve(sizes[e] + extra);
@@ -2655,7 +2703,7 @@ TopologyMetadata::Implementation::build_local_associations()
             {
                 build_offsets(L[e][a].sizes, L[e][a].offsets);
 #ifdef DEBUG_PRINT
-                cout << "L(" <<e << ", " << a << ")" << endl;
+                std::cout << "L(" <<e << ", " << a << ")" << std::endl;
                 print_association(e,a,false);
 #endif
             }
@@ -2707,10 +2755,6 @@ TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim
     // Explicit maps case.
     if(topo_shape.is_poly())
     {
-//        cout << "get_local_association_entity_range(" << src_dim << ", " << dst_dim
-//             <<"): sizes=" << L[src_dim][dst_dim].sizes.size()
-//             << ", data=" << L[src_dim][dst_dim].data.size()
-//             << endl;
         return std::max(L[src_dim][dst_dim].sizes.size(), L[src_dim][dst_dim].data.size());
     }
 
@@ -3136,20 +3180,8 @@ TopologyMetadata::Implementation::get_embed_length(index_t entity_dim, index_t e
     for(index_t ei = 0; ei < len; ei++)
     {
         entity_index_bag.push_back(ei);
-        // NOTE: I don't think that adding entity_dim here makes sense if we
-        //       had passed entity_dim=-1 because we'd get a larger len that
-        //       is really made of different entity dimensions. I think we'd
-        //       have to call get_length() for each dimension so we'd know
-        //       the entity dim that we need to add. That way, we'll have
-        //       entity indices that make sense for the various levels of
-        //       LOCAL maps.
         entity_dim_bag.push_back(entity_dim);
     }
-
-    // IDEA: The embed_set is only used at the embed_dim level so it may
-    //       be possible to replace with a std::vector<bool> (or other)
-    //       sized to the max number of items in L(embed_dim+1,embed_dim).
-    //       The L(e,a) maps contain indices in order
 
     std::set<index_t> embed_set;
     index_t embed_length = 0;
