@@ -1006,6 +1006,137 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_poly)
 }
 
 //-----------------------------------------------------------------------------
+void
+make_ph_topo(conduit::Node &topo, bool add_offsets, bool add_sub_offsets)
+{
+    std::vector<int> conn{0, 1, 2, 3, 4, 5,
+                          2, 6, 7, 8, 9, 10,
+                          11, 3, 12, 13, 14, 15,
+                          12, 8, 16, 17, 18, 19,
+                          20, 21, 22, 23, 5, 24,
+                          22, 25, 26, 27, 10, 28,
+                          29, 23, 30, 31, 15, 32,
+                          30, 27, 33, 34, 19, 35};
+    std::vector<int> sizes{6, 6, 6, 6, 6, 6, 6, 6};
+    std::vector<int> offsets{0, 6, 12, 18, 24, 30, 36, 42};
+
+    std::vector<int> subconn{0, 9, 12, 3,
+                             0, 1, 10, 9,
+                             1, 4, 13, 10,
+                             3, 12, 13, 4,
+                             0, 3, 4, 1,
+                             9, 10, 13, 12,
+                             1, 2, 11, 10,
+                             2, 5, 14, 11,
+                             4, 13, 14, 5,
+                             1, 4, 5, 2,
+                             10, 11, 14, 13,
+                             3, 12, 15, 6,
+                             4, 7, 16, 13,
+                             6, 15, 16, 7,
+                             3, 6, 7, 4,
+                             12, 13, 16, 15,
+                             5, 8, 17, 14,
+                             7, 16, 17, 8,
+                             4, 7, 8, 5,
+                             13, 14, 17, 16,
+                             9, 18, 21, 12,
+                             9, 10, 19, 18,
+                             10, 13, 22, 19,
+                             12, 21, 22, 13,
+                             18, 19, 22, 21,
+                             10, 11, 20, 19,
+                             11, 14, 23, 20,
+                             13, 22, 23, 14,
+                             19, 20, 23, 22,
+                             12, 21, 24, 15,
+                             13, 16, 25, 22,
+                             15, 24, 25, 16,
+                             21, 22, 25, 24,
+                             14, 17, 26, 23,
+                             16, 25, 26, 17,
+                             22, 23, 26, 25};
+    std::vector<int> subsizes{4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                              4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4,
+                              4, 4, 4, 4};
+    std::vector<int> suboffsets{0, 4, 8, 12, 16, 20, 24, 28, 32, 36, 40, 44,
+                                48, 52, 56, 60, 64, 68, 72, 76, 80, 84, 88,
+                                92, 96, 100, 104, 108, 112, 116, 120, 124,
+                                128, 132, 136, 140};
+
+    topo["coordset"] = "coords";
+    topo["type"] = "unstructured";
+
+    topo["elements/shape"] = "polyhedral";
+    topo["elements/connectivity"].set(conn);
+    topo["elements/sizes"].set(sizes);
+    if(add_offsets)
+        topo["elements/offsets"].set(offsets);
+
+    topo["subelements/shape"] = "polygonal";
+    topo["subelements/connectivity"].set(subconn);
+    topo["subelements/sizes"].set(subsizes);
+    if(add_sub_offsets)
+        topo["subelements/offsets"].set(suboffsets);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_offsets_types)
+{
+    // Make a PH topo that has element/offsets and subelement/offsets. The
+    // types should not change.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, true, true);
+        auto &offsets = topo["elements/offsets"];
+        int t0 = offsets.dtype().id();
+        int st0 = topo["subelements/offsets"].dtype().id();
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        int t1 = topo["elements/offsets"].dtype().id();
+        int st1 = topo["subelements/offsets"].dtype().id();
+        // The types better be equal
+        EXPECT_EQ(t0, t1);
+        EXPECT_EQ(st0, st1);
+    }
+
+    // Make a PH topo with no offsets.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, false, false);
+        auto &offsets = topo["elements/offsets"];
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        EXPECT_EQ(topo["elements"].has_child("offsets"), true);
+    }
+
+    // Make a PH topo with element/offsets.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, true, false);
+        auto &offsets = topo["elements/offsets"];
+        int t0 = offsets.dtype().id();
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        EXPECT_EQ(topo["elements"].has_child("offsets"), true);
+        int t1 = topo["elements/offsets"].dtype().id();
+        // The types better be equal
+        EXPECT_EQ(t0, t1);
+    }
+
+    // Make a PH topo with subelements/offsets. Make sure we generate elements/offsets.
+    { // new scope
+        conduit::Node topo;
+        make_ph_topo(topo, false, true);
+        auto &offsets = topo["elements/offsets"];
+        int st0 = topo["subelements/offsets"].dtype().id();
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
+        EXPECT_EQ(topo["elements"].has_child("offsets"), true);
+        EXPECT_EQ(topo["subelements"].has_child("offsets"), true);
+        int st1 = topo["subelements/offsets"].dtype().id();
+        // The types better be equal
+        EXPECT_EQ(st0, st1);
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_centroids)
 {
     const std::string CENTROID_COORDSET_NAME = "ccoords";
