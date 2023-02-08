@@ -335,6 +335,16 @@ public:
     conduit::vector_view<index_t>
     get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
 
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get a local association for a particular entity_id in the entity_dim
+            dimension.
+
+     @param entity_id The entity id whose information we want to obtain. This
+                      value must be valid for the entity dimension in question.
+     @param entity_dim The dimension of the entity whose information we want.
+     @param assoc_dim  The dimension of the association we want.
+    */
     conduit::range_vector<index_t>
     get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
 
@@ -669,7 +679,8 @@ private:
 
                 // Make lines.
                 int embed_dim = shape.dim - 1;
-                const conduit::Node &econn = dim_topos[embed_dim].fetch_existing("elements/connectivity");
+                const conduit::Node &econn = dim_topos[embed_dim].
+                   fetch_existing("elements/connectivity");
                 ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
                 dispatch_connectivity(embed_shape, econn);
             }
@@ -691,12 +702,14 @@ private:
 
     //-----------------------------------------------------------------------
     /**
-     @brief This method accepts a node containing polyhedral subelement data,
-            which contains the actual face definitions that make up the PH
-            mesh. We use these faces as the 2D topology as it is already
-            made of polygons. We scan it too to see whether it contains all
-            triangles or quads, in which case, we change the shape type to
-            make downstream line production easier.
+     @brief This makes 2D topology from the input polyhedral topology. If all
+            faces are triangles or quads then we make a mesh that just contains
+            those element types. This makes the refinement to edges a little
+            easier. If there are mized face sizes then the output 2D topology
+            is polygonal.
+
+     @note This method takes the face sizes as a concrete type so we can scan
+           them easily to determine if all faces are the same shape.
 
      @param subel The polyhedral subelement node.
      @param sizes The sizes in the subelement node cast to a more usable type
@@ -742,24 +755,12 @@ private:
             }
         }
 
-cout << "!!!!!! make_embedded_connectivity_ph: istri=" << istri << endl;
-cout << "!!!!!! make_embedded_connectivity_ph: isquad=" << isquad << endl;
-cout << "!!!!!! make_embedded_connectivity_ph: shape=" << (node["elements/shape"].as_string()) << endl;
-
         association &map32 = G[3][2];
 #ifdef REPRODUCE_REFERENCE
+        // Match the old TopologyMetadata, which reordered (unnecessary?)
+        // PH faces relative to the order in which they are used in elements.
         if(node["elements/shape"].as_string() == "polygonal")
         {
-// This crashes!
-cout << "!!!!!!! polygon case" << endl;
-
-cout << "sizes={";
-for(size_t q=  0; q < sizeslen; q++)
-    cout << sizes[q] << ", ";
-cout << "}" << endl;
-
-            // Match the old TopologyMetadata, which unnecessarily reordered
-            // PH faces relative to the order in which they are used in elements.
             index_t_accessor elem_conn = topo->fetch_existing("elements/connectivity").value();
             index_t_accessor elem_sizes = topo->fetch_existing("elements/sizes").value();
 
@@ -776,12 +777,7 @@ cout << "}" << endl;
             index_t nLocalFaces = elem_sizes.sum();
             local_to_global[2].reserve(nLocalFaces);
 
-std::string mname("make_embedded_connectivity_ph: ");
-cout << mname << "nelem=" << nelem << endl;
-cout << mname << "nfaces=" << nfaces << endl;
-cout << mname << "elem_conn.size=" << elem_conn.number_of_elements() << endl;
-cout << mname << "face_conn.size=" << face_conn.number_of_elements() << endl;
-
+            // Set up nodes to store the new topology.
             conduit::Node &n_newface_conn = node["elements/connectivity"];
             conduit::Node &n_newface_sizes = node["elements/sizes"];
             conduit::Node &n_newface_offsets = node["elements/offsets"];
@@ -800,13 +796,11 @@ cout << mname << "face_conn.size=" << face_conn.number_of_elements() << endl;
             index_t elem_offset = 0;
             for(index_t ei = 0; ei < nelem; ei++)
             {
-cout << "Element " << ei << endl;
                 index_t nelem_faces = elem_sizes[ei];
 
                 for(index_t fi = 0; fi < nelem_faces; fi++)
                 {
                     index_t faceid = elem_conn[elem_offset + fi];
-cout << "\tFace " << faceid << endl;
                     index_t newfaceid;
                     if(face_old_to_new[faceid] == -1)
                     {
@@ -814,16 +808,14 @@ cout << "\tFace " << faceid << endl;
 
                         newface_offsets[globalFaceIndex] = ptIndex;
                         newface_sizes[globalFaceIndex] = face_size;
-cout << "\t\temitting at " << ptIndex << ": ";
+
                         for(index_t pi = 0; pi < face_size; pi++)
                         {
-cout << face_conn[face_offsets[faceid] + pi] << ", ";
                             newface_conn[ptIndex++] = face_conn[face_offsets[faceid] + pi];
                         }
 
                         newfaceid = globalFaceIndex++;
                         face_old_to_new[faceid] = newfaceid;
-cout << " -> new face " << newfaceid << endl;
                     }
                     else
                     {
@@ -831,13 +823,10 @@ cout << " -> new face " << newfaceid << endl;
                     }
 
                     local_to_global[2].push_back(newfaceid);
-
-cout << "\t\tusing newfaceid " << newfaceid << endl;
                 }
                 elem_offset += nelem_faces;
             }
 
-yaml_print(cout, node);
             if(map32.requested)
             {
                 map32.data.resize(local_to_global[2].size());
@@ -853,42 +842,41 @@ yaml_print(cout, node);
                     map32.offsets[ei] = off;
                     off += elem_sizes[ei];
                 }
-cout << "!!!!!!!!!!!!!!!!" << endl;
-print_association(3, 2);
             }
         }
         else
         {
 #endif
-        // Copy these fields into the topo but convert to index_t.
-        std::vector<std::string> src_keys{"connectivity", "sizes", "offsets"};
-        std::vector<std::string> dest_keys{"elements/connectivity",
-                                           "elements/sizes",
-                                           "elements/offsets"};
-        copy_convert(src_keys, subel, DataType::index_t(), dest_keys, node);
+            // We can directly use the polyhedral faces as the 2D topology.
+            // Copy these fields into the topo but convert to index_t.
+            std::vector<std::string> src_keys{"connectivity", "sizes", "offsets"};
+            std::vector<std::string> dest_keys{"elements/connectivity",
+                                               "elements/sizes",
+                                               "elements/offsets"};
+            copy_convert(src_keys, subel, DataType::index_t(), dest_keys, node);
 
-        // While we're at it, we can use the elements/connectivity as the
-        // G(3,2) map.
-        if(map32.requested)
-        {
-            index_t_accessor conn = topo->fetch_existing("elements/connectivity").value();
-            map32.data.resize(conn.number_of_elements());
-            for(index_t i = 0; i < conn.number_of_elements(); i++)
-                map32.data[i] = conn[i];
-
-            index_t_accessor sizes = topo->fetch_existing("elements/sizes").value();
-            map32.sizes.resize(sizes.number_of_elements());
-            for(index_t i = 0; i < sizes.number_of_elements(); i++)
-                map32.sizes[i] = sizes[i];
-
-            if(topo->has_path("elements/offsets"))
+            // While we're at it, we can use the elements/connectivity as the
+            // G(3,2) map.
+            if(map32.requested)
             {
-                index_t_accessor offsets = topo->fetch_existing("elements/offsets").value();
-                map32.offsets.resize(offsets.number_of_elements());
-                for(index_t i = 0; i < offsets.number_of_elements(); i++)
-                    map32.offsets[i] = offsets[i];
+                index_t_accessor conn = topo->fetch_existing("elements/connectivity").value();
+                map32.data.resize(conn.number_of_elements());
+                for(index_t i = 0; i < conn.number_of_elements(); i++)
+                    map32.data[i] = conn[i];
+
+                index_t_accessor sizes = topo->fetch_existing("elements/sizes").value();
+                map32.sizes.resize(sizes.number_of_elements());
+                for(index_t i = 0; i < sizes.number_of_elements(); i++)
+                    map32.sizes[i] = sizes[i];
+
+                if(topo->has_path("elements/offsets"))
+                {
+                    index_t_accessor offsets = topo->fetch_existing("elements/offsets").value();
+                    map32.offsets.resize(offsets.number_of_elements());
+                    for(index_t i = 0; i < offsets.number_of_elements(); i++)
+                        map32.offsets[i] = offsets[i];
+                }
             }
-        }
 #ifdef REPRODUCE_REFERENCE
         }
 #endif
@@ -908,8 +896,12 @@ print_association(3, 2);
 
       - This method assumes that all elements in the connectivity are the 
         same type.   
+
       - This is a template method so we can pass in basic types (like 
         const int*) for the connectivity.
+
+      - The terms used in this method are "faces" but it is really whichever
+        entity has shape.dim-1
     */
     template <typename ConnType>
     void
@@ -919,8 +911,6 @@ print_association(3, 2);
 
         int embed_dim = shape.dim - 1;
         ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
-
-// TODO: rename some things so the terms are more generic.
 
         // Get sizes from the shape and embed_shape.
         index_t points_per_elem = shape.indices;
@@ -957,11 +947,6 @@ print_association(3, 2);
 #pragma omp parallel for
         for(index_t elem = 0; elem < nelem; elem++)
         {
-
-// TODO: it might be good to keep these the same as the connectivity element
-//       type rather than index_t (in case sizeof(index_t) > sizeof(elem_t).
-//       That would hash fewer bytes and possibly eliminate casts.
-
             // Get the element faces, storing them all in face_pts.
             index_t elemstart = elem * points_per_elem;
             index_t face_pts[nfacepts];
@@ -979,21 +964,8 @@ print_association(3, 2);
                 // encode element and face into element_face.
                 uint64 element_face = facestart + face;
 
-#if 0
-                cout << "elem=" << elem << ", face=" << face
-                     << ", element_face=" << element_face;
-                cout << ", pts={";
-                for(int q = 0; q < points_per_face; q++)
-                    cout << std::setw(2) << face_pts_start[q] << ", ";
-                cout << "}, sort={";
-#endif
-                std::sort(face_pts_start, face_pts_end); // Better 4 item sort
+                std::sort(face_pts_start, face_pts_end);
                 uint64 faceid = hash_ids(face_pts_start, points_per_face);
-#if 0
-                for(int q = 0; q < points_per_face; q++)
-                    cout << std::setw(2) << face_pts_start[q] << ", ";
-                cout << "}, faceid=" << faceid << endl;
-#endif
 
                 // Store the faceid and ef values.
                 faceid_to_ef[element_face] = std::make_pair(faceid, element_face);
@@ -1154,8 +1126,9 @@ print_association(3, 2);
 
     //-----------------------------------------------------------------------
     /**
-     @brief This methods makes embedded connectivity 2D->1D but uses sizes/
-            offsets to access the shape data.
+     @brief This method makes embedded connectivity 2D->1D but uses sizes/
+            offsets to access the shape data as when the input 2D topology
+            contains polygons.
 
             It's really only used to go from 2D polygons to 1D lines.
      */
@@ -1191,7 +1164,7 @@ print_association(3, 2);
             index_t pts[MAX_VERTS];
             for(index_t i = 0; i < elem_size; i++)
                 pts[i] = conn[elem_offset + i];
-cout << elem << ": ";
+
             // Make a unique id for each edge.
             for(index_t edge_index = 0; edge_index < elem_size; edge_index++)
             {
@@ -1204,14 +1177,13 @@ cout << elem << ": ";
                 edge[0] = pts[edge_index];
                 edge[1] = pts[next_edge_index];
                 ee_to_edge[elem_edge] = std::make_pair(edge[0], edge[1]);
-cout << "(" << edge[0] << ", " << edge[1] << "), ";
+
                 // Store the edgeid.
                 if(edge[0] > edge[1])
                     std::swap(edge[0], edge[1]);
                 uint64 edgeid = hash_ids(edge, 2);
                 edgeid_to_ee[elem_edge] = std::make_pair(edgeid, elem_edge);
             }
-cout << endl;
         }
         CONDUIT_ANNOTATE_MARK_END("Labeling");
 #ifdef DEBUG_PRINT
