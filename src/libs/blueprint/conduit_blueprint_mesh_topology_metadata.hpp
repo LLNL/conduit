@@ -507,6 +507,11 @@ public:
     }
 
     // Compatibility methods
+    TopologyMetadata(const conduit::Node &topology,
+                     const conduit::Node &coordset,
+                     size_t lowest_dim,
+                     const std::vector<std::pair<size_t,size_t> > &desired_maps);
+
     int dimension() const { return topo_cascade.dim; }
 
     const conduit::Node &get_topology(size_t dim)

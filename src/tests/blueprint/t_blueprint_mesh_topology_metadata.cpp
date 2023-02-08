@@ -11,13 +11,14 @@
 #include "conduit.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mesh.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mesh_topology_metadata.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 #include "conduit_annotations.hpp"
 
-#include <math.h>
+#include <algorithm>
 #include <iostream>
 #include <array>
 #include <cmath>
@@ -190,6 +191,25 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
         std::string mname2(oss2.str());
         conduit::Node &s = rep[mname2];
         s.set(le2ge.size());
+    }
+
+    // Test the 3,0 API for 3D meshes to see whether we get the same answer
+    // from G(3,0) as we would from unstructured::points()
+    if(md.dimension() == 3)
+    {
+        auto N = md.get_topology_length(3);
+        for(index_t ei = 0; ei < N; ei++)
+        {
+            // Get G(3,0) for the element and compare it to the points() function.
+            auto elempts = md.get_global_association(ei, 3, 0);
+            std::vector<index_t> elempts_vec(elempts.size());
+            std::copy(elempts.begin(), elempts.end(), elempts_vec.begin());
+            std::sort(elempts_vec.begin(), elempts_vec.end());
+
+            std::vector<index_t> pts = conduit::blueprint::mesh::utils::topology::unstructured::points(md.get_topology(3), ei);
+            bool equal = (pts == elempts_vec);
+            EXPECT_EQ(pts, elempts_vec);
+        }
     }
 
     std::string b = baseline_file(base);

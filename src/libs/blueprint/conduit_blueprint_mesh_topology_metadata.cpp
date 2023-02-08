@@ -1893,7 +1893,7 @@ TopologyMetadata::Implementation::build_associations()
 
     // Set the single_size values. This is the number of items in the data
     // that are grouped together.
-    if(topo_shape.dim >= 3)
+    if(topo_shape.dim == 3)
     {
         // NOTE: For polyhedra, we don't use single_shape.
         G[3][3].single_size = 1;
@@ -1906,21 +1906,27 @@ TopologyMetadata::Implementation::build_associations()
     }
     if(topo_shape.dim >= 2)
     {
-        // Get the shape from the topology (in case we changed it).
-        ShapeType shape(dim_topos[2]);
         G[2][3].single_size = 1;
         G[2][2].single_size = 1;
-        G[2][1].single_size = shape.embed_count;
-        G[2][0].single_size = shape.indices;
+        if(!dim_topos[2].dtype().is_empty())
+        {
+            // Get the shape from the topology (in case we changed it).
+            ShapeType shape(dim_topos[2]);
+            G[2][1].single_size = shape.embed_count;
+            G[2][0].single_size = shape.indices;
+        }
     }
     if(topo_shape.dim >= 1)
     {
-        // Get the shape from the topology.
-        ShapeType shape(dim_topos[1]);
         G[1][3].single_size = 1;
         G[1][2].single_size = 1;
         G[1][1].single_size = 1;
-        G[1][0].single_size = shape.indices;
+        if(!dim_topos[1].dtype().is_empty())
+        {
+            // Get the shape from the topology (in case we changed it).
+            ShapeType shape(dim_topos[1]);
+            G[1][0].single_size = shape.indices;
+        }
     }
     G[0][3].single_size = 1;
     G[0][2].single_size = 1;
@@ -3559,6 +3565,15 @@ namespace reference
 {
 
 // The reference implementation of TopologyMetadata.
+//---------------------------------------------------------------------------//
+TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
+    const conduit::Node &coordset,
+    size_t /*lowest_dim*/,
+    const std::vector<std::pair<size_t,size_t> > &/*desired_maps*/) :
+    TopologyMetadata(topology, coordset)
+{
+}
+
 //---------------------------------------------------------------------------//
 TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     const conduit::Node &coordset) :

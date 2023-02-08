@@ -3080,10 +3080,17 @@ generate_decomposed_entities(conduit::Node &mesh,
         // to consider on individual adjset interfaces.
         for(const index_t &dentry : decomposed_centroid_dims)
         {
-            const Node &dim_topo = src_topo_data.get_topology(dentry);
-            for(index_t ei = 0; ei < src_topo_data.get_length(dentry); ei++)
+            index_t dentry_length = src_topo_data.get_length(dentry);
+            for(index_t ei = 0; ei < dentry_length; ei++)
             {
+#if 1
+                // We should be able to get the unique set of points for this element
+                // from the topology metadata map (it's already computed).
+                auto entity_pidxs = src_topo_data.get_global_association(ei, dentry, 0);
+#else
+                const Node &dim_topo = src_topo_data.get_topology(dentry);
                 std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dim_topo, ei);
+#endif
                 for(const auto &neighbor_pair : neighbor_pidxs_map)
                 {
                     const index_t &ni = neighbor_pair.first;
@@ -4351,11 +4358,18 @@ mesh::topology::unstructured::generate_points(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
-    TopologyMetadata topo_data(topo, *coordset);
+    index_t src_dim = blueprint::mesh::topology::dims(topo);
+    index_t dst_dim = 0;
+    // Request only these maps.
+    std::vector<std::pair<size_t, size_t>> desired;
+    desired.push_back(std::make_pair(static_cast<size_t>(src_dim),
+                                     static_cast<size_t>(dst_dim)));
+    desired.push_back(std::make_pair(static_cast<size_t>(dst_dim),
+                                     static_cast<size_t>(src_dim)));
+    TopologyMetadata topo_data(topo, *coordset, dst_dim, desired);
     dest.reset();
-    topo_data.get_topology(0, dest);
+    topo_data.get_topology(dst_dim, dest);
 
-    const index_t src_dim = topo_data.dimension(), dst_dim = 0;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
@@ -4372,11 +4386,18 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
-    TopologyMetadata topo_data(topo, *coordset);
+    index_t src_dim = blueprint::mesh::topology::dims(topo);
+    index_t dst_dim = 1;
+    // Request only these maps.
+    std::vector<std::pair<size_t, size_t>> desired;
+    desired.push_back(std::make_pair(static_cast<size_t>(src_dim),
+                                     static_cast<size_t>(dst_dim)));
+    desired.push_back(std::make_pair(static_cast<size_t>(dst_dim),
+                                     static_cast<size_t>(src_dim)));
+    TopologyMetadata topo_data(topo, *coordset, dst_dim, desired);
     dest.reset();
-    topo_data.get_topology(1, dest);
+    topo_data.get_topology(dst_dim, dest);
 
-    const index_t src_dim = topo_data.dimension(), dst_dim = 1;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
@@ -4393,11 +4414,18 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
-    TopologyMetadata topo_data(topo, *coordset);
+    index_t src_dim = blueprint::mesh::topology::dims(topo);
+    index_t dst_dim = 2;
+    // Request only these maps.
+    std::vector<std::pair<size_t, size_t>> desired;
+    desired.push_back(std::make_pair(static_cast<size_t>(src_dim),
+                                     static_cast<size_t>(dst_dim)));
+    desired.push_back(std::make_pair(static_cast<size_t>(dst_dim),
+                                     static_cast<size_t>(src_dim)));
+    TopologyMetadata topo_data(topo, *coordset, dst_dim, desired);
     dest.reset();
-    topo_data.get_topology(2, dest);
+    topo_data.get_topology(dst_dim, dest);
 
-    const index_t src_dim = topo_data.dimension(), dst_dim = 2;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
@@ -4419,7 +4447,8 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
 
     Node map_node;
     std::vector<index_t> map_vec;
-    for(index_t ei = 0; ei < bputils::topology::length(topo); ei++)
+    index_t n = bputils::topology::length(topo);
+    for(index_t ei = 0; ei < n; ei++)
     {
         map_vec.push_back(1);
         map_vec.push_back(ei);

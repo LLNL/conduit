@@ -36,6 +36,9 @@ using namespace conduit::utils;
 namespace bputils = conduit::blueprint::mesh::utils;
 namespace o2mutils = conduit::blueprint::o2mrelation::utils;
 
+// Enable this macro when debugging to make Conduit hang where it would throw.
+//#define USE_ERROR_HANDLER
+
 /// Testing Constants ///
 
 static const index_t ELEM_TYPE_TRI_ID = 0;
@@ -66,6 +69,14 @@ const static index_t COMPLEX_GRID[] = {4, 4, 4};
 typedef std::vector<index_t> index_list;
 
 /// Testing Helpers ///
+void
+tmp_err_handler(const std::string &s1, const std::string &s2, int i1)
+{
+    std::cout << "s1=" << s1 << ", s2=" << s2 << ", i1=" << i1 << std::endl;
+
+    while(1);
+}
+
 index_t braid_bound_npts_z(const std::string &mesh_type, index_t npts_z)
 {
     if(mesh_type == "tris"  ||
@@ -1375,6 +1386,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_lines)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_faces)
 {
+#ifdef USE_ERROR_HANDLER
+    conduit::utils::set_error_handler(tmp_err_handler);
+#endif
+
     const std::string FACE_TOPOLOGY_NAME = "ftopo";
 
     const GridMeshCollection &grids = get_test_grids(COMPLEX_GRID);
