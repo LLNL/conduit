@@ -49,8 +49,10 @@ using ::conduit::utils::join_path;
 namespace bputils = conduit::blueprint::mesh::utils;
 typedef bputils::ShapeType ShapeType;
 typedef bputils::ShapeCascade ShapeCascade;
-typedef bputils::reference::TopologyMetadata TopologyMetadata;
-//typedef bputils::TopologyMetadata TopologyMetadata;
+// Use the old version.
+//typedef bputils::reference::TopologyMetadata TopologyMetadata;
+// Use the new version.
+typedef bputils::TopologyMetadata TopologyMetadata;
 
 //-----------------------------------------------------------------------------
 // -- begin internal helpers --
@@ -1552,7 +1554,7 @@ unstructured_centroid(const ShapeType &topo_shape,
 //       the data.
 template <typename IndexType, typename CoordType, typename StorageFunc>
 void
-unstructured_centroid_polyhedral(const ShapeType &topo_shape,
+unstructured_centroid_polyhedral(const ShapeType &/*topo_shape*/,
                                  const IndexType &topo_conn,
                                  const IndexType &topo_offsets,
                                  const IndexType &topo_sizes,

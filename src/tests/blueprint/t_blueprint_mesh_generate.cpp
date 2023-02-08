@@ -1414,7 +1414,19 @@ TEST(conduit_blueprint_generate_unstructured, generate_faces)
         mesh::topology::unstructured::generate_offsets(face_topo, face_off);
 
         EXPECT_EQ(face_topo["coordset"].as_string(), grid_coords.name());
-        EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
+        if(grid_mesh.is_poly)
+        {
+            // NOTE: In the newer TopologyMetadata, meshes where all PH faces are
+            //       
+            std::string shape(face_topo["elements/shape"].as_string());
+            std::string ft(face_tstr.substr(0, face_tstr.size() - 1));
+            bool ftsame = shape == "polygonal" || shape == ft;
+            EXPECT_EQ(ftsame, true);
+        }
+        else
+        {
+            EXPECT_EQ(face_topo["elements/shape"].as_string(), face_type);
+        }
         // relax exact type req, conn transforms will become index_t
         // EXPECT_EQ(face_conn.dtype().id(), grid_conn.dtype().id());
         EXPECT_EQ(face_off.dtype().number_of_elements(), grid_mesh.faces());
