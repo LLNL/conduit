@@ -39,7 +39,8 @@ using index_t = conduit::index_t;
 // Enable this macro to generate baselines.
 //#define GENERATE_BASELINES
 
-#define USE_ERROR_HANDLER
+// Enable this macro when debugging to make Conduit hang where it would throw.
+//#define USE_ERROR_HANDLER
 
 //-----------------------------------------------------------------------------
 #ifdef _WIN32
@@ -484,7 +485,7 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-#if 1
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
@@ -556,11 +557,26 @@ TEST(conduit_blueprint_topology_metadata, quads_poly)
 {
     test_mesh_type("quads_poly");
 }
-#endif
+
+// PH cases
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, hexs_poly)
+{
+    // NOTE: The topo2 elements/shape was modified in the baseline to "quad"
+    //       since the new TopologyMetadata class tries to make single shapes
+    //       if they happen to all be the same.
+    test_mesh_type("hexs_poly");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, custom_ph)
+{
+    test_mesh_type("custom_ph");
+}
 
 #if 0
-// These are not supported by reference::TopologyMetadata (and probably not the
-// new class either as additional connectivity handling is needed.)
+// These topologies are not supported by reference::TopologyMetadata (and probably
+// not the new class either as additional connectivity handling is needed.)
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, quads_and_tris)
@@ -578,23 +594,6 @@ TEST(conduit_blueprint_topology_metadata, mixed_2d)
 TEST(conduit_blueprint_topology_metadata, rectilinear)
 {
     test_mesh_type("rectilinear");
-}
-#endif
-
-// PH cases
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_topology_metadata, hexs_poly)
-{
-    // NOTE: The topo2 elements/shape was modified in the baseline to "quad"
-    //       since the new TopologyMetadata class tries to make single shapes
-    //       if they happen to all be the same.
-    test_mesh_type("hexs_poly");
-}
-#if 0
-//-----------------------------------------------------------------------------
-TEST(conduit_blueprint_topology_metadata, custom_ph)
-{
-    test_mesh_type("custom_ph");
 }
 #endif
 

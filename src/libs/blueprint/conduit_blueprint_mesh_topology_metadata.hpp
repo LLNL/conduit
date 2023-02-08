@@ -52,6 +52,7 @@ namespace mesh
 namespace utils
 {
 
+// Base class for TopologyMetadata classes - it provides IndexType.
 class CONDUIT_BLUEPRINT_API TopologyMetadataBase
 {
 public:
@@ -74,7 +75,7 @@ public:
  as a child in their connectivity. The 2D faces consist of a set of edges
  and these are made unique as well and are available in the mapping.
 
- An example is helpful to understand the concept of the maps.
+ An example is helpful to understand the concept of the associations.
 
  4 3D Hex topology (points are labelled):
 
@@ -126,15 +127,15 @@ public:
  In the same way, the entire collection of faces can be thought of as a unique
  set of edges with their own numbering.
 
- The entity maps contain the information of how these elements,faces,edges,points
- are connected.
+ The entity associations contain the information of how these elements,faces,
+ edges,points are connected.
 
- The global entity map for dimension 3 to dimension 2, which we'll write as G(3,2),
- indicates the relationship between entities of dimension 3 to the entities of
- dimension 2. Since the dimension 3 elements are made of the dimension 2 elements
- (much as PH cells are expressed in Blueprint), the G(3,2) map will consist
- of the indices of the faces that make up element 0, followed by the indices of the
- faces that make up element 1, and so on.
+ The global entity association for dimension 3 to dimension 2, which we'll write
+ as G(3,2), indicates the relationship between entities of dimension 3 to the
+ entities of dimension 2. Since the dimension 3 elements are made of the
+ dimension 2 elements (much as PH cells are expressed in Blueprint), the G(3,2)
+ association will consist of the indices of the faces that make up element 0,
+ followed by the indices of the faces that make up element 1, and so on.
 
            element 0 faces   element 1 faces ...
  G(3,2) = {0, 1, 2, 3, 4, 5}{6, 7, 8, 9, 2, 10}...
@@ -142,11 +143,11 @@ public:
                     |
                     face 3 in unique face list (topo[2] connectivity)
 
- There are other GLOBAL entity maps G(e,a) too. G(3,3) is the relationship
- of elements to elements, which is self so any input to the map is also the
- output. The G(3,1) map represents the indices of the 1D edges that make up
- the 3D element. The G(3,0) map represents all of the points contained by the
- 3D element.
+ There are other GLOBAL entity associations G(e,a) too. G(3,3) is the
+ relationship of elements to elements, which is self so any input to the map
+ is also the output. The G(3,1) map represents the indices of the 1D edges
+ that make up the 3D element. The G(3,0) map represents all of the points
+ contained by the 3D element.
 
  G(e,a) is shorthand for "Global(entity_dim, association_dim)".
 
@@ -296,11 +297,27 @@ public:
 
      @note The data are returned as a vector_view, which is an object that acts
            like a vector but does not have to copy bulk data. The data it points
-           to for a given return are in the associations.
+           to for a given return are in the associations. We use vector_view
+           instead of DataArray in order provide a std::vector-like container
+           (with iterators, etc) that points to externally allocated data.
      */
     conduit::vector_view<index_t>
     get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
 
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get a local association for a particular entity_id in the entity_dim
+            dimension.
+
+     @param entity_id The entity id whose information we want to obtain. This
+                      value must be valid for the entity dimension in question.
+     @param entity_dim The dimension of the entity whose information we want.
+     @param assoc_dim  The dimension of the association we want.
+
+     @note The data are returned as a range_vector, which is a class that
+           represents a range implicitly and provides std::vector-like
+           functionality and iterators.
+    */
     conduit::range_vector<index_t>
     get_local_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const;
 
@@ -403,8 +420,9 @@ private:
 namespace reference
 {
 
-// Keep this older class as a reference for now. Remove it when the new
-// implementation is up to par.
+// This is the original TopologyMetadata, which is remaining as a reference
+// implementation.
+
 class CONDUIT_BLUEPRINT_API TopologyMetadata : public TopologyMetadataBase
 {
 public:
