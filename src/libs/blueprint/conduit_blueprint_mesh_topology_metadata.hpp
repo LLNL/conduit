@@ -261,18 +261,27 @@ public:
 
     //-----------------------------------------------------------------------
     /**
-     @brief Get the topologies array.
-     @return The topologies array.
+     @brief Get the topology for the dimension.
+     @param dim The dimension.
+     @return The topology node.
      */
-    const conduit::Node *get_topologies() const;
+    const conduit::Node &get_topology(size_t dim);
 
     //-----------------------------------------------------------------------
     /**
-     @brief Get the legnths arrays for the topologies. Any topologies that
-            were not produced will have length 0.
-     @return The topology lengths array.
+     @brief Get the topology for the dimension in the provided node.
+     @param dim The dimension.
+     @param dest The destination node.
      */
-    const index_t *get_topology_lengths() const;
+    void get_topology(size_t dim, conduit::Node &dest);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get the length for a topology. Any topologies that were not
+            produced will have length 0.
+     @return The topology length.
+     */
+    index_t get_topology_length(size_t dim) const;
 
     //-----------------------------------------------------------------------
     /**
@@ -500,7 +509,24 @@ public:
     // Compatibility methods
     int dimension() const { return topo_cascade.dim; }
 
-    const std::vector<conduit::Node> &get_topologies() const { return dim_topos; }
+    const conduit::Node &get_topology(size_t dim)
+    {
+        if(dim > 3) { CONDUIT_ERROR("Invalid dimension."); }
+        return dim_topos[dim];
+    }
+
+    void get_topology(size_t dim, conduit::Node &dest)
+    {
+        if(dim > 3) { CONDUIT_ERROR("Invalid dimension."); }
+        dest.reset();
+        dest.set(dim_topos[dim]);
+    }
+
+    index_t get_topology_length(size_t dim) const
+    {
+        if(dim > 3) { CONDUIT_ERROR("Invalid dimension."); }
+        return conduit::blueprint::mesh::utils::topology::length(dim_topos[dim]);
+    }
 
     const std::vector<index_t> &
     get_global_association(index_t entity_id, index_t entity_dim, index_t assoc_dim) const

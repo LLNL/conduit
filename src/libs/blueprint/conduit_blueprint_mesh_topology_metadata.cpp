@@ -297,7 +297,15 @@ public:
      @brief Get the topologies array (the possibly int_dtype converted version)
      @return The topologies array.
      */
-    const conduit::Node *get_topologies() const { return dim_topos_int_dtype; }
+    const conduit::Node &get_topology(size_t dim);
+
+    //-----------------------------------------------------------------------
+    /**
+     @brief Get the topology for the dimension in the provided node.
+     @param dim The dimension.
+     @param dest The destination node.
+     */
+    void get_topology(size_t dim, conduit::Node &dest);
 
     //-----------------------------------------------------------------------
     /**
@@ -305,7 +313,7 @@ public:
             were not produced will have length 0.
      @return The topology lengths array.
      */
-    const index_t *get_topology_lengths() const { return dim_topo_lengths; }
+    index_t get_topology_length(size_t dim) const;
 
     //-----------------------------------------------------------------------
     /**
@@ -546,8 +554,13 @@ private:
     /**
      @brief Sets up the dim_topos_int_dtype topologies, converting types
             if needed.
+     @param dim The dimension topology to convert.
+     @param dest The node that holds the converted topology - or a reference
+                 to the topology if forceCopy == false and the data were in
+                 the right format.
+     @param forceCopy Whether to force copying the data.
      */
-    void convert_topology_dtype();
+    void convert_topology_dtype(size_t dim, conduit::Node &dest, bool forceCopy);
 
     //-----------------------------------------------------------------------
     /**
@@ -1503,42 +1516,62 @@ TopologyMetadata::Implementation::initialize(const std::vector<std::pair<size_t,
 
     build_associations();
     build_local_to_global();
+}
 
-    // Topologies were built using index_t so the internal code can assume a
-    // single type. If that is not the type we need for the output int_dtype,
-    // convert the topologies.
-    convert_topology_dtype();
+//---------------------------------------------------------------------------
+const conduit::Node &
+TopologyMetadata::Implementation::get_topology(size_t dim)
+{
+    if(dim > 3)
+        CONDUIT_ERROR("Invalid dimension");
+    if(dim_topos_int_dtype[dim].dtype().is_empty())
+        convert_topology_dtype(dim, dim_topos_int_dtype[dim], false);
+
+    return dim_topos_int_dtype[dim];
+}
+
+//---------------------------------------------------------------------------
+void
+TopologyMetadata::Implementation::get_topology(size_t dim, conduit::Node &dest)
+{
+    if(dim > 3)
+        CONDUIT_ERROR("Invalid dimension");
+    convert_topology_dtype(dim, dest, true);
+}
+
+//---------------------------------------------------------------------------
+index_t
+TopologyMetadata::Implementation::get_topology_length(size_t dim) const
+{
+    if(dim > 3)
+        CONDUIT_ERROR("Invalid dimension");
+    return dim_topo_lengths[dim];
 }
 
 //------------------------------------------------------------------------------
 void
-TopologyMetadata::Implementation::convert_topology_dtype()
+TopologyMetadata::Implementation::convert_topology_dtype(size_t dim,
+    conduit::Node &dest, bool forceCopy)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    // NOTE: If we change the get_topologies() method to get_topology(int) then
-    //       we could do these things there lazily.
-
-    int dim = dimension();
+    if(dim > 3)
+        CONDUIT_ERROR("Invalid dimension");
+    dest.reset();
     if(int_dtype.id() == DataType::index_t().id())
     {
-        // The topologies are already in the desired int_dtype. Reference them
+        // The topology is already in the desired int_dtype. Reference it
         // in the dim_topos_int_dtype nodes.
-        for(int i = 0; i <= dim; i++)
-        {
-            dim_topos_int_dtype[i].set_external(dim_topos[i]);
-        }
+        if(forceCopy)
+            dest.set(dim_topos[dim]);
+        else
+            dest.set_external(dim_topos[dim]);
     }
     else
     {
-        // The topologies are not in the desired int_dtype. Convert them.
-        for(int i = 0; i <= dim; i++)
-        {
-            const ShapeType shape(dim_topos[i]);
-            copy_topology(dim_topos[i], shape, int_dtype, dim_topos_int_dtype[i]);
-            // We probably don't need this topology anymore.
-            dim_topos[i].reset();
-        }
+        // The topology is not in the desired int_dtype. Convert it.
+        const ShapeType shape(dim_topos[dim]);
+        copy_topology(dim_topos[dim], shape, int_dtype, dest);
     }
 }
 
@@ -3390,17 +3423,23 @@ TopologyMetadata::dimension() const
 }
 
 //---------------------------------------------------------------------------
-const conduit::Node *
-TopologyMetadata::get_topologies() const
+const conduit::Node &
+TopologyMetadata::get_topology(size_t dim)
 {
-    return impl->get_topologies();
+    return impl->get_topology(dim);
 }
 
 //---------------------------------------------------------------------------
-const index_t *
-TopologyMetadata::get_topology_lengths() const
+void TopologyMetadata::get_topology(size_t dim, conduit::Node &dest)
 {
-    return impl->get_topology_lengths();
+    impl->get_topology(dim, dest);
+}
+
+//---------------------------------------------------------------------------
+index_t
+TopologyMetadata::get_topology_length(size_t dim) const
+{
+    return impl->get_topology_length(dim);
 }
 
 //---------------------------------------------------------------------------

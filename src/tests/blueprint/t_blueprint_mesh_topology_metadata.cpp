@@ -115,10 +115,10 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
         std::stringstream oss;
         oss << "topologies/topo" << d;
         std::string tname(oss.str());
-        rep[tname].set_external(md.get_topologies()[d]);
+        rep[tname].set_external(md.get_topology(d));
 
         // Add the topology to the vis.
-        vis[tname].set_external(md.get_topologies()[d]);
+        vis[tname].set_external(md.get_topology(d));
     }
     // Save all topos together to a dataset for visualization.
     save_visit(base, vis);
@@ -128,7 +128,7 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
         std::stringstream oss;
         oss << "lengths/topo" << d;
         std::string mname(oss.str());
-        rep[mname].set(conduit::blueprint::mesh::utils::topology::length(md.get_topologies()[d]));
+        rep[mname].set(conduit::blueprint::mesh::utils::topology::length(md.get_topology(d)));
     }
 
     std::vector<std::string> mapkeys{"values", "sizes", "offsets"};

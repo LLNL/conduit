@@ -3034,7 +3034,7 @@ generate_decomposed_entities(conduit::Node &mesh,
         const Node &src_cset = *src_cset_ptr;
         // NOTE(JRC): Diff- generate topology metadata for source topology to find
         // centroids that may exist within an adjset group.
-        const bputils::TopologyMetadata src_topo_data(src_topo, src_cset);
+        bputils::TopologyMetadata src_topo_data(src_topo, src_cset);
 
         // const Node &dst_topo = domain["topologies"][dst_topo_name];
         const Node &dst_cset = domain["coordsets"][dst_cset_name];
@@ -3078,7 +3078,7 @@ generate_decomposed_entities(conduit::Node &mesh,
         // to consider on individual adjset interfaces.
         for(const index_t &dentry : decomposed_centroid_dims)
         {
-            const Node &dim_topo = src_topo_data.get_topologies()[dentry];
+            const Node &dim_topo = src_topo_data.get_topology(dentry);
             for(index_t ei = 0; ei < src_topo_data.get_length(dentry); ei++)
             {
                 std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dim_topo, ei);
@@ -4351,7 +4351,7 @@ mesh::topology::unstructured::generate_points(const Node &topo,
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
     TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
-    dest.set(topo_data.get_topologies()[0]);
+    topo_data.get_topology(0, dest);
 
     const index_t src_dim = topo_data.dimension(), dst_dim = 0;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
@@ -4372,7 +4372,7 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
     TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
-    dest.set(topo_data.get_topologies()[1]);
+    topo_data.get_topology(1, dest);
 
     const index_t src_dim = topo_data.dimension(), dst_dim = 1;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
@@ -4393,7 +4393,7 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
     TopologyMetadata topo_data(topo, *coordset);
     dest.reset();
-    dest.set(topo_data.get_topologies()[2]);
+    topo_data.get_topology(2, dest);
 
     const index_t src_dim = topo_data.dimension(), dst_dim = 2;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
@@ -4458,7 +4458,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, *coordset);
+    TopologyMetadata topo_data(topo, *coordset);
     const DataType &int_dtype = topo_data.get_int_dtype();
     const DataType &float_dtype = topo_data.get_float_dtype();
 
@@ -4472,7 +4472,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         if(di == line_shape.dim) { continue; }
 
         calculate_unstructured_centroids(
-            topo_data.get_topologies()[di], *coordset,
+            topo_data.get_topology(di), *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
@@ -5659,7 +5659,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, *coordset);
+    TopologyMetadata topo_data(topo, *coordset);
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
     const DataType &int_dtype = topo_data.get_int_dtype();
     const DataType &float_dtype = topo_data.get_float_dtype();
@@ -5669,7 +5669,7 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         calculate_unstructured_centroids(
-            topo_data.get_topologies()[di], *coordset,
+            topo_data.get_topology(di), *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
