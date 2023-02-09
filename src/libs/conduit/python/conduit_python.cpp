@@ -3998,6 +3998,20 @@ PyConduit_Schema_number_of_children(PyConduit_Schema *self)
 }
 
 //---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_name(PyConduit_Schema *self)
+{
+    return PyString_FromString(self->schema->name().c_str());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Schema_path(PyConduit_Schema *self)
+{
+    return PyString_FromString(self->schema->path().c_str());
+}
+
+//---------------------------------------------------------------------------//
 static PyObject * 
 PyConduit_Schema_has_path(PyConduit_Schema *self,
                           PyObject* args)
@@ -4400,10 +4414,21 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
     (PyCFunction)PyConduit_Schema_remove,
     METH_VARARGS | METH_KEYWORDS,
     "Remove a child by index or path"},
+    //-----------------------------------------------------------------------//
     {"number_of_children",
       (PyCFunction)PyConduit_Schema_number_of_children,
       METH_NOARGS, 
       "Number of child schemas"},
+    //-----------------------------------------------------------------------//
+    {"name",
+      (PyCFunction)PyConduit_Schema_name,
+      METH_NOARGS, 
+      "This schema's name"},
+    //-----------------------------------------------------------------------//
+    {"path",
+      (PyCFunction)PyConduit_Schema_path,
+      METH_NOARGS, 
+      "Path to this schema"},
     //-----------------------------------------------------------------------//
     {"has_path",
      (PyCFunction)PyConduit_Schema_has_path,
@@ -5544,6 +5569,20 @@ static PyObject *
 PyConduit_Node_number_of_children(PyConduit_Node *self)
 {
     return PyLong_FromSsize_t((Py_ssize_t)self->node->number_of_children());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_name(PyConduit_Node *self)
+{
+    return PyString_FromString(self->node->name().c_str());
+}
+
+//---------------------------------------------------------------------------//
+static PyObject *
+PyConduit_Node_path(PyConduit_Node *self)
+{
+    return PyString_FromString(self->node->path().c_str());
 }
 
 //---------------------------------------------------------------------------//
@@ -6867,6 +6906,16 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
       (PyCFunction)PyConduit_Node_number_of_children,
       METH_NOARGS, 
       "Number of child nodes"},
+    //-----------------------------------------------------------------------//
+    {"name",
+      (PyCFunction)PyConduit_Node_name,
+      METH_NOARGS, 
+      "This node's name"},
+    //-----------------------------------------------------------------------//
+    {"path",
+      (PyCFunction)PyConduit_Node_path,
+      METH_NOARGS, 
+      "Path to this node"},
     //-----------------------------------------------------------------------//
     {"has_path",
      (PyCFunction)PyConduit_Node_has_path,

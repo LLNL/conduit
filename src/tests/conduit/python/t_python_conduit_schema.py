@@ -40,6 +40,13 @@ class Test_Conduit_Schema(unittest.TestCase):
         self.assertTrue(s.is_root())
         self.assertFalse(n.fetch('a').schema().is_root())
 
+    def test_name_and_path(self):
+        s = Schema()
+        s['a'] = DataType.float64(1)
+        s['b/c/d'] = DataType.float64(1)
+        self.assertEqual(s['a'].name(),'a')
+        self.assertEqual(s['b/c/d'].path(),'b/c/d')
+
     def test_create_node_using_schema_object(self):
         s = Schema()
         s["a"] = DataType.float64(10)
