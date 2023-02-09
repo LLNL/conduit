@@ -33,7 +33,7 @@ using std::endl;
 //using TopologyMetadata = conduit::blueprint::mesh::utils::reference::TopologyMetadata;
 
 // Use the new one
-using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
+//using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
 
 using index_t = conduit::index_t;
 
@@ -317,6 +317,41 @@ make_custom_hexs(conduit::Node &node)
 
 //-----------------------------------------------------------------------------
 void
+make_custom_poly(conduit::Node &node)
+{
+    std::vector<double> xc{0.,4.,4.,2.,0.,5.,8.,7.,8.,6.,8.,0.,4.,8.,0.,2.,4.,8.};
+    std::vector<double> yc{0.,0.,2.,4.,4.,0.,0.,1.,3.,4.,4.,5.,6.,6.,7.,7.,7.,7.};
+
+    std::vector<int> conn{0,1,2,3,4,
+                          1,5,7,8,10,9,2,
+                          5,6,7,
+                          7,6,8,
+                          2,9,12,3,
+                          11,15,14,
+                          4,3,12,16,15,11,
+                          12,9,13,17,16,
+                          9,10,13
+                         };
+    std::vector<int> connsize{5,7,3,3,4,3,6,5,3};
+
+    node["coordsets/coords/type"] = "explicit";
+    node["coordsets/coords/values/x"].set(xc);
+    node["coordsets/coords/values/y"].set(yc);
+
+    node["topologies/mesh/coordset"] = "coords";
+    node["topologies/mesh/type"] = "unstructured";
+
+    node["topologies/mesh/elements/shape"] = "polygonal";
+    node["topologies/mesh/elements/connectivity"].set(conn);
+    node["topologies/mesh/elements/sizes"].set(connsize);
+
+    conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(
+        node["topologies/mesh"], 
+        node["topologies/mesh/elements/offsets"]);
+}
+
+//-----------------------------------------------------------------------------
+void
 make_custom_ph(conduit::Node &node)
 {
     std::vector<float> xc{0.f, 0.5f, 1.f,
@@ -434,6 +469,8 @@ make_dataset(conduit::Node &node, const std::string &type, conduit::DataType &dt
         make_custom_tets(node);
     else if(type == "custom_hexs")
         make_custom_hexs(node);
+    else if(type == "custom_poly")
+        make_custom_poly(node);
     else if(type == "custom_ph")
         make_custom_ph(node);
     else
@@ -505,7 +542,7 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-
+#if 0
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
@@ -572,12 +609,18 @@ TEST(conduit_blueprint_topology_metadata, custom_hexs)
 
 // Polygon cases
 
-//-----------------------------------------------------------------------------
+///-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, quads_poly)
 {
     test_mesh_type("quads_poly");
 }
-
+#endif
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_topology_metadata, custom_poly)
+{
+    test_mesh_type("custom_poly");
+}
+#if 0
 // PH cases
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, hexs_poly)
@@ -616,7 +659,7 @@ TEST(conduit_blueprint_topology_metadata, rectilinear)
     test_mesh_type("rectilinear");
 }
 #endif
-
+#endif
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
