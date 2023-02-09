@@ -2470,48 +2470,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
     }
 
-    // check for + validate silo_type option
-    // TODO add more in later?
-    if (opts.has_child("silo_type") && opts["silo_type"].dtype().is_string())
-    {
-        opts_silo_type = opts["silo_type"].as_string();
-
-        if(opts_silo_type != "default" && 
-           opts_silo_type != "pdb" &&
-           opts_silo_type != "hdf5" &&
-           opts_silo_type != "unknown" )
-        {
-            CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
-                          << opts_silo_type << "\"\n"
-                          " expected: \"default\", \"pdb\", \"hdf5\", or \"unknown\"");
-        }
-
-        if (opts_silo_type == "default")
-        {
-            if (conduit::utils::is_file(path)) 
-            {
-                silo_type = DB_UNKNOWN;
-            }
-            else
-            {
-                silo_type = DB_HDF5;
-            }
-        }
-        else if (opts_silo_type == "pdb")
-        {
-            silo_type = DB_PDB;
-        }
-        else if (opts_silo_type == "hdf5")
-        {
-            silo_type = DB_HDF5;
-        }
-        else if (opts_silo_type == "unknown") 
-        {
-            silo_type = DB_UNKNOWN;
-        }
-
-    }
-
     // check for + validate suffix option
     if(opts.has_child("suffix") && opts["suffix"].dtype().is_string())
     {
@@ -2546,6 +2504,50 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         const std::string ow_string = opts["truncate"].as_string();
         if(ow_string == "true")
             opts_truncate = true;
+    }
+
+    // check for + validate silo_type option
+    // uses the truncate option so needs to happen after it is set
+    // TODO add more in later?
+    if (opts.has_child("silo_type") && opts["silo_type"].dtype().is_string())
+    {
+        opts_silo_type = opts["silo_type"].as_string();
+
+        if(opts_silo_type != "default" && 
+           opts_silo_type != "pdb" &&
+           opts_silo_type != "hdf5" &&
+           opts_silo_type != "unknown" )
+        {
+            CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
+                          << opts_silo_type << "\"\n"
+                          " expected: \"default\", \"pdb\", \"hdf5\", or \"unknown\"");
+        }
+
+        if (opts_silo_type == "default")
+        {
+            if (conduit::utils::is_file(path) &&
+                !opts_truncate) 
+            {
+                silo_type = DB_UNKNOWN;
+            }
+            else
+            {
+                silo_type = DB_HDF5;
+            }
+        }
+        else if (opts_silo_type == "pdb")
+        {
+            silo_type = DB_PDB;
+        }
+        else if (opts_silo_type == "hdf5")
+        {
+            silo_type = DB_HDF5;
+        }
+        else if (opts_silo_type == "unknown") 
+        {
+            // TODO dbcreate can't handle this
+            silo_type = DB_UNKNOWN;
+        }
     }
 
     // special logic for overlink
@@ -2843,23 +2845,22 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
-                        CONDUIT_ERROR("TODO Truncate case not yet implemented");
-                        // Node open_opts;
-                        // open_opts["mode"] = "wt";
-                        // // TODO I need a way to support truncate?
-                        // // How to open a file with opts for silo?
-                        // hnd.open(root_filename,"silo",open_opts);
-                        // local_root_file_created.set((int)1);
+                        if(!dbfile)
+                        {
+                            if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                            {
+                                CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                            }
+                        }
+                        local_root_file_created.set((int)1);
                     }
                     
                     if(!dbfile)
                     {
-                        std::cout << "it's me" << std::endl;
-                        if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                        if((dbfile = DBCreate(root_filename.c_str(), DB_NOCLOBBER, DB_LOCAL, NULL, silo_type)))
                         {
                             CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                         }
-                        std::cout << "hi" << std::endl;
                     }
 
                     const Node &dom = multi_dom.child(i);
@@ -2912,23 +2913,26 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                                     domain));
             // properly support truncate vs non truncate
 
-            DBfile *dbfile;
+            DBfile *dbfile = nullptr;
 
-            Node open_opts;
-            open_opts["mode"] = "w";
             if(opts_truncate)
             {
-                // TODO does silo support truncation
-               open_opts["mode"] = "wt";
+                if(!dbfile)
+               {
+                   if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                   {
+                       CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                   }
+               }
             }
-            // TODO learn how to pass open these opts or do something else
-            // silo open instead of silo create maybe?
-
-            if(!dbfile)
+            else
             {
-                if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                if(!dbfile)
                 {
-                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                    if((dbfile = DBCreate(root_filename.c_str(), DB_NOCLOBBER, DB_LOCAL, NULL, silo_type)))
+                    {
+                        CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                    }
                 }
             }
 
@@ -3096,16 +3100,31 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                             try
                             {
-                                DBfile *dbfile;
+                                DBfile *dbfile = nullptr;
                                 // if truncate == true check if this is the first time we are
-                                // touching file, and use wt
+                                // touching file, and use DB_CLOBBER
                                 Node open_opts;
                                 if(opts_truncate && global_file_created[f] == 0)
                                 {
-                                   open_opts["mode"] = "wt";
-
+                                    if(!dbfile)
+                                   {
+                                       if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                                       {
+                                           CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                                       }
+                                   }
                                    local_file_created[f]  = 1;
                                    global_file_created[f] = 1;
+                                }
+                                else
+                                {
+                                    if(!dbfile)
+                                    {
+                                        if((dbfile = DBCreate(root_filename.c_str(), DB_NOCLOBBER, DB_LOCAL, NULL, silo_type)))
+                                        {
+                                            CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                                        }
+                                    }
                                 }
 
                                 // TODO again we need truncate support
@@ -3401,19 +3420,26 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         // if not root only, this is the first time we are writing 
         // to the root file -- make sure to properly support truncate
-        Node open_opts;
         if(opts_file_style != "root_only" && opts_truncate)
         {
-            open_opts["mode"] = "wt";
-        }
-
-        // TODO use opts
-        if(!dbfile)
-        {
-            if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+            if(!dbfile)
             {
-                CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
-                return;
+                if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                {
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
+                    return;
+                }
+            }
+        }
+        else
+        {
+            if(!dbfile)
+            {
+                if((dbfile = DBCreate(root_filename.c_str(), DB_NOCLOBBER, DB_LOCAL, NULL, silo_type)))
+                {
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
+                    return;
+                }
             }
         }
 
