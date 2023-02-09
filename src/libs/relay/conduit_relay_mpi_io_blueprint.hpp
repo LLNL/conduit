@@ -55,24 +55,15 @@ namespace io
 namespace blueprint
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay::io::blueprint::detail
-//-----------------------------------------------------------------------------
+// TODO removefrom  detail
 namespace detail
 {
 
-void gen_domain_to_file_map(index_t num_domains,
+void CONDUIT_RELAY_API gen_domain_to_file_map(index_t num_domains,
                             index_t num_files,
                             Node &out);
 
-bool clean_mesh(const conduit::Node &data,
-                conduit::Node &output,
-                MPI_Comm comm);
-
 }
-//-----------------------------------------------------------------------------
-// -- end detail:: --
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // Save a blueprint mesh to root + file set

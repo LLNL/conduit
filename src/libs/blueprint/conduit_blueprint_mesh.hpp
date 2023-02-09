@@ -215,6 +215,9 @@ void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
                                    const conduit::Node &options,
                                    conduit::Node &output);
 
+//-------------------------------------------------------------------------
+bool CONDUIT_BLUEPRINT_API clean_mesh(const conduit::Node &data,
+                                      conduit::Node &output);
 
 //-----------------------------------------------------------------------------
 /// blueprint mesh transform methods (these work on multi domain meshes)

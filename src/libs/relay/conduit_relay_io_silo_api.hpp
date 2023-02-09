@@ -98,7 +98,7 @@ void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
                                  const conduit::Node &opts,
                                  conduit::Node &mesh);
 
-void silo_mesh_write(const Node &n, 
+void CONDUIT_RELAY_API silo_mesh_write(const Node &n, 
                      DBfile *dbfile,
                      const std::string &silo_obj_path);
 

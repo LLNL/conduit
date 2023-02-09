@@ -30,6 +30,7 @@
 #include "conduit_fmt/conduit_fmt.h"
 
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    #include "conduit_blueprint_mpi.hpp"
     #include "conduit_relay_mpi.hpp"
     #include "conduit_relay_mpi_io_blueprint.hpp"
 #else
@@ -2470,7 +2471,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     }
 
     // check for + validate silo_type option
-    // TODO
+    // TODO add more in later?
     if (opts.has_child("silo_type") && opts["silo_type"].dtype().is_string())
     {
         opts_silo_type = opts["silo_type"].as_string();
@@ -2567,9 +2568,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // -----------------------------------------------------------
     Node multi_dom;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    bool is_valid = blueprint::detail::clean_mesh(mesh, multi_dom, mpi_comm);
+    bool is_valid = conduit::blueprint::mpi::mesh::clean_mesh(mesh, multi_dom, mpi_comm);
 #else
-    bool is_valid = blueprint::detail::clean_mesh(mesh, multi_dom);
+    bool is_valid = conduit::blueprint::mesh::clean_mesh(mesh, multi_dom);
 #endif
 
     int par_rank = 0;
@@ -2832,7 +2833,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             if(par_rank == current_writer)
             {
-                DBfile *dbfile;
+                DBfile *dbfile = nullptr;
 
                 for(int i = 0; i < local_num_domains; ++i)
                 {
@@ -2853,11 +2854,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     
                     if(!dbfile)
                     {
+                        std::cout << "it's me" << std::endl;
                         if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                         {
                             CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                            return;
                         }
+                        std::cout << "hi" << std::endl;
                     }
 
                     const Node &dom = multi_dom.child(i);
@@ -2927,7 +2929,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                 {
                     CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                    return;
                 }
             }
 
@@ -3114,7 +3115,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                     if((dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                                     {
                                         CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                                        return;
                                     }
                                 }
 
@@ -3395,7 +3395,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["file_pattern"] = output_file_pattern;
         root["tree_pattern"] = output_tree_pattern;
 
-        DBfile *dbfile = NULL;
+        root.print();
+
+        DBfile *dbfile = nullptr;
 
         // if not root only, this is the first time we are writing 
         // to the root file -- make sure to properly support truncate
