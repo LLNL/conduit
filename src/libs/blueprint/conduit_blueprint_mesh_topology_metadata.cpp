@@ -952,6 +952,7 @@ private:
         index_t faces_per_elem = shape.embed_count;
         index_t points_per_face = embed_shape.indices;
         index_t nfacepts = faces_per_elem * points_per_face;
+        constexpr index_t max_nfacepts = 6 * 4;
 
         index_t nelem = connlen / points_per_elem;
         auto nelem_faces = nelem * faces_per_elem;
@@ -983,7 +984,7 @@ private:
         {
             // Get the element faces, storing them all in face_pts.
             index_t elemstart = elem * points_per_elem;
-            index_t face_pts[nfacepts];
+            index_t face_pts[max_nfacepts];
             for(index_t i = 0; i < nfacepts; i++)
                 face_pts[i] = conn[elemstart + shape.embedding[i]];
 
