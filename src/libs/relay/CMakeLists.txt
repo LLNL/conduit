@@ -377,7 +377,9 @@ set(conduit_relay_mpi_io_headers conduit_relay_mpi_io.hpp)
 set(conduit_relay_mpi_io_deps conduit
                               ${conduit_blt_mpi_deps}
                               conduit_relay_mpi
-                              conduit_relay)
+                              conduit_relay
+                              conduit_blueprint
+                              conduit_blueprint_mpi)
 
 #
 # Specify relay mpi c headers

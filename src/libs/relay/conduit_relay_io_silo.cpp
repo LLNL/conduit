@@ -2568,9 +2568,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // -----------------------------------------------------------
     Node multi_dom;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    bool is_valid = conduit::blueprint::mpi::mesh::clean_mesh(mesh, multi_dom, mpi_comm);
+    bool is_valid = conduit::relay::mpi::io::blueprint::detail::clean_mesh(mesh, multi_dom, mpi_comm);
 #else
-    bool is_valid = conduit::blueprint::mesh::clean_mesh(mesh, multi_dom);
+    bool is_valid = conduit::relay::io::blueprint::detail::clean_mesh(mesh, multi_dom);
 #endif
 
     int par_rank = 0;

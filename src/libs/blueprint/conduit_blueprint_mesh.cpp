@@ -7480,94 +7480,17 @@ mesh::flatten(const conduit::Node &mesh,
 }
 
 //-----------------------------------------------------------------------------
-namespace detail
+void mesh::generate_domain_ids(conduit::Node &domains)
 {
-    bool quick_mesh_check(const conduit::Node &n)
-    {
-        return n.has_child("topologies") &&
-               n["topologies"].number_of_children() > 0;
-    }
+  int num_domains = (int)domains.number_of_children();
 
-    //
-    // recalculate domain ids so that we are consistant.
-    // Assumes that domains are valid
-    //
-    void make_domain_ids(conduit::Node &domains)
-    {
-      int num_domains = (int)domains.number_of_children();
+  int domain_offset = 0;
 
-      int domain_offset = 0;
-
-      for(int i = 0; i < num_domains; ++i)
-      {
-        conduit::Node &dom = domains.child(i);
-        dom["state/domain_id"] = domain_offset + i;
-      }
-    }
-} // end namespace detail
-
-//-----------------------------------------------------------------------------
-//
-// This expects a single or multi_domain blueprint mesh and will iterate
-// through all domains to see if they are valid. Returns true
-// if it contains valid data and false if there is no valid
-// data.
-//
-// This is needed because after pipelines, it is possible to
-// have no data left in a domain because of something like a
-// clip
-//
-bool
-mesh::clean_mesh(const conduit::Node &data,
-                 conduit::Node &output)
-{
-  output.reset();
-  const index_t potential_doms = data.number_of_children();
-  bool maybe_multi_dom = true;
-
-  if(!data.dtype().is_object() && !data.dtype().is_list())
+  for(int i = 0; i < num_domains; ++i)
   {
-    maybe_multi_dom = false;
+    conduit::Node &dom = domains.child(i);
+    dom["state/domain_id"] = domain_offset + i;
   }
-
-  if(maybe_multi_dom)
-  {
-    // check all the children for valid domains
-    for(int i = 0; i < potential_doms; ++i)
-    {
-      // we expect folks to use their best behaivor
-      // (mesh bp verify is true before passing data)
-      // so we can assume we have valid mesh bp.
-      // if a child looks like a mesh, we have one
-      conduit::Node info;
-      const conduit::Node &child = data.child(i);
-      
-      bool is_valid = detail::quick_mesh_check(child);
-      if(is_valid)
-      {
-        conduit::Node &dest_dom = output.append();
-        dest_dom.set_external(child);
-      }
-    }
-  }
-  // if there is nothing in the output, lets see if it is a
-  // valid single domain
-  if(output.number_of_children() == 0)
-  {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = detail::quick_mesh_check(data);
-    if(is_valid)
-    {
-      conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
-    }
-  }
-
-    detail::make_domain_ids(output);
-
-
-  return output.number_of_children() > 0;
 }
 
 
