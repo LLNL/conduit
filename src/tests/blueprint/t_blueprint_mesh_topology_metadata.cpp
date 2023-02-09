@@ -33,7 +33,7 @@ using std::endl;
 //using TopologyMetadata = conduit::blueprint::mesh::utils::reference::TopologyMetadata;
 
 // Use the new one
-//using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
+using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
 
 using index_t = conduit::index_t;
 
@@ -121,9 +121,10 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
         // Add the topology to the vis.
         vis[tname].set_external(md.get_topology(d));
     }
+#ifdef GENERATE_BASELINES
     // Save all topos together to a dataset for visualization.
     save_visit(base, vis);
-
+#endif
     for(int d = maxdim; d >= 0; d--)
     {
         std::stringstream oss;
@@ -542,7 +543,7 @@ test_mesh_type(const std::string &type)
         test_topmd(oss.str(), node["topologies/mesh"], node["coordsets/coords"]);
     }
 }
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, points)
 {
@@ -614,13 +615,13 @@ TEST(conduit_blueprint_topology_metadata, quads_poly)
 {
     test_mesh_type("quads_poly");
 }
-#endif
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, custom_poly)
 {
     test_mesh_type("custom_poly");
 }
-#if 0
+
 // PH cases
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_topology_metadata, hexs_poly)
@@ -659,7 +660,7 @@ TEST(conduit_blueprint_topology_metadata, rectilinear)
     test_mesh_type("rectilinear");
 }
 #endif
-#endif
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
