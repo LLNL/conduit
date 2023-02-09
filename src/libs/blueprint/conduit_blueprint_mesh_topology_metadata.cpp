@@ -2720,7 +2720,7 @@ TopologyMetadata::Implementation::build_local_associations()
 bool
 TopologyMetadata::Implementation::association_requested(index_t entity_dim, index_t assoc_dim) const
 {
-#ifndef _NDEBUG
+#ifndef NDEBUG
     if(entity_dim > topo_shape.dim || assoc_dim > topo_shape.dim)
     {
         CONDUIT_ERROR("A global association map G(" << entity_dim << ", " << assoc_dim
@@ -2735,7 +2735,7 @@ vector_view<index_t>
 TopologyMetadata::Implementation::get_global_association(index_t entity_id,
     index_t entity_dim, index_t assoc_dim) const
 {
-#ifndef _NDEBUG
+#ifndef NDEBUG
     if(entity_dim > topo_shape.dim || assoc_dim > topo_shape.dim)
     {
         CONDUIT_ERROR("A global association map G(" << entity_dim << ", " << assoc_dim
@@ -2838,7 +2838,7 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
     index_t entity_dim, index_t assoc_dim) const
 {
     const association &assoc = L[entity_dim][assoc_dim];
-#ifndef _NDEBUG
+#ifndef NDEBUG
     if(entity_dim > topo_shape.dim || assoc_dim > topo_shape.dim)
     {
         CONDUIT_ERROR("A local association map L(" << entity_dim << ", " << assoc_dim
