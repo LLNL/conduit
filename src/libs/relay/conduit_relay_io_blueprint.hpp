@@ -47,20 +47,8 @@ namespace io
 namespace blueprint
 {
 
-//-----------------------------------------------------------------------------
-// -- begin conduit::relay::io::blueprint::detail
-//-----------------------------------------------------------------------------
-namespace detail
-{
-
 bool CONDUIT_RELAY_API clean_mesh(const conduit::Node &data,
                                   conduit::Node &output);
-
-}
-//-----------------------------------------------------------------------------
-// -- end detail:: --
-//-----------------------------------------------------------------------------
-
 
 void CONDUIT_RELAY_API gen_domain_to_file_map(index_t num_domains,
                                               index_t num_files,

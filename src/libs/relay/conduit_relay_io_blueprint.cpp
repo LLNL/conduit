@@ -456,73 +456,6 @@ bool quick_mesh_check(const conduit::Node &n)
            n["topologies"].number_of_children() > 0;
 }
 
-//
-// This expects a single or multi_domain blueprint mesh and will iterate
-// through all domains to see if they are valid. Returns true
-// if it contains valid data and false if there is no valid
-// data.
-//
-// This is needed because after pipelines, it is possible to
-// have no data left in a domain because of something like a
-// clip
-//
-bool clean_mesh(const conduit::Node &data,
-                conduit::Node &output
-                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
-{
-  output.reset();
-  const index_t potential_doms = data.number_of_children();
-  bool maybe_multi_dom = true;
-
-  if(!data.dtype().is_object() && !data.dtype().is_list())
-  {
-    maybe_multi_dom = false;
-  }
-
-  if(maybe_multi_dom)
-  {
-    // check all the children for valid domains
-    for(int i = 0; i < potential_doms; ++i)
-    {
-      // we expect folks to use their best behaivor
-      // (mesh bp verify is true before passing data)
-      // so we can assume we have valid mesh bp.
-      // if a child looks like a mesh, we have one
-      conduit::Node info;
-      const conduit::Node &child = data.child(i);
-
-      bool is_valid = quick_mesh_check(child);
-      if(is_valid)
-      {
-        conduit::Node &dest_dom = output.append();
-        dest_dom.set_external(child);
-      }
-    }
-  }
-  // if there is nothing in the output, lets see if it is a
-  // valid single domain
-  if(output.number_of_children() == 0)
-  {
-    // check to see if this is a single valid domain
-    conduit::Node info;
-    bool is_valid = quick_mesh_check(data);
-    if(is_valid)
-    {
-      conduit::Node &dest_dom = output.append();
-      dest_dom.set_external(data);
-    }
-  }
-
-#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    conduit::blueprint::mpi::mesh::generate_domain_ids(output, mpi_comm);
-#else
-    conduit::blueprint::mesh::generate_domain_ids(output);
-#endif
-
-
-  return output.number_of_children() > 0;
-}
-
 // mfem needs these special fields so look for them
 void check_for_attributes(const conduit::Node &input,
                           std::vector<std::string> &list)
@@ -688,6 +621,73 @@ identify_protocol(const std::string &path)
 // -- end conduit::relay::<mpi>::io_blueprint::detail --
 //-----------------------------------------------------------------------------
 };
+
+//
+// This expects a single or multi_domain blueprint mesh and will iterate
+// through all domains to see if they are valid. Returns true
+// if it contains valid data and false if there is no valid
+// data.
+//
+// This is needed because after pipelines, it is possible to
+// have no data left in a domain because of something like a
+// clip
+//
+bool clean_mesh(const conduit::Node &data,
+                conduit::Node &output
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+  output.reset();
+  const index_t potential_doms = data.number_of_children();
+  bool maybe_multi_dom = true;
+
+  if(!data.dtype().is_object() && !data.dtype().is_list())
+  {
+    maybe_multi_dom = false;
+  }
+
+  if(maybe_multi_dom)
+  {
+    // check all the children for valid domains
+    for(int i = 0; i < potential_doms; ++i)
+    {
+      // we expect folks to use their best behaivor
+      // (mesh bp verify is true before passing data)
+      // so we can assume we have valid mesh bp.
+      // if a child looks like a mesh, we have one
+      conduit::Node info;
+      const conduit::Node &child = data.child(i);
+
+      bool is_valid = detail::quick_mesh_check(child);
+      if(is_valid)
+      {
+        conduit::Node &dest_dom = output.append();
+        dest_dom.set_external(child);
+      }
+    }
+  }
+  // if there is nothing in the output, lets see if it is a
+  // valid single domain
+  if(output.number_of_children() == 0)
+  {
+    // check to see if this is a single valid domain
+    conduit::Node info;
+    bool is_valid = detail::quick_mesh_check(data);
+    if(is_valid)
+    {
+      conduit::Node &dest_dom = output.append();
+      dest_dom.set_external(data);
+    }
+  }
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    conduit::blueprint::mpi::mesh::generate_domain_ids(output, mpi_comm);
+#else
+    conduit::blueprint::mesh::generate_domain_ids(output);
+#endif
+
+
+  return output.number_of_children() > 0;
+}
 
 
 //-----------------------------------------------------------------------------
@@ -935,9 +935,9 @@ void write_mesh(const Node &mesh,
     // -----------------------------------------------------------
     Node multi_dom;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    bool is_valid = conduit::relay::mpi::io::blueprint::detail::clean_mesh(mesh, multi_dom, mpi_comm);
+    bool is_valid = conduit::relay::mpi::io::blueprint::clean_mesh(mesh, multi_dom, mpi_comm);
 #else
-    bool is_valid = conduit::relay::io::blueprint::detail::clean_mesh(mesh, multi_dom);
+    bool is_valid = conduit::relay::io::blueprint::clean_mesh(mesh, multi_dom);
 #endif
 
     int par_rank = 0;
