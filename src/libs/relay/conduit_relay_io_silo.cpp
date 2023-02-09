@@ -2975,9 +2975,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
 
         Node d2f_map;
-        blueprint::detail::gen_domain_to_file_map(global_num_domains,
-                                       num_files,
-                                       books);
+        blueprint::gen_domain_to_file_map(global_num_domains,
+                                          num_files,
+                                          books);
 
         //generate part map
         // use global_d2f is what we need for "file" part of part_map

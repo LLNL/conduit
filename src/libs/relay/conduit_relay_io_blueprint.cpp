@@ -75,19 +75,6 @@ namespace blueprint
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::relay::<mpi>::blueprint::detail --
-//-----------------------------------------------------------------------------
-
-
-//
-// Lots of helpers pulled in from Ascent for dealing with
-// with mesh blueprint writing and reading. 
-// TODO: Could use cleanup.
-//
-namespace detail
-{
-
-//-----------------------------------------------------------------------------
 void gen_domain_to_file_map(index_t num_domains,
                             index_t num_files,
                             Node &out)
@@ -128,6 +115,19 @@ void gen_domain_to_file_map(index_t num_domains,
         v_domain_to_file[d] = f_idx;
     }
 }
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::relay::<mpi>::blueprint::detail --
+//-----------------------------------------------------------------------------
+
+
+//
+// Lots of helpers pulled in from Ascent for dealing with
+// with mesh blueprint writing and reading. 
+// TODO: Could use cleanup.
+//
+namespace detail
+{
 
 class BlueprintPathGeneratorImpl
 {
@@ -1322,9 +1322,9 @@ void write_mesh(const Node &mesh,
 
 
         Node d2f_map;
-        detail::gen_domain_to_file_map(global_num_domains,
-                                       num_files,
-                                       books);
+        gen_domain_to_file_map(global_num_domains,
+                               num_files,
+                               books);
 
         //generate part map
         // use global_d2f is what we need for "file" part of part_map
