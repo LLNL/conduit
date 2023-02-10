@@ -492,7 +492,7 @@ private:
      @param a The association dimension
      @return The number of entities in L(e,a).
      */
-    index_t get_local_association_entity_range(int e, int a) const;
+    index_t get_local_association_entity_range(index_t e, index_t a) const;
 
     //-----------------------------------------------------------------------
     /**
@@ -652,7 +652,7 @@ private:
                 make_embedded_connectivity(shape, conn, connlen);
 
                 // Make lines.
-                int embed_dim = shape.dim - 1;
+                auto embed_dim = static_cast<index_t>(shape.dim - 1);
                 const conduit::Node &econn = dim_topos[embed_dim].
                    fetch_existing("elements/connectivity");
                 ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
@@ -2695,7 +2695,8 @@ TopologyMetadata::Implementation::get_global_association(index_t entity_id,
 
 //---------------------------------------------------------------------------
 index_t
-TopologyMetadata::Implementation::get_local_association_entity_range(int src_dim, int dst_dim) const
+TopologyMetadata::Implementation::get_local_association_entity_range(
+    index_t src_dim, index_t dst_dim) const
 {
     // Explicit maps case.
     if(topo_shape.is_poly())
@@ -2923,9 +2924,9 @@ TopologyMetadata::Implementation::get_local_association(index_t entity_id,
         // Falls through
     case EA_INDEX(3,2):
         { // new scope
-            const association &assoc = G[entity_dim][assoc_dim];
-            index_t gsize = assoc.single_size;
-            index_t goffset = entity_id * assoc.single_size;
+            const association &gassoc = G[entity_dim][assoc_dim];
+            index_t gsize = gassoc.single_size;
+            index_t goffset = entity_id * gassoc.single_size;
             vec = conduit::range_vector<index_t>(goffset, 1, gsize);
         } // end scope
         break;
@@ -3029,7 +3030,7 @@ TopologyMetadata::Implementation::get_local_dim_map(index_t src_dim, index_t dst
     if(requested)
     {
         // Do a sizing pass.
-        auto N = get_local_association_entity_range(src_dim, dst_dim);
+        index_t N = get_local_association_entity_range(src_dim, dst_dim);
         index_t total_size = 0;
         for(index_t eid = 0; eid < N; eid++)
         {
