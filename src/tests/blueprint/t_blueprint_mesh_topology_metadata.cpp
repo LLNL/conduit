@@ -218,7 +218,8 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
     make_baseline(b, rep);
 #else
     conduit::Node baseline_rep;
-    bool pass = compare_baseline(b, rep, baseline_rep);
+    // NOTE: We force writing to a file to avoid any problems in Node::diff.
+    bool pass = compare_baseline(b, rep, baseline_rep, true);
     if(!pass)
     {
         std::cout << "BASELINE: " << b << endl;
