@@ -222,7 +222,7 @@ public:
      @brief Get the highest shape dimension.
      @return The highest shape dimension.
      */
-    int dimension() const { return topo_shape.dim; }
+    int dimension() const { return static_cast<int>(topo_shape.dim); }
 
     //-----------------------------------------------------------------------
     /**
@@ -879,11 +879,11 @@ private:
     */
     template <typename ConnType>
     void
-    make_embedded_connectivity(const ShapeType &shape, const ConnType &conn, index_t connlen)
+    make_embedded_connectivity(const ShapeType &shape, const ConnType &conn, size_t connlen)
     {
         CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-        int embed_dim = shape.dim - 1;
+        auto embed_dim = shape.dim - 1;
         ShapeType embed_shape = topo_cascade.get_shape(embed_dim);
 
         // Get sizes from the shape and embed_shape.
@@ -891,9 +891,8 @@ private:
         index_t faces_per_elem = shape.embed_count;
         index_t points_per_face = embed_shape.indices;
         index_t nfacepts = faces_per_elem * points_per_face;
-        constexpr index_t max_nfacepts = 6 * 4;
 
-        index_t nelem = connlen / points_per_elem;
+        index_t nelem = static_cast<index_t>(connlen) / points_per_elem;
         auto nelem_faces = nelem * faces_per_elem;
 #ifdef DEBUG_PRINT
         std::cout << "=======================================================" << std::endl;
@@ -923,6 +922,7 @@ private:
         {
             // Get the element faces, storing them all in face_pts.
             index_t elemstart = elem * points_per_elem;
+            constexpr index_t max_nfacepts = 6 * 4;
             index_t face_pts[max_nfacepts];
             for(index_t i = 0; i < nfacepts; i++)
                 face_pts[i] = conn[elemstart + shape.embedding[i]];
@@ -1338,7 +1338,7 @@ private:
      @param func      The function to apply to a set of e,a levels.
      */
     template <typename Func>
-    void iterate_global_map_levels(int entity_id,
+    void iterate_global_map_levels(index_t entity_id,
         const std::vector<std::vector<std::pair<int,int>>> &levels,
         size_t level,
         index_t *localIdx,
@@ -1801,7 +1801,7 @@ TopologyMetadata::Implementation::build_associations()
 #ifdef DEBUG_PRINT
     std::cout << "build_associations: topo_shape.dim=" << topo_shape.dim << std::endl;
 #endif
-    for(int dim = topo_shape.dim; dim >= 0; dim--)
+    for(int dim = static_cast<int>(topo_shape.dim); dim >= 0; dim--)
     {
 #ifdef DEBUG_PRINT
         std::cout << "topo " << dim << std::endl;
@@ -2302,8 +2302,8 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
             // Add the points in the edge to the 3,0 mapping if it was requested
             // and if we have not seen them before in this element. We do this
             // before we make the edge key so the point order is preserved.
-            size_t pt0mask = 1 << edge_pt0;
-            size_t pt1mask = 1 << edge_pt1;
+            size_t pt0mask = static_cast<size_t>(1) << edge_pt0;
+            size_t pt1mask = static_cast<size_t>(1) << edge_pt1;
             if((ptadded & pt0mask) == 0)
             {
                 ptadded |= pt0mask;
@@ -2429,7 +2429,7 @@ TopologyMetadata::Implementation::build_child_to_parent_association(int e, int a
         mapCP.sizes[mapPC.data[i]]++;
 
     // Make offsets from sizes
-    int off = 0;
+    index_t off = 0;
     for(size_t i = 0; i < mapCP.sizes.size(); i++)
     {
         mapCP.offsets[i] = off;

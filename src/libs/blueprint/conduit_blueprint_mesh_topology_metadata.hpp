@@ -512,7 +512,7 @@ public:
                      size_t lowest_dim,
                      const std::vector<std::pair<size_t,size_t> > &desired_maps);
 
-    int dimension() const { return topo_cascade.dim; }
+    int dimension() const { return static_cast<int>(topo_cascade.dim); }
 
     const conduit::Node &get_topology(size_t dim)
     {
