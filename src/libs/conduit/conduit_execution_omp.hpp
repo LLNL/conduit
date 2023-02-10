@@ -45,12 +45,12 @@ struct for_policy
     inline void operator()(index_t begin, index_t end, Func &&func)
     {
 #if defined(_OPENMP)
-        #pragma message "omp::for_policy -> OMP"
+        #pragma message("omp::for_policy -> OMP")
         #pragma omp parallel for
         for(index_t i = begin; i < end; i++)
             func(i);
 #else
-        #pragma message "omp::for_policy -> serial"
+        #pragma message("omp::for_policy -> serial")
         for(index_t i = begin; i < end; i++)
             func(i);
 #endif
@@ -63,7 +63,7 @@ struct sort_policy
     template <typename Iterator>
     inline void operator()(Iterator begin, Iterator end)
     {
-        #pragma message "omp::sort_policy -> serial"
+        #pragma message("omp::sort_policy -> serial")
         // TODO: implement an OpenMP sort like in RAJA.
         std::sort(begin, end);
         // This is only allowed in C++14 or later.
@@ -74,7 +74,7 @@ struct sort_policy
     inline void operator()(Iterator begin, Iterator end, Predicate &&predicate)
     {
         // TODO: implement an OpenMP sort like in RAJA.
-        #pragma message "omp::sort_policy -> serial"
+        #pragma message("omp::sort_policy -> serial")
         std::sort(begin, end, predicate);
     }
 };

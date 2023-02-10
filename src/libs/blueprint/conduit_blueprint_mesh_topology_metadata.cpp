@@ -25,6 +25,7 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_annotations.hpp"
 #include "conduit_execution.hpp"
+#include "conduit_utils.hpp"
 
 //#define DEBUG_PRINT
 
@@ -62,68 +63,6 @@ namespace utils
 // We may tag certain algorithms as ParallelExec if it is safe to do so.
 using SerialExec = conduit::execution::SerialExec;
 using ParallelExec = conduit::execution::OpenMPExec;
-
-//---------------------------------------------------------------------------
-/**
- @brief Hash a series of bytes using a Jenkins hash forwards and backwards
-        and combine the results into a uint64 hash.
-
- @param data A series of bytes to hash.
- @param n The number of bytes.
-
- @return A hash value that represents the bytes.
- */
-inline uint64
-hash_uint8(const uint8 *data, index_t n)
-{
-    uint32 hashF = 0;
-
-    // Build the length into the hash so {1} and {0,1} hash to different values.
-    const auto ldata = reinterpret_cast<const uint8 *>(&n);
-    for(size_t e = 0; e < sizeof(n); e++)
-    {
-      hashF += ldata[e];
-      hashF += hashF << 10;
-      hashF ^= hashF >> 6;
-    }
-    // hash the data forward and backwards.
-    uint32 hashB = hashF;
-    for(index_t i = 0; i < n; i++)
-    {
-        hashF += data[i];
-        hashF += hashF << 10;
-        hashF ^= hashF >> 6;
-
-        hashB += data[n - 1 - i];
-        hashB += hashB << 10;
-        hashB ^= hashB >> 6;
-    }
-    hashF += hashF << 3;
-    hashF ^= hashF >> 11;
-    hashF += hashF << 15;
-
-    hashB += hashB << 3;
-    hashB ^= hashB >> 11;
-    hashB += hashB << 15;
-
-    // Combine the forward, backward into a uint64.
-    return (static_cast<uint64>(hashF) << 32) | static_cast<uint64>(hashB);
-}
-
-//---------------------------------------------------------------------------
-/**
- @brief Make a hash value from a series of index_t values.
-
- @param data A sorted list of ids.
- @param n The number of ids.
-
- @return A hash value that represents the ids.
- */
-inline uint64
-hash_ids(const index_t *data, index_t n)
-{
-    return hash_uint8(reinterpret_cast<const uint8 *>(data), n * sizeof(index_t));
-}
 
 //---------------------------------------------------------------------------
 void
@@ -899,10 +838,10 @@ private:
                 for(index_t i = 0; i < conn.number_of_elements(); i++)
                     map32.data[i] = conn[i];
 
-                index_t_accessor sizes = topo->fetch_existing("elements/sizes").value();
-                map32.sizes.resize(sizes.number_of_elements());
-                for(index_t i = 0; i < sizes.number_of_elements(); i++)
-                    map32.sizes[i] = sizes[i];
+                index_t_accessor esizes = topo->fetch_existing("elements/sizes").value();
+                map32.sizes.resize(esizes.number_of_elements());
+                for(index_t i = 0; i < esizes.number_of_elements(); i++)
+                    map32.sizes[i] = esizes[i];
 
                 if(topo->has_path("elements/offsets"))
                 {
@@ -1000,7 +939,7 @@ private:
                 uint64 element_face = facestart + face;
 
                 std::sort(face_pts_start, face_pts_end);
-                uint64 faceid = hash_ids(face_pts_start, points_per_face);
+                uint64 faceid = conduit::utils::hash(face_pts_start, points_per_face);
 
                 // Store the faceid and ef values.
                 faceid_to_ef[element_face] = std::make_pair(faceid, element_face);
@@ -1215,7 +1154,7 @@ private:
                 // Store the edgeid.
                 if(edge[0] > edge[1])
                     std::swap(edge[0], edge[1]);
-                uint64 edgeid = hash_ids(edge, 2);
+                uint64 edgeid = conduit::utils::hash(edge, 2);
                 edgeid_to_ee[elem_edge] = std::make_pair(edgeid, elem_edge);
             }
         });
@@ -1365,7 +1304,7 @@ private:
      */
     template <typename T>
     void
-    copy_local_map(int src_dim, int dst_dim,
+    copy_local_map(index_t src_dim, index_t dst_dim,
         T *values_ptr,
         T *sizes_ptr,
         T *offsets_ptr,
@@ -1412,7 +1351,7 @@ private:
         {
             index_t child_entity_id = ents.first[j];
             func(levels[level], localIdx);
-            int nextLevel = level + 1;
+            size_t nextLevel = level + 1;
             if(nextLevel < static_cast<int>(levels.size()))
             {
                 iterate_global_map_levels(child_entity_id, levels, nextLevel,
@@ -1894,9 +1833,9 @@ TopologyMetadata::Implementation::build_associations()
         G[3][3].single_size = 1;
         if(!topo_shape.is_polyhedral())
         {
-            G[3][2].single_size = topo_shape.embed_count;
-            G[3][1].single_size = embedding_3_1_edges(topo_shape).size() / 2; // #unique edges
-            G[3][0].single_size = topo_shape.indices;
+            G[3][2].single_size = static_cast<int>(topo_shape.embed_count);
+            G[3][1].single_size = static_cast<int>(embedding_3_1_edges(topo_shape).size() / 2); // #unique edges
+            G[3][0].single_size = static_cast<int>(topo_shape.indices);
         }
     }
     if(topo_shape.dim >= 2)
@@ -1907,8 +1846,8 @@ TopologyMetadata::Implementation::build_associations()
         {
             // Get the shape from the topology (in case we changed it).
             ShapeType shape(dim_topos[2]);
-            G[2][1].single_size = shape.embed_count;
-            G[2][0].single_size = shape.indices;
+            G[2][1].single_size = static_cast<int>(shape.embed_count);
+            G[2][0].single_size = static_cast<int>(shape.indices);
         }
     }
     if(topo_shape.dim >= 1)
@@ -1920,7 +1859,7 @@ TopologyMetadata::Implementation::build_associations()
         {
             // Get the shape from the topology (in case we changed it).
             ShapeType shape(dim_topos[1]);
-            G[1][0].single_size = shape.indices;
+            G[1][0].single_size = static_cast<int>(shape.indices);
         }
     }
     G[0][3].single_size = 1;
@@ -2176,7 +2115,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_ph()
                 // Look up the edge id in our list of real edges.
                 if(edge[1] > edge[0])
                     std::swap(edge[1], edge[0]);
-                uint64 key = hash_ids(edge, 2);
+                uint64 key = conduit::utils::hash(edge, 2);
                 index_t edgeid = lookup_edge_id(edge_key_to_id, key);
 
                 // Store the edge id in the map if it is the first time we've.
@@ -2229,7 +2168,7 @@ TopologyMetadata::Implementation::build_edge_key_to_id(
         edge[1] = conn1D[edge_index * 2 + 1];
         if(edge[1] > edge[0])
             std::swap(edge[0], edge[1]);
-        uint64 key = hash_ids(edge, 2);
+        uint64 key = conduit::utils::hash(edge, 2);
         // Store the edge in the map.
         edge_key_to_id[edge_index] = std::make_pair(key, edge_index);
 #ifdef DEBUG_PRINT
@@ -2379,7 +2318,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
             // Make a key from the edge.
             if(edge[1] > edge[0])
                 std::swap(edge[0], edge[1]);
-            uint64 key = hash_ids(edge, 2);
+            uint64 key = conduit::utils::hash(edge, 2);
 
             // Look up the edge id in our list of real edges.
             index_t edgeid = lookup_edge_id(edge_key_to_id, key);
@@ -2420,7 +2359,7 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
                 // Make a key from the edge.
                 if(edge[1] > edge[0])
                     std::swap(edge[0], edge[1]);
-                uint64 key = hash_ids(edge, 2);
+                uint64 key = conduit::utils::hash(edge, 2);
 
                 // Look up the edge id in our list of real edges.
                 index_t edgeid = lookup_edge_id(edge_key_to_id, key);

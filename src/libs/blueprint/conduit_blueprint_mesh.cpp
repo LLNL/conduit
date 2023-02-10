@@ -1513,7 +1513,7 @@ unstructured_centroid(const ShapeType &topo_shape,
 
         // Accumulate unique node values for centroid, using mask.
         float64 centroid[3]={0.,0.,0.};
-        int npts_used = 0;
+        index_t npts_used = 0;
         if(needmask)
         {
             for(index_t ci = 0; ci < npts; ci++)
