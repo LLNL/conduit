@@ -2791,7 +2791,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
     }
 
-    root_filename += ".silo"; // TODO change to .root?
+    root_filename += ".root";
 
     // zero or negative (default cases), use one file per domain
     if(num_files <= 0)
@@ -2857,8 +2857,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     
                     if(!dbfile)
                     {
-                        // TODO change to DB_NOCLOBBER
-                        if(!(dbfile = DBCreate("basic.silo", DB_CLOBBER, DB_LOCAL, NULL, DB_HDF5)))
+                        // TODO change to DB_NOCLOBBER - or something
+                        // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
+                        if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                         {
                             CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                         }
@@ -2930,7 +2931,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             {
                 if(!dbfile)
                 {
-                    if(!(dbfile = DBCreate(root_filename.c_str(), DB_NOCLOBBER, DB_LOCAL, NULL, silo_type)))
+                    // TODO change to DB_NOCLOBBER - or something
+                    // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
+                    if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                     {
                         CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                     }
@@ -3121,7 +3124,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 {
                                     if(!dbfile)
                                     {
-                                        if(!(dbfile = DBCreate(root_filename.c_str(), DB_NOCLOBBER, DB_LOCAL, NULL, silo_type)))
+                                        // TODO change to DB_NOCLOBBER - or something
+                                        // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
+                                        if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                                         {
                                             CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                                         }
@@ -3436,7 +3441,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             if(!dbfile)
             {
-                if(!(dbfile = DBCreate(root_filename.c_str(), DB_NOCLOBBER, DB_LOCAL, NULL, silo_type)))
+                // TODO change to DB_NOCLOBBER - or something
+                // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
+                if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
                 {
                     CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
                     return;
