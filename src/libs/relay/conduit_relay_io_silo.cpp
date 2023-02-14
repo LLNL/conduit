@@ -2447,10 +2447,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string opts_file_style = "default";
     std::string opts_suffix     = "default";
     std::string opts_mesh_name  = "mesh";
-    std::string opts_silo_type  = "unknown";
+    std::string opts_silo_type  = "default";
     int         opts_num_files  = -1;
     bool        opts_truncate   = false;
-    int         silo_type       = DB_UNKNOWN;
+    int         silo_type       = DB_HDF5;
 
     // check for + validate file_style option
     if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
@@ -2507,7 +2507,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     }
 
     // check for + validate silo_type option
-    // uses the truncate option so needs to happen after it is set
     // TODO add more in later?
     if (opts.has_child("silo_type") && opts["silo_type"].dtype().is_string())
     {
@@ -2522,32 +2521,33 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                           << opts_silo_type << "\"\n"
                           " expected: \"default\", \"pdb\", \"hdf5\", or \"unknown\"");
         }
+    }
 
-        if (opts_silo_type == "default")
+    // uses the truncate option so needs to happen after it is set
+    if (opts_silo_type == "default")
+    {
+        if (conduit::utils::is_file(path) &&
+            !opts_truncate) 
         {
-            if (conduit::utils::is_file(path) &&
-                !opts_truncate) 
-            {
-                silo_type = DB_UNKNOWN;
-            }
-            else
-            {
-                silo_type = DB_HDF5;
-            }
+            silo_type = DB_UNKNOWN;
         }
-        else if (opts_silo_type == "pdb")
-        {
-            silo_type = DB_PDB;
-        }
-        else if (opts_silo_type == "hdf5")
+        else
         {
             silo_type = DB_HDF5;
         }
-        else if (opts_silo_type == "unknown") 
-        {
-            // TODO dbcreate can't handle this
-            silo_type = DB_UNKNOWN;
-        }
+    }
+    else if (opts_silo_type == "pdb")
+    {
+        silo_type = DB_PDB;
+    }
+    else if (opts_silo_type == "hdf5")
+    {
+        silo_type = DB_HDF5;
+    }
+    else if (opts_silo_type == "unknown") 
+    {
+        // TODO dbcreate can't handle this
+        silo_type = DB_UNKNOWN;
     }
 
     // special logic for overlink
@@ -2791,7 +2791,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
     }
 
-    root_filename += ".silo";
+    root_filename += ".root";
 
     // zero or negative (default cases), use one file per domain
     if(num_files <= 0)
