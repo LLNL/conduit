@@ -2249,7 +2249,70 @@ get_mesh_domain_name(const conduit::Node &topo, bool overlink)
 }
 
 //-----------------------------------------------------------------------------
-void write_multimesh(DBfile *root,
+void write_multimesh(DBfile *dbfile,
+                     const std::string multimesh_name,
+                     const conduit::Node &root)
+{
+    const int64 num_domains = root["blueprint_index/mesh/state/number_of_domains"].as_int64();
+    // TODO is this the right way to get these? what if there are more topos or coordsets?
+    // no - instead iterate thru topos and use their linked coordsets - run through them all
+    // Q? check with cyrus
+    // hmmm I'm not sure
+    const std::string topo_name = root["blueprint_index/mesh/topologies"].children().next().name();
+    const std::string coords_name = root["blueprint_index/mesh/coordsets"].children().next().name();
+    int mesh_type;
+
+    const std::string coordset_type = root["blueprint_index/mesh/coordsets"][coords_name]["type"].as_string();
+    const std::string topo_type = root["blueprint_index/mesh/topologies"][topo_name]["type"].as_string();
+
+    // DB_QUAD_RECT - collinear
+    // DB_QUAD_CURV - noncollinear
+    // DB_UCDMESH
+    // DB_POINTMESH
+    // DB_CSGMESH - not supported
+
+    if (coordset_type == "rectilinear" && topo_type == "rectilinear") // collinear case
+    {
+        mesh_type = DB_QUAD_RECT;
+    }
+    else if (coordset_type == "explicit" && topo_type == "structured") // noncollinear case
+    {
+        mesh_type = DB_QUAD_CURV;
+    }
+    else if (coordset_type == "explicit" && topo_type == "unstructured")
+    {
+        mesh_type = DB_UCDMESH;
+    }
+    else if (coordset_type == "explicit" && topo_type == "points")
+    {
+        mesh_type = DB_POINTMESH;
+    }
+    else
+    {
+        CONDUIT_ERROR("Cannot assign a silo mesh type to blueprint mesh.");
+    }
+    
+    std::vector<const char *> domain_name_ptrs;
+    std::vector<int> mesh_types;
+    for (int i = 0; i < num_domains; i ++)
+    {
+        domain_name_ptrs.push_back(topo_name.c_str());
+        mesh_types.push_back(mesh_type);
+    }
+
+    CONDUIT_CHECK_SILO_ERROR(
+        DBPutMultimesh(
+            dbfile,
+            multimesh_name.c_str(),
+            num_domains,
+            domain_name_ptrs.data(),
+            mesh_types.data(),
+            NULL), // TODO do we really want null?
+        "Error putting multimesh");
+}
+
+//-----------------------------------------------------------------------------
+void write_multimesh2(DBfile *root,
                      const std::string &mmesh_name,
                      std::vector<std::string> &mesh_domain_names,
                      std::vector<int> &mesh_domain_types) 
@@ -3420,7 +3483,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["file_pattern"] = output_file_pattern;
         root["tree_pattern"] = output_tree_pattern;
 
-        root.print();
+        // root.print();
 
         DBfile *dbfile = nullptr;
 
@@ -3451,8 +3514,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
+        write_multimesh(dbfile, opts_mesh_name, root);
         // TODO
-        // write_multimesh();
         // write_multivar();
         // write_multimaterial();
 
@@ -3626,7 +3689,7 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
         }
     }
     // We always will want a multimesh so this is unconditional
-    write_multimesh(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
+    write_multimesh2(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
     if (silo_material_paths.size() > 0) 
     {
         for (const auto &pair : silo_material_paths) 
