@@ -341,7 +341,7 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_iterator_iteration)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_index_properties)
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_index)
 {
     Node n, info;
 
@@ -379,3 +379,174 @@ TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_index_properties)
         EXPECT_EQ(nidx.index(2, 3), 11);
     }
 }
+
+void o2m_sizes_offsets_indices(Node& res)
+{
+    // o2m:
+    //   data: [1.0, 2.0, 3.0, -1.0, 8.0, 7.0, 6.0, 5.0, 4.0, -1.0, -1.0, -1.0]
+    //   sizes: [3, 1, 4]
+    //   offsets: [0, 4, 8]
+    //   indices: [0, 1, 2, -1, 8, -1, -1, -1, 7, 6, 5, 4]
+
+    int data_array_size = 12;
+    int index_array_size = 12;
+    int ones_size = 3;
+
+    res["data"].set(DataType::float32(data_array_size));
+    float32_array res_data = res["data"].value();
+    res["indices"].set(DataType::uint32(index_array_size));
+    uint32_array res_indices = res["indices"].value();
+    res["sizes"].set(DataType::uint32(ones_size));
+    uint32_array res_sizes = res["sizes"].value();
+    res["offsets"].set(DataType::uint32(ones_size));
+    uint32_array res_offsets = res["offsets"].value();
+
+    res_sizes[0] = 3;
+    res_sizes[1] = 1;
+    res_sizes[2] = 4;
+    res_offsets[0] = 0;
+    res_offsets[1] = 4;
+    res_offsets[2] = 8;
+
+    res_indices[0] = 0;
+    res_indices[1] = 1;
+    res_indices[2] = 2;
+    res_indices[3] = -1;
+    res_indices[4] = 8;
+    res_indices[5] = -1;
+    res_indices[6] = -1;
+    res_indices[7] = -1;
+    res_indices[8] = 7;
+    res_indices[9] = 6;
+    res_indices[10] = 5;
+    res_indices[11] = 4;
+
+    for (int i = 0; i < data_array_size; ++i) {
+        res_data[i] = -1;
+    }
+
+    conduit::float32 d = 1.0;
+    for (int ones = 0; ones < ones_size; ++ones) {
+        for (int many = 0; many < res_sizes[ones]; ++many) {
+            res_data[res_indices[res_offsets[ones] + many]] = d;
+            d += 1;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_index_complex)
+{
+    Node n, info;
+
+    o2m_sizes_offsets_indices(n);
+    std::cout << n.to_yaml() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n, info));
+
+    { // Size/offset Tests //
+        blueprint::o2mrelation::O2MIndex nidx(n);
+
+        EXPECT_EQ(nidx.size(), 3);
+        EXPECT_EQ(nidx.size(0), 3);
+        EXPECT_EQ(nidx.size(1), 1);
+        EXPECT_EQ(nidx.size(2), 4);
+        EXPECT_EQ(nidx.offset(0), 0);
+        EXPECT_EQ(nidx.offset(1), 4);
+        EXPECT_EQ(nidx.offset(2), 8);
+    }
+
+    { // Index Tests //
+        blueprint::o2mrelation::O2MIndex nidx(n);
+
+        // o2m:
+        //            0    1    2     3    4    5    6    7    8     9    10    11
+        //   data: [1.0, 2.0, 3.0, -1.0, 8.0, 7.0, 6.0, 5.0, 4.0, -1.0, -1.0, -1.0]
+        //   sizes: [3, 1, 4]
+        //   offsets: [0, 4, 8]
+        //   indices: [0, 1, 2, -1, 8, -1, -1, -1, 7, 6, 5, 4]
+
+        EXPECT_EQ(nidx.index(0, 0), 0);
+        EXPECT_EQ(nidx.index(0, 1), 1);
+        EXPECT_EQ(nidx.index(0, 2), 2);
+        EXPECT_EQ(nidx.index(1, 0), 8);
+        EXPECT_EQ(nidx.index(2, 0), 7);
+        EXPECT_EQ(nidx.index(2, 1), 6);
+        EXPECT_EQ(nidx.index(2, 2), 5);
+        EXPECT_EQ(nidx.index(2, 3), 4);
+    }
+}
+
+void o2m_indices(Node& res)
+{
+    // o2m:
+    //   data: [1.0, -1.0, 3.0, 2.0, 4.0]
+    //   indices: [0, 3, 2, 4]
+    //
+    // Missing sizes implies [1, 1, 1, 1]
+    // Missing offsets implies [0, 1, 2, 3]
+
+    int data_array_size = 5;
+    int index_array_size = 4;
+
+    res["data"].set(DataType::float32(data_array_size));
+    float32_array res_data = res["data"].value();
+    res["indices"].set(DataType::uint32(index_array_size));
+    uint32_array res_indices = res["indices"].value();
+
+    res_indices[0] = 0;
+    res_indices[1] = 3;
+    res_indices[2] = 2;
+    res_indices[3] = 4;
+
+    for (int i = 0; i < data_array_size; ++i) {
+        res_data[i] = -1;
+    }
+
+    conduit::float32 d = 1.0;
+    for (int ones = 0; ones < index_array_size; ++ones) {
+        res_data[ones] = d;
+        d += 1;
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_o2mrelation_examples, o2mrelation_index_indices_only)
+{
+    Node n, info;
+
+    o2m_indices(n);
+    std::cout << n.to_yaml() << std::endl;
+    EXPECT_TRUE(blueprint::o2mrelation::verify(n, info));
+
+    { // Size/offset Tests //
+        blueprint::o2mrelation::O2MIndex nidx(n);
+
+        EXPECT_EQ(nidx.size(), 4);
+        EXPECT_EQ(nidx.size(0), 1);
+        EXPECT_EQ(nidx.size(1), 1);
+        EXPECT_EQ(nidx.size(2), 1);
+        EXPECT_EQ(nidx.size(3), 1);
+        EXPECT_EQ(nidx.offset(0), 0);
+        EXPECT_EQ(nidx.offset(1), 1);
+        EXPECT_EQ(nidx.offset(2), 2);
+        EXPECT_EQ(nidx.offset(3), 3);
+    }
+
+    { // Index Tests //
+        blueprint::o2mrelation::O2MIndex nidx(n);
+
+        // o2m:
+        //            0     1    2    3    4
+        //   data: [1.0, -1.0, 3.0, 2.0, 4.0]
+        //   indices: [0, 3, 2, 4]
+        //
+        // Missing sizes implies [1, 1, 1, 1]
+        // Missing offsets implies [0, 1, 2, 3]
+
+        EXPECT_EQ(nidx.index(0, 0), 0);
+        EXPECT_EQ(nidx.index(1, 0), 3);
+        EXPECT_EQ(nidx.index(2, 0), 2);
+        EXPECT_EQ(nidx.index(3, 0), 4);
+    }
+}
+

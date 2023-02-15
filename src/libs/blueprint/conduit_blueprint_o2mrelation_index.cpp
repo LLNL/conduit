@@ -105,9 +105,18 @@ void
 O2MIndex::info(Node &res) const
 {
     res.reset();
-    // res["o2m_ref"] = utils::to_hex_string(m_node);
-    // res["one_index"] = m_one_index;
-    // res["many_index"] = m_many_index - 1;
+    if (m_offsets_node)
+    {
+        res["offsets"] = *m_offsets_node;
+    }
+    if (m_sizes_node)
+    {
+        res["sizes"] = *m_sizes_node;
+    }
+    if (m_indices_node)
+    {
+        res["indices"] = *m_indices_node;
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -129,10 +138,12 @@ O2MIndex::index(index_t one_index, index_t many_index) const
     index = offset;
     if(m_indices_node)
     {
-        index = m_indices_node->as_index_t_accessor()[offset];
+        index = m_indices_node->as_index_t_accessor()[offset + many_index];
     }
-
-    index += many_index;
+    else
+    {
+        index += many_index;
+    }
 
     return index;
 }
@@ -150,12 +161,20 @@ O2MIndex::size(index_t one_index) const
         {
             nelements = m_offsets_node->dtype().number_of_elements();
         }
+        else if (m_indices_node)
+        {
+            nelements = m_indices_node->dtype().number_of_elements();
+        }
     }
     else
     {
         if(m_sizes_node)
         {
             nelements = m_sizes_node->as_index_t_accessor()[one_index];
+        }
+        else
+        {
+            nelements = 1;
         }
     }
 
@@ -166,7 +185,12 @@ O2MIndex::size(index_t one_index) const
 index_t
 O2MIndex::offset(index_t one_index) const
 {
-    return this->index(one_index, 0);
+    index_t offset = one_index;
+    if (m_offsets_node)
+    {
+        offset = m_offsets_node->as_index_t_accessor()[one_index];
+    }
+    return offset;
 }
 
 
