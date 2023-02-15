@@ -2270,28 +2270,34 @@ void write_multimesh(DBfile *dbfile,
     // DB_UCDMESH
     // DB_POINTMESH
     // DB_CSGMESH - not supported
-
-    if (coordset_type == "rectilinear" && topo_type == "rectilinear") // collinear case
+    
+    if (topo_type == "points")
+    {
+        mesh_type = DB_POINTMESH;
+    }
+    else if (topo_type == "uniform")
+    {
+        CONDUIT_ERROR("TODO I have no clue");
+    }
+    else if (topo_type == "rectilinear") // collinear case
     {
         mesh_type = DB_QUAD_RECT;
     }
-    else if (coordset_type == "explicit" && topo_type == "structured") // noncollinear case
+    else if (topo_type == "structured") // noncollinear case
     {
         mesh_type = DB_QUAD_CURV;
     }
-    else if (coordset_type == "explicit" && topo_type == "unstructured")
+    else if (topo_type == "unstructured")
     {
         mesh_type = DB_UCDMESH;
-    }
-    else if (coordset_type == "explicit" && topo_type == "points")
-    {
-        mesh_type = DB_POINTMESH;
     }
     else
     {
         CONDUIT_ERROR("Cannot assign a silo mesh type to blueprint mesh.");
     }
     
+    // TODO is this true?
+    // every blueprint domain should have the same mesh name and mesh type
     std::vector<const char *> domain_name_ptrs;
     std::vector<int> mesh_types;
     for (int i = 0; i < num_domains; i ++)
