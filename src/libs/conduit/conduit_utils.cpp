@@ -1929,6 +1929,50 @@ inline unsigned int Hash(const unsigned char *k, unsigned int length, unsigned i
 // Just to keep this macro from leaking out and polluting the global namespace
 #undef bjhash_mix
 
+/**
+ Take the uint8 stream and hash it forwards and backwards and OR the results
+ together into an int64.
+
+ @note If the above Hash function was adapted to go forwards or backwards then
+       we could use it instead.
+ */
+inline uint64
+hash_uint8(const uint8 *data, index_t n)
+{
+    uint32 hashF = 0;
+
+    // Build the length into the hash so {1} and {0,1} hash to different values.
+    const auto ldata = reinterpret_cast<const uint8 *>(&n);
+    for(size_t e = 0; e < sizeof(n); e++)
+    {
+      hashF += ldata[e];
+      hashF += hashF << 10;
+      hashF ^= hashF >> 6;
+    }
+    // hash the data forward and backwards.
+    uint32 hashB = hashF;
+    for(index_t i = 0; i < n; i++)
+    {
+        hashF += data[i];
+        hashF += hashF << 10;
+        hashF ^= hashF >> 6;
+
+        hashB += data[n - 1 - i];
+        hashB += hashB << 10;
+        hashB ^= hashB >> 6;
+    }
+    hashF += hashF << 3;
+    hashF ^= hashF >> 11;
+    hashF += hashF << 15;
+
+    hashB += hashB << 3;
+    hashB ^= hashB >> 11;
+    hashB += hashB << 15;
+
+    // Combine the forward, backward into a uint64.
+    return (static_cast<uint64>(hashF) << 32) | static_cast<uint64>(hashB);
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::utils::hashing --
@@ -1952,6 +1996,13 @@ hash(const std::string &k, unsigned int initval)
 {
     return hashing::Hash((unsigned char const*)k.c_str(),
                          (unsigned int)k.size(), initval);
+}
+
+uint64
+hash(const index_t *k, unsigned int length)
+{
+    return hashing::hash_uint8(reinterpret_cast<const uint8 *>(k),
+                               length * sizeof(index_t));
 }
 
 }

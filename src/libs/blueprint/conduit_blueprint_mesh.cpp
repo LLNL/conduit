@@ -35,8 +35,10 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_mesh_partition.hpp"
 #include "conduit_blueprint_mesh_flatten.hpp"
+#include "conduit_blueprint_mesh_topology_metadata.hpp"
 #include "conduit_blueprint_mesh.hpp"
 #include "conduit_log.hpp"
+#include "conduit_annotations.hpp"
 
 using namespace conduit;
 // Easier access to the Conduit logging functions
@@ -47,6 +49,9 @@ using ::conduit::utils::join_path;
 namespace bputils = conduit::blueprint::mesh::utils;
 typedef bputils::ShapeType ShapeType;
 typedef bputils::ShapeCascade ShapeCascade;
+// Use the old version.
+//typedef bputils::reference::TopologyMetadata TopologyMetadata;
+// Use the new version.
 typedef bputils::TopologyMetadata TopologyMetadata;
 
 //-----------------------------------------------------------------------------
@@ -129,6 +134,27 @@ void grid_id_to_ijk(const index_t id,
 }
 
 //-----------------------------------------------------------------------------
+template <typename Container1, typename Container2>
+std::vector<index_t> intersect_sets(const Container1 &v1,
+                                    const Container2 &v2)
+{
+    std::vector<index_t> res;
+    for(const auto elem1 : v1)
+    {
+        for(const auto elem2 : v2)
+        {
+            if(elem1 == elem2)
+            {
+                res.push_back(elem1);
+            }
+        }
+    }
+
+    return std::vector<index_t>(std::move(res));
+}
+
+//-----------------------------------------------------------------------------
+template <>
 std::vector<index_t> intersect_sets(const std::set<index_t> &s1,
                                     const std::set<index_t> &s2)
 {
@@ -136,24 +162,6 @@ std::vector<index_t> intersect_sets(const std::set<index_t> &s1,
     std::vector<index_t>::iterator si_end = std::set_intersection(
         s1.begin(), s1.end(), s2.begin(), s2.end(), si.begin());
     return std::vector<index_t>(si.begin(), si_end);
-}
-
-//-----------------------------------------------------------------------------
-std::vector<index_t> intersect_sets(const std::vector<index_t> &v1,
-                                    const std::vector<index_t> &v2)
-{
-    std::vector<index_t> res;
-    for(index_t i1 = 0; i1 < (index_t)v1.size(); i1++)
-    {
-        for(index_t i2 = 0; i2 < (index_t)v2.size(); i2++)
-        {
-            if(v1[i1] == v2[i2])
-            {
-                res.push_back(v1[i1]);
-            }
-        }
-    }
-    return std::vector<index_t>(std::move(res));
 }
 
 //-----------------------------------------------------------------------------
@@ -1505,7 +1513,7 @@ unstructured_centroid(const ShapeType &topo_shape,
 
         // Accumulate unique node values for centroid, using mask.
         float64 centroid[3]={0.,0.,0.};
-        int npts_used = 0;
+        index_t npts_used = 0;
         if(needmask)
         {
             for(index_t ci = 0; ci < npts; ci++)
@@ -1546,7 +1554,7 @@ unstructured_centroid(const ShapeType &topo_shape,
 //       the data.
 template <typename IndexType, typename CoordType, typename StorageFunc>
 void
-unstructured_centroid_polyhedral(const ShapeType &topo_shape,
+unstructured_centroid_polyhedral(const ShapeType &/*topo_shape*/,
                                  const IndexType &topo_conn,
                                  const IndexType &topo_offsets,
                                  const IndexType &topo_sizes,
@@ -1616,6 +1624,8 @@ calculate_unstructured_centroids(const conduit::Node &topo,
                                  conduit::Node &dest,
                                  conduit::Node &cdest)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // NOTE(JRC): This is a stand-in implementation for the method
     // 'mesh::topology::unstructured::generate_centroids' that exists because there
     // is currently no good way in Blueprint to create mappings with sparse data.
@@ -3026,7 +3036,7 @@ generate_decomposed_entities(conduit::Node &mesh,
         const Node &src_cset = *src_cset_ptr;
         // NOTE(JRC): Diff- generate topology metadata for source topology to find
         // centroids that may exist within an adjset group.
-        const bputils::TopologyMetadata src_topo_data(src_topo, src_cset);
+        bputils::TopologyMetadata src_topo_data(src_topo, src_cset);
 
         // const Node &dst_topo = domain["topologies"][dst_topo_name];
         const Node &dst_cset = domain["coordsets"][dst_cset_name];
@@ -3070,10 +3080,17 @@ generate_decomposed_entities(conduit::Node &mesh,
         // to consider on individual adjset interfaces.
         for(const index_t &dentry : decomposed_centroid_dims)
         {
-            const Node &dim_topo = src_topo_data.dim_topos[dentry];
-            for(index_t ei = 0; ei < src_topo_data.get_length(dentry); ei++)
+            index_t dentry_length = src_topo_data.get_length(dentry);
+            for(index_t ei = 0; ei < dentry_length; ei++)
             {
+#if 1
+                // We should be able to get the unique set of points for this element
+                // from the topology metadata map (it's already computed).
+                auto entity_pidxs = src_topo_data.get_global_association(ei, dentry, 0);
+#else
+                const Node &dim_topo = src_topo_data.get_topology(dentry);
                 std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dim_topo, ei);
+#endif
                 for(const auto &neighbor_pair : neighbor_pidxs_map)
                 {
                     const index_t &ni = neighbor_pair.first;
@@ -4336,14 +4353,23 @@ mesh::topology::unstructured::generate_points(const Node &topo,
                                               Node &s2dmap,
                                               Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_points".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
-    TopologyMetadata topo_data(topo, *coordset);
+    index_t src_dim = blueprint::mesh::topology::dims(topo);
+    index_t dst_dim = 0;
+    // Request only these maps.
+    std::vector<std::pair<size_t, size_t>> desired;
+    desired.push_back(std::make_pair(static_cast<size_t>(src_dim),
+                                     static_cast<size_t>(dst_dim)));
+    desired.push_back(std::make_pair(static_cast<size_t>(dst_dim),
+                                     static_cast<size_t>(src_dim)));
+    TopologyMetadata topo_data(topo, *coordset, dst_dim, desired);
     dest.reset();
-    dest.set(topo_data.dim_topos[0]);
+    topo_data.get_topology(dst_dim, dest);
 
-    const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 0;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
@@ -4355,14 +4381,23 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
                                              Node &s2dmap,
                                              Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
-    TopologyMetadata topo_data(topo, *coordset);
+    index_t src_dim = blueprint::mesh::topology::dims(topo);
+    index_t dst_dim = 1;
+    // Request only these maps.
+    std::vector<std::pair<size_t, size_t>> desired;
+    desired.push_back(std::make_pair(static_cast<size_t>(src_dim),
+                                     static_cast<size_t>(dst_dim)));
+    desired.push_back(std::make_pair(static_cast<size_t>(dst_dim),
+                                     static_cast<size_t>(src_dim)));
+    TopologyMetadata topo_data(topo, *coordset, dst_dim, desired);
     dest.reset();
-    dest.set(topo_data.dim_topos[1]);
+    topo_data.get_topology(dst_dim, dest);
 
-    const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 1;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
@@ -4374,14 +4409,23 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
                                              Node &s2dmap,
                                              Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
-    TopologyMetadata topo_data(topo, *coordset);
+    index_t src_dim = blueprint::mesh::topology::dims(topo);
+    index_t dst_dim = 2;
+    // Request only these maps.
+    std::vector<std::pair<size_t, size_t>> desired;
+    desired.push_back(std::make_pair(static_cast<size_t>(src_dim),
+                                     static_cast<size_t>(dst_dim)));
+    desired.push_back(std::make_pair(static_cast<size_t>(dst_dim),
+                                     static_cast<size_t>(src_dim)));
+    TopologyMetadata topo_data(topo, *coordset, dst_dim, desired);
     dest.reset();
-    dest.set(topo_data.dim_topos[2]);
+    topo_data.get_topology(dst_dim, dest);
 
-    const index_t src_dim = topo_data.topo_cascade.dim, dst_dim = 2;
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, src_dim, dst_dim, s2dmap);
     topo_data.get_dim_map(TopologyMetadata::GLOBAL, dst_dim, src_dim, d2smap);
 }
@@ -4394,6 +4438,8 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
                                                  Node &s2dmap,
                                                  Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_centroids".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4401,7 +4447,8 @@ mesh::topology::unstructured::generate_centroids(const Node &topo,
 
     Node map_node;
     std::vector<index_t> map_vec;
-    for(index_t ei = 0; ei < bputils::topology::length(topo); ei++)
+    index_t n = bputils::topology::length(topo);
+    for(index_t ei = 0; ei < n; ei++)
     {
         map_vec.push_back(1);
         map_vec.push_back(ei);
@@ -4423,6 +4470,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                                              Node &s2dmap,
                                              Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // Retrieve Relevent Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4440,9 +4489,9 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, *coordset);
-    const DataType &int_dtype = topo_data.int_dtype;
-    const DataType &float_dtype = topo_data.float_dtype;
+    TopologyMetadata topo_data(topo, *coordset);
+    const DataType &int_dtype = topo_data.get_int_dtype();
+    const DataType &float_dtype = topo_data.get_float_dtype();
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
@@ -4454,7 +4503,7 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
         if(di == line_shape.dim) { continue; }
 
         calculate_unstructured_centroids(
-            topo_data.dim_topos[di], *coordset,
+            topo_data.get_topology(di), *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
@@ -4559,8 +4608,8 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 
             // NOTE(JRC): We iterate using local index values so that we
             // get the correct orientations for per-element lines.
-            const std::vector<index_t> &embed_ids = topo_data.get_entity_assocs(
-                TopologyMetadata::LOCAL, embed_index, embed_dim, embed_dim - 1);
+            const auto embed_ids = topo_data.get_local_association(
+                embed_index, embed_dim, embed_dim - 1);
             if(embed_dim > line_shape.dim)
             {
                 embed_parents.push_back(embed_index);
@@ -4577,16 +4626,20 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
                 // by creating elements as follows:
                 // - 2D: Face-Line Start => Face-Line End => Face Center
                 // - 3D: Cell-Face-Line Start => Cell-Face-Line End => Cell-Face Center => Cell Center
-                for(index_t ei = 0; ei < (index_t)embed_ids.size(); ei++)
+                const auto local_to_global_lower = topo_data.get_local_to_global_map(embed_dim - 1);
+                const auto num_embed_ids = static_cast<index_t>(embed_ids.size());
+                for(index_t ei = 0; ei < num_embed_ids; ei++)
                 {
-                    index_t point_id = topo_data.dim_le2ge_maps[embed_dim - 1][embed_ids[ei]];
+                    index_t point_id = local_to_global_lower[embed_ids[ei]];
                     side_data_raw[ei] = point_id;
                 }
-                for(index_t pi = 0; pi < (index_t)embed_parents.size(); pi++)
+                const auto num_embed_parents = static_cast<index_t>(embed_parents.size());
+                for(index_t pi = 0; pi < num_embed_parents; pi++)
                 {
-                    index_t parent_index = embed_parents[embed_parents.size() - pi - 1];
+                    index_t parent_index = embed_parents[num_embed_parents - pi - 1];
                     index_t parent_dim = embed_dim + pi + 1;
-                    index_t parent_id = topo_data.dim_le2ge_maps[parent_dim][parent_index];
+                    const auto local_to_global_parent = topo_data.get_local_to_global_map(parent_dim);
+                    index_t parent_id = local_to_global_parent[parent_index];
                     side_data_raw[2 + pi] = dim_coord_offsets[parent_dim] + parent_id;
                 }
 
@@ -5470,6 +5523,8 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
                                              conduit::Node &d2smap,
                                              const conduit::Node &options)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     std::string field_prefix = "";
     std::vector<std::string> field_names;
     const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
@@ -5613,6 +5668,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &s2dmap,
                                                Node &d2smap)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // Retrieve Relevent Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -5633,17 +5690,17 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
 
     // Extract Derived Coordinate/Topology Data //
 
-    const TopologyMetadata topo_data(topo, *coordset);
+    TopologyMetadata topo_data(topo, *coordset);
     const index_t topo_num_elems = topo_data.get_length(topo_shape.dim);
-    const DataType &int_dtype = topo_data.int_dtype;
-    const DataType &float_dtype = topo_data.float_dtype;
+    const DataType &int_dtype = topo_data.get_int_dtype();
+    const DataType &float_dtype = topo_data.get_float_dtype();
 
     std::vector<conduit::Node> dim_cent_topos(topo_shape.dim + 1);
     std::vector<conduit::Node> dim_cent_coords(topo_shape.dim + 1);
     for(index_t di = 0; di <= topo_shape.dim; di++)
     {
         calculate_unstructured_centroids(
-            topo_data.dim_topos[di], *coordset,
+            topo_data.get_topology(di), *coordset,
             dim_cent_topos[di], dim_cent_coords[di]);
     }
 
@@ -5712,29 +5769,33 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
     std::vector<int64> d2s_idx_data_raw, d2s_size_data_raw;
     std::map< std::set<index_t>, index_t > subconn_topo_set;
 
+    const auto face_local_to_global_map = topo_data.get_local_to_global_map(face_shape.dim);
+    const auto line_local_to_global_map = topo_data.get_local_to_global_map(line_shape.dim);
+    const auto point_local_to_global_map = topo_data.get_local_to_global_map(point_shape.dim);
+
     for(index_t elem_index = 0, corner_index = 0; elem_index < topo_num_elems; elem_index++)
     {
         // per-face, per-line orientations for this element, i.e. {(f_gi, l_gj) => (v_gk, v_gl)}
         std::map< std::pair<index_t, index_t>, std::pair<index_t, index_t> > elem_orient;
         { // establish the element's internal line constraints
-            const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
-                TopologyMetadata::LOCAL, elem_index, topo_shape.dim, face_shape.dim);
+            const auto elem_faces = topo_data.get_local_association(
+                elem_index, topo_shape.dim, face_shape.dim);
             for(index_t fi = 0; fi < (index_t)elem_faces.size(); fi++)
             {
                 const index_t face_lid = elem_faces[fi];
-                const index_t face_gid = topo_data.dim_le2ge_maps[face_shape.dim][face_lid];
+                const index_t face_gid = face_local_to_global_map[face_lid];
 
-                const std::vector<index_t> &face_lines = topo_data.get_entity_assocs(
-                    TopologyMetadata::LOCAL, face_lid, face_shape.dim, line_shape.dim);
+                const auto face_lines = topo_data.get_local_association(
+                    face_lid, face_shape.dim, line_shape.dim);
                 for(index_t li = 0; li < (index_t)face_lines.size(); li++)
                 {
                     const index_t line_lid = face_lines[li];
-                    const index_t line_gid = topo_data.dim_le2ge_maps[line_shape.dim][line_lid];
+                    const index_t line_gid = line_local_to_global_map[line_lid];
 
-                    const std::vector<index_t> &line_points = topo_data.get_entity_assocs(
-                        TopologyMetadata::LOCAL, line_lid, line_shape.dim, point_shape.dim);
-                    const index_t start_gid = topo_data.dim_le2ge_maps[point_shape.dim][line_points[0]];
-                    const index_t end_gid = topo_data.dim_le2ge_maps[point_shape.dim][line_points[1]];
+                    const auto line_points = topo_data.get_local_association(
+                        line_lid, line_shape.dim, point_shape.dim);
+                    const index_t start_gid = point_local_to_global_map[line_points[0]];
+                    const index_t end_gid = point_local_to_global_map[line_points[1]];
 
                     elem_orient[std::make_pair(face_gid, line_gid)] =
                         std::make_pair(start_gid, end_gid);
@@ -5742,10 +5803,10 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             }
         }
 
-        const std::vector<index_t> &elem_lines = topo_data.get_entity_assocs(
-            TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, line_shape.dim);
-        const std::vector<index_t> &elem_faces = topo_data.get_entity_assocs(
-            TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, face_shape.dim);
+        const auto elem_lines = topo_data.get_global_association(
+            elem_index, topo_shape.dim, line_shape.dim);
+        const auto elem_faces = topo_data.get_global_association(
+            elem_index, topo_shape.dim, face_shape.dim);
 
         // NOTE(JRC): Corner ordering retains original element orientation
         // by creating elements as follows:
@@ -5804,16 +5865,16 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
         //
 
         // per-elem, per-point corners, informed by cell-face-line orientation constraints
-        const std::vector<index_t> &elem_points = topo_data.get_entity_assocs(
-            TopologyMetadata::GLOBAL, elem_index, topo_shape.dim, point_shape.dim);
+        const auto elem_points = topo_data.get_global_association(
+            elem_index, topo_shape.dim, point_shape.dim);
         for(index_t pi = 0; pi < (index_t)elem_points.size(); pi++, corner_index++)
         {
             const index_t point_index = elem_points[pi];
 
-            const std::vector<index_t> &point_faces = topo_data.get_entity_assocs(
-                TopologyMetadata::GLOBAL, point_index, point_shape.dim, face_shape.dim);
-            const std::vector<index_t> &point_lines = topo_data.get_entity_assocs(
-                TopologyMetadata::GLOBAL, point_index, point_shape.dim, line_shape.dim);
+            const auto point_faces = topo_data.get_global_association(
+                point_index, point_shape.dim, face_shape.dim);
+            const auto point_lines = topo_data.get_global_association(
+                point_index, point_shape.dim, line_shape.dim);
             const std::vector<index_t> elem_point_faces = intersect_sets(
                 elem_faces, point_faces);
             const std::vector<index_t> elem_point_lines = intersect_sets(
@@ -5836,8 +5897,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             {
                 const index_t face_index = elem_point_faces[fi];
 
-                const std::vector<index_t> &elem_face_lines = topo_data.get_entity_assocs(
-                    TopologyMetadata::GLOBAL, face_index, face_shape.dim, line_shape.dim);
+                const auto elem_face_lines = topo_data.get_global_association(
+                    face_index, face_shape.dim, line_shape.dim);
                 const std::vector<index_t> corner_face_lines = intersect_sets(
                     elem_face_lines, point_lines);
 
@@ -5870,8 +5931,8 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
             {
                 const index_t line_index = elem_point_lines[li];
 
-                const std::vector<index_t> &line_faces = topo_data.get_entity_assocs(
-                    TopologyMetadata::GLOBAL, line_index, line_shape.dim, face_shape.dim);
+                const auto line_faces = topo_data.get_global_association(
+                    line_index, line_shape.dim, face_shape.dim);
                 const std::vector<index_t> corner_line_faces = intersect_sets(
                     elem_faces, line_faces);
 
@@ -5917,15 +5978,22 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                     // unique faces in the subconnectivity for 3D corners, but
                     // this can be easily changed by modifying the logic below.
                     const std::set<index_t> corner_face_set(corner_face.begin(), corner_face.end());
-                    if(subconn_topo_set.find(corner_face_set) == subconn_topo_set.end())
+                    auto sts_it = subconn_topo_set.find(corner_face_set);
+                    index_t face_index;
+                    if(sts_it == subconn_topo_set.end())
                     {
                         const index_t next_face_index = subconn_topo_set.size();
+                        face_index = next_face_index;
                         subconn_topo_set[corner_face_set] = next_face_index;
                         subsize_data_raw.push_back(corner_face_set.size());
                         subconn_data_raw.insert(subconn_data_raw.end(),
                             corner_face.begin(), corner_face.end());
                     }
-                    const index_t face_index = subconn_topo_set.find(corner_face_set)->second;
+                    else
+                    {
+                        face_index = sts_it->second;
+                    }
+
                     conn_data_raw.push_back(face_index);
                 }
             }

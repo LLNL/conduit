@@ -10,14 +10,17 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### General
 - Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
+- Added Node.as_index_t_ptr()
+- Added `conduit::execution` namespace, which contains `for_all()` and `sort()` functions.
 
 #### Blueprint
 - Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (supports moving domains and domain overloading)
 
 ### Fixed
 #### Blueprint
-- Performance improvements to Mesh Blueprint topology metadata, used by `generate_points`, `generate_sides`, etc.
+- Performance improvements to Mesh Blueprint topology metadata, used by `generate_points`, `generate_sides`, etc. The class was rewritten and the old one was moved to `conduit::blueprint::mesh::utils::reference::TopologyMetadata`. The new implementation is faster, often about 6-20x depending on options.
 - Performance improvements to O2M Iterators.
+- Performance improvements to functions that underpin centroid generation.
 
 ## [0.8.6] - Released 2023-01-11
 

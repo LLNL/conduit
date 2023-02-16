@@ -43,6 +43,9 @@ set(conduit_headers
     conduit_endianness_types.h
     conduit_core.hpp
     conduit_endianness.hpp
+    conduit_execution.hpp
+    conduit_execution_omp.hpp
+    conduit_execution_serial.hpp
     conduit_data_array.hpp
     conduit_data_accessor.hpp
     conduit_data_type.hpp
