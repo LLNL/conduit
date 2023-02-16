@@ -325,6 +325,47 @@ std::string sanitize_silo_varname(const std::string &varname)
 }
 
 //-----------------------------------------------------------------------------
+// Create or open files for writing
+// If a file already exists, you cannot call DBCREATE with DB_NOCLOBBER
+// Since we are writing, we never want to call DBOPEN with DB_READ
+//-----------------------------------------------------------------------------
+DBfile *
+create_or_open(std::set<std::string> &filelist,
+               const std::string &filename,
+               int silo_type,
+               int mode)
+{
+    // modes: 
+    // DB_READ    or DB_APPEND    for DBOPEN()
+    // DB_CLOBBER or DB_NOCLOBBER for DBCREATE()
+    DBfile *dbfile;
+
+    auto search = filelist.find(filename);
+    // Have we encountered this file before? Use DBOPEN
+    if (search != filelist.end())
+    {
+        if (!(dbfile = DBOpen(filename.c_str(), silo_type, DB_APPEND)))
+        {
+            CONDUIT_ERROR("Error opening Silo file for writing: " << filename);
+        }
+    }
+    // Have we never encountered this file? Use DBCREATE
+    else
+    {
+        std::cout << (mode == DB_CLOBBER ? "DB_CLOBBER" : "DB_NOCLOBBER") << std::endl;
+        std::cout << (silo_type == DB_UNKNOWN ? "DB_UNKNOWN" : "something else") << std::endl;
+        if (!(dbfile = DBCreate(filename.c_str(), mode, DB_LOCAL, NULL, silo_type)))
+        {
+            CONDUIT_ERROR("Error opening Silo file for writing: " << filename );
+        }
+        // TODO MPI thread safe?
+        filelist.insert(filename);
+    }
+
+    return dbfile;
+}
+
+//-----------------------------------------------------------------------------
 // Fetch the DBfile * associated with 'filename' from 'filemap'.
 // If the map does not contain an entry for 'filename', open
 // the file and add it to the map before returning the pointer.
@@ -366,8 +407,7 @@ get_or_open(std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &
 // 'type' should be one of the DB_HDF5* or DB_PDB* constants.
 //-----------------------------------------------------------------------------
 DBfile *
-get_or_create(std::map<std::string,
-              std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+get_or_create(std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
               const std::string &filename,
               int type)
 {
@@ -2520,6 +2560,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     int         opts_num_files  = -1;
     bool        opts_truncate   = false;
     int         silo_type       = DB_HDF5;
+    std::set<std::string> filelist;
 
     // check for + validate file_style option
     if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
@@ -2592,10 +2633,11 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
     }
 
+    // TODO clean up the next couple blocks so there isn't duplicate logic
     // uses the truncate option so needs to happen after it is set
     if (opts_silo_type == "default")
     {
-        if (conduit::utils::is_file(path) &&
+        if (conduit::utils::is_file(path + ".root") &&
             !opts_truncate) 
         {
             silo_type = DB_UNKNOWN;
@@ -2615,8 +2657,36 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     }
     else if (opts_silo_type == "unknown") 
     {
-        // TODO dbcreate can't handle this
         silo_type = DB_UNKNOWN;
+    }
+
+    // if the file exists, then
+    if (conduit::utils::is_file(path + ".root"))
+    {
+        // if truncate, then 
+        if (opts_truncate)
+        {
+            // silo type can be anything except unknown
+            if (silo_type == DB_UNKNOWN)
+            {
+                silo_type = DB_HDF5;
+            }
+        }
+        // if not truncate, then
+        else
+        {
+            // silo type must be unknown
+            silo_type = DB_UNKNOWN;
+        }
+    }
+    // if the file does not exist, then
+    else
+    {
+        // make sure silo type is not unknown
+        if (silo_type == DB_UNKNOWN)
+        {
+            silo_type = DB_HDF5;
+        }
     }
 
     // special logic for overlink
@@ -2914,24 +2984,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
-                        if(!dbfile)
-                        {
-                            if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                            {
-                                CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                            }
-                        }
+                        dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
                         local_root_file_created.set((int)1);
                     }
                     
                     if(!dbfile)
                     {
-                        // TODO change to DB_NOCLOBBER - or something
-                        // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
-                        if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                        {
-                            CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                        }
+                        dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
                     }
 
                     const Node &dom = multi_dom.child(i);
@@ -2986,26 +3045,15 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             DBfile *dbfile = nullptr;
 
-            if(opts_truncate)
+            if (!dbfile)
             {
-                if(!dbfile)
-               {
-                   if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                   {
-                       CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                   }
-               }
-            }
-            else
-            {
-                if(!dbfile)
+                if (opts_truncate)
                 {
-                    // TODO change to DB_NOCLOBBER - or something
-                    // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
-                    if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                    {
-                        CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                    }
+                    dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
+                }
+                else
+                {
+                    dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
                 }
             }
 
@@ -3180,36 +3228,16 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 if(opts_truncate && global_file_created[f] == 0)
                                 {
                                     if(!dbfile)
-                                   {
-                                       if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                                       {
-                                           CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                                       }
-                                   }
-                                   local_file_created[f]  = 1;
-                                   global_file_created[f] = 1;
-                                }
-                                else
-                                {
-                                    if(!dbfile)
                                     {
-                                        // TODO change to DB_NOCLOBBER - or something
-                                        // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
-                                        if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                                        {
-                                            CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                                        }
+                                        dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
                                     }
+                                    local_file_created[f]  = 1;
+                                    global_file_created[f] = 1;
                                 }
-
-                                // TODO again we need truncate support
-
+                                
                                 if(!dbfile)
                                 {
-                                    if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                                    {
-                                        CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
-                                    }
+                                    dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
                                 }
 
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
@@ -3499,25 +3527,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             if(!dbfile)
             {
-                if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                {
-                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
-                    return;
-                }
+                dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
             }
         }
-        else
+
+        if(!dbfile)
         {
-            if(!dbfile)
-            {
-                // TODO change to DB_NOCLOBBER - or something
-                // it seems like if the file already exists, you can't call create with DB_NOCLOBBER
-                if(!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                {
-                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
-                    return;
-                }
-            }
+            dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
         }
 
         write_multimesh(dbfile, opts_mesh_name, root);
