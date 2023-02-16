@@ -137,7 +137,7 @@ operator << (std::ostream &os, const std::vector<std::pair<index_t, index_t>> &o
  This class differs from the previous implementation in the following ways:
 
  * It uses recursion and template functions to make sure we can access
-   connectivity data using either native pointers or and index_t_accessor
+   connectivity data using either native pointers or an index_t_accessor
    so no Conduit casts are needed.
 
  * Associations are mostly created only when asked for (or indirectly needed)
@@ -210,7 +210,7 @@ public:
                          If we only want faces, for example, then we don't need to
                          refine to edges or points.
      @param desired      A vector of (entity_dim,assoc_dim) pairs that indicate
-                         the associations that will be requested by the client.
+                         the associations that are requested by the client.
      */
     Implementation(const conduit::Node &topology,
                    const conduit::Node &coordset,
@@ -311,13 +311,13 @@ public:
       @param dst_dim The destination dimension of the desired association.
       @param[out] map_node The Conduit node that will contain the copied association data.
 
-      @note This method guarantees that all bulk arrays for values, sizes, and
-            offsets will be index_t.
+      @note This method produces data arrays as int_dtype.
 
       @return True if the map exists(was requested); False otherwise.
      */
     bool get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, Node &map_node) const;
 
+    //-----------------------------------------------------------------------
     /**
       @brief Gets the length of the topology as specified by dimension. If
              dim is -1 then the length of all topologies are summed.
@@ -328,18 +328,21 @@ public:
      */
     index_t get_length(index_t dim) const;
 
+    //-----------------------------------------------------------------------
     /**
      @brief The the preferred integer storage data type.
      @return The preferred integer storage data type.
      */
     const DataType &get_int_dtype() const;
 
+    //-----------------------------------------------------------------------
     /**
      @brief The the preferred float storage data type.
      @return The preferred float storage data type.
      */
     const DataType &get_float_dtype() const;
 
+    //-----------------------------------------------------------------------
     /**
      @brief Gets the total number of embeddings for each entity at the top level
             to the embedding level.
@@ -496,7 +499,7 @@ private:
 
     //-----------------------------------------------------------------------
     /**
-     @brief Takes the input topology and reuses it has the highest topology.
+     @brief Takes the input topology and uses it as the highest topology.
             The method makes sure that the topology will have offsets too.
      */
     void make_highest_topology();
@@ -2158,9 +2161,12 @@ TopologyMetadata::Implementation::build_edge_key_to_id(
     index_t nedges = conn1D.number_of_elements() / 2;
 #ifdef DEBUG_PRINT
     std::cout << "edges_key_to_id = {" << std::endl;
+    // Because of the printing.
+    using Exec = SerialExec;
+#else
+    using Exec = ParallelExec;
 #endif
-
-    conduit::execution::for_all<ParallelExec>(0, nedges, [&](index_t edge_index)
+    conduit::execution::for_all<Exec>(0, nedges, [&](index_t edge_index)
     {
         // Make a key for this edge.
         index_t edge[2];
@@ -2329,11 +2335,11 @@ TopologyMetadata::Implementation::build_association_3_1_and_3_0_nonph()
         }
         map31.sizes[ei] = edges_per_elem;
         map31.offsets[ei] = ei * edges_per_elem;
-     });
+    });
 
-     // This loop is not parallel safe because we append to local_to_global.
-     for(index_t ei = 0; ei < nelem; ei++)
-     {
+    // This loop is not parallel safe because we append to local_to_global.
+    for(index_t ei = 0; ei < nelem; ei++)
+    {
         index_t elem_offset = ei * points_per_elem;
 
         // To build the local_to_global maps, we need to iterate all edges of
@@ -2593,7 +2599,7 @@ TopologyMetadata::Implementation::build_local_associations()
     };
 
     // The associations that need to be built at a given dimension.
-    std::vector<std::vector<std::vector<std::pair<int,int>>>> allLevels{
+    const std::vector<std::vector<std::vector<std::pair<int,int>>>> allLevels{
         { // dim 0
             {}
         },
@@ -3185,7 +3191,7 @@ TopologyMetadata::Implementation::make_node(conduit::Node &rep) const
     }
 
     // Get all the maps and add them to the rep.
-    std::vector<std::string> mapkeys{"values", "sizes", "offsets"};
+    const std::vector<std::string> mapkeys{"values", "sizes", "offsets"};
     for(int e = maxdim; e >= 0; e--)
     for(int a = maxdim; a >= 0; a--)
     {
@@ -3957,7 +3963,7 @@ TopologyMetadata::get_dim_map(IndexType type, index_t src_dim, index_t dst_dim, 
         sizes.push_back((index_t)src_assocs.size());
         offsets.push_back(so);
     }
-// NOTE: can we store the data directly into the Conduit node?
+
     std::vector<index_t>* path_data[] = { &values, &sizes, &offsets };
     std::string path_names[] = { "values", "sizes", "offsets" };
     const index_t path_count = sizeof(path_data) / sizeof(path_data[0]);

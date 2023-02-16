@@ -63,7 +63,7 @@ public:
 
 //---------------------------------------------------------------------------//
 /**
- The TopologicalMetadata takes an input topology and decomposes each element
+ TopologyMetadata takes an input topology and decomposes each element
  according to a topological cascade to produce connectivity from the input
  topology's level down to the points. In 3D, this gives rise to:
 
@@ -190,7 +190,7 @@ t    |                | BBC*            |                 | dim[3] connectivity
 i  --|-----------------------------------------------------------------------
 t  2 | element ids    |                 | edge ids in     | point ids in 
 y    | that contain   |      self       | face i          | face i
-     | face i         |                 | BBC *           | dim[2] connectivity
+     | face i         |                 | BBC*            | dim[2] connectivity
 e  --|-----------------------------------------------------------------------
    1 | element ids    | face ids that   |                 | point ids in
      | that contain   | contain edge i  |      self       | edge i
@@ -201,9 +201,9 @@ e  --|-----------------------------------------------------------------------
      | point i        |                 |                 |
   ---------------------------------------------------------------------------
 
- *BBC = built by cascade
+ BBC* = built by cascade
 
- There is another mapping concept called LOCAL mapping L(e,a) where entity
+ There is another mapping concept called LOCAL mapping L(e,a) where an entity
  gets its own unique index ordering. The local maps look essentially like an
  increasing series of integers, though the number of repetitions for an
  entity depends on e,a.
@@ -232,9 +232,9 @@ public:
 
     //-----------------------------------------------------------------------
     /**
-     @brief Constructor for the NewTopologyMetadata class. This constructor
+     @brief Constructor for the TopologyMetadata class. This constructor
             lets the caller be more selective about which topology levels and 
-            associations are created, possibly saving time.
+            associations are created, saving time.
 
      @param topology     The input topology node.
      @param coordset     The input coordset associated with the topology.
@@ -242,7 +242,7 @@ public:
                          If we only want faces, for example, then we don't need to
                          refine to edges or points.
      @param desired      A vector of (entity_dim,assoc_dim) pairs that indicate
-                         the associations that will be requested by the client.
+                         the associations that are requested by the client.
      */
     TopologyMetadata(const conduit::Node &topology,
                      const conduit::Node &coordset,
@@ -353,8 +353,7 @@ public:
      @param dst_dim The destination dimension of the desired association.
      @param[out] map_node The Conduit node that will contain the copied association data.
 
-     @note This method guarantees that all bulk arrays for values, sizes, and
-           offsets will be index_t.
+     @note This method produces data arrays as int_dtype.
 
      @return True if the map exists(was requested); False otherwise.
      */
