@@ -328,38 +328,53 @@ std::string sanitize_silo_varname(const std::string &varname)
 // Create or open files for writing
 // If a file already exists, you cannot call DBCREATE with DB_NOCLOBBER
 // Since we are writing, we never want to call DBOPEN with DB_READ
+// DB_NOCLOBBER is only supposed to be used if the file being created already exists
+
+// The above info is bad
+// Mark's wisdom:
+// If I want to truncate, call dbcreate with the clobber option
+// If I do not want to truncate, call dbopen with the append option
+// don't use no clobber
+// see email
 //-----------------------------------------------------------------------------
 DBfile *
 create_or_open(std::set<std::string> &filelist,
                const std::string &filename,
                int silo_type,
-               int mode)
+               bool truncate)
 {
     // modes: 
     // DB_READ    or DB_APPEND    for DBOPEN()
     // DB_CLOBBER or DB_NOCLOBBER for DBCREATE()
     DBfile *dbfile;
 
-    auto search = filelist.find(filename);
-    // Have we encountered this file before? Use DBOPEN
-    if (search != filelist.end())
+    // if we are truncating, we want to use create w/ clobber only the first time we see this file
+    if (truncate)
+    {
+        auto search = filelist.find(filename);
+        if (search == filelist.end())
+        {
+            if (!(dbfile = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+            {
+                CONDUIT_ERROR("Error opening Silo file for writing: " << filename );
+            }
+            // TODO MPI thread safe?
+            filelist.insert(filename);
+        }
+        else
+        {
+            if (!(dbfile = DBOpen(filename.c_str(), silo_type, DB_APPEND)))
+            {
+                CONDUIT_ERROR("Error opening Silo file for writing: " << filename);
+            }
+        }
+    }
+    else
     {
         if (!(dbfile = DBOpen(filename.c_str(), silo_type, DB_APPEND)))
         {
             CONDUIT_ERROR("Error opening Silo file for writing: " << filename);
         }
-    }
-    // Have we never encountered this file? Use DBCREATE
-    else
-    {
-        std::cout << (mode == DB_CLOBBER ? "DB_CLOBBER" : "DB_NOCLOBBER") << std::endl;
-        std::cout << (silo_type == DB_UNKNOWN ? "DB_UNKNOWN" : "something else") << std::endl;
-        if (!(dbfile = DBCreate(filename.c_str(), mode, DB_LOCAL, NULL, silo_type)))
-        {
-            CONDUIT_ERROR("Error opening Silo file for writing: " << filename );
-        }
-        // TODO MPI thread safe?
-        filelist.insert(filename);
     }
 
     return dbfile;
@@ -2085,8 +2100,6 @@ void silo_mesh_write(const Node &n,
                      DBfile *dbfile,
                      const std::string &silo_obj_path)
 {
-    // TODO is the silo_obj_path (as passed) the name of the topo?
-
     int silo_error = 0;
     char silo_prev_dir[256];
 
@@ -2290,19 +2303,17 @@ get_mesh_domain_name(const conduit::Node &topo, bool overlink)
 
 //-----------------------------------------------------------------------------
 void write_multimesh(DBfile *dbfile,
-                     const std::string multimesh_name,
+                     const std::string &multimesh_name,
                      const conduit::Node &root)
 {
     const int64 num_domains = root["blueprint_index/mesh/state/number_of_domains"].as_int64();
-    // TODO is this the right way to get these? what if there are more topos or coordsets?
-    // no - instead iterate thru topos and use their linked coordsets - run through them all
+    // TODO is this the right way to get this? what if there are more topos?
+    // no - instead iterate thru topos - run through them all
     // Q? check with cyrus
     // hmmm I'm not sure
     const std::string topo_name = root["blueprint_index/mesh/topologies"].children().next().name();
-    const std::string coords_name = root["blueprint_index/mesh/coordsets"].children().next().name();
     int mesh_type;
 
-    const std::string coordset_type = root["blueprint_index/mesh/coordsets"][coords_name]["type"].as_string();
     const std::string topo_type = root["blueprint_index/mesh/topologies"][topo_name]["type"].as_string();
 
     // DB_QUAD_RECT - collinear
@@ -2335,6 +2346,8 @@ void write_multimesh(DBfile *dbfile,
     {
         CONDUIT_ERROR("Cannot assign a silo mesh type to blueprint mesh.");
     }
+
+    std::string tree_pattern = root["tree_pattern"].as_string();
     
     // TODO is this true?
     // every blueprint domain should have the same mesh name and mesh type
@@ -2342,7 +2355,10 @@ void write_multimesh(DBfile *dbfile,
     std::vector<int> mesh_types;
     for (int i = 0; i < num_domains; i ++)
     {
-        domain_name_ptrs.push_back(topo_name.c_str());
+        char buffer[100];
+        int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
+        snprintf(buffer + cx, 100 - cx, topo_name.c_str());
+        domain_name_ptrs.push_back(buffer);
         mesh_types.push_back(mesh_type);
     }
 
@@ -2558,7 +2574,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string opts_mesh_name  = "mesh";
     std::string opts_silo_type  = "default";
     int         opts_num_files  = -1;
-    bool        opts_truncate   = false;
+    bool        opts_truncate   = true; // false; - TODO this default may not be what we want
     int         silo_type       = DB_HDF5;
     std::set<std::string> filelist;
 
@@ -2984,32 +3000,34 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
-                        dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
+                        dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
                         local_root_file_created.set((int)1);
                     }
                     
                     if(!dbfile)
                     {
-                        dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
+                        dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
                     }
 
                     const Node &dom = multi_dom.child(i);
                     // figure out the proper mesh path the file
                     std::string mesh_path = "";
 
-                    if(global_num_domains == 1)
-                    {
-                        // no domain prefix, write to mesh name
-                        mesh_path = opts_mesh_name;
-                    }
-                    else
-                    {
-                        // multiple domains, we need to use a domain prefix
-                        uint64 domain = dom["state/domain_id"].to_uint64();
-                        mesh_path = conduit_fmt::format("domain_{:06d}/{}",
-                                                        domain,
-                                                        opts_mesh_name);
-                    }
+                    // if(global_num_domains == 1)
+                    // {
+                    //     // no domain prefix, write to mesh name
+                    //     mesh_path = opts_mesh_name;
+                    // }
+                    // else
+                    // {
+                    //     // multiple domains, we need to use a domain prefix
+                    //     uint64 domain = dom["state/domain_id"].to_uint64();
+                    //     mesh_path = conduit_fmt::format("domain_{:06d}/{}",
+                    //                                     domain,
+                    //                                     opts_mesh_name);
+                    // }
+                    uint64 domain = dom["state/domain_id"].to_uint64();
+                    mesh_path = conduit_fmt::format("domain_{:06d}", domain);
                     silo_mesh_write(dom, dbfile, mesh_path);
                 }
 
@@ -3047,14 +3065,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             if (!dbfile)
             {
-                if (opts_truncate)
-                {
-                    dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
-                }
-                else
-                {
-                    dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
-                }
+                dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
             }
 
             // write to mesh name subpath
@@ -3229,7 +3240,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 {
                                     if(!dbfile)
                                     {
-                                        dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
+                                        dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
                                     }
                                     local_file_created[f]  = 1;
                                     global_file_created[f] = 1;
@@ -3237,7 +3248,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 
                                 if(!dbfile)
                                 {
-                                    dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
+                                    dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
                                 }
 
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
@@ -3400,13 +3411,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                output_file_pattern,
                                tmp);
 
-            if(global_num_domains == 1)
-            {
-                output_tree_pattern = "/";
-                output_partition_pattern = output_file_pattern + ":/";
-                // NOTE: we don't need the part map entries for this case
-            }
-            else
+            // if(global_num_domains == 1)
+            // {
+            //     output_tree_pattern = "/";
+            //     output_partition_pattern = output_file_pattern + ":/";
+            //     // NOTE: we don't need the part map entries for this case
+            // }
+            // else
             {
                 output_tree_pattern = "/domain_%06d/";
                 output_partition_pattern = root_filename + ":/domain_{domain:06d}";
@@ -3517,7 +3528,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["file_pattern"] = output_file_pattern;
         root["tree_pattern"] = output_tree_pattern;
 
-        // root.print();
+        root.print();
 
         DBfile *dbfile = nullptr;
 
@@ -3527,13 +3538,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             if(!dbfile)
             {
-                dbfile = create_or_open(filelist, root_filename, silo_type, DB_CLOBBER);
+                dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
             }
         }
 
         if(!dbfile)
         {
-            dbfile = create_or_open(filelist, root_filename, silo_type, DB_NOCLOBBER);
+            dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
         }
 
         write_multimesh(dbfile, opts_mesh_name, root);
