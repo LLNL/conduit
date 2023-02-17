@@ -22,6 +22,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Performance improvements to O2M Iterators.
 - Performance improvements to functions that underpin centroid generation.
 
+#### Relay
+- Fixed MPI baton logic error in `conduit::relay::io::blueprint::save_mesh()` that caused MPI tasks to serialize writes to files in the N domains to M files case. Fix restores parallel writing performance. The bug did not impact to N domains to N files or the single file cases. 
+
 ## [0.8.6] - Released 2023-01-11
 
 ### Added
