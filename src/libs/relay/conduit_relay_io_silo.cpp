@@ -358,7 +358,7 @@ create_or_open(std::set<std::string> &filelist,
             {
                 CONDUIT_ERROR("Error opening Silo file for writing: " << filename );
             }
-            // TODO MPI thread safe?
+            // TODO Q? MPI thread safe?
             filelist.insert(filename);
         }
         else
@@ -1946,7 +1946,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                DBoptlist *state_optlist,
                                Node &n_mesh_info) 
 {
-    // TODO: also support interleaved:
+    // TODO Q?: also support interleaved:
     // xy, xyz
 
     // check if we are 2d or 3d
@@ -2330,7 +2330,7 @@ void write_multimesh(DBfile *dbfile,
     }
     else if (topo_type == "uniform")
     {
-        CONDUIT_ERROR("TODO I have no clue");
+        CONDUIT_ERROR("TODO Q? I have no clue");
     }
     else if (topo_type == "rectilinear") // collinear case
     {
@@ -2352,7 +2352,7 @@ void write_multimesh(DBfile *dbfile,
     std::string tree_pattern = root["tree_pattern"].as_string();
     
     // TODO is this true?
-    // every blueprint domain should have the same mesh name and mesh type
+    // Q? every blueprint domain should have the same mesh name and mesh type
     std::vector<const char *> domain_name_ptrs;
     std::vector<int> mesh_types;
     for (int i = 0; i < num_domains; i ++)
@@ -2419,7 +2419,7 @@ write_multivars(DBfile *dbfile,
                 const conduit::Node &root)
 {
     const std::string &multimesh_name = root["blueprint_index"].children().next().name();
-    // TODO is the num domains the var is defined on ever different from the total num domains?
+    // TODO Q? is the num domains the var is defined on ever different from the total num domains?
     const int64 num_domains = root["blueprint_index"][multimesh_name]["state/number_of_domains"].as_int64();
     auto field_itr = root["blueprint_index"][multimesh_name]["fields"].children();
     while (field_itr.has_next())
@@ -2460,7 +2460,7 @@ write_multivars(DBfile *dbfile,
 
         std::string tree_pattern = root["tree_pattern"].as_string();
 
-        // TODO is this true?
+        // TODO Q? is this true?
         // every blueprint domain should have the same var name and var type
         std::vector<const char *> var_name_ptrs;
         std::vector<int> var_types;
@@ -2605,7 +2605,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string opts_mesh_name  = "mesh";
     std::string opts_silo_type  = "default";
     int         opts_num_files  = -1;
-    bool        opts_truncate   = true; // false; - TODO this default may not be what we want
+    bool        opts_truncate   = true; // false; - TODO Q? this default may not be what we want
     int         silo_type       = DB_HDF5;
     std::set<std::string> filelist;
 
@@ -3578,7 +3578,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         write_multimesh(dbfile, root);
         write_multivars(dbfile, root);
-        // TODO
+        // TODO Q?
         // write_multimaterial();
 
         if(DBClose(dbfile) != 0)
@@ -3598,12 +3598,11 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 }
 
 
+// TODO remove this function once I have extracted everything useful from it
 void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
                                   const std::string &path,
                                   const conduit::Node &opts)
 {
-    // TODO scrap this and use the blueprint version instead, fill in where it uses iohandle for silo calls
-
     int i, type, ndomains, nfiles;
     std::string mmesh_name = "mesh";
     bool overlink = false;
@@ -3691,7 +3690,6 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
                     (*dom)["topologies"],
                     overlink));
 
-        // TODO
         // instead of renaming everything to domain_000000 + lalalala
         // we want to make subdirectories called domain_000000 and then put the things in there
         // we don't need to change the topo names
@@ -3711,7 +3709,6 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
             {
                 const Node &curr_field = field_itr.next();
                 std::string var_name{field_itr.name()};
-                // TODO fix this so that it writes to fixed width of 6
                 std::string new_var_name{sanitize_silo_varname("domain_00000" + std::to_string(i) + "_" + var_name)};
 
                 replace_field_names["fields"][new_var_name].set_external(curr_field);
@@ -3733,8 +3730,6 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
                 silo_variable_paths[var_name].push_back(std::make_pair(tmp.str(), var_type));
             }
         }
-        // TODO material paths as well
-
         silo_mesh_write(*dom,
                         get_or_create(filemap, domain_file, type), 
                         silo_dir);
