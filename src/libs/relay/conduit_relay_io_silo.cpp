@@ -2303,18 +2303,18 @@ get_mesh_domain_name(const conduit::Node &topo, bool overlink)
 
 //-----------------------------------------------------------------------------
 void write_multimesh(DBfile *dbfile,
-                     const std::string &multimesh_name,
                      const conduit::Node &root)
 {
-    const int64 num_domains = root["blueprint_index/mesh/state/number_of_domains"].as_int64();
+    const std::string &multimesh_name = root["blueprint_index"].children().next().name();
+    const int64 num_domains = root["blueprint_index"][multimesh_name]["state/number_of_domains"].as_int64();
     // TODO is this the right way to get this? what if there are more topos?
     // no - instead iterate thru topos - run through them all
     // Q? check with cyrus
     // hmmm I'm not sure
-    const std::string topo_name = root["blueprint_index/mesh/topologies"].children().next().name();
+    const std::string topo_name = root["blueprint_index"][multimesh_name]["topologies"].children().next().name();
     int mesh_type;
 
-    const std::string topo_type = root["blueprint_index/mesh/topologies"][topo_name]["type"].as_string();
+    const std::string topo_type = root["blueprint_index"][multimesh_name]["topologies"][topo_name]["type"].as_string();
 
     // DB_QUAD_RECT - collinear
     // DB_QUAD_CURV - noncollinear
@@ -2362,6 +2362,8 @@ void write_multimesh(DBfile *dbfile,
         mesh_types.push_back(mesh_type);
     }
 
+    // TODO add any dboptions?
+
     CONDUIT_CHECK_SILO_ERROR(
         DBPutMultimesh(
             dbfile,
@@ -2371,28 +2373,6 @@ void write_multimesh(DBfile *dbfile,
             mesh_types.data(),
             NULL), // TODO do we really want null?
         "Error putting multimesh");
-}
-
-//-----------------------------------------------------------------------------
-void write_multimesh2(DBfile *root,
-                     const std::string &mmesh_name,
-                     std::vector<std::string> &mesh_domain_names,
-                     std::vector<int> &mesh_domain_types) 
-{
-    std::vector<const char *> domain_name_ptrs;
-
-    for (auto domain : mesh_domain_names)
-    {
-        domain_name_ptrs.push_back(domain.c_str());
-    }
-
-    CONDUIT_CHECK_SILO_ERROR( DBPutMultimesh(root,
-                                             mmesh_name.c_str(),
-                                             domain_name_ptrs.size(),
-                                             domain_name_ptrs.data(),
-                                             mesh_domain_types.data(),
-                                             NULL),
-                              "Error putting multimesh");
 }
 
 //-----------------------------------------------------------------------------
@@ -2433,7 +2413,93 @@ write_multimaterial(DBfile *root,
 
 //-----------------------------------------------------------------------------
 void
-write_multivar(DBfile *root,
+write_multivars(DBfile *dbfile,
+                const conduit::Node &root)
+{
+    const std::string &multimesh_name = root["blueprint_index"].children().next().name();
+    // TODO is the num domains the var is defined on ever different from the total num domains?
+    const int64 num_domains = root["blueprint_index"][multimesh_name]["state/number_of_domains"].as_int64();
+    auto field_itr = root["blueprint_index"][multimesh_name]["fields"].children();
+    while (field_itr.has_next())
+    {
+        const Node &n_var = field_itr.next();
+        std::string var_name = field_itr.name();
+
+        std::string linked_topo_name = n_var["topology"].as_string();
+        std::string linked_topo_type = root["blueprint_index"][multimesh_name]["topologies"][linked_topo_name]["type"].as_string();
+
+        int var_type;
+        if (linked_topo_type == "unstructured")
+        {
+            var_type = DB_UCDVAR;
+        }
+        else if (linked_topo_type == "rectilinear" || 
+                 linked_topo_type == "uniform" || 
+                 linked_topo_type == "structured")
+        {
+            var_type = DB_QUADVAR;
+        }
+        else if (linked_topo_type == "points")
+        {
+            var_type = DB_POINTVAR;
+        }
+        else
+        {
+            CONDUIT_ERROR("Only DB_UCDVAR + DB_QUADVAR + DB_POINTVAR var are supported");
+        }
+
+        // to write each multivar, we need the following:
+        // - dbfile
+        // - multivar name
+        // - num domains
+        // - multimesh name
+        // - domain variable names
+        // - domain variable types
+
+        std::string tree_pattern = root["tree_pattern"].as_string();
+
+        // TODO is this true?
+        // every blueprint domain should have the same var name and var type
+        std::vector<const char *> var_name_ptrs;
+        std::vector<int> var_types;
+        for (int i = 0; i < num_domains; i ++)
+        {
+            char buffer[100];
+            int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
+            snprintf(buffer + cx, 100 - cx, var_name.c_str());
+            var_name_ptrs.push_back(buffer);
+            var_types.push_back(var_type);
+        }
+
+        std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{DBMakeOptlist(1),
+                                                                     &DBFreeOptlist};
+        if (!optlist.get())
+        {
+            optlist.release();
+            CONDUIT_ERROR("Error creating options");
+        }
+
+        // have to const_cast because converting to void *
+        CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.get(),
+                                              DBOPT_MMESH_NAME,
+                                              const_cast<char *>(multimesh_name.c_str())),
+                                  "Error creating options for putting multivar");
+
+        CONDUIT_CHECK_SILO_ERROR(
+            DBPutMultivar(
+                dbfile,
+                var_name.c_str(),
+                num_domains,
+                var_name_ptrs.data(),
+                var_types.data(),
+                optlist.get()),
+            "Error putting multivar");
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+write_multivar2(DBfile *root,
                const std::string &mvar_name,
                const std::string &mmesh_name,
                std::vector<std::pair<std::string, int>> var_domains)
@@ -3547,9 +3613,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
         }
 
-        write_multimesh(dbfile, opts_mesh_name, root);
+        write_multimesh(dbfile, root);
+        write_multivars(dbfile, root);
         // TODO
-        // write_multivar();
         // write_multimaterial();
 
         if(DBClose(dbfile) != 0)
@@ -3722,7 +3788,7 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
         }
     }
     // We always will want a multimesh so this is unconditional
-    write_multimesh2(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
+    // write_multimesh2(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
     if (silo_material_paths.size() > 0) 
     {
         for (const auto &pair : silo_material_paths) 
@@ -3740,7 +3806,7 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
             CONDUIT_ASSERT(
                 pair.second.size() == static_cast<std::size_t>(ndomains),
                 "variable " << pair.first << " not specified for all domains");
-            write_multivar(silofile, pair.first, mmesh_name, pair.second);
+            write_multivar2(silofile, pair.first, mmesh_name, pair.second);
         }
     }
 }
