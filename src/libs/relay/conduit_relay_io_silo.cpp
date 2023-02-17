@@ -326,16 +326,8 @@ std::string sanitize_silo_varname(const std::string &varname)
 
 //-----------------------------------------------------------------------------
 // Create or open files for writing
-// If a file already exists, you cannot call DBCREATE with DB_NOCLOBBER
-// Since we are writing, we never want to call DBOPEN with DB_READ
-// DB_NOCLOBBER is only supposed to be used if the file being created already exists
-
-// The above info is bad
-// Mark's wisdom:
-// If I want to truncate, call dbcreate with the clobber option
-// If I do not want to truncate, call dbopen with the append option
-// don't use no clobber
-// see email
+// Always open unless we are encountering the file for the first time AND
+// truncate is turned on, then use create
 //-----------------------------------------------------------------------------
 DBfile *
 create_or_open(std::set<std::string> &filelist,
@@ -349,25 +341,14 @@ create_or_open(std::set<std::string> &filelist,
     DBfile *dbfile;
 
     // if we are truncating, we want to use create w/ clobber only the first time we see this file
-    if (truncate)
+    if (truncate && filelist.find(filename) == filelist.end())
     {
-        auto search = filelist.find(filename);
-        if (search == filelist.end())
+        if (!(dbfile = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
         {
-            if (!(dbfile = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-            {
-                CONDUIT_ERROR("Error opening Silo file for writing: " << filename );
-            }
-            // TODO Q? MPI thread safe?
-            filelist.insert(filename);
+            CONDUIT_ERROR("Error opening Silo file for writing: " << filename );
         }
-        else
-        {
-            if (!(dbfile = DBOpen(filename.c_str(), silo_type, DB_APPEND)))
-            {
-                CONDUIT_ERROR("Error opening Silo file for writing: " << filename);
-            }
-        }
+        // TODO Q? MPI thread safe?
+        filelist.insert(filename);
     }
     else
     {
@@ -2334,6 +2315,7 @@ void write_multimesh(DBfile *dbfile,
     }
     else if (topo_type == "rectilinear") // collinear case
     {
+        // TODO Q? or DB_QUADMESH instead? Just make the errors go away!
         mesh_type = DB_QUAD_RECT;
     }
     else if (topo_type == "structured") // noncollinear case
