@@ -1037,7 +1037,9 @@ read_multivar(DBfile *root_file,
     for (index_t i = 0; i < multivar->nvars; ++i)
     {
         split_silo_path(multivar->varnames[i], dirname, file_path, silo_name);
-        Node &field = mesh[i]["fields"][silo_name];
+        std::string domain_name, field_name;
+        conduit::utils::rsplit_string(silo_name, "/", field_name, domain_name);
+        Node &field = mesh[i]["fields"][field_name];
         if (!file_path.empty())
         {
             read_variable_domain(get_or_open(filemap, file_path), silo_name,
@@ -2498,43 +2500,6 @@ write_multivars(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
-void
-write_multivar2(DBfile *root,
-               const std::string &mvar_name,
-               const std::string &mmesh_name,
-               std::vector<std::pair<std::string, int>> var_domains)
-{
-    std::vector<const char *> domain_name_ptrs;
-    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{DBMakeOptlist(1),
-                                                                 &DBFreeOptlist};
-    std::vector<int> domain_var_types;
-    
-    if (!optlist.get())
-    {
-        optlist.release();
-        CONDUIT_ERROR("Error creating options");
-    }
-
-    // have to const_cast because converting to void *
-    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.get(),
-                                          DBOPT_MMESH_NAME,
-                                          const_cast<char *>(mmesh_name.c_str())),
-                              "Error creating options for putting multivar");
-    for (auto domain : var_domains)
-    {
-        domain_name_ptrs.push_back(domain.first.c_str());
-        domain_var_types.push_back(domain.second);
-    }
-    CONDUIT_CHECK_SILO_ERROR( DBPutMultivar(root,
-                                            mvar_name.c_str(),
-                                            var_domains.size(),
-                                            domain_name_ptrs.data(),
-                                            domain_var_types.data(),
-                                            optlist.get()),
-                            "Error putting multivar");
-}
-
-//-----------------------------------------------------------------------------
 ///      silo_type: "default", "pdb", "hdf5", "hdf5_sec2", "hdf5_stdio",
 ///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
 ///            when 'path' exists, "default" ==> "unknown"
@@ -3594,8 +3559,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["file_pattern"] = output_file_pattern;
         root["tree_pattern"] = output_tree_pattern;
 
-        root.print();
-
         DBfile *dbfile = nullptr;
 
         // if not root only, this is the first time we are writing 
@@ -3806,7 +3769,7 @@ void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
             CONDUIT_ASSERT(
                 pair.second.size() == static_cast<std::size_t>(ndomains),
                 "variable " << pair.first << " not specified for all domains");
-            write_multivar2(silofile, pair.first, mmesh_name, pair.second);
+            // write_multivar2(silofile, pair.first, mmesh_name, pair.second);
         }
     }
 }
