@@ -1428,10 +1428,18 @@ void write_mesh(const Node &mesh,
             {
                 for(int d = 0; d < local_num_domains; ++d)
                 {
-                    if(local_domain_status[d] == 1)
+                    // do we need to write this domain,
+                    // and if so is it going to the file
+                    // associated with these
+                    if(local_domain_status[d] == 1 &&
+                       local_domain_to_file[d] == f)
+                    {
                         local_file_batons[f] = par_rank;
+                    }
                     else
+                    {
                         local_file_batons[f] = -1;
+                    }
                 }
             }
 
@@ -1546,11 +1554,15 @@ void write_mesh(const Node &mesh,
                 }
                 CONDUIT_ERROR(emsg);
             }
-            // If you  need to debug the baton alog:
-            // std::cout << "[" << par_rank << "] "
+
+            // // If you  need to debug the baton alog:
+            // if(par_rank == 0)
+            // {
+            //    std::cout << "[" << par_rank << "] "
             //              << " twirls: " << twirls
             //              << " details\n"
             //              << books.to_yaml();
+            // }
 
             // check if we have another round
             // stop when all batons are -1
