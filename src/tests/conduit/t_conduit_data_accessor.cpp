@@ -186,6 +186,22 @@ TEST(conduit_data_accessor, as_cstyle)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_data_accessor, default_construct)
+{
+    index_t_accessor n_acc;
+    Node n;
+    n.set({-1,2,-3,4,-5});
+
+    n_acc = n.value();
+    EXPECT_EQ(n_acc[0],(index_t)(-1));
+    EXPECT_EQ(n_acc[1],(index_t)( 2));
+    EXPECT_EQ(n_acc[2],(index_t)(-3));
+    EXPECT_EQ(n_acc[3],(index_t)( 4));
+    EXPECT_EQ(n_acc[4],(index_t)(-5));
+}
+
+
 
 
 

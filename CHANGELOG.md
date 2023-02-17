@@ -7,6 +7,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ## Unreleased 
 
 ### Added
+- Added public default and copy constructor to DataAccessor. Enables more flexibility with initializing DataAccessors from Nodes.
 
 #### General
 - Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.

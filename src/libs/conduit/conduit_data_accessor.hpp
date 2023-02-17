@@ -49,6 +49,10 @@ public:
 //-----------------------------------------------------------------------------
 // Construction and Destruction
 //-----------------------------------------------------------------------------
+        /// Default constructor
+        DataAccessor();
+        /// Copy constructor
+        DataAccessor(const DataAccessor<T> &accessor);
         /// Access a pointer to raw data according to dtype description.
         DataAccessor(void *data, const DataType &dtype);
         /// Access a const pointer to raw data according to dtype description.
@@ -92,7 +96,6 @@ private:
 // -- conduit::DataAccessor private data members --
 //
 //-----------------------------------------------------------------------------
-    DataAccessor();
     /// holds data (always external, never allocated)
     void           *m_data;
     /// holds data description
