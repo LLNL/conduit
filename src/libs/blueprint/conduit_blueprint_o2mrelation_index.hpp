@@ -115,6 +115,11 @@ private:
     const Node *m_indices_node;
     /// pointer to an internal offsets Node for the 'o2mrelation'
     const Node *m_offsets_node;
+
+    /// Accessors for sizes, indices, and offsets
+    index_t_accessor m_sizes_acc;
+    index_t_accessor m_indices_acc;
+    index_t_accessor m_offsets_acc;
 };
 //-----------------------------------------------------------------------------
 // -- end conduit::O2MIndex --

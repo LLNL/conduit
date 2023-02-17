@@ -52,12 +52,23 @@ O2MIndex::O2MIndex(const Node *node)
 {
     std::vector<std::string> paths = conduit::blueprint::o2mrelation::data_paths(*node);
 
-    if(node->has_child("sizes"))
+    if (node->has_child("sizes"))
+    {
         m_sizes_node = node->fetch_ptr("sizes");
+        m_sizes_acc = m_sizes_node->as_index_t_accessor();
+        // Or should it be the following:
+        // m_sizes_acc = m_sizes_node->value();
+    }
     if(node->has_child("indices"))
+    {
         m_indices_node = node->fetch_ptr("indices");
+        m_indices_acc = m_indices_node->as_index_t_accessor();
+    }
     if(node->has_child("offsets"))
+    {
         m_offsets_node = node->fetch_ptr("offsets");
+        m_offsets_acc = m_offsets_node->as_index_t_accessor();
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -74,7 +85,18 @@ O2MIndex::O2MIndex(const O2MIndex &itr)
   m_indices_node(itr.m_indices_node),
   m_offsets_node(itr.m_offsets_node)
 {
-    
+    if (m_sizes_node)
+    {
+        m_sizes_acc = m_sizes_node->as_index_t_accessor();
+    }
+    if (m_indices_node)
+    {
+        m_indices_acc = m_indices_node->as_index_t_accessor();
+    }
+    if (m_offsets_node)
+    {
+        m_offsets_acc = m_offsets_node->as_index_t_accessor();
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -92,6 +114,22 @@ O2MIndex::operator=(const O2MIndex &itr)
         m_sizes_node = itr.m_sizes_node;
         m_indices_node = itr.m_indices_node;
         m_offsets_node = itr.m_offsets_node;
+
+        m_sizes_acc = index_t_accessor();
+        if (m_sizes_node)
+        {
+            m_sizes_acc = m_sizes_node->as_index_t_accessor();
+        }
+        m_indices_acc = index_t_accessor();
+        if (m_indices_node)
+        {
+            m_indices_acc = m_indices_node->as_index_t_accessor();
+        }
+        m_offsets_acc = index_t_accessor();
+        if (m_offsets_node)
+        {
+            m_offsets_acc = m_offsets_node->as_index_t_accessor();
+        }
     }
     return *this;
 }
@@ -132,13 +170,13 @@ O2MIndex::index(index_t one_index, index_t many_index) const
     index_t offset = one_index;
     if(m_offsets_node)
     {
-        offset = m_offsets_node->as_index_t_accessor()[one_index];
+        offset = m_offsets_acc[one_index];
     }
 
     index = offset;
     if(m_indices_node)
     {
-        index = m_indices_node->as_index_t_accessor()[offset + many_index];
+        index = m_indices_acc[offset + many_index];
     }
     else
     {
@@ -170,7 +208,7 @@ O2MIndex::size(index_t one_index) const
     {
         if(m_sizes_node)
         {
-            nelements = m_sizes_node->as_index_t_accessor()[one_index];
+            nelements = m_sizes_acc[one_index];
         }
         else
         {
@@ -188,7 +226,7 @@ O2MIndex::offset(index_t one_index) const
     index_t offset = one_index;
     if (m_offsets_node)
     {
-        offset = m_offsets_node->as_index_t_accessor()[one_index];
+        offset = m_offsets_acc[one_index];
     }
     return offset;
 }
