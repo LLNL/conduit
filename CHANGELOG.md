@@ -23,7 +23,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Performance improvements to functions that underpin centroid generation.
 
 #### Relay
-- Fixed MPI baton logic error in `conduit::relay::io::blueprint::save_mesh()` that caused MPI tasks to serialize writes to files in the N domains to M files case. Fix restores parallel writing performance. The bug did not impact to N domains to N files or the single file cases. 
+- Fixed MPI baton logic error in `conduit::relay::io::blueprint::save_mesh()` that caused MPI tasks to serialize writes to files in the N domains to M files case. Fix restores parallel write performance. This bug did not impact cases where where N domains were written to N files (N to N) or N domains were written to a single file (N to 1).
 
 ## [0.8.6] - Released 2023-01-11
 
