@@ -110,20 +110,26 @@ void gen_domain_to_file_map(index_t num_domains,
             v_domains_per_file[f]+=1;
     }
 
-    // prefix sum to calc offsets
-    for(index_t f=0; f < num_files; f++)
+    if(num_files > 1)
     {
-        v_domains_offsets[f] = v_domains_per_file[f];
-        if(f > 0)
-            v_domains_offsets[f] += v_domains_offsets[f-1];
+        // prefix sum to calc offsets
+        for(index_t f=1; f < num_files; f++)
+        {
+            v_domains_offsets[f] += (v_domains_per_file[f-1] +
+                                     v_domains_offsets[f-1]);
+        }
     }
 
     // do assignment, create simple map
     index_t f_idx = 0;
     for(index_t d=0; d < num_domains; d++)
     {
-        if(d >= v_domains_offsets[f_idx])
-            f_idx++;
+        // see if we are at the offset for the next file
+        if(f_idx + 1 < num_files)
+        {
+            if(d >= v_domains_offsets[f_idx+1])
+                f_idx++;
+        }
         v_domain_to_file[d] = f_idx;
     }
 }
@@ -1426,19 +1432,19 @@ void write_mesh(const Node &mesh,
             // update baton requests
             for(int f = 0; f < num_files; ++f)
             {
+                // reset file baton logic, look
+                // to see if any local domains are
+                // destined for this file
+                local_file_batons[f] = -1;
                 for(int d = 0; d < local_num_domains; ++d)
                 {
                     // do we need to write this domain,
                     // and if so is it going to the file
-                    // associated with these
+                    // f
                     if(local_domain_status[d] == 1 &&
                        local_domain_to_file[d] == f)
                     {
                         local_file_batons[f] = par_rank;
-                    }
-                    else
-                    {
-                        local_file_batons[f] = -1;
                     }
                 }
             }
@@ -1555,7 +1561,8 @@ void write_mesh(const Node &mesh,
                 CONDUIT_ERROR(emsg);
             }
 
-            // // If you  need to debug the baton alog:
+            // // If you need to debug the baton algorithm,
+            // // uncomment to examine the books:
             // if(par_rank == 0)
             // {
             //    std::cout << "[" << par_rank << "] "

@@ -465,6 +465,8 @@ TEST(blueprint_mpi_relay, spiral_multi_file)
                                                       opts,
                                                       comm);
 
+        MPI_Barrier(comm);
+
         // count the files
         //  file_%06llu.{protocol}:/domain_%06llu/...
 
@@ -593,8 +595,6 @@ TEST(blueprint_mpi_relay, spiral_root_only)
                                                   opts,
                                                   comm);
     EXPECT_TRUE(conduit::utils::is_file(tout_base + ".root"));
-
-
 
     // read the mesh back in diff to make sure we have the same data
     Node n_read, info;
