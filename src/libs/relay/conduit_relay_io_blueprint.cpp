@@ -98,20 +98,26 @@ void gen_domain_to_file_map(index_t num_domains,
             v_domains_per_file[f]+=1;
     }
 
-    // prefix sum to calc offsets
-    for(index_t f=0; f < num_files; f++)
+    if(num_files > 1)
     {
-        v_domains_offsets[f] = v_domains_per_file[f];
-        if(f > 0)
-            v_domains_offsets[f] += v_domains_offsets[f-1];
+        // prefix sum to calc offsets
+        for(index_t f=1; f < num_files; f++)
+        {
+            v_domains_offsets[f] += (v_domains_per_file[f-1] +
+                                     v_domains_offsets[f-1]);
+        }
     }
 
     // do assignment, create simple map
     index_t f_idx = 0;
     for(index_t d=0; d < num_domains; d++)
     {
-        if(d >= v_domains_offsets[f_idx])
-            f_idx++;
+        // see if we are at the offset for the next file
+        if(f_idx + 1 < num_files)
+        {
+            if(d >= v_domains_offsets[f_idx+1])
+                f_idx++;
+        }
         v_domain_to_file[d] = f_idx;
     }
 }
