@@ -325,43 +325,6 @@ std::string sanitize_silo_varname(const std::string &varname)
 }
 
 //-----------------------------------------------------------------------------
-// Create or open files for writing
-// Always open unless we are encountering the file for the first time AND
-// truncate is turned on, then use create
-// TODO remove this function, the bookkeeping is done already in write_mesh
-//-----------------------------------------------------------------------------
-DBfile *
-create_or_open(std::set<std::string> &filelist,
-               const std::string &filename,
-               int silo_type,
-               bool truncate)
-{
-    // modes: 
-    // DB_READ    or DB_APPEND    for DBOPEN()
-    // DB_CLOBBER or DB_NOCLOBBER for DBCREATE()
-    DBfile *dbfile;
-
-    // if we are truncating, we want to use create w/ clobber only the first time we see this file
-    if (truncate && filelist.find(filename) == filelist.end())
-    {
-        if (!(dbfile = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-        {
-            CONDUIT_ERROR("Error opening Silo file for writing: " << filename );
-        }
-        filelist.insert(filename);
-    }
-    else
-    {
-        if (!(dbfile = DBOpen(filename.c_str(), silo_type, DB_APPEND)))
-        {
-            CONDUIT_ERROR("Error opening Silo file for writing: " << filename);
-        }
-    }
-
-    return dbfile;
-}
-
-//-----------------------------------------------------------------------------
 // Fetch the DBfile * associated with 'filename' from 'filemap'.
 // If the map does not contain an entry for 'filename', open
 // the file and add it to the map before returning the pointer.
@@ -2351,7 +2314,7 @@ void write_multimeshes(DBfile *dbfile,
                 domain_name_ptrs.data(),
                 mesh_types.data(),
                 NULL), // TODO do we really want null?
-            "Error putting multimesh");
+            "Error putting multimesh corresponding to topo: " << topo_name);
     }
 }
 
@@ -2472,7 +2435,7 @@ write_multivars(DBfile *dbfile,
                 var_name_ptrs.data(),
                 var_types.data(),
                 optlist.get()),
-            "Error putting multivar");
+            "Error putting multivar corresponding to field: " << var_name);
     }
 }
 
@@ -3009,13 +2972,19 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
-                        dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
+                        if (!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                        {
+                            CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                        }
                         local_root_file_created.set((int)1);
                     }
                     
                     if(!dbfile)
                     {
-                        dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
+                        if (!(dbfile = DBOpen(root_filename.c_str(), silo_type, DB_APPEND)))
+                        {
+                            CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
+                        }
                     }
 
                     const Node &dom = multi_dom.child(i);
@@ -3072,9 +3041,19 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             DBfile *dbfile = nullptr;
 
-            if (!dbfile)
+            if (opts_truncate)
             {
-                dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
+                if (!(dbfile = DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                {
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << output_file );
+                }
+            }
+            else
+            {
+                if (!(dbfile = DBOpen(output_file.c_str(), silo_type, DB_APPEND)))
+                {
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << output_file);
+                }
             }
 
             // write to mesh name subpath
@@ -3082,7 +3061,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             if(DBClose(dbfile) != 0)
             {
-                CONDUIT_ERROR("Error closing Silo file: " << root_filename);
+                CONDUIT_ERROR("Error closing Silo file: " << output_file);
             }
         }
     }
@@ -3251,13 +3230,16 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                             {
                                 DBfile *dbfile = nullptr;
                                 // if truncate == true check if this is the first time we are
-                                // touching file, and use DB_CLOBBER
+                                // touching file, and use DBCREATE w/ DB_CLOBBER
                                 Node open_opts;
                                 if(opts_truncate && global_file_created[f] == 0)
                                 {
                                     if(!dbfile)
                                     {
-                                        dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
+                                        if (!(dbfile = DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                                        {
+                                            CONDUIT_ERROR("Error opening Silo file for writing: " << output_file );
+                                        }
                                     }
                                     local_file_created[f]  = 1;
                                     global_file_created[f] = 1;
@@ -3265,7 +3247,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 
                                 if(!dbfile)
                                 {
-                                    dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
+                                    if (!(dbfile = DBOpen(output_file.c_str(), silo_type, DB_APPEND)))
+                                    {
+                                        CONDUIT_ERROR("Error opening Silo file for writing: " << output_file);
+                                    }
                                 }
 
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
@@ -3275,7 +3260,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                                 if(DBClose(dbfile) != 0)
                                 {
-                                    CONDUIT_ERROR("Error closing Silo file: " << root_filename);
+                                    CONDUIT_ERROR("Error closing Silo file: " << output_file);
                                 }
                                 
                                 // update status, we are done with this doman
@@ -3558,13 +3543,19 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             if(!dbfile)
             {
-                dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
+                if (!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                {
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                }
             }
         }
 
         if(!dbfile)
         {
-            dbfile = create_or_open(filelist, root_filename, silo_type, opts_truncate);
+            if (!(dbfile = DBOpen(root_filename.c_str(), silo_type, DB_APPEND)))
+            {
+                CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
+            }
         }
 
         // TODO give these functions the multimesh name
@@ -3819,11 +3810,18 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const conduit::Node &opts
                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
+    // TODO is this necessary?
     conduit::utils::remove_path_if_exists(path);
+
+    // we force overwrite to true, so we need a copy of the const opts passed.
+    Node save_opts;
+    save_opts.set(opts);
+    save_opts["truncate"] = "true";
+
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    write_mesh(mesh, path, opts, mpi_comm);
+    write_mesh(mesh, path, save_opts, mpi_comm);
 #else
-    write_mesh(mesh, path, opts);
+    write_mesh(mesh, path, save_opts);
 #endif
 }
 
