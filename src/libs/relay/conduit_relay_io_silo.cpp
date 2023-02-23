@@ -310,6 +310,7 @@ namespace silo
 {
 
 //-----------------------------------------------------------------------------
+// TODO actually use this functions
 std::string sanitize_silo_varname(const std::string &varname)
 {
     std::stringstream newvarname;
@@ -355,36 +356,6 @@ get_or_open(std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &
                         std::make_tuple(fileptr, &DBClose));
         return fileptr;
     }
-}
-
-//-----------------------------------------------------------------------------
-// Fetch the DBfile * associated with 'filename' from 'filemap'.
-// If the map does not contain an entry for 'filename', but the file
-// exists, open the file and add it to the map before returning the pointer.
-// If the file is not in the map and does not exist, create the file and add
-// it to the map before returning the pointer.
-// 'type' should be one of the DB_HDF5* or DB_PDB* constants.
-//-----------------------------------------------------------------------------
-DBfile *
-get_or_create(std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-              const std::string &filename,
-              int type)
-{
-    DBfile *fileptr;
-    if (conduit::utils::is_file(filename))
-    {
-        return get_or_open(filemap, filename, DB_APPEND);
-    }
-
-    if (!(fileptr = DBCreate(filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, type)))
-    {
-        CONDUIT_ERROR("Error creating silo file " << filename);
-    }
-
-    filemap.emplace(std::piecewise_construct,
-                    std::make_tuple(filename),
-                    std::make_tuple(fileptr, &DBClose));
-    return fileptr;
 }
 
 //-----------------------------------------------------------------------------
@@ -2181,71 +2152,6 @@ void silo_mesh_write(const Node &n,
 }
 
 //-----------------------------------------------------------------------------
-// return the directory within a silo file where a mesh domain's info
-// (mesh object, materials, fields, ...) will be stored
-std::string
-get_domain_silo_directory(int domain,
-                          int nfiles,
-                          int ndomains)
-{
-    if (ndomains < nfiles)
-    {
-        return "domain" + std::to_string(domain);
-    }
-    else
-    {
-        return "";
-    }
-}
-
-//-----------------------------------------------------------------------------
-// return the path to the file where a mesh domain will be stored
-std::string
-get_domain_file(int curr_domain,
-                int ndomains,
-                int nfiles,
-                const std::string &root_file) 
-{
-    if (nfiles <= 0) 
-    {
-        return root_file;
-    }
-    else if (ndomains == nfiles)
-    {
-        return "domain" + std::to_string(curr_domain) + ".silo";
-    }
-    else
-    {
-        // ndomains > nfiles
-        // see overlink spec
-        int remainder = ndomains % nfiles;
-        int a = 1 + int(ndomains / nfiles);
-        if (curr_domain < remainder * a)
-        {
-            return "domfile" + std::to_string(int(curr_domain / a)) + ".silo";
-        }
-        else
-        {
-            return "domfile" + std::to_string(int((curr_domain - remainder) / (a - 1))) + ".silo";
-        }
-    }
-}
-
-//-----------------------------------------------------------------------------
-std::string
-get_mesh_domain_name(const conduit::Node &topo, bool overlink) 
-{
-    CONDUIT_ASSERT(topo.number_of_children() == 1,
-                   "Multiple topologies not supported");
-    if (overlink)
-    {
-        return "MESH";
-    }
-
-    return topo.children().next().name();
-}
-
-//-----------------------------------------------------------------------------
 void write_multimeshes(DBfile *dbfile,
                        const std::string opts_mesh_name,
                        const conduit::Node &root)
@@ -2440,72 +2346,6 @@ write_multivars(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
-///      silo_type: "default", "pdb", "hdf5", "hdf5_sec2", "hdf5_stdio",
-///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
-///            when 'path' exists, "default" ==> "unknown"
-///            else,               "default" ==> "hdf5"
-// TODO delete this function once it has all been extracted to write_mesh
-int
-parse_type_option(const std::string &path,
-                  const conduit::Node &opts)
-{
-    int type = 0;
-
-    if (conduit::utils::is_file(path)) 
-    {
-        type = DB_UNKNOWN;
-    }
-    else
-    {
-        type = DB_HDF5;
-    }
-    
-    if (opts.has_path("silo_type"))
-    {
-        std::string silo_type = opts["silo_type"].as_string();
-        if (silo_type == "pdb")
-        {
-            type = DB_PDB;
-        }
-        else if (silo_type == "hdf5")
-        {
-            type = DB_HDF5;
-        }
-        else if (silo_type == "hdf5_sec2")
-        {
-            type = DB_HDF5_SEC2;
-        }
-        else if (silo_type == "hdf5_stdio")
-        {
-            type = DB_HDF5_STDIO;
-        }
-        else if (silo_type == "hdf5_mpio")
-        {
-            type = DB_HDF5_MPIO;
-        }
-        // TODO when can I uncomment this
-        // else if (silo_type == "hdf5_mpiposix")
-        // {
-        //     type = DB_HDF5_MPIPOSIX; 
-        // }
-        else if (silo_type == "taurus") 
-        {
-            type = DB_TAURUS;
-        }
-        else if (silo_type == "unknown") 
-        {
-            type = DB_UNKNOWN;
-        }
-        else
-        {
-            CONDUIT_ASSERT(silo_type == "default",
-                           "Unrecognized 'silo_type' option " << silo_type);
-        }
-    }
-    return type;
-}
-
-//-----------------------------------------------------------------------------
 /// The following options can be passed via the opts Node:
 //-----------------------------------------------------------------------------
 /// opts:
@@ -2647,6 +2487,28 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     {
         silo_type = DB_UNKNOWN;
     }
+    // TODO use these later?
+    // else if (opts_silo_type == "hdf5_sec2")
+    // {
+    //     silo_type = DB_HDF5_SEC2;
+    // }
+    // else if (opts_silo_type == "hdf5_stdio")
+    // {
+    //     silo_type = DB_HDF5_STDIO;
+    // }
+    // else if (opts_silo_type == "hdf5_mpio")
+    // {
+    //     silo_type = DB_HDF5_MPIO;
+    // }
+    // // TODO when can I uncomment this
+    // // else if (opts_silo_type == "hdf5_mpiposix")
+    // // {
+    // //     silo_type = DB_HDF5_MPIPOSIX; 
+    // // }
+    // else if (opts_silo_type == "taurus") 
+    // {
+    //     silo_type = DB_TAURUS;
+    // }
 
     // if the file exists, then
     if (conduit::utils::is_file(path + ".root"))
@@ -3558,7 +3420,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
-        // TODO give these functions the multimesh name
         write_multimeshes(dbfile, opts_mesh_name, root);
         write_multivars(dbfile, opts_mesh_name, root);
         // TODO Q?
@@ -3578,178 +3439,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
         MPI_Barrier(mpi_comm);
     #endif
-}
-
-
-// TODO remove this function once I have extracted everything useful from it
-void CONDUIT_RELAY_API write_mesh_OUTDATED(const conduit::Node &mesh,
-                                  const std::string &path,
-                                  const conduit::Node &opts)
-{
-    int i, type, ndomains, nfiles;
-    std::string mmesh_name = "mesh";
-    bool overlink = false;
-    DBfile *silofile;
-    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
-    std::vector<const conduit::Node *> domains = conduit::blueprint::mesh::domains(mesh);
-    // nfiles is the number of non-root files, so 0 implies root-only
-    // nfiles will == # domains unless:
-    // a) root_only option passed
-    // b) no style option passed and domains == 1
-    // c) number_of_files > 0 specified
-    nfiles = ndomains = domains.size();
-
-    // parse out options
-    type = parse_type_option(path, opts);
-    if (opts.has_path("mesh_name"))
-    {
-        mmesh_name = opts["mesh_name"].as_string();
-    }
-
-    if (opts.has_path("file_style"))
-    {
-        std::string file_style = opts["file_style"].as_string();
-        if (file_style == "overlink")
-        {
-            mmesh_name = "MMESH";
-            overlink = true;
-        }
-        else if (file_style == "multi")
-        {
-            // nothing to do
-        }
-        else if (file_style == "root_only")
-        {
-            nfiles = 0;
-        }
-        else
-        {
-            CONDUIT_ASSERT(file_style == "default",
-                           "Unrecognized file_style option " << file_style);
-            if (nfiles == 1)
-            {
-                nfiles = 0;
-            }
-        }
-    }
-    else
-    {
-        if (nfiles == 1)
-        {
-            nfiles = 0;
-        }
-    }
-    
-    if (opts.has_path("number_of_files") && nfiles > 0) 
-    {
-        if (opts["number_of_files"].as_int() > 0 && nfiles > 0) 
-        {
-            nfiles = opts["number_of_files"].as_int();
-        }
-
-        CONDUIT_ASSERT(nfiles <= ndomains, "More files ("
-                                               << nfiles << ") than domains ("
-                                               << ndomains << ") not allowed");
-    }
-
-    // end option parsing
-    silofile = get_or_create(filemap, path, type);
-
-    std::vector<std::string> silo_mesh_paths;
-    std::vector<int> silo_mesh_types;
-    std::map<std::string, std::vector<std::string>> silo_material_paths;
-    std::map<std::string, std::vector<std::pair<std::string, int>>> silo_variable_paths;
-
-    for (i = 0; i < ndomains; ++i)
-    {
-        std::string domain_file = get_domain_file(i, ndomains, nfiles, path);
-        std::string silo_dir = get_domain_silo_directory(i, nfiles, ndomains);
-        const Node *dom = domains[i];
-        Node fix_name_collisions, replace_field_names;
-
-        std::string mesh_domain_name = conduit::utils::join_path(
-            silo_dir, 
-            get_mesh_domain_name(
-                    (*dom)["topologies"],
-                    overlink));
-
-        // instead of renaming everything to domain_000000 + lalalala
-        // we want to make subdirectories called domain_000000 and then put the things in there
-        // we don't need to change the topo names
-
-        // maybe just rework this entirely so that it does "write_topo" and then "write_field"
-
-        // see blueprint write mesh too! - steal it and change this up to work for silo
-
-        int var_type;
-
-        // prepare multivar paths
-        if (dom->has_path("fields"))
-        {
-            auto field_itr = (*dom)["fields"].children();
-
-            while (field_itr.has_next())
-            {
-                const Node &curr_field = field_itr.next();
-                std::string var_name{field_itr.name()};
-                std::string new_var_name{sanitize_silo_varname("domain_00000" + std::to_string(i) + "_" + var_name)};
-
-                replace_field_names["fields"][new_var_name].set_external(curr_field);
-
-                bool singleFile{nfiles == 0};
-
-                std::stringstream tmp;
-                if (singleFile)
-                {
-                    // CONDUIT_ERROR("Uh oh spaghettio");
-                    // tmp << "block" << i << "/" << VN(var_name);
-                    tmp << new_var_name;
-                }
-                else
-                {
-                    tmp << domain_file << ":" << new_var_name;
-                }
-
-                silo_variable_paths[var_name].push_back(std::make_pair(tmp.str(), var_type));
-            }
-        }
-        silo_mesh_write(*dom,
-                        get_or_create(filemap, domain_file, type), 
-                        silo_dir);
-
-        if (domain_file == path) 
-        {
-            // domain is in root file
-            silo_mesh_paths.push_back(mesh_domain_name);
-        }
-        else
-        {
-            // domain is not in root file
-            silo_mesh_paths.push_back(domain_file + ":" + mesh_domain_name);
-        }
-    }
-    // We always will want a multimesh so this is unconditional
-    // write_multimesh2(silofile, mmesh_name, silo_mesh_paths, silo_mesh_types);
-    if (silo_material_paths.size() > 0) 
-    {
-        for (const auto &pair : silo_material_paths) 
-        {
-            CONDUIT_ASSERT( pair.second.size() == static_cast<std::size_t>(ndomains),
-                           "material " << pair.first << " not specified for all domains");
-            write_multimaterial(silofile, pair.first, mmesh_name, pair.second);
-        }
-    }
-
-    if (silo_variable_paths.size() > 0) 
-    {
-        for (const auto &pair : silo_variable_paths)
-        {
-            CONDUIT_ASSERT(
-                pair.second.size() == static_cast<std::size_t>(ndomains),
-                "variable " << pair.first << " not specified for all domains");
-            // write_multivar2(silofile, pair.first, mmesh_name, pair.second);
-        }
-    }
 }
 
 //-----------------------------------------------------------------------------
