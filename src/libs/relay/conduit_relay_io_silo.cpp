@@ -2287,76 +2287,71 @@ void write_multimeshes(DBfile *dbfile,
                        const std::string opts_mesh_name,
                        const conduit::Node &root)
 {
-    auto mesh_itr = root["blueprint_index"].children();
-    while (mesh_itr.has_next())
+    const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+
+    const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
+
+    auto topo_itr = n_mesh["topologies"].children();
+    while (topo_itr.has_next())
     {
-        const Node &n_mesh = mesh_itr.next();
-        std::string mesh_name = mesh_itr.name();
+        const Node &n_topo = topo_itr.next();
+        std::string topo_name = topo_itr.name();
+        std::string topo_type = n_topo["type"].as_string();
 
-        const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
+        int mesh_type;
 
-        auto topo_itr = n_mesh["topologies"].children();
-        while (topo_itr.has_next())
+        if (topo_type == "points")
         {
-            const Node &n_topo = topo_itr.next();
-            std::string topo_name = topo_itr.name();
-            std::string topo_type = n_topo["type"].as_string();
-
-            int mesh_type;
-
-            if (topo_type == "points")
-            {
-                mesh_type = DB_POINTMESH;
-            }
-            else if (topo_type == "uniform" || 
-                     topo_type == "rectilinear" || 
-                     topo_type == "structured")
-            {
-                mesh_type = DB_QUADMESH;
-            }
-            else if (topo_type == "unstructured")
-            {
-                mesh_type = DB_UCDMESH;
-            }
-            else
-            {
-                CONDUIT_ERROR("Cannot assign a silo mesh type to blueprint mesh.");
-            }
-
-            std::string tree_pattern = root["tree_pattern"].as_string();
-
-            // TODO DANGER DANGER DANGER - tree pattern is not the answer
-            // look at what conduit - and/or visit? does for generating the name recipes
-            // and see cyrus email
-            // there is a way to generate them correctly and this is not it this will fail the m to n case
-            
-            // TODO is this true?
-            // Q? every blueprint domain should have the same mesh name and mesh type
-            std::vector<const char *> domain_name_ptrs;
-            std::vector<int> mesh_types;
-            for (int i = 0; i < num_domains; i ++)
-            {
-                char buffer[100];
-                int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
-                snprintf(buffer + cx, 100 - cx, topo_name.c_str());
-                domain_name_ptrs.push_back(buffer);
-                mesh_types.push_back(mesh_type);
-            }
-
-            std::string multimesh_name = opts_mesh_name + "_" + mesh_name + "_" + topo_name;
-
-            // TODO add any dboptions?
-
-            CONDUIT_CHECK_SILO_ERROR(
-                DBPutMultimesh(
-                    dbfile,
-                    multimesh_name.c_str(),
-                    num_domains,
-                    domain_name_ptrs.data(),
-                    mesh_types.data(),
-                    NULL), // TODO do we really want null?
-                "Error putting multimesh");
+            mesh_type = DB_POINTMESH;
         }
+        else if (topo_type == "uniform" || 
+                 topo_type == "rectilinear" || 
+                 topo_type == "structured")
+        {
+            mesh_type = DB_QUADMESH;
+        }
+        else if (topo_type == "unstructured")
+        {
+            mesh_type = DB_UCDMESH;
+        }
+        else
+        {
+            CONDUIT_ERROR("Unsupported topo type in " << topo_type);
+        }
+
+        std::string tree_pattern = root["tree_pattern"].as_string();
+
+        // TODO DANGER DANGER DANGER - tree pattern is not the answer
+        // look at what conduit - and/or visit? does for generating the name recipes
+        // and see cyrus email
+        // there is a way to generate them correctly and this is not it this will fail the m to n case
+        
+        // TODO is this true?
+        // Q? every blueprint domain should have the same mesh name and mesh type
+        std::vector<const char *> domain_name_ptrs;
+        std::vector<int> mesh_types;
+        for (int i = 0; i < num_domains; i ++)
+        {
+            char buffer[100];
+            int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
+            snprintf(buffer + cx, 100 - cx, topo_name.c_str());
+            domain_name_ptrs.push_back(buffer);
+            mesh_types.push_back(mesh_type);
+        }
+
+        std::string multimesh_name = opts_mesh_name + "_" + topo_name;
+
+        // TODO add any dboptions?
+
+        CONDUIT_CHECK_SILO_ERROR(
+            DBPutMultimesh(
+                dbfile,
+                multimesh_name.c_str(),
+                num_domains,
+                domain_name_ptrs.data(),
+                mesh_types.data(),
+                NULL), // TODO do we really want null?
+            "Error putting multimesh");
     }
 }
 
@@ -2402,87 +2397,82 @@ write_multivars(DBfile *dbfile,
                 const std::string opts_mesh_name,
                 const conduit::Node &root)
 {
-    auto mesh_itr = root["blueprint_index"].children();
-    while (mesh_itr.has_next())
+    const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+
+    // TODO check in visit for if there are domains where vars are not defined what does it do
+    const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
+    auto field_itr = n_mesh["fields"].children();
+    while (field_itr.has_next())
     {
-        const Node &n_mesh = mesh_itr.next();
-        std::string mesh_name = mesh_itr.name();
+        const Node &n_var = field_itr.next();
+        std::string var_name = field_itr.name();
 
-        // TODO check in visit for if there are domains where vars are not defined what does it do
-        const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
-        auto field_itr = n_mesh["fields"].children();
-        while (field_itr.has_next())
+        std::string linked_topo_name = n_var["topology"].as_string();
+        std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
+
+        int var_type;
+        if (linked_topo_type == "unstructured")
         {
-            const Node &n_var = field_itr.next();
-            std::string var_name = field_itr.name();
-
-            std::string linked_topo_name = n_var["topology"].as_string();
-            std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
-
-            int var_type;
-            if (linked_topo_type == "unstructured")
-            {
-                var_type = DB_UCDVAR;
-            }
-            else if (linked_topo_type == "rectilinear" || 
-                     linked_topo_type == "uniform" || 
-                     linked_topo_type == "structured")
-            {
-                var_type = DB_QUADVAR;
-            }
-            else if (linked_topo_type == "points")
-            {
-                var_type = DB_POINTVAR;
-            }
-            else
-            {
-                CONDUIT_ERROR("Only DB_UCDVAR + DB_QUADVAR + DB_POINTVAR var are supported");
-            }
-
-            // TODO danger danger danger see notes in the multimesh function
-            std::string tree_pattern = root["tree_pattern"].as_string();
-
-            // TODO Q? is this true?
-            // every blueprint domain should have the same var name and var type
-            std::vector<const char *> var_name_ptrs;
-            std::vector<int> var_types;
-            for (int i = 0; i < num_domains; i ++)
-            {
-                char buffer[100];
-                int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
-                snprintf(buffer + cx, 100 - cx, var_name.c_str());
-                var_name_ptrs.push_back(buffer);
-                var_types.push_back(var_type);
-            }
-
-            std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{DBMakeOptlist(1),
-                                                                         &DBFreeOptlist};
-            if (!optlist.get())
-            {
-                optlist.release();
-                CONDUIT_ERROR("Error creating options");
-            }
-
-            std::string multimesh_name = opts_mesh_name + "_" + mesh_name + "_" + linked_topo_name;
-
-            // have to const_cast because converting to void *
-            CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.get(),
-                                                  DBOPT_MMESH_NAME,
-                                                  const_cast<char *>(multimesh_name.c_str())),
-                                      "Error creating options for putting multivar");
-
-            std::string multivar_name = opts_mesh_name + "_" + mesh_name + "_" + var_name;
-
-            CONDUIT_CHECK_SILO_ERROR(
-                DBPutMultivar(
-                    dbfile,
-                    multivar_name.c_str(),
-                    num_domains,
-                    var_name_ptrs.data(),
-                    var_types.data(),
-                    optlist.get()),
-                "Error putting multivar");
+            var_type = DB_UCDVAR;
         }
+        else if (linked_topo_type == "rectilinear" || 
+                 linked_topo_type == "uniform" || 
+                 linked_topo_type == "structured")
+        {
+            var_type = DB_QUADVAR;
+        }
+        else if (linked_topo_type == "points")
+        {
+            var_type = DB_POINTVAR;
+        }
+        else
+        {
+            CONDUIT_ERROR("Unsupported topo type in " << linked_topo_type);
+        }
+
+        // TODO danger danger danger see notes in the multimesh function
+        std::string tree_pattern = root["tree_pattern"].as_string();
+
+        // TODO Q? is this true?
+        // every blueprint domain should have the same var name and var type
+        std::vector<const char *> var_name_ptrs;
+        std::vector<int> var_types;
+        for (int i = 0; i < num_domains; i ++)
+        {
+            char buffer[100];
+            int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
+            snprintf(buffer + cx, 100 - cx, var_name.c_str());
+            var_name_ptrs.push_back(buffer);
+            var_types.push_back(var_type);
+        }
+
+        std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{DBMakeOptlist(1),
+                                                                     &DBFreeOptlist};
+        if (!optlist.get())
+        {
+            optlist.release();
+            CONDUIT_ERROR("Error creating options");
+        }
+
+        std::string multimesh_name = opts_mesh_name + "_" + linked_topo_name;
+
+        // have to const_cast because converting to void *
+        CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.get(),
+                                              DBOPT_MMESH_NAME,
+                                              const_cast<char *>(multimesh_name.c_str())),
+                                  "Error creating options for putting multivar");
+
+        std::string multivar_name = opts_mesh_name + "_" + var_name;
+
+        CONDUIT_CHECK_SILO_ERROR(
+            DBPutMultivar(
+                dbfile,
+                multivar_name.c_str(),
+                num_domains,
+                var_name_ptrs.data(),
+                var_types.data(),
+                optlist.get()),
+            "Error putting multivar");
     }
 }
 
