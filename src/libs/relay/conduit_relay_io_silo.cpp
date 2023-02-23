@@ -1582,7 +1582,7 @@ void compact_coords(const Node &n_coords,
         {
             if (n_coords["values"][labels[i]].dtype().is_compact())
             {
-                n_coords_compact[labels[i]].set_external(n_coords["values"]);
+                n_coords_compact[labels[i]].set_external(n_coords["values"][labels[i]]);
             }
             else
             {
