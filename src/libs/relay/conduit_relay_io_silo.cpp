@@ -1566,6 +1566,33 @@ assign_coords_ptrs(void *coords_ptrs[3],
 }
 
 //---------------------------------------------------------------------------//
+void compact_coords(const Node &n_coords,
+                    const int ndims,
+                    const std::vector<std::string> &labels,
+                    Node &n_coords_compact)
+{
+    // compaction is necessary to support ragged arrays
+    if (n_coords["values"].dtype().is_compact())
+    {
+        n_coords_compact.set_external(n_coords["values"]);
+    }
+    else
+    {
+        for (int i = 0; i < ndims; i ++)
+        {
+            if (n_coords["values"][labels[i]].dtype().is_compact())
+            {
+                n_coords_compact[labels[i]].set_external(n_coords["values"]);
+            }
+            else
+            {
+                n_coords["values"][labels[i]].compact_to(n_coords_compact[labels[i]]);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
 void silo_write_pointmesh(DBfile *dbfile,
                           const std::string &topo_name,
                           const Node &n_coords,
@@ -1581,8 +1608,7 @@ void silo_write_pointmesh(DBfile *dbfile,
                              "error adding coordsys option");
 
     Node n_coords_compact;
-    // compaction is necessary to support ragged arrays
-    n_coords["values"].compact_to(n_coords_compact);
+    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
 
     int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
 
@@ -1817,8 +1843,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                               "Failed to create coordsystem labels");
 
     Node n_coords_compact;
-    // compaction is necessary to support ragged arrays
-    n_coords["values"].compact_to(n_coords_compact);
+    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
 
     int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
     // TODO: check that y & z have the same number of points
@@ -1869,10 +1894,8 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                           &coordsys_type_labels.first),
                               "Failed to create coordsystem labels");
 
-    // TODO if already compact no need to compact
     Node n_coords_compact;
-    // compaction is necessary to support ragged arrays
-    n_coords["values"].compact_to(n_coords_compact);
+    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
 
     int pts_dims[3];
     pts_dims[0] = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
@@ -1944,8 +1967,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
                               "Error adding option");
 
     Node n_coords_compact;
-    // compaction is necessary to support ragged arrays
-    n_coords["values"].compact_to(n_coords_compact);
+    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
 
     int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
     CONDUIT_ASSERT(num_pts ==
@@ -2037,9 +2059,7 @@ void silo_mesh_write(const Node &n,
     while (topo_itr.has_next())
     {
         const Node &n_topo = topo_itr.next();
-
         std::string topo_name = topo_itr.name();
-
         std::string topo_type = n_topo["type"].as_string();
 
         n_mesh_info[topo_name]["type"].set(topo_type);
@@ -2225,6 +2245,7 @@ void write_multimeshes(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
+// TODO hmmmmmm
 void
 write_multimaterial(DBfile *root,
                     const std::string &mmat_name,
