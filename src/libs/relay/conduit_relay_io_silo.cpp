@@ -1567,8 +1567,6 @@ assign_coords_ptrs(void *coords_ptrs[3],
 
 //---------------------------------------------------------------------------//
 void compact_coords(const Node &n_coords,
-                    const int ndims,
-                    const std::vector<std::string> &labels,
                     Node &n_coords_compact)
 {
     // compaction is necessary to support ragged arrays
@@ -1578,18 +1576,42 @@ void compact_coords(const Node &n_coords,
     }
     else
     {
-        for (int i = 0; i < ndims; i ++)
+        auto val_itr = n_coords["values"].children();
+        while (val_itr.has_next())
         {
-            if (n_coords["values"][labels[i]].dtype().is_compact())
+            const Node &n_val = val_itr.next();
+            std::string label = val_itr.name();
+            if (n_coords["values"][label].dtype().is_compact())
             {
-                n_coords_compact[labels[i]].set_external(n_coords["values"][labels[i]]);
+                n_coords_compact[label].set_external(n_val);
             }
             else
             {
-                n_coords["values"][labels[i]].compact_to(n_coords_compact[labels[i]]);
+                n_val.compact_to(n_coords_compact[label]);
             }
         }
     }
+}
+
+//---------------------------------------------------------------------------//
+int get_num_pts(const Node &n_vals)
+{
+    auto val_itr = n_vals.children();
+    if (!val_itr.has_next())
+    {
+        CONDUIT_ERROR("Cannot count the number of points because no points given.");
+    }
+    const Node &n_first_val = val_itr.next();
+    int num_pts = n_first_val.dtype().number_of_elements();
+    while(val_itr.has_next())
+    {
+        const Node &n_val = val_itr.next();
+        if (num_pts != n_val.dtype().number_of_elements())
+        {
+            CONDUIT_ERROR("Number of points in explicit coordset does not match between dimensions.");
+        }
+    }
+    return num_pts;
 }
 
 //---------------------------------------------------------------------------//
@@ -1608,9 +1630,8 @@ void silo_write_pointmesh(DBfile *dbfile,
                              "error adding coordsys option");
 
     Node n_coords_compact;
-    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
-
-    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
+    compact_coords(n_coords, n_coords_compact);
+    int num_pts = get_num_pts(n_coords_compact);
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
@@ -1843,10 +1864,8 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                               "Failed to create coordsystem labels");
 
     Node n_coords_compact;
-    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
-
-    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
-    // TODO: check that y & z have the same number of points
+    compact_coords(n_coords, n_coords_compact);
+    int num_pts = get_num_pts(n_coords_compact);
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
 
@@ -1896,7 +1915,8 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                               "Failed to create coordsystem labels");
 
     Node n_coords_compact;
-    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
+    compact_coords(n_coords, n_coords_compact);
+
 
     int pts_dims[3];
     pts_dims[0] = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
@@ -1954,9 +1974,6 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 DBoptlist *state_optlist,
                                 Node &n_mesh_info) 
 {
-    // also support interleaved:
-    // xy, xyz
-
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
 
@@ -1968,14 +1985,8 @@ void silo_write_structured_mesh(DBfile *dbfile,
                               "Error adding option");
 
     Node n_coords_compact;
-    compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
-
-    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
-    CONDUIT_ASSERT(num_pts ==
-                   n_coords_compact[coordsys_type_labels.second[1]].dtype().number_of_elements(),
-                   "element count mismatch");
-
-    n_mesh_info[topo_name]["num_pts"].set(num_pts);
+    compact_coords(n_coords, n_coords_compact);
+    int num_pts = get_num_pts(n_coords_compact);
 
     void *coords_ptrs[3] = {NULL, NULL, NULL};
 
