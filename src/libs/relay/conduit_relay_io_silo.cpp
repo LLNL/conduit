@@ -1845,8 +1845,17 @@ void silo_write_ucd_mesh(DBfile *dbfile,
     Node n_coords_compact;
     compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
 
-    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
-    // TODO: check that y & z have the same number of points
+    int pts_dims[3];
+    pts_dims[0] = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
+    pts_dims[1] = n_coords_compact[coordsys_type_labels.second[1]].dtype().number_of_elements();
+    pts_dims[2] = 1;
+
+    int num_pts = pts_dims[0] * pts_dims[1];
+    if (ndims == 3)
+    {
+        pts_dims[2] = n_coords_compact[coordsys_type_labels.second[2]].dtype().number_of_elements();
+        num_pts *= pts_dims[2];
+    }
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
 
@@ -2407,7 +2416,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string opts_mesh_name  = "mesh";
     std::string opts_silo_type  = "default";
     int         opts_num_files  = -1;
-    bool        opts_truncate   = true; // false; - TODO turn on truncate in save_mesh - see how blueprint does it
+    bool        opts_truncate   = false;
     int         silo_type       = DB_HDF5;
     std::set<std::string> filelist;
 
@@ -2486,8 +2495,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // uses the truncate option so needs to happen after it is set
     if (opts_silo_type == "default")
     {
-        if (conduit::utils::is_file(path + ".root") &&
-            !opts_truncate) 
+        if (conduit::utils::is_file(path + ".root")) 
         {
             silo_type = DB_UNKNOWN;
         }
@@ -2531,33 +2539,17 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     //     silo_type = DB_TAURUS;
     // }
 
-    // if the file exists, then
-    if (conduit::utils::is_file(path + ".root"))
+    // if the file exists and we are not truncating
+    if (conduit::utils::is_file(path + ".root") && !opts_truncate)
     {
-        // if truncate, then 
-        if (opts_truncate)
-        {
-            // silo type can be anything except unknown
-            if (silo_type == DB_UNKNOWN)
-            {
-                silo_type = DB_HDF5;
-            }
-        }
-        // if not truncate, then
-        else
-        {
-            // silo type must be unknown
-            silo_type = DB_UNKNOWN;
-        }
+        // then silo type must be unknown
+        silo_type = DB_UNKNOWN;
     }
-    // if the file does not exist, then
-    else
+    // if the file does not exist or we are truncating
+    else if (silo_type == DB_UNKNOWN)
     {
-        // make sure silo type is not unknown
-        if (silo_type == DB_UNKNOWN)
-        {
-            silo_type = DB_HDF5;
-        }
+        // silo type can be anything except unknown
+        silo_type = DB_HDF5;
     }
 
     // special logic for overlink
