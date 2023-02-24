@@ -310,7 +310,7 @@ namespace silo
 {
 
 //-----------------------------------------------------------------------------
-// TODO actually use this functions
+// TODO actually use this function
 std::string sanitize_silo_varname(const std::string &varname)
 {
     std::stringstream newvarname;
@@ -1845,17 +1845,8 @@ void silo_write_ucd_mesh(DBfile *dbfile,
     Node n_coords_compact;
     compact_coords(n_coords, ndims, coordsys_type_labels.second, n_coords_compact);
 
-    int pts_dims[3];
-    pts_dims[0] = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
-    pts_dims[1] = n_coords_compact[coordsys_type_labels.second[1]].dtype().number_of_elements();
-    pts_dims[2] = 1;
-
-    int num_pts = pts_dims[0] * pts_dims[1];
-    if (ndims == 3)
-    {
-        pts_dims[2] = n_coords_compact[coordsys_type_labels.second[2]].dtype().number_of_elements();
-        num_pts *= pts_dims[2];
-    }
+    int num_pts = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
+    // TODO: check that y & z have the same number of points
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
 
@@ -1869,6 +1860,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 
     std::string zlist_name = topo_name + "_connectivity";
 
+    // TODO we could go index out of bounds here watch out
     char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
                                         coordsys_type_labels.second[1].c_str(),
                                         coordsys_type_labels.second[2].c_str()};
@@ -2386,7 +2378,7 @@ write_multivars(DBfile *dbfile,
 ///
 ///      silo_type: "default", "pdb", "hdf5", ARE ALL WE WANT FOR NOW
 
-// these other ones are BONUS
+// these other ones are BONUS TODO
 // "hdf5_sec2", "hdf5_stdio",
 ///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
 ///            when 'path' exists, "default" ==> "unknown"
@@ -2491,8 +2483,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
     }
 
-    // TODO clean up the next couple blocks so there isn't duplicate logic
-    // uses the truncate option so needs to happen after it is set
     if (opts_silo_type == "default")
     {
         if (conduit::utils::is_file(path + ".root")) 
@@ -2539,6 +2529,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     //     silo_type = DB_TAURUS;
     // }
 
+    // uses the truncate option so needs to happen after it is set
     // if the file exists and we are not truncating
     if (conduit::utils::is_file(path + ".root") && !opts_truncate)
     {
@@ -3504,7 +3495,29 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 /// The following options can be passed via the opts Node:
 //-----------------------------------------------------------------------------
 /// opts:
-///      TODO
+///
+///      file_style: "default", "root_only", "multi_file", "overlink"
+///            when # of domains == 1,  "default"   ==> "root_only"
+///            else,                    "default"   ==> "multi_file"
+///
+///      silo_type: "default", "pdb", "hdf5", ARE ALL WE WANT FOR NOW
+
+// these other ones are BONUS TODO
+// "hdf5_sec2", "hdf5_stdio",
+///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
+///            when 'path' exists, "default" ==> "unknown"
+///            else,               "default" ==> "hdf5"
+///
+///      suffix: "default", "cycle", "none"
+///            when # of domains == 1,  "default"   ==> "none"
+///            else,                    "default"   ==> "cycle"
+///
+///      mesh_name:  (used if present, default ==> "mesh")
+///
+///      number_of_files:  {# of files}
+///            when "multi_file" or "overlink":
+///                 <= 0, use # of files == # of domains
+///                  > 0, # of files == number_of_files
 ///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
