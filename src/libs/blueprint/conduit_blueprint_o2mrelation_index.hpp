@@ -37,10 +37,10 @@ namespace o2mrelation
 {
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::O2Mindex --
+// -- begin conduit::blueprint::o2mrelation::O2Mindex --
 //-----------------------------------------------------------------------------
 ///
-/// class: conduit::O2MIndex
+/// class: conduit::blueprint::o2mrelation::O2MIndex
 ///
 /// description:
 ///  General purpose index for 'o2mrelation' Nodes.
@@ -51,7 +51,7 @@ class CONDUIT_BLUEPRINT_API O2MIndex
 public:
 //-----------------------------------------------------------------------------
 //
-// -- conduit::O2MIndex public members --
+// -- conduit::blueprint::o2mrelation::O2MIndex public members --
 //
 //-----------------------------------------------------------------------------
 
@@ -98,7 +98,7 @@ private:
 
 //-----------------------------------------------------------------------------
 //
-// -- conduit::O2MIndex private members --
+// -- conduit::blueprint::o2mrelation::O2MIndex private members --
 //
 //-----------------------------------------------------------------------------
 
@@ -122,7 +122,7 @@ private:
     index_t_accessor m_offsets_acc;
 };
 //-----------------------------------------------------------------------------
-// -- end conduit::O2MIndex --
+// -- end conduit::blueprint::o2mrelation::O2MIndex --
 //-----------------------------------------------------------------------------
 
 

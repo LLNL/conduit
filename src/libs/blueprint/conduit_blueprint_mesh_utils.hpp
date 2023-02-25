@@ -216,6 +216,158 @@ CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const s
 index_t CONDUIT_BLUEPRINT_API find_domain_id(const Node &node);
 
 //-----------------------------------------------------------------------------
+///
+/// class: conduit::blueprint::mesh::utils::NDIndex
+///
+/// description:
+///  General purpose index for strided structured meshes.
+///
+//-----------------------------------------------------------------------------
+class CONDUIT_BLUEPRINT_API NDIndex
+{
+public:
+    //-----------------------------------------------------------------------------
+    //
+    // -- conduit::blueprint::mesh::utils::NDIndex public members --
+    //
+    //-----------------------------------------------------------------------------
+
+    //-----------------------------------------------------------------------------
+    /// NDIndex Construction and Destruction
+    //-----------------------------------------------------------------------------
+        /// Copy constructor.
+    NDIndex(const NDIndex& idx);
+
+    /// Primary index constructor.
+    NDIndex(const Node* node);
+
+    /// Primary index constructor.  The argument node should contain numeric
+    /// children, all of equal length:
+    ///     - shape (required) specifies the shape of the array to index
+    ///     - offset (optional) specifies where the data starts in the array
+    ///     - extent (optional) specifies the extent of the data to index
+    ///
+    /// If offset is not specified, it defaults to 0 in each dimension.
+    /// If extent is not specified, it defaults to shape[d] - extent[d] in
+    /// each dimension d.
+    ///
+    /// NDIndex follows the index order convention of Conduit Blueprint:
+    /// fastest-varying dimension first.  For example,
+    ///
+    /// shape: [6, 4]
+    ///
+    /// indicates a two-dimensional array, extent 6 in the X-dimension and
+    /// extent 4 in the Y-dimension.
+    NDIndex(const Node& node);
+
+    /// Destructor
+    ~NDIndex();
+
+    /// Assignment operator.
+    NDIndex& operator=(const NDIndex& itr);
+
+    //-----------------------------------------------------------------------------
+    /// Retrieve a flat-index: public interface.
+    //-----------------------------------------------------------------------------
+    template<typename T, typename... Ts>
+    index_t     index(T idx, Ts... idxs) const;
+    template<typename T>
+    index_t     index(T idx) const;
+
+    /// With default argument, returns the number of ranks or dimensions for
+    /// this NDIndex.  With dim >= 0, returns the extent of this NDIndex
+    /// for dimension dim.
+    index_t     shape(index_t dim = -1) const;
+
+    /// Returns the logical index in dimension dim where the data starts.
+    index_t     offset(index_t dim) const;
+
+    /// Returns the stride along dimension dim.
+    index_t     stride(index_t dim) const;
+
+    //-----------------------------------------------------------------------------
+    /// Human readable info about this iterator
+    //-----------------------------------------------------------------------------
+    void        info(Node& res) const;
+
+private:
+
+    //-----------------------------------------------------------------------------
+    //
+    // -- conduit::blueprint::mesh::utils::NDIndex private members --
+    //
+    //-----------------------------------------------------------------------------
+
+    //-----------------------------------------------------------------------------
+    /// Index state/fields.
+    //-----------------------------------------------------------------------------
+        /// The following 3 members are used so we can look them up once and then
+        /// use the existence of the pointer instead of expensive calls that look
+        /// up the child in m_node while we use the iterator.
+
+    /// pointer to an internal shape, offset, and stride Node
+    const Node* m_shape_node;
+    const Node* m_offset_node;
+    const Node* m_stride_node;
+
+    /// Do we own the shape, offset, or stride node?
+    bool m_own_shape;
+    bool m_own_offset;
+    bool m_own_stride;
+
+    /// Accessors for shape, offset, and stride
+    index_t_accessor m_shape_acc;
+    index_t_accessor m_offset_acc;
+    index_t_accessor m_stride_acc;
+
+    //-----------------------------------------------------------------------------
+    /// Retrieve a flat-index: private implementation.
+    //-----------------------------------------------------------------------------
+    template<typename T, typename... Ts>
+    index_t index(index_t acc, int depth, T idx, Ts... idxs) const;
+    template<typename T>
+    index_t index(index_t acc, int depth, T idx) const;
+};
+
+template<typename T, typename... Ts>
+index_t NDIndex::index(T idx, Ts... idxs) const
+{
+    return index(0, 0, idx, idxs);
+}
+
+template<typename T>
+index_t NDIndex::index(T idx) const
+{
+    return index(0, 0, idx);
+}
+
+template<typename T, typename... Ts>
+index_t NDIndex::index(index_t acc, int depth, T idx, Ts... idxs) const
+{
+    index_t component = 0;
+    if (m_shape_node)
+    {
+        component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
+    }
+    return index(acc + component, depth + 1, idxs);
+}
+
+template<typename T>
+index_t NDIndex::index(index_t acc, int depth, T idx) const
+{
+    index_t component = 0;
+    if (m_shape_node)
+    {
+        component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
+    }
+    return acc + component;
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::O2MIndex --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
 //-----------------------------------------------------------------------------
 namespace connectivity

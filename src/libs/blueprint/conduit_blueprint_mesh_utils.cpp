@@ -342,6 +342,154 @@ find_domain_id(const Node &node)
     return domain_id;
 }
 
+
+//-----------------------------------------------------------------------------
+NDIndex::NDIndex(const Node& idx) :
+    NDIndex(&idx)
+{
+
+}
+
+//-----------------------------------------------------------------------------
+NDIndex::NDIndex(const Node* idx) :
+    m_shape_node(NULL),
+    m_offset_node(NULL),
+    m_stride_node(NULL),
+    m_own_shape(false),
+    m_own_offset(false),
+    m_own_stride(false)
+{
+    // TODO: error if idx has no child "shape"
+    // TODO: error if shape, offset, and stride differ in length
+
+    if (idx->has_child("shape"))
+    {
+        m_shape_node = idx->fetch_ptr("shape");
+        m_shape_acc = m_shape_node->as_index_t_accessor();
+    }
+
+    if (idx->has_child("offset"))
+    {
+        m_offset_node = idx->fetch_ptr("offset");
+        m_offset_acc = m_offset_node->as_index_t_accessor();
+    }
+    else
+    {
+        // make our own
+        index_t dim = m_shape_node->number_of_children();
+        Node * t_offset_node = new Node();
+        m_own_offset = true;
+
+        t_offset_node->set(DataType::index_t(dim));
+        index_t *p_offset = t_offset_node->value();
+        for (index_t i = 0; i < dim; ++i) {
+            p_offset[i] = 0;
+        }
+        m_offset_node = t_offset_node;
+        m_offset_acc = m_offset_node->as_index_t_accessor();
+    }
+
+    if (idx->has_child("stride"))
+    {
+        m_stride_node = idx->fetch_ptr("stride");
+        m_stride_acc = m_stride_node->as_index_t_accessor();
+    }
+    else
+    {
+        // make our own
+        index_t dim = m_shape_node->number_of_children();
+        Node * t_stride_node = new Node();
+        m_own_stride = true;
+
+        t_stride_node->set(DataType::index_t(dim));
+        index_t* p_stride = t_stride_node->as_index_t_ptr();
+        p_stride[0] = 1;
+        for (index_t i = 0; i < dim; ++i) {
+            p_stride[i] = p_stride[i-1] * m_shape_acc[i-1];
+        }
+        m_stride_node = t_stride_node;
+        m_stride_acc = m_stride_node->as_index_t_accessor();
+    }
+}
+
+NDIndex::~NDIndex()
+{
+    if (m_own_shape)
+    {
+        delete m_shape_node;
+    }
+    m_shape_node = NULL;
+
+    if (m_own_offset)
+    {
+        delete m_offset_node;
+    }
+    m_offset_node = NULL;
+
+    if (m_own_stride)
+    {
+        delete m_stride_node;
+    }
+    m_stride_node = NULL;
+}
+
+index_t NDIndex::shape(index_t dim) const
+{
+    int retval = 0;
+    if (dim < 0)
+    {
+        retval = m_shape_node->number_of_children();
+    }
+    else
+    {
+        retval = m_shape_acc[dim];
+    }
+    return retval;
+}
+
+index_t NDIndex::offset(index_t dim) const
+{
+    return m_offset_acc[dim];
+}
+
+index_t NDIndex::stride(index_t dim) const
+{
+    return m_stride_acc[dim];
+}
+
+void NDIndex::info(Node& res) const
+{
+    index_t dim = shape();
+    res["shape"].set(DataType::index_t(dim));
+    res["offset"].set(DataType::index_t(dim));
+    res["stride"].set(DataType::index_t(dim));
+
+    index_t* p_shape = res["shape"].as_index_t_ptr();
+    index_t* p_offset = res["offset"].as_index_t_ptr();
+    index_t* p_stride = res["stride"].as_index_t_ptr();
+    for (index_t d = 0; d < dim; ++d)
+    {
+        p_shape[d] = m_shape_acc[d];
+        p_offset[d] = m_offset_acc[d];
+        p_stride[d] = m_stride_acc[d];
+    }
+
+    if (m_own_shape)
+    {
+        res["own_shape"] = true;
+    }
+
+    if (m_own_offset)
+    {
+        res["own_offset"] = true;
+    }
+
+    if (m_own_stride)
+    {
+        res["own_stride"] = true;
+    }
+}
+
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
 //-----------------------------------------------------------------------------
