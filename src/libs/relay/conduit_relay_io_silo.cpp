@@ -1215,6 +1215,7 @@ read_mesh(const std::string &root_file_path,
 
 //-----------------------------------------------------------------------------
 ///
+// TODO are these the real opts?
 /// opts:
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
@@ -1241,6 +1242,7 @@ read_mesh(const std::string &root_file_path,
     // only read bp index on rank 0
     if(par_rank == 0)
     {
+        // TODO we don't want to create something akin to the blueprint index; no need for an intermediary
         if(!read_root_blueprint_index(root_file_path,
                                       opts,
                                       root_node,
@@ -1916,10 +1918,13 @@ void silo_write_pointmesh(DBfile *dbfile,
                                           &coordsys_type_labels.first),
                              "error adding coordsys option");
 
+    if (n_coords["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
+    }
+
     Node n_coords_compact;
     compact_coords(n_coords, n_coords_compact);
-    // TODO error if coordset is not explicit
-    // Cyrus told me I can expect an explicit coordset here so this is the right way to calculate
     int num_pts = get_explicit_num_pts(n_coords_compact);
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
@@ -2152,6 +2157,11 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                                           &coordsys_type_labels.first),
                               "Failed to create coordsystem labels");
 
+    if (n_coords["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
+    }
+
     Node n_coords_compact;
     compact_coords(n_coords, n_coords_compact);
     // unstructured topo must have explicit coords so this is the right way to calculate num pts
@@ -2273,6 +2283,11 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                           DBOPT_COORDSYS,
                                           &coordsys_type_labels.first),
                               "Error adding option");
+
+    if (n_coords["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
+    }
 
     Node n_coords_compact;
     compact_coords(n_coords, n_coords_compact);
@@ -3827,9 +3842,6 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const conduit::Node &opts
                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
-    // TODO is this necessary?
-    conduit::utils::remove_path_if_exists(path);
-
     // we force overwrite to true, so we need a copy of the const opts passed.
     Node save_opts;
     save_opts.set(opts);
