@@ -310,6 +310,34 @@ namespace silo
 {
 
 //-----------------------------------------------------------------------------
+// -- begin conduit::relay::<mpi>::io::silo::detail --
+//-----------------------------------------------------------------------------
+namespace detail
+{
+
+template <class T, class Deleter>
+class SiloObjectWrapper
+{
+private:
+    T *obj;
+    Deleter del;
+    std::string errmsg = "";
+
+public:
+    SiloObjectWrapper(T *o, Deleter d, std::string err) : obj(o), del{d}, errmsg{err} {}
+    T getSiloObject() { return obj; }
+    void setSiloObject(T *o) { obj = o; }
+    virtual ~SiloObjectWrapper()
+    {
+        if(del(obj) != 0)
+        {
+            // CONDUIT_ERROR() TODO hmmmm
+            std::cout << errmsg << std::endl;
+        }
+    }
+};
+
+//-----------------------------------------------------------------------------
 // TODO actually use this function
 std::string sanitize_silo_varname(const std::string &varname)
 {
@@ -324,6 +352,13 @@ std::string sanitize_silo_varname(const std::string &varname)
     }
     return newvarname.str();
 }
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::relay::<mpi>::io::silo::detail --
+//-----------------------------------------------------------------------------
+
+
 
 //-----------------------------------------------------------------------------
 // Fetch the DBfile * associated with 'filename' from 'filemap'.
@@ -760,7 +795,7 @@ read_multimesh( DBfile *root_file,
                 DBmultimesh *multimesh,
                 conduit::Node &mesh)
 {
-
+// TODO file ptr wrapper and multimesh wrapper class to make errors work across mpi ranks
     std::string file_path, silo_name;
     for (index_t i = 0; i < multimesh->nblocks; ++i)
     {
@@ -1214,6 +1249,63 @@ read_mesh(const std::string &root_file_path,
 }
 
 //-----------------------------------------------------------------------------
+// TODO change name
+bool
+read_silo_stuff(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> dbfile,
+                DBtoc *toc,
+                const std::string &root_file_path,
+                const Node &opts,
+                std::string &mesh_name, // output
+                std::ostringstream &error_oss) // output
+{
+    // clear output vars
+    mesh_name = "";
+    error_oss.str("");
+
+    dbfile.setSiloObject(DBOpen(root_file_path.c_str(), silo_type, DB_READ));
+    if (! dbfile.getSiloObject())
+    {
+        error_oss << "Error opening Silo file for reading: " << root_file_path;
+        return false;
+    }
+
+    toc = DBGetToc(dbfile.getSiloObject()); // shouldn't be free'd
+    // get the multimesh
+    if (toc->nmultimesh <= 0)
+    {
+        error_oss << "No multimesh found in file: " << root_file_path;
+        return false;
+    }
+
+    if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
+    {
+        mesh_name = opts["mesh_name"].as_string();
+    }
+
+    if (mesh_name.empty())
+    {
+        mesh_name = toc->multimesh_names[0];
+    }
+
+    bool found = false;
+    for (i = 0; i < toc->nmultimesh; i ++)
+    {
+        if (toc->multimesh_names[i] == mesh_name)
+        {
+            found = true;
+            break;
+        }
+    }
+    if (!found)
+    {
+        error_oss << "No multimesh found matching " << mesh_name;
+        return false;
+    }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 ///
 // TODO are these the real opts?
 /// opts:
@@ -1236,23 +1328,29 @@ read_mesh(const std::string &root_file_path,
 
     int error = 0;
     std::ostringstream error_oss;
-    Node root_node;
     std::string mesh_name;
+    Node root_node; // TODO what to do with this
+
+    detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> dbfile{
+        nullptr, &DBClose, "Error closing Silo file: " + root_filename};
+
+    // TODO should this live in a wrapper too? Notes say it shouldn't be freed
+    DBtoc *toc;
 
     // only read bp index on rank 0
     if(par_rank == 0)
     {
-        // TODO we don't want to create something akin to the blueprint index; no need for an intermediary
-        if(!read_root_blueprint_index(root_file_path,
-                                      opts,
-                                      root_node,
-                                      mesh_name,
-                                      error_oss))
+        if(!read_silo_stuff(dbfile,
+                            toc,
+                            root_file_path,
+                            opts,
+                            mesh_name,
+                            error_oss))
         {
             error = 1;
         }
     }
-    
+
 #if CONDUIT_RELAY_IO_MPI_ENABLED
     Node n_local, n_global;
     n_local.set((int)error);
@@ -1275,6 +1373,8 @@ read_mesh(const std::string &root_file_path,
     }
     else
     {
+        // TODO we will want to broadcast the names to the other tasks
+
         // broadcast the mesh name and the bp index
         // from rank 0 to all ranks
         n_global.set(mesh_name);
@@ -1288,90 +1388,11 @@ read_mesh(const std::string &root_file_path,
     }
 #endif
 
-    // make sure we have a valid bp index
-    Node verify_info;
     const Node &mesh_index = root_node["blueprint_index"][mesh_name];
-    if( !::conduit::blueprint::mesh::index::verify(mesh_index,
-                                                   verify_info[mesh_name]))
-    {
-        CONDUIT_ERROR("Mesh Blueprint index verify failed" << std::endl
-                      << verify_info.to_json());
-    }
-
-    bool has_part_pattern = mesh_index.has_path("state/partition_pattern");
-    // We need either a state/partition_pattern, or root level file_pattern
-
-    if(!has_part_pattern && !root_node.has_child("file_pattern"))
-    {
-        CONDUIT_ERROR("Root file missing 'file_pattern' or mesh specific"
-            " partition_pattern (" << mesh_name << "/state/partition_pattern)");
-    }
-
-    //(per mesh part maps case doesn't need these, but older style does)
-    if(!has_part_pattern && !root_node.has_child("number_of_trees"))
-    {
-        CONDUIT_ERROR("Root missing `number_of_trees`");
-    }
-
-    if(!has_part_pattern && !root_node.has_child("number_of_files"))
-    {
-        CONDUIT_ERROR("Root missing `number_of_files`");
-    }
     
-    std::string data_protocol = "hdf5";
-
-    if(root_node.has_child("protocol"))
-    {
-        data_protocol = root_node["protocol/name"].as_string();
-    }
-
     // read all domains for given mesh
-    int num_domains = -1;
-    if(has_part_pattern)
-    {
-        if(mesh_index.has_path("state/partition_map/domain"))
-        {
-            index_t_accessor doms = mesh_index["state/partition_map/domain"].value();
-            num_domains = doms.max() + 1;
-        }
-        else
-        {
-            // special case, one 1 domain
-            num_domains = 1;
-        }
-    }
-    else
-    {
-        num_domains = root_node["number_of_trees"].to_int();
-    }
+    int num_domains = root_node["number_of_trees"].to_int();
     detail::BlueprintTreePathGenerator gen;
-
-    // three cases:
-    //  legacy case that uses file_pattern and tree_pattern
-    //  case that uses a mesh specific partition pattern and partition map
-    //  case that uses a mesh specific partition pattern 
-    if(mesh_index["state"].has_child("partition_pattern"))
-    {
-        if(mesh_index["state"].has_child("partition_map"))
-        {
-            gen.Init(mesh_index["state/partition_pattern"].as_string(),
-                     mesh_index["state/partition_map"]);
-        }
-        else
-        {
-            // this will only occur for single domain root file case
-            gen.Init(mesh_index["state/partition_pattern"].as_string());
-        }
-    }
-    else
-    {
-        int num_files   = root_node["number_of_files"].to_int();
-        gen.Init(root_node["file_pattern"].as_string(),
-                 root_node["tree_pattern"].as_string(),
-                 num_files,
-                 num_domains,
-                 data_protocol);
-    }
 
     std::ostringstream oss;
     int domain_start = 0;
@@ -1406,95 +1427,78 @@ read_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
-    if(data_protocol == "sidre_hdf5")
+    relay::io::IOHandle hnd;
+    Node open_opts;
+    open_opts["mode"] = "r";
+    for(int i = domain_start ; i < domain_end; i++)
     {
-        relay::io::IOHandle hnd;
-        Node open_opts;
-        open_opts["mode"] = "r";
-        hnd.open(root_file_path, "sidre_hdf5", open_opts);
-        for(int i = domain_start ; i < domain_end; i++)
+        std::string current, next;
+        utils::rsplit_file_path (root_file_path, current, next);
+        std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
+
+        hnd.open(domain_file, data_protocol, open_opts);
+
+        // also need the tree path
+        std::string tree_path = gen.GenerateTreePath(i);
+
+        std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
+
+        Node &mesh_out = mesh[mesh_path];
+
+        // read components of the mesh according to the mesh index
+        // for each child in the index
+        NodeConstIterator outer_itr = mesh_index.children();
+
+        while(outer_itr.has_next())
         {
-            oss.str("");
-            oss << i << "/" << mesh_name;
-            hnd.read(oss.str(),mesh);
-        }
-    }
-    else
-    {
-        relay::io::IOHandle hnd;
-        Node open_opts;
-        open_opts["mode"] = "r";
-        for(int i = domain_start ; i < domain_end; i++)
-        {
-            std::string current, next;
-            utils::rsplit_file_path (root_file_path, current, next);
-            std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
+            const Node &outer = outer_itr.next();
+            std::string outer_name = outer_itr.name();
 
-            hnd.open(domain_file, data_protocol, open_opts);
-
-            // also need the tree path
-            std::string tree_path = gen.GenerateTreePath(i);
-
-            std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
-
-            Node &mesh_out = mesh[mesh_path];
-
-            // read components of the mesh according to the mesh index
-            // for each child in the index
-            NodeConstIterator outer_itr = mesh_index.children();
-
-            while(outer_itr.has_next())
+            // special logic for state, since it was not included in the index
+            if(outer_name == "state" )
             {
-                const Node &outer = outer_itr.next();
-                std::string outer_name = outer_itr.name();
-
-                // special logic for state, since it was not included in the index
-                if(outer_name == "state" )
+                // we do need to read the state!
+                if(outer.has_child("path"))
                 {
-                    // we do need to read the state!
-                    if(outer.has_child("path"))
-                    {
-                        hnd.read(utils::join_path(tree_path,outer["path"].as_string()),
-                                 mesh_out[outer_name]);
-                    }
-                    else
-                    { 
-                        if(outer.has_child("cycle"))
-                        {
-                             mesh_out[outer_name]["cycle"] = outer["cycle"];
-                        }
-
-                        if(outer.has_child("time"))
-                        {
-                            mesh_out[outer_name]["time"] = outer["time"];
-                        }
-                     }
+                    hnd.read(utils::join_path(tree_path,outer["path"].as_string()),
+                             mesh_out[outer_name]);
                 }
-
-                NodeConstIterator itr = outer.children();
-                while(itr.has_next())
-                {
-                    const Node &entry = itr.next();
-                    // check if it has a path
-                    if(entry.has_child("path"))
+                else
+                { 
+                    if(outer.has_child("cycle"))
                     {
-                        std::string entry_name = itr.name();
-                        std::string entry_path = entry["path"].as_string();
-                        std::string fetch_path = utils::join_path(tree_path,
-                                                                  entry_path);
-                        // some parts may not exist in all domains
-                        // only read if they are there
-                        if(hnd.has_path(fetch_path))
-                        {   
-                            hnd.read(fetch_path,
-                                     mesh_out[outer_name][entry_name]);
-                        }
+                         mesh_out[outer_name]["cycle"] = outer["cycle"];
+                    }
+
+                    if(outer.has_child("time"))
+                    {
+                        mesh_out[outer_name]["time"] = outer["time"];
+                    }
+                 }
+            }
+
+            NodeConstIterator itr = outer.children();
+            while(itr.has_next())
+            {
+                const Node &entry = itr.next();
+                // check if it has a path
+                if(entry.has_child("path"))
+                {
+                    std::string entry_name = itr.name();
+                    std::string entry_path = entry["path"].as_string();
+                    std::string fetch_path = utils::join_path(tree_path,
+                                                              entry_path);
+                    // some parts may not exist in all domains
+                    // only read if they are there
+                    if(hnd.has_path(fetch_path))
+                    {   
+                        hnd.read(fetch_path,
+                                 mesh_out[outer_name][entry_name]);
                     }
                 }
             }
         }
     }
-    
 }
 
 
@@ -3174,19 +3178,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     // figure out the proper mesh path the file
                     std::string mesh_path = "";
 
-                    // if(global_num_domains == 1)
-                    // {
-                    //     // no domain prefix, write to mesh name
-                    //     mesh_path = opts_mesh_name;
-                    // }
-                    // else
-                    // {
-                    //     // multiple domains, we need to use a domain prefix
-                    //     uint64 domain = dom["state/domain_id"].to_uint64();
-                    //     mesh_path = conduit_fmt::format("domain_{:06d}/{}",
-                    //                                     domain,
-                    //                                     opts_mesh_name);
-                    // }
                     uint64 domain = dom["state/domain_id"].to_uint64();
                     mesh_path = conduit_fmt::format("domain_{:06d}", domain);
                     silo_mesh_write(dom, dbfile, mesh_path);
