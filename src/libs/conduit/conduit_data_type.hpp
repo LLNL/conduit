@@ -590,6 +590,9 @@ public:
     void                compact_to(DataType &dtype) const;
 
 
+    static conduit::uint64 c_abi_hash();
+
+
 private:
 //-----------------------------------------------------------------------------
 //

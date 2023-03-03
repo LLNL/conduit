@@ -44,6 +44,7 @@
 //-----------------------------------------------------------------------------
 // -- conduit includes --
 //-----------------------------------------------------------------------------
+#include "conduit_endianness.hpp"
 #include "conduit_error.hpp"
 #include "conduit_utils.hpp"
 
@@ -16872,6 +16873,25 @@ class Node::MMap
       void *data_ptr() const
           { return m_data; }
 
+      //----------------------------------------------------------------------
+      static uint64 c_abi_hash()
+      {
+          const uint64 abi_signature[] = {
+              // MMap information.
+              sizeof(MMap),
+              offsetof(MMap, m_data),
+              offsetof(MMap, m_data_size),
+#if !defined(CONDUIT_PLATFORM_WINDOWS)
+              offsetof(MMap, m_mmap_fd),
+#else
+              offsetof(MMap, m_file_hnd),
+              offsetof(MMap, m_map_hnd),
+#endif
+          };
+
+          return hash(reinterpret_cast<const char*>(abi_signature), sizeof(abi_signature), 0);
+      }
+
   private:
       void      *m_data;
       int        m_data_size;
@@ -18043,6 +18063,40 @@ Node::info(Node &res, const std::string &curr_path) const
 //
 //-----------------------------------------------------------------------------
 //=============================================================================
+
+
+//-----------------------------------------------------------------------------
+// -- ABI compatibility detection --
+//-----------------------------------------------------------------------------
+uint64 Node::c_abi_hash()
+{
+    const uint64 abi_signature[] = {
+        // Node information.
+        sizeof(Node),
+        offsetof(Node, m_parent),
+        offsetof(Node, m_schema),
+        offsetof(Node, m_owns_schema),
+        offsetof(Node, m_children),
+        offsetof(Node, m_data),
+        offsetof(Node, m_data_size),
+        offsetof(Node, m_alloced),
+        offsetof(Node, m_mmaped),
+        offsetof(Node, m_mmap),
+        offsetof(Node, m_allocator_id),
+
+        // Auxillary information
+        sizeof(std::vector<Node*>),
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+        // On Windows, debugging changes the ABI of STL containers.
+        _ITERATOR_DEBUG_LEVEL,
+#endif
+
+        // MMap information.
+        MMap::c_abi_hash(),
+    };
+
+    return hash(reinterpret_cast<const char*>(abi_signature), sizeof(abi_signature), 0);
+}
 
 
 }

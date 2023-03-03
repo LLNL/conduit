@@ -74,6 +74,8 @@ typedef conduit_index_t   index_t;
 std::string CONDUIT_API about();
 void        CONDUIT_API about(Node &);
 
+uint64 CONDUIT_API c_abi_hash();
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit:: --

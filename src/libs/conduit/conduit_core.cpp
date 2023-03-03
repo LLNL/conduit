@@ -173,6 +173,28 @@ about(Node &n)
 
 }
 
+//---------------------------------------------------------------------------//
+uint64
+c_abi_hash()
+{
+    const uint64 abi_signature[] = {
+        // Core platform information.
+        sizeof(void*),
+        static_cast<uint64>(Endianness::machine_default()),
+        CHAR_MIN == 0, // signedness of `char`
+
+        // Conduit ABI changes.
+        sizeof(index_t),
+        sizeof(conduit_long_double),
+
+        // Node information.
+        Node::c_abi_hash(),
+        DataType::c_abi_hash(),
+    };
+
+    return utils::hash(reinterpret_cast<const char*>(abi_signature), sizeof(abi_signature), 0);
+}
+
 
 }
 //-----------------------------------------------------------------------------

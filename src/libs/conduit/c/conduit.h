@@ -32,6 +32,8 @@ extern "C" {
 
 CONDUIT_API void conduit_about(conduit_node *cnode);
 
+CONDUIT_API conduit_uint64 conduit_abi_hash();
+
 #ifdef __cplusplus
 }
 #endif

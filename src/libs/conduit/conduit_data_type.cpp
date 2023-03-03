@@ -1474,6 +1474,24 @@ DataType::compact_to(DataType &dtype) const
                m_endianness);
 }
 
+//---------------------------------------------------------------------------//
+uint64
+DataType::c_abi_hash()
+{
+    const conduit::uint64 abi_signature[] = {
+        // DataType information.
+        sizeof(DataType),
+        offsetof(DataType, m_id),
+        offsetof(DataType, m_num_ele),
+        offsetof(DataType, m_offset),
+        offsetof(DataType, m_stride),
+        offsetof(DataType, m_ele_bytes),
+        offsetof(DataType, m_endianness),
+    };
+
+    return conduit::utils::hash(reinterpret_cast<const char*>(abi_signature), sizeof(abi_signature), 0);
+}
+
 //=============================================================================
 //-----------------------------------------------------------------------------
 //
