@@ -235,7 +235,7 @@ public:
     //-----------------------------------------------------------------------------
     /// NDIndex Construction and Destruction
     //-----------------------------------------------------------------------------
-        /// Copy constructor.
+    // Copy constructor.
     NDIndex(const NDIndex& idx);
 
     /// Primary index constructor.
@@ -245,10 +245,10 @@ public:
     /// children, all of equal length:
     ///     - shape (required) specifies the shape of the array to index
     ///     - offset (optional) specifies where the data starts in the array
-    ///     - extent (optional) specifies the extent of the data to index
+    ///     - stride (optional) specifies the extent of the data to index
     ///
     /// If offset is not specified, it defaults to 0 in each dimension.
-    /// If extent is not specified, it defaults to shape[d] - extent[d] in
+    /// If stride is not specified, it defaults to shape[d] - stride[d] in
     /// each dimension d.
     ///
     /// NDIndex follows the index order convention of Conduit Blueprint:
@@ -259,6 +259,9 @@ public:
     /// indicates a two-dimensional array, extent 6 in the X-dimension and
     /// extent 4 in the Y-dimension.
     NDIndex(const Node& node);
+
+    /// Array constructor
+    NDIndex(index_t dim, index_t* shape, index_t* offset = NULL, index_t* stride = NULL);
 
     /// Destructor
     ~NDIndex();
@@ -301,9 +304,9 @@ private:
     //-----------------------------------------------------------------------------
     /// Index state/fields.
     //-----------------------------------------------------------------------------
-        /// The following 3 members are used so we can look them up once and then
-        /// use the existence of the pointer instead of expensive calls that look
-        /// up the child in m_node while we use the iterator.
+    /// The following 3 members are used so we can look them up once and then
+    /// use the existence of the pointer instead of expensive calls that look
+    /// up the child in m_node while we use the iterator.
 
     /// pointer to an internal shape, offset, and stride Node
     const Node* m_shape_node;
@@ -320,47 +323,35 @@ private:
     index_t_accessor m_offset_acc;
     index_t_accessor m_stride_acc;
 
-    //-----------------------------------------------------------------------------
-    /// Retrieve a flat-index: private implementation.
-    //-----------------------------------------------------------------------------
-    template<typename T, typename... Ts>
-    index_t index(index_t acc, int depth, T idx, Ts... idxs) const;
-    template<typename T>
-    index_t index(index_t acc, int depth, T idx) const;
+    /// Dimension (length of shape, offset, and stride nodes)
+    index_t m_dim;
+
+    /// Helper for dtor
+    void cleanup();
 };
 
 template<typename T, typename... Ts>
 index_t NDIndex::index(T idx, Ts... idxs) const
 {
-    return index(0, 0, idx, idxs);
+    index_t depth = m_dim - sizeof...(idxs) - 1;
+    index_t component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
+    // DEBUG (take out before committing)
+    std::cout << "Recursive index; idx " << idx << " depth " << depth <<
+        " offset " << m_offset_acc[depth] << " stride " << m_stride_acc[depth] <<
+        " component " << component << std::endl;
+    return component + index(idxs...);
 }
 
 template<typename T>
 index_t NDIndex::index(T idx) const
 {
-    return index(0, 0, idx);
-}
-
-template<typename T, typename... Ts>
-index_t NDIndex::index(index_t acc, int depth, T idx, Ts... idxs) const
-{
-    index_t component = 0;
-    if (m_shape_node)
-    {
-        component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
-    }
-    return index(acc + component, depth + 1, idxs);
-}
-
-template<typename T>
-index_t NDIndex::index(index_t acc, int depth, T idx) const
-{
-    index_t component = 0;
-    if (m_shape_node)
-    {
-        component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
-    }
-    return acc + component;
+    index_t depth = m_dim - 1;
+    index_t component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
+    // DEBUG (take out before committing)
+    std::cout << "Base case index; idx " << idx << " depth " << depth <<
+        " offset " << m_offset_acc[depth] << " stride " << m_stride_acc[depth] <<
+        " component " << component << std::endl;
+    return component;
 }
 
 //-----------------------------------------------------------------------------
