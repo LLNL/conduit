@@ -325,8 +325,10 @@ private:
 
 public:
     SiloObjectWrapper(T *o, Deleter d, std::string err) : obj(o), del{d}, errmsg{err} {}
+    SiloObjectWrapper(T *o, Deleter d) : obj(o), del{d} {}
     T getSiloObject() { return obj; }
     void setSiloObject(T *o) { obj = o; }
+    void setErrMsg(std::string newmsg) { errmsg = newmsg; }
     virtual ~SiloObjectWrapper()
     {
         if(del(obj) != 0)
@@ -1251,25 +1253,29 @@ read_mesh(const std::string &root_file_path,
 //-----------------------------------------------------------------------------
 // TODO change name
 bool
-read_silo_stuff(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> dbfile,
-                DBtoc *toc,
-                const std::string &root_file_path,
+read_silo_stuff(const std::string &root_file_path,
                 const Node &opts,
+                Node root_node,
                 std::string &mesh_name, // output
                 std::ostringstream &error_oss) // output
 {
     // clear output vars
+    root_node.reset();
     mesh_name = "";
     error_oss.str("");
 
-    dbfile.setSiloObject(DBOpen(root_file_path.c_str(), silo_type, DB_READ));
+    detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> dbfile{
+        DBOpen(root_file_path.c_str(), DB_UNKNOWN, DB_READ), 
+        &DBClose, 
+        "Error closing Silo file: " + root_file_path};
+
     if (! dbfile.getSiloObject())
     {
         error_oss << "Error opening Silo file for reading: " << root_file_path;
         return false;
     }
 
-    toc = DBGetToc(dbfile.getSiloObject()); // shouldn't be free'd
+    DBtoc *toc = DBGetToc(dbfile.getSiloObject()); // shouldn't be free'd
     // get the multimesh
     if (toc->nmultimesh <= 0)
     {
@@ -1302,12 +1308,70 @@ read_silo_stuff(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> dbfile,
         return false;
     }
 
+    detail::SiloObjectWrapper<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{
+        DBGetMultimesh(dbfile, mesh_name.c_str()), 
+        &DBFreeMultimesh, 
+        "Error closing multimesh " + mesh_name};
+
+    if (! multimesh.getSiloObject())
+    {
+        multimesh.getSiloObject().release();
+        error_oss << "Error opening multimesh " << mesh_name;
+        return false;
+    }
+
+    int nblocks = multimesh.getSiloObject().nblocks;
+    root_node[mesh_name]["nblocks"] = nblocks;
+
+    nameschemes = false;
+    if (nameschemes)
+    {
+        root_node[mesh_name]["nameschemes"] = "yes";
+        // go kick rocks
+    }
+    else
+    {
+        root_node[mesh_name]["nameschemes"] = "no";
+        std::vector<int> mesh_types;
+        for (int i = 0; i < nblocks; i ++)
+        {
+            // save the mesh name and mesh type
+            root_node[mesh_name]["mesh_paths"].append();
+            Node &mesh_path = root_node[mesh_name]["mesh_paths"].append();
+            mesh_path.set(multimesh.getSiloObject().meshnames[i]);
+            mesh_types.push_back(multimesh.getSiloObject().meshtypes[i]);
+        }
+        root_node[mesh_name]["mesh_types"].set(mesh_types.data());
+    }
+
+    // should look like this:
+
+    // mesh:
+    //    nblocks: 5
+    //    nameschemes: "no"
+    //    mesh_paths:
+    //       - "domain_000000.silo:mesh"
+    //       - "domain_000001.silo:mesh"
+    //         ...
+    //    mesh_types: [UCD_MESH, UCD_MESH, ...]
+    //    ...
+
+
+    // code from james
+    // // read in the multimesh and add it to the mesh Node
+    // read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
+    // // get the multivars matching the multimesh
+    // read_all_multivars(silofile, toc, filemap, dirname,
+    //     mmesh_name, multimesh.get()->nblocks, mesh);
+    // // get the multimaterials matching the multimesh
+    // read_all_multimats(silofile, toc, filemap, dirname, mmesh_name,
+    //                     multimesh.get()->nblocks, mesh);
+
     return true;
 }
 
 //-----------------------------------------------------------------------------
 ///
-// TODO are these the real opts?
 /// opts:
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
@@ -1329,21 +1393,14 @@ read_mesh(const std::string &root_file_path,
     int error = 0;
     std::ostringstream error_oss;
     std::string mesh_name;
-    Node root_node; // TODO what to do with this
-
-    detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> dbfile{
-        nullptr, &DBClose, "Error closing Silo file: " + root_filename};
-
-    // TODO should this live in a wrapper too? Notes say it shouldn't be freed
-    DBtoc *toc;
+    Node root_node;
 
     // only read bp index on rank 0
     if(par_rank == 0)
     {
-        if(!read_silo_stuff(dbfile,
-                            toc,
-                            root_file_path,
+        if(!read_silo_stuff(root_file_path,
                             opts,
+                            root_node,
                             mesh_name,
                             error_oss))
         {
@@ -1373,8 +1430,6 @@ read_mesh(const std::string &root_file_path,
     }
     else
     {
-        // TODO we will want to broadcast the names to the other tasks
-
         // broadcast the mesh name and the bp index
         // from rank 0 to all ranks
         n_global.set(mesh_name);
@@ -1388,10 +1443,18 @@ read_mesh(const std::string &root_file_path,
     }
 #endif
 
-    const Node &mesh_index = root_node["blueprint_index"][mesh_name];
+    const Node &mesh_index = root_node[mesh_name];
+
+    bool nameschemes = false;
+    if (mesh_index.has_child("nameschemes") &&
+        mesh_index["nameschemes"].as_string() == "yes")
+    {
+        nameschemes = true;
+        CONDUIT_ERROR("WRONG CHOICE BUCKAROO");
+    }
     
     // read all domains for given mesh
-    int num_domains = root_node["number_of_trees"].to_int();
+    int num_domains = mesh_index["nblocks"].to_int();
     detail::BlueprintTreePathGenerator gen;
 
     std::ostringstream oss;
@@ -1427,21 +1490,60 @@ read_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
+    // should look like this:
+
+    // mesh:
+    //    nblocks: 5
+    //    nameschemes: "no"
+    //    mesh_paths:
+    //       - "domain_000000.silo:mesh"
+    //       - "domain_000001.silo:mesh"
+    //         ...
+    //    mesh_types: [UCD_MESH, UCD_MESH, ...]
+    //    ...
+
     relay::io::IOHandle hnd;
-    Node open_opts;
-    open_opts["mode"] = "r";
+    detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> domfile{nullptr, &DBClose};
     for(int i = domain_start ; i < domain_end; i++)
     {
+        std::string mesh_path = mesh_index["mesh_paths"][i];
+        int mesh_type = mesh_index["mesh_types"][i];
+
         std::string current, next;
         utils::rsplit_file_path (root_file_path, current, next);
         std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
+        domfile.setErrMsg("Error closing Silo file: " + domain_file);
 
-        hnd.open(domain_file, data_protocol, open_opts);
+        domfile.setSiloObject(DBOpen(domain_file.c_str(), DB_UNKNOWN, DB_READ));
+        if (! domfile.getSiloObject())
+        {
+            CONDUIT_ERROR("Error opening Silo file for reading: " << domain_file);
+        }
+
+        std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
+
+        mesh[mesh_path]
+
+        // good luck justin
+
+        // Node &entry = mesh.append();
+        // split_silo_path(multimesh->meshnames[i], dirname, file_path, silo_name);
+        // if (!file_path.empty())
+        // {
+        //     read_mesh_domain(get_or_open(filemap, file_path),
+        //                      silo_name,
+        //                      entry,
+        //                      multimesh->meshtypes[i]);
+        // }else
+        // {
+        //     read_mesh_domain(root_file,
+        //                      silo_name,
+        //                      entry,
+        //                      multimesh->meshtypes[i]);
+        // }
 
         // also need the tree path
         std::string tree_path = gen.GenerateTreePath(i);
-
-        std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
 
         Node &mesh_out = mesh[mesh_path];
 
