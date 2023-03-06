@@ -7407,7 +7407,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
     
     for(Py_ssize_t idx=0; idx < tuple_size && homogenous_numeric; idx++)
     {
-        PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+        PyObject *py_entry = PyTuple_GetItem(value, idx);
         if (PyInt_Check(py_entry) || PyLong_Check(py_entry))
         {
             // int64 still ok
@@ -7433,7 +7433,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
             int64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < tuple_size; idx++)
             {
-                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+                PyObject *py_entry = PyTuple_GetItem(value, idx);
                 if (PyInt_Check(py_entry))
                 {
                     vals_ptr[idx] = (int64)PyInt_AsLong(py_entry);
@@ -7450,7 +7450,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
             float64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < tuple_size; idx++)
             {
-                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+                PyObject *py_entry = PyTuple_GetItem(value, idx);
 
                 if (PyInt_Check(py_entry))
                 {
@@ -7474,7 +7474,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
         ok = true;
         for(Py_ssize_t idx=0; idx < tuple_size && ok; idx++)
         {
-            PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+            PyObject *py_entry = PyTuple_GetItem(value, idx);
             Node &cld = node.append();
             if( PyConduit_Node_Set_From_Python(cld,py_entry) != 0 )
             {
