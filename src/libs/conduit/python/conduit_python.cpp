@@ -7392,7 +7392,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
     // a numeric case, or a more general case
     
     
-    Py_ssize_t tuple_size = PyTuple_GET_SIZE(value);
+    Py_ssize_t tuple_size = PyTuple_Size(value);
     
     if(tuple_size == 0)
     {
