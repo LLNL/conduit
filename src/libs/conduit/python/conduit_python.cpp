@@ -101,7 +101,7 @@ PyString_AsString(PyObject *py_obj)
                                                           "strict"); // Owned reference
         if(temp_bytes != NULL)
         {
-            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
+            res = _conduit_strdup(PyBytes_AsString(temp_bytes));
             Py_DECREF(temp_bytes);
         }
         else
@@ -111,7 +111,7 @@ PyString_AsString(PyObject *py_obj)
     }
     else if(PyBytes_Check(py_obj))
     {
-        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
+        res = _conduit_strdup(PyBytes_AsString(py_obj));
     }
     else
     {
@@ -7555,7 +7555,7 @@ PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
         }
 
         // copy data into conduit node
-        cld.set_char8_str(PyBytes_AS_STRING(py_temp_bytes));
+        cld.set_char8_str(PyBytes_AsString(py_temp_bytes));
         // cleanup temp bytes
         Py_DECREF(py_temp_bytes);
     }
