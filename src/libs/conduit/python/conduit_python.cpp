@@ -7355,7 +7355,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
                 }
                 else // float
                 {
-                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                    vals_ptr[idx] = (float64)PyFloat_AsDouble(py_entry);
                 }
             }
         }
@@ -7462,7 +7462,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
                 }
                 else // float
                 {
-                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                    vals_ptr[idx] = (float64)PyFloat_AsDouble(py_entry);
                 }
             }
         }
@@ -7609,7 +7609,7 @@ PyConduit_Node_Set_From_Python(Node &node,
     }
     else if (PyFloat_Check(value))
     {
-        node = PyFloat_AS_DOUBLE(value);
+      node = PyFloat_AsDouble(value);
     }
     else if (PyArray_Check(value))
     {
