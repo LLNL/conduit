@@ -7287,7 +7287,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
     // like json and yaml cases, identify if we are 
     // a numeric case, or a more general case
     
-    Py_ssize_t list_size = PyList_GET_SIZE(value);
+    Py_ssize_t list_size = PyList_Size(value);
 
     if(list_size == 0)
     {
