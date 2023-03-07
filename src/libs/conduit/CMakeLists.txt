@@ -123,7 +123,8 @@ if(FORTRAN_FOUND)
     # Specify fortran sources
     #
     set(conduit_fortran_sources
-        fortran/conduit_fortran.F90)
+        fortran/conduit_fortran.F90
+        fortran/conduit_fortran_endianess_types.f90)
 
     #  add oo interface if the fortran compiler supports it
     if(ENABLE_FORTRAN_OBJ_INTERFACE)
