@@ -24,7 +24,7 @@ module conduit
     ! generic types
     !--------------------------------------------------------------------------
     integer, parameter :: CONDUIT_EMPTY_ID  = F_CONDUIT_EMPTY_ID
-    integer, parameter :: CONDUIT_OBJECT_ID = F_CONDUIT_EMPTY_ID
+    integer, parameter :: CONDUIT_OBJECT_ID = F_CONDUIT_OBJECT_ID
     integer, parameter :: CONDUIT_LIST_ID   = F_CONDUIT_LIST_ID
     
     !--------------------------------------------------------------------------
