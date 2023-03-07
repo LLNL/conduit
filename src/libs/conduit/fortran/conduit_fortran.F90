@@ -1178,6 +1178,15 @@ module conduit
          real(C_DOUBLE) :: res
     end function conduit_node_as_double
 
+    !--------------------------------------------------------------------------
+    pure function conduit_node_dtype(cnode) result(res) &
+             bind(C, name="conduit_node_dtype")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: res
+    end function conduit_node_dtype
+
 
     !--------------------------------------------------------------------------
     end interface
