@@ -78,6 +78,8 @@ module conduit
     integer, parameter :: CONDUIT_DOUBLE_ID = F_CONDUIT_NATIVE_DOUBLE_ID
     !--------------------------------------------------------------------------
 
+    ! conduit_index_t as defined in c
+    integer, parameter :: CONDUIT_INDEX_ID = F_CONDUIT_INDEX_ID
 
 
     !--------------------------------------------------------------------------
