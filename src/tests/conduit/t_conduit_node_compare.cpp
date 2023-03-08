@@ -180,8 +180,8 @@ TEST(conduit_node_compare, compare_leaf_string)
             //         leaf_buff
             //   [ _ _ _ _ _ _ _ m e / ]
             //     0 1 2 3 4 5 6 7 8 9
-            DataType leaf_type(leaf_tid, //id 
-                               leaf_str.length() + 1, // size 
+            DataType leaf_type(leaf_tid, //id
+                               leaf_str.length() + 1, // size
                                (10 - leaf_str.length() - 1) * DataType::default_bytes(leaf_tid), // offset
                                DataType::default_bytes(leaf_tid),
                                DataType::default_bytes(leaf_tid),
@@ -211,6 +211,9 @@ TEST(conduit_node_compare, compare_leaf_string)
                 diff_buff[8] += 1;
 
                 Node  o(leaf_type, (void*)diff_buff, true), info;
+                n.print();
+                std::cout << "vs" << std::endl;
+                o.print();
                 EXPECT_TRUE(diff_nodes(n, o, info));
                 info.print();
             }
@@ -464,7 +467,7 @@ TEST(conduit_node_compare, compare_list_size_diff)
 
 
 //-----------------------------------------------------------------------------
-TEST(conduit_yaml, check_string_diffs)
+TEST(conduit_node_compare, check_string_diffs)
 {
     Node n_a, n_b, info;
     
@@ -481,6 +484,87 @@ TEST(conduit_yaml, check_string_diffs)
     EXPECT_EQ(info["errors"][0].as_string(),
               "data_array::diff_compatible: data string mismatch (\"a is first\" vs \"b is second\")");
 
-    
-    
+    // now make both node a and node b the same
+    n_b.set("a is first");
+    n_a.print();
+    n_b.print();
+    // no diff
+    EXPECT_FALSE(n_a.diff(n_b,info));
+    info.print();
+
+    n_a.reset();
+    n_b.reset();
+
+    // init to empty dtype of char8
+    n_a.set(DataType::char8_str(0));
+    n_b.set(DataType::char8_str(0));
+    // no diff.
+    EXPECT_FALSE(n_a.diff(n_b,info));
+
+    n_a.reset();
+    n_b.reset();
+
+    n_a.set(DataType::char8_str(0));
+    n_b.set("here");
+    // diff
+    EXPECT_TRUE(n_a.diff(n_b,info));
+    info.print();
+
+    n_a.reset();
+    n_b.reset();
+
+    n_a.set("here");
+    n_b.set(DataType::char8_str(0));
+    // diff
+    EXPECT_TRUE(n_a.diff(n_b,info));
+    info.print();
+
+    n_a.reset();
+    n_b.reset();
+
+    // following cases work w/o reset
+    // b/c set will include null term
+
+    n_a.set("");
+    n_b.set("");
+    // no diff.
+    EXPECT_FALSE(n_a.diff(n_b,info));
+
+    n_a.set("");
+    n_b.set("here");
+
+    EXPECT_TRUE(n_a.diff(n_b,info));
+    info.print();
+
+    n_a.set("here");
+    n_b.set("");
+
+    EXPECT_TRUE(n_a.diff(n_b,info));
+    info.print();
+
+    //------
+    // check diff_compatible
+    //------
+
+    // no diff compat
+    n_a.set("he");
+    n_b.set("here");
+    EXPECT_FALSE(n_a.diff_compatible(n_b,info));
+
+    // not sym, yes diff
+    EXPECT_TRUE(n_b.diff_compatible(n_a,info));
+    info.print();
+
+    // no diff compat
+    n_a.set("her");
+    n_b.set("here");
+    EXPECT_FALSE(n_a.diff_compatible(n_b,info));
+
+    // YES diff compat
+    n_a.set("hx");
+    n_b.set("here");
+    EXPECT_TRUE(n_a.diff_compatible(n_b,info));
+    info.print();
+
 }
+
