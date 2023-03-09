@@ -140,9 +140,16 @@ static PyObject *
 PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
                                     int string_len)
 {
+    #ifdef Py_LIMITED_API
+    return PyUnicode_Decode(unicode_buffer,
+                             string_len,
+                             "utf-32",
+                             "strict");
+    #else
     return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                      unicode_buffer,
                                      string_len/4);
+    #endif
 }
 
 //-----------------------------------------------------------------------------
