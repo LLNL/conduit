@@ -6049,11 +6049,7 @@ PyConduit_Node_print_detailed(PyConduit_Node *self)
 {
     std::ostringstream oss;
     self->node->to_string_stream(oss,"conduit_json");
-    // create python string from our c++ stream and call std print
-    PyObject *py_str = Py_BuildValue("s", oss.str().c_str());
-    PyObject_Print(py_str, stdout, Py_PRINT_RAW);
-    // dec ref for python string
-    Py_DECREF(py_str);
+    std::fprintf(stdout,"%s",oss.str().c_str());
     Py_RETURN_NONE;
 }
 
