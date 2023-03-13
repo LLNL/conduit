@@ -548,12 +548,12 @@ add_shape_info(DBzonelist *zones,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_ucdmesh_domain(DBfile *file,
+read_ucdmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
                     std::string &mesh_name,
                     conduit::Node &mesh_domain)
 {
     DBucdmesh *ucdmesh_ptr;
-    if (!(ucdmesh_ptr = DBGetUcdmesh(file, mesh_name.c_str())))
+    if (!(ucdmesh_ptr = DBGetUcdmesh(dbfile.getSiloObject(), mesh_name.c_str())))
     {
         CONDUIT_ERROR("Error fetching mesh " << mesh_name);
     }
@@ -617,12 +617,12 @@ read_ucdmesh_domain(DBfile *file,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_quadmesh_domain(DBfile *file,
+read_quadmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
                      std::string &mesh_name,
                      conduit::Node &mesh_domain)
 {
     DBquadmesh *quadmesh_ptr;
-    if (!(quadmesh_ptr = DBGetQuadmesh(file, mesh_name.c_str())))
+    if (!(quadmesh_ptr = DBGetQuadmesh(dbfile.getSiloObject(), mesh_name.c_str())))
     {
         CONDUIT_ERROR("Error fetching mesh " << mesh_name);
     }
@@ -715,12 +715,12 @@ conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_pointmesh_domain(DBfile *file,
+read_pointmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
                       std::string &mesh_name,
                       conduit::Node &mesh_domain)
 {
     DBpointmesh *pointmesh_ptr;
-    if (!(pointmesh_ptr = DBGetPointmesh(file, mesh_name.c_str())))
+    if (!(pointmesh_ptr = DBGetPointmesh(dbfile.getSiloObject(), mesh_name.c_str())))
     {
         CONDUIT_ERROR("Error fetching mesh " << mesh_name);
     }
@@ -760,21 +760,21 @@ read_pointmesh_domain(DBfile *file,
 
 //-----------------------------------------------------------------------------
 // Read a multimesh domain, switching on the type.
-// 'file' must be a pointer into the file containing the mesh, and 'mesh_name'
+// 'dbfile' must be a pointer into the file containing the mesh, and 'mesh_name'
 // must be the mesh's name
 //-----------------------------------------------------------------------------
 void
-read_mesh_domain(DBfile *file,
+read_mesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
                  std::string &mesh_name,
                  conduit::Node &mesh_domain,
                  int meshtype)
 {
     if (meshtype == DB_UCDMESH)
-        return read_ucdmesh_domain(file, mesh_name, mesh_domain);
+        read_ucdmesh_domain(dbfile, mesh_name, mesh_domain);
     if (meshtype == DB_QUADMESH)
-        return read_quadmesh_domain(file, mesh_name, mesh_domain);
+        read_quadmesh_domain(dbfile, mesh_name, mesh_domain);
     if (meshtype == DB_POINTMESH)
-        return read_pointmesh_domain(file, mesh_name, mesh_domain);
+        read_pointmesh_domain(dbfile, mesh_name, mesh_domain);
     if (meshtype == DB_CSGMESH)
         CONDUIT_ERROR("CSG meshes are not supported by Blueprint");
 
@@ -791,31 +791,23 @@ read_mesh_domain(DBfile *file,
 // to concretize the paths given by the multivar.
 //-----------------------------------------------------------------------------
 void
-read_multimesh( DBfile *root_file,
-                std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-                std::string &dirname,
-                DBmultimesh *multimesh,
-                conduit::Node &mesh)
+read_multimesh(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
+               std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+               std::string &dirname,
+               DBmultimesh *multimesh,
+               conduit::Node &mesh)
 {
 // TODO file ptr wrapper and multimesh wrapper class to make errors work across mpi ranks
     std::string file_path, silo_name;
-    for (index_t i = 0; i < multimesh->nblocks; ++i)
+    for (index_t i = 0; i < multimesh->nblocks; i ++)
     {
         Node &entry = mesh.append();
+        // TODO we need to add a new mesh domain, not a new list entry
         split_silo_path(multimesh->meshnames[i], dirname, file_path, silo_name);
-        if (!file_path.empty())
-        {
-            read_mesh_domain(get_or_open(filemap, file_path),
-                             silo_name,
-                             entry,
-                             multimesh->meshtypes[i]);
-        }else
-        {
-            read_mesh_domain(root_file,
-                             silo_name,
-                             entry,
-                             multimesh->meshtypes[i]);
-        }
+        read_mesh_domain(dbfile,
+                         silo_name,
+                         entry,
+                         multimesh->meshtypes[i]);
     }
 }
 
@@ -1502,12 +1494,13 @@ read_mesh(const std::string &root_file_path,
     //    mesh_types: [UCD_MESH, UCD_MESH, ...]
     //    ...
 
-    relay::io::IOHandle hnd;
     detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> domfile{nullptr, &DBClose};
-    for(int i = domain_start ; i < domain_end; i++)
+    for (int i = domain_start; i < domain_end; i++)
     {
-        std::string mesh_path = mesh_index["mesh_paths"][i];
-        int mesh_type = mesh_index["mesh_types"][i];
+        std::string mesh_index_path = mesh_index["mesh_paths"][i];
+        int meshtype = mesh_index["mesh_types"][i];
+
+        std::string mesh_name = magic();
 
         std::string current, next;
         utils::rsplit_file_path (root_file_path, current, next);
@@ -1520,32 +1513,25 @@ read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Error opening Silo file for reading: " << domain_file);
         }
 
-        std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
-
-        mesh[mesh_path]
-
-        // good luck justin
-
-        // Node &entry = mesh.append();
-        // split_silo_path(multimesh->meshnames[i], dirname, file_path, silo_name);
-        // if (!file_path.empty())
-        // {
-        //     read_mesh_domain(get_or_open(filemap, file_path),
-        //                      silo_name,
-        //                      entry,
-        //                      multimesh->meshtypes[i]);
-        // }else
-        // {
-        //     read_mesh_domain(root_file,
-        //                      silo_name,
-        //                      entry,
-        //                      multimesh->meshtypes[i]);
-        // }
-
         // also need the tree path
         std::string tree_path = gen.GenerateTreePath(i);
 
+        std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
+
         Node &mesh_out = mesh[mesh_path];
+
+        // split_silo_path(multimesh->meshnames[i], dirname, file_path, silo_name);
+
+        if (meshtype == DB_UCDMESH)
+            read_ucdmesh_domain(domfile, mesh_name, mesh_out);
+        if (meshtype == DB_QUADMESH)
+            read_quadmesh_domain(domfile, mesh_name, mesh_out);
+        if (meshtype == DB_POINTMESH)
+            read_pointmesh_domain(domfile, mesh_name, mesh_out);
+        if (meshtype == DB_CSGMESH)
+            CONDUIT_ERROR("CSG meshes are not supported by Blueprint");
+
+        CONDUIT_ERROR("Unsupported mesh type " << meshtype);
 
         // read components of the mesh according to the mesh index
         // for each child in the index
@@ -1647,8 +1633,8 @@ void CONDUIT_RELAY_API read_mesh_OUTDATED(const std::string &root_file_path,
         multimesh.release();
         CONDUIT_ERROR("Error fetching multimesh " << mmesh_name);
     }
-    // read in the multimesh and add it to the mesh Node
-    read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
+    // // read in the multimesh and add it to the mesh Node
+    // read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
     // get the multivars matching the multimesh
     read_all_multivars(silofile, toc, filemap, dirname,
         mmesh_name, multimesh.get()->nblocks, mesh);
