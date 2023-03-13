@@ -1594,8 +1594,8 @@ Save a mesh to disk using a specific protocol:
 .. code:: cpp
 
     conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
-                                              const std::string &protocol,
-                                              const std::string &path);
+                                              const std::string &path,
+                                              const std::string &protocol);
 
 Save a mesh to disk using a specific protocol and options:
 
