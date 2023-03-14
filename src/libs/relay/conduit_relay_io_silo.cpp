@@ -321,20 +321,62 @@ class SiloObjectWrapper
 private:
     T *obj;
     Deleter del;
+
+public:
+    SiloObjectWrapper(T *o, Deleter d) : 
+        obj(o), del{d} {}
+    T* getSiloObject() { return obj; }
+    void setSiloObject(T *o) { obj = o; }
+    ~SiloObjectWrapper()
+    {
+        del(obj);
+    }
+};
+
+template <class T, class Deleter>
+class SiloObjectWrapperCheckError
+{
+private:
+    T *obj;
+    Deleter del;
     std::string errmsg = "";
 
 public:
-    SiloObjectWrapper(T *o, Deleter d, std::string err) : obj(o), del{d}, errmsg{err} {}
-    SiloObjectWrapper(T *o, Deleter d) : obj(o), del{d} {}
-    T getSiloObject() { return obj; }
+    SiloObjectWrapperCheckError(T *o, Deleter d, std::string err) : 
+        obj(o), del{d}, errmsg{err} {}
+    SiloObjectWrapperCheckError(T *o, Deleter d) : 
+        obj(o), del{d} {}
+    T* getSiloObject() { return obj; }
     void setSiloObject(T *o) { obj = o; }
     void setErrMsg(std::string newmsg) { errmsg = newmsg; }
-    virtual ~SiloObjectWrapper()
+    ~SiloObjectWrapperCheckError()
     {
         if(del(obj) != 0)
         {
             // CONDUIT_ERROR() TODO hmmmm
             std::cout << errmsg << std::endl;
+        }
+    }
+};
+
+class SiloTreePathGenerator
+{
+private:
+    bool nameschemes;
+    // TODO other stuff to support nameschemes
+
+public:
+    SiloTreePathGenerator(bool nameschemes_on) : nameschemes(nameschemes_on) {}
+    void GeneratePaths(const std::string &path,
+                       const std::string &relative_dir,
+                       std::string &file_path,
+                       std::string &silo_name)
+    {
+        conduit::utils::rsplit_file_path(path, ":", silo_name, file_path);
+        if (!file_path.empty())
+        {
+            // TODO or use utils::join_path() instead?
+            file_path = conduit::utils::join_file_path(relative_dir, file_path);
         }
     }
 };
@@ -548,7 +590,7 @@ add_shape_info(DBzonelist *zones,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_ucdmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
+read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
                     std::string &mesh_name,
                     conduit::Node &mesh_domain)
 {
@@ -617,7 +659,7 @@ read_ucdmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfil
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_quadmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
+read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
                      std::string &mesh_name,
                      conduit::Node &mesh_domain)
 {
@@ -715,7 +757,7 @@ conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_pointmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
+read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
                       std::string &mesh_name,
                       conduit::Node &mesh_domain)
 {
@@ -764,7 +806,7 @@ read_pointmesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbf
 // must be the mesh's name
 //-----------------------------------------------------------------------------
 void
-read_mesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
+read_mesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
                  std::string &mesh_name,
                  conduit::Node &mesh_domain,
                  int meshtype)
@@ -779,36 +821,6 @@ read_mesh_domain(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
         CONDUIT_ERROR("CSG meshes are not supported by Blueprint");
 
     CONDUIT_ERROR("Unsupported mesh type " << meshtype);
-}
-
-//-----------------------------------------------------------------------------
-// Read a multimesh from a Silo file.
-// 'root_file' should be the file containing the multivar entry
-// 'filemap' should be a mapping providing DBfile* for files which have
-//  already been opened.
-// 'dirname' should be the directory containing the root file, as if the
-// `dirname` command were called on the root file path. This directory is used
-// to concretize the paths given by the multivar.
-//-----------------------------------------------------------------------------
-void
-read_multimesh(detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> &dbfile,
-               std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-               std::string &dirname,
-               DBmultimesh *multimesh,
-               conduit::Node &mesh)
-{
-// TODO file ptr wrapper and multimesh wrapper class to make errors work across mpi ranks
-    std::string file_path, silo_name;
-    for (index_t i = 0; i < multimesh->nblocks; i ++)
-    {
-        Node &entry = mesh.append();
-        // TODO we need to add a new mesh domain, not a new list entry
-        split_silo_path(multimesh->meshnames[i], dirname, file_path, silo_name);
-        read_mesh_domain(dbfile,
-                         silo_name,
-                         entry,
-                         multimesh->meshtypes[i]);
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1256,7 +1268,7 @@ read_silo_stuff(const std::string &root_file_path,
     mesh_name = "";
     error_oss.str("");
 
-    detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> dbfile{
+    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
         DBOpen(root_file_path.c_str(), DB_UNKNOWN, DB_READ), 
         &DBClose, 
         "Error closing Silo file: " + root_file_path};
@@ -1286,7 +1298,7 @@ read_silo_stuff(const std::string &root_file_path,
     }
 
     bool found = false;
-    for (i = 0; i < toc->nmultimesh; i ++)
+    for (int i = 0; i < toc->nmultimesh; i ++)
     {
         if (toc->multimesh_names[i] == mesh_name)
         {
@@ -1301,21 +1313,20 @@ read_silo_stuff(const std::string &root_file_path,
     }
 
     detail::SiloObjectWrapper<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{
-        DBGetMultimesh(dbfile, mesh_name.c_str()), 
-        &DBFreeMultimesh, 
-        "Error closing multimesh " + mesh_name};
+        DBGetMultimesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        &DBFreeMultimesh};
 
     if (! multimesh.getSiloObject())
     {
-        multimesh.getSiloObject().release();
         error_oss << "Error opening multimesh " << mesh_name;
         return false;
     }
 
-    int nblocks = multimesh.getSiloObject().nblocks;
+    int nblocks = multimesh.getSiloObject()->nblocks;
     root_node[mesh_name]["nblocks"] = nblocks;
 
-    nameschemes = false;
+    bool nameschemes = false;
+    // TODO nameschemes
     if (nameschemes)
     {
         root_node[mesh_name]["nameschemes"] = "yes";
@@ -1330,8 +1341,8 @@ read_silo_stuff(const std::string &root_file_path,
             // save the mesh name and mesh type
             root_node[mesh_name]["mesh_paths"].append();
             Node &mesh_path = root_node[mesh_name]["mesh_paths"].append();
-            mesh_path.set(multimesh.getSiloObject().meshnames[i]);
-            mesh_types.push_back(multimesh.getSiloObject().meshtypes[i]);
+            mesh_path.set(multimesh.getSiloObject()->meshnames[i]);
+            mesh_types.push_back(multimesh.getSiloObject()->meshtypes[i]);
         }
         root_node[mesh_name]["mesh_types"].set(mesh_types.data());
     }
@@ -1447,7 +1458,7 @@ read_mesh(const std::string &root_file_path,
     
     // read all domains for given mesh
     int num_domains = mesh_index["nblocks"].to_int();
-    detail::BlueprintTreePathGenerator gen;
+    detail::SiloTreePathGenerator gen{nameschemes};
 
     std::ostringstream oss;
     int domain_start = 0;
@@ -1482,7 +1493,7 @@ read_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
-    // should look like this:
+    // our mesh_index should look like this:
 
     // mesh:
     //    nblocks: 5
@@ -1494,98 +1505,42 @@ read_mesh(const std::string &root_file_path,
     //    mesh_types: [UCD_MESH, UCD_MESH, ...]
     //    ...
 
-    detail::SiloObjectWrapper<DBfile, decltype(&DBClose)> domfile{nullptr, &DBClose};
+    std::string current, next;
+    utils::rsplit_file_path(root_file_path, current, next);
+
+    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> domfile{nullptr, &DBClose};
     for (int i = domain_start; i < domain_end; i++)
     {
-        std::string mesh_index_path = mesh_index["mesh_paths"][i];
-        int meshtype = mesh_index["mesh_types"][i];
+        std::string silo_mesh_path = mesh_index["mesh_paths"][i].as_string();
+        int_accessor meshtypes = mesh_index["mesh_types"].value();
+        int meshtype = meshtypes[i];
 
-        std::string mesh_name = magic();
-
-        std::string current, next;
-        utils::rsplit_file_path (root_file_path, current, next);
-        std::string domain_file = utils::join_path(next, gen.GenerateFilePath(i));
+        std::string mesh_name, domain_file;
+        gen.GeneratePaths(silo_mesh_path, next, domain_file, mesh_name);
         domfile.setErrMsg("Error closing Silo file: " + domain_file);
-
         domfile.setSiloObject(DBOpen(domain_file.c_str(), DB_UNKNOWN, DB_READ));
         if (! domfile.getSiloObject())
         {
             CONDUIT_ERROR("Error opening Silo file for reading: " << domain_file);
         }
 
-        // also need the tree path
-        std::string tree_path = gen.GenerateTreePath(i);
-
-        std::string mesh_path = conduit_fmt::format("domain_{:06d}",i);
+        std::string mesh_path = conduit_fmt::format("domain_{:06d}", i);
 
         Node &mesh_out = mesh[mesh_path];
 
-        // split_silo_path(multimesh->meshnames[i], dirname, file_path, silo_name);
-
         if (meshtype == DB_UCDMESH)
             read_ucdmesh_domain(domfile, mesh_name, mesh_out);
-        if (meshtype == DB_QUADMESH)
+        else if (meshtype == DB_QUADMESH)
             read_quadmesh_domain(domfile, mesh_name, mesh_out);
-        if (meshtype == DB_POINTMESH)
+        else if (meshtype == DB_POINTMESH)
             read_pointmesh_domain(domfile, mesh_name, mesh_out);
-        if (meshtype == DB_CSGMESH)
-            CONDUIT_ERROR("CSG meshes are not supported by Blueprint");
+        else
+            CONDUIT_ERROR("Unsupported mesh type " << meshtype);
 
-        CONDUIT_ERROR("Unsupported mesh type " << meshtype);
+        // TODO we need to read multivars
+        // TODO we need to read multimaterials
 
-        // read components of the mesh according to the mesh index
-        // for each child in the index
-        NodeConstIterator outer_itr = mesh_index.children();
-
-        while(outer_itr.has_next())
-        {
-            const Node &outer = outer_itr.next();
-            std::string outer_name = outer_itr.name();
-
-            // special logic for state, since it was not included in the index
-            if(outer_name == "state" )
-            {
-                // we do need to read the state!
-                if(outer.has_child("path"))
-                {
-                    hnd.read(utils::join_path(tree_path,outer["path"].as_string()),
-                             mesh_out[outer_name]);
-                }
-                else
-                { 
-                    if(outer.has_child("cycle"))
-                    {
-                         mesh_out[outer_name]["cycle"] = outer["cycle"];
-                    }
-
-                    if(outer.has_child("time"))
-                    {
-                        mesh_out[outer_name]["time"] = outer["time"];
-                    }
-                 }
-            }
-
-            NodeConstIterator itr = outer.children();
-            while(itr.has_next())
-            {
-                const Node &entry = itr.next();
-                // check if it has a path
-                if(entry.has_child("path"))
-                {
-                    std::string entry_name = itr.name();
-                    std::string entry_path = entry["path"].as_string();
-                    std::string fetch_path = utils::join_path(tree_path,
-                                                              entry_path);
-                    // some parts may not exist in all domains
-                    // only read if they are there
-                    if(hnd.has_path(fetch_path))
-                    {   
-                        hnd.read(fetch_path,
-                                 mesh_out[outer_name][entry_name]);
-                    }
-                }
-            }
-        }
+        // TODO we need to generate the state node if possible
     }
 }
 
@@ -1643,13 +1598,25 @@ void CONDUIT_RELAY_API read_mesh_OUTDATED(const std::string &root_file_path,
                         multimesh.get()->nblocks, mesh);
 }
 
-//---------------------------------------------------------------------------//
-void CONDUIT_RELAY_API
-load_mesh(const std::string &root_file_path,
-          conduit::Node &mesh)
+//-----------------------------------------------------------------------------
+// The load semantics, the mesh node is reset before reading.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void load_mesh(const std::string &root_file_path,
+               conduit::Node &mesh
+               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
-    Node opts;
-    load_mesh(root_file_path, opts, mesh);
+    mesh.reset();
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    read_mesh(root_file_path,
+              mesh,
+              mpi_comm);
+#else
+    read_mesh(root_file_path,
+              mesh);
+#endif
 }
 
 //-----------------------------------------------------------------------------
@@ -1659,13 +1626,23 @@ load_mesh(const std::string &root_file_path,
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API
-load_mesh(const std::string &root_file_path,
-          const conduit::Node &opts,
-          conduit::Node &mesh)
+void load_mesh(const std::string &root_file_path,
+               const conduit::Node &opts,
+               conduit::Node &mesh
+               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     mesh.reset();
-    read_mesh(root_file_path, opts, mesh);
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    read_mesh(root_file_path,
+              opts,
+              mesh,
+              mpi_comm);
+#else
+    read_mesh(root_file_path,
+              opts,
+              mesh);
+#endif
 }
 
 //---------------------------------------------------------------------------//

@@ -59,45 +59,6 @@ void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
 namespace silo
 {
 
-//-----------------------------------------------------------------------------
-// Load a blueprint mesh from root + file set
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
-                                 conduit::Node &mesh);
-
-
-//-----------------------------------------------------------------------------
-///
-/// opts:
-///      TODO
-///
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
-                                 const conduit::Node &opts,
-                                 conduit::Node &mesh);
-
-
-//-----------------------------------------------------------------------------
-// The load semantics, the mesh node is reset before reading.
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
-                                 conduit::Node &mesh);
-
-
-//-----------------------------------------------------------------------------
-///
-/// opts:
-///      TODO
-///
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
-                                 const conduit::Node &opts,
-                                 conduit::Node &mesh);
-
 void CONDUIT_RELAY_API silo_mesh_write(const Node &n, 
                      DBfile *dbfile,
                      const std::string &silo_obj_path);

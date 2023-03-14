@@ -110,6 +110,49 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const conduit::Node &opts,
                                  MPI_Comm comm);
 
+//-----------------------------------------------------------------------------
+// The load semantics, the mesh node is reset before reading.
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+                                 conduit::Node &mesh,
+                                 MPI_Comm comm);
+
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API load_mesh(const std::string &root_file_path,
+                                 const conduit::Node &opts,
+                                 conduit::Node &mesh,
+                                 MPI_Comm comm);
+
+//-----------------------------------------------------------------------------
+// Load a blueprint mesh from root + file set
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
+                                 conduit::Node &mesh,
+                                 MPI_Comm comm);
+
+
+//-----------------------------------------------------------------------------
+///
+/// opts:
+///      TODO
+///
+//-----------------------------------------------------------------------------
+void CONDUIT_RELAY_API read_mesh(const std::string &root_file_path,
+                                 const conduit::Node &opts,
+                                 conduit::Node &mesh,
+                                 MPI_Comm comm);
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end <>::silo --
