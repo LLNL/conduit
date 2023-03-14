@@ -1259,7 +1259,7 @@ read_mesh(const std::string &root_file_path,
 bool
 read_silo_stuff(const std::string &root_file_path,
                 const Node &opts,
-                Node root_node,
+                Node &root_node,
                 std::string &mesh_name, // output
                 std::ostringstream &error_oss) // output
 {
@@ -1339,7 +1339,6 @@ read_silo_stuff(const std::string &root_file_path,
         for (int i = 0; i < nblocks; i ++)
         {
             // save the mesh name and mesh type
-            root_node[mesh_name]["mesh_paths"].append();
             Node &mesh_path = root_node[mesh_name]["mesh_paths"].append();
             mesh_path.set(multimesh.getSiloObject()->meshnames[i]);
             mesh_types.push_back(multimesh.getSiloObject()->meshtypes[i]);
@@ -1445,7 +1444,7 @@ read_mesh(const std::string &root_file_path,
                                                     mpi_comm);
     }
 #endif
-
+    root_node.print();
     const Node &mesh_index = root_node[mesh_name];
 
     bool nameschemes = false;
