@@ -1516,6 +1516,10 @@ read_mesh(const std::string &root_file_path,
 
         std::string mesh_name, domain_file;
         gen.GeneratePaths(silo_mesh_path, next, domain_file, mesh_name);
+        if (domain_file.empty())
+        {
+            domain_file = root_file_path;
+        }
         domfile.setErrMsg("Error closing Silo file: " + domain_file);
         domfile.setSiloObject(DBOpen(domain_file.c_str(), DB_UNKNOWN, DB_READ));
         if (! domfile.getSiloObject())

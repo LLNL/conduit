@@ -107,103 +107,108 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
         std::string input_file = relay_test_silo_data_path(filename_vec.at(i));
         io::silo::load_mesh(input_file, mesh);
 
-        // EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
-        // EXPECT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        EXPECT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
 
-        // const Node &domain = *blueprint::mesh::domains(mesh).front();
-        // EXPECT_TRUE(domain.has_child("coordsets"));
-        // EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
-        // EXPECT_TRUE(domain.has_child("topologies"));
-        // EXPECT_EQ(domain["topologies"].number_of_children(), 1);
+        const Node &domain = *blueprint::mesh::domains(mesh).front();
+        EXPECT_TRUE(domain.has_child("coordsets"));
+        EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
+        EXPECT_TRUE(domain.has_child("topologies"));
+        EXPECT_EQ(domain["topologies"].number_of_children(), 1);
 
-        // { // Coordset Validation //
-        //     const Node &cset = domain["coordsets"].child(0);
-        //     EXPECT_EQ(blueprint::mesh::coordset::dims(cset), dims_vec.at(i));
-        //     EXPECT_EQ(blueprint::mesh::coordset::length(cset), coordset_length_vec.at(i));
-        //     EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
-        // }
+        { // Coordset Validation //
+            const Node &cset = domain["coordsets"].child(0);
+            EXPECT_EQ(blueprint::mesh::coordset::dims(cset), dims_vec.at(i));
+            EXPECT_EQ(blueprint::mesh::coordset::length(cset), coordset_length_vec.at(i));
+            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
+        }
 
-        // { // Topology Validation //
-        //     const Node &topo = domain["topologies"].child(0);
-        //     EXPECT_EQ(blueprint::mesh::topology::dims(topo), dims_vec.at(i));
-        //     EXPECT_EQ(blueprint::mesh::topology::length(topo), topology_length_vec.at(i));
-        //     EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
-        // }
+        { // Topology Validation //
+            const Node &topo = domain["topologies"].child(0);
+            EXPECT_EQ(blueprint::mesh::topology::dims(topo), dims_vec.at(i));
+            EXPECT_EQ(blueprint::mesh::topology::length(topo), topology_length_vec.at(i));
+            EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
+        }
     }
 }
 
 
-// // TODO: add tests for fields, matsets, etc.
-// TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
-// {
-//     bool i_wanna_print = true;
+// TODO: add tests for fields, matsets, etc.
+TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
+{
+    bool i_wanna_print = true;
 
-//     const std::vector<std::string> mesh_types = {
-//     // TODO: the following types fail
-//          /*"uniform",*/ /*"rectilinear",*/ /*"structured",*/
-//         "tris", "quads"};
-//     for (int i = 0; i < mesh_types.size(); ++i)
-//     {
-//         for (int nx = 2; nx < 4; ++nx) 
-//         {
-//             Node save_mesh;
-//             blueprint::mesh::examples::basic(mesh_types[i], 
-//                 nx, nx, (nx - 2) * 2 + (mesh_types[i] == "structured" ? 1 : 0), save_mesh);
+    const std::vector<std::string> mesh_types = {
+    // TODO: the following types fail
+         /*"uniform",*/ /*"rectilinear",*/ /*"structured",*/
+        "tris", "quads"};
+    for (int i = 0; i < mesh_types.size(); ++i)
+    {
+        for (int nx = 2; nx < 4; ++nx) 
+        {
+            Node save_mesh;
+            int npts_z = 0;
+            if (mesh_types[i] != "tris" && mesh_types[i] != "quads")
+            {
+                npts_z = (nx - 2) * 2 + (mesh_types[i] == "structured" ? 1 : 0);
+            }
+            blueprint::mesh::examples::basic(mesh_types[i], 
+                nx, nx, npts_z, save_mesh);
 
-//             Node info;
+            Node info;
             
-//             io::silo::save_mesh(save_mesh, "basic");
-//             Node load_mesh;
-//             io::silo::load_mesh("basic.root", load_mesh);
+            io::silo::save_mesh(save_mesh, "basic");
+            Node load_mesh;
+            io::silo::load_mesh("basic.root", load_mesh);
             
-//             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+            EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-//             if (i_wanna_print)
-//             {
-//                 std::cout << "I am save mesh" << std::endl;
-//                 save_mesh.print();
-//                 std::cout << "I am load mesh" << std::endl;
-//                 load_mesh[0].print();
-//             }
+            if (i_wanna_print)
+            {
+                std::cout << "I am save mesh" << std::endl;
+                save_mesh.print();
+                std::cout << "I am load mesh" << std::endl;
+                load_mesh[0].print();
+            }
 
-//             // The Blueprint to Silo transformation changes several names 
-//             // and some information is lost. We manually make changes so 
-//             // that the diff will pass.
-//             save_mesh["coordsets"].rename_child("coords", "mesh");
-//             save_mesh["topologies"]["mesh"]["coordset"].reset();
-//             save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
-//             save_mesh["fields"]["field"].remove_child("volume_dependent");
+            // The Blueprint to Silo transformation changes several names 
+            // and some information is lost. We manually make changes so 
+            // that the diff will pass.
+            save_mesh["coordsets"].rename_child("coords", "mesh");
+            save_mesh["topologies"]["mesh"]["coordset"].reset();
+            save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
+            save_mesh["fields"]["field"].remove_child("volume_dependent");
 
-//             // the silo conversion will transform uniform to rectilinear
-//             // so we will do the same to allow the diff to succeed
-//             if (mesh_types[i] == "uniform")
-//             {
-//                 Node save_mesh_rect;
-//                 Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["mesh"];
-//                 Node &save_mesh_rect_topo = save_mesh_rect["topologies"]["mesh"];
-//                 blueprint::mesh::topology::uniform::to_rectilinear(
-//                     save_mesh["topologies"]["mesh"], 
-//                     save_mesh_rect_topo, save_mesh_rect_coords);
-//                 save_mesh["topologies"]["mesh"].set(save_mesh_rect_topo);
-//                 save_mesh["coordsets"]["mesh"].set(save_mesh_rect_coords);
-//             }
+            // the silo conversion will transform uniform to rectilinear
+            // so we will do the same to allow the diff to succeed
+            if (mesh_types[i] == "uniform")
+            {
+                Node save_mesh_rect;
+                Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["mesh"];
+                Node &save_mesh_rect_topo = save_mesh_rect["topologies"]["mesh"];
+                blueprint::mesh::topology::uniform::to_rectilinear(
+                    save_mesh["topologies"]["mesh"], 
+                    save_mesh_rect_topo, save_mesh_rect_coords);
+                save_mesh["topologies"]["mesh"].set(save_mesh_rect_topo);
+                save_mesh["coordsets"]["mesh"].set(save_mesh_rect_coords);
+            }
 
-//             if (i_wanna_print)
-//             {
-//                 std::cout << "I am save mesh updated for modern audiences" << std::endl;
-//                 save_mesh.print();
-//             }
+            if (i_wanna_print)
+            {
+                std::cout << "I am save mesh updated for modern audiences" << std::endl;
+                save_mesh.print();
+            }
 
-//             // the loaded mesh will be in the multidomain format
-//             // (it will be a list containing a single mesh domain)
-//             // but the saved mesh is in the single domain format
-//             EXPECT_EQ(load_mesh.number_of_children(), 1);
-//             EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+            // // the loaded mesh will be in the multidomain format
+            // // (it will be a list containing a single mesh domain)
+            // // but the saved mesh is in the single domain format
+            // EXPECT_EQ(load_mesh.number_of_children(), 1);
+            // EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-//             EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-//         }
-//     }
-// }
+            // EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+        }
+    }
+}
 
 // // TODO: make this pass?
 // // right now multidomain meshes are read out as a list, but
