@@ -676,19 +676,26 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     int coordtype{quadmesh_ptr->coordtype};
     int ndims{quadmesh_ptr->ndims};
+    int dims[] = {quadmesh_ptr->nnodes,
+                  quadmesh_ptr->nnodes,
+                  quadmesh_ptr->nnodes};
+    int *real_dims = dims;
 
     if (coordtype == DB_COLLINEAR)
     {
         mesh_domain["coordsets"][name]["type"] = "rectilinear";
         mesh_domain["topologies"][name]["type"] = "rectilinear";
+        real_dims = quadmesh_ptr->dims;
     }
     else if (coordtype == DB_NONCOLLINEAR)
     {
         mesh_domain["coordsets"][name]["type"] = "explicit";
         mesh_domain["topologies"][name]["type"] = "structured";
-        mesh_domain["topologies"][name]["elements/dims/i"] = quadmesh_ptr->dims[0];
-        if (ndims > 1) mesh_domain["topologies"][name]["elements/dims/j"] = quadmesh_ptr->dims[1];
-        if (ndims > 2) mesh_domain["topologies"][name]["elements/dims/k"] = quadmesh_ptr->dims[2];
+
+        // We subtract 1 from each of these because in silo these dims are node dims, not element dims
+        mesh_domain["topologies"][name]["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
+        if (ndims > 1) mesh_domain["topologies"][name]["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
+        if (ndims > 2) mesh_domain["topologies"][name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
     }
     else
     {
@@ -697,6 +704,7 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     mesh_domain["topologies"][name]["coordset"] = name;
 
+    // TODO Q? I am worried about transition from zonal to nodal and back - are these ok?
     // If the origin is not the default value
     if (quadmesh_ptr->base_index[0] != 0 && quadmesh_ptr->base_index[1] != 0 && quadmesh_ptr->base_index[2] != 0)
     {
@@ -705,12 +713,12 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
         if (ndims > 1) mesh_domain["topologies"][name]["elements/origin/j"] = quadmesh_ptr->base_index[1];
         if (ndims > 2) mesh_domain["topologies"][name]["elements/origin/k"] = quadmesh_ptr->base_index[2];
     }
-    
+
     if (quadmesh_ptr->datatype == DB_DOUBLE)
     {
         copy_point_coords<double>(quadmesh_ptr->coords,
                                   ndims,
-                                  quadmesh_ptr->dims,
+                                  real_dims,
                                   quadmesh_ptr->coord_sys,
                                   mesh_domain["coordsets"][name]["values"]);
     }
@@ -718,7 +726,7 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
     {
         copy_point_coords<float>(quadmesh_ptr->coords,
                                  ndims,
-                                 quadmesh_ptr->dims,
+                                 real_dims,
                                  quadmesh_ptr->coord_sys,
                                  mesh_domain["coordsets"][name]["values"]);
     }
@@ -1444,7 +1452,6 @@ read_mesh(const std::string &root_file_path,
                                                     mpi_comm);
     }
 #endif
-    root_node.print();
     const Node &mesh_index = root_node[mesh_name];
 
     bool nameschemes = false;
@@ -2335,7 +2342,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                       DB_COLLINEAR,   // DB_COLLINEAR or DB_NONCOLLINEAR
                       state_optlist); // opt list
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutUcdmesh");
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutQuadmesh");
 }
 
 //---------------------------------------------------------------------------//

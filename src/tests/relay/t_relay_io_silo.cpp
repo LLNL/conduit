@@ -136,15 +136,14 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 // TODO: add tests for fields, matsets, etc.
 TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
-    bool i_wanna_print = true;
+    bool i_wanna_print = false;
 
     const std::vector<std::string> mesh_types = {
-    // TODO: the following types fail
-         /*"uniform",*/ /*"rectilinear",*/ /*"structured",*/
+        "uniform", "rectilinear", "structured",
         "tris", "quads"};
     for (int i = 0; i < mesh_types.size(); ++i)
     {
-        for (int nx = 2; nx < 4; ++nx) 
+        for (int nx = 2; nx < 4; ++nx)
         {
             Node save_mesh;
             int npts_z = 0;
@@ -158,6 +157,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             Node info;
             
             io::silo::save_mesh(save_mesh, "basic");
+
+            io::blueprint::save_mesh(save_mesh, "basic_test", "hdf5");
+
             Node load_mesh;
             io::silo::load_mesh("basic.root", load_mesh);
             
@@ -179,6 +181,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
             save_mesh["fields"]["field"].remove_child("volume_dependent");
 
+            // TODO fields
+            save_mesh.remove_child("fields");
+
             // the silo conversion will transform uniform to rectilinear
             // so we will do the same to allow the diff to succeed
             if (mesh_types[i] == "uniform")
@@ -199,13 +204,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
                 save_mesh.print();
             }
 
-            // // the loaded mesh will be in the multidomain format
-            // // (it will be a list containing a single mesh domain)
-            // // but the saved mesh is in the single domain format
-            // EXPECT_EQ(load_mesh.number_of_children(), 1);
-            // EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+            // the loaded mesh will be in the multidomain format
+            // (it will be a list containing a single mesh domain)
+            // but the saved mesh is in the single domain format
+            EXPECT_EQ(load_mesh.number_of_children(), 1);
+            EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-            // EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+            EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
         }
     }
 }
