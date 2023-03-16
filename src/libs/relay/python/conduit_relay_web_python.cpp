@@ -109,7 +109,7 @@ PyRelay_Web_WebServer_new(PyTypeObject *type,
                           PyObject*, // args -- unused
                           PyObject*) // kwds -- unused
 {
-    PyRelay_Web_WebServer *self = (PyRelay_Web_WebServer*)type->tp_alloc(type, 0);
+    PyRelay_Web_WebServer *self = (PyRelay_Web_WebServer*)PyType_GenericAlloc(type, 0);
 
     if (self)
     {
@@ -605,7 +605,7 @@ PyRelay_Web_WebSocket_new(PyTypeObject *type,
                           PyObject*, // args -- unused
                           PyObject*) // kwds -- unused
 {
-    PyRelay_Web_WebSocket *self = (PyRelay_Web_WebSocket*)type->tp_alloc(type, 0);
+    PyRelay_Web_WebSocket *self = (PyRelay_Web_WebSocket*)PyType_GenericAlloc(type, 0);
 
     if (self)
     {
@@ -792,7 +792,7 @@ PyRelay_Web_WebSocket_python_wrap(WebSocket *websocket)
 {
     PyTypeObject *type = (PyTypeObject*)&PyRelay_Web_WebSocket_TYPE;
 
-    PyRelay_Web_WebSocket *retval = (PyRelay_Web_WebSocket*)type->tp_alloc(type, 0);
+    PyRelay_Web_WebSocket *retval = (PyRelay_Web_WebSocket*)PyType_GenericAlloc(type, 0);
     retval->websocket = websocket;
     return ((PyObject*)retval);
 }

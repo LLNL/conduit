@@ -90,7 +90,7 @@ PyRelay_MPI_Request_new(PyTypeObject *type,
                         PyObject*, // args -- unused
                         PyObject*) // kwds -- unused
 {
-    PyRelay_MPI_Request *self = (PyRelay_MPI_Request*)type->tp_alloc(type, 0);
+    PyRelay_MPI_Request *self = (PyRelay_MPI_Request*)PyType_GenericAlloc(type, 0);
 
     return ((PyObject*)self);
 }

@@ -114,7 +114,7 @@ PyRelay_IOHandle_new(PyTypeObject *type,
                      PyObject*, // args -- unused
                      PyObject*) // kwds -- unused
 {
-    PyRelay_IOHandle *self = (PyRelay_IOHandle*)type->tp_alloc(type, 0);
+    PyRelay_IOHandle *self = (PyRelay_IOHandle*)PyType_GenericAlloc(type, 0);
 
     if (self)
     {

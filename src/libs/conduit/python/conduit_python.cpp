@@ -279,7 +279,7 @@ PyConduit_DataType_new(PyTypeObject* type,
         return (NULL);
     }
 
-    PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
+    PyConduit_DataType* self = (PyConduit_DataType*)PyType_GenericAlloc(type,0);
     return ((PyObject*)self);
 }
 
@@ -3224,7 +3224,7 @@ static PyConduit_DataType *
 PyConduit_DataType_Python_Create()
 {
     PyTypeObject* type = (PyTypeObject*)&PyConduit_DataType_TYPE;
-    return (PyConduit_DataType*)type->tp_alloc(type,0);
+    return (PyConduit_DataType*)PyType_GenericAlloc(type,0);
 }
 
 //---------------------------------------------------------------------------//
@@ -3249,7 +3249,7 @@ PyConduit_Generator_new(PyTypeObject *type,
                         PyObject*, // args -- unused
                         PyObject*) // kwds -- unused
 {
-    PyConduit_Generator *self = (PyConduit_Generator*)type->tp_alloc(type, 0);
+    PyConduit_Generator *self = (PyConduit_Generator*)PyType_GenericAlloc(type,0);
 
     if (self)
     {
@@ -3517,7 +3517,7 @@ PyConduit_Schema_new(PyTypeObject* type,
                      PyObject*) // kwds -- unused
 {
 
-    PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
+    PyConduit_Schema *self = (PyConduit_Schema*)PyType_GenericAlloc(type,0);
     
     if (self)
     {
@@ -4559,7 +4559,7 @@ PyConduit_NodeIterator_new(PyTypeObject *type,
         return (NULL);
     }
     
-    PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
+    PyConduit_DataType *self = (PyConduit_DataType*)PyType_GenericAlloc(type,0);
     return ((PyObject*)self);
 }
 
@@ -4909,7 +4909,7 @@ static PyConduit_NodeIterator *
 PyConduit_NodeIterator_Python_Create()
 {
     PyTypeObject* type = (PyTypeObject*)&PyConduit_NodeIterator_TYPE;
-    return (PyConduit_NodeIterator*)type->tp_alloc(type,0);
+    return (PyConduit_NodeIterator*)PyType_GenericAlloc(type,0);
 }
 
 
@@ -5033,7 +5033,7 @@ PyConduit_Node_new(PyTypeObject* type,
         return (NULL);
     }
 
-    PyConduit_Node* self = (PyConduit_Node*)type->tp_alloc(type, 0);
+    PyConduit_Node* self = (PyConduit_Node*)PyType_GenericAlloc(type,0);
 
     if (self)
     {
@@ -7239,7 +7239,7 @@ PyConduit_Schema_Python_Wrap(Schema *schema, int python_owns)
 {
     PyTypeObject *type = (PyTypeObject*)&PyConduit_Schema_TYPE;
 
-    PyConduit_Schema *retval = (PyConduit_Schema*)type->tp_alloc(type, 0);
+    PyConduit_Schema *retval = (PyConduit_Schema*)PyType_GenericAlloc(type,0);
     retval->schema = schema;
     retval->python_owns = python_owns;
     return ((PyObject*)retval);
@@ -7265,7 +7265,7 @@ static PyObject *
 PyConduit_Node_Python_Wrap(Node *node, int python_owns)
 {
     PyTypeObject* type = (PyTypeObject*)&PyConduit_Node_TYPE;
-    PyConduit_Node* retval = (PyConduit_Node*)type->tp_alloc(type, 0);
+    PyConduit_Node *retval = (PyConduit_Node*)PyType_GenericAlloc(type,0);
     retval->node = node;
     retval->python_owns = python_owns;
     return ((PyObject*)retval);
