@@ -242,14 +242,10 @@ public:
     NDIndex(const Node* node);
 
     /// Primary index constructor.  The argument node should contain numeric
-    /// children, all of equal length:
+    /// children, all of length equal to the array's dimensionality:
     ///     - shape (required) specifies the shape of the array to index
     ///     - offset (optional) specifies where the data starts in the array
     ///     - stride (optional) specifies the extent of the data to index
-    ///
-    /// If offset is not specified, it defaults to 0 in each dimension.
-    /// If stride is not specified, it defaults to shape[d] - stride[d] in
-    /// each dimension d.
     ///
     /// NDIndex follows the index order convention of Conduit Blueprint:
     /// fastest-varying dimension first.  For example,
@@ -258,10 +254,27 @@ public:
     ///
     /// indicates a two-dimensional array, extent 6 in the X-dimension and
     /// extent 4 in the Y-dimension.
+    ///
+    /// If offset is not specified, it defaults to 0 in each dimension.
+    /// If stride is not specified, it defaults to shape[d] + offset[d] in
+    /// each dimension d.  Stride and offset are specified in terms of logical
+    /// index, not flatindex.  Thus, a 6x4 array with two extra elements at
+    /// the end of each row, and an extra row, would have
+    ///
+    /// shape: [6, 4]
+    /// stride: [8, 5]
+    ///
+    /// Similarly, a 6x4 array with two elements of padding at the low-index
+    /// end of each dimension and one element of padding at the high-index end
+    /// of each dimension would be specified by
+    ///
+    /// shape: [6, 4]
+    /// offset: [2, 2]
+    /// stride: [9, 7]
     NDIndex(const Node& node);
 
     /// Array constructor
-    NDIndex(index_t dim, index_t* shape, index_t* offset = NULL, index_t* stride = NULL);
+    NDIndex(const index_t dim, const index_t* shape, const index_t* offset = NULL, const index_t* stride = NULL);
 
     /// Destructor
     ~NDIndex();

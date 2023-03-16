@@ -411,7 +411,7 @@ NDIndex::NDIndex(const Node* idx) :
 }
 
 //---------------------------------------------------------------------------//
-NDIndex::NDIndex(index_t dim, index_t* shape, index_t* offset, index_t* stride) :
+NDIndex::NDIndex(const index_t dim, const index_t* shape, const index_t* offset, const index_t* stride) :
     m_dim(dim)
 {
     // TODO Error if dim < 1
@@ -452,6 +452,11 @@ NDIndex::NDIndex(index_t dim, index_t* shape, index_t* offset, index_t* stride) 
     }
     m_stride_node = t_stride_node;
     m_stride_acc = m_stride_node->as_index_t_accessor();
+}
+
+NDIndex::NDIndex(const NDIndex& idx)
+{
+
 }
 
 //---------------------------------------------------------------------------//
