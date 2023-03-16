@@ -704,7 +704,9 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     mesh_domain["topologies"][name]["coordset"] = name;
 
-    // TODO Q? I am worried about transition from zonal to nodal and back - are these ok?
+    // TODO I am worried about transition from zonal to nodal and back - are these ok?
+    // transition back to zonal - subtract 1 unless it is already zero
+
     // If the origin is not the default value
     if (quadmesh_ptr->base_index[0] != 0 && quadmesh_ptr->base_index[1] != 0 && quadmesh_ptr->base_index[2] != 0)
     {
@@ -2414,6 +2416,8 @@ void silo_write_structured_mesh(DBfile *dbfile,
     char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
                                         coordsys_type_labels.second[1].c_str(),
                                         coordsys_type_labels.second[2].c_str()};
+
+    // TODO handle elements/origin
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
