@@ -355,6 +355,7 @@ NDIndex::NDIndex(const Node* idx) :
     m_shape_node(NULL),
     m_offset_node(NULL),
     m_stride_node(NULL),
+    m_element_stride(NULL),
     m_own_shape(false),
     m_own_offset(false),
     m_own_stride(false),
@@ -401,13 +402,14 @@ NDIndex::NDIndex(const Node* idx) :
 
         t_stride_node->set(DataType::index_t(m_dim));
         index_t* p_stride = t_stride_node->as_index_t_ptr();
-        p_stride[0] = 1;
-        for (index_t i = 1; i < m_dim; ++i) {
-            p_stride[i] = p_stride[i-1] * (m_offset_acc[i-1] + m_shape_acc[i-1]);
+        for (index_t i = 0; i < m_dim; ++i) {
+            p_stride[i] = m_offset_acc[i] + m_shape_acc[i];
         }
         m_stride_node = t_stride_node;
     }
     m_stride_acc = m_stride_node->as_index_t_accessor();
+
+    setup_element_stride();
 }
 
 //---------------------------------------------------------------------------//
@@ -444,30 +446,94 @@ NDIndex::NDIndex(const index_t dim, const index_t* shape, const index_t* offset,
 
     t_stride_node->set(DataType::index_t(m_dim));
     index_t* p_stride = t_stride_node->as_index_t_ptr();
-    p_stride[0] = stride == NULL ? 1 : stride[0];
-    for (index_t i = 1; i < m_dim; ++i) {
-        p_stride[i] = stride == NULL ?
-            p_stride[i - 1] * (m_offset_acc[i - 1] + m_shape_acc[i - 1]) :
-            stride[i];
+    for (index_t i = 0; i < m_dim; ++i) {
+        p_stride[i] = stride == NULL ? m_offset_acc[i] + m_shape_acc[i] : stride[i];
     }
     m_stride_node = t_stride_node;
     m_stride_acc = m_stride_node->as_index_t_accessor();
+
+    setup_element_stride();
 }
 
-NDIndex::NDIndex(const NDIndex& idx)
+//---------------------------------------------------------------------------//
+NDIndex::NDIndex(const NDIndex& idx) :
+    m_shape_node(NULL),
+    m_offset_node(NULL),
+    m_stride_node(NULL),
+    m_element_stride(NULL),
+    m_own_shape(false),
+    m_own_offset(false),
+    m_own_stride(false),
+    m_dim(0)
 {
+    m_dim = idx.m_dim;
 
+    if (!idx.m_own_shape)
+    {
+        m_shape_node = idx.m_shape_node;
+        m_own_shape = false;
+    }
+    else
+    {
+        Node* t_shape_node = new Node();
+        m_own_shape = true;
+
+        t_shape_node->set(DataType::index_t(m_dim));
+        index_t* p_shape = t_shape_node->value();
+        for (index_t i = 0; i < m_dim; ++i) {
+            p_shape[i] = idx.m_shape_acc[i];
+        }
+        m_shape_node = t_shape_node;
+    }
+    m_shape_acc = m_shape_node->as_index_t_accessor();
+
+    if (!idx.m_own_offset)
+    {
+        m_offset_node = idx.m_offset_node;
+        m_own_offset = false;
+    }
+    else
+    {
+        // make our own
+        index_t dim = m_shape_node->dtype().number_of_elements();
+        Node* t_offset_node = new Node();
+        m_own_offset = true;
+
+        t_offset_node->set(DataType::index_t(dim));
+        index_t* p_offset = t_offset_node->value();
+        for (index_t i = 0; i < dim; ++i) {
+            p_offset[i] = idx.m_offset_acc[i];
+        }
+        m_offset_node = t_offset_node;
+    }
+    m_offset_acc = m_offset_node->as_index_t_accessor();
+
+    if (!idx.m_own_stride)
+    {
+        m_stride_node = idx.m_stride_node;
+        m_own_stride = false;
+    }
+    else
+    {
+        // make our own
+        index_t dim = m_shape_node->dtype().number_of_elements();
+        Node* t_stride_node = new Node();
+        m_own_stride = true;
+
+        t_stride_node->set(DataType::index_t(dim));
+        index_t* p_stride = t_stride_node->as_index_t_ptr();
+        for (index_t i = 0; i < dim; ++i) {
+            p_stride[i] = idx.m_stride_acc[i];
+        }
+        m_stride_node = t_stride_node;
+    }
+    m_stride_acc = m_stride_node->as_index_t_accessor();
+
+    setup_element_stride();
 }
 
 //---------------------------------------------------------------------------//
 NDIndex::~NDIndex()
-{
-    cleanup();
-}
-
-//---------------------------------------------------------------------------//
-void
-NDIndex::cleanup()
 {
     if (m_own_shape)
     {
@@ -486,78 +552,51 @@ NDIndex::cleanup()
         delete m_stride_node;
     }
     m_stride_node = NULL;
+
+    delete[] m_element_stride;
+    m_element_stride = NULL;
+}
+
+//---------------------------------------------------------------------------//
+void
+NDIndex::setup_element_stride()
+{
+    m_element_stride = new index_t[m_dim];
+    m_element_stride[0] = 1;
+    for (index_t i = 1; i < m_dim; ++i) {
+        m_element_stride[i] = m_element_stride[i - 1] * m_stride_acc[i - 1];
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+NDIndex::swap(NDIndex& idx)
+{
+    std::swap(m_shape_node, idx.m_shape_node);
+    std::swap(m_offset_node, idx.m_offset_node);
+    std::swap(m_stride_node, idx.m_stride_node);
+
+    std::swap(m_own_shape, idx.m_own_shape);
+    std::swap(m_own_offset, idx.m_own_offset);
+    std::swap(m_own_stride, idx.m_own_stride);
+
+    m_shape_acc = m_shape_node->as_index_t_accessor();
+    m_offset_acc = m_offset_node->as_index_t_accessor();
+    m_stride_acc = m_stride_node->as_index_t_accessor();
+
+    std::swap(m_element_stride, idx.m_element_stride);
+
+    std::swap(m_dim, idx.m_dim);
 }
 
 //---------------------------------------------------------------------------//
 NDIndex&
-NDIndex::operator=(const NDIndex& itr)
+NDIndex::operator=(const NDIndex& idx)
 {
-    if (this != &itr)
+    if (this != &idx)
     {
-        cleanup();
-
-        m_dim = itr.m_dim;
-
-        if (!itr.m_own_shape)
-        {
-            m_shape_node = itr.m_shape_node;
-            m_own_shape = false;
-        }
-        else
-        {
-            Node* t_shape_node = new Node();
-            m_own_shape = true;
-
-            t_shape_node->set(DataType::index_t(m_dim));
-            index_t* p_shape = t_shape_node->value();
-            for (index_t i = 0; i < m_dim; ++i) {
-                p_shape[i] = itr.m_shape_acc[i];
-            }
-            m_shape_node = t_shape_node;
-        }
-        m_shape_acc = m_shape_node->as_index_t_accessor();
-
-        if (!itr.m_own_offset)
-        {
-            m_offset_node = itr.m_offset_node;
-            m_own_offset = false;
-        }
-        else
-        {
-            // make our own
-            index_t dim = m_shape_node->dtype().number_of_elements();
-            Node* t_offset_node = new Node();
-            m_own_offset = true;
-
-            t_offset_node->set(DataType::index_t(dim));
-            index_t* p_offset = t_offset_node->value();
-            for (index_t i = 0; i < dim; ++i) {
-                p_offset[i] = itr.m_offset_acc[i];
-            }
-            m_offset_node = t_offset_node;
-        }
-        m_offset_acc = m_offset_node->as_index_t_accessor();
-
-        if (!itr.m_own_stride)
-        {
-            m_stride_node = itr.m_stride_node;
-            m_own_stride = false;
-        }
-        else
-        {
-            // make our own
-            index_t dim = m_shape_node->dtype().number_of_elements();
-            Node* t_stride_node = new Node();
-            m_own_stride = true;
-
-            t_stride_node->set(DataType::index_t(dim));
-            index_t* p_stride = t_stride_node->as_index_t_ptr();
-            for (index_t i = 0; i < dim; ++i) {
-                p_stride[i] = itr.m_stride_acc[i];
-            }
-            m_stride_node = t_stride_node;
-        }
-        m_stride_acc = m_stride_node->as_index_t_accessor();
+        NDIndex tmp(idx);
+        tmp.swap(*this);
     }
     return *this;
 }

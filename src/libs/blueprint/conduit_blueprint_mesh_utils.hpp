@@ -326,6 +326,9 @@ private:
     const Node* m_offset_node;
     const Node* m_stride_node;
 
+    /// flatelement array
+    index_t* m_element_stride;
+
     /// Do we own the shape, offset, or stride node?
     bool m_own_shape;
     bool m_own_offset;
@@ -339,19 +342,18 @@ private:
     /// Dimension (length of shape, offset, and stride nodes)
     index_t m_dim;
 
-    /// Helper for dtor
-    void cleanup();
+    /// Helper for ctors
+    void setup_element_stride();
+
+    /// Custom swapper, because we must set up the accessors
+    void swap(NDIndex & idx) throw();
 };
 
 template<typename T, typename... Ts>
 index_t NDIndex::index(T idx, Ts... idxs) const
 {
     index_t depth = m_dim - sizeof...(idxs) - 1;
-    index_t component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
-    // DEBUG (take out before committing)
-    std::cout << "Recursive index; idx " << idx << " depth " << depth <<
-        " offset " << m_offset_acc[depth] << " stride " << m_stride_acc[depth] <<
-        " component " << component << std::endl;
+    index_t component = (m_offset_acc[depth] + idx) * m_element_stride[depth];
     return component + index(idxs...);
 }
 
@@ -359,11 +361,7 @@ template<typename T>
 index_t NDIndex::index(T idx) const
 {
     index_t depth = m_dim - 1;
-    index_t component = (m_offset_acc[depth] + idx) * m_stride_acc[depth];
-    // DEBUG (take out before committing)
-    std::cout << "Base case index; idx " << idx << " depth " << depth <<
-        " offset " << m_offset_acc[depth] << " stride " << m_stride_acc[depth] <<
-        " component " << component << std::endl;
+    index_t component = (m_offset_acc[depth] + idx) * m_element_stride[depth];
     return component;
 }
 
