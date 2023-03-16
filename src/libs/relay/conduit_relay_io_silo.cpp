@@ -1592,19 +1592,25 @@ read_mesh(const std::string &root_file_path,
         int_accessor meshtypes = mesh_index["mesh_types"].value();
         int meshtype = meshtypes[i];
 
+        std::string sub_mesh_name, domain_filename;
+        gen.GeneratePaths(silo_mesh_path, relative_dir, domain_filename, sub_mesh_name);
+
         // TODO hmmmm, what if the mesh name here differs from the multimesh name?
         // then have I created broken blueprint?
-        std::string mesh_name, domain_file;
-        gen.GeneratePaths(silo_mesh_path, relative_dir, domain_file, mesh_name);
-        if (domain_file.empty())
+        if (sub_mesh_name != mesh_name)
         {
-            domain_file = root_file_path;
+            // this is a band aid, we should be smarter about this
+            CONDUIT_ERROR("TODO fix me");
         }
-        domfile.setErrMsg("Error closing Silo file: " + domain_file);
-        domfile.setSiloObject(DBOpen(domain_file.c_str(), DB_UNKNOWN, DB_READ));
+        if (domain_filename.empty())
+        {
+            domain_filename = root_file_path;
+        }
+        domfile.setErrMsg("Error closing Silo file: " + domain_filename);
+        domfile.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
         if (! domfile.getSiloObject())
         {
-            CONDUIT_ERROR("Error opening Silo file for reading: " << domain_file);
+            CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
         }
 
         std::string mesh_path = conduit_fmt::format("domain_{:06d}", i);
@@ -1612,15 +1618,63 @@ read_mesh(const std::string &root_file_path,
         Node &mesh_out = mesh[mesh_path];
 
         if (meshtype == DB_UCDMESH)
-            read_ucdmesh_domain(domfile, mesh_name, mesh_out);
+            read_ucdmesh_domain(domfile, sub_mesh_name, mesh_out);
         else if (meshtype == DB_QUADMESH)
-            read_quadmesh_domain(domfile, mesh_name, mesh_out);
+            read_quadmesh_domain(domfile, sub_mesh_name, mesh_out);
         else if (meshtype == DB_POINTMESH)
-            read_pointmesh_domain(domfile, mesh_name, mesh_out);
+            read_pointmesh_domain(domfile, sub_mesh_name, mesh_out);
         else
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
 
-        // TODO we need to read multivars
+        Node &vars = mesh_index["vars"];
+        auto var_itr = vars.children();
+        while (var_itr.has_next())
+        {
+            const Node &n_var = var_itr.next();
+            std::string var_name = var_itr.name();
+
+            std::string silo_var_path = n_var["var_paths"][i].as_string();
+            int_accessor vartypes = mesh_index["var_types"].value();
+            int vartype = vartypes[i];
+
+            std::string sub_var_name, domain_filename;
+
+            // TODO ahhhhh
+            gen.GeneratePaths(silo_var_path, relative_dir, domain_filename, sub_var_name);
+
+            // TODO hmmmm, what if the var name here differs from the multivar name?
+            // then have I created broken blueprint?
+            if (sub_var_name != var_name)
+            {
+                // this is a band aid, we should be smarter about this
+                CONDUIT_ERROR("TODO fix me");
+            }
+
+            // TODO we need to verify that the domain file for the var is the same as that for the mesh
+            // if (domain_filename.empty())
+            // {
+            //     domain_filename = root_file_path;
+            // }
+            // domfile.setErrMsg("Error closing Silo file: " + domain_filename);
+            // domfile.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+            // if (! domfile.getSiloObject())
+            // {
+            //     CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
+            // }
+
+            Node &field_out = mesh_out["fields"][var_name];
+
+            if (vartype == DB_UCDVAR)
+                read_ucdvariable_domain(domfile, sub_var_name, field_out);
+            else if (vartype == DB_QUADVAR)
+                read_quadvariable_domain(domfile, sub_var_name, field_out);
+            else if (vartype == DB_POINTVAR)
+                read_pointvariable_domain(domfile, sub_var_name, field_out);
+            else
+                CONDUIT_ERROR("Unsupported variable type " << vartype);
+        }
+
+
         // TODO we need to read multimaterials
 
         // TODO we need to generate the state node if possible
