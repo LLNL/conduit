@@ -2284,6 +2284,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 //---------------------------------------------------------------------------//
 void silo_write_quad_rect_mesh(DBfile *dbfile,
                                const std::string &topo_name,
+                               const Node &n_topo,
                                const Node &n_coords,
                                DBoptlist *state_optlist,
                                Node &n_mesh_info) 
@@ -2333,6 +2334,19 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
     char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
                                         coordsys_type_labels.second[1].c_str(),
                                         coordsys_type_labels.second[2].c_str()};
+
+    int base_index[] = {0,0,0};
+    if (n_topo.has_path("elements/origin"))
+    {
+        base_index[0] = n_topo["elements/origin/i"].as_int();
+        base_index[1] = n_topo["elements/origin/j"].as_int();
+        base_index[2] = n_topo["elements/origin/k"].as_int();
+
+        CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
+                                              DBOPT_BASEINDEX,
+                                              base_index),
+                                  "Error adding option");
+    }
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
@@ -2418,19 +2432,18 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                         coordsys_type_labels.second[1].c_str(),
                                         coordsys_type_labels.second[2].c_str()};
 
+    int base_index[] = {0,0,0};
     if (n_topo.has_path("elements/origin"))
     {
-        int base_index[] = {n_topo["elements/origin/i0"].as_int(),
-                            n_topo["elements/origin/j0"].as_int(),
-                            n_topo["elements/origin/k0"].as_int()};
+        base_index[0] = n_topo["elements/origin/i0"].as_int();
+        base_index[1] = n_topo["elements/origin/j0"].as_int();
+        base_index[2] = n_topo["elements/origin/k0"].as_int();
 
         CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                               DBOPT_BASEINDEX,
                                               base_index),
                                   "Error adding option");
     }
-
-    // TODO handle elements/origin everywhere else; looks right here
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
@@ -2525,7 +2538,7 @@ void silo_mesh_write(const Node &n,
         }
         else if (topo_type == "rectilinear") 
         {
-            silo_write_quad_rect_mesh(dbfile, topo_name, n_coords,
+            silo_write_quad_rect_mesh(dbfile, topo_name, n_topo, n_coords,
                                       state_optlist, n_mesh_info);
         }
         else if (topo_type == "uniform") 
@@ -2540,7 +2553,7 @@ void silo_mesh_write(const Node &n,
             conduit::blueprint::mesh::topology::uniform::to_rectilinear(
                 n_topo, n_rect_topo, n_rect_coords);
 
-            silo_write_quad_rect_mesh(dbfile, topo_name, n_rect_coords,
+            silo_write_quad_rect_mesh(dbfile, topo_name, n_rect_topo, n_rect_coords,
                                       state_optlist, n_mesh_info);
 
         }
