@@ -704,16 +704,13 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     mesh_domain["topologies"][name]["coordset"] = name;
 
-    // TODO I am worried about transition from zonal to nodal and back - are these ok?
-    // transition back to zonal - subtract 1 unless it is already zero
-
-    // If the origin is not the default value
+    // If the origin is not the default value, then we need to specify it
     if (quadmesh_ptr->base_index[0] != 0 && quadmesh_ptr->base_index[1] != 0 && quadmesh_ptr->base_index[2] != 0)
     {
-        // then we need to specify it
-        mesh_domain["topologies"][name]["elements/origin/i"] = quadmesh_ptr->base_index[0];
-        if (ndims > 1) mesh_domain["topologies"][name]["elements/origin/j"] = quadmesh_ptr->base_index[1];
-        if (ndims > 2) mesh_domain["topologies"][name]["elements/origin/k"] = quadmesh_ptr->base_index[2];
+        Node &origin = mesh_domain["topologies"][name]["elements"]["origin"];
+        origin["i"] = quadmesh_ptr->base_index[0];
+        if (ndims > 1) origin["j"] = quadmesh_ptr->base_index[1];
+        if (ndims > 2) origin["k"] = quadmesh_ptr->base_index[2];
     }
 
     if (quadmesh_ptr->datatype == DB_DOUBLE)
