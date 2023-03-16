@@ -329,7 +329,10 @@ public:
     void setSiloObject(T *o) { obj = o; }
     ~SiloObjectWrapper()
     {
-        del(obj);
+        if (obj)
+        {
+            del(obj);
+        }
     }
 };
 
@@ -351,10 +354,13 @@ public:
     void setErrMsg(std::string newmsg) { errmsg = newmsg; }
     ~SiloObjectWrapperCheckError()
     {
-        if(del(obj) != 0)
+        if (obj)
         {
-            // CONDUIT_ERROR() TODO hmmmm
-            std::cout << errmsg << std::endl;
+            if(del(obj) != 0)
+            {
+                // CONDUIT_ERROR() TODO hmmmm
+                std::cout << errmsg << std::endl;
+            }
         }
     }
 };
@@ -594,14 +600,14 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
                     std::string &mesh_name,
                     conduit::Node &mesh_domain)
 {
+    detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
+        DBGetUcdmesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        &DBFreeUcdmesh};
     DBucdmesh *ucdmesh_ptr;
-    if (!(ucdmesh_ptr = DBGetUcdmesh(dbfile.getSiloObject(), mesh_name.c_str())))
+    if (!(ucdmesh_ptr = ucdmesh.getSiloObject()))
     {
-        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
+        CONDUIT_ERROR("Error fetching ucd mesh " << mesh_name);
     }
-    
-    std::unique_ptr<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
-        ucdmesh_ptr, &DBFreeUcdmesh};
 
     std::string name{ucdmesh_ptr->name};
     if (ucdmesh_ptr->zones)
@@ -663,14 +669,14 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
                      std::string &mesh_name,
                      conduit::Node &mesh_domain)
 {
+    detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
+        DBGetQuadmesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        &DBFreeQuadmesh};
     DBquadmesh *quadmesh_ptr;
-    if (!(quadmesh_ptr = DBGetQuadmesh(dbfile.getSiloObject(), mesh_name.c_str())))
+    if (! (quadmesh_ptr = quadmesh.getSiloObject()))
     {
-        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
+        CONDUIT_ERROR("Error fetching quad mesh " << mesh_name);
     }
-    
-    std::unique_ptr<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
-        quadmesh_ptr, &DBFreeQuadmesh};
     
     std::string name{quadmesh_ptr->name};
 
@@ -772,15 +778,16 @@ read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBCl
                       std::string &mesh_name,
                       conduit::Node &mesh_domain)
 {
+    detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
+        DBGetPointmesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        &DBFreePointmesh};
     DBpointmesh *pointmesh_ptr;
-    if (!(pointmesh_ptr = DBGetPointmesh(dbfile.getSiloObject(), mesh_name.c_str())))
+    if (! (pointmesh_ptr = pointmesh.getSiloObject()))
     {
-        CONDUIT_ERROR("Error fetching mesh " << mesh_name);
+        CONDUIT_ERROR("Error fetching point mesh " << mesh_name);
     }
     
     std::string name{pointmesh_ptr->name};
-    std::unique_ptr<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
-        pointmesh_ptr, &DBFreePointmesh};
 
     mesh_domain["topologies"][name]["type"] = "points";
     mesh_domain["topologies"][name]["coordset"] = name;

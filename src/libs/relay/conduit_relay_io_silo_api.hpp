@@ -49,11 +49,6 @@ void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
                                        const std::string &silo_obj_path);
 
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       DBfile *dbfile,
-                                       const std::string &silo_obj_path);
-
-//-----------------------------------------------------------------------------
 // -- begin <>::silo --
 //-----------------------------------------------------------------------------
 namespace silo
