@@ -132,8 +132,12 @@ PyRelay_IOHandle_dealloc(PyRelay_IOHandle *self)
     {
         delete self->handle;
     }
-    
+    #ifdef Py_LIMITED_API 
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free);
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//

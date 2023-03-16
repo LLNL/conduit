@@ -99,7 +99,12 @@ PyRelay_MPI_Request_new(PyTypeObject *type,
 static void
 PyRelay_MPI_Request_dealloc(PyRelay_MPI_Request *self)
 {
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//

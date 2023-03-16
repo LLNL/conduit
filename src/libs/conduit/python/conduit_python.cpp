@@ -475,7 +475,12 @@ PyConduit_DataType_init(PyConduit_DataType* self,
 static void
 PyConduit_DataType_dealloc(PyConduit_DataType *self)
 {
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -3268,7 +3273,12 @@ PyConduit_Generator_dealloc(PyConduit_Generator *self)
         delete self->generator;
     }
     
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 
@@ -3583,7 +3593,12 @@ PyConduit_Schema_dealloc(PyConduit_Schema* self)
         delete self->schema;
     }
     
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -4596,7 +4611,12 @@ PyConduit_NodeIterator_init(PyConduit_NodeIterator* self,
 static void
 PyConduit_NodeIterator_dealloc(PyConduit_NodeIterator *self)
 {
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -5083,7 +5103,12 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
        delete self->node;
     }
 
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//

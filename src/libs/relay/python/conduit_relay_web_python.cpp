@@ -128,7 +128,12 @@ PyRelay_Web_WebServer_dealloc(PyRelay_Web_WebServer *self)
         delete self->webserver;
     }
     
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free);
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 
@@ -621,7 +626,12 @@ PyRelay_Web_WebSocket_dealloc(PyRelay_Web_WebSocket *self)
 {
     // cpp "socket" pointer is owned by the parent web server, no
     // need to clean them up from python
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free);
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 
