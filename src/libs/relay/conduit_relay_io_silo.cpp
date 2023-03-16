@@ -980,15 +980,13 @@ read_variable_domain(DBfile *file, std::string &var_name,
                      conduit::Node &field, int vartype)
 {
     if (vartype == DB_UCDVAR)
-        return read_ucdvariable_domain(file, var_name, field);
-    if (vartype == DB_QUADVAR)
-        return read_quadvariable_domain(file, var_name, field);
-    if (vartype == DB_POINTVAR)
-        return read_pointvariable_domain(file, var_name, field);
-    if (vartype == DB_CSGVAR)
-        CONDUIT_ERROR("CSG Variables not supported by Blueprint");
-
-    CONDUIT_ERROR("Unsupported variable type " << vartype);
+        read_ucdvariable_domain(file, var_name, field);
+    else if (vartype == DB_QUADVAR)
+        read_quadvariable_domain(file, var_name, field);
+    else if (vartype == DB_POINTVAR)
+        read_pointvariable_domain(file, var_name, field);
+    else
+        CONDUIT_ERROR("Unsupported variable type " << vartype);
 }
 
 //-----------------------------------------------------------------------------
@@ -1010,7 +1008,11 @@ read_multivar(DBfile *root_file,
     std::string file_path, silo_name;
     for (index_t i = 0; i < multivar->nvars; ++i)
     {
-        split_silo_path(multivar->varnames[i], dirname, file_path, silo_name);
+        conduit::utils::rsplit_file_path(multivar->varnames[i], ":", silo_name, file_path);
+        if (!file_path.empty())
+        {
+            file_path = conduit::utils::join_file_path(dirname, file_path);
+        }
         std::string domain_name, field_name;
         conduit::utils::rsplit_string(silo_name, "/", field_name, domain_name);
         Node &field = mesh[i]["fields"][field_name];
@@ -1340,7 +1342,7 @@ read_silo_stuff(const std::string &root_file_path,
         return false;
     }
 
-    int nblocks = multimesh.getSiloObject()->nblocks;
+    const int nblocks = multimesh.getSiloObject()->nblocks;
     root_node[mesh_name]["nblocks"] = nblocks;
 
     bool nameschemes = false;
@@ -1364,6 +1366,49 @@ read_silo_stuff(const std::string &root_file_path,
         root_node[mesh_name]["mesh_types"].set(mesh_types.data());
     }
 
+    // iterate thru the multivars and find the ones that are associated with
+    // the chosen multimesh
+    for (int i = 0; i < toc->nmultivar; i ++)
+    {
+        std::string multivar_name = toc->multivar_names[i];
+        detail::SiloObjectWrapper<DBmultivar, decltype(&DBFreeMultivar)> multivar{
+            DBGetMultivar(dbfile.getSiloObject(), multivar_name.c_str()), 
+            &DBFreeMultivar};
+        if (! multivar.getSiloObject())
+        {
+            error_oss << "Error opening multivar " << multivar_name;
+            return false;
+        }
+        else if (multivar.getSiloObject()->mmesh_name == mesh_name)
+        {
+            CONDUIT_ASSERT(multivar.getSiloObject()->nvars == nblocks,
+                           "Domain count mismatch between multivar "
+                               << multivar_name
+                               << "and multimesh");
+            Node &var = root_node[mesh_name]["vars"][multivar_name];
+            bool var_nameschemes = false;
+            // TODO var_nameschemes
+            if (var_nameschemes)
+            {
+                var["nameschemes"] = "yes";
+                // go kick rocks
+            }
+            else
+            {
+                var["nameschemes"] = "no";
+                std::vector<int> var_types;
+                for (int i = 0; i < nblocks; i ++)
+                {
+                    // save the mesh name and mesh type
+                    Node &var_path = var["mesh_paths"].append();
+                    var_path.set(multivar.getSiloObject()->varnames[i]);
+                    var_types.push_back(multimesh.getSiloObject()->vartypes[i]);
+                }
+                var["var_types"].set(var_types.data());
+            }
+        }
+    }
+
     // should look like this:
 
     // mesh:
@@ -1371,10 +1416,18 @@ read_silo_stuff(const std::string &root_file_path,
     //    nameschemes: "no"
     //    mesh_paths:
     //       - "domain_000000.silo:mesh"
-    //       - "domain_000001.silo:mesh"
+    //       - "domain_000001.silo:mesh" 
     //         ...
     //    mesh_types: [UCD_MESH, UCD_MESH, ...]
-    //    ...
+    //    vars:
+    //       field:
+    //          nameschemes: "no"
+    //          var_paths:
+    //             - "domain_000000.silo:field"
+    //             - "domain_000001.silo:field"
+    //               ...
+    //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
+    //       ...
 
 
     // code from james
@@ -1509,20 +1562,28 @@ read_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
-    // our mesh_index should look like this:
+    // our root_index should look like this:
 
     // mesh:
     //    nblocks: 5
     //    nameschemes: "no"
     //    mesh_paths:
     //       - "domain_000000.silo:mesh"
-    //       - "domain_000001.silo:mesh"
+    //       - "domain_000001.silo:mesh" 
     //         ...
     //    mesh_types: [UCD_MESH, UCD_MESH, ...]
-    //    ...
+    //    vars:
+    //       field:
+    //          nameschemes: "no"
+    //          var_paths:
+    //             - "domain_000000.silo:field"
+    //             - "domain_000001.silo:field"
+    //               ...
+    //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
+    //       ...
 
-    std::string current, next;
-    utils::rsplit_file_path(root_file_path, current, next);
+    std::string silo_name, relative_dir;
+    utils::rsplit_file_path(root_file_path, silo_name, relative_dir);
 
     detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> domfile{nullptr, &DBClose};
     for (int i = domain_start; i < domain_end; i++)
@@ -1531,8 +1592,10 @@ read_mesh(const std::string &root_file_path,
         int_accessor meshtypes = mesh_index["mesh_types"].value();
         int meshtype = meshtypes[i];
 
+        // TODO hmmmm, what if the mesh name here differs from the multimesh name?
+        // then have I created broken blueprint?
         std::string mesh_name, domain_file;
-        gen.GeneratePaths(silo_mesh_path, next, domain_file, mesh_name);
+        gen.GeneratePaths(silo_mesh_path, relative_dir, domain_file, mesh_name);
         if (domain_file.empty())
         {
             domain_file = root_file_path;
@@ -1562,6 +1625,8 @@ read_mesh(const std::string &root_file_path,
 
         // TODO we need to generate the state node if possible
     }
+
+    // should I call verify at the end here?
 }
 
 //-----------------------------------------------------------------------------
