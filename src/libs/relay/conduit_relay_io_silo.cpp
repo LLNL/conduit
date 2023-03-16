@@ -1564,60 +1564,6 @@ read_mesh(const std::string &root_file_path,
     }
 }
 
-
-void CONDUIT_RELAY_API read_mesh_OUTDATED(const std::string &root_file_path,
-                                 const conduit::Node &opts,
-                                 conduit::Node &mesh)
-{
-
-    int i;
-    std::string mmesh_name;
-    std::string dirname;
-    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> filemap;
-    // get the directory of the root silo file, for concretizing paths found
-    // within the root silo file
-    conduit::utils::rsplit_file_path(root_file_path, mmesh_name, dirname);
-    DBfile *silofile = get_or_open(filemap, root_file_path);
-    DBtoc *toc = DBGetToc(silofile); // shouldn't be free'd
-    // get the multimesh
-    CONDUIT_ASSERT(toc->nmultimesh > 0, "No multimesh found in file");
-    if (!opts.has_path("mesh_name"))
-    {
-        mmesh_name = toc->multimesh_names[0];
-    }
-    else
-    {
-        CONDUIT_ASSERT(opts["mesh_name"].dtype().is_string(),
-                       "opts['mesh_name'] must be a string");
-        for (i = 0; i < toc->nmultimesh; ++i)
-        {
-            if (toc->multimesh_names[i] == opts["mesh_name"].as_string())
-            {
-                mmesh_name = toc->multimesh_names[i];
-                break;
-            }
-        }
-        CONDUIT_ERROR("No multimesh found matching "
-                      << opts["mesh_name"].as_string());
-    }
-    std::unique_ptr<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{
-        DBGetMultimesh(silofile, mmesh_name.c_str()), &DBFreeMultimesh};
-    
-    if (!multimesh.get())
-    {
-        multimesh.release();
-        CONDUIT_ERROR("Error fetching multimesh " << mmesh_name);
-    }
-    // // read in the multimesh and add it to the mesh Node
-    // read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
-    // get the multivars matching the multimesh
-    read_all_multivars(silofile, toc, filemap, dirname,
-        mmesh_name, multimesh.get()->nblocks, mesh);
-    // get the multimaterials matching the multimesh
-    read_all_multimats(silofile, toc, filemap, dirname, mmesh_name,
-                        multimesh.get()->nblocks, mesh);
-}
-
 //-----------------------------------------------------------------------------
 // The load semantics, the mesh node is reset before reading.
 //-----------------------------------------------------------------------------
@@ -2248,7 +2194,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 
     if (n_coords["type"].as_string() != "explicit")
     {
-        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
+        CONDUIT_ERROR("Expected an explicit coordset when writing ucd mesh " << topo_name);
     }
 
     Node n_coords_compact;
@@ -2389,7 +2335,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
 
     if (n_coords["type"].as_string() != "explicit")
     {
-        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
+        CONDUIT_ERROR("Expected an explicit coordset when writing structured mesh " << topo_name);
     }
 
     Node n_coords_compact;
