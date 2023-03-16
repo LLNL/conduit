@@ -704,13 +704,17 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     mesh_domain["topologies"][name]["coordset"] = name;
 
+    // use the first set when dealing with rectilinear, the second set for structured
+    std::string origin_accessors[] = {"i", "j", "k", "i0", "j0", "k0"};
+    int start_index = (coordtype == DB_COLLINEAR ? 0 : 3);
+
     // If the origin is not the default value, then we need to specify it
     if (quadmesh_ptr->base_index[0] != 0 && quadmesh_ptr->base_index[1] != 0 && quadmesh_ptr->base_index[2] != 0)
     {
         Node &origin = mesh_domain["topologies"][name]["elements"]["origin"];
-        origin["i"] = quadmesh_ptr->base_index[0];
-        if (ndims > 1) origin["j"] = quadmesh_ptr->base_index[1];
-        if (ndims > 2) origin["k"] = quadmesh_ptr->base_index[2];
+        origin[origin_accessors[start_index]] = quadmesh_ptr->base_index[0];
+        if (ndims > 1) origin[origin_accessors[start_index + 1]] = quadmesh_ptr->base_index[1];
+        if (ndims > 2) origin[origin_accessors[start_index + 2]] = quadmesh_ptr->base_index[2];
     }
 
     if (quadmesh_ptr->datatype == DB_DOUBLE)
@@ -2414,7 +2418,19 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                         coordsys_type_labels.second[1].c_str(),
                                         coordsys_type_labels.second[2].c_str()};
 
-    // TODO handle elements/origin
+    if (n_topo.has_path("elements/origin"))
+    {
+        int base_index[] = {n_topo["elements/origin/i0"].as_int(),
+                            n_topo["elements/origin/j0"].as_int(),
+                            n_topo["elements/origin/k0"].as_int()};
+
+        CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
+                                              DBOPT_BASEINDEX,
+                                              base_index),
+                                  "Error adding option");
+    }
+
+    // TODO handle elements/origin everywhere else; looks right here
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
