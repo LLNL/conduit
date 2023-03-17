@@ -873,6 +873,7 @@ apply_values(void **vals,
 template <class T>
 void
 read_variable_domain(T *var_ptr,
+                     std::string var_name,
                      conduit::Node &field)
 {
     if (!var_ptr)
@@ -1236,7 +1237,7 @@ read_silo_stuff(const std::string &root_file_path,
                     // save the mesh name and mesh type
                     Node &var_path = var["mesh_paths"].append();
                     var_path.set(multivar.getSiloObject()->varnames[i]);
-                    var_types.push_back(multimesh.getSiloObject()->vartypes[i]);
+                    var_types.push_back(multivar.getSiloObject()->vartypes[i]);
                 }
                 var["var_types"].set(var_types.data());
             }
@@ -1460,7 +1461,7 @@ read_mesh(const std::string &root_file_path,
         else
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
 
-        Node &vars = mesh_index["vars"];
+        const Node &vars = mesh_index["vars"];
         auto var_itr = vars.children();
         while (var_itr.has_next())
         {
@@ -1501,23 +1502,23 @@ read_mesh(const std::string &root_file_path,
             if (vartype == DB_UCDVAR)
             {
                 detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                    DBGetUcdvar(dbfile.getSiloObject(), var_name.c_str()), 
+                    DBGetUcdvar(domfile.getSiloObject(), var_name.c_str()), 
                     &DBFreeUcdvar};
-                read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), field);
+                read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), var_name, field_out);
             }
             else if (vartype == DB_QUADVAR)
             {
                 detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                    DBGetQuadvar(dbfile.getSiloObject(), var_name.c_str()), 
+                    DBGetQuadvar(domfile.getSiloObject(), var_name.c_str()), 
                     &DBFreeQuadvar};
-                read_variable_domain<DBquadvar>(quadvar.getSiloObject(), field);
+                read_variable_domain<DBquadvar>(quadvar.getSiloObject(), var_name, field_out);
             }
             else if (vartype == DB_POINTVAR)
             {
                 detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                    DBGetPointvar(dbfile.getSiloObject(), var_name.c_str()), 
+                    DBGetPointvar(domfile.getSiloObject(), var_name.c_str()), 
                     &DBFreeMeshvar};
-                read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), field);
+                read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), var_name, field_out);
             }
             else
                 CONDUIT_ERROR("Unsupported variable type " << vartype);
