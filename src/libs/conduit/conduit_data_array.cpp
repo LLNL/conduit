@@ -122,62 +122,94 @@ DataArray<T>::diff(const DataArray<T> &array, Node &info, const float64 epsilon)
 
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
-    
+
+
     if(dtype().is_char8_str())
     {
-        // the number of elements includes the null term
-        // so shrink to the actual string size so 
-        // we can pass that to the std::string constructors
-        // and avoid creating strings with embedded
-        // null terms in the middle :-)
-        if(t_nelems > 1)
-        {
-            t_nelems--;
-        }
-        if(o_nelems > 1)
-        {
-            o_nelems--;
-        }
+        // since char8_str are null termed strings
+        // diff should obey those semantics
+        //
+        // buffers may not always be 100% equal
+
+        const char *t_data = NULL;
+        const char *o_data = NULL;
 
         uint8 *t_compact_data = NULL;
         uint8 *o_compact_data = NULL;
-        std::string t_string = "";
-        std::string o_string = "";
-        
-        if(dtype().is_compact())
+
+        // conduit stores char8_strs with null terms
+        // if the data array size is 0, we have a empty
+        // case that is distinct from an empty string.
+        if(t_nelems > 0)
         {
-            t_string = std::string((const char*)element_ptr(0),
-                                   (size_t)t_nelems);
-        }
-        else
-        {
-            // if not compact, we need to compact to get our data into std::string
-            t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
-            compact_elements_to(t_compact_data);
-            t_string = std::string((const char*)t_compact_data,
-                                   (size_t)t_nelems);
+            if(dtype().is_compact())
+            {
+                t_data = (const char*)element_ptr(0);
+            }
+            else
+            {
+                t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
+                compact_elements_to(t_compact_data);
+                t_data = (const char*)t_compact_data;
+            }
         }
 
-        if(array.dtype().is_compact())
+        if(o_nelems > 0)
         {
-            o_string = std::string((const char*)array.element_ptr(0),
-                                   (size_t)o_nelems);
-        }
-        else
-        {
-            // if not compact, we need to compact to get our data into std::string
-            o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
-            array.compact_elements_to(o_compact_data);
-            o_string = std::string((const char*)o_compact_data, (size_t)o_nelems);
+            if(array.dtype().is_compact())
+            {
+                o_data = (const char*)array.element_ptr(0);
+            }
+            else
+            {
+                o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
+                array.compact_elements_to(o_compact_data);
+                o_data = (const char*)o_compact_data;
+            }
         }
 
-        if(t_string != o_string)
+        // for debugging:
+        // if(t_data)
+        //     std::cout << "t_data " << t_data <<std::endl;
+        // if(o_data)
+        //     std::cout << "o_data " << o_data <<std::endl;
+
+        if(t_nelems == 0 && o_nelems == 0)
+        {
+            // ok, both are empty buffers
+        }
+        // t_data is null, array is len 0
+        else if( t_nelems == 0 )
         {
             std::ostringstream oss;
             oss << "data string mismatch ("
-                << "\"" << t_string << "\""
+                << " [empty buffer] "
                 << " vs "
-                << "\"" << o_string << "\""
+                << "\"" << o_data << "\""
+                << ")";
+            log::error(info, protocol, oss.str());
+            res = true;
+        }
+        // o_data is null, array is len 0
+        else if( o_nelems == 0)
+        {
+            std::ostringstream oss;
+            oss << "data string mismatch ("
+                << "\"" << t_data << "\""
+                << " vs "
+                << " [empty buffer] "
+                << ")";
+            log::error(info, protocol, oss.str());
+            res = true;
+        }
+        // all other cases use strcmp
+        else if(strcmp(t_data,o_data) != 0)
+        {
+            std::ostringstream oss;
+            oss << "data string mismatch ("
+                << "\"" << t_data << "\""
+                << " vs "
+                << "\"" << o_data << "\""
                 << ")";
             log::error(info, protocol, oss.str());
             res = true;
@@ -246,69 +278,116 @@ DataArray<T>::diff_compatible(const DataArray<T> &array, Node &info, const float
     index_t t_nelems = number_of_elements();
     index_t o_nelems = array.number_of_elements();
 
-    // TODO(JRC): Currently, due to the way that strings are represented
-    // in C/C++ (i.e. null-terminated), a 'compatible'-type comparison
-    // isn't very useful/intuitive (e.g. "a" isn't compatible with "aa"
-    // because of the null terminator). Until a better compatible compare
-    // strategy is found, 'diff_compatible' just uses the 'diff' comparison
-    // operation for strings.
+    // if we have a string, look that compat string
+    // is a substring that starts at the beginning
+    // of the test string
     if(dtype().is_char8_str())
     {
-        // the number of elements includes the null term
-        // so shrink to the actual string size so 
-        // we can pass that to the std::string constructors
-        // and avoid creating strings with embedded
-        // null terms in the middle :-)
-        if(t_nelems > 1)
-        {
-            t_nelems--;
-        }
-        if(o_nelems > 1)
-        {
-            o_nelems--;
-        }
-        
+
+        const char *t_data = NULL;
+        const char *o_data = NULL;
+
         uint8 *t_compact_data = NULL;
         uint8 *o_compact_data = NULL;
-        std::string t_string = "";
-        std::string o_string = "";
-        
-        if(dtype().is_compact())
+
+        // conduit stores char8_strs with null terms
+        // if the data array size is 0, we have a empty
+        // case that is distinct from an empty string.
+        if(t_nelems > 0)
         {
-            t_string = std::string((const char*)element_ptr(0),
-                                   (size_t)t_nelems);
-        }
-        else
-        {
-            // if not compact, we need to compact to get our data into std::string
-            t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
-            compact_elements_to(t_compact_data);
-            t_string = std::string((const char*)t_compact_data, (size_t)t_nelems);
+            if(dtype().is_compact())
+            {
+                t_data = (const char*)element_ptr(0);
+            }
+            else
+            {
+                t_compact_data = new uint8[(size_t)dtype().bytes_compact()];
+                compact_elements_to(t_compact_data);
+                t_data = (const char*)t_compact_data;
+            }
         }
 
-        if(array.dtype().is_compact())
+        if(o_nelems > 0)
         {
-            o_string = std::string((const char*)array.element_ptr(0),
-                                   (size_t)o_nelems);
-        }
-        else
-        {
-            // if not compact, we need to compact to get our data into std::string
-            o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
-            array.compact_elements_to(o_compact_data);
-            o_string = std::string((const char*)o_compact_data, (size_t)o_nelems);
+            if(array.dtype().is_compact())
+            {
+                o_data = (const char*)array.element_ptr(0);
+            }
+            else
+            {
+                o_compact_data = new uint8[(size_t)array.dtype().bytes_compact()];
+                array.compact_elements_to(o_compact_data);
+                o_data = (const char*)o_compact_data;
+            }
         }
 
-        if(t_string != o_string)
+        // for debugging:
+        // if(t_data)
+        //     std::cout << "t_data " << t_data <<std::endl;
+        // if(o_data)
+        //     std::cout << "o_data " << o_data <<std::endl;
+
+        if(t_nelems == 0 && o_nelems == 0)
+        {
+            // ok, both are empty buffers
+        }
+        // t_data is null, array is len 0
+        else if( t_nelems == 0 )
         {
             std::ostringstream oss;
             oss << "data string mismatch ("
-                << "\"" << t_string << "\""
+                << " [empty buffer] "
                 << " vs "
-                << "\"" << o_string << "\""
+                << "\"" << o_data << "\""
                 << ")";
             log::error(info, protocol, oss.str());
             res = true;
+        }
+        // o_data is null, array is len 0
+        else if( o_nelems == 0)
+        {
+            std::ostringstream oss;
+            oss << "data string mismatch ("
+                << "\"" << t_data << "\""
+                << " vs "
+                << " [empty buffer] "
+                << ")";
+            log::error(info, protocol, oss.str());
+            res = true;
+        }
+        // standard compat size check
+        // (t_data len must be less than o_data len)
+        else if(strlen(t_data) > strlen(o_data))
+        {
+            std::ostringstream oss;
+            oss << "arg string length incompatible ("
+                << t_nelems
+                << " vs "
+                << o_nelems
+                << ")";
+            log::error(info, protocol, oss.str());
+            res = true;
+        }
+        // all other cases use strstr
+        else
+        {
+            // check that t_data is a substr of
+            // o_data, and that substr 
+            // starts at the beginning of o_data
+            const char *found = strstr(o_data,t_data);
+            // the substr should be found at the start
+            // of o_data
+            if(found != o_data)
+            {
+                std::ostringstream oss;
+                oss << "data string mismatch ("
+                    << "\"" << t_data << "\""
+                    << " vs "
+                    << "\"" << o_data << "\""
+                    << ")";
+                log::error(info, protocol, oss.str());
+                res = true;
+            }
         }
 
         if(t_compact_data)
