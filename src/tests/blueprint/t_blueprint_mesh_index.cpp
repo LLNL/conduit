@@ -23,14 +23,6 @@ namespace meshutils = conduit::blueprint::mesh::utils;
 
 /// Index Tests ///
 
-// Copy constructor
-// Arrays constructor
-// Assignment operator
-//     Exercise info() on all constructor tests?
-// shape, offset
-// shape, offset, stride (and exercise info())
-
-
 //-----------------------------------------------------------------------------
 int calcFlatIndex(index_t x, index_t y, index_t z, const index_t dim,
     const index_t* shape, const index_t* offset, const index_t* stride)
@@ -140,6 +132,31 @@ void verifyNodeCtors(Node& parms, const index_t dim,
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_index, copy_ctor)
+{
+    constexpr index_t dim = 3;
+    constexpr index_t dx = 7;
+    constexpr index_t dy = 4;
+    constexpr index_t dz = 3;
+
+    const index_t p_shape[dim]{ dx, dy, dz };
+    const index_t p_offset[dim]{ 0, 0, 0 };
+    const index_t p_stride[dim]{ dx, dy, dz };
+
+    Node parms;
+    parms["shape"].set(DataType::index_t(dim));
+    index_t* shape = parms["shape"].value();
+    shape[0] = dx;
+    shape[1] = dy;
+    shape[2] = dz;
+
+    meshutils::NDIndex idx(parms);
+    meshutils::NDIndex idx2(idx);
+
+    verifyEquality(idx, idx2);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_index, ctor_shape)
 {
     constexpr index_t dim = 3;
@@ -167,6 +184,7 @@ TEST(conduit_blueprint_mesh_index, ctor_shape)
 
         Node info;
         idx.info(info);
+        info.print();
 
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }
@@ -206,9 +224,6 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_stride)
 
         meshutils::NDIndex idx(dim, p_shape, NULL, p_stride);
 
-        Node info;
-        idx.info(info);
-
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }
 }
@@ -246,9 +261,6 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_offset)
         SCOPED_TRACE("Pointer");
 
         meshutils::NDIndex idx(dim, p_shape, p_offset, NULL);
-
-        Node info;
-        idx.info(info);
 
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }
@@ -295,9 +307,6 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_offset_stride)
         SCOPED_TRACE("Pointer");
 
         meshutils::NDIndex idx(dim, p_shape, p_offset, p_stride);
-
-        Node info;
-        idx.info(info);
 
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }

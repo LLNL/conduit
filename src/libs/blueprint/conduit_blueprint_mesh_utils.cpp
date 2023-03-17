@@ -584,6 +584,10 @@ NDIndex::swap(NDIndex& idx)
     m_offset_acc = m_offset_node->as_index_t_accessor();
     m_stride_acc = m_stride_node->as_index_t_accessor();
 
+    idx.m_shape_acc = idx.m_shape_node->as_index_t_accessor();
+    idx.m_offset_acc = idx.m_offset_node->as_index_t_accessor();
+    idx.m_stride_acc = idx.m_stride_node->as_index_t_accessor();
+
     std::swap(m_element_stride, idx.m_element_stride);
 
     std::swap(m_dim, idx.m_dim);
