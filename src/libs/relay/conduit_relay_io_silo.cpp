@@ -870,103 +870,31 @@ apply_values(void **vals,
 }
 
 //-----------------------------------------------------------------------------
-// Read a quad variable from a Silo file.
-// 'file' must be a pointer into the file containing the variable domain
-// 'var_name' must be the name of the variable within the file.
-//-----------------------------------------------------------------------------
+template <class T>
 void
-read_quadvariable_domain(DBfile *file,
-                         std::string &var_name,
-                         conduit::Node &field)
+// TODO name
+read_variable_domain_for_real(T *var_ptr,
+                              conduit::Node &field)
 {
-    DBquadvar *quadvar_ptr;
-    if (!(quadvar_ptr = DBGetQuadvar(file, var_name.c_str())))
+    if (!var_ptr)
     {
-        CONDUIT_ERROR("Error fetching quad variable " << var_name);
-    }
-    std::unique_ptr<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-        quadvar_ptr, &DBFreeQuadvar};
-    std::string name{quadvar_ptr->name};
-    field["topology"] = std::string(quadvar_ptr->meshname);
-
-    apply_centering(quadvar_ptr->centering, field);
-    
-    if (quadvar_ptr->datatype == DB_FLOAT)
-    {
-        apply_values<float>(quadvar_ptr->vals, quadvar_ptr->nvals,
-                            quadvar_ptr->nels, field["values"]);
-    }
-    else if (quadvar_ptr->datatype == DB_DOUBLE)
-    {
-        apply_values<double>(quadvar_ptr->vals, quadvar_ptr->nvals,
-                             quadvar_ptr->nels, field["values"]);
-    }
-}
-
-//-----------------------------------------------------------------------------
-// Read a UCD variable domain from a Silo file.
-// 'file' must be a pointer into the file containing the variable domain
-// 'var_name' must be the name of the variable within the file.
-//-----------------------------------------------------------------------------
-void
-read_ucdvariable_domain(DBfile *file,
-                        std::string &var_name,
-                        conduit::Node &field)
-{
-    DBucdvar *ucdvar_ptr;
-    if (!(ucdvar_ptr = DBGetUcdvar(file, var_name.c_str())))
-    {
-        CONDUIT_ERROR("Error fetching ucd variable " << var_name);
-    }
-
-    std::unique_ptr<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{ucdvar_ptr,
-                                                              &DBFreeUcdvar};
-    std::string name{ucdvar_ptr->name};
-    field["topology"] = std::string(ucdvar_ptr->meshname);
-    apply_centering(ucdvar_ptr->centering, field);
-    
-    if (ucdvar_ptr->datatype == DB_FLOAT)
-    {
-        apply_values<float>(ucdvar_ptr->vals, ucdvar_ptr->nvals,
-                            ucdvar_ptr->nels, field["values"]);
-    }
-    else if (ucdvar_ptr->datatype == DB_DOUBLE)
-    {
-        apply_values<double>(ucdvar_ptr->vals, ucdvar_ptr->nvals,
-                             ucdvar_ptr->nels, field["values"]);
-    }
-}
-
-//-----------------------------------------------------------------------------
-// Read a pointvariable domain from a Silo file.
-// 'file' must be a pointer into the file containing the variable domain
-// 'var_name' must be the name of the variable within the file.
-//-----------------------------------------------------------------------------
-void
-read_pointvariable_domain(DBfile *file,
-                          std::string &var_name,
-                          conduit::Node &field)
-{
-    DBmeshvar *meshvar_ptr;
-    if (!(meshvar_ptr = DBGetPointvar(file, var_name.c_str())))
         CONDUIT_ERROR("Error fetching variable " << var_name);
-
-    std::unique_ptr<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-        meshvar_ptr, &DBFreeMeshvar};
-    std::string name{meshvar_ptr->name};
-    field["topology"] = std::string(meshvar_ptr->meshname);
-
-    apply_centering(meshvar_ptr->centering, field);
-
-    if (meshvar_ptr->datatype == DB_FLOAT)
-    {
-        apply_values<float>(meshvar_ptr->vals, meshvar_ptr->nvals,
-                            meshvar_ptr->nels, field["values"]);
     }
-    else if (meshvar_ptr->datatype == DB_DOUBLE)
+
+    // TODO is this the right choice?
+    field["topology"] = std::string(var_ptr->meshname);
+
+    apply_centering(var_ptr->centering, field);
+
+    if (var_ptr->datatype == DB_FLOAT)
     {
-        apply_values<double>(meshvar_ptr->vals, meshvar_ptr->nvals,
-                             meshvar_ptr->nels, field["values"]);
+        apply_values<float>(var_ptr->vals, var_ptr->nvals,
+                            var_ptr->nels, field["values"]);
+    }
+    else if (var_ptr->datatype == DB_DOUBLE)
+    {
+        apply_values<double>(var_ptr->vals, var_ptr->nvals,
+                             var_ptr->nels, field["values"]);
     }
 }
 
@@ -976,15 +904,32 @@ read_pointvariable_domain(DBfile *file,
 // 'var_name' must be the name of the variable within the file.
 //-----------------------------------------------------------------------------
 void
-read_variable_domain(DBfile *file, std::string &var_name,
-                     conduit::Node &field, int vartype)
+read_variable_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile, 
+                     std::string &var_name,
+                     conduit::Node &field, 
+                     int vartype)
 {
     if (vartype == DB_UCDVAR)
-        read_ucdvariable_domain(file, var_name, field);
+    {
+        detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
+            DBGetUcdvar(dbfile.getSiloObject(), var_name.c_str()), 
+            &DBFreeUcdvar};
+        read_variable_domain_for_real<DBucdvar>(ucdvar.getSiloObject(), field);
+    }
     else if (vartype == DB_QUADVAR)
-        read_quadvariable_domain(file, var_name, field);
+    {
+        detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
+            DBGetQuadvar(dbfile.getSiloObject(), var_name.c_str()), 
+            &DBFreeQuadvar};
+        read_variable_domain_for_real<DBquadvar>(quadvar.getSiloObject(), field);
+    }
     else if (vartype == DB_POINTVAR)
-        read_pointvariable_domain(file, var_name, field);
+    {
+        detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
+            DBGetPointvar(dbfile.getSiloObject(), var_name.c_str()), 
+            &DBFreeMeshvar};
+        read_variable_domain_for_real<DBmeshvar>(meshvar.getSiloObject(), field);
+    }
     else
         CONDUIT_ERROR("Unsupported variable type " << vartype);
 }
@@ -1676,7 +1621,6 @@ read_mesh(const std::string &root_file_path,
 
 
         // TODO we need to read multimaterials
-
         // TODO we need to generate the state node if possible
     }
 
