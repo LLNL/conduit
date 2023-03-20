@@ -152,6 +152,17 @@
 #error Bitwidth Style Types: no native type found that maps to float64
 #endif
 
+!------------------------------------------------------------------------------
+! Index Types
+!------------------------------------------------------------------------------
+
+! use a 64-bit index, unless CONDUIT_INDEX_32 is defined.
+#ifdef CONDUIT_INDEX_32
+#define F_CONDUIT_INDEX_ID  F_CONDUIT_INT32_ID
+#else
+#define F_CONDUIT_INDEX_ID  F_CONDUIT_INT64_ID
+#endif 
+
 !-----------------------------------------------------------------------------
 !End Bit-width type map sanity checks
 !-----------------------------------------------------------------------------

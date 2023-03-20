@@ -10,6 +10,7 @@ set(FORTRAN_TESTS
     t_f_type_sizes
     t_f_conduit_smoke
     t_f_conduit_node
+    t_f_conduit_node_datatype
     t_f_conduit_node_int
     t_f_conduit_node_float
     t_f_conduit_node_char8_str
