@@ -69,7 +69,7 @@ public:
     O2MIndex(const Node &node);
 
     /// Destructor
-    ~O2MIndex();
+    ~O2MIndex() { };
 
     /// Assignment operator.
     O2MIndex &operator=(const O2MIndex &itr);
@@ -105,16 +105,6 @@ private:
 //-----------------------------------------------------------------------------
 /// Index state/fields.
 //-----------------------------------------------------------------------------
-    /// The following 3 members are used so we can look them up once and then
-    /// use the existence of the pointer instead of expensive calls that look
-    /// up the child in m_node while we use the iterator.
-
-    /// pointer to an internal sizes Node for the 'o2mrelation'
-    const Node *m_sizes_node;
-    /// pointer to an internal indices Node for the 'o2mrelation'
-    const Node *m_indices_node;
-    /// pointer to an internal offsets Node for the 'o2mrelation'
-    const Node *m_offsets_node;
 
     /// Accessors for sizes, indices, and offsets
     index_t_accessor m_sizes_acc;
