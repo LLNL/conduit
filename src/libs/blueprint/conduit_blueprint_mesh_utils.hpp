@@ -245,39 +245,63 @@ public:
     /// children, all of length equal to the array's dimensionality:
     ///     - shape (required) specifies the shape of the array to index
     ///     - offset (optional) specifies where the data starts in the array
-    ///     - stride (optional) specifies the extent of the data to index
+    ///     - stride (optional) specifies the extent of the array storing data
     ///
-    /// NDIndex follows the index order convention of Conduit Blueprint:
-    /// fastest-varying dimension first.  For example,
-    ///
-    /// shape: [6, 4]
-    ///
-    /// indicates a two-dimensional array, extent 6 in the X-dimension and
-    /// extent 4 in the Y-dimension.
-    ///
+    /// The shape is required.  It is an error if shape is omitted.
     /// If offset is not specified, it defaults to 0 in each dimension.
-    /// If stride is not specified, it defaults to shape[d] + offset[d] in
-    /// each dimension d.  Stride and offset are specified in terms of logical
-    /// index, not flatindex.  Thus, a 6x4 array with two extra elements at
-    /// the end of each row, and an extra row, would have
+    /// If stride is not specified, it defaults to
+    /// \code
+    /// stride[0] = 1
+    /// stride[i] = stride[i-1] * (offset[i-1] + shape[i-1])
+    /// \endcode
+    /// Node that offset is specified in terms of logical index, not
+    /// flatindex, and stride is specified in terms of flatindex.  Also note
+    /// that the default stride holds an assumption that the data is laid
+    /// out in C-style, with fastest-varying dimension left-most.  Users may
+    /// specify a custom stride to index Fortran-style arrays, where the
+    /// fastest-varying index is right-most.
     ///
-    /// shape: [6, 4]
-    /// stride: [8, 5]
+    /// Here are a few examples:
     ///
-    /// Similarly, a 6x4 array with two elements of padding at the low-index
-    /// end of each dimension and one element of padding at the high-index end
-    /// of each dimension would be specified by
-    ///
-    /// shape: [6, 4]
-    /// offset: [2, 2]
-    /// stride: [9, 7]
+    /// - A 6x4 array
+    ///   \code
+    ///   shape: [6, 4]
+    ///   \endcode
+    /// - A 6x4 array with two extra elements at the end of each row
+    ///   \code
+    ///   shape: [6, 4]
+    ///   stride: [1, 8]
+    ///   \endcode
+    /// - A 6x4 array with two elements of padding on the low end of a
+    ///   dimension and one element of padding on the high end
+    ///   \code
+    ///   shape: [6, 4]
+    ///   offset: [2, 2]
+    ///   stride: [1, 9]
+    ///   \endcode
+    /// - A 6x4x5 array with two elements of padding on the low end of each
+    ///   dimension and one element of padding on the high end (adds third
+    ///   dimension to previous)
+    ///   \code
+    ///   shape: [6, 4, 5]
+    ///   offset: [2, 2, 2]
+    ///   stride: [1, 9, 63]
+    ///   \endcode
+    /// - A Fortran 6x4x5 array with two elements of padding on the low
+    ///   end of each dimension and one element of padding on the high end
+    ///   (previous example changed to column-major)
+    ///   \code
+    ///   shape: [6, 4, 5]
+    ///   offset: [2, 2, 2]
+    ///   stride: [63, 7, 1]
+    ///   \endcode
     NDIndex(const Node& node);
 
     /// Array constructor
     NDIndex(const index_t dim, const index_t* shape, const index_t* offset = NULL, const index_t* stride = NULL);
 
     /// Destructor
-    ~NDIndex();
+    ~NDIndex() { };
 
     /// Assignment operator.
     NDIndex& operator=(const NDIndex& itr);
@@ -314,26 +338,6 @@ private:
     //
     //-----------------------------------------------------------------------------
 
-    //-----------------------------------------------------------------------------
-    /// Index state/fields.
-    //-----------------------------------------------------------------------------
-    /// The following 3 members are used so we can look them up once and then
-    /// use the existence of the pointer instead of expensive calls that look
-    /// up the child in m_node while we use the iterator.
-
-    /// pointer to an internal shape, offset, and stride Node
-    const Node* m_shape_node;
-    const Node* m_offset_node;
-    const Node* m_stride_node;
-
-    /// flatelement array
-    index_t* m_element_stride;
-
-    /// Do we own the shape, offset, or stride node?
-    bool m_own_shape;
-    bool m_own_offset;
-    bool m_own_stride;
-
     /// Accessors for shape, offset, and stride
     index_t_accessor m_shape_acc;
     index_t_accessor m_offset_acc;
@@ -341,29 +345,70 @@ private:
 
     /// Dimension (length of shape, offset, and stride nodes)
     index_t m_dim;
-
-    /// Helper for ctors
-    void setup_element_stride();
-
-    /// Custom swapper, because we must set up the accessors
-    void swap(NDIndex & idx) throw();
 };
 
 template<typename T, typename... Ts>
-index_t NDIndex::index(T idx, Ts... idxs) const
+index_t
+NDIndex::index(T idx, Ts... idxs) const
 {
     index_t depth = m_dim - sizeof...(idxs) - 1;
-    index_t component = (m_offset_acc[depth] + idx) * m_element_stride[depth];
+    index_t component = (offset(depth) + idx) * stride(depth);
     return component + index(idxs...);
 }
 
 template<typename T>
-index_t NDIndex::index(T idx) const
+index_t
+NDIndex::index(T idx) const
 {
     index_t depth = m_dim - 1;
-    index_t component = (m_offset_acc[depth] + idx) * m_element_stride[depth];
+    index_t component = (offset(depth) + idx) * stride(depth);
     return component;
 }
+
+inline
+index_t
+NDIndex::shape(index_t dim) const
+{
+    int retval = 0;
+    if (dim < 0)
+    {
+        retval = m_dim;
+    }
+    else
+    {
+        retval = m_shape_acc[dim];
+    }
+    return retval;
+}
+
+inline
+index_t
+NDIndex::offset(index_t dim) const
+{
+    if (m_offset_acc.number_of_elements() < 1)
+    {
+        return 0;
+    }
+    return m_offset_acc[dim];
+}
+
+inline
+index_t
+NDIndex::stride(index_t dim) const
+{
+    if (m_stride_acc.number_of_elements() < 1)
+    {
+        index_t acc = 1;
+        for (int d = 0; d < dim && d < m_dim; ++d)
+        {
+            acc = acc * (m_shape_acc[d] + offset(d));
+        }
+        return acc;
+    }
+    return m_stride_acc[dim];
+}
+
+
 
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::O2MIndex --

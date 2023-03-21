@@ -28,11 +28,11 @@ int calcFlatIndex(index_t x, index_t y, index_t z, const index_t dim,
     const index_t* shape, const index_t* offset, const index_t* stride)
 {
     int retval = 0;
-    retval += (offset[0] + x);
-    retval += (offset[1] + y) * stride[0];
+    retval += (offset[0] + x) * stride[0];
+    retval += (offset[1] + y) * stride[1];
     if (dim > 2)
     {
-        retval += (offset[2] + z) * stride[1] * stride[0];
+        retval += (offset[2] + z) * stride[2];
     }
     return retval;
 }
@@ -141,7 +141,7 @@ TEST(conduit_blueprint_mesh_index, copy_ctor)
 
     const index_t p_shape[dim]{ dx, dy, dz };
     const index_t p_offset[dim]{ 0, 0, 0 };
-    const index_t p_stride[dim]{ dx, dy, dz };
+    const index_t p_stride[dim]{ 1, dx, dx * dy };
 
     Node parms;
     parms["shape"].set(DataType::index_t(dim));
@@ -166,7 +166,7 @@ TEST(conduit_blueprint_mesh_index, ctor_shape)
 
     const index_t p_shape[dim]{ dx, dy, dz };
     const index_t p_offset[dim]{ 0, 0, 0 };
-    const index_t p_stride[dim]{ dx, dy, dz };
+    const index_t p_stride[dim]{ 1, dx, dx * dy };
 
     Node parms;
     parms["shape"].set(DataType::index_t(dim));
@@ -184,7 +184,6 @@ TEST(conduit_blueprint_mesh_index, ctor_shape)
 
         Node info;
         idx.info(info);
-        info.print();
 
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }
@@ -197,9 +196,9 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_stride)
     constexpr index_t dx = 7;
     constexpr index_t dy = 4;
     constexpr index_t dz = 3;
-    constexpr index_t sx = 8;
-    constexpr index_t sy = 5;
-    constexpr index_t sz = 4;
+    constexpr index_t sx = 1;
+    constexpr index_t sy = sx * (dx + 1);
+    constexpr index_t sz = sy * (dy + 1);
 
     const index_t p_shape[dim]{ dx, dy, dz };
     const index_t p_offset[dim]{ 0, 0, 0 };
@@ -241,7 +240,7 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_offset)
 
     const index_t p_shape[dim]{ dx, dy, dz };
     const index_t p_offset[dim]{ ox, oy, oz };
-    const index_t p_stride[dim]{ dx + ox, dy + oy, dz + oz };
+    const index_t p_stride[dim]{ 1, dx + ox, (dx + ox) * (dy + oy) };
 
     Node parms;
     parms["shape"].set(DataType::index_t(dim));
@@ -276,9 +275,9 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_offset_stride)
     constexpr index_t ox = 2;
     constexpr index_t oy = 2;
     constexpr index_t oz = 2;
-    constexpr index_t sx = 10;
-    constexpr index_t sy = 7;
-    constexpr index_t sz = 6;
+    constexpr index_t sx = 1;
+    constexpr index_t sy = dx + ox + 1;
+    constexpr index_t sz = sy * (dy + oy + 1);
 
     const index_t p_shape[dim]{ dx, dy, dz };
     const index_t p_offset[dim]{ ox, oy, oz };
@@ -323,7 +322,7 @@ TEST(conduit_blueprint_mesh_index, twoD)
 
     const index_t p_shape[dim]{ dx, dy };
     const index_t p_offset[dim]{ ox, oy };
-    const index_t p_stride[dim]{ dx + ox, dy + oy };
+    const index_t p_stride[dim]{ 1, dx + ox };
 
     meshutils::NDIndex idx(dim, p_shape, p_offset);
 
@@ -341,7 +340,7 @@ TEST(conduit_blueprint_mesh_index, assignment)
 
     const index_t p_shape2[dim2]{ dx2, dy2 };
     const index_t p_offset2[dim2]{ ox2, oy2 };
-    const index_t p_stride2[dim2]{ dx2 + ox2, dy2 + oy2 };
+    const index_t p_stride2[dim2]{ 1, dx2 + ox2 };
 
     meshutils::NDIndex idxA(dim2, p_shape2, p_offset2);
     verify2DCoords(idxA, p_shape2, p_offset2, p_stride2);
@@ -357,9 +356,9 @@ TEST(conduit_blueprint_mesh_index, assignment)
     constexpr index_t ox = 1;
     constexpr index_t oy = 0;
     constexpr index_t oz = 2;
-    constexpr index_t sx = 10;
-    constexpr index_t sy = 7;
-    constexpr index_t sz = 6;
+    constexpr index_t sx = 1;
+    constexpr index_t sy = sx * (dx + ox + 2);
+    constexpr index_t sz = sy * (dy + oy + 3);
 
     const index_t p_shape[dim]{ dx, dy, dz };
     const index_t p_offset[dim]{ ox, oy, oz };
