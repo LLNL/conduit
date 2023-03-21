@@ -4,29 +4,9 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: conduit_blueprint_mesh_examples_julia.cpp
+/// file: conduit_blueprint_mesh_examples_rz_cylinder.cpp
 ///
 //-----------------------------------------------------------------------------
-
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-#define NOMINMAX
-#undef min
-#undef max
-#include "windows.h"
-#endif
-
-//-----------------------------------------------------------------------------
-// std lib includes
-//-----------------------------------------------------------------------------
-#include <string.h>
-#include <stdio.h>
-#include <math.h>
-#include <algorithm>
-#include <cassert>
-#include <map>
-#include <set>
-#include <vector>
-#include <queue>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -72,7 +52,7 @@ namespace detail
 void
 create_rz_cyl_explciit_coords(index_t nz,
                               index_t nr,
-                               Node &res)
+                              Node &res)
 {
     res["type"] = "explicit";
     res["values/z"] = DataType::float64( (nz + 1) * (nr + 1) );
@@ -103,7 +83,6 @@ create_rz_cyl_field(index_t nz,
                      index_t nr,
                      Node &res)
 {
-    
     res["cyl/association"] = "element";
     res["cyl/topology"] = "topo";
     res["cyl/values"] = DataType::float64( nz * nr );
@@ -223,8 +202,8 @@ rz_cylinder(const std::string &mesh_type,
     else
     {
         // unsupported
-        CONDUIT_ERROR("blueprint::mesh::examples::rz_cylinder unsupported mesh_type = "
-                      << mesh_type);
+        CONDUIT_ERROR("blueprint::mesh::examples::rz_cylinder unsupported"
+                      " mesh_type = " << mesh_type);
     }
     // add the cyl field
     detail::create_rz_cyl_field(nz,nr,res["fields"]);
