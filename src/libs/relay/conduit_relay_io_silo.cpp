@@ -1216,10 +1216,12 @@ read_silo_stuff(const std::string &root_file_path,
         }
         else if (multivar.getSiloObject()->mmesh_name == mesh_name)
         {
-            CONDUIT_ASSERT(multivar.getSiloObject()->nvars == nblocks,
-                           "Domain count mismatch between multivar "
-                               << multivar_name
-                               << "and multimesh");
+            if (multivar.getSiloObject()->nvars != nblocks)
+            {
+                error_oss << "Domain count mismatch between multivar " 
+                          << multivar_name << "and multimesh";
+                return false;
+            }
             Node &var = root_node[mesh_name]["vars"][multivar_name];
             bool var_nameschemes = false;
             // TODO var_nameschemes
