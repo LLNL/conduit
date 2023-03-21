@@ -14,7 +14,7 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_python
                            FOLDER        libs/python)
 
 # link with the proper libs
-target_link_libraries(conduit_relay_python conduit conduit_relay)
+target_link_libraries(conduit_relay_python conduit conduit_relay conduit_python_build)
 
 # add relay io submodule
 PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_python
@@ -26,7 +26,7 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_python
 
 
 # link with the proper libs (beyond python)
-target_link_libraries(conduit_relay_io_python conduit conduit_relay)
+target_link_libraries(conduit_relay_io_python conduit conduit_relay conduit_python_build)
 
 # add relay io blueprint submodule
 PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_blueprint_python
@@ -37,7 +37,7 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_blueprint_python
                            FOLDER        libs/python)
 
 # link with the proper libs (beyond python)
-target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint)
+target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint conduit_python_build)
 
 
 if(ENABLE_RELAY_WEBSERVER)
@@ -50,7 +50,7 @@ if(ENABLE_RELAY_WEBSERVER)
                                FOLDER        libs/python)
 
     # link with the proper libs (beyond python)
-    target_link_libraries(conduit_relay_web_python conduit conduit_relay)
+    target_link_libraries(conduit_relay_web_python conduit conduit_relay conduit_python_build)
 endif()
 
 ################################################################
@@ -68,7 +68,7 @@ if(MPI_FOUND)
                                FOLDER        libs/python)
 
     # link with the proper libs (beyond python)
-    target_link_libraries(conduit_relay_mpi_python conduit conduit_relay_mpi)
+    target_link_libraries(conduit_relay_mpi_python conduit conduit_relay_mpi conduit_python_build)
 
 endif()
 
