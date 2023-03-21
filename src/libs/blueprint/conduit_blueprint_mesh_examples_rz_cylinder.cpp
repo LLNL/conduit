@@ -50,7 +50,7 @@ namespace detail
 
 //-----------------------------------------------------------------------------
 void
-create_rz_cyl_explciit_coords(index_t nz,
+create_rz_cyl_explicit_coords(index_t nz,
                               index_t nr,
                               Node &res)
 {
@@ -168,7 +168,7 @@ rz_cylinder(const std::string &mesh_type,
     }
     else if(mesh_type == "structured")
     {
-        detail::create_rz_cyl_explciit_coords(nz,nr,res["coordsets/coords"]);
+        detail::create_rz_cyl_explicit_coords(nz,nr,res["coordsets/coords"]);
 
         res["topologies/topo/type"] = "structured";
         res["topologies/topo/coordset"] = "coords";
@@ -177,7 +177,7 @@ rz_cylinder(const std::string &mesh_type,
     }
     else if(mesh_type == "unstructured")
     {
-        detail::create_rz_cyl_explciit_coords(nz,nr,res["coordsets/coords"]);
+        detail::create_rz_cyl_explicit_coords(nz,nr,res["coordsets/coords"]);
         res["topologies/topo/type"] = "unstructured";
         res["topologies/topo/coordset"] = "coords";
         res["topologies/topo/elements/shape"] = "quad";
