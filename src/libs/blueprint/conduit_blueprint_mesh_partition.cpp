@@ -5844,21 +5844,20 @@ point_merge::iterate_coordinates(const Node &coordset, Func &&func)
         ynode = coords.fetch_ptr("y");
         znode = coords.fetch_ptr("z");
     }
+    // Cylindrical
+    else if((xnode = coords.fetch_ptr("z")))
+    {
+        ynode = coords.fetch_ptr("r");
+    }
+    // Spherical
     else if((xnode = coords.fetch_ptr("r")))
     {
-        if((ynode = coords.fetch_ptr("z")))
-        {
-            // Cylindrical
-        }
-        else if((ynode = coords.fetch_ptr("theta")))
-        {
-            // Spherical
-            znode = coords.fetch_ptr("phi");
-        }
+        ynode = coords.fetch_ptr("theta");
+        znode = coords.fetch_ptr("phi");
     }
+        // Logical
     else if(((xnode = coords.fetch_ptr("i"))))
     {
-        // Logical
         ynode = coords.fetch_ptr("j");
         znode = coords.fetch_ptr("k");
     }

@@ -66,9 +66,9 @@ static const std::vector<std::string> ASSOCIATIONS = {"vertex", "element"};
 static const std::vector<std::string> BOOLEANS = {"true", "false"};
 static const std::vector<std::string> NESTSET_TYPES = {"parent", "child"};
 
-static const std::vector<std::string> COORDINATE_AXES = {"x", "y", "z", "r", "z", "theta", "phi"};
+static const std::vector<std::string> COORDINATE_AXES = {"x", "y", "z", "r", "theta", "phi"};
 static const std::vector<std::string> CARTESIAN_AXES = {"x", "y", "z"};
-static const std::vector<std::string> CYLINDRICAL_AXES = {"r", "z"};
+static const std::vector<std::string> CYLINDRICAL_AXES = {"z", "r"};
 static const std::vector<std::string> SPHERICAL_AXES = {"r", "theta", "phi"};
 static const std::vector<std::string> LOGICAL_AXES = {"i", "j", "k"};
 
