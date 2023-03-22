@@ -96,7 +96,6 @@ blueprint
  - Provides interfaces for common higher-level conventions and data exchange protocols (eg. describing a “mesh”) using Conduit.
  - *No optional dependencies* 
 
-See the :doc:`user` for more details on these libraries. 
 
 Contributors 
 ----------------
