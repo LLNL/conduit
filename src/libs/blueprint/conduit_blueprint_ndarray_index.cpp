@@ -35,14 +35,14 @@ namespace ndarray
 NDIndex::NDIndex()
 : m_ndim(0)
 {
-
+// empty //
 }
 
 //-----------------------------------------------------------------------------
 NDIndex::NDIndex(const Node& idx)
 : NDIndex(&idx)
 {
-    
+// empty //
 }
 
 //-----------------------------------------------------------------------------
@@ -102,7 +102,7 @@ NDIndex::NDIndex(const NDIndex& idx)
   m_offset_acc(idx.m_offset_acc),
   m_stride_acc(idx.m_stride_acc)
 {
-
+// empty //
 }
 
 //---------------------------------------------------------------------------//
