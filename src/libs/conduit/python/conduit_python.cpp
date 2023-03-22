@@ -9,6 +9,7 @@
 #include <Python.h>
 #include <structmember.h>
 #include "bytesobject.h"
+#include <string.h> // for strdup
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
