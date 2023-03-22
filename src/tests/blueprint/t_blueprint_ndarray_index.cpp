@@ -10,7 +10,7 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
-#include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_ndarray_index.hpp"
 
 // #include <algorithm>
 // #include <memory>
@@ -19,13 +19,18 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
-namespace meshutils = conduit::blueprint::mesh::utils;
+namespace ndarray = conduit::blueprint::ndarray;
 
 /// Index Tests ///
 
 //-----------------------------------------------------------------------------
-int calcFlatIndex(index_t x, index_t y, index_t z, const index_t dim,
-    const index_t* shape, const index_t* offset, const index_t* stride)
+int calcFlatIndex(index_t x,
+                  index_t y,
+                  index_t z,
+                  const index_t dim,
+                  const index_t* shape,
+                  const index_t* offset,
+                  const index_t* stride)
 {
     int retval = 0;
     retval += (offset[0] + x) * stride[0];
@@ -38,8 +43,10 @@ int calcFlatIndex(index_t x, index_t y, index_t z, const index_t dim,
 }
 
 //-----------------------------------------------------------------------------
-void verify2DCoords(meshutils::NDIndex idx,
-    const index_t* shape, const index_t* offset, const index_t* stride)
+void verify2DCoords(ndarray::NDIndex idx,
+                    const index_t* shape,
+                    const index_t* offset,
+                    const index_t* stride)
 {
     const int DUMMY = -1;
 
@@ -62,8 +69,10 @@ void verify2DCoords(meshutils::NDIndex idx,
 }
 
 //-----------------------------------------------------------------------------
-void verify3DCoords(meshutils::NDIndex idx,
-    const index_t* shape, const index_t* offset, const index_t* stride)
+void verify3DCoords(ndarray::NDIndex idx,
+                    const index_t* shape,
+                    const index_t* offset,
+                    const index_t* stride)
 {
     int dim = 3;
     EXPECT_EQ(idx.ndims(), dim);
@@ -86,7 +95,7 @@ void verify3DCoords(meshutils::NDIndex idx,
     EXPECT_EQ(idx.index(5, 2, 1), calcFlatIndex(5, 2, 1, dim, shape, offset, stride));
 }
 
-void verifyEquality(const meshutils::NDIndex& idx1, const meshutils::NDIndex& idx2)
+void verifyEquality(const ndarray::NDIndex& idx1, const ndarray::NDIndex& idx2)
 {
     ASSERT_EQ(idx1.ndims(), idx2.ndims());
 
@@ -100,12 +109,15 @@ void verifyEquality(const meshutils::NDIndex& idx1, const meshutils::NDIndex& id
     }
 }
 
-void verifyNodeCtors(Node& parms, const index_t dim,
-    const index_t* shape, const index_t* offset, const index_t* stride)
+void verifyNodeCtors(Node& parms,
+                     const index_t dim,
+                     const index_t* shape,
+                     const index_t* offset,
+                     const index_t* stride)
 {
     {
         SCOPED_TRACE("Node reference");
-        meshutils::NDIndex idx(parms);
+        ndarray::NDIndex idx(parms);
 
         Node info;
         idx.info(info);
@@ -114,7 +126,7 @@ void verifyNodeCtors(Node& parms, const index_t dim,
 
         {
             SCOPED_TRACE("Copy ctor of Node reference");
-            meshutils::NDIndex idx2(idx);
+            ndarray::NDIndex idx2(idx);
 
             verify3DCoords(idx2, shape, offset, stride);
         }
@@ -122,7 +134,7 @@ void verifyNodeCtors(Node& parms, const index_t dim,
 
     {
         SCOPED_TRACE("Node pointer");
-        meshutils::NDIndex idx(&parms);
+        ndarray::NDIndex idx(&parms);
 
         Node info;
         idx.info(info);
@@ -132,7 +144,7 @@ void verifyNodeCtors(Node& parms, const index_t dim,
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_index, copy_ctor)
+TEST(conduit_blueprint_ndarray_index, copy_ctor)
 {
     constexpr index_t dim = 3;
     constexpr index_t dx = 7;
@@ -150,14 +162,14 @@ TEST(conduit_blueprint_mesh_index, copy_ctor)
     shape[1] = dy;
     shape[2] = dz;
 
-    meshutils::NDIndex idx(parms);
-    meshutils::NDIndex idx2(idx);
+    ndarray::NDIndex idx(parms);
+    ndarray::NDIndex idx2(idx);
 
     verifyEquality(idx, idx2);
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_index, ctor_shape)
+TEST(conduit_blueprint_ndarray_index, ctor_shape)
 {
     constexpr index_t dim = 3;
     constexpr index_t dx = 7;
@@ -180,7 +192,7 @@ TEST(conduit_blueprint_mesh_index, ctor_shape)
     {
         SCOPED_TRACE("Pointer");
 
-        meshutils::NDIndex idx(dim, p_shape);
+        ndarray::NDIndex idx(dim, p_shape);
 
         Node info;
         idx.info(info);
@@ -190,7 +202,7 @@ TEST(conduit_blueprint_mesh_index, ctor_shape)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_index, ctor_shape_stride)
+TEST(conduit_blueprint_ndarray_index, ctor_shape_stride)
 {
     constexpr index_t dim = 3;
     constexpr index_t dx = 7;
@@ -221,14 +233,14 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_stride)
     {
         SCOPED_TRACE("Pointer");
 
-        meshutils::NDIndex idx(dim, p_shape, NULL, p_stride);
+        ndarray::NDIndex idx(dim, p_shape, NULL, p_stride);
 
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_index, ctor_shape_offset)
+TEST(conduit_blueprint_ndarray_index, ctor_shape_offset)
 {
     constexpr index_t dim = 3;
     constexpr index_t dx = 7;
@@ -259,14 +271,14 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_offset)
     {
         SCOPED_TRACE("Pointer");
 
-        meshutils::NDIndex idx(dim, p_shape, p_offset, NULL);
+        ndarray::NDIndex idx(dim, p_shape, p_offset, NULL);
 
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_index, ctor_shape_offset_stride)
+TEST(conduit_blueprint_ndarray_index, ctor_shape_offset_stride)
 {
     constexpr index_t dim = 3;
     constexpr index_t dx = 7;
@@ -305,14 +317,14 @@ TEST(conduit_blueprint_mesh_index, ctor_shape_offset_stride)
     {
         SCOPED_TRACE("Pointer");
 
-        meshutils::NDIndex idx(dim, p_shape, p_offset, p_stride);
+        ndarray::NDIndex idx(dim, p_shape, p_offset, p_stride);
 
         verify3DCoords(idx, p_shape, p_offset, p_stride);
     }
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_index, twoD)
+TEST(conduit_blueprint_ndarray_index, twoD)
 {
     constexpr index_t dim = 2;
     constexpr index_t dx = 7;
@@ -324,12 +336,12 @@ TEST(conduit_blueprint_mesh_index, twoD)
     const index_t p_offset[dim]{ ox, oy };
     const index_t p_stride[dim]{ 1, dx + ox };
 
-    meshutils::NDIndex idx(dim, p_shape, p_offset);
+    ndarray::NDIndex idx(dim, p_shape, p_offset);
 
     verify2DCoords(idx, p_shape, p_offset, p_stride);
 }
 
-TEST(conduit_blueprint_mesh_index, assignment)
+TEST(conduit_blueprint_ndarray_index, assignment)
 {
     // First make a 2D index, with pointers.  Verify it.  Make a copy.
     constexpr index_t dim2 = 2;
@@ -342,10 +354,10 @@ TEST(conduit_blueprint_mesh_index, assignment)
     const index_t p_offset2[dim2]{ ox2, oy2 };
     const index_t p_stride2[dim2]{ 1, dx2 + ox2 };
 
-    meshutils::NDIndex idxA(dim2, p_shape2, p_offset2);
+    ndarray::NDIndex idxA(dim2, p_shape2, p_offset2);
     verify2DCoords(idxA, p_shape2, p_offset2, p_stride2);
 
-    meshutils::NDIndex idxB(idxA);
+    ndarray::NDIndex idxB(idxA);
     verify2DCoords(idxB, p_shape2, p_offset2, p_stride2);
 
     // Then make a 3D index, with a node.  Verify that.
@@ -381,7 +393,7 @@ TEST(conduit_blueprint_mesh_index, assignment)
     stride[1] = sy;
     stride[2] = sz;
 
-    meshutils::NDIndex idxC(parms);
+    ndarray::NDIndex idxC(parms);
     verify3DCoords(idxC, p_shape, p_offset, p_stride);
 
     // Now assign the 3D index to the first 2D index.
