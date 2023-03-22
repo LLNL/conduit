@@ -1355,7 +1355,7 @@ private:
             index_t child_entity_id = ents.first[j];
             func(levels[level], localIdx);
             size_t nextLevel = level + 1;
-            if(nextLevel < static_cast<int>(levels.size()))
+            if(nextLevel < levels.size())
             {
                 iterate_global_map_levels(child_entity_id, levels, nextLevel,
                                           localIdx, func);
