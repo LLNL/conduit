@@ -8,16 +8,16 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 - Added public default and copy constructor to DataAccessor. Enables more flexibility with initializing DataAccessors from Nodes.
-
 #### General
 - Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
 - Added Node.as_index_t_ptr()
 - Added `conduit::execution` namespace, which contains `for_all()` and `sort()` functions.
 
 #### Blueprint
-- Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (supports moving domains and domain overloading)
+- Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (suppo
 - Added `conduit::blueprint::mesh::utils::NDIndex` class.  Instantiate with shape, offset, and stride in array or conduit::Node.  Get flatindex for N-D coordinates.
 - Added `conduit::blueprint::o2mrelation::O2MIndex` class.  Instantiate with O2M relation Node; get flatindex for a given one_index and many_index.  Alternative to Java-style iterator.
+- Added `conduit::blueprint::examples::mesh::rz_cylinder` function that generates example 2D cylindrical (RZ) meshes.
 
 ### Fixed
 #### Blueprint
@@ -33,6 +33,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Changed diff of string types to respect null terminated strings instead of described length
 - Improved diff_compatible of string types to look for substring match, to implement expected compatible semantics.
 
+#### Blueprint
+- Changed the recommended axis order for 2D cylindrical meshes to be `Z` as the first axis, and `R` as the second. This choice aligns with expected visualization cases where `Z` varies with the horizontal axis and `R` varies with the vertical axis.
 
 
 ## [0.8.6] - Released 2023-01-11
