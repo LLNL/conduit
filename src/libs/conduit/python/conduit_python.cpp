@@ -201,6 +201,7 @@ struct module_state {
     PyObject *error;
     #ifdef Py_LIMITED_API
     PyTypeObject* PyConduit_DataType_TYPE;
+    PyTypeObject* PyConduit_Generator_TYPE;
     #endif
 };
 
@@ -3526,6 +3527,25 @@ static PyMethodDef PyConduit_Generator_METHODS[] = {
 //---------------------------------------------------------------------------//
 
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_Generator_SLOTS[]  = {
+  {Py_tp_dealloc, (void*) PyConduit_Generator_dealloc},
+  {Py_tp_methods, (void*) PyConduit_Generator_METHODS},
+  {Py_tp_init,    (void*) PyConduit_Generator_init},
+  {Py_tp_new,     (void*) PyConduit_Generator_new},
+  {0,0},
+};
+
+static PyType_Spec PyConduit_Generator_SPEC = 
+{
+   "Generator",                                /* tp_name */
+   sizeof(PyConduit_Generator),                /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyConduit_Generator_SLOTS,                  /* tp_slots */
+};
+
+#else
 static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Generator",
@@ -3578,13 +3598,16 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
 static int
 PyConduit_Generator_Check(PyObject* obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_Generator_TYPE));
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Generator_TYPE);
+    return (PyObject_TypeCheck(obj, type));
 }
 
 
@@ -8243,6 +8266,7 @@ conduit_python_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(GETSTATE(m)->error);
     #ifdef Py_LIMITED_API
     Py_VISIT(GETSTATE(m)->PyConduit_DataType_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_Generator_TYPE);
     #endif
     return 0;
 }
@@ -8254,6 +8278,7 @@ conduit_python_clear(PyObject *m)
     Py_CLEAR(GETSTATE(m)->error);
     #ifdef Py_LIMITED_API
     Py_CLEAR(GETSTATE(m)->PyConduit_DataType_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_Generator_TYPE);
     #endif
     return 0;
 }
