@@ -192,6 +192,59 @@ PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// Module Code
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+struct module_state {
+    PyObject *error;
+};
+
+//---------------------------------------------------------------------------//
+#if defined(IS_PY3K)
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+//---------------------------------------------------------------------------//
+
+
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module. 
+// Ideally it should be aquired from the type each time using get_state_from_type 
+// But many functions like PyConduit_Node_Check don't have access to the type
+PyObject* GLOBAL_MODULE = NULL;
+
+static inline module_state *
+get_module_state()
+{
+    void *state = PyModule_GetState(GLOBAL_MODULE);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+static inline module_state *
+get_state_from_type(PyTypeObject *tp)
+{
+    void *state = PyType_GetModuleState(tp);
+    assert(state != NULL);
+    return (module_state*)state;
+}
+#endif                                                    
+
+
+#ifdef Py_LIMITED_API                            
+
+#define Set_PyTypeObject_Macro(type,NAME)                \
+module_state* state = get_module_state();  \
+assert(state != NULL);                                   \
+type = state->NAME 
+#else
+#define Set_PyTypeObject_Macro(type,NAME) type = (PyTypeObject*)&NAME                             
+#endif
+
 struct PyConduit_DataType
 {
     PyObject_HEAD
@@ -8153,24 +8206,6 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
 };
 
 
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-// Module Init Code
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-
-struct module_state {
-    PyObject *error;
-};
-
-//---------------------------------------------------------------------------//
-#if defined(IS_PY3K)
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-#else
-#define GETSTATE(m) (&_state)
-static struct module_state _state;
-#endif
-//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
@@ -8215,6 +8250,46 @@ static struct PyModuleDef conduit_python_module_def =
 #define PY_MODULE_INIT_RETURN_ERROR return NULL
 #else
 #define PY_MODULE_INIT_RETURN_ERROR return
+#endif
+
+//---------------------------------------------------------------------------//
+// This macro allows register a type whether we are using heap- or static-
+// allocated Python types
+//---------------------------------------------------------------------------//
+#define CONDUIT_SPEC_OBJECT(name) PyConduit_##name##_SPEC
+#define CONDUIT_TYPE_OBJECT(name) PyConduit_##name##_TYPE
+#define CONDUIT_STRINGIFY(x) #x
+#define CONDUIT_TOSTRING(x) CONDUIT_STRINGIFY(x)
+
+#ifdef Py_LIMITED_API
+
+#define ADD_TYPE(module, name)                                                                                  \
+do {                                                                                                            \
+    module_state* state = GETSTATE(module);                                                                     \
+    PyType_Spec* spec = &(CONDUIT_SPEC_OBJECT(name));                                                           \
+    state->CONDUIT_TYPE_OBJECT(name) = (PyTypeObject *)PyType_FromModuleAndSpec((PyObject*)module, spec, NULL); \
+    if (state->CONDUIT_TYPE_OBJECT(name) == NULL)                                                               \
+    {                                                                                                           \
+       PY_MODULE_INIT_RETURN_ERROR;                                                                             \
+    }                                                                                                           \
+    if (PyModule_AddType((PyObject*)module,state->CONDUIT_TYPE_OBJECT(name)) < 0)                               \
+    {                                                                                                           \
+       PY_MODULE_INIT_RETURN_ERROR;                                                                             \
+    }                                                                                                           \
+} while (0) 
+#else
+
+#define ADD_TYPE(module, name)                                      \
+do {                                                                \
+    if (PyType_Ready(&CONDUIT_TYPE_OBJECT(name)) < 0)               \
+    {                                                               \
+        PY_MODULE_INIT_RETURN_ERROR;                                \
+    }                                                               \
+    Py_INCREF(&CONDUIT_TYPE_OBJECT(name));                          \
+    PyModule_AddObject(module,                                      \
+                       CONDUIT_TOSTRING(name),                      \
+                       (PyObject*)&CONDUIT_TYPE_OBJECT(name))  ;    \
+} while (0) 
 #endif
 //---------------------------------------------------------------------------//
 
@@ -8262,92 +8337,12 @@ void CONDUIT_PYTHON_API initconduit_python(void)
     // init our custom types
     //-----------------------------------------------------------------------//
 
-    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Generator_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Endianness_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-
-    //-----------------------------------------------------------------------//
-    // add DataType
-    //-----------------------------------------------------------------------//
-    
-    Py_INCREF(&PyConduit_DataType_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "DataType",
-                       (PyObject*)&PyConduit_DataType_TYPE);
-    //-----------------------------------------------------------------------//
-    // add Schema
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Schema_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Schema",
-                       (PyObject*)&PyConduit_Schema_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Generator
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Generator_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Generator",
-                       (PyObject*)&PyConduit_Generator_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add NodeIterator
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_NodeIterator_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "NodeIterator",
-                       (PyObject*)&PyConduit_NodeIterator_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Node
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Node_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Node",
-                       (PyObject*)&PyConduit_Node_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Endianness
-    //-----------------------------------------------------------------------//
-
-
-    Py_INCREF(&PyConduit_Endianness_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Endianness",
-                       (PyObject*)&PyConduit_Endianness_TYPE);
-
-
+    ADD_TYPE(conduit_module, DataType);
+    ADD_TYPE(conduit_module, Schema);
+    ADD_TYPE(conduit_module, Generator);
+    ADD_TYPE(conduit_module, NodeIterator);
+    ADD_TYPE(conduit_module, Node);
+    ADD_TYPE(conduit_module, Endianness);
 
     static void *PyConduit_API[PyConduit_API_number_of_entries];
 
@@ -8367,10 +8362,19 @@ void CONDUIT_PYTHON_API initconduit_python(void)
 
     // req setup for numpy
     import_array();
+
+#ifdef Py_LIMITED_API
+    GLOBAL_MODULE = conduit_module;
+#endif
     
 #if defined(IS_PY3K)
     return conduit_module;
 #endif
 
 }
+#undef ADD_TYPE
+#undef CONDUIT_TYPE_OBJECT
+#undef CONDUIT_SPEC_OBJECT
+#undef CONDUIT_STRINGIFY
+#undef CONDUIT_TOSTRING
 
