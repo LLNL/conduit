@@ -30,7 +30,7 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 
 // access one-to-many index types
-namespace O2MIndex = conduit::blueprint::o2mrelation;
+namespace o2mrelation = conduit::blueprint::o2mrelation;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -1689,12 +1689,12 @@ topology::unstructured::points(const Node &n,
 
             index_t_accessor eidxs_vals = ntemp["elements/connectivity"].value();
             o2mrelation::O2MIterator eiter(ntemp["elements"]);
-            eiter.to(ei, O2MIndex::ONE);
-            eiter.to_front(O2MIndex::MANY);
-            while(eiter.has_next(O2MIndex::MANY))
+            eiter.to(ei, o2mrelation::ONE);
+            eiter.to_front(o2mrelation::MANY);
+            while(eiter.has_next(o2mrelation::MANY))
             {
-                eiter.next(O2MIndex::MANY);
-                const index_t tmp = eidxs_vals[eiter.index(O2MIndex::DATA)];
+                eiter.next(o2mrelation::MANY);
+                const index_t tmp = eidxs_vals[eiter.index(o2mrelation::DATA)];
                 eidxs.insert(tmp);
             }
         }
@@ -1703,12 +1703,12 @@ topology::unstructured::points(const Node &n,
         o2mrelation::O2MIterator piter(enode);
         for(const index_t eidx : eidxs)
         {
-            piter.to(eidx, O2MIndex::ONE);
-            piter.to_front(O2MIndex::MANY);
-            while(piter.has_next(O2MIndex::MANY))
+            piter.to(eidx, o2mrelation::ONE);
+            piter.to_front(o2mrelation::MANY);
+            while(piter.has_next(o2mrelation::MANY))
             {
-                piter.next(O2MIndex::MANY);
-                const index_t tmp = pidxs_vals[piter.index(O2MIndex::DATA)];
+                piter.next(o2mrelation::MANY);
+                const index_t tmp = pidxs_vals[piter.index(o2mrelation::DATA)];
                 pidxs.insert(tmp);
             }
         }

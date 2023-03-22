@@ -28,7 +28,7 @@ using namespace conduit;
 // access conduit blueprint mesh utilities
 namespace bputils = conduit::blueprint::mesh::utils;
 // access one-to-many index types
-namespace O2MIndex = conduit::blueprint::o2mrelation;
+namespace o2mrelation = conduit::blueprint::o2mrelation;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -173,7 +173,7 @@ to_silo(const conduit::Node &field,
         }
 
         blueprint::o2mrelation::O2MIterator mat_iter(mat_vfs);
-        matset_num_elems = mat_iter.elements(O2MIndex::ONE);
+        matset_num_elems = mat_iter.elements(o2mrelation::ONE);
     }
     const index_t mset_num_elems = matset_num_elems;
 
@@ -194,9 +194,9 @@ to_silo(const conduit::Node &field,
         }
 
         blueprint::o2mrelation::O2MIterator mat_iter(matset);
-        while(mat_iter.has_next(O2MIndex::DATA))
+        while(mat_iter.has_next(o2mrelation::DATA))
         {
-            const index_t elem_ind_index = mat_iter.next(O2MIndex::ONE);
+            const index_t elem_ind_index = mat_iter.next(o2mrelation::ONE);
 
             // -- get element id -- //
             // this is either "elem_ind_index" from the o2m, or
@@ -212,11 +212,11 @@ to_silo(const conduit::Node &field,
 
             // we now have the element index, find all material indicies
             // using the o2m-many iter
-            mat_iter.to_front(O2MIndex::MANY);
-            while(mat_iter.has_next(O2MIndex::MANY))
+            mat_iter.to_front(o2mrelation::MANY);
+            while(mat_iter.has_next(o2mrelation::MANY))
             {
-                mat_iter.next(O2MIndex::MANY);
-                const index_t mat_ind_index = mat_iter.index(O2MIndex::DATA);
+                mat_iter.next(o2mrelation::MANY);
+                const index_t mat_ind_index = mat_iter.index(o2mrelation::DATA);
 
                 // this index now allows us to fetch the
                 //  vol frac
