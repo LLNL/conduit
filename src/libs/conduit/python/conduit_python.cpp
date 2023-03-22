@@ -203,6 +203,7 @@ struct module_state {
     PyTypeObject* PyConduit_DataType_TYPE;
     PyTypeObject* PyConduit_Generator_TYPE;
     PyTypeObject* PyConduit_Schema_TYPE;
+    PyTypeObject* PyConduit_NodeIterator_TYPE;
     #endif
 };
 
@@ -4998,7 +4999,28 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_NodeIterator_SLOTS[]  = {
+  {Py_tp_dealloc,  (void*) PyConduit_NodeIterator_dealloc},
+  {Py_tp_methods,  (void*) PyConduit_NodeIterator_METHODS},
+  {Py_tp_init,     (void*) PyConduit_NodeIterator_init},
+  {Py_tp_new,      (void*) PyConduit_NodeIterator_new},
+  {Py_tp_str,      (void*) PyConduit_NodeIterator_str},
+  {Py_tp_iter,     (void*) PyConduit_NodeIterator_iter},
+  {Py_tp_iternext, (void*) PyConduit_NodeIterator_iternext},
+  {0,0},
+};
 
+static PyType_Spec PyConduit_NodeIterator_SPEC = 
+{
+   "NodeIterator",                             /* tp_name */
+   sizeof(PyConduit_NodeIterator),             /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyConduit_NodeIterator_SLOTS,               /* tp_slots */
+};
+
+#else
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Iterator",
@@ -5051,13 +5073,15 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
 static PyConduit_NodeIterator *
 PyConduit_NodeIterator_Python_Create()
 {
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_NodeIterator_TYPE;
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_NodeIterator_TYPE);
     return (PyConduit_NodeIterator*)PyType_GenericAlloc(type,0);
 }
 
@@ -8298,6 +8322,7 @@ conduit_python_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(GETSTATE(m)->PyConduit_DataType_TYPE);
     Py_VISIT(GETSTATE(m)->PyConduit_Generator_TYPE);
     Py_VISIT(GETSTATE(m)->PyConduit_Schema_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_NodeIterator_TYPE);
     #endif
     return 0;
 }
@@ -8311,6 +8336,7 @@ conduit_python_clear(PyObject *m)
     Py_CLEAR(GETSTATE(m)->PyConduit_DataType_TYPE);
     Py_CLEAR(GETSTATE(m)->PyConduit_Generator_TYPE);
     Py_CLEAR(GETSTATE(m)->PyConduit_Schema_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_NodeIterator_TYPE);
     #endif
     return 0;
 }
