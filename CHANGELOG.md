@@ -4,14 +4,16 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.8.7] - Released 2023-03-23
 
 ### Added
-- Added public default and copy constructor to DataAccessor. Enables more flexibility with initializing DataAccessors from Nodes.
+
 #### General
+- Added public default and copy constructor to DataAccessor. Enables more flexibility with initializing DataAccessors from Nodes.
 - Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
 - Added Node.as_index_t_ptr()
 - Added `conduit::execution` namespace, which contains `for_all()` and `sort()` functions.
+- Added DataType support to the Fortran API
 
 #### Blueprint
 - Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (suppo
@@ -20,6 +22,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `conduit::blueprint::examples::mesh::rz_cylinder` function that generates example 2D cylindrical (RZ) meshes.
 
 ### Fixed
+#### General
+- Fixed a logic issue undermining C++ type mapping when using CMake 3.26.
+
 #### Blueprint
 - Performance improvements to Mesh Blueprint topology metadata, used by `generate_points`, `generate_sides`, etc. The class was rewritten and the old one was moved to `conduit::blueprint::mesh::utils::reference::TopologyMetadata`. The new implementation is faster, often about 6-20x depending on options.
 - Performance improvements to O2M Iterators.
