@@ -205,6 +205,7 @@ struct module_state {
     PyTypeObject* PyConduit_Schema_TYPE;
     PyTypeObject* PyConduit_NodeIterator_TYPE;
     PyTypeObject* PyConduit_Node_TYPE;
+    PyTypeObject* PyConduit_Endianness_TYPE;
     #endif
 };
 
@@ -8281,7 +8282,22 @@ static PyMethodDef PyConduit_Endianness_METHODS[] =
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_Endianness_SLOTS[]  = {
+  {Py_tp_methods,        (void*) PyConduit_Endianness_METHODS},
+  {0,0},
+};
 
+static PyType_Spec PyConduit_Endianness_SPEC = 
+{
+   "Endianness",               /* tp_name */
+   0,                          /* tp_basicsize */
+   0,                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT,         /* tp_flags */
+   PyConduit_Endianness_SLOTS, /* tp_slots */
+};
+
+#else
 static PyTypeObject PyConduit_Endianness_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Endianness",
@@ -8334,6 +8350,7 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 
@@ -8352,6 +8369,7 @@ conduit_python_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(GETSTATE(m)->PyConduit_Schema_TYPE);
     Py_VISIT(GETSTATE(m)->PyConduit_NodeIterator_TYPE);
     Py_VISIT(GETSTATE(m)->PyConduit_Node_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_Endianness_TYPE);
     #endif
     return 0;
 }
@@ -8366,7 +8384,7 @@ conduit_python_clear(PyObject *m)
     Py_CLEAR(GETSTATE(m)->PyConduit_Generator_TYPE);
     Py_CLEAR(GETSTATE(m)->PyConduit_Schema_TYPE);
     Py_CLEAR(GETSTATE(m)->PyConduit_NodeIterator_TYPE);
-    Py_CLEAR(GETSTATE(m)->PyConduit_Node_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_Endianness_TYPE);
     #endif
     return 0;
 }
