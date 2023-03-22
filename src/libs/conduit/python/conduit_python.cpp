@@ -202,6 +202,7 @@ struct module_state {
     #ifdef Py_LIMITED_API
     PyTypeObject* PyConduit_DataType_TYPE;
     PyTypeObject* PyConduit_Generator_TYPE;
+    PyTypeObject* PyConduit_Schema_TYPE;
     #endif
 };
 
@@ -4594,15 +4595,41 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
 };
 
 //---------------------------------------------------------------------------//
+#ifndef Py_LIMITED_API
+// The limited API does not include PyMappingMethods,
+// The corresponding slots are set directly in _SLOTS
 static PyMappingMethods PyConduit_Schema_as_mapping = {
    (lenfunc)0,    // len operator is not supported
    (binaryfunc)PyConduit_Schema_get_item,
    (objobjargproc)PyConduit_Schema_set_item
 };
+#endif
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_Schema_SLOTS[]  = {
+  {Py_tp_dealloc, (void*) PyConduit_Schema_dealloc},
+  {Py_tp_methods, (void*) PyConduit_Schema_METHODS},
+  {Py_tp_init,    (void*) PyConduit_Schema_init},
+  {Py_tp_new,     (void*) PyConduit_Schema_new},
+  {Py_tp_str,     (void*) PyConduit_Schema_str},
+  {Py_mp_subscript, (void*) PyConduit_Schema_get_item},
+  {Py_mp_ass_subscript, (void*) PyConduit_Schema_set_item},
+  {0,0},
+};
+
+static PyType_Spec PyConduit_Schema_SPEC = 
+{
+   "Schema",                                   /* tp_name */
+   sizeof(PyConduit_Schema),                   /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyConduit_Schema_SLOTS,                     /* tp_slots */
+};
+
+#else
 
 static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -4656,6 +4683,7 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
@@ -7355,7 +7383,9 @@ static PyMethodDef conduit_python_funcs[] =
 static int
 PyConduit_Schema_Check(PyObject* obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_Schema_TYPE));
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Schema_TYPE);
+    return (PyObject_TypeCheck(obj, type));
 }
 
 
@@ -7363,8 +7393,8 @@ PyConduit_Schema_Check(PyObject* obj)
 static PyObject *
 PyConduit_Schema_Python_Wrap(Schema *schema, int python_owns)
 {
-    PyTypeObject *type = (PyTypeObject*)&PyConduit_Schema_TYPE;
-
+    PyTypeObject *type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Schema_TYPE);
     PyConduit_Schema *retval = (PyConduit_Schema*)PyType_GenericAlloc(type,0);
     retval->schema = schema;
     retval->python_owns = python_owns;
@@ -8267,6 +8297,7 @@ conduit_python_traverse(PyObject *m, visitproc visit, void *arg)
     #ifdef Py_LIMITED_API
     Py_VISIT(GETSTATE(m)->PyConduit_DataType_TYPE);
     Py_VISIT(GETSTATE(m)->PyConduit_Generator_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_Schema_TYPE);
     #endif
     return 0;
 }
@@ -8279,6 +8310,7 @@ conduit_python_clear(PyObject *m)
     #ifdef Py_LIMITED_API
     Py_CLEAR(GETSTATE(m)->PyConduit_DataType_TYPE);
     Py_CLEAR(GETSTATE(m)->PyConduit_Generator_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_Schema_TYPE);
     #endif
     return 0;
 }
