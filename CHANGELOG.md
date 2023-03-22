@@ -4,7 +4,7 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased 
+## Unreleased
 
 ### Added
 - Added public default and copy constructor to DataAccessor. Enables more flexibility with initializing DataAccessors from Nodes.
@@ -14,7 +14,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `conduit::execution` namespace, which contains `for_all()` and `sort()` functions.
 
 #### Blueprint
-- Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (supports moving domains and domain overloading)
+- Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (suppo
+- Added `conduit::blueprint::mesh::utils::NDIndex` class.  Instantiate with shape, offset, and stride in array or conduit::Node.  Get flatindex for N-D coordinates.
+- Added `conduit::blueprint::o2mrelation::O2MIndex` class.  Instantiate with O2M relation Node; get flatindex for a given one_index and many_index.  Alternative to Java-style iterator.
 - Added `conduit::blueprint::examples::mesh::rz_cylinder` function that generates example 2D cylindrical (RZ) meshes.
 
 ### Fixed
@@ -29,7 +31,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 #### General
 - Changed diff of string types to respect null terminated strings instead of described length
-- Improved diff_compatible of string types to look for substring match, to implement expected compatible semantics. 
+- Improved diff_compatible of string types to look for substring match, to implement expected compatible semantics.
 
 #### Blueprint
 - Changed the recommended axis order for 2D cylindrical meshes to be `Z` as the first axis, and `R` as the second. This choice aligns with expected visualization cases where `Z` varies with the horizontal axis and `R` varies with the vertical axis.
