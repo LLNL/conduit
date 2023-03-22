@@ -314,10 +314,11 @@ public:
     template<typename T>
     index_t     index(T idx) const;
 
-    /// With default argument, returns the number of ranks or dimensions for
-    /// this NDIndex.  With dim >= 0, returns the extent of this NDIndex
-    /// for dimension dim.
-    index_t     shape(index_t dim = -1) const;
+    /// Returns the number of dimensions
+    index_t     ndims() const;
+
+    /// Returns the extent of this NDIndex for dimension dim.
+    index_t     shape(index_t dim) const;
 
     /// Returns the logical index in dimension dim where the data starts.
     index_t     offset(index_t dim) const;
@@ -369,16 +370,7 @@ inline
 index_t
 NDIndex::shape(index_t dim) const
 {
-    int retval = 0;
-    if (dim < 0)
-    {
-        retval = m_dim;
-    }
-    else
-    {
-        retval = m_shape_acc[dim];
-    }
-    return retval;
+    return m_shape_acc[dim];
 }
 
 inline
@@ -408,6 +400,12 @@ NDIndex::stride(index_t dim) const
     return m_stride_acc[dim];
 }
 
+inline
+index_t
+NDIndex::ndims() const
+{
+    return m_dim;
+}
 
 
 //-----------------------------------------------------------------------------

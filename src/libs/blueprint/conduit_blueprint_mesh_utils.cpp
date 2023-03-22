@@ -416,7 +416,7 @@ NDIndex::operator=(const NDIndex& idx)
 
 void NDIndex::info(Node& res) const
 {
-    index_t dim = shape();
+    index_t dim = ndims();
     res["shape"].set(DataType::index_t(dim));
     res["offset"].set(DataType::index_t(dim));
     res["stride"].set(DataType::index_t(dim));

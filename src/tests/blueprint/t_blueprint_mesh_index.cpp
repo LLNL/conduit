@@ -44,7 +44,7 @@ void verify2DCoords(meshutils::NDIndex idx,
     const int DUMMY = -1;
 
     int dim = 2;
-    EXPECT_EQ(idx.shape(-1), dim);
+    EXPECT_EQ(idx.ndims(), dim);
     EXPECT_EQ(idx.shape(0), shape[0]);
     EXPECT_EQ(idx.shape(1), shape[1]);
 
@@ -66,7 +66,7 @@ void verify3DCoords(meshutils::NDIndex idx,
     const index_t* shape, const index_t* offset, const index_t* stride)
 {
     int dim = 3;
-    EXPECT_EQ(idx.shape(-1), dim);
+    EXPECT_EQ(idx.ndims(), dim);
     EXPECT_EQ(idx.shape(0), shape[0]);
     EXPECT_EQ(idx.shape(1), shape[1]);
     EXPECT_EQ(idx.shape(2), shape[2]);
@@ -88,9 +88,9 @@ void verify3DCoords(meshutils::NDIndex idx,
 
 void verifyEquality(const meshutils::NDIndex& idx1, const meshutils::NDIndex& idx2)
 {
-    ASSERT_EQ(idx1.shape(-1), idx2.shape(-1));
+    ASSERT_EQ(idx1.ndims(), idx2.ndims());
 
-    index_t dim = idx1.shape(-1);
+    index_t dim = idx1.ndims();
 
     for (index_t d = 0; d < dim; ++d)
     {
