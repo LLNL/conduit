@@ -199,6 +199,9 @@ PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
 
 struct module_state {
     PyObject *error;
+    #ifdef Py_LIMITED_API
+    PyTypeObject* PyConduit_DataType_TYPE;
+    #endif
 };
 
 //---------------------------------------------------------------------------//
@@ -3222,7 +3225,25 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_DataType_SLOTS[]  = {
+  {Py_tp_dealloc, (void*) PyConduit_DataType_dealloc},
+  {Py_tp_str,     (void*) PyConduit_DataType_str},
+  {Py_tp_methods, (void*) PyConduit_DataType_METHODS},
+  {Py_tp_init,    (void*) PyConduit_DataType_init},
+  {Py_tp_new,     (void*) PyConduit_DataType_new},
+  {0,0},
+};
 
+static PyType_Spec PyConduit_DataType_SPEC = 
+{
+   "DataType",                                /* tp_name */
+   sizeof(PyConduit_DataType),                /* tp_basicsize */
+   0,                                         /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
+   PyConduit_DataType_SLOTS,                  /* tp_slots */
+};
+#else
 static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "DataType",
@@ -3276,12 +3297,14 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_TAIL
 };
 
+#endif
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *
 PyConduit_DataType_Python_Create()
 {
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_DataType_TYPE;
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type,PyConduit_DataType_TYPE);
     return (PyConduit_DataType*)PyType_GenericAlloc(type,0);
 }
 
@@ -3289,7 +3312,9 @@ PyConduit_DataType_Python_Create()
 static int
 PyConduit_DataType_Check(PyObject *obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_DataType_TYPE));
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type,PyConduit_DataType_TYPE);
+    return (PyObject_TypeCheck(obj, type));
 }
 
 
@@ -8216,6 +8241,9 @@ static int
 conduit_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_VISIT(GETSTATE(m)->PyConduit_DataType_TYPE);
+    #endif
     return 0;
 }
 
@@ -8224,6 +8252,9 @@ static int
 conduit_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_CLEAR(GETSTATE(m)->PyConduit_DataType_TYPE);
+    #endif
     return 0;
 }
 
