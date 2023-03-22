@@ -75,7 +75,7 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
     * coordsets/coords/type: “uniform”
     * coordsets/coords/dims/{i,j}
     * coordsets/coords/origin/{z,r} (optional, default = {0.0, 0.0})
-    * coordsets/coords/spacing/{dr,dz} (optional, default = {1.0, 1.0})
+    * coordsets/coords/spacing/{dz,dr} (optional, default = {1.0, 1.0})
 
 
   * Spherical
