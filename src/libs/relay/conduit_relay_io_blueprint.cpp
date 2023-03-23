@@ -2073,6 +2073,12 @@ void read_mesh(const std::string &root_file_path,
                                                     0,
                                                     mpi_comm);
     }
+#else
+    // non MPI case, throw error
+    if(error == 1)
+    {
+        CONDUIT_ERROR(error_oss.str());
+    }
 #endif
 
     // make sure we have a valid bp index
