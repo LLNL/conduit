@@ -2039,8 +2039,8 @@ braid_mixed_2d(const int32 npts_x,
     1,
     res["coordsets/coords"]);
 
-  const int32 nele_x = npts_x - 1;
-  const int32 nele_y = npts_y - 1;
+  const index_t nele_x = npts_x - 1;
+  const index_t nele_y = npts_y - 1;
 
   res["topologies/mesh/type"] = "unstructured";
   res["topologies/mesh/coordset"] = "coords";
@@ -2056,10 +2056,10 @@ braid_mixed_2d(const int32 npts_x,
    *   |/--|---|/--|---|/--|>>>
    */
 
-  const int32 nele_x2 = nele_x / 2;
-  const int32 nquads = nele_y * nele_x2;
-  const int32 ntris = nele_y * 2 * (nele_x2 + nele_x % 2);
-  const int32 nele = nquads + ntris;
+  const index_t nele_x2 = nele_x / 2;
+  const index_t nquads = nele_y * nele_x2;
+  const index_t ntris = nele_y * 2 * (nele_x2 + nele_x % 2);
+  const index_t nele = nquads + ntris;
 
   Node &elements = res["topologies/mesh/elements"];
   elements["shapes"].set(DataType::int32(nele));
@@ -2073,11 +2073,11 @@ braid_mixed_2d(const int32 npts_x,
   offsets[0] = 0;
   int32 *connectivity = elements["connectivity"].value();
 
-  size_t idx_elem(0);
-  size_t idx(0);
-  for(int32 j = 0; j < nele_y ; ++j)
+  index_t idx_elem(0);
+  index_t idx(0);
+  for(index_t j = 0; j < nele_y ; ++j)
   {
-    for(int32 i = 0; i < nele_x; ++i)
+    for(index_t i = 0; i < nele_x; ++i)
     {
       if (i%2==0)
       {

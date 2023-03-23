@@ -1355,7 +1355,7 @@ private:
             index_t child_entity_id = ents.first[j];
             func(levels[level], localIdx);
             size_t nextLevel = level + 1;
-            if(nextLevel < static_cast<int>(levels.size()))
+            if(nextLevel < levels.size())
             {
                 iterate_global_map_levels(child_entity_id, levels, nextLevel,
                                           localIdx, func);
@@ -3257,7 +3257,7 @@ TopologyMetadata::Implementation::to_json() const
 {
     conduit::Node rep;
     make_node(rep);
-    return std::move(rep.to_json());
+    return rep.to_json();
 }
 
 //---------------------------------------------------------------------------
@@ -3494,7 +3494,7 @@ TopologyMetadata::make_node(conduit::Node &rep) const
 std::string
 TopologyMetadata::to_json() const
 {
-    return std::move(impl->to_json());
+    return impl->to_json();
 }
 
 //---------------------------------------------------------------------------

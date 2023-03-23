@@ -30,7 +30,7 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 
 // access one-to-many index types
-namespace O2MIndex = conduit::blueprint::o2mrelation;
+namespace o2mrelation = conduit::blueprint::o2mrelation;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -340,116 +340,6 @@ find_domain_id(const Node &node)
     }
 
     return domain_id;
-}
-
-
-//-----------------------------------------------------------------------------
-NDIndex::NDIndex(const Node& idx) :
-    NDIndex(&idx)
-{ }
-
-//-----------------------------------------------------------------------------
-NDIndex::NDIndex(const Node* idx) :
-    m_dim(0)
-{
-    // TODO: error if idx has no child "shape"
-    // TODO: error if shape, offset, and stride differ in length
-
-    if (idx->has_child("shape"))
-    {
-        m_shape_acc = (*idx)["shape"].as_index_t_accessor();
-        m_dim = m_shape_acc.number_of_elements();
-    }
-
-    if (idx->has_child("offset"))
-    {
-        m_offset_acc = (*idx)["offset"].as_index_t_accessor();
-    }
-
-    if (idx->has_child("stride"))
-    {
-        m_stride_acc = (*idx)["stride"].as_index_t_accessor();
-    }
-}
-
-//---------------------------------------------------------------------------//
-NDIndex::NDIndex(const index_t dim, const index_t* shape, const index_t* offset, const index_t* stride) :
-    m_dim(dim)
-{
-    // TODO Error if dim < 1
-    // TODO Error if shape is NULL
-
-    m_shape_acc = index_t_accessor(shape, DataType::index_t(dim));
-
-    if (offset)
-    {
-        m_offset_acc = index_t_accessor(offset, DataType::index_t(dim));
-    }
-
-    if (stride)
-    {
-        m_stride_acc = index_t_accessor(stride, DataType::index_t(dim));
-    }
-}
-
-//---------------------------------------------------------------------------//
-NDIndex::NDIndex(const NDIndex& idx) :
-    m_dim(idx.m_dim),
-    m_shape_acc(idx.m_shape_acc),
-    m_offset_acc(idx.m_offset_acc),
-    m_stride_acc(idx.m_stride_acc)
-{ }
-
-//---------------------------------------------------------------------------//
-NDIndex&
-NDIndex::operator=(const NDIndex& idx)
-{
-    if (this != &idx)
-    {
-        this->m_shape_acc = idx.m_shape_acc;
-        this->m_offset_acc = idx.m_offset_acc;
-        this->m_stride_acc = idx.m_stride_acc;
-        this->m_dim = idx.m_dim;
-    }
-    return *this;
-}
-
-void NDIndex::info(Node& res) const
-{
-    index_t dim = ndims();
-    res["shape"].set(DataType::index_t(dim));
-    res["offset"].set(DataType::index_t(dim));
-    res["stride"].set(DataType::index_t(dim));
-
-    index_t* p_shape = res["shape"].as_index_t_ptr();
-    index_t* p_offset = res["offset"].as_index_t_ptr();
-    index_t* p_stride = res["stride"].as_index_t_ptr();
-    for (index_t d = 0; d < dim; ++d)
-    {
-        p_shape[d] = shape(d);
-        p_offset[d] = offset(d);
-        p_stride[d] = stride(d);
-    }
-
-    // shape is always required, so we don't report user_provided/shape
-
-    if (m_offset_acc.number_of_elements() < 1)
-    {
-        res["user_provided/offset"] = "false";
-    }
-    else
-    {
-        res["user_provided/offset"] = "true";
-    }
-
-    if (m_stride_acc.number_of_elements() < 1)
-    {
-        res["user_provided/stride"] = "false";
-    }
-    else
-    {
-        res["user_provided/stride"] = "true";
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1799,12 +1689,12 @@ topology::unstructured::points(const Node &n,
 
             index_t_accessor eidxs_vals = ntemp["elements/connectivity"].value();
             o2mrelation::O2MIterator eiter(ntemp["elements"]);
-            eiter.to(ei, O2MIndex::ONE);
-            eiter.to_front(O2MIndex::MANY);
-            while(eiter.has_next(O2MIndex::MANY))
+            eiter.to(ei, o2mrelation::ONE);
+            eiter.to_front(o2mrelation::MANY);
+            while(eiter.has_next(o2mrelation::MANY))
             {
-                eiter.next(O2MIndex::MANY);
-                const index_t tmp = eidxs_vals[eiter.index(O2MIndex::DATA)];
+                eiter.next(o2mrelation::MANY);
+                const index_t tmp = eidxs_vals[eiter.index(o2mrelation::DATA)];
                 eidxs.insert(tmp);
             }
         }
@@ -1813,12 +1703,12 @@ topology::unstructured::points(const Node &n,
         o2mrelation::O2MIterator piter(enode);
         for(const index_t eidx : eidxs)
         {
-            piter.to(eidx, O2MIndex::ONE);
-            piter.to_front(O2MIndex::MANY);
-            while(piter.has_next(O2MIndex::MANY))
+            piter.to(eidx, o2mrelation::ONE);
+            piter.to_front(o2mrelation::MANY);
+            while(piter.has_next(o2mrelation::MANY))
             {
-                piter.next(O2MIndex::MANY);
-                const index_t tmp = pidxs_vals[piter.index(O2MIndex::DATA)];
+                piter.next(o2mrelation::MANY);
+                const index_t tmp = pidxs_vals[piter.index(o2mrelation::DATA)];
                 pidxs.insert(tmp);
             }
         }

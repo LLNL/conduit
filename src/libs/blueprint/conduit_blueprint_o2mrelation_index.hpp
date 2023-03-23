@@ -58,6 +58,9 @@ public:
 //-----------------------------------------------------------------------------
 /// O2MIndex Construction and Destruction
 //-----------------------------------------------------------------------------
+    /// Default constructor.
+    O2MIndex();
+
     /// Copy constructor.
     O2MIndex(const O2MIndex &idx);
 

@@ -81,7 +81,7 @@ struct ffloat64
 // access conduit blueprint mesh utilities
 namespace bputils = conduit::blueprint::mesh::utils;
 // access one-to-many index types
-namespace O2MIndex = conduit::blueprint::o2mrelation;
+namespace o2mrelation = conduit::blueprint::o2mrelation;
 
 // typedefs for verbose but commonly used types
 typedef std::tuple<conduit::Node*, conduit::Node*, conduit::Node*> DomMapsTuple;

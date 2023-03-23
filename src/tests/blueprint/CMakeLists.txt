@@ -14,10 +14,10 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mcarray_examples
                     t_blueprint_o2mrelation_verify
                     t_blueprint_o2mrelation_examples
+                    t_blueprint_ndarray_index
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_transform
                     t_blueprint_mesh_partition
-                    t_blueprint_mesh_index
                     t_blueprint_mesh_query
                     t_blueprint_mesh_relay
                     t_blueprint_mesh_generate

@@ -27,6 +27,8 @@
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_blueprint_o2mrelation_index.hpp"
 
+#include "conduit_blueprint_ndarray_index.hpp"
+
 #include "conduit_blueprint_mcarray.hpp"
 #include "conduit_blueprint_mcarray_examples.hpp"
 

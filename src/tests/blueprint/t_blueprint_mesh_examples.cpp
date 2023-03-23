@@ -1532,13 +1532,13 @@ TEST(conduit_blueprint_mesh_examples, rz_cylinder)
                                                                   res),
                   conduit::Error);
 
-    EXPECT_THROW( conduit::blueprint::mesh::examples::rz_cylinder("garbage",
+    EXPECT_THROW( conduit::blueprint::mesh::examples::rz_cylinder("uniform",
                                                                   0,
                                                                   0,
                                                                   res),
                   conduit::Error);
 
-    EXPECT_THROW( conduit::blueprint::mesh::examples::rz_cylinder("garbage",
+    EXPECT_THROW( conduit::blueprint::mesh::examples::rz_cylinder("uniform",
                                                                   -1,
                                                                   10,
                                                                   res),

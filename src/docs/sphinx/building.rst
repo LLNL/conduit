@@ -188,14 +188,6 @@ To handle build options, third party library paths, etc we rely on CMake's initi
 
 We call these initial-cache files *host-config* files, since we typically create a file for each platform or specific hosts if necessary. 
 
-The ``config-build.sh`` script uses your machine's hostname, the SYS_TYPE environment variable, and your platform name (via *uname*) to look for an existing host config file in the ``host-configs`` directory at the root of the conduit repo. If found, it passes the host config file to CMake via the `-C` command line option.
-
-.. code:: bash
-    
-    cmake {other options} -C host-configs/{config_file}.cmake ../
-
-
-You can find example files in the ``host-configs`` directory. 
 
 These files use standard CMake commands. To properly seed the cache, CMake *set* commands need to specify ``CACHE`` as follows:
 

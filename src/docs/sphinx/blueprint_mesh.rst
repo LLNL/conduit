@@ -389,7 +389,7 @@ The following diagram illustrates a simple **polyhedral** topology:
 
 
 Mixed topologies with shapes/shape_map
-++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++
 
 The schema for a **mixed** shapes topology is as follows:
 
@@ -1708,11 +1708,11 @@ them in ``<`` and ``>`` characters. An example expressions entry in the index is
       {
         "braid":
         {
-          ...
+          // ...
         },
         "radial":
         {
-          ...
+          // ...
         },
       "expressions":
       {
@@ -1728,6 +1728,7 @@ them in ``<`` and ``>`` characters. An example expressions entry in the index is
           "topology": "mesh",
           "definition": "{<braid>,recenter(<radial>,\"nodal\")}"
         }
+      }
       }
 
 .. Properties and Transforms
