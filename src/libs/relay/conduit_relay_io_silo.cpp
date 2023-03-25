@@ -710,6 +710,8 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     mesh_domain["topologies"][name]["coordset"] = name;
 
+    // TODO this should just be i,j,k, get rid of all i0, j0, and k0
+
     // use the first set when dealing with rectilinear, the second set for structured
     std::string origin_accessors[] = {"i", "j", "k", "i0", "j0", "k0"};
     int start_index = (coordtype == DB_COLLINEAR ? 0 : 3);
@@ -1359,7 +1361,7 @@ read_mesh(const std::string &root_file_path,
         mesh_index["nameschemes"].as_string() == "yes")
     {
         nameschemes = true;
-        CONDUIT_ERROR("WRONG CHOICE BUCKAROO");
+        CONDUIT_ERROR("TODO no support for nameschemes yet");
     }
     
     // read all domains for given mesh
@@ -2358,9 +2360,9 @@ void silo_write_structured_mesh(DBfile *dbfile,
     int base_index[] = {0,0,0};
     if (n_topo.has_path("elements/origin"))
     {
-        base_index[0] = n_topo["elements/origin/i0"].as_int();
-        base_index[1] = n_topo["elements/origin/j0"].as_int();
-        base_index[2] = n_topo["elements/origin/k0"].as_int();
+        base_index[0] = n_topo["elements/origin/i"].as_int();
+        base_index[1] = n_topo["elements/origin/j"].as_int();
+        base_index[2] = n_topo["elements/origin/k"].as_int();
 
         CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                               DBOPT_BASEINDEX,

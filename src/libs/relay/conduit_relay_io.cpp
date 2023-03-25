@@ -394,15 +394,6 @@ save(const Node &node,
                       "Failed to save conduit node to path " << path);
 #endif
     }
-    else if(protocol == "conduit_silo_mesh")
-    {
-#ifdef CONDUIT_RELAY_IO_SILO_ENABLED
-        silo_mesh_write(node,path);
-#else
-        CONDUIT_ERROR("conduit_relay lacks Silo support: " <<
-                      "Failed to save conduit mesh node to path " << path);
-#endif
-    }
     else if( protocol == "adios")
     {
 #ifdef CONDUIT_RELAY_IO_ADIOS_ENABLED
