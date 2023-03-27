@@ -1112,30 +1112,30 @@ read_mesh(const std::string &root_file_path,
 }
 
 //-----------------------------------------------------------------------------
-// TODO change name
 bool
-read_silo_stuff(const std::string &root_file_path,
-                const Node &opts,
-                Node &root_node,
-                std::string &mesh_name, // output
-                std::ostringstream &error_oss) // output
+read_root_silo_index(const std::string &root_file_path,
+                     const Node &opts,
+                     Node &root_node, // output
+                     std::string &multimesh_name, // output
+                     std::ostringstream &error_oss) // output
 {
     // clear output vars
     root_node.reset();
-    mesh_name = "";
+    multimesh_name = "";
     error_oss.str("");
 
+    // open silo file
     detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
         DBOpen(root_file_path.c_str(), DB_UNKNOWN, DB_READ), 
         &DBClose, 
         "Error closing Silo file: " + root_file_path};
-
     if (! dbfile.getSiloObject())
     {
         error_oss << "Error opening Silo file for reading: " << root_file_path;
         return false;
     }
 
+    // get table of contents
     DBtoc *toc = DBGetToc(dbfile.getSiloObject()); // shouldn't be free'd
     // get the multimesh
     if (toc->nmultimesh <= 0)
@@ -1144,63 +1144,66 @@ read_silo_stuff(const std::string &root_file_path,
         return false;
     }
 
+    // decide what multimesh to extract
     if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
     {
-        mesh_name = opts["mesh_name"].as_string();
+        multimesh_name = opts["mesh_name"].as_string();
     }
 
-    if (mesh_name.empty())
+    if (multimesh_name.empty())
     {
-        mesh_name = toc->multimesh_names[0];
+        multimesh_name = toc->multimesh_names[0];
     }
-
-    bool found = false;
-    for (int i = 0; i < toc->nmultimesh; i ++)
+    else
     {
-        if (toc->multimesh_names[i] == mesh_name)
+        bool found = false;
+        for (int i = 0; i < toc->nmultimesh; i ++)
         {
-            found = true;
-            break;
+            if (toc->multimesh_names[i] == multimesh_name)
+            {
+                found = true;
+                break;
+            }
         }
-    }
-    if (!found)
-    {
-        error_oss << "No multimesh found matching " << mesh_name;
-        return false;
-    }
+        if (!found)
+        {
+            error_oss << "No multimesh found matching " << multimesh_name;
+            return false;
+        }
+    }    
 
+    // extract the multimesh
     detail::SiloObjectWrapper<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{
-        DBGetMultimesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        DBGetMultimesh(dbfile.getSiloObject(), multimesh_name.c_str()), 
         &DBFreeMultimesh};
-
     if (! multimesh.getSiloObject())
     {
-        error_oss << "Error opening multimesh " << mesh_name;
+        error_oss << "Error opening multimesh " << multimesh_name;
         return false;
     }
 
     const int nblocks = multimesh.getSiloObject()->nblocks;
-    root_node[mesh_name]["nblocks"] = nblocks;
+    root_node[multimesh_name]["nblocks"] = nblocks;
 
     bool nameschemes = false;
     // TODO nameschemes
     if (nameschemes)
     {
-        root_node[mesh_name]["nameschemes"] = "yes";
+        root_node[multimesh_name]["nameschemes"] = "yes";
         // go kick rocks
     }
     else
     {
-        root_node[mesh_name]["nameschemes"] = "no";
+        root_node[multimesh_name]["nameschemes"] = "no";
         std::vector<int> mesh_types;
         for (int i = 0; i < nblocks; i ++)
         {
             // save the mesh name and mesh type
-            Node &mesh_path = root_node[mesh_name]["mesh_paths"].append();
+            Node &mesh_path = root_node[multimesh_name]["mesh_paths"].append();
             mesh_path.set(multimesh.getSiloObject()->meshnames[i]);
             mesh_types.push_back(multimesh.getSiloObject()->meshtypes[i]);
         }
-        root_node[mesh_name]["mesh_types"].set(mesh_types.data());
+        root_node[multimesh_name]["mesh_types"].set(mesh_types.data());
     }
 
     // iterate thru the multivars and find the ones that are associated with
@@ -1216,7 +1219,7 @@ read_silo_stuff(const std::string &root_file_path,
             error_oss << "Error opening multivar " << multivar_name;
             return false;
         }
-        else if (multivar.getSiloObject()->mmesh_name == mesh_name)
+        else if (multivar.getSiloObject()->mmesh_name == multimesh_name)
         {
             if (multivar.getSiloObject()->nvars != nblocks)
             {
@@ -1224,7 +1227,7 @@ read_silo_stuff(const std::string &root_file_path,
                           << multivar_name << "and multimesh";
                 return false;
             }
-            Node &var = root_node[mesh_name]["vars"][multivar_name];
+            Node &var = root_node[multimesh_name]["vars"][multivar_name];
             bool var_nameschemes = false;
             // TODO var_nameschemes
             if (var_nameschemes)
@@ -1239,7 +1242,7 @@ read_silo_stuff(const std::string &root_file_path,
                 for (int i = 0; i < nblocks; i ++)
                 {
                     // save the mesh name and mesh type
-                    Node &var_path = var["mesh_paths"].append();
+                    Node &var_path = var["var_paths"].append();
                     var_path.set(multivar.getSiloObject()->varnames[i]);
                     var_types.push_back(multivar.getSiloObject()->vartypes[i]);
                 }
@@ -1304,17 +1307,17 @@ read_mesh(const std::string &root_file_path,
 
     int error = 0;
     std::ostringstream error_oss;
-    std::string mesh_name;
+    std::string multimesh_name;
     Node root_node;
 
     // only read bp index on rank 0
     if(par_rank == 0)
     {
-        if(!read_silo_stuff(root_file_path,
-                            opts,
-                            root_node,
-                            mesh_name,
-                            error_oss))
+        if(!read_root_silo_index(root_file_path,
+                                 opts,
+                                 root_node,
+                                 multimesh_name,
+                                 error_oss))
         {
             error = 1;
         }
@@ -1344,29 +1347,20 @@ read_mesh(const std::string &root_file_path,
     {
         // broadcast the mesh name and the bp index
         // from rank 0 to all ranks
-        n_global.set(mesh_name);
+        n_global.set(multimesh_name);
         conduit::relay::mpi::broadcast_using_schema(n_global,
                                                     0,
                                                     mpi_comm);
-        mesh_name = n_global.as_string();
+        multimesh_name = n_global.as_string();
         conduit::relay::mpi::broadcast_using_schema(root_node,
                                                     0,
                                                     mpi_comm);
     }
 #endif
-    const Node &mesh_index = root_node[mesh_name];
+    const Node &mesh_index = root_node[multimesh_name];
 
-    bool nameschemes = false;
-    if (mesh_index.has_child("nameschemes") &&
-        mesh_index["nameschemes"].as_string() == "yes")
-    {
-        nameschemes = true;
-        CONDUIT_ERROR("TODO no support for nameschemes yet");
-    }
-    
     // read all domains for given mesh
     int num_domains = mesh_index["nblocks"].to_int();
-    detail::SiloTreePathGenerator gen{nameschemes};
 
     std::ostringstream oss;
     int domain_start = 0;
@@ -1421,79 +1415,96 @@ read_mesh(const std::string &root_file_path,
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
     //       ...
 
+    bool mesh_nameschemes = false;
+    if (mesh_index.has_child("nameschemes") &&
+        mesh_index["nameschemes"].as_string() == "yes")
+    {
+        mesh_nameschemes = true;
+        CONDUIT_ERROR("TODO no support for nameschemes yet");
+    }
+    detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
+
     std::string silo_name, relative_dir;
     utils::rsplit_file_path(root_file_path, silo_name, relative_dir);
 
-    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> domfile{nullptr, &DBClose};
     for (int i = domain_start; i < domain_end; i++)
     {
         std::string silo_mesh_path = mesh_index["mesh_paths"][i].as_string();
         int_accessor meshtypes = mesh_index["mesh_types"].value();
         int meshtype = meshtypes[i];
 
-        std::string sub_mesh_name, domain_filename;
-        gen.GeneratePaths(silo_mesh_path, relative_dir, domain_filename, sub_mesh_name);
+        std::string mesh_name, mesh_domain_filename;
+        mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
 
         // TODO hmmmm, what if the mesh name here differs from the multimesh name?
         // then have I created broken blueprint?
-        if (sub_mesh_name != mesh_name)
+        if (mesh_name != multimesh_name)
         {
             // this is a band aid, we should be smarter about this
             CONDUIT_ERROR("TODO fix me");
         }
-        if (domain_filename.empty())
+        if (mesh_domain_filename.empty())
         {
-            domain_filename = root_file_path;
+            mesh_domain_filename = root_file_path;
         }
-        domfile.setErrMsg("Error closing Silo file: " + domain_filename);
-        domfile.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-        if (! domfile.getSiloObject())
+        detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{nullptr, &DBClose};
+        mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
+        mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+        DBfile *mesh_dbfile = mesh_domain_file.getSiloObject();
+        if (! mesh_dbfile)
         {
-            CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
+            CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
         }
 
-        std::string mesh_path = conduit_fmt::format("domain_{:06d}", i);
-
-        Node &mesh_out = mesh[mesh_path];
+        Node &mesh_out = mesh[i];
 
         if (meshtype == DB_UCDMESH)
-            read_ucdmesh_domain(domfile, sub_mesh_name, mesh_out);
+            read_ucdmesh_domain(mesh_domain_file, mesh_name, mesh_out);
         else if (meshtype == DB_QUADMESH)
-            read_quadmesh_domain(domfile, sub_mesh_name, mesh_out);
+            read_quadmesh_domain(mesh_domain_file, mesh_name, mesh_out);
         else if (meshtype == DB_POINTMESH)
-            read_pointmesh_domain(domfile, sub_mesh_name, mesh_out);
+            read_pointmesh_domain(mesh_domain_file, mesh_name, mesh_out);
         else
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
 
+        // for each mesh domain, we would like to iterate through all the variables
+        // and extract the same domain from them.
         const Node &vars = mesh_index["vars"];
         auto var_itr = vars.children();
         while (var_itr.has_next())
         {
             const Node &n_var = var_itr.next();
-            std::string var_name = var_itr.name();
+            std::string multivar_name = var_itr.name();
+
+            bool var_nameschemes = false;
+            if (n_var.has_child("nameschemes") &&
+                n_var["nameschemes"].as_string() == "yes")
+            {
+                var_nameschemes = true;
+                CONDUIT_ERROR("TODO no support for nameschemes yet");
+            }
+            detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
 
             std::string silo_var_path = n_var["var_paths"][i].as_string();
             int_accessor vartypes = mesh_index["var_types"].value();
             int vartype = vartypes[i];
 
-            std::string sub_var_name, domain_filename;
-
-            // TODO ahhhhh
-            gen.GeneratePaths(silo_var_path, relative_dir, domain_filename, sub_var_name);
+            std::string var_name, var_domain_filename;
+            var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
 
             // TODO hmmmm, what if the var name here differs from the multivar name?
             // then have I created broken blueprint?
-            if (sub_var_name != var_name)
+            if (var_name != multivar_name)
             {
                 // this is a band aid, we should be smarter about this
                 CONDUIT_ERROR("TODO fix me");
             }
 
             // TODO we need to verify that the domain file for the var is the same as that for the mesh
-            // if (domain_filename.empty())
-            // {
-            //     domain_filename = root_file_path;
-            // }
+            if (var_domain_filename.empty())
+            {
+                var_domain_filename = root_file_path;
+            }
             // domfile.setErrMsg("Error closing Silo file: " + domain_filename);
             // domfile.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
             // if (! domfile.getSiloObject())
@@ -1501,28 +1512,28 @@ read_mesh(const std::string &root_file_path,
             //     CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
             // }
 
-            Node &field_out = mesh_out["fields"][var_name];
+            Node &field_out = mesh_out["fields"][multivar_name];
 
             if (vartype == DB_UCDVAR)
             {
                 detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                    DBGetUcdvar(domfile.getSiloObject(), var_name.c_str()), 
+                    DBGetUcdvar(domfile.getSiloObject(), multivar_name.c_str()), 
                     &DBFreeUcdvar};
-                read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), var_name, field_out);
+                read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), multivar_name, field_out);
             }
             else if (vartype == DB_QUADVAR)
             {
                 detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                    DBGetQuadvar(domfile.getSiloObject(), var_name.c_str()), 
+                    DBGetQuadvar(domfile.getSiloObject(), multivar_name.c_str()), 
                     &DBFreeQuadvar};
-                read_variable_domain<DBquadvar>(quadvar.getSiloObject(), var_name, field_out);
+                read_variable_domain<DBquadvar>(quadvar.getSiloObject(), multivar_name, field_out);
             }
             else if (vartype == DB_POINTVAR)
             {
                 detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                    DBGetPointvar(domfile.getSiloObject(), var_name.c_str()), 
+                    DBGetPointvar(domfile.getSiloObject(), multivar_name.c_str()), 
                     &DBFreeMeshvar};
-                read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), var_name, field_out);
+                read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), multivar_name, field_out);
             }
             else
                 CONDUIT_ERROR("Unsupported variable type " << vartype);
