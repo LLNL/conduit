@@ -69,6 +69,34 @@ using namespace conduit::relay::web;
 #define PyVarObject_TAIL
 #endif
 
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// Module Init Code
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+struct module_state {
+    PyObject *error;
+    #ifdef Py_LIMITED_API
+    PyTypeObject* PyRelay_Web_WebServer_TYPE;
+    PyTypeObject* PyRelay_Web_WebSocket_TYPE;
+    #endif
+};
+
+//---------------------------------------------------------------------------//
+#if defined(IS_PY3K)
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module.
+PyObject* GLOBAL_MODULE = NULL;
+#endif
+//---------------------------------------------------------------------------//
+
 
 //---------------------------------------------------------------------------//
 struct PyRelay_Web_WebServer
@@ -819,24 +847,6 @@ static PyMethodDef relay_web_python_funcs[] =
     {NULL, NULL, METH_VARARGS, NULL}
 };
 
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-// Module Init Code
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-
-struct module_state {
-    PyObject *error;
-};
-
-//---------------------------------------------------------------------------//
-#if defined(IS_PY3K)
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-#else
-#define GETSTATE(m) (&_state)
-static struct module_state _state;
-#endif
-//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
@@ -950,6 +960,9 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_web_python(void)
                        "WebServer",
                        (PyObject*)&PyRelay_Web_WebServer_TYPE);
 
+#ifdef Py_LIMITED_API
+  GLOBAL_MODULE = relay_web_module;
+#endif
 #if defined(IS_PY3K)
     return relay_web_module;
 #endif
