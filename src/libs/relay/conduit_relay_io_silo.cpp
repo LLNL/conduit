@@ -332,6 +332,7 @@ public:
         if (obj)
         {
             del(obj);
+            obj = nullptr;
         }
     }
 };
@@ -356,11 +357,12 @@ public:
     {
         if (obj)
         {
-            if(del(obj) != 0)
+            if (del(obj) != 0)
             {
                 // CONDUIT_ERROR() TODO hmmmm
                 std::cout << errmsg << std::endl;
             }
+            obj = nullptr;
         }
     }
 };
@@ -596,8 +598,9 @@ add_shape_info(DBzonelist *zones,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
-                    std::string &mesh_name,
+read_ucdmesh_domain(const detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+                    const std::string &mesh_name,
+                    const std::string &multimesh_name,
                     conduit::Node &mesh_domain)
 {
     detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
@@ -609,20 +612,19 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
         CONDUIT_ERROR("Error fetching ucd mesh " << mesh_name);
     }
 
-    std::string name{ucdmesh_ptr->name};
     if (ucdmesh_ptr->zones)
     {
         CONDUIT_ASSERT(!ucdmesh_ptr->phzones,
                        "Both phzones and zones are defined in mesh "
                            << mesh_name);
         add_shape_info(ucdmesh_ptr->zones,
-                       mesh_domain["topologies"][name]["elements"]);
+                       mesh_domain["topologies"][multimesh_name]["elements"]);
     }
     else if (ucdmesh_ptr->phzones)
     {
         // TODO: implement support for phzones
         CONDUIT_ERROR("Silo ucdmesh phzones not yet supported");
-        mesh_domain["topologies"][name]["elements"]["shape"] =
+        mesh_domain["topologies"][multimesh_name]["elements"]["shape"] =
             shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
 
     }
@@ -632,9 +634,9 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
                       << mesh_name);
     }
 
-    mesh_domain["topologies"][name]["coordset"] = name;
-    mesh_domain["coordsets"][name]["type"] = "explicit";
-    mesh_domain["topologies"][name]["type"] = "unstructured";
+    mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
+    mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
+    mesh_domain["topologies"][multimesh_name]["type"] = "unstructured";
 
     int dims[] = {ucdmesh_ptr->nnodes,
                   ucdmesh_ptr->nnodes,
@@ -646,7 +648,7 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
                                   ucdmesh_ptr->ndims,
                                   dims,
                                   ucdmesh_ptr->coord_sys,
-                                  mesh_domain["coordsets"][name]["values"]);
+                                  mesh_domain["coordsets"][multimesh_name]["values"]);
     }
     else if (ucdmesh_ptr->datatype == DB_FLOAT)
     {
@@ -654,7 +656,7 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
                                  ucdmesh_ptr->ndims,
                                  dims,
                                  ucdmesh_ptr->coord_sys,
-                                 mesh_domain["coordsets"][name]["values"]);
+                                 mesh_domain["coordsets"][multimesh_name]["values"]);
     }
     else 
     {
@@ -665,8 +667,9 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
-                     std::string &mesh_name,
+read_quadmesh_domain(const detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+                     const std::string &mesh_name,
+                     const std::string &multimesh_name,
                      conduit::Node &mesh_domain)
 {
     detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
@@ -678,8 +681,6 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
         CONDUIT_ERROR("Error fetching quad mesh " << mesh_name);
     }
     
-    std::string name{quadmesh_ptr->name};
-
     int coordtype{quadmesh_ptr->coordtype};
     int ndims{quadmesh_ptr->ndims};
     int dims[] = {quadmesh_ptr->nnodes,
@@ -689,26 +690,26 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     if (coordtype == DB_COLLINEAR)
     {
-        mesh_domain["coordsets"][name]["type"] = "rectilinear";
-        mesh_domain["topologies"][name]["type"] = "rectilinear";
+        mesh_domain["coordsets"][multimesh_name]["type"] = "rectilinear";
+        mesh_domain["topologies"][multimesh_name]["type"] = "rectilinear";
         real_dims = quadmesh_ptr->dims;
     }
     else if (coordtype == DB_NONCOLLINEAR)
     {
-        mesh_domain["coordsets"][name]["type"] = "explicit";
-        mesh_domain["topologies"][name]["type"] = "structured";
+        mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
+        mesh_domain["topologies"][multimesh_name]["type"] = "structured";
 
         // We subtract 1 from each of these because in silo these dims are node dims, not element dims
-        mesh_domain["topologies"][name]["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
-        if (ndims > 1) mesh_domain["topologies"][name]["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
-        if (ndims > 2) mesh_domain["topologies"][name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
+        mesh_domain["topologies"][multimesh_name]["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
+        if (ndims > 1) mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
+        if (ndims > 2) mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
     }
     else
     {
         CONDUIT_ERROR("Undefined coordtype in " << coordtype);
     }
 
-    mesh_domain["topologies"][name]["coordset"] = name;
+    mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
 
     // TODO this should just be i,j,k, get rid of all i0, j0, and k0
 
@@ -719,7 +720,7 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
     // If the origin is not the default value, then we need to specify it
     if (quadmesh_ptr->base_index[0] != 0 && quadmesh_ptr->base_index[1] != 0 && quadmesh_ptr->base_index[2] != 0)
     {
-        Node &origin = mesh_domain["topologies"][name]["elements"]["origin"];
+        Node &origin = mesh_domain["topologies"][multimesh_name]["elements"]["origin"];
         origin[origin_accessors[start_index]] = quadmesh_ptr->base_index[0];
         if (ndims > 1) origin[origin_accessors[start_index + 1]] = quadmesh_ptr->base_index[1];
         if (ndims > 2) origin[origin_accessors[start_index + 2]] = quadmesh_ptr->base_index[2];
@@ -731,7 +732,7 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
                                   ndims,
                                   real_dims,
                                   quadmesh_ptr->coord_sys,
-                                  mesh_domain["coordsets"][name]["values"]);
+                                  mesh_domain["coordsets"][multimesh_name]["values"]);
     }
     else if (quadmesh_ptr->datatype == DB_FLOAT)
     {
@@ -739,7 +740,7 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
                                  ndims,
                                  real_dims,
                                  quadmesh_ptr->coord_sys,
-                                 mesh_domain["coordsets"][name]["values"]);
+                                 mesh_domain["coordsets"][multimesh_name]["values"]);
     }
     else
     {
@@ -749,12 +750,14 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
 
 //---------------------------------------------------------------------------//
+// TODO move this where it belongs
 template<typename T>
 void
 conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
 {
     const int conn_size = n_mesh_conn.dtype().number_of_elements();
     T *conn_ptr = n_mesh_conn.value();
+    // TODO double check this calculation
     for (int i = 0; i < conn_size; i += 6)
     {
         auto conn0 = conn_ptr[i + 0];
@@ -776,8 +779,9 @@ conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
-                      std::string &mesh_name,
+read_pointmesh_domain(const detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+                      const std::string &mesh_name,
+                      const std::string &multimesh_name,
                       conduit::Node &mesh_domain)
 {
     detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
@@ -788,12 +792,10 @@ read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBCl
     {
         CONDUIT_ERROR("Error fetching point mesh " << mesh_name);
     }
-    
-    std::string name{pointmesh_ptr->name};
 
-    mesh_domain["topologies"][name]["type"] = "points";
-    mesh_domain["topologies"][name]["coordset"] = name;
-    mesh_domain["coordsets"][name]["type"] = "explicit";
+    mesh_domain["topologies"][multimesh_name]["type"] = "points";
+    mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
+    mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
     int dims[] = { pointmesh_ptr->nels,
                    pointmesh_ptr->nels,
                    pointmesh_ptr->nels};
@@ -804,7 +806,7 @@ read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBCl
                                   pointmesh_ptr->ndims,
                                   dims,
                                   DB_CARTESIAN,
-                                  mesh_domain["coordsets"][name]["values"]);
+                                  mesh_domain["coordsets"][multimesh_name]["values"]);
     }
     else if (pointmesh_ptr->datatype == DB_FLOAT)
     {
@@ -812,47 +814,11 @@ read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBCl
                                  pointmesh_ptr->ndims,
                                  dims,
                                  DB_CARTESIAN,
-                                 mesh_domain["coordsets"][name]["values"]);
+                                 mesh_domain["coordsets"][multimesh_name]["values"]);
     }
     else
     {
         CONDUIT_ERROR("Unsupported mesh data type " << pointmesh_ptr->datatype);
-    }
-}
-
-//-----------------------------------------------------------------------------
-// Read a multimesh domain, switching on the type.
-// 'dbfile' must be a pointer into the file containing the mesh, and 'mesh_name'
-// must be the mesh's name
-//-----------------------------------------------------------------------------
-void
-read_mesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
-                 std::string &mesh_name,
-                 conduit::Node &mesh_domain,
-                 int meshtype)
-{
-    if (meshtype == DB_UCDMESH)
-        read_ucdmesh_domain(dbfile, mesh_name, mesh_domain);
-    if (meshtype == DB_QUADMESH)
-        read_quadmesh_domain(dbfile, mesh_name, mesh_domain);
-    if (meshtype == DB_POINTMESH)
-        read_pointmesh_domain(dbfile, mesh_name, mesh_domain);
-    if (meshtype == DB_CSGMESH)
-        CONDUIT_ERROR("CSG meshes are not supported by Blueprint");
-
-    CONDUIT_ERROR("Unsupported mesh type " << meshtype);
-}
-
-//-----------------------------------------------------------------------------
-void
-apply_centering(int centering, conduit::Node &field)
-{
-    if (centering == DB_NODECENT) {
-        field["association"] = "vertex";
-    } else if (centering == DB_ZONECENT) {
-        field["association"] = "element";
-    } else {
-        CONDUIT_ERROR("Unsupported field association " << centering);
     }
 }
 
@@ -886,7 +852,12 @@ read_variable_domain(T *var_ptr,
     // TODO is this the right choice?
     field["topology"] = std::string(var_ptr->meshname);
 
-    apply_centering(var_ptr->centering, field);
+    if (var_ptr->centering == DB_NODECENT)
+        field["association"] = "vertex";
+    else if (var_ptr->centering == DB_ZONECENT)
+        field["association"] = "element";
+    else
+        CONDUIT_ERROR("Unsupported field association " << var_ptr->centering);
 
     if (var_ptr->datatype == DB_FLOAT)
     {
@@ -1436,13 +1407,6 @@ read_mesh(const std::string &root_file_path,
         std::string mesh_name, mesh_domain_filename;
         mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
 
-        // TODO hmmmm, what if the mesh name here differs from the multimesh name?
-        // then have I created broken blueprint?
-        if (mesh_name != multimesh_name)
-        {
-            // this is a band aid, we should be smarter about this
-            CONDUIT_ERROR("TODO fix me");
-        }
         if (mesh_domain_filename.empty())
         {
             mesh_domain_filename = root_file_path;
@@ -1450,8 +1414,7 @@ read_mesh(const std::string &root_file_path,
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{nullptr, &DBClose};
         mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
         mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-        DBfile *mesh_dbfile = mesh_domain_file.getSiloObject();
-        if (! mesh_dbfile)
+        if (! mesh_domain_file.getSiloObject())
         {
             CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
         }
@@ -1459,11 +1422,11 @@ read_mesh(const std::string &root_file_path,
         Node &mesh_out = mesh[i];
 
         if (meshtype == DB_UCDMESH)
-            read_ucdmesh_domain(mesh_domain_file, mesh_name, mesh_out);
+            read_ucdmesh_domain(mesh_domain_file, mesh_name, multimesh_name, mesh_out);
         else if (meshtype == DB_QUADMESH)
-            read_quadmesh_domain(mesh_domain_file, mesh_name, mesh_out);
+            read_quadmesh_domain(mesh_domain_file, mesh_name, multimesh_name, mesh_out);
         else if (meshtype == DB_POINTMESH)
-            read_pointmesh_domain(mesh_domain_file, mesh_name, mesh_out);
+            read_pointmesh_domain(mesh_domain_file, mesh_name, multimesh_name, mesh_out);
         else
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
 
@@ -1500,38 +1463,53 @@ read_mesh(const std::string &root_file_path,
                 CONDUIT_ERROR("TODO fix me");
             }
 
-            // TODO we need to verify that the domain file for the var is the same as that for the mesh
             if (var_domain_filename.empty())
             {
                 var_domain_filename = root_file_path;
             }
-            // domfile.setErrMsg("Error closing Silo file: " + domain_filename);
-            // domfile.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-            // if (! domfile.getSiloObject())
-            // {
-            //     CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
-            // }
+
+            detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{nullptr, &DBClose};
+            var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
+
+            // if the var domain is stored in the same file as the mesh domain then we
+            // can reuse the open file ptr
+            if (var_domain_filename == mesh_domain_filename)
+            {
+                // this will not cause a double free later because the SiloObjectWrapper sets
+                // the ptr to null after deleting it, so if two SiloObjectWrappers own
+                // the ptr it is null for both
+                var_domain_filename.setSiloObject(mesh_domain_file.getSiloObject());
+            }
+            // otherwise we need to open our own file
+            else
+            {
+                var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                if (! var_domain_file.getSiloObject())
+                {
+                    CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
+                }
+            }
 
             Node &field_out = mesh_out["fields"][multivar_name];
 
             if (vartype == DB_UCDVAR)
             {
                 detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                    DBGetUcdvar(domfile.getSiloObject(), multivar_name.c_str()), 
+                    DBGetUcdvar(var_domain_file.getSiloObject(), multivar_name.c_str()), 
                     &DBFreeUcdvar};
                 read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), multivar_name, field_out);
             }
             else if (vartype == DB_QUADVAR)
             {
                 detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                    DBGetQuadvar(domfile.getSiloObject(), multivar_name.c_str()), 
+                    DBGetQuadvar(var_domain_file.getSiloObject(), multivar_name.c_str()), 
                     &DBFreeQuadvar};
                 read_variable_domain<DBquadvar>(quadvar.getSiloObject(), multivar_name, field_out);
             }
             else if (vartype == DB_POINTVAR)
             {
                 detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                    DBGetPointvar(domfile.getSiloObject(), multivar_name.c_str()), 
+                    DBGetPointvar(var_domain_file.getSiloObject(), multivar_name.c_str()), 
                     &DBFreeMeshvar};
                 read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), multivar_name, field_out);
             }
