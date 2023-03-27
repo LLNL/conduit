@@ -598,7 +598,7 @@ add_shape_info(DBzonelist *zones,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_ucdmesh_domain(const detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
                     const std::string &mesh_name,
                     const std::string &multimesh_name,
                     conduit::Node &mesh_domain)
@@ -667,7 +667,7 @@ read_ucdmesh_domain(const detail::SiloObjectWrapperCheckError<DBfile, decltype(&
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_quadmesh_domain(const detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
                      const std::string &mesh_name,
                      const std::string &multimesh_name,
                      conduit::Node &mesh_domain)
@@ -779,7 +779,7 @@ conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_pointmesh_domain(const detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
                       const std::string &mesh_name,
                       const std::string &multimesh_name,
                       conduit::Node &mesh_domain)
@@ -1470,7 +1470,7 @@ read_mesh(const std::string &root_file_path,
                 // this will not cause a double free later because the SiloObjectWrapper sets
                 // the ptr to null after deleting it, so if two SiloObjectWrappers own
                 // the ptr it is null for both
-                var_domain_filename.setSiloObject(mesh_domain_file.getSiloObject());
+                var_domain_file.setSiloObject(mesh_domain_file.getSiloObject());
             }
             // otherwise we need to open our own file
             else
