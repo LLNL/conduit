@@ -564,11 +564,14 @@ writePoints(const conduit::Node &info)
         const conduit::Node &dom = info[domainId];
         std::string domainName(dom.name());
         std::string filename(domainName + ".3D");
-        FILE *fp = nullptr;
 
         for(conduit::index_t adjsetId = 0; adjsetId < dom.number_of_children(); adjsetId++)
         {
             const conduit::Node &adjset = dom[adjsetId];
+
+            std::string filename(domainName + "_" + adjset.name() + ".3D");
+            FILE *fp = nullptr;
+
             for(conduit::index_t groupId = 0; groupId < adjset.number_of_children(); groupId++)
             {
                 const conduit::Node &group = adjset[groupId];
@@ -592,12 +595,12 @@ writePoints(const conduit::Node &info)
                     }
                 }
             }
-        }
 
-        if(fp != nullptr)
-        {
-            fclose(fp);
-            cout << "Wrote " << filename << endl;
+            if(fp != nullptr)
+            {
+                fclose(fp);
+                cout << "Wrote " << filename << endl;
+            }
         }
     }
 }
