@@ -840,8 +840,9 @@ apply_values(void **vals,
 //-----------------------------------------------------------------------------
 template <class T>
 void
-read_variable_domain(T *var_ptr,
-                     std::string var_name,
+read_variable_domain(const T *var_ptr,
+                     const std::string &var_name,
+                     const std::string &multimesh_name,
                      conduit::Node &field)
 {
     if (!var_ptr)
@@ -849,8 +850,7 @@ read_variable_domain(T *var_ptr,
         CONDUIT_ERROR("Error fetching variable " << var_name);
     }
 
-    // TODO is this the right choice?
-    field["topology"] = std::string(var_ptr->meshname);
+    field["topology"] = multimesh_name;
 
     if (var_ptr->centering == DB_NODECENT)
         field["association"] = "vertex";
@@ -1455,14 +1455,6 @@ read_mesh(const std::string &root_file_path,
             std::string var_name, var_domain_filename;
             var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
 
-            // TODO hmmmm, what if the var name here differs from the multivar name?
-            // then have I created broken blueprint?
-            if (var_name != multivar_name)
-            {
-                // this is a band aid, we should be smarter about this
-                CONDUIT_ERROR("TODO fix me");
-            }
-
             if (var_domain_filename.empty())
             {
                 var_domain_filename = root_file_path;
@@ -1495,23 +1487,23 @@ read_mesh(const std::string &root_file_path,
             if (vartype == DB_UCDVAR)
             {
                 detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                    DBGetUcdvar(var_domain_file.getSiloObject(), multivar_name.c_str()), 
+                    DBGetUcdvar(var_domain_file.getSiloObject(), var_name.c_str()),
                     &DBFreeUcdvar};
-                read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), multivar_name, field_out);
+                read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), var_name, multimesh_name, field_out);
             }
             else if (vartype == DB_QUADVAR)
             {
                 detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                    DBGetQuadvar(var_domain_file.getSiloObject(), multivar_name.c_str()), 
+                    DBGetQuadvar(var_domain_file.getSiloObject(), var_name.c_str()), 
                     &DBFreeQuadvar};
-                read_variable_domain<DBquadvar>(quadvar.getSiloObject(), multivar_name, field_out);
+                read_variable_domain<DBquadvar>(quadvar.getSiloObject(), var_name, multimesh_name, field_out);
             }
             else if (vartype == DB_POINTVAR)
             {
                 detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                    DBGetPointvar(var_domain_file.getSiloObject(), multivar_name.c_str()), 
+                    DBGetPointvar(var_domain_file.getSiloObject(), var_name.c_str()), 
                     &DBFreeMeshvar};
-                read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), multivar_name, field_out);
+                read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), var_name, multimesh_name, field_out);
             }
             else
                 CONDUIT_ERROR("Unsupported variable type " << vartype);
