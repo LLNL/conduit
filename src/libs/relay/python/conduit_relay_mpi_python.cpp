@@ -1912,6 +1912,11 @@ static struct module_state _state;
 #endif
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module.
+PyObject* GLOBAL_MODULE = NULL;
+#endif
+
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
 //---------------------------------------------------------------------------//
@@ -2023,6 +2028,10 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_mpi_python(void)
     PyModule_AddObject(relay_mpi_module,
                        "Request",
                        (PyObject*)&PyRelay_MPI_Request_TYPE);
+
+#ifdef Py_LIMITED_API
+    GLOBAL_MODULE = relay_mpi_module;
+#endif
 
 #if defined(IS_PY3K)
     return relay_mpi_module;
