@@ -776,6 +776,26 @@ static PyMethodDef PyRelay_Web_WebSocket_METHODS[] = {
 };
 
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyRelay_Web_WebSocket_SLOTS[]  = {
+  {Py_tp_dealloc,        (void*) PyRelay_Web_WebSocket_dealloc},
+  {Py_tp_methods,        (void*) PyRelay_Web_WebSocket_METHODS},
+  {Py_tp_init,           (void*) PyRelay_Web_WebSocket_init},
+  {Py_tp_new,            (void*) PyRelay_Web_WebSocket_new},
+  {Py_tp_doc,            (void*) "Conduit Relay WebSocket objects"},
+  {0,0},
+};
+
+static PyType_Spec PyRelay_Web_WebSocket_SPEC = 
+{
+   "WebSocket",                              /* tp_name */
+   sizeof(PyRelay_Web_WebSocket),            /* tp_basicsize */
+   0,                                        /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+   PyRelay_Web_WebSocket_SLOTS,              /* tp_slots */
+};
+
+#else
 
 //---------------------------------------------------------------------------//
 static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
@@ -828,6 +848,7 @@ static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
    0
    PyVarObject_TAIL
 };
+#endif
 
 //---------------------------------------------------------------------------//
 // Leave commented until we need to use.
@@ -845,7 +866,15 @@ static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
 static PyObject *
 PyRelay_Web_WebSocket_python_wrap(WebSocket *websocket)
 {
-    PyTypeObject *type = (PyTypeObject*)&PyRelay_Web_WebSocket_TYPE;
+    PyTypeObject *type = NULL;
+
+    #ifdef Py_LIMITED_API
+    module_state* state = GETSTATE(GLOBAL_MODULE);
+    assert(state != NULL);
+    type = state->PyRelay_Web_WebSocket_TYPE;
+    #else
+    type = (PyTypeObject*)&PyRelay_Web_WebSocket_TYPE;
+    #endif
 
     PyRelay_Web_WebSocket *retval = (PyRelay_Web_WebSocket*)PyType_GenericAlloc(type, 0);
     retval->websocket = websocket;
@@ -876,6 +905,7 @@ relay_web_python_traverse(PyObject *m, visitproc visit, void *arg)
     Py_VISIT(GETSTATE(m)->error);
     #ifdef Py_LIMITED_API
     Py_VISIT(GETSTATE(m)->PyRelay_Web_WebServer_TYPE);
+    Py_VISIT(GETSTATE(m)->PyRelay_Web_WebSocket_TYPE);
     #endif
     return 0;
 }
@@ -887,6 +917,7 @@ relay_web_python_clear(PyObject *m)
     Py_CLEAR(GETSTATE(m)->error);
     #ifdef Py_LIMITED_API
     Py_CLEAR(GETSTATE(m)->PyRelay_Web_WebServer_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyRelay_Web_WebSocket_TYPE);
     #endif
     return 0;
 }
@@ -978,6 +1009,16 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_web_python(void)
        PY_MODULE_INIT_RETURN_ERROR;
     }
     if (PyModule_AddType((PyObject*)relay_web_module,state->PyRelay_Web_WebServer_TYPE) < 0)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    
+    state->PyRelay_Web_WebSocket_TYPE = (PyTypeObject *)PyType_FromModuleAndSpec((PyObject*)relay_web_module, &PyRelay_Web_WebSocket_SPEC, NULL);
+    if (state->PyRelay_Web_WebSocket_TYPE == NULL)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    if (PyModule_AddType((PyObject*)relay_web_module,state->PyRelay_Web_WebSocket_TYPE) < 0)
     {
        PY_MODULE_INIT_RETURN_ERROR;
     }
