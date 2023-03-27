@@ -69,6 +69,56 @@ using namespace conduit::relay::io;
 #define PyVarObject_TAIL
 #endif
 
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// Module Init Code
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+struct module_state {
+    PyObject *error;
+};
+
+//---------------------------------------------------------------------------//
+#if defined(IS_PY3K)
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+//---------------------------------------------------------------------------//
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module.
+PyObject* GLOBAL_MODULE = NULL;
+
+static inline module_state *
+get_module_state()
+{
+    void *state = PyModule_GetState(GLOBAL_MODULE);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+static inline module_state *
+get_state_from_type(PyTypeObject *tp)
+{
+    void *state = PyType_GetModuleState(tp);
+    assert(state != NULL);
+    return (module_state*)state;
+}
+#endif
+
+
+#ifdef Py_LIMITED_API
+
+#define Set_PyTypeObject_Macro(type,NAME)                \
+module_state* state = get_module_state();  \
+assert(state != NULL);                                   \
+type = state->NAME
+#else
+#define Set_PyTypeObject_Macro(type,NAME) type = (PyTypeObject*)&NAME
+#endif
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Begin Functions to help with Python 2/3 Compatibility.
@@ -973,24 +1023,6 @@ static PyMethodDef relay_io_python_funcs[] =
     {NULL, NULL, METH_VARARGS, NULL}
 };
 
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-// Module Init Code
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-
-struct module_state {
-    PyObject *error;
-};
-
-//---------------------------------------------------------------------------//
-#if defined(IS_PY3K)
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-#else
-#define GETSTATE(m) (&_state)
-static struct module_state _state;
-#endif
-//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
@@ -1105,7 +1137,9 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_io_python(void)
     PyModule_AddObject(relay_io_module,
                        "IOHandle",
                        (PyObject*)&PyRelay_IOHandle_TYPE);
-
+#ifdef Py_LIMITED_API
+    GLOBAL_MODULE = relay_io_module;
+#endif
 #if defined(IS_PY3K)
     return relay_io_module;
 #endif
