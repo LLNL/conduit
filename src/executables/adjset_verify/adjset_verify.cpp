@@ -14,6 +14,7 @@
 #include <iostream>
 #include <cstring>
 #include <numeric>
+#include <cstdio>
 
 using std::cout;
 using std::endl;
@@ -430,7 +431,7 @@ VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
                        << " group " << group.name()
                        << " has an invalid neighbor "
                        << nbr << " at index " << ni;
-                    info.append().set(ss.str());
+                    info[adjsetName].append().set(ss.str());
 
                     retval = false;
 
@@ -456,7 +457,14 @@ VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
                            << " has a vertex id " << value
                            << " that could not be looked up in the local coordset "
                            << coordsetName << ".";
-                        info.append().set(ss.str());
+
+                        conduit::Node &vn = info[group.name()].append();
+                        vn["message"].set(ss.str());
+                        vn["vertex"] = value;
+                        vn["index"] = vi;
+                        vn["neighbor"] = nbr;
+                        vn["coordinate"] = std::vector<double>(coord, coord + 3);
+
                         retval = false;
                     }
 
@@ -471,7 +479,14 @@ VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
                            << " (" << coord[0] << ", " << coord[1]
                            << ", " << coord[2] << ") at index " << vi
                            << " could not be located in neighbor domain " << nbr << ".";
-                        info.append().set(ss.str());
+
+                        conduit::Node &vn = info[group.name()].append();
+                        vn["message"].set(ss.str());
+                        vn["vertex"] = value;
+                        vn["index"] = vi;
+                        vn["neighbor"] = nbr;
+                        vn["coordinate"] = std::vector<double>(coord, coord + 3);
+
                         retval = false;
                     }
                 }
@@ -538,6 +553,53 @@ VerifyAdjsets(Domains &doms,
         }
     }
     return retval;
+}
+
+//---------------------------------------------------------------------------
+void
+writePoints(const conduit::Node &info)
+{
+    for(conduit::index_t domainId = 0; domainId < info.number_of_children(); domainId++)
+    {
+        const conduit::Node &dom = info[domainId];
+        std::string domainName(dom.name());
+        std::string filename(domainName + ".3D");
+        FILE *fp = nullptr;
+
+        for(conduit::index_t adjsetId = 0; adjsetId < dom.number_of_children(); adjsetId++)
+        {
+            const conduit::Node &adjset = dom[adjsetId];
+            for(conduit::index_t groupId = 0; groupId < adjset.number_of_children(); groupId++)
+            {
+                const conduit::Node &group = adjset[groupId];
+                for(conduit::index_t errId = 0; errId < group.number_of_children(); errId++)
+                {
+                    const conduit::Node &err = group[errId];
+                    if(err.has_child("coordinate") && err.has_child("neighbor"))
+                    {
+                        if(fp == nullptr)
+                        {
+                            fp = fopen(filename.c_str(), "wt");
+                            fprintf(fp, "x y z neighbor\n");
+                        }
+
+                        if(fp != nullptr)
+                        {
+                            conduit::double_accessor da = err["coordinate"].as_double_accessor();
+                            int nbr = err["neighbor"].to_int();
+                            fprintf(fp, "%lg %lg %lg %d\n", da[0], da[1], da[2], nbr);
+                        }
+                    }
+                }
+            }
+        }
+
+        if(fp != nullptr)
+        {
+            fclose(fp);
+            cout << "Wrote " << filename << endl;
+        }
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -641,6 +703,7 @@ main(int argc, char *argv[])
         {
             cout << msg2 << "FAIL: The adjsets contain errors." << endl;
             info.print();
+            writePoints(info);
             return -3;
         }
     }
