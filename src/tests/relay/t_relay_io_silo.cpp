@@ -88,7 +88,8 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     // Symlinks may break on Windows (?)
     // Could make them overlink format without the symlink.
     // But would require modifying the files.
-    std::vector<std::string> filename_vec = {"box2d.silo",
+    std::vector<std::string> filename_vec = {
+        "box2d.silo",
         "box3d.silo",
         "diamond.silo",
         // TODO: rename these files to be more descriptive.
@@ -101,8 +102,8 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     std::vector<int> dims_vec = {2, 3, 2, 2, 2, 2};
     std::vector<int> coordset_length_vec = {4, 8, 36, 1994, 16, 961};
     std::vector<int> topology_length_vec = {1, 1, 33, 1920, 9, 900};
-    for (int i = 0; i < filename_vec.size(); ++i) {
-
+    for (int i = 0; i < filename_vec.size(); ++i) 
+    {
         Node mesh, info;
         std::string input_file = relay_test_silo_data_path(filename_vec.at(i));
         io::silo::load_mesh(input_file, mesh);
@@ -173,30 +174,31 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
                 load_mesh[0].print();
             }
 
-            // The Blueprint to Silo transformation changes several names 
-            // and some information is lost. We manually make changes so 
-            // that the diff will pass.
-            save_mesh["coordsets"].rename_child("coords", "mesh");
-            save_mesh["topologies"]["mesh"]["coordset"].reset();
-            save_mesh["topologies"]["mesh"]["coordset"] = "mesh";
-            save_mesh["fields"]["field"].remove_child("volume_dependent");
-
-            // TODO fields
-            save_mesh.remove_child("fields");
-
-            // the silo conversion will transform uniform to rectilinear
+            // The silo conversion will transform uniform to rectilinear
             // so we will do the same to allow the diff to succeed
             if (mesh_types[i] == "uniform")
             {
                 Node save_mesh_rect;
-                Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["mesh"];
+                Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["coords"];
                 Node &save_mesh_rect_topo = save_mesh_rect["topologies"]["mesh"];
                 blueprint::mesh::topology::uniform::to_rectilinear(
                     save_mesh["topologies"]["mesh"], 
                     save_mesh_rect_topo, save_mesh_rect_coords);
                 save_mesh["topologies"]["mesh"].set(save_mesh_rect_topo);
-                save_mesh["coordsets"]["mesh"].set(save_mesh_rect_coords);
+                save_mesh["coordsets"]["coords"].set(save_mesh_rect_coords);
             }
+
+            // The Blueprint to Silo transformation changes several names 
+            // and some information is lost. We manually make changes so 
+            // that the diff will pass.
+            save_mesh["coordsets"].rename_child("coords", "mesh_mesh");
+            save_mesh["topologies"].rename_child("mesh", "mesh_mesh");
+            save_mesh["fields"].rename_child("field", "mesh_field");
+            save_mesh["topologies"]["mesh_mesh"]["coordset"].reset();
+            save_mesh["topologies"]["mesh_mesh"]["coordset"] = "mesh_mesh";
+            save_mesh["fields"]["mesh_field"]["topology"].reset();
+            save_mesh["fields"]["mesh_field"]["topology"] = "mesh_mesh";
+            save_mesh["fields"]["mesh_field"].remove_child("volume_dependent");
 
             if (i_wanna_print)
             {
