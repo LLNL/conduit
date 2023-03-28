@@ -1419,7 +1419,8 @@ read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
         }
 
-        Node &mesh_out = mesh[i];
+        std::string mesh_path = conduit_fmt::format("domain_{:06d}", i);
+        Node &mesh_out = mesh[mesh_path];
 
         if (meshtype == DB_UCDMESH)
             read_ucdmesh_domain(mesh_domain_file, mesh_name, multimesh_name, mesh_out);
@@ -1449,7 +1450,7 @@ read_mesh(const std::string &root_file_path,
             detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
 
             std::string silo_var_path = n_var["var_paths"][i].as_string();
-            int_accessor vartypes = mesh_index["var_types"].value();
+            int_accessor vartypes = n_var["var_types"].value();
             int vartype = vartypes[i];
 
             std::string var_name, var_domain_filename;
@@ -1462,21 +1463,19 @@ read_mesh(const std::string &root_file_path,
 
             detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{nullptr, &DBClose};
             var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
+            DBfile *domain_file_to_use = nullptr;
 
             // if the var domain is stored in the same file as the mesh domain then we
             // can reuse the open file ptr
             if (var_domain_filename == mesh_domain_filename)
             {
-                // this will not cause a double free later because the SiloObjectWrapper sets
-                // the ptr to null after deleting it, so if two SiloObjectWrappers own
-                // the ptr it is null for both
-                var_domain_file.setSiloObject(mesh_domain_file.getSiloObject());
+                domain_file_to_use = mesh_domain_file.getSiloObject();
             }
             // otherwise we need to open our own file
             else
             {
                 var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-                if (! var_domain_file.getSiloObject())
+                if (! (domain_file_to_use = var_domain_file.getSiloObject()))
                 {
                     CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
                 }
@@ -1487,21 +1486,21 @@ read_mesh(const std::string &root_file_path,
             if (vartype == DB_UCDVAR)
             {
                 detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                    DBGetUcdvar(var_domain_file.getSiloObject(), var_name.c_str()),
+                    DBGetUcdvar(domain_file_to_use, var_name.c_str()),
                     &DBFreeUcdvar};
                 read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), var_name, multimesh_name, field_out);
             }
             else if (vartype == DB_QUADVAR)
             {
                 detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                    DBGetQuadvar(var_domain_file.getSiloObject(), var_name.c_str()), 
+                    DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
                     &DBFreeQuadvar};
                 read_variable_domain<DBquadvar>(quadvar.getSiloObject(), var_name, multimesh_name, field_out);
             }
             else if (vartype == DB_POINTVAR)
             {
                 detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                    DBGetPointvar(var_domain_file.getSiloObject(), var_name.c_str()), 
+                    DBGetPointvar(domain_file_to_use, var_name.c_str()), 
                     &DBFreeMeshvar};
                 read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), var_name, multimesh_name, field_out);
             }
