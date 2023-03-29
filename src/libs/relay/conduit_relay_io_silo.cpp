@@ -2397,7 +2397,10 @@ void silo_mesh_write(const Node &n,
                                  << silo_obj_path);
     }
 
-    DBoptlist *state_optlist = silo_generate_state_optlist(n);
+    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
+        silo_generate_state_optlist(n), 
+        &DBFreeOptlist,
+        "Error freeing state optlist."};
 
     Node n_mesh_info;
 
@@ -2453,12 +2456,12 @@ void silo_mesh_write(const Node &n,
         if (topo_type == "unstructured")
         {
             silo_write_ucd_mesh(dbfile, topo_name, n_coords,
-                                state_optlist, n_mesh_info);
+                                state_optlist.getSiloObject(), n_mesh_info);
         }
         else if (topo_type == "rectilinear") 
         {
             silo_write_quad_rect_mesh(dbfile, topo_name, n_topo, n_coords,
-                                      state_optlist, n_mesh_info);
+                                      state_optlist.getSiloObject(), n_mesh_info);
         }
         else if (topo_type == "uniform") 
         {
@@ -2473,18 +2476,18 @@ void silo_mesh_write(const Node &n,
                 n_topo, n_rect_topo, n_rect_coords);
 
             silo_write_quad_rect_mesh(dbfile, topo_name, n_rect_topo, n_rect_coords,
-                                      state_optlist, n_mesh_info);
+                                      state_optlist.getSiloObject(), n_mesh_info);
 
         }
         else if (topo_type == "structured")
         {
             silo_write_structured_mesh(dbfile, topo_name, n_topo, n_coords,
-                                       state_optlist, n_mesh_info);
+                                       state_optlist.getSiloObject(), n_mesh_info);
         }
         else if (topo_type == "points")
         {
             silo_write_pointmesh(dbfile, topo_name, n_coords,
-                                 state_optlist, n_mesh_info);
+                                 state_optlist.getSiloObject(), n_mesh_info);
         }
     }
 
@@ -2499,14 +2502,6 @@ void silo_mesh_write(const Node &n,
             silo_write_field(dbfile, var_name, n_var, n_mesh_info);
         }
     }
-
-    if(state_optlist)
-    {
-        silo_error = DBFreeOptlist(state_optlist);
-    }
-
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " freeing state optlist.");
 
     if (!silo_obj_path.empty()) 
     {
@@ -3173,26 +3168,31 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             if(par_rank == current_writer)
             {
-                DBfile *dbfile = nullptr;
+                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
+                    nullptr, 
+                    &DBClose, 
+                    "Error closing Silo file: " + root_filename};
 
                 for(int i = 0; i < local_num_domains; ++i)
                 {
                     // if truncate, first rank to touch the file needs
                     // to open at
-                    if( !dbfile
+                    if( !dbfile.getSiloObject()
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
-                        if (!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                        dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
+                        if (!dbfile.getSiloObject())
                         {
                             CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                         }
                         local_root_file_created.set((int)1);
                     }
                     
-                    if(!dbfile)
+                    if(!dbfile.getSiloObject())
                     {
-                        if (!(dbfile = DBOpen(root_filename.c_str(), silo_type, DB_APPEND)))
+                        dbfile.setSiloObject(DBOpen(root_filename.c_str(), silo_type, DB_APPEND));
+                        if (!dbfile.getSiloObject())
                         {
                             CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
                         }
@@ -3204,12 +3204,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                     uint64 domain = dom["state/domain_id"].to_uint64();
                     mesh_path = conduit_fmt::format("domain_{:06d}", domain);
-                    silo_mesh_write(dom, dbfile, mesh_path);
-                }
-
-                if(DBClose(dbfile) != 0)
-                {
-                    CONDUIT_ERROR("Error closing Silo file: " << root_filename);
+                    silo_mesh_write(dom, dbfile.getSiloObject(), mesh_path);
                 }
             }
 
@@ -3237,30 +3232,20 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                                     domain));
             // properly support truncate vs non truncate
 
-            DBfile *dbfile = nullptr;
+            detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
+                nullptr, 
+                &DBClose,
+                "Error closing Silo file: " + output_file};
 
             if (opts_truncate)
-            {
-                if (!(dbfile = DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                {
-                    CONDUIT_ERROR("Error opening Silo file for writing: " << output_file );
-                }
-            }
+                dbfile.setSiloObject(DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
             else
-            {
-                if (!(dbfile = DBOpen(output_file.c_str(), silo_type, DB_APPEND)))
-                {
-                    CONDUIT_ERROR("Error opening Silo file for writing: " << output_file);
-                }
-            }
+                dbfile.setSiloObject(DBOpen(output_file.c_str(), silo_type, DB_APPEND));
+            if (!dbfile.getSiloObject())
+                CONDUIT_ERROR("Error opening Silo file for writing: " << output_file );
 
             // write to mesh name subpath
-            silo_mesh_write(dom, dbfile, opts_mesh_name);
-
-            if(DBClose(dbfile) != 0)
-            {
-                CONDUIT_ERROR("Error closing Silo file: " << output_file);
-            }
+            silo_mesh_write(dom, dbfile.getSiloObject(), opts_mesh_name);
         }
     }
     else // more complex case, N domains to M files
@@ -3426,40 +3411,36 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                             try
                             {
-                                DBfile *dbfile = nullptr;
+                                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
+                                    nullptr, 
+                                    &DBClose,
+                                    "Error closing Silo file: " + output_file};
                                 // if truncate == true check if this is the first time we are
                                 // touching file, and use DBCREATE w/ DB_CLOBBER
                                 Node open_opts;
                                 if(opts_truncate && global_file_created[f] == 0)
                                 {
-                                    if(!dbfile)
+                                    if(!dbfile.getSiloObject())
                                     {
-                                        if (!(dbfile = DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
-                                        {
+                                        dbfile.setSiloObject(DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
+                                        if (!dbfile.getSiloObject())
                                             CONDUIT_ERROR("Error opening Silo file for writing: " << output_file );
-                                        }
                                     }
                                     local_file_created[f]  = 1;
                                     global_file_created[f] = 1;
                                 }
                                 
-                                if(!dbfile)
+                                if(!dbfile.getSiloObject())
                                 {
-                                    if (!(dbfile = DBOpen(output_file.c_str(), silo_type, DB_APPEND)))
-                                    {
+                                    dbfile.setSiloObject(DBOpen(output_file.c_str(), silo_type, DB_APPEND));
+                                    if (!dbfile.getSiloObject())
                                         CONDUIT_ERROR("Error opening Silo file for writing: " << output_file);
-                                    }
                                 }
 
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
                                 //              << output_file << " path " << path);
 
-                                silo_mesh_write(dom, dbfile, curr_path);
-
-                                if(DBClose(dbfile) != 0)
-                                {
-                                    CONDUIT_ERROR("Error closing Silo file: " << output_file);
-                                }
+                                silo_mesh_write(dom, dbfile.getSiloObject(), curr_path);
                                 
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
@@ -3733,38 +3714,39 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["file_pattern"] = output_file_pattern;
         root["tree_pattern"] = output_tree_pattern;
 
-        DBfile *dbfile = nullptr;
+        detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
+            nullptr, 
+            &DBClose,
+            "Error closing Silo file: " << root_filename};
 
         // if not root only, this is the first time we are writing 
         // to the root file -- make sure to properly support truncate
         if(opts_file_style != "root_only" && opts_truncate)
         {
-            if(!dbfile)
+            if(!dbfile.getSiloObject())
             {
-                if (!(dbfile = DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type)))
+                dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
+                if (!dbfile.getSiloObject())
                 {
                     CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
                 }
             }
         }
 
-        if(!dbfile)
+        if(!dbfile.getSiloObject())
         {
-            if (!(dbfile = DBOpen(root_filename.c_str(), silo_type, DB_APPEND)))
+            dbfile.setSiloObject(DBOpen(root_filename.c_str(), silo_type, DB_APPEND));
+            if (!dbfile.getSiloObject())
             {
                 CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
             }
         }
 
-        write_multimeshes(dbfile, opts_mesh_name, root);
-        write_multivars(dbfile, opts_mesh_name, root);
-        // TODO Q?
+        write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, root);
+        write_multivars(dbfile.getSiloObject(), opts_mesh_name, root);
+        // TODO
         // write_multimaterial();
 
-        if(DBClose(dbfile) != 0)
-        {
-            CONDUIT_ERROR("Error closing Silo file: " << root_filename);
-        }
     }
 
     // barrier at end of work to avoid file system race
