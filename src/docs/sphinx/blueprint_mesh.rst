@@ -74,8 +74,8 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
 
     * coordsets/coords/type: “uniform”
     * coordsets/coords/dims/{i,j}
-    * coordsets/coords/origin/{r,z} (optional, default = {0.0, 0.0})
-    * coordsets/coords/spacing/{dr,dz} (optional, default = {1.0, 1.0})
+    * coordsets/coords/origin/{z,r} (optional, default = {0.0, 0.0})
+    * coordsets/coords/spacing/{dz,dr} (optional, default = {1.0, 1.0})
 
 
   * Spherical
@@ -100,7 +100,7 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
   * Cylindrical:
 
     * coordsets/coords/type: “rectilinear”
-    * coordsets/coords/values/{r,z}
+    * coordsets/coords/values/{z,r}
 
   * Spherical
 
@@ -123,13 +123,20 @@ The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``
 
 
     * coordsets/coords/type: “explicit”
-    * coordsets/coords/values/{r,z}
+    * coordsets/coords/values/{z,r}
 
   * Spherical
 
 
     * coordsets/coords/type: “explicit”
     * coordsets/coords/values/{r,theta,phi}
+
+
+.. note::
+   For 2D cylindrical coordinate systems we recommend specifying the ``Z`` as the first axis and  ``R`` as the second axis. 
+   This matches the common expectation that ``Z`` should be displayed horizontally and ``R`` vertically in visualization tools,
+   and that when the mesh is revolved into 3D, it will be revolved around the horizontal axis.
+
 
 .. note::
    In all of the coordinate space definitions outlined above, spherical coordinates adhere to the definitions of
@@ -382,7 +389,7 @@ The following diagram illustrates a simple **polyhedral** topology:
 
 
 Mixed topologies with shapes/shape_map
-++++++++++++++++++++
+++++++++++++++++++++++++++++++++++++++++
 
 The schema for a **mixed** shapes topology is as follows:
 
@@ -1594,8 +1601,8 @@ Save a mesh to disk using a specific protocol:
 .. code:: cpp
 
     conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
-                                              const std::string &protocol,
-                                              const std::string &path);
+                                              const std::string &path,
+                                              const std::string &protocol);
 
 Save a mesh to disk using a specific protocol and options:
 
@@ -1701,11 +1708,11 @@ them in ``<`` and ``>`` characters. An example expressions entry in the index is
       {
         "braid":
         {
-          ...
+          // ...
         },
         "radial":
         {
-          ...
+          // ...
         },
       "expressions":
       {
@@ -1721,6 +1728,7 @@ them in ``<`` and ``>`` characters. An example expressions entry in the index is
           "topology": "mesh",
           "definition": "{<braid>,recenter(<radial>,\"nodal\")}"
         }
+      }
       }
 
 .. Properties and Transforms

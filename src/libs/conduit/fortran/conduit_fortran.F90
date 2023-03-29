@@ -24,7 +24,7 @@ module conduit
     ! generic types
     !--------------------------------------------------------------------------
     integer, parameter :: CONDUIT_EMPTY_ID  = F_CONDUIT_EMPTY_ID
-    integer, parameter :: CONDUIT_OBJECT_ID = F_CONDUIT_EMPTY_ID
+    integer, parameter :: CONDUIT_OBJECT_ID = F_CONDUIT_OBJECT_ID
     integer, parameter :: CONDUIT_LIST_ID   = F_CONDUIT_LIST_ID
     
     !--------------------------------------------------------------------------
@@ -78,6 +78,8 @@ module conduit
     integer, parameter :: CONDUIT_DOUBLE_ID = F_CONDUIT_NATIVE_DOUBLE_ID
     !--------------------------------------------------------------------------
 
+    ! conduit_index_t as defined in c
+    integer, parameter :: CONDUIT_INDEX_ID = F_CONDUIT_INDEX_ID
 
 
     !--------------------------------------------------------------------------
@@ -1177,6 +1179,409 @@ module conduit
          type(C_PTR), value, intent(IN) :: cnode
          real(C_DOUBLE) :: res
     end function conduit_node_as_double
+
+    !--------------------------------------------------------------------------
+    pure function conduit_node_dtype(cnode) result(res) &
+             bind(C, name="conduit_node_dtype")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cnode
+         type(C_PTR) :: res
+    end function conduit_node_dtype
+    
+    !--------------------------------------------------------------------------
+    ! DataType methods
+    !--------------------------------------------------------------------------
+
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_sizeof_index_t() result(res) &
+             bind(C, name="conduit_datatype_sizeof_index_t")
+         use iso_c_binding
+         implicit none
+         integer(C_INT) :: res
+    end function conduit_datatype_sizeof_index_t
+
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_id(cdatatype) result(res) &
+             bind(C, name="conduit_datatype_id")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(kind(F_CONDUIT_INDEX_ID)) :: res
+    end function conduit_datatype_id
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_name(cdatatype) result(res) &
+             bind(C, name="conduit_datatype_name")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         character(kind=C_CHAR) ::res 
+    end function c_conduit_datatype_name
+    
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_datatype_name_destroy(nameStr) &
+             bind(C, name="conduit_datatype_name_destroy")
+         use iso_c_binding
+         implicit none
+         character(kind=C_CHAR), intent(IN) ::nameStr(*)
+    end subroutine c_conduit_datatype_name_destroy
+
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_number_of_elements(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_number_of_elements")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(kind(F_CONDUIT_INDEX_ID)) :: res
+    end function conduit_datatype_number_of_elements
+
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_offset(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_offset")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(kind(F_CONDUIT_INDEX_ID)) :: res
+    end function conduit_datatype_offset
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_stride(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_stride")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(kind(F_CONDUIT_INDEX_ID)) :: res
+    end function conduit_datatype_stride
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_element_bytes(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_element_bytes")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(kind(F_CONDUIT_INDEX_ID)) :: res
+    end function conduit_datatype_element_bytes
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_endianness(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_endianness")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(kind(F_CONDUIT_INDEX_ID)) :: res
+    end function conduit_datatype_endianness
+    
+    !--------------------------------------------------------------------------
+    pure function conduit_datatype_element_index(cdatatype, idx) result(res) &
+            bind(C, name="conduit_datatype_element_index")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(kind(F_CONDUIT_INDEX_ID)), value, intent(IN) :: idx
+         integer(kind(F_CONDUIT_INDEX_ID)) :: res
+    end function conduit_datatype_element_index
+
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_empty(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_empty")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_empty
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_object(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_object")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_object
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_list(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_list")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_list
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_number(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_number")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_number
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_floating_point(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_floating_point")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_floating_point
+
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_integer(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_integer")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_integer
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_signed_integer(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_signed_integer")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_signed_integer
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_unsigned_integer(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_unsigned_integer")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_unsigned_integer
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_int8(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_int8")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_int8
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_int16(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_int16")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_int16
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_int32(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_int32")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_int32
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_int64(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_int64")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_int64
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_uint8(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_uint8")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_uint8
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_uint16(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_uint16")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_uint16
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_uint32(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_uint32")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_uint32
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_uint64(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_uint64")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_uint64
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_float32(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_float32")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_float32
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_float64(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_float64")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_float64
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_char(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_char")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_char
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_short(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_short")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_short
+
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_int(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_int")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_int
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_long(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_long")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_long
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_unsigned_char(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_unsigned_char")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_unsigned_char
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_unsigned_short(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_unsigned_short")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_unsigned_short
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_unsigned_int(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_unsigned_int")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_unsigned_int
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_unsigned_long(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_unsigned_long")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_unsigned_long
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_float(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_float")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_float
+
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_double(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_double")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_double
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_string(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_string")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_string
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_char8_str(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_char8_str")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_char8_str
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_little_endian(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_little_endian")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_little_endian
+    
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_is_big_endian(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_is_big_endian")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_is_big_endian
+
+    !--------------------------------------------------------------------------
+    pure function c_conduit_datatype_endianness_matches_machine(cdatatype) result(res) &
+            bind(C, name="conduit_datatype_endianness_matches_machine")
+         use iso_c_binding
+         implicit none
+         type(C_PTR), value, intent(IN) :: cdatatype
+         integer(C_INT) :: res
+    end function c_conduit_datatype_endianness_matches_machine
 
 
     !--------------------------------------------------------------------------

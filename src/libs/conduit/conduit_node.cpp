@@ -14730,6 +14730,17 @@ Node::as_int64_ptr()
 }
 
 //---------------------------------------------------------------------------//
+index_t *
+Node::as_index_t_ptr()
+{
+#ifdef CONDUIT_INDEX_32
+    return as_int32_ptr();
+#else
+    return as_int64_ptr();
+#endif
+}
+
+//---------------------------------------------------------------------------//
 // unsigned integers via pointers
 //---------------------------------------------------------------------------//
 
@@ -14850,6 +14861,17 @@ Node::as_int64_ptr() const
                         "as_int64_ptr() const",
                         NULL);
     return (int64*)element_ptr(0);
+}
+
+//---------------------------------------------------------------------------//
+const index_t *
+Node::as_index_t_ptr() const
+{
+#ifdef CONDUIT_INDEX_32
+    return as_int32_ptr();
+#else
+    return as_int64_ptr();
+#endif
 }
 
 //---------------------------------------------------------------------------//

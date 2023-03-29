@@ -787,7 +787,6 @@ endmacro()
 # over `long`.
 #-----------------------------------------------------------------------------
 
-set(bitwidth_prefer_long_long FALSE)
 if(CONDUIT_USE_CXX11)
     # note: this call assumes this file included from libs/conduit/CMakeLists.txt
     try_compile( bitwidth_prefer_long_long   # result var
@@ -796,6 +795,8 @@ if(CONDUIT_USE_CXX11)
                  OUTPUT_VARIABLE bitwidth_prefer_long_long_out
                  CXX_STANDARD 11
                  CXX_STANDARD_REQUIRED TRUE)
+else()
+    set(bitwidth_prefer_long_long FALSE)
 endif()
 
 

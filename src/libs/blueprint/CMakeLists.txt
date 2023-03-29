@@ -31,17 +31,21 @@ set(blueprint_headers
     conduit_blueprint.hpp
     conduit_blueprint_mesh.hpp
     conduit_blueprint_mesh_utils.hpp
+    conduit_blueprint_mesh_topology_metadata.hpp
     conduit_blueprint_mesh_examples.hpp
     conduit_blueprint_mesh_examples_julia.hpp
     conduit_blueprint_mesh_examples_venn.hpp
     conduit_blueprint_mesh_examples_related_boundary.hpp
     conduit_blueprint_mesh_examples_polystar.hpp
+    conduit_blueprint_mesh_examples_rz_cylinder.hpp
     conduit_blueprint_mcarray.hpp
     conduit_blueprint_mcarray_examples.hpp
     conduit_blueprint_o2mrelation.hpp
     conduit_blueprint_o2mrelation_utils.hpp
     conduit_blueprint_o2mrelation_iterator.hpp
+    conduit_blueprint_o2mrelation_index.hpp
     conduit_blueprint_o2mrelation_examples.hpp
+    conduit_blueprint_ndarray_index.hpp
     conduit_blueprint_table.hpp
     conduit_blueprint_table_examples.hpp
     conduit_blueprint_zfparray.hpp
@@ -68,19 +72,23 @@ set(blueprint_sources
     conduit_blueprint_mesh.cpp
     conduit_blueprint_mesh_partition.cpp
     conduit_blueprint_mesh_utils.cpp
+    conduit_blueprint_mesh_topology_metadata.cpp
     conduit_blueprint_mesh_matset_xforms.cpp
     conduit_blueprint_mesh_examples.cpp
     conduit_blueprint_mesh_examples_julia.cpp
     conduit_blueprint_mesh_examples_venn.cpp
     conduit_blueprint_mesh_examples_related_boundary.cpp
     conduit_blueprint_mesh_examples_polystar.cpp
+    conduit_blueprint_mesh_examples_rz_cylinder.cpp
     conduit_blueprint_mesh_flatten.cpp
     conduit_blueprint_mcarray.cpp
     conduit_blueprint_mcarray_examples.cpp
     conduit_blueprint_o2mrelation.cpp
     conduit_blueprint_o2mrelation_utils.cpp
     conduit_blueprint_o2mrelation_iterator.cpp
+    conduit_blueprint_o2mrelation_index.cpp
     conduit_blueprint_o2mrelation_examples.cpp
+    conduit_blueprint_ndarray_index.cpp
     conduit_blueprint_table.cpp
     conduit_blueprint_table_examples.cpp
     conduit_blueprint_zfparray.cpp
@@ -188,6 +196,7 @@ set(conduit_blueprint_mpi_sources
     conduit_blueprint_mpi.cpp
     conduit_blueprint_mpi_mesh.cpp
     conduit_blueprint_mpi_mesh_examples.cpp
+    conduit_blueprint_mpi_mesh_distribute.cpp
     conduit_blueprint_mpi_mesh_flatten.cpp
     conduit_blueprint_mpi_mesh_partition.cpp
     )

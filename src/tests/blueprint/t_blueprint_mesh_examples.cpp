@@ -12,6 +12,7 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
+#include "conduit_fmt/conduit_fmt.h"
 
 #include <math.h>
 #include <iostream>
@@ -1483,6 +1484,67 @@ TEST(conduit_blueprint_mesh_examples, oneDtostrip_fullfeatured)
     }
 }
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, rz_cylinder)
+{
+    index_t nz = 10;
+    index_t nr = 15;
+
+    Node res, info;
+
+    std::string mesh_type = "uniform";
+    std::string ofbase = conduit_fmt::format("rz_cylinder_{:s}_z_{:d}_r_{:d}",mesh_type,nz,nr);
+    conduit::blueprint::mesh::examples::rz_cylinder(mesh_type,nz,nr,res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    std::cout << "verify: " << ofbase << std::endl;
+    info.print();
+    test_save_mesh_helper(res,ofbase);
+
+    mesh_type = "rectilinear";
+    ofbase = conduit_fmt::format("rz_cylinder_{:s}_z_{:d}_r_{:d}",mesh_type,nz,nr);
+    conduit::blueprint::mesh::examples::rz_cylinder(mesh_type,nz,nr,res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    std::cout << "verify: " << ofbase << std::endl;
+    info.print();
+    test_save_mesh_helper(res,ofbase);
+
+    mesh_type = "structured";
+    ofbase = conduit_fmt::format("rz_cylinder_{:s}_z_{:d}_r_{:d}",mesh_type,nz,nr);
+    conduit::blueprint::mesh::examples::rz_cylinder(mesh_type,nz,nr,res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    std::cout << "verify: " << ofbase << std::endl;
+    info.print();
+    test_save_mesh_helper(res,ofbase);
+
+    mesh_type = "unstructured";
+    ofbase = conduit_fmt::format("rz_cylinder_{:s}_z_{:d}_r_{:d}",mesh_type,nz,nr);
+    conduit::blueprint::mesh::examples::rz_cylinder(mesh_type,nz,nr,res);
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    std::cout << "verify: " << ofbase << std::endl;
+    info.print();
+    test_save_mesh_helper(res,ofbase);
+
+    // bad args tests
+    EXPECT_THROW( conduit::blueprint::mesh::examples::rz_cylinder("garbage",
+                                                                  nz,
+                                                                  nr,
+                                                                  res),
+                  conduit::Error);
+
+    EXPECT_THROW( conduit::blueprint::mesh::examples::rz_cylinder("uniform",
+                                                                  0,
+                                                                  0,
+                                                                  res),
+                  conduit::Error);
+
+    EXPECT_THROW( conduit::blueprint::mesh::examples::rz_cylinder("uniform",
+                                                                  -1,
+                                                                  10,
+                                                                  res),
+                  conduit::Error);
+
+}
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
@@ -1499,3 +1561,5 @@ int main(int argc, char* argv[])
     result = RUN_ALL_TESTS();
     return result;
 }
+
+

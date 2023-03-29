@@ -679,7 +679,7 @@ void generate_partition_field(conduit::Node &mesh,
 
 
     // first lets get eldist setup:
-    // eldist[0] = 0,\
+    // eldist[0] = 0
     // eldist[1] == # of elements on rank 0-
     // eldist[2] == # of elemens on rank 0 + rank 1
     //    ...

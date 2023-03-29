@@ -613,6 +613,13 @@ namespace utils
      unsigned int CONDUIT_API hash(const std::string &k,
                                    unsigned int initval = 0);
 
+//-----------------------------------------------------------------------------
+// index_t hash functions
+//-----------------------------------------------------------------------------
+     uint64       CONDUIT_API hash(const index_t *k,
+                                   unsigned int length);
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::utils --

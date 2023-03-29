@@ -12,6 +12,67 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.8.7
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.7/conduit-v0.8.7-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **General**
+
+ * Added public default and copy constructor to DataAccessor. Enables more flexibility with initializing DataAccessors from Nodes.
+ * Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
+ * Added Node.as_index_t_ptr()
+ * Added ``conduit::execution`` namespace, which contains ``for_all()`` and ``sort()`` functions.
+ * Added DataType support to the Fortran API
+
+* **Blueprint**
+
+ * Added ``conduit::blueprint::mpi::mesh::distribute``, which enables sending mesh domains to arbitrary MPI ranks (suppo
+ * Added ``conduit::blueprint::mesh::utils::NDIndex`` class.  Instantiate with shape, offset, and stride in array or conduit::Node.  Get flatindex for N-D coordinates.
+ * Added ``conduit::blueprint::o2mrelation::O2MIndex`` class.  Instantiate with O2M relation Node; get flatindex for a given one_index and many_index.  Alternative to Java-style iterator.
+ * Added ``conduit::blueprint::examples::mesh::rz_cylinder`` function that generates example 2D cylindrical (RZ) meshes.
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Fixed a logic issue undermining C++ type mapping when using CMake 3.26.
+
+* **Blueprint**
+
+ * Performance improvements to Mesh Blueprint topology metadata, used by ``generate_points``, ``generate_sides``, etc. The class was rewritten and the old one was moved to ``conduit::blueprint::mesh::utils::reference::TopologyMetadata``. The new implementation is faster, often about 6-20x depending on options.
+ * Performance improvements to O2M Iterators.
+ * Performance improvements to functions that underpin centroid generation.
+
+* **Relay**
+
+ * Fixed MPI baton logic error in ``conduit::relay::io::blueprint::save_mesh()`` that caused MPI tasks to serialize writes to files in the N domains to M files case. Fix restores parallel write performance. This bug did not impact cases where where N domains were written to N files (N to N) or N domains were written to a single file (N to 1).
+
+Changed
+~~~~~~~
+
+
+* **General**
+
+ * Changed diff of string types to respect null terminated strings instead of described length
+ * Improved diff_compatible of string types to look for substring match, to implement expected compatible semantics.
+
+* **Blueprint**
+
+ * Changed the recommended axis order for 2D cylindrical meshes to be ``Z`` as the first axis, and ``R`` as the second. This choice aligns with expected visualization cases where ``Z`` varies with the horizontal axis and ``R`` varies with the vertical axis.
+
 v0.8.6
 ---------------------------------
 
