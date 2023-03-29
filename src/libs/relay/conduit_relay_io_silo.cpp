@@ -381,6 +381,10 @@ public:
                        std::string &silo_name)
     {
         conduit::utils::rsplit_file_path(path, ":", silo_name, file_path);
+        if (silo_name.length() > 1 && silo_name[0] == '/')
+        {
+            silo_name = silo_name.substr(1);
+        }
         if (!file_path.empty())
         {
             // TODO or use utils::join_path() instead?
@@ -1094,6 +1098,16 @@ read_root_silo_index(const std::string &root_file_path,
     root_node.reset();
     multimesh_name = "";
     error_oss.str("");
+
+    // first, make sure we can open the root file
+    std::ifstream ifs;
+    ifs.open(root_file_path.c_str());
+    if(!ifs.is_open())
+    {
+        error_oss << "failed to open root file: " << root_file_path;
+        return false;
+    }
+    ifs.close();
 
     // open silo file
     detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
