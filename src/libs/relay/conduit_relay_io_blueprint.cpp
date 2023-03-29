@@ -668,6 +668,14 @@ bool clean_mesh(const conduit::Node &data,
       {
         conduit::Node &dest_dom = output.append();
         dest_dom.set_external(child);
+        // note: this algo may re-write domain ids
+        // so make sure this isn't set as external
+        if(dest_dom.has_path("state/domain_id"))
+        {
+            index_t dom_id = dest_dom["state/domain_id"].to_index_t();
+            dest_dom["state/domain_id"].reset();
+            dest_dom["state/domain_id"] = dom_id;
+        }
       }
     }
   }
@@ -1387,12 +1395,20 @@ void write_mesh(const Node &mesh,
             // update baton requests
             for(int f = 0; f < num_files; ++f)
             {
+                // reset file baton logic, look
+                // to see if any local domains are
+                // destined for this file
+                local_file_batons[f] = -1;
                 for(int d = 0; d < local_num_domains; ++d)
                 {
-                    if(local_domain_status[d] == 1)
+                    // do we need to write this domain,
+                    // and if so is it going to the file
+                    // f
+                    if(local_domain_status[d] == 1 &&
+                       local_domain_to_file[d] == f)
+                    {
                         local_file_batons[f] = par_rank;
-                    else
-                        local_file_batons[f] = -1;
+                    }
                 }
             }
 
@@ -1507,11 +1523,16 @@ void write_mesh(const Node &mesh,
                 }
                 CONDUIT_ERROR(emsg);
             }
-            // If you  need to debug the baton alog:
-            // std::cout << "[" << par_rank << "] "
+
+            // // If you need to debug the baton algorithm,
+            // // uncomment to examine the books:
+            // if(par_rank == 0)
+            // {
+            //    std::cout << "[" << par_rank << "] "
             //              << " twirls: " << twirls
             //              << " details\n"
             //              << books.to_yaml();
+            // }
 
             // check if we have another round
             // stop when all batons are -1
@@ -2014,6 +2035,12 @@ void read_mesh(const std::string &root_file_path,
         conduit::relay::mpi::broadcast_using_schema(root_node,
                                                     0,
                                                     mpi_comm);
+    }
+#else
+    // non MPI case, throw error
+    if(error == 1)
+    {
+        CONDUIT_ERROR(error_oss.str());
     }
 #endif
 

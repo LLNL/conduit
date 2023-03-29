@@ -299,7 +299,7 @@ TEST(conduit_blueprint_mesh_verify, coordset_uniform_spacing)
 
     EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dx","dy","dz"}));
     EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dr","dtheta","dphi"}));
-    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dr","dz"}));
+    EXPECT_TRUE(is_valid_coordsys(verify_uniform_spacing,{"dz","dr"}));
 
     EXPECT_FALSE(is_valid_coordsys(verify_uniform_spacing,{"di","dj","dk"}));
 }

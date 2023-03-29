@@ -1,1 +1,0 @@
-bgqos_0.gcc.4.8.4.cmake

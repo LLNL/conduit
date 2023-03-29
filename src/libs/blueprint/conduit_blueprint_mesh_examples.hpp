@@ -21,6 +21,7 @@
 #include "conduit_blueprint_mesh_examples_venn.hpp"
 #include "conduit_blueprint_mesh_examples_related_boundary.hpp"
 #include "conduit_blueprint_mesh_examples_polystar.hpp"
+#include "conduit_blueprint_mesh_examples_rz_cylinder.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--

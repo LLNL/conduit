@@ -23,7 +23,7 @@ namespace conduit
 
 //-----------------------------------------------------------------------------
 //
-// -- conduit::DataArray public methods --
+// -- conduit::DataAccessor public methods --
 //
 //-----------------------------------------------------------------------------
 
@@ -33,6 +33,14 @@ DataAccessor<T>::DataAccessor()
 : m_data(NULL),
   m_dtype()
 {}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+DataAccessor<T>::DataAccessor(const DataAccessor<T> &accessor)
+: m_data(accessor.m_data),
+  m_dtype(accessor.m_dtype)
+{}
+
 
 //---------------------------------------------------------------------------//
 template <typename T> 

@@ -43,6 +43,9 @@ set(conduit_headers
     conduit_endianness_types.h
     conduit_core.hpp
     conduit_endianness.hpp
+    conduit_execution.hpp
+    conduit_execution_omp.hpp
+    conduit_execution_serial.hpp
     conduit_data_array.hpp
     conduit_data_accessor.hpp
     conduit_data_type.hpp
@@ -120,7 +123,8 @@ if(FORTRAN_FOUND)
     # Specify fortran sources
     #
     set(conduit_fortran_sources
-        fortran/conduit_fortran.F90)
+        fortran/conduit_fortran.F90
+        fortran/conduit_fortran_endianess_types.f90)
 
     #  add oo interface if the fortran compiler supports it
     if(ENABLE_FORTRAN_OBJ_INTERFACE)

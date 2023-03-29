@@ -69,23 +69,53 @@ load_baseline(const std::string &filename, conduit::Node &n)
 
 //-----------------------------------------------------------------------------
 inline bool
-compare_baseline(const std::string &filename, const conduit::Node &n)
+compare_baseline(const std::string &filename, const conduit::Node &n,
+    conduit::Node &baseline, bool forceFile = false)
 {
     const double tolerance = 1.e-6;
-    conduit::Node baseline, info;
+    conduit::Node info;
     conduit::relay::io::load(filename, "yaml", baseline);
 
-    // Node::diff returns true if the nodes are different. We want not different.
-    bool equal = !baseline.diff(n, info, tolerance, true);
+    bool equal;
+    if(forceFile)
+    {
+        // Sometimes Node::diff lies about data arrays being equal when they are not.
+        // Save the results node n out to a file first and then read it back in.
+        // That seems to work around the issue.
+        std::string tmp_file("conduit_tmp_result.yaml");
+        conduit::relay::io::save(n, tmp_file, "yaml");
+        conduit::Node n_fromfile;
+        conduit::relay::io::load(tmp_file, "yaml", n_fromfile);
+        conduit::utils::remove_file(tmp_file);
+        // Node::diff returns true if the nodes are different. We want not different.
+        equal = !baseline.diff(n_fromfile, info, tolerance, true);
+    }
+    else
+    {
+        // Node::diff returns true if the nodes are different. We want not different.
+        equal = !baseline.diff(n, info, tolerance, true);
+    }
 
     if(!equal)
     {
-       const char *line = "*************************************************************";
-       std::cout << "Difference!" << std::endl;
-       std::cout << line << std::endl;
-       info.print();
+        const char *line = "*************************************************************";
+        std::cout << "Difference!" << std::endl;
+        std::cout << line << std::endl;
+
+        conduit::Node opts;
+        opts["num_elements_threshold"] = 20;
+        opts["num_children_threshold"] = 10000;
+        info.to_summary_string_stream(std::cout, opts);
     }
     return equal;
+}
+
+//-----------------------------------------------------------------------------
+inline bool
+compare_baseline(const std::string &filename, const conduit::Node &n)
+{
+    conduit::Node baseline;
+    return compare_baseline(filename, n, baseline);
 }
 
 //-----------------------------------------------------------------------------

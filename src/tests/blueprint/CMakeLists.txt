@@ -14,6 +14,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mcarray_examples
                     t_blueprint_o2mrelation_verify
                     t_blueprint_o2mrelation_examples
+                    t_blueprint_ndarray_index
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_transform
                     t_blueprint_mesh_partition
@@ -24,6 +25,7 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mesh_examples
                     t_blueprint_mesh_flatten
                     t_blueprint_mesh_matset_xforms
+                    t_blueprint_mesh_topology_metadata
                     t_blueprint_table_verify
                     t_blueprint_table_examples
                     t_blueprint_table_relay
@@ -71,7 +73,8 @@ set(BLUEPRINT_MPI_TESTS_RANKS_2
 
 set(BLUEPRINT_RELAY_MPI_TESTS
     t_blueprint_mpi_mesh_relay
-    t_blueprint_mpi_mesh_polytopal)
+    t_blueprint_mpi_mesh_polytopal
+    t_blueprint_mpi_mesh_distribute_2_ranks)
 
 set(BLUEPRINT_RELAY_PARMETIS_MPI_TESTS
     t_blueprint_mpi_mesh_parmetis
@@ -79,7 +82,8 @@ set(BLUEPRINT_RELAY_PARMETIS_MPI_TESTS
 
 set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4
     t_blueprint_mpi_mesh_flatten
-    t_blueprint_mpi_mesh_partition)
+    t_blueprint_mpi_mesh_partition
+    t_blueprint_mpi_mesh_distribute_4_ranks)
 
 if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")

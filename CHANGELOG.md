@@ -4,13 +4,43 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.8.7] - Released 2023-03-23
 
 ### Added
 
 #### General
-
+- Added public default and copy constructor to DataAccessor. Enables more flexibility with initializing DataAccessors from Nodes.
 - Added Node.name(), Node.path(), Schema.name(), and Schema.path() to Python API.
+- Added Node.as_index_t_ptr()
+- Added `conduit::execution` namespace, which contains `for_all()` and `sort()` functions.
+- Added DataType support to the Fortran API
+
+#### Blueprint
+- Added `conduit::blueprint::mpi::mesh::distribute`, which enables sending mesh domains to arbitrary MPI ranks (suppo
+- Added `conduit::blueprint::mesh::utils::NDIndex` class.  Instantiate with shape, offset, and stride in array or conduit::Node.  Get flatindex for N-D coordinates.
+- Added `conduit::blueprint::o2mrelation::O2MIndex` class.  Instantiate with O2M relation Node; get flatindex for a given one_index and many_index.  Alternative to Java-style iterator.
+- Added `conduit::blueprint::examples::mesh::rz_cylinder` function that generates example 2D cylindrical (RZ) meshes.
+
+### Fixed
+#### General
+- Fixed a logic issue undermining C++ type mapping when using CMake 3.26.
+
+#### Blueprint
+- Performance improvements to Mesh Blueprint topology metadata, used by `generate_points`, `generate_sides`, etc. The class was rewritten and the old one was moved to `conduit::blueprint::mesh::utils::reference::TopologyMetadata`. The new implementation is faster, often about 6-20x depending on options.
+- Performance improvements to O2M Iterators.
+- Performance improvements to functions that underpin centroid generation.
+
+#### Relay
+- Fixed MPI baton logic error in `conduit::relay::io::blueprint::save_mesh()` that caused MPI tasks to serialize writes to files in the N domains to M files case. Fix restores parallel write performance. This bug did not impact cases where where N domains were written to N files (N to N) or N domains were written to a single file (N to 1).
+
+### Changed
+#### General
+- Changed diff of string types to respect null terminated strings instead of described length
+- Improved diff_compatible of string types to look for substring match, to implement expected compatible semantics.
+
+#### Blueprint
+- Changed the recommended axis order for 2D cylindrical meshes to be `Z` as the first axis, and `R` as the second. This choice aligns with expected visualization cases where `Z` varies with the horizontal axis and `R` varies with the vertical axis.
+
 
 ## [0.8.6] - Released 2023-01-11
 
@@ -738,7 +768,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.5...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.7...HEAD
+[0.8.7]: https://github.com/llnl/conduit/compare/v0.8.6...v0.8.7
+[0.8.6]: https://github.com/llnl/conduit/compare/v0.8.5...v0.8.6
 [0.8.5]: https://github.com/llnl/conduit/compare/v0.8.4...v0.8.5
 [0.8.4]: https://github.com/llnl/conduit/compare/v0.8.3...v0.8.4
 [0.8.3]: https://github.com/llnl/conduit/compare/v0.8.2...v0.8.3
@@ -756,3 +788,4 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 [0.3.0]: https://github.com/llnl/conduit/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/llnl/conduit/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/llnl/conduit/compare/v0.1.0...v0.2.0
+

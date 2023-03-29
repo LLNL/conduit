@@ -185,7 +185,7 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate)
     }
 
     std::string output_base = "tout_relay_mesh_save_load_truncate";
-    
+
     Node data;
 
     // 3 doms
@@ -265,7 +265,7 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate)
 
     // trunc will work
     relay::io::blueprint::save_mesh(data, output_base, "hdf5", opts);
-    
+
     // load mesh back back in and diff to check values
     relay::io::blueprint::load_mesh(output_base + ".cycle_000100.root",
                                     n_read);
@@ -290,10 +290,10 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate_root_only)
         CONDUIT_INFO("HDF5 disabled, skipping save_read_mesh_truncate test");
         return;
     }
-    
+
 
     std::string output_base = "tout_relay_mesh_save_load_truncate";
-    
+
     Node data;
 
     blueprint::mesh::examples::braid("uniform",
@@ -318,7 +318,7 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_truncate_root_only)
     opts["truncate"] = "true";
     // this will succed
     relay::io::blueprint::write_mesh(data, output_base, "hdf5", opts);
-    
+
 }
 
 //-----------------------------------------------------------------------------
@@ -491,8 +491,8 @@ TEST(conduit_blueprint_mesh_relay, save_read_mesh_opts)
     // now test expected name
     load_opts["mesh_name"] = "bananas";
     relay::io::blueprint::load_mesh(tout_base + ".root", load_opts, n_read);
-    
-    // check that 
+
+    // check that
     // load mesh back back in and diff to check values
     relay::io::blueprint::load_mesh(tout_base + ".root",
                                     n_read);
@@ -507,9 +507,9 @@ TEST(conduit_blueprint_mesh_relay, save_multi_domain_json_yaml)
     Node data;
     // use spiral , with 3 domains
     conduit::blueprint::mesh::examples::spiral(3,data);
-    
+
     std::string tout_base = "tout_relay_bp_mesh_fname_test_";
-    
+
     // turn off cycle for these files
     Node opts;
     opts["suffix"] = "none";
@@ -543,7 +543,7 @@ TEST(conduit_blueprint_mesh_relay, save_with_subdir)
 
     Node data;
     conduit::blueprint::mesh::examples::spiral(3,data);
-    
+
     blueprint::mesh::examples::braid("uniform",
                                      2,
                                      2,
@@ -581,7 +581,7 @@ TEST(conduit_blueprint_mesh_relay, save_with_subdir)
     relay::io::blueprint::save_mesh(data,tout_base,"hdf5",opts);
     relay::io::blueprint::load_mesh(tout_file,n_load);
     EXPECT_FALSE(data[0].diff(n_load[0],info));
-    
+
     tout_base = "tout_subdir/tout_relay_subdir_test_hdf5_multi_dom_multi_file";
     tout_file = "tout_subdir/tout_relay_subdir_test_hdf5_multi_dom_multi_file.root";
     opts["number_of_files"] = 2;
@@ -622,7 +622,7 @@ TEST(conduit_blueprint_mesh_relay, round_trip_all_protos)
         std::string data_str = data.to_yaml();
         data.reset();
         data.parse(data_str,"yaml");
-        
+
         opts["suffix"] = "none";
         relay::io::blueprint::save_mesh(data,tout_base,protocol,opts);
         relay::io::blueprint::load_mesh(tout_fname,n_load);
@@ -651,7 +651,7 @@ TEST(conduit_blueprint_mesh_relay, single_file_custom_part_map_index)
     Node root;
     conduit::blueprint::mesh::examples::braid("quads",10,10,0,root["mesh"]);
 
-    // create an index 
+    // create an index
     blueprint::mesh::generate_index(root["mesh"],
                                     "",
                                     1,
@@ -664,7 +664,7 @@ TEST(conduit_blueprint_mesh_relay, single_file_custom_part_map_index)
     CONDUIT_INFO("Creating: tout_single_file_part_map_index_hdf5.root");
     relay::io::save(root, output_root,"hdf5");
 
-    // now to test the read, the domains should return 
+    // now to test the read, the domains should return
     // back in the original order
     Node n_load, n_info;
     relay::io::blueprint::load_mesh(output_root,n_load);
@@ -696,7 +696,7 @@ TEST(conduit_blueprint_mesh_relay, custom_part_map_index)
     create_directory(output_dir);
 
     //
-    // 5 domain case, has a non trivial domain ordering across 3 files 
+    // 5 domain case, has a non trivial domain ordering across 3 files
     //
 
     // partition_pattern: "tout_custom_part_map_index/file_{:02}.hdf5:/domain_{:03}"
@@ -708,14 +708,14 @@ TEST(conduit_blueprint_mesh_relay, custom_part_map_index)
     Node data, root;
     conduit::blueprint::mesh::examples::spiral(5,data);
 
-    // create an index 
+    // create an index
     blueprint::mesh::generate_index(data,
                                     "",
                                     5,
                                     root["blueprint_index/spiral"]);
 
     // add the custom part map
-                                    
+
     Node &bp_idx_state = root["blueprint_index/spiral/state"];
     bp_idx_state["partition_pattern"] = output_dir + "/file_{:02}.hdf5:/domain_{:03}";
 
@@ -726,7 +726,7 @@ TEST(conduit_blueprint_mesh_relay, custom_part_map_index)
     for(index_t i=0;i<5;i++)
     {
         int domain_id = pmap_d_vals[i];
-        std::string opath = conduit::utils::format( 
+        std::string opath = conduit::utils::format(
                                 bp_idx_state["partition_pattern"].as_string(),
                                 bp_idx_state["partition_map"],
                                 i);
@@ -742,12 +742,12 @@ TEST(conduit_blueprint_mesh_relay, custom_part_map_index)
     CONDUIT_INFO("Creating: tout_custom_part_map_index.root");
     relay::io::save(root, output_root,"hdf5");
 
-    // now to test the read, the domains should return 
+    // now to test the read, the domains should return
     // back in the original order
     Node n_load, n_info;
     relay::io::blueprint::load_mesh(output_root,n_load);
 
-    // spiral domains are unique, so we can 
+    // spiral domains are unique, so we can
     // check if they came back in the right order via diff
     // (read should have retrieved 0 -> 4 in order)
     for(index_t i=0;i<5;i++)
