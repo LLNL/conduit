@@ -1626,8 +1626,7 @@ get_coordset_type_labels(const Node &values)
         return std::make_pair(DB_CYLINDRICAL, conduit::blueprint::mesh::utils::CYLINDRICAL_AXES);
     else if (sys == "spherical")
         return std::make_pair(DB_SPHERICAL, conduit::blueprint::mesh::utils::SPHERICAL_AXES);
-    else
-        CONDUIT_ERROR("Unrecognized coordinate system " << sys);
+    CONDUIT_ERROR("Unrecognized coordinate system " << sys);
 }
 
 //---------------------------------------------------------------------------//
@@ -3717,7 +3716,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
             nullptr, 
             &DBClose,
-            "Error closing Silo file: " << root_filename};
+            "Error closing Silo file: " + root_filename};
 
         // if not root only, this is the first time we are writing 
         // to the root file -- make sure to properly support truncate

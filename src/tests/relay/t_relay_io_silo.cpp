@@ -134,11 +134,9 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 }
 
 
-// TODO: add tests for fields, matsets, etc.
+// TODO: add tests for matsets
 TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
-    bool i_wanna_print = false;
-
     const std::vector<std::string> mesh_types = {
         "uniform", "rectilinear", "structured",
         "tris", "quads"};
@@ -159,20 +157,10 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             
             io::silo::save_mesh(save_mesh, "basic");
 
-            io::blueprint::save_mesh(save_mesh, "basic_test", "hdf5");
-
             Node load_mesh;
             io::silo::load_mesh("basic.root", load_mesh);
             
             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
-
-            if (i_wanna_print)
-            {
-                std::cout << "I am save mesh" << std::endl;
-                save_mesh.print();
-                std::cout << "I am load mesh" << std::endl;
-                load_mesh[0].print();
-            }
 
             // The silo conversion will transform uniform to rectilinear
             // so we will do the same to allow the diff to succeed
@@ -200,12 +188,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             save_mesh["fields"]["mesh_field"]["topology"] = "mesh_mesh";
             save_mesh["fields"]["mesh_field"].remove_child("volume_dependent");
 
-            if (i_wanna_print)
-            {
-                std::cout << "I am save mesh updated for modern audiences" << std::endl;
-                save_mesh.print();
-            }
-
             // the loaded mesh will be in the multidomain format
             // (it will be a list containing a single mesh domain)
             // but the saved mesh is in the single domain format
@@ -217,60 +199,62 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
     }
 }
 
-// // TODO: make this pass?
-// // right now multidomain meshes are read out as a list, but
-// // blueprint specifies that multidomain meshes are objects.
-// // this is one reason the test fails.
-// // Problem: in overlink, all domains are named the same ('MESH')
-// TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
-// {
-//     for (int ndomains = 3; ndomains < 4; ++ndomains)
-//     {
-//         Node save_mesh;
-//         blueprint::mesh::examples::spiral(ndomains, save_mesh);
-//         // for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
-//         // {
-//         //     save_mesh[child].remove("state"); // TODO uncomment this and add functionality for it
-//         // }
+// TODO: make this pass?
+// right now multidomain meshes are read out as a list, but
+// blueprint specifies that multidomain meshes are objects.
+// this is one reason the test fails.
+// Problem: in overlink, all domains are named the same ('MESH')
+TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
+{
+    for (int ndomains = 3; ndomains < 4; ndomains ++)
+    {
+        Node save_mesh;
+        blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
+        {
+            save_mesh[child].remove("state"); // TODO uncomment this and add functionality for it
+        }
 
-//         io::silo::save_mesh(save_mesh, "spiral");
-//         // Node load_mesh;
-//         // io::silo::load_mesh("spiral.silo", load_mesh);
+        // TODO there is a bug on the save side only multimeshes and multivars are being saved
 
-//         // Node info;
+        io::silo::save_mesh(save_mesh, "spiral");
+        Node load_mesh;
+        // io::silo::load_mesh("spiral.root", load_mesh);
 
-//         // EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+        Node info;
 
-//         // for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
-//         // {
-//         //     // The Blueprint to Silo transformation changes several names 
-//         //     // and some information is lost. We manually make changes so 
-//         //     // that the diff will pass.
-//         //     save_mesh[child]["coordsets"].rename_child("coords", "topo");
-//         //     save_mesh[child]["topologies"]["topo"]["coordset"].reset();
-//         //     save_mesh[child]["topologies"]["topo"]["coordset"] = "topo";
-//         //     save_mesh[child]["fields"].rename_child("dist", "domain_00000" + std::to_string(child) + "_dist");
-//         // }
+        // EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-//         // save_mesh.print();
+        // for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
+        // {
+        //     // The Blueprint to Silo transformation changes several names 
+        //     // and some information is lost. We manually make changes so 
+        //     // that the diff will pass.
+        //     save_mesh[child]["coordsets"].rename_child("coords", "topo");
+        //     save_mesh[child]["topologies"]["topo"]["coordset"].reset();
+        //     save_mesh[child]["topologies"]["topo"]["coordset"] = "topo";
+        //     save_mesh[child]["fields"].rename_child("dist", "domain_00000" + std::to_string(child) + "_dist");
+        // }
 
-//         // load_mesh.print();
+        // save_mesh.print();
 
-//         // // the loaded mesh will be in the multidomain format
-//         // // (it will be a list containing a single mesh domain)
-//         // // but the saved mesh is in the single domain format
-//         // EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-//         // NodeConstIterator l_itr = load_mesh.children();
-//         // NodeConstIterator s_itr = save_mesh.children();
-//         // while(l_itr.has_next())
-//         // {
-//         //     const Node &l_curr = l_itr.next();
-//         //     const Node &s_curr = s_itr.next();
+        // load_mesh.print();
 
-//         //     EXPECT_FALSE(l_curr.diff(s_curr, info));
-//         // }
-//     }
-// }
+        // // the loaded mesh will be in the multidomain format
+        // // (it will be a list containing a single mesh domain)
+        // // but the saved mesh is in the single domain format
+        // EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        // NodeConstIterator l_itr = load_mesh.children();
+        // NodeConstIterator s_itr = save_mesh.children();
+        // while(l_itr.has_next())
+        // {
+        //     const Node &l_curr = l_itr.next();
+        //     const Node &s_curr = s_itr.next();
+
+        //     EXPECT_FALSE(l_curr.diff(s_curr, info));
+        // }
+    }
+}
 
 // TODO we might want "round trip" tests for all the different mesh types
 // not round trip though, since not everything will come back unchanged
