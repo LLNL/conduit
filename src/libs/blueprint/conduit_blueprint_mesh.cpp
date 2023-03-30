@@ -2818,15 +2818,9 @@ generate_derived_entities(conduit::Node &mesh,
 
             for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
             {
-                // src_data.set_external(DataType(src_neighbors.dtype().id(), 1),
-                //     (void*)src_neighbors.element_ptr(ni));
-                // std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_data.to_index_t()];
                 std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_neighbors[ni]];
                 for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
                 {
-                    // src_data.set_external(DataType(src_values.dtype().id(), 1),
-                    //     (void*)src_values.element_ptr(pi));
-                    // neighbor_pidxs.insert(src_data.to_index_t());
                     neighbor_pidxs.insert(src_values[pi]);
                 }
             }
@@ -2985,6 +2979,448 @@ calculate_decomposed_dims(const conduit::Node &mesh, const std::string &adjset_n
     }
 }
 
+#if 0
+class PointQuery
+{
+public:
+    PointQuery(const conduit::Node &mesh, const std::string &coordsetName);
+
+    virtual ~PointQuery() = default;
+
+    /**
+     @brief Reset the query to try again.
+     */
+    virtual void Reset();
+
+    /**
+     @brief Add a point to the list of points that will be queried on domain \a dom.
+     @param dom The domain that will be queried.
+     @param pt The point that will be queried.
+     */
+    void Add(int dom, double pt[3]);
+
+    /**
+     @brief Execute all of the queries.
+     */
+    virtual void Execute();
+
+    /**
+     @brief Get the input points vector for a domain.
+     @param dom The domain id.
+
+     @return A vector of coordinates for the domain.
+     */
+    const std::vector<double> &Inputs(int dom) const;
+
+    /**
+     @brief Get the results vector for a domain.
+     @param dom The domain id.
+
+     @return A vector of results for the domain. Each element represents a
+             point 1=found, 0=not found.
+     */
+    const std::vector<int> &Results(int dom) const;
+
+protected:
+    /**
+     @brief Get the domain that has state/domain_id == dom.
+     @param dom The domain id.
+     @return A Node pointer or nullptr if it is not found.
+     */
+    const conduit::Node *GetDomain(int dom);
+
+    /**
+     @brief Find the input points in the input mesh's coordset and make a result
+            vector that contains the point ids of the looked-up points.
+     @param mesh The node that contains the mesh.
+     @param input The input vector of x,y,z triples that we're looking for.
+     @param result The output vector containing the node id of each point or
+                   -1 if not found.
+     */
+    void FindPointsInDomain(conduit::Node &mesh, const std::vector<double> &input, std::vector<int> &result);
+
+    /**
+     @brief Return a list of domain ids that exist locally.
+     @return A list of local domain ids.
+     */
+    std::vector<int> DomainIds() const;
+protected:
+    const conduit::Node &m_mesh;
+    std::string m_coordsetName;
+    std::map<int, std::vector<double>> m_domInputs;
+    std::map<int, std::vector<int>>    m_domResults;
+};
+
+PointQuery::PointQuery(const conduit::Node &mesh,
+    const std::string &coordsetName) : m_mesh(mesh),
+    m_coordsetName(coordsetName), m_domInputs(), m_domResults()
+{
+}
+
+void
+PointQuery::Reset()
+{
+    m_domCoordinates.clear();
+    m_domResults.clear();
+}
+
+void
+PointQuery::Add(int dom, double pt[3])
+{
+    std::vector<double> &coords = m_domInputs[dom];
+    coords.push_back(pt[0]);
+    coords.push_back(pt[1]);
+    coords.push_back(pt[2]);
+}
+
+const conduit::Node *
+PointQuery::GetDomain(int dom)
+{
+    if(!conduit::blueprint::mesh::is_multi_domain(m_mesh))
+    {
+        return &m_mesh;
+    }
+    else
+    {
+        NodeIterator domains_it = m_mesh.children();
+        while(domains_it.has_next())
+        {
+            conduit::Node& domain = domains_it.next();
+            if(domain.has_path("state/domain_id"))
+            {
+                int domain_id = domain["state/domain_id"].value();
+                if(domain_id == dom)
+                    return &domain;
+            }
+        }
+    }
+    return nullptr;
+}
+
+const std::vector<double> &
+PointQuery::Inputs(int dom) const
+{
+    auto it = m_domInputs.find(dom);
+    if(it == m_domInputs.end())
+    {
+        CONDUIT_ERROR("Domain " << dom << " inputs were requested but not found.");
+    }
+    return it->second;
+}
+
+const std::vector<int> &
+PointQuery::Results(int dom) const
+{
+    auto it = m_domResults.find(dom);
+    if(it == m_domResults.end())
+    {
+        CONDUIT_ERROR("Domain " << dom << " results were requested but not found.");
+    }
+    return it->second;
+}
+
+void
+PointQuery::Execute()
+{
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+    {
+        conduit::Node *dom = GetDomain(it->first);
+        if(dom == nullptr)
+        {
+            CONDUIT_ERROR("Domain " << it->first << " was requested but not found.");
+        }
+
+        const std::vector<double> &input = m_domInputs[dom];
+        std::vector<int> &result = m_domResults[dom];
+        FindPointsInDomain(*dom, coords, result);
+    }
+}
+
+void
+FindPointsInDomain(conduit::Node &mesh, const std::vector<double> &input, std::vector<int> &result)
+{
+    conduit::index_t numInputPts = input.size() / 3;
+    result.resize(numInputPts, 0);
+
+    const conduit::Node &cset = mesh.fetch_existing["coordsets/"+m_coordsetName];
+    const conduit::Node *coords[3] = {nullptr, nullptr, nullptr};
+    int ci = 0;
+    for(const std::string &axis : coordset::axes(coords))
+    {
+        coords[ci++] = cset.fetch_ptr(axis);
+        ci++;
+    }
+    conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
+    const double *input_ptr = &input[0];
+
+    using policy = conduit::execution::OpenMPExec;
+    conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+    {
+        constexpr double EPS = 1.e-10;
+        auto ptIdx = i * 3;
+        int found = -1; // not found
+        for(conduit::index_t pi = 0; pi < numCoordsetPts; pi++)
+        {
+            double p[3];
+            for(int ii = 0; ii < ci; ii++)
+                p[ii] = coords[ii] ? coords[ii]->as_double_accessor()[pi] : 0.;
+
+            double dx = p[0] - input_ptr[ptIdx];
+            double dy = p[1] - input_ptr[ptIdx + 1];
+            double dz = p[2] - input_ptr[ptIdx + 2];
+            double dSquared = dx * dx + dy * dy + dz * dz;
+            if(dSquared < EPS)
+            {
+                found = static_cast<int>(pi);
+                break;
+            }
+        }
+        result[i] = found;
+    });
+}
+
+std::vector<int>
+PointQuery::DomainIds() const
+{
+    std::vector<int> domainIds;
+
+    // NOTE: state/domain_id should probably just be required here.
+
+    if(!conduit::blueprint::mesh::is_multi_domain(m_mesh))
+    {
+        int domain_id = 0;
+        if(m_mesh.has_path("state/domain_id"))
+            domain_id = domain["state/domain_id"].value();
+        domainIds.push_back(domain_id);
+    }
+    else
+    {
+        NodeIterator domains_it = m_mesh.children();
+        while(domains_it.has_next())
+        {
+            conduit::Node& domain = domains_it.next();
+            int domain_id = 0;
+            if(domain.has_path("state/domain_id"))
+                domain_id = domain["state/domain_id"].value();
+            domainIds.push_back(domain_id);
+        }
+    }
+
+    return domainIds;
+}
+
+//-----------------------------------------------------------------------------
+
+class MPIPointQuery
+{
+public:
+    MPIPointQuery(const conduit::Node &mesh, const std::string &coordsetName,
+                  MPI_Comm comm);
+
+    virtual ~MPIPointQuery();
+
+    /**
+     @brief Reset the query to try again.
+     */
+    virtual void Reset() override;
+
+    /**
+     @brief Execute all of the queries.
+     */
+    virtual void Execute() override;
+
+protected:
+    int NumberOfDomains() const;
+
+    MPI_Comm m_comm;  
+};
+
+MPIPointQuery::MPIPointQuery(const conduit::Node &mesh, const std::string &coordsetName,
+                             MPI_Comm comm) : PointQuery(mesh, coordsetName), m_comm(comm)
+{
+}
+
+MPIPointQuery::~MPIPointQuery()
+{
+}
+
+void
+MPIPointQuery::Reset()
+{
+    PointQuery::Reset();
+}
+
+void
+MPIPointQuery::Execute()
+{
+    int rank, size;
+    MPI_Comm_rank(m_comm, &rank);
+    MPI_Comm_size(m_comm, &size);
+
+    // Figure out which ranks own the domains.
+    std::vector<int> localDomains = GetDomainIds();
+    int ndoms = localDomains.size(), ntotal_doms = 0;
+    MPI_AllReduce(&ndoms, &ntotal_doms, 1, MPI_INT, MPI_SUM, m_comm);
+
+    // Make sure each rank knows who owns which domains. This assumes that
+    // the domains were set properly and only occur on one rank.
+    std::vector<int> local_domain_to_rank(ntotal_doms, 0);
+    std::vector<int> domain_to_rank(ntotal_doms, 0);
+    for(auto dom : localDomains)
+        local_domain_to_rank[dom] = rank;
+    MPI_AllReduce(&local_domain_to_rank[0], &domain_to_rank[0], ntotal_doms, MPI_INT, MPI_SUM, m_comm);
+
+    // Put together the queries that we need to run.
+    std::vector<int> queries;
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+    {
+        queries.push_back(rank);              // the rank asking the question
+        queries.push_back(it->first);         // the domain
+        queries.push_back(it->second.size()); // the number of points.
+    }
+
+    // Let all ranks know the sizes of the queries vectors.
+    int nq = queries.size();
+    std::vector<int> qsize(size, 0);
+    MPI_Allgather(&nq, 1, MPI_INT, &qsize[0], 1, MPI_INT, m_comm);
+
+    // Make an offset array and total the sizes.
+    std::vector<int> qoffset(size, 0);
+    for(int i = 1; i < size; i++)
+        qoffset[i] = qoffset[i-1] + qsize[i-1];
+    int total_qsize = 0;
+    for(int i = 0; i < size; i++)
+        total_qsize += qsize[i];
+
+    // Gather the queries to all ranks.
+    std::vector<int> allqueries(total_qsize, 0);
+    MPI_Allgatherv(&queries[0], nq, MPI_INT,
+                   &allqueries[0], &qsize[0], &qoffset[0], MPI_INT,
+                   m_comm);
+
+    // Now we can start to issue some queries. We do a first pass that sends/recvs
+    // all of the query points. Then a second pass does the queries and sends/recvs
+    // the results. The results get stored in m_domResults.
+    std::map<int, conduit::Node *> input_sends, result_sends, input_recvs, result_recvs;
+    int inputs_tag = 55000000;
+    int results_tag = 66000000;
+    for(int pass = 0; pass < 2; pass++)
+    {
+        conduit::relay::mpi::communicate_using_schema C(m_comm);
+
+        for(size_t i = 0; i < allqueries.size(); i += 3)
+        {
+            int asker  = allqueries[i];
+            int domain = allqueries[i+1];
+            int npts   = allqueries[i+2];
+
+            if(asker == rank)
+            {
+                int owner = domain_to_rank[domain];
+                if(owner == rank)
+                {
+                    // This rank already owns the data. We can do the search.
+                    // There is no need to communicate.
+                    if(pass == 0)
+                    {
+                        // Query the domain and store the results in r.
+                        std::vector<int> &r = m_domResults[domain];
+                        r.resize(npts);
+                        conduit::Node *dom = GetDomain(domain);
+                        FindPointsInDomain(*dom, Inputs(dom), r);
+                    }
+                }
+                else
+                {
+                    // A different rank owns the data. We need to send the coordinates
+                    // we're querying and then post a receive for the result.
+                    if(pass == 0)
+                    {
+                        // Wrap the inputs as a Conduit node and post an isend.
+                        const std::vector<double> &inputs = Inputs(domain);
+                        input_sends[domain] = new conduit::Node;
+                        conduit::Node &q = *input_sends[domain];
+                        q["inputs"].set_external(const_cast<int *>(&inputs[0]), inputs.size());
+                        C.add_isend(q, asker, inputs_tag + domain);
+                    }
+
+                    if(pass == 1)
+                    {
+                        // Make a node to receive the results.
+                        result_recvs[domain] = new conduit::Node;
+                        conduit::Node &r = *result_recvs[domain];
+                        C.add_irecv(r, owner, results_tag + domain);
+                    }
+                }
+            }
+            else if(domain_to_rank[domain] == rank)
+            {
+                // This rank is not asker but it owns the domain and so it has to
+                // do the query.
+
+                if(pass == 0)
+                {
+                    // Make a node to store the query parameters
+                    input_recvs[domain] = new conduit::Node;
+                    conduit::Node &q = *input_recvs[domain];
+                    C.add_irecv(q, asker, inputs_tag + domain);
+                }
+
+                if(pass == 1)
+                {
+                    // We have the query parameters in input_recv. Turn it into a vector.
+                    conduit::Node &q = *input_recvs[domain];
+                    auto acc = q["inputs"].as_double_accessor();
+                    std::vector<double> input;
+                    input.reserve(acc.number_of_elements());
+                    for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
+                        input.push_back(acc[i]);
+
+                    // Do the query.
+                    std::vector<int> result;
+                    conduit::Node *dom = GetDomain(domain);
+                    FindPointsInDomain(*dom, input, result);
+
+                    // Make a node to send the results back to the asker.
+                    result_sends[domain] = new conduit::Node;
+                    conduit::Node &r = *result_sends[domain];
+                    r["results"].set(result);
+                    C.add_isend(r, asker, results_tag + domain);
+                }
+            }
+        }
+
+        // Do the exchanges.
+        C.execute();
+
+        if(pass == 1)
+        {
+            // We have query results to convert/store in m_domResults.
+            for(auto it = result_recvs.begin(); it != result_recvs.end(); it++)
+            {
+                int domain = it->first;
+                const conduit::Node &r = it->second->fetch_existing("results");
+                auto acc = r.as_int_accessor();
+                std::vector<int> &result = m_domResults[domain];
+                result.reserve(acc.number_of_elements());
+                for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
+                    result.push_back(acc[i]);
+            }
+        }
+    }
+
+    // Clean up maps.
+    for(auto it = input_recvs.begin(); it != input_recvs.end(); it++)
+        delete it->second;
+    for(auto it = input_sends.begin(); it != input_sends.end(); it++)
+        delete it->second;
+    for(auto it = result_recvs.begin(); it != result_recvs.end(); it++)
+        delete it->second;
+    for(auto it = result_sends.begin(); it != result_sends.end(); it++)
+        delete it->second;
+}
+
+#endif
 
 //-----------------------------------------------------------------------------
 void
@@ -2997,8 +3433,12 @@ generate_decomposed_entities(conduit::Node &mesh,
                              conduit::Node &d2smap,
                              GenDecomposedFun generate_decomposed,
                              IdDecomposedFun  identify_decomposed,
-                             const std::vector<index_t> &decomposed_centroid_dims)
+                             const std::vector<index_t> &decomposed_centroid_dims,
+                             conduit::blueprint::mesh::utils::query::NullPointQuery &query)
 {
+    // Iterate over the domains and produce a "decomposed" mesh for each domain.
+    // The new mesh will live in the domain's topologies next to the topology for
+    // the adjset identified by src_adjset_name.
     const std::vector<DomMapsTuple> doms_and_maps = group_domains_and_maps(mesh, s2dmap, d2smap);
     for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
     {
@@ -3022,6 +3462,8 @@ generate_decomposed_entities(conduit::Node &mesh,
         dst_adjset["topology"].set(dst_topo_name);
     }
 
+    // Iterate over each domain and produce a new corner adjset based on the src
+    // mesh's adjset.
     Node src_data, dst_data;
     src_data.reset();
     dst_data.reset();
@@ -3045,7 +3487,12 @@ generate_decomposed_entities(conduit::Node &mesh,
         Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
         // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
-
+        //
+        //   Iterate over all adjset groups and build a list of vertex ids for 
+        //   each neighbor (neighbor_pidxs). Each list of vertex ids contains
+        //   vertices in the main topology's coordset. The vertex ids will
+        //   probably also all live on the external surfaces of the domain.
+        //
         // {(neighbor domain id): <(participating points for domain interface)>}
         std::map<index_t, std::set<index_t>> neighbor_pidxs_map;
         for(const std::string &group_name : src_adjset_groups.child_names())
@@ -3057,16 +3504,9 @@ generate_decomposed_entities(conduit::Node &mesh,
 
             for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
             {
-                // src_data.set_external(DataType(src_neighbors.dtype().id(), 1),
-                //     (void*)src_neighbors.element_ptr(ni));
-                // std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_data.to_index_t()];
-
                 std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[src_neighbors[ni]];
                 for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
                 {
-                    // src_data.set_external(DataType(src_values.dtype().id(), 1),
-                    //     (void*)src_values.element_ptr(pi));
-                    // neighbor_pidxs.insert(src_data.to_index_t());
                     neighbor_pidxs.insert(src_values[pi]);
                 }
             }
@@ -3078,32 +3518,72 @@ generate_decomposed_entities(conduit::Node &mesh,
         std::map<index_t, std::set<index_t>> entity_neighbor_map;
         // NOTE(JRC): Diff, entirely different iteration strategy for finding entities
         // to consider on individual adjset interfaces.
+#define DEBUG_PRINT
+#if 0//def DEBUG_PRINT
+        std::cout << "decomposed_centroid_dims={";
+        for(const index_t &dentry : decomposed_centroid_dims)
+            std::cout << dentry << ", ";
+        std::cout << "}" << std::endl;
+        std::cout << "Domain: " << domain_id << std::endl;
+#endif
+        // Iterate over the entity dimensions that can be produced by cascading
+        // the main topology. From there, iterate over all of the entities in
+        // each cascade dimension to get its points and see if that entity's
+        // points are contained by neighbor_pidxs. The goal is to find out which
+        // entities are connected to which neighbors.
         for(const index_t &dentry : decomposed_centroid_dims)
         {
             index_t dentry_length = src_topo_data.get_length(dentry);
+#ifdef DEBUG_PRINT
+            if(domain_id == 0)
+            {
+                std::cout << "  Dimension" << dentry << std::endl;
+                std::cout << "    length: " << dentry_length << std::endl;
+                std::cout << "    entities:" << std::endl;
+            }
+#endif
             for(index_t ei = 0; ei < dentry_length; ei++)
             {
-#if 1
-                // We should be able to get the unique set of points for this element
-                // from the topology metadata map (it's already computed).
+                // Get the point ids for the current entity ei.
                 auto entity_pidxs = src_topo_data.get_global_association(ei, dentry, 0);
-#else
-                const Node &dim_topo = src_topo_data.get_topology(dentry);
-                std::vector<index_t> entity_pidxs = bputils::topology::unstructured::points(dim_topo, ei);
+#ifdef DEBUG_PRINT
+                if(domain_id == 0)
+                {
+                std::cout << "      -" << std::endl;
+                std::cout << "        ei: "<< ei << std::endl;
+                std::cout << "        pidxs: [";
+                for(size_t qq =0; qq < entity_pidxs.size(); qq++)
+                {
+                    if(qq > 0)
+                        std::cout << ", ";
+                    std::cout << entity_pidxs[qq];
+                }
+                std::cout << "]" << std::endl;
+                std::cout << "        cidx: " << identify_decomposed(src_topo_data, ei, dentry) << std::endl;
+                }
 #endif
                 for(const auto &neighbor_pair : neighbor_pidxs_map)
                 {
                     const index_t &ni = neighbor_pair.first;
                     const std::set<index_t> &neighbor_pidxs = neighbor_pair.second;
 
-                    bool entity_in_neighbor = true;
-                    for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && entity_in_neighbor; pi++)
+                    // Check the points in entity_pidxs to see if they are ALL
+                    // in the neighbor_pidxs set. If so then the points in this entity
+                    // touch the neighbor.
+                    bool need_to_add = true;
+                    for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && need_to_add; pi++)
                     {
-                        entity_in_neighbor &= neighbor_pidxs.find(entity_pidxs[pi]) != neighbor_pidxs.end();
+                        need_to_add &= neighbor_pidxs.find(entity_pidxs[pi]) != neighbor_pidxs.end();
                     }
 
-                    if(entity_in_neighbor)
+                    if(need_to_add)
                     {
+                        // Compute a new index for the entity. This is later used
+                        // as an index into the corner mesh's coordset.
+
+                        // dentry 0: entity_cidx = ei
+                        // dentry 1: entity_cidx = npts + ei
+                        // dentry 2: entity_cidx = npts + nfaces + ei
                         const index_t entity_cidx = identify_decomposed(src_topo_data, ei, dentry);
                         entity_neighbor_map[entity_cidx].insert(ni);
                     }
@@ -3111,36 +3591,87 @@ generate_decomposed_entities(conduit::Node &mesh,
             }
         }
 
+#ifdef DEBUG_PRINT
+        if(domain_id == 0)
+        {
+            std::cout << "  entity_neighbor_map: " << std::endl;
+            for(const auto &entity_neighbor_pair : entity_neighbor_map)
+            {
+                const index_t &entity_cidx = entity_neighbor_pair.first;
+                const std::set<index_t> &entity_neighbors = entity_neighbor_pair.second;
+
+                std::cout << "    -" << std::endl;
+                std::cout << "      cidx: " << entity_cidx << std::endl;
+                std::cout << "      neighbors: [";
+                for(auto it = entity_neighbors.begin(); it != entity_neighbors.end(); it++)
+                {
+                    if(it != entity_neighbors.begin())
+                        std::cout << ", ";
+                    std::cout << *it;
+                }
+                std::cout << "]" << std::endl;
+            }
+        }
+#endif
+
         // Use Entity Interfaces to Construct Group Entity Lists //
+
+        // Iterate over the entity_neighbor_map and build up group_entity_map.
+        // entity_neighbor_map is indexed by an entity id and its associated data
+        // contains a set of neighbor domains for that entity. Those entity ids
+        // are for the source topology's points, edges, faces in that order.
+        // They are used to index into the corner topology's coordset, assuming
+        // that the coordinates were added in that same order.
+        //
+        // This assumption must be made to avoid a costly coordinate->id lookup.
 
         std::map<std::set<index_t>, std::vector<std::tuple<std::set<PointTuple>, index_t>>> group_entity_map;
         for(const auto &entity_neighbor_pair : entity_neighbor_map)
         {
             const index_t &entity_cidx = entity_neighbor_pair.first;
             const std::set<index_t> &entity_neighbors = entity_neighbor_pair.second;
-            std::tuple<std::set<PointTuple>, index_t> entity;
 
+            // Make an entity tuple and get references to its members.
+            std::tuple<std::set<PointTuple>, index_t> entity;
             std::set<PointTuple> &entity_points = std::get<0>(entity);
+            index_t &entity_id = std::get<1>(entity);
+
             // NOTE(JRC): Diff: Substitute entity for centroid point at the end here.
+
+            // Use the entity_cidx (a source topo index) to get the coordinate
+            // in the corner coordset.
+
+// THIS SEEMS ERROR PRONE IF THERE ARE INDEXING DIFFERENCES BETWEEN THE SCEME
+// AND HOW THE CORNER MESH WAS MADE.
+//
+// It assumes that the corner mesh's coords are organized as all source topo coords,
+// followed by the coordinates for all source topo edge midpoints, followed by all
+// face centers.
+//
+// 1. The entity_cidx is a point, line, or face index. It's being treated as a point index
+//    in the corner mesh coordinates.
+// 2. The PointTuple is being inserted into a set. This would be using float comparison
+//    determine whether the point is already in the set. This is probably ok.
+
             const std::vector<float64> point_coords = bputils::coordset::_explicit::coords(
                 dst_cset, entity_cidx);
+
             entity_points.emplace(
                 point_coords[0],
                 (point_coords.size() > 1) ? point_coords[1] : 0.0,
                 (point_coords.size() > 2) ? point_coords[2] : 0.0);
 
-            index_t &entity_id = std::get<1>(entity);
             entity_id = entity_cidx;
 
             // NOTE(JRC): Inserting with this method allows this algorithm to sort new
             // elements as they're generated, rather than as a separate process at the
             // end (slight optimization overall).
-            std::vector<std::tuple<std::set<PointTuple>, index_t>> &group_entities =
-                group_entity_map[entity_neighbors];
+            auto &group_entities = group_entity_map[entity_neighbors];
             auto entity_itr = std::upper_bound(group_entities.begin(), group_entities.end(), entity);
             group_entities.insert(entity_itr, entity);
         }
 
+        // Build the output adjsets from data in group_entity_map
         for(const auto &group_pair : group_entity_map)
         {
             // NOTE(JRC): It's possible for the 'src_adjset_groups' node to be empty,
@@ -3149,8 +3680,8 @@ generate_decomposed_entities(conduit::Node &mesh,
             const DataType src_neighbors_dtype = src_adjset_groups.child(0)["neighbors"].dtype();
             const DataType src_values_dtype = src_adjset_groups.child(0)["values"].dtype();
 
-            const std::set<index_t> &group_nidxs = group_pair.first;
-            const std::vector<std::tuple<std::set<PointTuple>, index_t>> &group_entities = group_pair.second;
+            const auto &group_nidxs = group_pair.first;
+            const auto &group_entities = group_pair.second;
             std::string group_name;
             {
                 // NOTE(JRC): The current domain is included in the domain name so that
@@ -3312,9 +3843,12 @@ mesh::generate_centroids(conduit::Node& mesh,
     const std::vector<index_t> centroid_dims = calculate_decomposed_dims(
         mesh, src_adjset_name, calculate_centroid_dims);
 
+    conduit::blueprint::mesh::utils::query::NullPointQuery query(mesh);
+
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap,
-        conduit::blueprint::mesh::topology::unstructured::generate_centroids, identify_centroid, centroid_dims);
+        conduit::blueprint::mesh::topology::unstructured::generate_centroids, identify_centroid, centroid_dims,
+        query);
 }
 
 
@@ -3361,11 +3895,13 @@ mesh::generate_sides(conduit::Node& mesh,
     const std::vector<index_t> side_dims = calculate_decomposed_dims(
         mesh, src_adjset_name, calculate_side_dims);
 
+    conduit::blueprint::mesh::utils::query::NullPointQuery query(mesh);
+
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap,
-        conduit::blueprint::mesh::topology::unstructured::generate_sides, identify_side, side_dims);
+        conduit::blueprint::mesh::topology::unstructured::generate_sides, identify_side, side_dims,
+        query);
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -3375,7 +3911,8 @@ mesh::generate_corners(conduit::Node& mesh,
                        const std::string& dst_topo_name,
                        const std::string& dst_cset_name,
                        conduit::Node& s2dmap,
-                       conduit::Node& d2smap)
+                       conduit::Node& d2smap,
+                       conduit::blueprint::mesh::utils::query::NullPointQuery &query)
 {
     const static auto identify_corner = []
         (const bputils::TopologyMetadata &topo_data, const index_t ei, const index_t di)
@@ -3408,9 +3945,25 @@ mesh::generate_corners(conduit::Node& mesh,
 
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap,
-        conduit::blueprint::mesh::topology::unstructured::generate_corners, identify_corner, corner_dims);
+        conduit::blueprint::mesh::topology::unstructured::generate_corners, identify_corner, corner_dims,
+        query);
 }
 
+//-----------------------------------------------------------------------------
+// NOTE: compatibility method.
+void
+mesh::generate_corners(conduit::Node& mesh,
+                       const std::string& src_adjset_name,
+                       const std::string& dst_adjset_name,
+                       const std::string& dst_topo_name,
+                       const std::string& dst_cset_name,
+                       conduit::Node& s2dmap,
+                       conduit::Node& d2smap)
+{
+    conduit::blueprint::mesh::utils::query::NullPointQuery query(mesh);
+    generate_corners(mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name,
+                     s2dmap, d2smap, query);
+}
 
 //-----------------------------------------------------------------------------
 // blueprint::mesh::logical_dims protocol interface

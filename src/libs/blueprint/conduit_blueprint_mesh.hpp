@@ -16,6 +16,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 #include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_mesh_utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -265,6 +266,17 @@ void CONDUIT_BLUEPRINT_API generate_sides(conduit::Node& mesh,
                                           conduit::Node& d2smap);
 
 //-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_corners(conduit::Node& mesh,
+                                            const std::string& src_adjset_name,
+                                            const std::string& dst_adjset_name,
+                                            const std::string& dst_topo_name,
+                                            const std::string& dst_cset_name,
+                                            conduit::Node& s2dmap,
+                                            conduit::Node& d2smap,
+                                            conduit::blueprint::mesh::utils::query::NullPointQuery &query);
+
+//-------------------------------------------------------------------------
+//[[deprecated]]
 void CONDUIT_BLUEPRINT_API generate_corners(conduit::Node& mesh,
                                             const std::string& src_adjset_name,
                                             const std::string& dst_adjset_name,

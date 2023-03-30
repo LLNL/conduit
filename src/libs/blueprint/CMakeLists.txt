@@ -199,6 +199,7 @@ set(conduit_blueprint_mpi_sources
     conduit_blueprint_mpi_mesh_distribute.cpp
     conduit_blueprint_mpi_mesh_flatten.cpp
     conduit_blueprint_mpi_mesh_partition.cpp
+    conduit_blueprint_mpi_mesh_utils.cpp
     )
 
 #
@@ -209,6 +210,7 @@ set(conduit_blueprint_mpi_headers
     conduit_blueprint_mpi_mesh.hpp
     conduit_blueprint_mpi_mesh_partition.hpp
     conduit_blueprint_mpi_mesh_examples.hpp
+    conduit_blueprint_mpi_mesh_utils.hpp
 ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
 
 #
@@ -228,7 +230,7 @@ set(blueprint_mpi_c_sources
 set(conduit_blueprint_mpi_deps conduit
                                ${conduit_blt_mpi_deps}
                                conduit_blueprint
-                               conduit_relay_mpi)
+                               conduit_relay conduit_relay_mpi)
 
 if(PARMETIS_FOUND)
     list(APPEND conduit_blueprint_mpi_headers conduit_blueprint_mpi_mesh_parmetis.hpp)

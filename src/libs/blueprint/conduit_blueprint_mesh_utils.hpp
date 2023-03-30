@@ -413,6 +413,119 @@ namespace adjset
 // -- end conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::query --
+//-----------------------------------------------------------------------------
+namespace query
+{
+
+//---------------------------------------------------------------------------
+/**
+ @brief Base class for point queries. The class can build up a set of point
+        queries but it does not actually execute them. It will return results
+        that indicate that all the queries succeeded.
+ */
+class NullPointQuery
+{
+public:
+    static const int NotFound;
+
+    NullPointQuery(const conduit::Node &mesh);
+
+    virtual ~NullPointQuery() = default;
+
+    /**
+     @brief Reset the query to try again.
+     */
+    virtual void Reset();
+
+    /**
+     @brief Add a point to the list of points that will be queried on domain \a dom.
+     @param dom The domain that will be queried.
+     @param pt The point that will be queried.
+     */
+    void Add(int dom, const double pt[3]);
+
+    /**
+     @brief Execute all of the point queries.
+     @param coordsetName The name of the coordset we're searching in the domains.
+     */
+    virtual void Execute(const std::string &coordsetName);
+
+    /**
+     @brief Get the input points vector for a domain.
+     @param dom The domain id.
+
+     @return A vector of coordinates for the domain.
+     */
+    const std::vector<double> &Inputs(int dom) const;
+
+    /**
+     @brief Get the results vector for a domain.
+     @param dom The domain id.
+
+     @return A vector of results for the domain. Each element represents a
+             point id. If the point is not found, it contains -1.
+     */
+    const std::vector<int> &Results(int dom) const;
+protected:
+    const conduit::Node &m_mesh;
+    std::map<int, std::vector<double>> m_domInputs;
+    std::map<int, std::vector<int>>    m_domResults;
+};
+
+//---------------------------------------------------------------------------
+/**
+ @brief This class can built up a set of point queries and execute them in
+        serial against the domains in the input mesh.
+ */
+class PointQuery : public NullPointQuery
+{
+public:
+    PointQuery(const conduit::Node &mesh);
+
+    virtual ~PointQuery() = default;
+
+    /**
+     @brief Execute all of the point queries.
+     @param coordsetName The name of the coordset we're searching in the domains.
+     */
+    virtual void Execute(const std::string &coordsetName) override;
+
+protected:
+    /**
+     @brief Get the domain that has state/domain_id == dom.
+     @param dom The domain id.
+     @return A Node pointer or nullptr if it is not found.
+     */
+    const conduit::Node *GetDomain(int dom);
+
+    /**
+     @brief Find the input points in the input mesh's coordset and make a result
+            vector that contains the point ids of the looked-up points.
+     @param mesh The node that contains the mesh.
+     @param coordsetName The name of the coordset that will be searched.
+     @param input The input vector of x,y,z triples that we're looking for.
+     @param result The output vector containing the node id of each point or
+                   -1 if not found.
+     */
+    void FindPointsInDomain(const conduit::Node &mesh,
+                            const std::string &coordsetName,
+                            const std::vector<double> &input,
+                            std::vector<int> &result) const;
+
+    /**
+     @brief Return a list of domain ids that exist locally.
+     @return A list of local domain ids.
+     */
+    std::vector<int> DomainIds() const;
+};
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::query --
+//-----------------------------------------------------------------------------
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils --

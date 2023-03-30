@@ -24,6 +24,7 @@
 #include "conduit_blueprint_mpi_mesh.hpp"
 #include "conduit_blueprint_mpi_mesh_flatten.hpp"
 #include "conduit_blueprint_mpi_mesh_partition.hpp"
+#include "conduit_blueprint_mpi_mesh_utils.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
@@ -2661,7 +2662,6 @@ generate_sides(conduit::Node& mesh,
 
 }
 
-
 //-----------------------------------------------------------------------------
 void
 generate_corners(conduit::Node& mesh,
@@ -2671,16 +2671,20 @@ generate_corners(conduit::Node& mesh,
                  const std::string& dst_cset_name,
                  conduit::Node& s2dmap,
                  conduit::Node& d2smap,
-                 MPI_Comm /*comm*/)
+                 MPI_Comm comm)
 {
+    // Make a query object that will be used to determine whether points actually
+    // exist in a neighbor domain.
+    conduit::blueprint::mpi::mesh::utils::query::PointQuery Q(mesh, comm);
+
     conduit::blueprint::mesh::generate_corners(mesh,
                                                src_adjset_name,
                                                dst_adjset_name,
                                                dst_topo_name,
                                                dst_cset_name,
                                                s2dmap,
-                                               d2smap);
-
+                                               d2smap,
+                                               Q);
 }
 
 //-------------------------------------------------------------------------

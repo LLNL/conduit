@@ -28,6 +28,8 @@
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_execution.hpp"
+#include "conduit_annotations.hpp"
 
 // access one-to-many index types
 namespace o2mrelation = conduit::blueprint::o2mrelation;
@@ -1770,6 +1772,190 @@ adjset::canonicalize(Node &adjset)
 
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::query --
+//-----------------------------------------------------------------------------
+namespace query
+{
+
+const int NullPointQuery::NotFound = -1;
+
+//---------------------------------------------------------------------------
+NullPointQuery::NullPointQuery(const conduit::Node &mesh) : m_mesh(mesh),
+    m_domInputs(), m_domResults()
+{
+}
+
+//---------------------------------------------------------------------------
+void
+NullPointQuery::Reset()
+{
+    m_domInputs.clear();
+    m_domResults.clear();
+}
+
+//---------------------------------------------------------------------------
+void
+NullPointQuery::Add(int dom, const double pt[3])
+{
+    std::vector<double> &coords = m_domInputs[dom];
+    coords.push_back(pt[0]);
+    coords.push_back(pt[1]);
+    coords.push_back(pt[2]);
+}
+
+//---------------------------------------------------------------------------
+const std::vector<double> &
+NullPointQuery::Inputs(int dom) const
+{
+    auto it = m_domInputs.find(dom);
+    if(it == m_domInputs.end())
+    {
+        CONDUIT_ERROR("Domain " << dom << " inputs were requested but not found.");
+    }
+    return it->second;
+}
+
+//---------------------------------------------------------------------------
+const std::vector<int> &
+NullPointQuery::Results(int dom) const
+{
+    auto it = m_domResults.find(dom);
+    if(it == m_domResults.end())
+    {
+        CONDUIT_ERROR("Domain " << dom << " results were requested but not found.");
+    }
+    return it->second;
+}
+
+//---------------------------------------------------------------------------
+void
+NullPointQuery::Execute(const std::string & /*coordsetName*/)
+{
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+    {
+        int npts = it->second.size() / 3;
+        std::vector<int> &result = m_domResults[it->first];
+        result.resize(npts, 0); // success is anything != -1
+    }
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+PointQuery::PointQuery(const conduit::Node &mesh) : NullPointQuery(mesh)
+{
+}
+
+//---------------------------------------------------------------------------
+void
+PointQuery::Execute(const std::string &coordsetName)
+{
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+    {
+        const conduit::Node *dom = GetDomain(it->first);
+        if(dom == nullptr)
+        {
+            CONDUIT_ERROR("Domain " << it->first << " was requested but not found.");
+        }
+
+        const std::vector<double> &input = it->second;
+        std::vector<int> &result = m_domResults[it->first];
+        FindPointsInDomain(*dom, coordsetName, input, result);
+    }
+}
+
+//---------------------------------------------------------------------------
+const conduit::Node *
+PointQuery::GetDomain(int dom)
+{
+    std::vector<const conduit::Node *> doms = domains(m_mesh);
+    for(const auto d : doms)
+    {
+       int domain_id = 0;
+       if(d->has_path("state/domain_id"))
+       {
+           int domain_id = d->fetch_existing("state/domain_id").value();
+           if(domain_id == dom)
+               return d;
+       }
+    }
+
+    return nullptr;
+}
+
+//---------------------------------------------------------------------------
+void
+PointQuery::FindPointsInDomain(const conduit::Node &mesh,
+    const std::string &coordsetName,
+    const std::vector<double> &input,
+    std::vector<int> &result) const
+{
+    conduit::index_t numInputPts = input.size() / 3;
+    result.resize(numInputPts, 0);
+
+    const conduit::Node &cset = mesh.fetch_existing("coordsets/" + coordsetName);
+    const conduit::Node *coords[3] = {nullptr, nullptr, nullptr};
+    int ci = 0;
+    for(const std::string &axis : coordset::axes(cset))
+    {
+        coords[ci++] = cset.fetch_ptr(axis);
+        ci++;
+    }
+    conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
+    const double *input_ptr = &input[0];
+
+    using policy = conduit::execution::OpenMPExec;
+    conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+    {
+        constexpr double EPS = 1.e-10;
+        auto ptIdx = i * 3;
+        int found = -1; // not found
+        for(conduit::index_t pi = 0; pi < numCoordsetPts; pi++)
+        {
+            double p[3];
+            for(int ii = 0; ii < ci; ii++)
+                p[ii] = coords[ii] ? coords[ii]->as_double_accessor()[pi] : 0.;
+
+            double dx = p[0] - input_ptr[ptIdx];
+            double dy = p[1] - input_ptr[ptIdx + 1];
+            double dz = p[2] - input_ptr[ptIdx + 2];
+            double dSquared = dx * dx + dy * dy + dz * dz;
+            if(dSquared < EPS)
+            {
+                found = static_cast<int>(pi);
+                break;
+            }
+        }
+        result[i] = found;
+    });
+}
+
+//---------------------------------------------------------------------------
+std::vector<int>
+PointQuery::DomainIds() const
+{
+    std::vector<const conduit::Node *> doms = domains(m_mesh);
+    std::vector<int> domainIds;
+    domainIds.reserve(doms.size());
+    for(const auto d : doms)
+    {
+       int domain_id = 0;
+       if(d->has_path("state/domain_id"))
+           domain_id = d->fetch_existing("state/domain_id").value();
+       domainIds.push_back(domain_id); 
+    }
+
+    return domainIds;
+}
+
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::query --
 //-----------------------------------------------------------------------------
 
 }
