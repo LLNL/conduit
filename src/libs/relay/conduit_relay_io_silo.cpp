@@ -2513,7 +2513,8 @@ void silo_mesh_write(const Node &n,
 
 //-----------------------------------------------------------------------------
 void write_multimeshes(DBfile *dbfile,
-                       const std::string opts_mesh_name,
+                       const std::string &opts_mesh_name,
+                       const bool &singleFile,
                        const conduit::Node &root)
 {
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
@@ -2548,7 +2549,11 @@ void write_multimeshes(DBfile *dbfile,
             CONDUIT_ERROR("Unsupported topo type in " << topo_type);
         }
 
-        std::string tree_pattern = root["tree_pattern"].as_string();
+        // std::string tree_pattern = root["tree_pattern"].as_string();
+        std::string file_pattern = root["file_pattern"].as_string();
+
+        std::string dirname, dom_pattern;
+        conduit::utils::split_file_path(file_pattern, "/", dirname, dom_pattern);
 
         // TODO DANGER DANGER DANGER - tree pattern is not the answer
         // look at what conduit - and/or visit? does for generating the name recipes
@@ -2557,14 +2562,31 @@ void write_multimeshes(DBfile *dbfile,
         
         // TODO is this true?
         // Q? every blueprint domain should have the same mesh name and mesh type
+        std::vector<std::string> domain_name_strings;
         std::vector<const char *> domain_name_ptrs;
         std::vector<int> mesh_types;
+        // for (int i = 0; i < num_domains; i ++)
+        // {
+        //     char buffer[100];
+        //     int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
+        //     snprintf(buffer + cx, 100 - cx, topo_name.c_str());
+        //     domain_name_ptrs.push_back(buffer);
+        //     mesh_types.push_back(mesh_type);
+        // }
+
         for (int i = 0; i < num_domains; i ++)
         {
-            char buffer[100];
-            int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
-            snprintf(buffer + cx, 100 - cx, topo_name.c_str());
-            domain_name_ptrs.push_back(buffer);
+            std::stringstream ss;
+            ss.clear();
+            ss.str(std::string());
+            if (singleFile)
+                ss << "/domain_" << std::setfill('0') << std::setw(6) << i << "/";
+            else
+                ss << dirname << "/" << "domain_" << std::setfill('0') << std::setw(6) << i << ".silo:/";
+            ss << detail::sanitize_silo_varname(topo_name);
+
+            domain_name_strings.push_back(ss.str());
+            domain_name_ptrs.push_back(domain_name_strings.back().c_str());
             mesh_types.push_back(mesh_type);
         }
 
@@ -3741,7 +3763,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
-        write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, root);
+        const bool singleFile = opts_file_style == "root_only";
+        write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, singleFile, root);
         write_multivars(dbfile.getSiloObject(), opts_mesh_name, root);
         // TODO
         // write_multimaterial();
