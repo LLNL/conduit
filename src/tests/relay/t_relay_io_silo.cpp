@@ -215,11 +215,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             save_mesh[child].remove("state"); // TODO uncomment this and add functionality for it
         }
 
-        // TODO there is a bug on the save side only multimeshes and multivars are being saved
-
         io::silo::save_mesh(save_mesh, "spiral");
         Node load_mesh;
-        // io::silo::load_mesh("spiral.root", load_mesh);
+        io::silo::load_mesh("spiral.root", load_mesh);
 
         Node info;
 

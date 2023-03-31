@@ -1180,15 +1180,15 @@ read_root_silo_index(const std::string &root_file_path,
     else
     {
         root_node[multimesh_name]["nameschemes"] = "no";
-        std::vector<int> mesh_types;
+        root_node[multimesh_name]["mesh_types"].set(DataType::int64(nblocks));
+        int64 *mesh_types = root_node[multimesh_name]["mesh_types"].value();
         for (int i = 0; i < nblocks; i ++)
         {
             // save the mesh name and mesh type
             Node &mesh_path = root_node[multimesh_name]["mesh_paths"].append();
             mesh_path.set(multimesh.getSiloObject()->meshnames[i]);
-            mesh_types.push_back(multimesh.getSiloObject()->meshtypes[i]);
+            mesh_types[i] = multimesh.getSiloObject()->meshtypes[i];
         }
-        root_node[multimesh_name]["mesh_types"].set(mesh_types.data());
     }
 
     // iterate thru the multivars and find the ones that are associated with
@@ -1223,15 +1223,15 @@ read_root_silo_index(const std::string &root_file_path,
             else
             {
                 var["nameschemes"] = "no";
-                std::vector<int> var_types;
+                var["var_types"].set(DataType::int64(nblocks));
+                int64 *var_types = var["var_types"].value();
                 for (int i = 0; i < nblocks; i ++)
                 {
                     // save the mesh name and mesh type
                     Node &var_path = var["var_paths"].append();
                     var_path.set(multivar.getSiloObject()->varnames[i]);
-                    var_types.push_back(multivar.getSiloObject()->vartypes[i]);
+                    var_types[i] = multivar.getSiloObject()->vartypes[i];
                 }
-                var["var_types"].set(var_types.data());
             }
         }
     }
@@ -2549,9 +2549,7 @@ void write_multimeshes(DBfile *dbfile,
             CONDUIT_ERROR("Unsupported topo type in " << topo_type);
         }
 
-        // std::string tree_pattern = root["tree_pattern"].as_string();
         std::string file_pattern = root["file_pattern"].as_string();
-
         std::string dirname, dom_pattern;
         conduit::utils::split_file_path(file_pattern, "/", dirname, dom_pattern);
 
@@ -2565,25 +2563,22 @@ void write_multimeshes(DBfile *dbfile,
         std::vector<std::string> domain_name_strings;
         std::vector<const char *> domain_name_ptrs;
         std::vector<int> mesh_types;
-        // for (int i = 0; i < num_domains; i ++)
-        // {
-        //     char buffer[100];
-        //     int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
-        //     snprintf(buffer + cx, 100 - cx, topo_name.c_str());
-        //     domain_name_ptrs.push_back(buffer);
-        //     mesh_types.push_back(mesh_type);
-        // }
-
         for (int i = 0; i < num_domains; i ++)
         {
+            // TODO hey isn't this wrong? 
+            // single file should go in dom folder yes
+            // but multifile CAN'T go in optsmeshname folder because of m to n case
+            // you will have name collisions it will be bad
             std::stringstream ss;
             ss.clear();
             ss.str(std::string());
             if (singleFile)
-                ss << "/domain_" << std::setfill('0') << std::setw(6) << i << "/";
+                ss << "/domain_" << std::setfill('0') << std::setw(6) << i;
             else
-                ss << dirname << "/" << "domain_" << std::setfill('0') << std::setw(6) << i << ".silo:/";
-            ss << detail::sanitize_silo_varname(topo_name);
+                ss << dirname << "/" 
+                   << "domain_" << std::setfill('0') << std::setw(6) << i 
+                   << ".silo:/" << opts_mesh_name;
+            ss << "/" << detail::sanitize_silo_varname(topo_name);
 
             domain_name_strings.push_back(ss.str());
             domain_name_ptrs.push_back(domain_name_strings.back().c_str());
@@ -2646,7 +2641,8 @@ write_multimaterial(DBfile *root,
 //-----------------------------------------------------------------------------
 void
 write_multivars(DBfile *dbfile,
-                const std::string opts_mesh_name,
+                const std::string &opts_mesh_name,
+                const bool &singleFile,
                 const conduit::Node &root)
 {
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
@@ -2682,19 +2678,30 @@ write_multivars(DBfile *dbfile,
             CONDUIT_ERROR("Unsupported topo type in " << linked_topo_type);
         }
 
-        // TODO danger danger danger see notes in the multimesh function
-        std::string tree_pattern = root["tree_pattern"].as_string();
+        std::string file_pattern = root["file_pattern"].as_string();
+        std::string dirname, dom_pattern;
+        conduit::utils::split_file_path(file_pattern, "/", dirname, dom_pattern);
 
         // TODO Q? is this true?
         // every blueprint domain should have the same var name and var type
+        std::vector<std::string> var_name_strings;
         std::vector<const char *> var_name_ptrs;
         std::vector<int> var_types;
         for (int i = 0; i < num_domains; i ++)
         {
-            char buffer[100];
-            int cx = snprintf(buffer, 100, tree_pattern.c_str(), i);
-            snprintf(buffer + cx, 100 - cx, var_name.c_str());
-            var_name_ptrs.push_back(buffer);
+            std::stringstream ss;
+            ss.clear();
+            ss.str(std::string());
+            if (singleFile)
+                ss << "/domain_" << std::setfill('0') << std::setw(6) << i;
+            else
+                ss << dirname << "/" 
+                   << "domain_" << std::setfill('0') << std::setw(6) << i 
+                   << ".silo:/" << opts_mesh_name;
+            ss << "/" << detail::sanitize_silo_varname(var_name);
+
+            var_name_strings.push_back(ss.str());
+            var_name_ptrs.push_back(var_name_strings.back().c_str());
             var_types.push_back(var_type);
         }
 
@@ -3765,7 +3772,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         const bool singleFile = opts_file_style == "root_only";
         write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, singleFile, root);
-        write_multivars(dbfile.getSiloObject(), opts_mesh_name, root);
+        write_multivars(dbfile.getSiloObject(), opts_mesh_name, singleFile, root);
         // TODO
         // write_multimaterial();
 
