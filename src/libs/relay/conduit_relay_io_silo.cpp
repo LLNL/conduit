@@ -2517,9 +2517,16 @@ void write_multimeshes(DBfile *dbfile,
                        const bool &singleFile,
                        const conduit::Node &root)
 {
+    const int num_files = root["number_of_files"];
+    const int global_num_domains = root["number_of_trees"];
+
+
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
-    const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
+    if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
+    {
+        CONDUIT_ERROR("Domain count mismatch");
+    }
 
     auto topo_itr = n_mesh["topologies"].children();
     while (topo_itr.has_next())
@@ -2560,27 +2567,71 @@ void write_multimeshes(DBfile *dbfile,
         
         // TODO is this true?
         // Q? every blueprint domain should have the same mesh name and mesh type
+
+
+
+        // TODO big things to think about:
+        //  - I need to do the same approach for multivars
+        //  - I need to see if I can use part patterns to generate the 
+        //    paths and file names, or if that isn't possible, I should
+        //    look into modifying write_mesh to set them up the way I
+        //    want.
+        //  - Sanitize silo varname elsewhere, whereever I am writing var names
+        //  - In general I don't want to be making decisions here, only taking
+        //    info from choices that were made in write_mesh and saving them.
         std::vector<std::string> domain_name_strings;
         std::vector<const char *> domain_name_ptrs;
         std::vector<int> mesh_types;
-        for (int i = 0; i < num_domains; i ++)
+        for (index_t i = 0; i < global_num_domains; i ++)
         {
-            // TODO hey isn't this wrong? 
-            // single file should go in dom folder yes
-            // but multifile CAN'T go in optsmeshname folder because of m to n case
-            // you will have name collisions it will be bad
-            std::stringstream ss;
-            ss.clear();
-            ss.str(std::string());
-            if (singleFile)
-                ss << "/domain_" << std::setfill('0') << std::setw(6) << i;
+            std::string silo_path, output_file;
+            output_file = "";
+            index_t d;
+            if (n_mesh["state"].has_path("partition_map/domain"))
+            {
+                index_t_array part_map_domain_vals = n_mesh["state"]["partition_map"]["domain"].value();
+                d = part_map_domain_vals[i];
+            }
             else
-                ss << dirname << "/" 
-                   << "domain_" << std::setfill('0') << std::setw(6) << i 
-                   << ".silo:/" << opts_mesh_name;
-            ss << "/" << detail::sanitize_silo_varname(topo_name);
-
-            domain_name_strings.push_back(ss.str());
+            {
+                d = i;
+            }
+            if (singleFile)
+            {
+                if (global_num_domains == 1)
+                {
+                    silo_path = opts_mesh_name;
+                }
+                else
+                {
+                    silo_path = conduit_fmt::format("domain_{:06d}", d);
+                }
+            }
+            else
+            {
+                if (global_num_domains == num_files)
+                {
+                    output_file = conduit::utils::join_file_path(
+                        dirname, conduit_fmt::format("domain_{:06d}.silo", d)) + ":";
+                    silo_path = opts_mesh_name;
+                }
+                else // m to n case
+                {
+                    index_t f;
+                    if (n_mesh["state"].has_path("partition_map/file"))
+                    {
+                        index_t_array part_map_file_vals = n_mesh["state"]["partition_map"]["file"].value();
+                        f = part_map_file_vals[i];
+                    }
+                    else
+                    {
+                        f = i;
+                    }
+                    output_file = conduit_fmt::format("file_{:06d}.silo", f) + ":";
+                    silo_path = conduit_fmt::format("domain_{:06d}", d)
+                }
+            }
+            domain_name_strings.push_back(output_file + silo_path + "/" + detail::sanitize_silo_varname(topo_name));
             domain_name_ptrs.push_back(domain_name_strings.back().c_str());
             mesh_types.push_back(mesh_type);
         }
@@ -2593,7 +2644,7 @@ void write_multimeshes(DBfile *dbfile,
             DBPutMultimesh(
                 dbfile,
                 multimesh_name.c_str(),
-                num_domains,
+                global_num_domains,
                 domain_name_ptrs.data(),
                 mesh_types.data(),
                 NULL), // TODO do we really want null?
@@ -3230,8 +3281,19 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     // figure out the proper mesh path the file
                     std::string mesh_path = "";
 
-                    uint64 domain = dom["state/domain_id"].to_uint64();
-                    mesh_path = conduit_fmt::format("domain_{:06d}", domain);
+                    if(global_num_domains == 1)
+                    {
+                        // no domain prefix, write to mesh name
+                        mesh_path = opts_mesh_name;
+                    }
+                    else
+                    {
+                        // multiple domains, we need to use a domain prefix
+                        uint64 domain = dom["state/domain_id"].to_uint64();
+                        mesh_path = conduit_fmt::format("domain_{:06d}/{}",
+                                                        domain,
+                                                        opts_mesh_name);
+                    }
                     silo_mesh_write(dom, dbfile.getSiloObject(), mesh_path);
                 }
             }
