@@ -1890,7 +1890,7 @@ PointQuery::GetDomain(int dom)
        int domain_id = 0;
        if(d->has_path("state/domain_id"))
        {
-           int domain_id = d->fetch_existing("state/domain_id").value();
+           int domain_id = d->fetch_existing("state/domain_id").to_int();
            if(domain_id == dom)
                return d;
        }
@@ -1968,7 +1968,7 @@ PointQuery::DomainIds() const
     {
        int domain_id = 0;
        if(d->has_path("state/domain_id"))
-           domain_id = d->fetch_existing("state/domain_id").value();
+           domain_id = d->fetch_existing("state/domain_id").to_int();
        domainIds.push_back(domain_id); 
     }
 
