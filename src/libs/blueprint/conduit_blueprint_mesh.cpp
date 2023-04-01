@@ -3129,10 +3129,16 @@ generate_decomposed_entities(conduit::Node &mesh,
                         // without checking.
                         if(dentry > 0)
                         {
+                            // Get the point (it might not be 3D)
                             auto pt = bputils::coordset::_explicit::coords(dst_cset, entity_cidx);
-                            auto idx = query.Add(ni, &pt[0]);
+                            double pt3[3];
+                            pt3[0] = pt[0];
+                            pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
+                            pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
 
-                            // Add information we can use to finish up later.
+                            // Add the point to the query and store some information
+                            // help finish up later.
+                            auto idx = query.Add(ni, pt3);
                             query_guide.emplace_back(domain_id, entity_cidx, ni, idx);
                         }
                         else
