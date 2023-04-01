@@ -1667,7 +1667,7 @@ const int communicate_using_schema::OP_RECV = 2;
 
 //-----------------------------------------------------------------------------
 communicate_using_schema::communicate_using_schema(MPI_Comm c) :
-    comm(c), operations(), logging(false)
+    comm(c), operations(), loggingRoot("communicate_using_schema"), logging(false)
 {
 }
 
@@ -1696,6 +1696,13 @@ void
 communicate_using_schema::set_logging(bool val)
 {
     logging = val;
+}
+
+//-----------------------------------------------------------------------------
+void
+communicate_using_schema::set_logging_root(const std::string &filename)
+{
+    loggingRoot = filename;
 }
 
 //-----------------------------------------------------------------------------
@@ -1746,8 +1753,9 @@ communicate_using_schema::execute()
     if(logging)
     {
         char fn[128];
-        sprintf(fn, "communicate_using_schema.%04d.log", rank);
-        log.open(fn, std::ofstream::out);
+        sprintf(fn, ".%04d.log", rank);
+        std::string filename(loggingRoot + fn);
+        log.open(filename.c_str(), std::ofstream::out);
         log << "* Log started on rank " << rank << " at " << t0 << std::endl;
     }
 
