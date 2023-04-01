@@ -1797,13 +1797,15 @@ NullPointQuery::Reset()
 }
 
 //---------------------------------------------------------------------------
-void
+conduit::index_t
 NullPointQuery::Add(int dom, const double pt[3])
 {
     std::vector<double> &coords = m_domInputs[dom];
+    conduit::index_t idx = coords.size() / 3;
     coords.push_back(pt[0]);
     coords.push_back(pt[1]);
     coords.push_back(pt[2]);
+    return idx;
 }
 
 //---------------------------------------------------------------------------
@@ -1840,6 +1842,16 @@ NullPointQuery::Execute(const std::string & /*coordsetName*/)
         std::vector<int> &result = m_domResults[it->first];
         result.resize(npts, 0); // success is anything != -1
     }
+}
+
+//---------------------------------------------------------------------------
+std::vector<int>
+NullPointQuery::QueryDomainIds() const
+{
+    std::vector<int> retval;
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+        retval.push_back(it->first);
+    return retval;
 }
 
 //---------------------------------------------------------------------------
@@ -1895,34 +1907,45 @@ PointQuery::FindPointsInDomain(const conduit::Node &mesh,
     std::vector<int> &result) const
 {
     conduit::index_t numInputPts = input.size() / 3;
-    result.resize(numInputPts, 0);
+    result.resize(numInputPts, NotFound);
 
     const conduit::Node &cset = mesh.fetch_existing("coordsets/" + coordsetName);
     const conduit::Node *coords[3] = {nullptr, nullptr, nullptr};
+    std::vector<std::string> axes(coordset::axes(cset));
     int ci = 0;
-    for(const std::string &axis : coordset::axes(cset))
+    const conduit::Node &cvals = cset.fetch_existing("values");
+    for(const std::string &axis : axes)
     {
-        coords[ci++] = cset.fetch_ptr(axis);
-        ci++;
+        coords[ci++] = cvals.fetch_ptr(axis);
     }
+    if(coords[0] == nullptr)
+    {
+        CONDUIT_ERROR("Coordinates not found in coordset " << coordsetName << ".");
+        // result is full of NotFound.
+        return;
+    }
+
+    // Look up each input query point in the coordset and record its point id
+    // or NotFound if we can't find it.
+    //
+    // TODO: Use point acceleration structure instead of brute force.
     conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
     const double *input_ptr = &input[0];
-
     using policy = conduit::execution::OpenMPExec;
     conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
     {
         constexpr double EPS = 1.e-10;
-        auto ptIdx = i * 3;
-        int found = -1; // not found
+        const double *searchPt = &input_ptr[i * 3];
+        int found = NotFound;
         for(conduit::index_t pi = 0; pi < numCoordsetPts; pi++)
         {
-            double p[3];
+            double p[3] = {0., 0., 0.};
             for(int ii = 0; ii < ci; ii++)
                 p[ii] = coords[ii] ? coords[ii]->as_double_accessor()[pi] : 0.;
 
-            double dx = p[0] - input_ptr[ptIdx];
-            double dy = p[1] - input_ptr[ptIdx + 1];
-            double dz = p[2] - input_ptr[ptIdx + 2];
+            double dx = p[0] - searchPt[0];
+            double dy = p[1] - searchPt[1];
+            double dz = p[2] - searchPt[2];
             double dSquared = dx * dx + dy * dy + dz * dz;
             if(dSquared < EPS)
             {

@@ -444,7 +444,7 @@ public:
      @param dom The domain that will be queried.
      @param pt The point that will be queried.
      */
-    void Add(int dom, const double pt[3]);
+    conduit::index_t Add(int dom, const double pt[3]);
 
     /**
      @brief Execute all of the point queries.
@@ -468,6 +468,14 @@ public:
              point id. If the point is not found, it contains -1.
      */
     const std::vector<int> &Results(int dom) const;
+
+    /**
+     @brief Return a vector of the unique domain ids (the keys of the 
+            m_domInputs map) that were requested via calls to Add.
+
+     @return A vector of unique domain ids.
+     */
+    std::vector<int> QueryDomainIds() const;
 protected:
     const conduit::Node &m_mesh;
     std::map<int, std::vector<double>> m_domInputs;
@@ -476,8 +484,9 @@ protected:
 
 //---------------------------------------------------------------------------
 /**
- @brief This class can built up a set of point queries and execute them in
-        serial against the domains in the input mesh.
+ @brief This class can build up a set of point queries and execute them in
+        serial against the domains in the input mesh. This class actually
+        executes the queries.
  */
 class PointQuery : public NullPointQuery
 {

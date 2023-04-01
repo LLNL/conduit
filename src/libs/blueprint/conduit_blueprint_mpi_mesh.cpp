@@ -2673,8 +2673,8 @@ generate_corners(conduit::Node& mesh,
                  conduit::Node& d2smap,
                  MPI_Comm comm)
 {
-    // Make a query object that will be used to determine whether points actually
-    // exist in a neighbor domain.
+    // Make a MPI-aware query object that will be used to determine whether
+    // points actually exist in a neighbor domain.
     conduit::blueprint::mpi::mesh::utils::query::PointQuery Q(mesh, comm);
 
     conduit::blueprint::mesh::generate_corners(mesh,

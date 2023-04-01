@@ -16,8 +16,9 @@
 #include "conduit_annotations.hpp"
 #include "conduit_relay_mpi.hpp"
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 #ifdef DEBUG_PRINT
+// NOTE: if DEBUG_PRINT is defined then the library must also depend on conduit_relay
 #include "conduit_relay_io.hpp"
 #endif
 
@@ -73,7 +74,8 @@ PointQuery::Execute(const std::string &coordsetName)
     MPI_Comm_rank(m_comm, &rank);
     MPI_Comm_size(m_comm, &size);
 
-    // Figure out which ranks own the domains.
+    // Figure out which ranks own the domains. Get the domain ids on this rank
+    // and sum the number of domains on all ranks.
     std::vector<int> localDomains = DomainIds();
     int ndoms = localDomains.size(), ntotal_doms = 0;
     MPI_Allreduce(&ndoms, &ntotal_doms, 1, MPI_INT, MPI_SUM, m_comm);
@@ -108,6 +110,12 @@ PointQuery::Execute(const std::string &coordsetName)
     for(int i = 0; i < size; i++)
         total_qsize += qsize[i];
 
+    // Gather the queries to all ranks.
+    std::vector<int> allqueries(total_qsize, 0);
+    MPI_Allgatherv(&queries[0], nq, MPI_INT,
+                   &allqueries[0], &qsize[0], &qoffset[0], MPI_INT,
+                   m_comm);
+
 #ifdef DEBUG_PRINT
     // Print out some debugging information to files.
     conduit::Node debug;
@@ -121,18 +129,23 @@ PointQuery::Execute(const std::string &coordsetName)
     debug["qsize"].set(qsize);
     debug["qoffset"].set(qoffset);
     debug["total_qsize"] = total_qsize;
+    debug["allqueries"].set(allqueries);
+
+    // Store the points that we'll ask of each domain.
+    conduit::Node &qi = debug["inputs"];
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+    {
+        std::vector<double> qvals(it->second.begin(), it->second.end());
+        conduit::Node &qid = qi.append();
+        qid["domain"] = it->first;
+        qid["input"].set(qvals);
+    }
 
     std::stringstream ss;
     ss << "pointquery." << rank << ".yaml";
     std::string filename(ss.str());
     conduit::relay::io::save(debug, filename, "yaml");
 #endif
-
-    // Gather the queries to all ranks.
-    std::vector<int> allqueries(total_qsize, 0);
-    MPI_Allgatherv(&queries[0], nq, MPI_INT,
-                   &allqueries[0], &qsize[0], &qoffset[0], MPI_INT,
-                   m_comm);
 
     // Now we can start to issue some queries. We do a first pass that sends/recvs
     // all of the query points. Then a second pass does the queries and sends/recvs
@@ -143,16 +156,22 @@ PointQuery::Execute(const std::string &coordsetName)
     for(int pass = 0; pass < 2; pass++)
     {
         conduit::relay::mpi::communicate_using_schema C(m_comm);
-
+#ifdef DEBUG_PRINT
+        // Turn on logging.
+        std::stringstream ss;
+        ss << "mpi_pointquery_pass" << pass;
+        C.set_logging_root(ss.str());
+        C.set_logging(true);
+#endif
         for(size_t i = 0; i < allqueries.size(); i += 3)
         {
             int asker  = allqueries[i];
             int domain = allqueries[i+1];
             int npts   = allqueries[i+2];
+            int owner = domain_to_rank[domain];
 
             if(asker == rank)
             {
-                int owner = domain_to_rank[domain];
                 if(owner == rank)
                 {
                     // This rank already owns the data. We can do the search.
@@ -174,22 +193,22 @@ PointQuery::Execute(const std::string &coordsetName)
                     {
                         // Wrap the inputs as a Conduit node and post an isend.
                         const std::vector<double> &inputs = Inputs(domain);
-                        input_sends[domain] = new conduit::Node;
-                        conduit::Node &q = *input_sends[domain];
+                        input_sends[owner] = new conduit::Node;
+                        conduit::Node &q = *input_sends[owner];
                         q["inputs"].set_external(const_cast<double *>(&inputs[0]), inputs.size());
-                        C.add_isend(q, asker, inputs_tag + domain);
+                        C.add_isend(q, owner, inputs_tag + domain);
                     }
 
                     if(pass == 1)
                     {
                         // Make a node to receive the results.
-                        result_recvs[domain] = new conduit::Node;
-                        conduit::Node &r = *result_recvs[domain];
+                        result_recvs[owner] = new conduit::Node;
+                        conduit::Node &r = *result_recvs[owner];
                         C.add_irecv(r, owner, results_tag + domain);
                     }
                 }
             }
-            else if(domain_to_rank[domain] == rank)
+            else if(owner == rank)
             {
                 // This rank is not asker but it owns the domain and so it has to
                 // do the query.
@@ -197,15 +216,15 @@ PointQuery::Execute(const std::string &coordsetName)
                 if(pass == 0)
                 {
                     // Make a node to store the query parameters
-                    input_recvs[domain] = new conduit::Node;
-                    conduit::Node &q = *input_recvs[domain];
+                    input_recvs[asker] = new conduit::Node;
+                    conduit::Node &q = *input_recvs[asker];
                     C.add_irecv(q, asker, inputs_tag + domain);
                 }
 
                 if(pass == 1)
                 {
                     // We have the query parameters in input_recv. Turn it into a vector.
-                    conduit::Node &q = *input_recvs[domain];
+                    conduit::Node &q = *input_recvs[asker];
                     auto acc = q["inputs"].as_double_accessor();
                     std::vector<double> input;
                     input.reserve(acc.number_of_elements());
@@ -218,8 +237,8 @@ PointQuery::Execute(const std::string &coordsetName)
                     FindPointsInDomain(*dom, coordsetName, input, result);
 
                     // Make a node to send the results back to the asker.
-                    result_sends[domain] = new conduit::Node;
-                    conduit::Node &r = *result_sends[domain];
+                    result_sends[asker] = new conduit::Node;
+                    conduit::Node &r = *result_sends[asker];
                     r["results"].set(result);
                     C.add_isend(r, asker, results_tag + domain);
                 }
@@ -228,22 +247,32 @@ PointQuery::Execute(const std::string &coordsetName)
 
         // Do the exchanges.
         C.execute();
-
-        if(pass == 1)
-        {
-            // We have query results to convert/store in m_domResults.
-            for(auto it = result_recvs.begin(); it != result_recvs.end(); it++)
-            {
-                int domain = it->first;
-                const conduit::Node &r = it->second->fetch_existing("results");
-                auto acc = r.as_int_accessor();
-                std::vector<int> &result = m_domResults[domain];
-                result.reserve(acc.number_of_elements());
-                for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
-                    result.push_back(acc[i]);
-            }
-        }
     }
+
+    // We have query results to convert/store in m_domResults.
+    for(auto it = result_recvs.begin(); it != result_recvs.end(); it++)
+    {
+        int domain = it->first;
+        const conduit::Node &r = it->second->fetch_existing("results");
+        auto acc = r.as_int_accessor();
+        std::vector<int> &result = m_domResults[domain];
+        result.reserve(acc.number_of_elements());
+        for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
+            result.push_back(acc[i]);
+
+#ifdef DEBUG_PRINT
+        // Add the results into the debug node. Any points that could not be
+        // located will contain -1 (NotFound) for their entry.
+        conduit::Node &rn = debug["results"].append();
+        rn["domain"] = domain;
+        rn["result"].set(result);
+#endif
+    }
+
+#ifdef DEBUG_PRINT
+    // Overwrite the log file with new information.
+    conduit::relay::io::save(debug, filename, "yaml");
+#endif
 
     // Clean up maps.
     for(auto it = input_recvs.begin(); it != input_recvs.end(); it++)
