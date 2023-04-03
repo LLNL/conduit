@@ -12,6 +12,7 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_mpi.hpp"
 #include "conduit_relay_mpi.hpp"
+#include "conduit_blueprint_mpi_mesh_utils.hpp"
 
 #include <algorithm>
 #include <memory>
@@ -574,6 +575,300 @@ TEST(conduit_blueprint_mpi_mesh_transform, generate_corners)
                     ASSERT_EQ(dst_group_values.size(), 1);
                 }
             }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+generate_wonky_mesh(conduit::Node &mesh)
+{
+    // There is a 3x3x3 zone mesh that was giving generate_corners a problem
+    // due to adjacency sets.
+
+    // Domain 0
+    const char *dom0_str = R"(
+coordsets:
+  coords:
+    type: "explicit"
+    values:
+      x: [0.3333, 0.3333, 0.3333, 0.3333, 0.3333, 0.0, 0.3333, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.3333, 0.3333, 0.0, 0.6666, 0.3333, 0.3333, 0.6666, 0.6666, 0.3333, 0.0, 0.6666, 0.3333, 0.0, 0.6666, 1.0, 1.0, 1.0, 1.0]
+      y: [0.3333, 0.0, 0.3333, 0.0, 0.6666, 0.6666, 0.6666, 0.6666, 0.3333, 0.6666, 0.3333, 0.0, 0.0, 0.3333, 0.3333, 0.6666, 0.6666, 0.3333, 0.3333, 0.6666, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.3333, 0.0, 0.3333, 0.0]
+      z: [0.3333, 0.3333, 0.0, 0.0, 0.3333, 0.3333, 0.0, 0.3333, 0.3333, 0.0, 0.0, 0.3333, 0.0, 0.6666, 0.6666, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0, 0.6666, 0.6666, 0.6666, 0.6666, 0.3333, 0.3333, 0.3333, 0.3333, 0.3333, 0.0, 0.0]
+topologies:
+  main:
+    type: "unstructured"
+    coordset: "coords"
+    elements:
+      shape: "hex"
+      connectivity: [7, 8, 0, 4, 9, 10, 2, 6, 8, 11, 1, 0, 10, 12, 3, 2, 20, 17, 18, 19, 21, 13, 14, 15, 22, 15, 16, 23, 25, 4, 5, 26, 24, 21, 15, 22, 27, 7, 4, 25, 21, 13, 14, 15, 7, 8, 0, 4, 28, 29, 11, 8, 30, 31, 12, 10]
+      offsets: [0, 8, 16, 24, 32, 40, 48]
+adjsets:
+  main_adjset:
+    association: "vertex"
+    topology: "main"
+    groups:
+      group_0_1:
+        neighbors: 1
+        values: [2, 3, 5, 26]
+      group_0_3:
+        neighbors: 3
+        values: [7, 8, 9, 10, 11, 27, 28, 29, 30]
+      group_0_2:
+        neighbors: 2
+        values: [17, 20, 22, 23]
+      group_0_1_3:
+        neighbors: [1, 3]
+        values: [0, 1, 4, 6, 25]
+      group_0_2_3:
+        neighbors: [2, 3]
+        values: [13, 21, 24]
+      group_0_1_2:
+        neighbors: [1, 2]
+        values: [15, 16, 18, 19]
+      group_0_1_2_3:
+        neighbors: [1, 2, 3]
+        values: 14
+state:
+  domain_id: 0
+)";
+
+    // Domain 1
+    const char *dom1_str = R"(
+coordsets:
+  coords:
+    type: "explicit"
+    values:
+      x: [0.3333, 0.3333, 0.0, 0.0, 0.3333, 0.3333, 0.0, 0.0, 0.3333, 0.0, 0.3333, 0.0, 0.3333, 0.3333, 0.3333, 0.0, 0.0, 0.0, 0.3333, 0.0, 0.3333, 0.0, 0.3333, 0.0, 0.3333, 0.0]
+      y: [0.3333, 0.0, 0.0, 0.3333, 0.3333, 0.0, 0.0, 0.3333, 0.6666, 0.6666, 0.6666, 0.6666, 0.0, 0.3333, 0.6666, 0.3333, 0.6666, 0.0, 0.3333, 0.3333, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0]
+      z: [0.3333, 0.3333, 0.3333, 0.3333, 0.0, 0.0, 0.0, 0.0, 0.3333, 0.3333, 0.0, 0.0, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0, 0.3333, 0.3333, 0.0, 0.0]
+topologies:
+  main:
+    type: "unstructured"
+    coordset: "coords"
+    elements:
+      shape: "hex"
+      connectivity: [0, 1, 2, 3, 4, 5, 6, 7, 8, 0, 3, 9, 10, 4, 7, 11, 14, 13, 15, 16, 8, 0, 3, 9, 13, 12, 17, 15, 0, 1, 2, 3, 20, 18, 19, 21, 14, 13, 15, 16, 22, 8, 9, 23, 24, 10, 11, 25]
+      offsets: [0, 8, 16, 24, 32, 40]
+adjsets:
+  main_adjset:
+    association: "vertex"
+    topology: "main"
+    groups:
+      group_0_1:
+        neighbors: 0
+        values: [4, 5, 9, 23]
+      group_1_3:
+        neighbors: 3
+        values: 24
+      group_1_2:
+        neighbors: 2
+        values: [15, 17, 19, 21]
+      group_0_1_3:
+        neighbors: [0, 3]
+        values: [0, 1, 8, 10, 22]
+      group_1_2_3:
+        neighbors: [2, 3]
+        values: 12
+      group_0_1_2:
+        neighbors: [0, 2]
+        values: [14, 16, 18, 20]
+      group_0_1_2_3:
+        neighbors: [0, 2, 3]
+        values: 13
+state:
+  domain_id: 1
+)";
+
+    // Domain 2
+    const char *dom2_str = R"(
+coordsets:
+  coords:
+    type: "explicit"
+    values:
+      x: [0.6666, 0.6666, 0.3333, 0.3333, 0.3333, 0.0, 0.0, 0.0, 0.6666, 0.6666, 0.3333, 0.3333, 0.0, 0.0, 0.3333, 0.0, 0.6666, 0.6666, 0.3333, 0.0, 0.3333, 0.0, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      y: [0.3333, 0.0, 0.0, 0.3333, 0.6666, 0.3333, 0.6666, 0.0, 0.3333, 0.0, 0.0, 0.3333, 0.0, 0.3333, 0.6666, 0.6666, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.6666, 1.0, 0.6666, 0.3333, 0.3333, 0.0, 0.0]
+      z: [0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.6666, 1.0, 1.0, 0.6666, 0.6666, 1.0, 0.6666, 0.6666, 0.6666, 1.0, 1.0, 1.0, 0.6666, 1.0, 0.6666]
+topologies:
+  main:
+    type: "unstructured"
+    coordset: "coords"
+    elements:
+      shape: "hex"
+      connectivity: [8, 9, 10, 11, 0, 1, 2, 3, 11, 10, 12, 13, 3, 2, 7, 5, 18, 14, 15, 19, 20, 4, 6, 21, 22, 16, 14, 18, 23, 17, 4, 20, 26, 27, 16, 22, 24, 25, 17, 23, 27, 28, 8, 16, 25, 29, 0, 17, 28, 30, 9, 8, 29, 31, 1, 0]
+      offsets: [0, 8, 16, 24, 32, 40, 48]
+adjsets:
+  main_adjset:
+    association: "vertex"
+    topology: "main"
+    groups:
+      group_2_3:
+        neighbors: 3
+        values: [1, 24, 25, 29, 31]
+      group_1_2:
+        neighbors: 1
+        values: [5, 7, 13, 15]
+      group_0_2:
+        neighbors: 0
+        values: [8, 16, 20, 21]
+      group_1_2_3:
+        neighbors: [1, 3]
+        values: 2
+      group_0_2_3:
+        neighbors: [0, 3]
+        values: [0, 17, 23]
+      group_0_1_2:
+        neighbors: [0, 1]
+        values: [4, 6, 11, 14]
+      group_0_1_2_3:
+        neighbors: [0, 1, 3]
+        values: 3
+state:
+  domain_id: 2
+)";
+
+    // Domain 3
+    const char *dom3_str = R"(
+coordsets:
+  coords:
+    type: "explicit"
+    values:
+      x: [0.3333, 0.3333, 0.3333, 0.3333, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.3333, 0.3333, 0.6666, 0.6666, 0.3333, 0.3333, 0.6666, 0.6666, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+      y: [0.3333, 0.0, 0.6666, 0.6666, 0.6666, 0.3333, 0.6666, 0.3333, 0.0, 0.3333, 0.0, 0.0, 0.3333, 0.6666, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.6666, 1.0, 0.6666, 1.0, 0.6666, 0.3333, 0.0, 0.3333, 0.0, 0.3333]
+      z: [0.3333, 0.3333, 0.3333, 0.0, 0.3333, 0.3333, 0.0, 0.0, 0.3333, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.6666, 0.3333, 0.0, 0.3333, 0.0, 0.3333, 0.3333, 0.0, 0.0, 0.6666, 0.6666, 0.6666, 0.6666, 0.3333, 0.3333, 0.0]
+topologies:
+  main:
+    type: "unstructured"
+    coordset: "coords"
+    elements:
+      shape: "hex"
+      connectivity: [9, 10, 11, 12, 5, 8, 1, 0, 17, 4, 2, 15, 18, 6, 3, 16, 19, 20, 4, 17, 21, 22, 6, 18, 23, 24, 13, 14, 19, 20, 4, 17, 25, 26, 10, 9, 27, 28, 8, 5, 24, 25, 9, 13, 20, 27, 5, 4, 20, 27, 5, 4, 22, 29, 7, 6]
+      offsets: [0, 8, 16, 24, 32, 40, 48]
+adjsets:
+  main_adjset:
+    association: "vertex"
+    topology: "main"
+    groups:
+      group_0_3:
+        neighbors: 0
+        values: [4, 5, 6, 7, 8, 17, 27, 28, 29]
+      group_2_3:
+        neighbors: 2
+        values: [10, 23, 24, 25, 26]
+      group_1_3:
+        neighbors: 1
+        values: 16
+      group_0_1_3:
+        neighbors: [0, 1]
+        values: [0, 1, 2, 3, 15]
+      group_1_2_3:
+        neighbors: [1, 2]
+        values: 11
+      group_0_2_3:
+        neighbors: [0, 2]
+        values: [9, 13, 14]
+      group_0_1_2_3:
+        neighbors: [0, 1, 2]
+        values: 12
+state:
+  domain_id: 3
+)";
+
+    // This test is supposed to run on 2 processors
+    const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
+    const int par_size = relay::mpi::size(MPI_COMM_WORLD);
+    const int domain_to_rank[4][4] = {
+        {0, 0, 0, 0},
+        {0, 0, 1, 1},
+        {0, 0, 1, 2},
+        {0, 1, 2, 3}
+    };
+    int pIdx = std::min(par_size, 4) - 1;
+
+    // Add domains to the mesh.
+    if(domain_to_rank[pIdx][0] == par_rank)
+        mesh["domain0"].parse(dom0_str, "yaml");
+    if(domain_to_rank[pIdx][1] == par_rank)
+        mesh["domain1"].parse(dom1_str, "yaml");
+    if(domain_to_rank[pIdx][2] == par_rank)
+        mesh["domain2"].parse(dom2_str, "yaml");
+    if(domain_to_rank[pIdx][3] == par_rank)
+        mesh["domain3"].parse(dom3_str, "yaml");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, generate_corners_wonky)
+{
+    // There is a 3x3x3 zone mesh that was giving generate_corners a problem
+    // due to adjacency sets. Adjacency sets are produced from the original one
+    // and when making corners. It was giving rise to adjacency sets that
+    // contained points that do not exist in neighbor domains. We can use the
+    // PointQuery to test this.
+
+    conduit::Node mesh, s2dmap, d2smap;
+    generate_wonky_mesh(mesh);
+
+    // Make the corner mesh.
+    conduit::blueprint::mpi::mesh::generate_corners(mesh,
+                                                    "main_adjset",
+                                                    "corner_adjset",
+                                                    "corner_mesh",
+                                                    "corner_coords",
+                                                    s2dmap,
+                                                    d2smap,
+                                                    MPI_COMM_WORLD);
+
+    // Get the domains in the mesh for this rank.
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
+
+    conduit::blueprint::mpi::mesh::utils::query::PointQuery Q(mesh, MPI_COMM_WORLD);
+
+    // Iterate over the corner mesh's adjacency sets for each domain and make
+    // sure all points are found using a PointQuery.
+    for(auto dom_ptr : domains)
+    {
+        const conduit::Node &dom = *dom_ptr;
+        //int domain_id = dom["state/domain_id"].to_int();
+        const conduit::Node &groups = dom["adjsets/corner_adjset/groups"];
+        const conduit::Node &cset = dom["coordsets/corner_coords"];
+        for(conduit::index_t gi = 0; gi < groups.number_of_children(); gi++)
+        {
+            int_accessor neighbors = groups[gi]["neighbors"].as_int_accessor();
+            int_accessor values = groups[gi]["values"].as_int_accessor();
+
+            for(conduit::index_t ni = 0; ni < neighbors.number_of_elements(); ni++)
+            {
+                int nbr = neighbors[ni];
+                for(conduit::index_t vi = 0; vi < values.number_of_elements(); vi++)
+                {
+                    int val = values[vi];
+
+                    // Get the point (it might not be 3D)
+                    auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(cset, val);
+                    double pt3[3];
+                    pt3[0] = pt[0];
+                    pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
+                    pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
+
+                    Q.Add(nbr, pt3);
+                }
+            }
+        }
+    }
+
+    // Execute the query.
+    Q.Execute("corner_coords");
+
+    // If this rank had domains, check the query results. There should be no
+    // occurrances of NotFound.
+    if(!domains.empty())
+    {
+        for(auto domainId : Q.QueryDomainIds())
+        {
+            const auto &r = Q.Results(domainId);
+            auto it = std::find(r.begin(), r.end(), Q.NotFound);
+            bool found = it != r.end();
+            EXPECT_FALSE(found);
         }
     }
 }

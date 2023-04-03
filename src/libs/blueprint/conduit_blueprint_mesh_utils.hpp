@@ -430,8 +430,16 @@ class NullPointQuery
 public:
     static const int NotFound;
 
+    /**
+     @brief Constructor
+     @param mesh The input mesh(es). Each mesh domain must have state/domain_id
+                 that uniquely identifies the domain.
+     */
     NullPointQuery(const conduit::Node &mesh);
 
+    /**
+     @brief Destructor
+     */
     virtual ~NullPointQuery() = default;
 
     /**
@@ -491,8 +499,16 @@ protected:
 class PointQuery : public NullPointQuery
 {
 public:
+    /**
+     @brief Constructor
+     @param mesh The input mesh(es). Each mesh domain must have state/domain_id
+                 that uniquely identifies the domain.
+     */
     PointQuery(const conduit::Node &mesh);
 
+    /**
+     @brief Destructor
+     */
     virtual ~PointQuery() = default;
 
     /**

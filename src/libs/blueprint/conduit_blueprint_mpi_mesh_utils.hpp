@@ -72,7 +72,8 @@ public:
     /**
      @brief Constructor
 
-     @param mesh A node that holds one or more domains.
+     @param mesh A node that holds one or more domains. Each domain must have
+                 state/domain_id that uniquely identifies the domain.
      @param comm The MPI communicator that will be used for communication.
      */
     PointQuery(const conduit::Node &mesh, MPI_Comm comm);
