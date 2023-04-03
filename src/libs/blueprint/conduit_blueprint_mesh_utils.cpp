@@ -1928,7 +1928,7 @@ PointQuery::FindPointsInDomain(const conduit::Node &mesh,
     // Look up each input query point in the coordset and record its point id
     // or NotFound if we can't find it.
     //
-    // TODO: Use point acceleration structure instead of brute force.
+    // TODO: Use acceleration structure for search.
     conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
     const double *input_ptr = &input[0];
     using policy = conduit::execution::OpenMPExec;

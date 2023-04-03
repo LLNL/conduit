@@ -141,16 +141,34 @@ PointQuery::Execute(const std::string &coordsetName)
         qid["input"].set(qvals);
     }
 
+    // Save the input mesh
+    debug["mesh"].set_external(m_mesh);
+
     std::stringstream ss;
     ss << "pointquery." << rank << ".yaml";
     std::string filename(ss.str());
     conduit::relay::io::save(debug, filename, "yaml");
 #endif
 
+    // Do a pass upfront where we look for domain ids from the query that
+    // do not map to ranks. This would be possible if the adjset references
+    // domains that were not actually added to the mesh. This should not
+    // happen but it came up in a test case.
+    for(size_t i = 0; i < allqueries.size(); i += 3)
+    {
+        int domain = allqueries[i+1];
+        if(domain < 0 || domain >= domain_to_rank.size())
+        {
+            CONDUIT_ERROR("An adjacency set referenced domain " << domain
+                << ", which is not a valid domain in the input mesh.");
+        }
+    }
+
     // Now we can start to issue some queries. We do a first pass that sends/recvs
     // all of the query points. Then a second pass does the queries and sends/recvs
     // the results. The results get stored in m_domResults.
-    std::map<int, conduit::Node *> input_sends, result_sends, input_recvs, result_recvs;
+    std::map<std::pair<int,int>, conduit::Node *> input_sends, result_sends,
+                                                  input_recvs, result_recvs;
     int inputs_tag = 55000000;
     int results_tag = 66000000;
     for(int pass = 0; pass < 2; pass++)
@@ -187,14 +205,16 @@ PointQuery::Execute(const std::string &coordsetName)
                 }
                 else
                 {
+                    auto id = std::make_pair(owner, domain);
+
                     // A different rank owns the data. We need to send the coordinates
                     // we're querying and then post a receive for the result.
                     if(pass == 0)
                     {
                         // Wrap the inputs as a Conduit node and post an isend.
                         const std::vector<double> &inputs = Inputs(domain);
-                        input_sends[owner] = new conduit::Node;
-                        conduit::Node &q = *input_sends[owner];
+                        input_sends[id] = new conduit::Node;
+                        conduit::Node &q = *input_sends[id];
                         q["inputs"].set_external(const_cast<double *>(&inputs[0]), inputs.size());
                         C.add_isend(q, owner, inputs_tag + domain);
                     }
@@ -202,8 +222,8 @@ PointQuery::Execute(const std::string &coordsetName)
                     if(pass == 1)
                     {
                         // Make a node to receive the results.
-                        result_recvs[owner] = new conduit::Node;
-                        conduit::Node &r = *result_recvs[owner];
+                        result_recvs[id] = new conduit::Node;
+                        conduit::Node &r = *result_recvs[id];
                         C.add_irecv(r, owner, results_tag + domain);
                     }
                 }
@@ -212,19 +232,20 @@ PointQuery::Execute(const std::string &coordsetName)
             {
                 // This rank is not asker but it owns the domain and so it has to
                 // do the query.
+                auto id = std::make_pair(asker, domain);
 
                 if(pass == 0)
                 {
                     // Make a node to store the query parameters
-                    input_recvs[asker] = new conduit::Node;
-                    conduit::Node &q = *input_recvs[asker];
+                    input_recvs[id] = new conduit::Node;
+                    conduit::Node &q = *input_recvs[id];
                     C.add_irecv(q, asker, inputs_tag + domain);
                 }
 
                 if(pass == 1)
                 {
                     // We have the query parameters in input_recv. Turn it into a vector.
-                    conduit::Node &q = *input_recvs[asker];
+                    conduit::Node &q = *input_recvs[id];
                     auto acc = q["inputs"].as_double_accessor();
                     std::vector<double> input;
                     input.reserve(acc.number_of_elements());
@@ -237,8 +258,8 @@ PointQuery::Execute(const std::string &coordsetName)
                     FindPointsInDomain(*dom, coordsetName, input, result);
 
                     // Make a node to send the results back to the asker.
-                    result_sends[asker] = new conduit::Node;
-                    conduit::Node &r = *result_sends[asker];
+                    result_sends[id] = new conduit::Node;
+                    conduit::Node &r = *result_sends[id];
                     r["results"].set(result);
                     C.add_isend(r, asker, results_tag + domain);
                 }
@@ -252,7 +273,7 @@ PointQuery::Execute(const std::string &coordsetName)
     // We have query results to convert/store in m_domResults.
     for(auto it = result_recvs.begin(); it != result_recvs.end(); it++)
     {
-        int domain = it->first;
+        int domain = it->first.second;
         const conduit::Node &r = it->second->fetch_existing("results");
         auto acc = r.as_int_accessor();
         std::vector<int> &result = m_domResults[domain];

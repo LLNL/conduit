@@ -160,22 +160,31 @@ void setup_test_mesh(const index_t type,
     conduit::blueprint::mesh::examples::grid(
         (ndims == 3) ? "hexs" : "quads",
         dims, dims, (ndims == 3) ? dims : 0,
-        2, 2, 1,
+        2, 2, 1, // nx,ny,nz domains
         full_mesh);
     setup_test_mesh_paths(type, full_mesh, rank_paths);
 
     const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
     const int par_size = relay::mpi::size(MPI_COMM_WORLD);
-    if(par_size == 1)
+
+    // full_mesh contains 4 domains that we need to assign to ranks.
+    // Make sure all domains get assigned.
+    const int domain_to_rank[4][4] = {
+        {0, 0, 0, 0},
+        {0, 0, 1, 1},
+        {0, 0, 1, 2},
+        {0, 1, 2, 3}
+    };
+    int pIdx = std::min(par_size, 4) - 1;
+    for(int dom = 0; dom < 4; dom++)
     {
-        rank_mesh.set_external(full_mesh);
-    }
-    else
-    {
-        std::ostringstream oss;
-        oss << "domain" << par_rank;
-        const std::string domain_name = oss.str();
-        rank_mesh.set_external(full_mesh[domain_name]);
+        if(domain_to_rank[pIdx][dom] == par_rank)
+        {
+            std::ostringstream oss;
+            oss << "domain" << dom;
+            const std::string domain_name = oss.str();
+            rank_mesh.append().set_external(full_mesh[domain_name]);
+        }
     }
 
     if(DERIVED_TYPE_FUNS[type] != nullptr)
