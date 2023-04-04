@@ -206,7 +206,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 // Problem: in overlink, all domains are named the same ('MESH')
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
-    for (int ndomains = 3; ndomains < 4; ndomains ++)
+    for (int ndomains = 2; ndomains < 6; ndomains ++)
     {
         Node save_mesh;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
