@@ -387,7 +387,6 @@ public:
         }
         if (!file_path.empty())
         {
-            // TODO or use utils::join_path() instead?
             file_path = conduit::utils::join_file_path(relative_dir, file_path);
         }
     }
@@ -713,19 +712,15 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
 
     mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
 
-    // TODO this should just be i,j,k, get rid of all i0, j0, and k0
-
-    // use the first set when dealing with rectilinear, the second set for structured
-    std::string origin_accessors[] = {"i", "j", "k", "i0", "j0", "k0"};
-    int start_index = (coordtype == DB_COLLINEAR ? 0 : 3);
-
     // If the origin is not the default value, then we need to specify it
-    if (quadmesh_ptr->base_index[0] != 0 && quadmesh_ptr->base_index[1] != 0 && quadmesh_ptr->base_index[2] != 0)
+    if (quadmesh_ptr->base_index[0] != 0 && 
+        quadmesh_ptr->base_index[1] != 0 && 
+        quadmesh_ptr->base_index[2] != 0)
     {
         Node &origin = mesh_domain["topologies"][multimesh_name]["elements"]["origin"];
-        origin[origin_accessors[start_index]] = quadmesh_ptr->base_index[0];
-        if (ndims > 1) origin[origin_accessors[start_index + 1]] = quadmesh_ptr->base_index[1];
-        if (ndims > 2) origin[origin_accessors[start_index + 2]] = quadmesh_ptr->base_index[2];
+        origin["i"] = quadmesh_ptr->base_index[0];
+        if (ndims > 1) origin["i"] = quadmesh_ptr->base_index[1];
+        if (ndims > 2) origin["i"] = quadmesh_ptr->base_index[2];
     }
 
     if (quadmesh_ptr->datatype == DB_DOUBLE)
@@ -747,33 +742,6 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
     else
     {
         CONDUIT_ERROR("Unsupported mesh data type " << quadmesh_ptr->datatype);
-    }
-}
-
-
-//---------------------------------------------------------------------------//
-// TODO move this where it belongs
-template<typename T>
-void
-conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
-{
-    const int conn_size = n_mesh_conn.dtype().number_of_elements();
-    T *conn_ptr = n_mesh_conn.value();
-    // TODO double check this calculation
-    for (int i = 0; i < conn_size; i += 6)
-    {
-        auto conn0 = conn_ptr[i + 0];
-        auto conn1 = conn_ptr[i + 1];
-        auto conn2 = conn_ptr[i + 2];
-        auto conn3 = conn_ptr[i + 3];
-        auto conn4 = conn_ptr[i + 4];
-        auto conn5 = conn_ptr[i + 5];
-        conn_ptr[i + 2] = conn0;
-        conn_ptr[i + 1] = conn1;
-        conn_ptr[i + 5] = conn2;
-        conn_ptr[i + 3] = conn3;
-        conn_ptr[i + 0] = conn4;
-        conn_ptr[i + 4] = conn5;
     }
 }
 
@@ -1216,7 +1184,7 @@ read_root_silo_index(const std::string &root_file_path,
             if (var_nameschemes)
             {
                 var["nameschemes"] = "yes";
-                // go kick rocks
+                // TODO
             }
             else
             {
@@ -1527,7 +1495,7 @@ read_mesh(const std::string &root_file_path,
         // TODO we need to generate the state node if possible
     }
 
-    // should I call verify at the end here?
+    // TODO should I call verify at the end here?
 }
 
 //-----------------------------------------------------------------------------
@@ -1613,20 +1581,44 @@ silo_generate_state_optlist(const Node &n)
 }
 
 //---------------------------------------------------------------------------//
-// return a pair where the first entry is the coordset type
-// and the second is the labels for the coordinates
-std::pair<int, const std::vector<std::string>>
-get_coordset_type_labels(const Node &values)
+std::vector<const char *>
+get_coordset_axis_labels(const std::string &sys)
 {
-    std::string sys =
-        conduit::blueprint::mesh::utils::coordset::coordsys(values);
+    std::vector<const char *> coordnames;
     if (sys == "cartesian")
-        return std::make_pair(DB_CARTESIAN, conduit::blueprint::mesh::utils::CARTESIAN_AXES);
+    {
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[0].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[1].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[2].c_str());
+    }
     else if (sys == "cylindrical")
-        return std::make_pair(DB_CYLINDRICAL, conduit::blueprint::mesh::utils::CYLINDRICAL_AXES);
+    {
+        coordnames.push_back(conduit::blueprint::mesh::utils::CYLINDRICAL_AXES[0].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CYLINDRICAL_AXES[1].c_str());
+        coordnames.push_back(nullptr);
+    }
     else if (sys == "spherical")
-        return std::make_pair(DB_SPHERICAL, conduit::blueprint::mesh::utils::SPHERICAL_AXES);
+    {
+        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[0].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[1].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[2].c_str());
+    }
+    else
+        CONDUIT_ERROR("Unrecognized coordinate system " << sys);
+    return coordnames;
+}
+
+//---------------------------------------------------------------------------//
+int get_coordset_silo_type(const std::string &sys)
+{
+    if (sys == "cartesian")
+        return DB_CARTESIAN;
+    else if (sys == "cylindrical")
+        return DB_CYLINDRICAL;
+    else if (sys == "spherical")
+        return DB_SPHERICAL;
     CONDUIT_ERROR("Unrecognized coordinate system " << sys);
+    return -1;
 }
 
 //---------------------------------------------------------------------------//
@@ -1814,7 +1806,7 @@ int
 assign_coords_ptrs(void *coords_ptrs[3],
                    int ndims,
                    conduit::Node &n_coords_compact,
-                   const std::vector<std::string> &coordsys_labels)
+                   std::vector<const char *> &coordsys_labels)
 {
 
     DataType dtype = n_coords_compact[coordsys_labels[0]].dtype();
@@ -1911,10 +1903,13 @@ void silo_write_pointmesh(DBfile *dbfile,
 {
 
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    auto coordsys_type_labels = get_coordset_type_labels(n_coords);
+    std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
+    int silo_coordsys_type = get_coordset_silo_type(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
+
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
-                                          &coordsys_type_labels.first),
+                                          &silo_coordsys_type),
                              "error adding coordsys option");
 
     if (n_coords["type"].as_string() != "explicit")
@@ -1933,7 +1928,7 @@ void silo_write_pointmesh(DBfile *dbfile,
     int coords_dtype = assign_coords_ptrs(coords_ptrs,
                                           ndims,
                                           n_coords_compact,
-                                          coordsys_type_labels.second);
+                                          silo_coordset_axis_labels);
 
     int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
                                     detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
@@ -1944,6 +1939,30 @@ void silo_write_pointmesh(DBfile *dbfile,
                                     state_optlist);    // opt list
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after saving DBPutPointmesh");
+}
+
+//---------------------------------------------------------------------------//
+template<typename T>
+void
+conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
+{
+    const int conn_size = n_mesh_conn.dtype().number_of_elements();
+    T *conn_ptr = n_mesh_conn.value();
+    for (int i = 0; i < conn_size; i += 6)
+    {
+        auto conn0 = conn_ptr[i + 0];
+        auto conn1 = conn_ptr[i + 1];
+        auto conn2 = conn_ptr[i + 2];
+        auto conn3 = conn_ptr[i + 3];
+        auto conn4 = conn_ptr[i + 4];
+        auto conn5 = conn_ptr[i + 5];
+        conn_ptr[i + 2] = conn0;
+        conn_ptr[i + 1] = conn1;
+        conn_ptr[i + 5] = conn2;
+        conn_ptr[i + 3] = conn3;
+        conn_ptr[i + 0] = conn4;
+        conn_ptr[i + 4] = conn5;
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -2149,11 +2168,13 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 {
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    auto coordsys_type_labels = get_coordset_type_labels(n_coords);
+    std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
+    int silo_coordsys_type = get_coordset_silo_type(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
 
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
-                                          &coordsys_type_labels.first),
+                                          &silo_coordsys_type),
                               "Failed to create coordsystem labels");
 
     if (n_coords["type"].as_string() != "explicit")
@@ -2172,21 +2193,16 @@ void silo_write_ucd_mesh(DBfile *dbfile,
     int coords_dtype = assign_coords_ptrs(coords_ptrs,
                                           ndims,
                                           n_coords_compact,
-                                          coordsys_type_labels.second);
+                                          silo_coordset_axis_labels);
 
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
     std::string zlist_name = topo_name + "_connectivity";
 
-    // TODO we could go index out of bounds here watch out
-    char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
-                                        coordsys_type_labels.second[1].c_str(),
-                                        coordsys_type_labels.second[2].c_str()};
-
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
                                   detail::sanitize_silo_varname(topo_name).c_str(),           // mesh name
                                   ndims,                       // number of dims
-                                  coordnames, // coord names
+                                  silo_coordset_axis_labels.data(), // coord names
                                   coords_ptrs,                 // coords values
                                   num_pts,            // number of points
                                   num_elems,          // number of elements
@@ -2208,10 +2224,13 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 {
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    auto coordsys_type_labels = get_coordset_type_labels(n_coords);
+    std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
+    int silo_coordsys_type = get_coordset_silo_type(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
+
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
-                                          &coordsys_type_labels.first),
+                                          &silo_coordsys_type),
                               "Failed to create coordsystem labels");
 
     Node n_coords_compact;
@@ -2219,15 +2238,15 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 
 
     int pts_dims[3];
-    pts_dims[0] = n_coords_compact[coordsys_type_labels.second[0]].dtype().number_of_elements();
-    pts_dims[1] = n_coords_compact[coordsys_type_labels.second[1]].dtype().number_of_elements();
+    pts_dims[0] = n_coords_compact[silo_coordset_axis_labels[0]].dtype().number_of_elements();
+    pts_dims[1] = n_coords_compact[silo_coordset_axis_labels[1]].dtype().number_of_elements();
     pts_dims[2] = 1;
 
     int num_pts = pts_dims[0] * pts_dims[1];
     int num_elems = (pts_dims[0] - 1) * (pts_dims[1] - 1);
     if (ndims == 3)
     {
-        pts_dims[2] = n_coords_compact[coordsys_type_labels.second[2]].dtype().number_of_elements();
+        pts_dims[2] = n_coords_compact[silo_coordset_axis_labels[2]].dtype().number_of_elements();
         num_pts *= pts_dims[2];
         num_elems *= (pts_dims[2] - 1);
     }
@@ -2246,11 +2265,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
     int coords_dtype = assign_coords_ptrs(coords_ptrs,
                                           ndims,
                                           n_coords_compact,
-                                          coordsys_type_labels.second);
-
-    char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
-                                        coordsys_type_labels.second[1].c_str(),
-                                        coordsys_type_labels.second[2].c_str()};
+                                          silo_coordset_axis_labels);
 
     int base_index[] = {0,0,0};
     if (n_topo.has_path("elements/origin"))
@@ -2268,7 +2283,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
                       detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                      coordnames, // coord names
+                      silo_coordset_axis_labels.data(), // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
                       ndims,                       // number of dims
@@ -2291,10 +2306,14 @@ void silo_write_structured_mesh(DBfile *dbfile,
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
 
     CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
-    auto coordsys_type_labels = get_coordset_type_labels(n_coords);
+
+    std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
+    int silo_coordsys_type = get_coordset_silo_type(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
+
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
-                                          &coordsys_type_labels.first),
+                                          &silo_coordsys_type),
                               "Error adding option");
 
     if (n_coords["type"].as_string() != "explicit")
@@ -2312,7 +2331,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
     int coords_dtype = assign_coords_ptrs(coords_ptrs,
                                           ndims,
                                           n_coords_compact,
-                                          coordsys_type_labels.second);
+                                          silo_coordset_axis_labels);
 
     int ele_dims[3];
     ele_dims[0] = n_topo["elements/dims/i"].to_value();
@@ -2345,10 +2364,6 @@ void silo_write_structured_mesh(DBfile *dbfile,
         pts_dims[2] = ele_dims[2] + 1;
     }
 
-    char const * const coordnames[3] = {coordsys_type_labels.second[0].c_str(),
-                                        coordsys_type_labels.second[1].c_str(),
-                                        coordsys_type_labels.second[2].c_str()};
-
     int base_index[] = {0,0,0};
     if (n_topo.has_path("elements/origin"))
     {
@@ -2365,7 +2380,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
                       detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                      coordnames, // coord names
+                      silo_coordset_axis_labels.data(), // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
                       ndims,                       // number of dims
