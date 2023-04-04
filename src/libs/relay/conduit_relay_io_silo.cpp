@@ -394,7 +394,6 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-// TODO actually use this function
 std::string sanitize_silo_varname(const std::string &varname)
 {
     std::stringstream newvarname;
@@ -404,7 +403,6 @@ std::string sanitize_silo_varname(const std::string &varname)
             newvarname << varname[i];
         else
             newvarname << "_";
-        // newvarname << (std::isalnum(varname[i]) ? (varname[i]) : "_");
     }
     return newvarname.str();
 }
