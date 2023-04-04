@@ -1901,8 +1901,9 @@ void silo_write_pointmesh(DBfile *dbfile,
                           DBoptlist *state_optlist,
                           Node &n_mesh_info) 
 {
-
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
+    CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
+
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = get_coordset_silo_type(coordsys);
     std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
@@ -2168,6 +2169,8 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 {
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
+    CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
+
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = get_coordset_silo_type(coordsys);
     std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
@@ -2224,6 +2227,8 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 {
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
+    CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
+
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = get_coordset_silo_type(coordsys);
     std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
@@ -2304,7 +2309,6 @@ void silo_write_structured_mesh(DBfile *dbfile,
 {
     // check if we are 2d or 3d
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-
     CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
 
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
@@ -2570,12 +2574,7 @@ void write_multimeshes(DBfile *dbfile,
         }
 
         std::string silo_path = root["silo_path"].as_string();
-        
-        // TODO is this true?
-        // Q? every blueprint domain should have the same mesh name and mesh type
 
-        // TODO big things to think about:
-        //  - Sanitize silo varname elsewhere, whereever I am writing var names
         std::vector<std::string> domain_name_strings;
         std::vector<const char *> domain_name_ptrs;
         std::vector<int> mesh_types;
@@ -2657,7 +2656,7 @@ void write_multimeshes(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
-// TODO hmmmmmm
+// TODO rework this function and use it
 void
 write_multimaterial(DBfile *root,
                     const std::string &mmat_name,
@@ -2739,8 +2738,6 @@ write_multivars(DBfile *dbfile,
 
         std::string silo_path = root["silo_path"].as_string();
 
-        // TODO Q? is this true?
-        // every blueprint domain should have the same var name and var type
         std::vector<std::string> var_name_strings;
         std::vector<const char *> var_name_ptrs;
         std::vector<int> var_types;
