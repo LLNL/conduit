@@ -1174,8 +1174,8 @@ read_root_silo_index(const std::string &root_file_path,
     // TODO nameschemes
     if (nameschemes)
     {
+        // TODO
         root_node[multimesh_name]["nameschemes"] = "yes";
-        // go kick rocks
     }
     else
     {
@@ -1747,8 +1747,8 @@ void silo_write_field(DBfile *dbfile,
     if (mesh_type == "unstructured")
     {
         silo_error = DBPutUcdvar1(dbfile, 
-                                  var_name.c_str(),
-                                  topo_name.c_str(),
+                                  detail::sanitize_silo_varname(var_name).c_str(),
+                                  detail::sanitize_silo_varname(topo_name).c_str(),
                                   vals_ptr,
                                   num_values,
                                   NULL,
@@ -1781,8 +1781,8 @@ void silo_write_field(DBfile *dbfile,
         }
 
         silo_error = DBPutQuadvar1( dbfile,
-                                    var_name.c_str(),
-                                    topo_name.c_str(),
+                                    detail::sanitize_silo_varname(var_name).c_str(),
+                                    detail::sanitize_silo_varname(topo_name).c_str(),
                                     vals_ptr,
                                     dims,
                                     num_dims,
@@ -1794,10 +1794,9 @@ void silo_write_field(DBfile *dbfile,
     }
     else if (mesh_type == "points") 
     {
-
         silo_error = DBPutPointvar1(dbfile, // dbfile Database file pointer.
-                                    var_name.c_str(),  // variable name
-                                    topo_name.c_str(), // mesh name
+                                    detail::sanitize_silo_varname(var_name).c_str(),  // variable name
+                                    detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
                                     vals_ptr,          // data values
                                     num_pts, // Number of elements (points).
                                     vals_type, // Datatype of the variable.
@@ -1939,7 +1938,7 @@ void silo_write_pointmesh(DBfile *dbfile,
                                           coordsys_type_labels.second);
 
     int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
-                                    topo_name.c_str(), // mesh name
+                                    detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
                                     ndims,             // num_dims
                                     coords_ptrs,       // coords values
                                     num_pts,           // num eles = num pts
@@ -2126,7 +2125,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 
     int silo_error =
         DBPutZonelist2(dbfile,             // silo file
-                       zlist_name.c_str(), // silo obj name
+                       detail::sanitize_silo_varname(zlist_name).c_str(), // silo obj name
                        total_num_elems,    // number of elements
                        2,                  // spatial dims
                        conn_ptr,           // connectivity array
@@ -2187,13 +2186,13 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                                         coordsys_type_labels.second[2].c_str()};
 
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
-                                  topo_name.c_str(),           // mesh name
+                                  detail::sanitize_silo_varname(topo_name).c_str(),           // mesh name
                                   ndims,                       // number of dims
                                   coordnames, // coord names
                                   coords_ptrs,                 // coords values
                                   num_pts,            // number of points
                                   num_elems,          // number of elements
-                                  zlist_name.c_str(), // zone list name
+                                  detail::sanitize_silo_varname(zlist_name).c_str(), // zone list name
                                   NULL,               // face list names
                                   coords_dtype,       // type of data array
                                   state_optlist);     // opt list
@@ -2270,7 +2269,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
-                      topo_name.c_str(),           // mesh name
+                      detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
                       coordnames, // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
@@ -2367,7 +2366,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
-                      topo_name.c_str(),           // mesh name
+                      detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
                       coordnames, // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
@@ -2635,7 +2634,7 @@ void write_multimeshes(DBfile *dbfile,
         CONDUIT_CHECK_SILO_ERROR(
             DBPutMultimesh(
                 dbfile,
-                multimesh_name.c_str(),
+                detail::sanitize_silo_varname(multimesh_name).c_str(),
                 global_num_domains,
                 domain_name_ptrs.data(),
                 mesh_types.data(),
@@ -2653,9 +2652,10 @@ write_multimaterial(DBfile *root,
                     std::vector<std::string> mat_domains) 
 {
     std::vector<const char *> domain_name_ptrs;
-    detail::SiloObjectWrapper<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
             DBMakeOptlist(1),
-            &DBFreeOptlist};
+            &DBFreeOptlist,
+            "Error freeing optlist."};
     if (!optlist.getSiloObject())
     {
         CONDUIT_ERROR("Error creating options");
@@ -2673,7 +2673,7 @@ write_multimaterial(DBfile *root,
     }
 
     CONDUIT_CHECK_SILO_ERROR( DBPutMultimat(root,
-                                            mmat_name.c_str(),
+                                            detail::sanitize_silo_varname(mmat_name).c_str(),
                                             mat_domains.size(),
                                             domain_name_ptrs.data(),
                                             optlist.getSiloObject()),
@@ -2792,9 +2792,10 @@ write_multivars(DBfile *dbfile,
             var_types.push_back(var_type);
         }
 
-        detail::SiloObjectWrapper<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+        detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
             DBMakeOptlist(1),
-            &DBFreeOptlist};
+            &DBFreeOptlist,
+            "Error freeing optlist."};
         if (!optlist.getSiloObject())
         {
             CONDUIT_ERROR("Error creating options");
