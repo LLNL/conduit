@@ -1447,81 +1447,83 @@ read_mesh(const std::string &root_file_path,
 
         // for each mesh domain, we would like to iterate through all the variables
         // and extract the same domain from them.
-        const Node &vars = mesh_index["vars"];
-        auto var_itr = vars.children();
-        while (var_itr.has_next())
+        if (mesh_index.has_child("vars"))
         {
-            const Node &n_var = var_itr.next();
-            std::string multivar_name = var_itr.name();
-
-            bool var_nameschemes = false;
-            if (n_var.has_child("nameschemes") &&
-                n_var["nameschemes"].as_string() == "yes")
+            const Node &vars = mesh_index["vars"];
+            auto var_itr = vars.children();
+            while (var_itr.has_next())
             {
-                var_nameschemes = true;
-                CONDUIT_ERROR("TODO no support for nameschemes yet");
-            }
-            detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
+                const Node &n_var = var_itr.next();
+                std::string multivar_name = var_itr.name();
 
-            std::string silo_var_path = n_var["var_paths"][i].as_string();
-            int_accessor vartypes = n_var["var_types"].value();
-            int vartype = vartypes[i];
-
-            std::string var_name, var_domain_filename;
-            var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
-
-            if (var_domain_filename.empty())
-            {
-                var_domain_filename = root_file_path;
-            }
-
-            detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{nullptr, &DBClose};
-            var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
-            DBfile *domain_file_to_use = nullptr;
-
-            // if the var domain is stored in the same file as the mesh domain then we
-            // can reuse the open file ptr
-            if (var_domain_filename == mesh_domain_filename)
-            {
-                domain_file_to_use = mesh_domain_file.getSiloObject();
-            }
-            // otherwise we need to open our own file
-            else
-            {
-                var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-                if (! (domain_file_to_use = var_domain_file.getSiloObject()))
+                bool var_nameschemes = false;
+                if (n_var.has_child("nameschemes") &&
+                    n_var["nameschemes"].as_string() == "yes")
                 {
-                    CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
+                    var_nameschemes = true;
+                    CONDUIT_ERROR("TODO no support for nameschemes yet");
                 }
-            }
+                detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
 
-            Node &field_out = mesh_out["fields"][multivar_name];
+                std::string silo_var_path = n_var["var_paths"][i].as_string();
+                int_accessor vartypes = n_var["var_types"].value();
+                int vartype = vartypes[i];
 
-            if (vartype == DB_UCDVAR)
-            {
-                detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                    DBGetUcdvar(domain_file_to_use, var_name.c_str()),
-                    &DBFreeUcdvar};
-                read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), var_name, multimesh_name, field_out);
+                std::string var_name, var_domain_filename;
+                var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
+
+                if (var_domain_filename.empty())
+                {
+                    var_domain_filename = root_file_path;
+                }
+
+                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{nullptr, &DBClose};
+                var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
+                DBfile *domain_file_to_use = nullptr;
+
+                // if the var domain is stored in the same file as the mesh domain then we
+                // can reuse the open file ptr
+                if (var_domain_filename == mesh_domain_filename)
+                {
+                    domain_file_to_use = mesh_domain_file.getSiloObject();
+                }
+                // otherwise we need to open our own file
+                else
+                {
+                    var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                    if (! (domain_file_to_use = var_domain_file.getSiloObject()))
+                    {
+                        CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
+                    }
+                }
+
+                Node &field_out = mesh_out["fields"][multivar_name];
+
+                if (vartype == DB_UCDVAR)
+                {
+                    detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
+                        DBGetUcdvar(domain_file_to_use, var_name.c_str()),
+                        &DBFreeUcdvar};
+                    read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), var_name, multimesh_name, field_out);
+                }
+                else if (vartype == DB_QUADVAR)
+                {
+                    detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
+                        DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
+                        &DBFreeQuadvar};
+                    read_variable_domain<DBquadvar>(quadvar.getSiloObject(), var_name, multimesh_name, field_out);
+                }
+                else if (vartype == DB_POINTVAR)
+                {
+                    detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
+                        DBGetPointvar(domain_file_to_use, var_name.c_str()), 
+                        &DBFreeMeshvar};
+                    read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), var_name, multimesh_name, field_out);
+                }
+                else
+                    CONDUIT_ERROR("Unsupported variable type " << vartype);
             }
-            else if (vartype == DB_QUADVAR)
-            {
-                detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                    DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
-                    &DBFreeQuadvar};
-                read_variable_domain<DBquadvar>(quadvar.getSiloObject(), var_name, multimesh_name, field_out);
-            }
-            else if (vartype == DB_POINTVAR)
-            {
-                detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                    DBGetPointvar(domain_file_to_use, var_name.c_str()), 
-                    &DBFreeMeshvar};
-                read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), var_name, multimesh_name, field_out);
-            }
-            else
-                CONDUIT_ERROR("Unsupported variable type " << vartype);
         }
-
 
         // TODO we need to read multimaterials
         // TODO we need to generate the state node if possible
@@ -2514,13 +2516,10 @@ void silo_mesh_write(const Node &n,
 //-----------------------------------------------------------------------------
 void write_multimeshes(DBfile *dbfile,
                        const std::string &opts_mesh_name,
-                       const bool &singleFile,
                        const conduit::Node &root)
 {
-    const int num_files = root["number_of_files"];
-    const int global_num_domains = root["number_of_trees"];
-
-
+    const int num_files = root["number_of_files"].as_int32();
+    const int global_num_domains = root["number_of_trees"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
     if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
@@ -2534,6 +2533,8 @@ void write_multimeshes(DBfile *dbfile,
         const Node &n_topo = topo_itr.next();
         std::string topo_name = topo_itr.name();
         std::string topo_type = n_topo["type"].as_string();
+
+        std::string safe_meshname = detail::sanitize_silo_varname(topo_name);
 
         int mesh_type;
 
@@ -2556,36 +2557,21 @@ void write_multimeshes(DBfile *dbfile,
             CONDUIT_ERROR("Unsupported topo type in " << topo_type);
         }
 
-        std::string file_pattern = root["file_pattern"].as_string();
-        std::string dirname, dom_pattern;
-        conduit::utils::split_file_path(file_pattern, "/", dirname, dom_pattern);
-
-        // TODO DANGER DANGER DANGER - tree pattern is not the answer
-        // look at what conduit - and/or visit? does for generating the name recipes
-        // and see cyrus email
-        // there is a way to generate them correctly and this is not it this will fail the m to n case
+        std::string silo_path = root["silo_path"].as_string();
         
         // TODO is this true?
         // Q? every blueprint domain should have the same mesh name and mesh type
 
-
-
         // TODO big things to think about:
-        //  - I need to do the same approach for multivars
-        //  - I need to see if I can use part patterns to generate the 
-        //    paths and file names, or if that isn't possible, I should
-        //    look into modifying write_mesh to set them up the way I
-        //    want.
         //  - Sanitize silo varname elsewhere, whereever I am writing var names
-        //  - In general I don't want to be making decisions here, only taking
-        //    info from choices that were made in write_mesh and saving them.
         std::vector<std::string> domain_name_strings;
         std::vector<const char *> domain_name_ptrs;
         std::vector<int> mesh_types;
         for (index_t i = 0; i < global_num_domains; i ++)
         {
-            std::string silo_path, output_file;
-            output_file = "";
+            std::string silo_meshname;
+
+            // determine which domain
             index_t d;
             if (n_mesh["state"].has_path("partition_map/domain"))
             {
@@ -2596,43 +2582,49 @@ void write_multimeshes(DBfile *dbfile,
             {
                 d = i;
             }
-            if (singleFile)
+
+            // we have three cases, just as we had in write_mesh
+
+            // single file case
+            if (num_files == 1)
             {
                 if (global_num_domains == 1)
                 {
-                    silo_path = opts_mesh_name;
+                    silo_meshname = conduit_fmt::format(silo_path, safe_meshname);
                 }
                 else
                 {
-                    silo_path = conduit_fmt::format("domain_{:06d}", d);
+                    silo_meshname = conduit_fmt::format(silo_path, d, safe_meshname);
                 }
+            }            
+            // num domains == num files case
+            else if (global_num_domains == num_files)
+            {
+                silo_meshname = conduit_fmt::format(silo_path, d, safe_meshname);
             }
+            // m to n case
             else
             {
-                if (global_num_domains == num_files)
+                // determine which file
+                index_t f;
+                if (n_mesh["state"].has_path("partition_map/file"))
                 {
-                    output_file = conduit::utils::join_file_path(
-                        dirname, conduit_fmt::format("domain_{:06d}.silo", d)) + ":";
-                    silo_path = opts_mesh_name;
+                    index_t_array part_map_file_vals = n_mesh["state"]["partition_map"]["file"].value();
+                    f = part_map_file_vals[i];
                 }
-                else // m to n case
+                else
                 {
-                    index_t f;
-                    if (n_mesh["state"].has_path("partition_map/file"))
-                    {
-                        index_t_array part_map_file_vals = n_mesh["state"]["partition_map"]["file"].value();
-                        f = part_map_file_vals[i];
-                    }
-                    else
-                    {
-                        f = i;
-                    }
-                    output_file = conduit_fmt::format("file_{:06d}.silo", f) + ":";
-                    silo_path = conduit_fmt::format("domain_{:06d}", d)
+                    f = i;
                 }
+
+                silo_meshname = conduit_fmt::format(silo_path, f, d, safe_meshname);
             }
-            domain_name_strings.push_back(output_file + silo_path + "/" + detail::sanitize_silo_varname(topo_name));
+
+            // we create the silo meshnames
+            domain_name_strings.push_back(silo_meshname);
             domain_name_ptrs.push_back(domain_name_strings.back().c_str());
+            
+            // we assume all mesh types for a given mesh to be the same, so we push back the same mesh type for each domain
             mesh_types.push_back(mesh_type);
         }
 
@@ -2661,17 +2653,16 @@ write_multimaterial(DBfile *root,
                     std::vector<std::string> mat_domains) 
 {
     std::vector<const char *> domain_name_ptrs;
-    std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{ DBMakeOptlist(1),
-                                                                  &DBFreeOptlist};
-
-    if (!optlist.get())
+    detail::SiloObjectWrapper<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+            DBMakeOptlist(1),
+            &DBFreeOptlist};
+    if (!optlist.getSiloObject())
     {
-        optlist.release();
         CONDUIT_ERROR("Error creating options");
     }
 
     // have to const_cast because converting to void *
-    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.get(),
+    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
                                           DBOPT_MMESH_NAME,
                                           const_cast<char *>(mmesh_name.c_str())),
                               "Error creating options for putting multimat");
@@ -2685,7 +2676,7 @@ write_multimaterial(DBfile *root,
                                             mmat_name.c_str(),
                                             mat_domains.size(),
                                             domain_name_ptrs.data(),
-                                            optlist.get()),
+                                            optlist.getSiloObject()),
                               "Error putting multimaterial");
 }
 
@@ -2693,9 +2684,10 @@ write_multimaterial(DBfile *root,
 void
 write_multivars(DBfile *dbfile,
                 const std::string &opts_mesh_name,
-                const bool &singleFile,
                 const conduit::Node &root)
 {
+    const int num_files = root["number_of_files"].as_int32();
+    const int global_num_domains = root["number_of_trees"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
     // TODO check in visit for if there are domains where vars are not defined what does it do
@@ -2708,6 +2700,9 @@ write_multivars(DBfile *dbfile,
 
         std::string linked_topo_name = n_var["topology"].as_string();
         std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
+
+        std::string safe_var_name = detail::sanitize_silo_varname(var_name); 
+        std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name); 
 
         int var_type;
         if (linked_topo_type == "unstructured")
@@ -2729,50 +2724,91 @@ write_multivars(DBfile *dbfile,
             CONDUIT_ERROR("Unsupported topo type in " << linked_topo_type);
         }
 
-        std::string file_pattern = root["file_pattern"].as_string();
-        std::string dirname, dom_pattern;
-        conduit::utils::split_file_path(file_pattern, "/", dirname, dom_pattern);
+        std::string silo_path = root["silo_path"].as_string();
 
         // TODO Q? is this true?
         // every blueprint domain should have the same var name and var type
         std::vector<std::string> var_name_strings;
         std::vector<const char *> var_name_ptrs;
         std::vector<int> var_types;
-        for (int i = 0; i < num_domains; i ++)
+        for (index_t i = 0; i < global_num_domains; i ++)
         {
-            std::stringstream ss;
-            ss.clear();
-            ss.str(std::string());
-            if (singleFile)
-                ss << "/domain_" << std::setfill('0') << std::setw(6) << i;
-            else
-                ss << dirname << "/" 
-                   << "domain_" << std::setfill('0') << std::setw(6) << i 
-                   << ".silo:/" << opts_mesh_name;
-            ss << "/" << detail::sanitize_silo_varname(var_name);
+            std::string silo_varname;
 
-            var_name_strings.push_back(ss.str());
+            // determine which domain
+            index_t d;
+            if (n_mesh["state"].has_path("partition_map/domain"))
+            {
+                index_t_array part_map_domain_vals = n_mesh["state"]["partition_map"]["domain"].value();
+                d = part_map_domain_vals[i];
+            }
+            else
+            {
+                d = i;
+            }
+
+            // we have three cases, just as we had in write_mesh
+
+            // single file case
+            if (num_files == 1)
+            {
+                if (global_num_domains == 1)
+                {
+                    silo_varname = conduit_fmt::format(silo_path, safe_var_name);
+                }
+                else
+                {
+                    silo_varname = conduit_fmt::format(silo_path, d, safe_var_name);
+                }
+            }            
+            // num domains == num files case
+            else if (global_num_domains == num_files)
+            {
+                silo_varname = conduit_fmt::format(silo_path, d, safe_var_name);
+            }
+            // m to n case
+            else
+            {
+                // determine which file
+                index_t f;
+                if (n_mesh["state"].has_path("partition_map/file"))
+                {
+                    index_t_array part_map_file_vals = n_mesh["state"]["partition_map"]["file"].value();
+                    f = part_map_file_vals[i];
+                }
+                else
+                {
+                    f = i;
+                }
+
+                silo_varname = conduit_fmt::format(silo_path, f, d, safe_var_name);
+            }
+
+            // we create the silo varnames
+            var_name_strings.push_back(silo_varname);
             var_name_ptrs.push_back(var_name_strings.back().c_str());
+            
+            // we assume all var types for a given var to be the same, so we push back the same var type for each domain
             var_types.push_back(var_type);
         }
 
-        std::unique_ptr<DBoptlist, decltype(&DBFreeOptlist)> optlist{DBMakeOptlist(1),
-                                                                     &DBFreeOptlist};
-        if (!optlist.get())
+        detail::SiloObjectWrapper<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+            DBMakeOptlist(1),
+            &DBFreeOptlist};
+        if (!optlist.getSiloObject())
         {
-            optlist.release();
             CONDUIT_ERROR("Error creating options");
         }
 
-        std::string multimesh_name = opts_mesh_name + "_" + linked_topo_name;
+        std::string multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
 
         // have to const_cast because converting to void *
-        CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.get(),
+        CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
                                               DBOPT_MMESH_NAME,
                                               const_cast<char *>(multimesh_name.c_str())),
                                   "Error creating options for putting multivar");
 
-        std::string multivar_name = opts_mesh_name + "_" + var_name;
+        std::string multivar_name = opts_mesh_name + "_" + safe_var_name;
 
         CONDUIT_CHECK_SILO_ERROR(
             DBPutMultivar(
@@ -2781,7 +2817,7 @@ write_multivars(DBfile *dbfile,
                 num_domains,
                 var_name_ptrs.data(),
                 var_types.data(),
-                optlist.get()),
+                optlist.getSiloObject()),
             "Error putting multivar corresponding to field: " << var_name);
     }
 }
@@ -3376,7 +3412,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                           num_files,
                                           books);
 
-        //generate part map
+        // generate part map
         // use global_d2f is what we need for "file" part of part_map
         output_partition_map["file"] = books["global_domain_to_file"];
         output_partition_map["domain"].set(DataType::index_t(global_num_domains));
@@ -3669,123 +3705,100 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                          output_dir_base,
                                          output_dir_path);
 
-        std::string output_tree_pattern;
-        std::string output_file_pattern;
-        // new style bp index partition spec
-        std::string output_partition_pattern;
+        std::string output_silo_path;
 
         // NOTE: 
         // The file pattern needs to be relative to
         // the root file. 
         // reverse split the path
 
-        if(opts_file_style == "root_only")
+        // single file case
+        if (opts_file_style == "root_only")
         {
-            // make sure this is relative to output dir
-            std::string tmp;
-            utils::rsplit_path(root_filename,
-                               output_file_pattern,
-                               tmp);
-
-            // if(global_num_domains == 1)
-            // {
-            //     output_tree_pattern = "/";
-            //     output_partition_pattern = output_file_pattern + ":/";
-            //     // NOTE: we don't need the part map entries for this case
-            // }
-            // else
+            if (global_num_domains == 1)
             {
-                output_tree_pattern = "/domain_%06d/";
-                output_partition_pattern = root_filename + ":/domain_{domain:06d}";
+                output_silo_path = opts_mesh_name + "/{}";
+            }
+            else
+            {
+                output_silo_path = "domain_{:06d}/" + opts_mesh_name + "/{}";
+            }
 
-                //generate part map (we only need domain for this case)
-                output_partition_map["domain"].set(DataType::index_t(global_num_domains));
-                index_t_array part_map_domain_vals = output_partition_map["domain"].value();
-                for(index_t i=0; i < global_num_domains; i++)
-                {
-                    part_map_domain_vals[i] = i;
-                }
+            // generate part map (we only need domain for this case)
+            output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+            index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+            for (index_t i = 0; i < global_num_domains; i ++)
+            {
+                part_map_domain_vals[i] = i;
             }
         }
-        else if(global_num_domains == num_files)
+        // num domains == num files case
+        else if (global_num_domains == num_files)
         {
-            //generate part map
+            // generate partition map
             output_partition_map["file"].set(DataType::index_t(global_num_domains));
             output_partition_map["domain"].set(DataType::index_t(global_num_domains));
             index_t_array part_map_file_vals   = output_partition_map["file"].value();
             index_t_array part_map_domain_vals = output_partition_map["domain"].value();
 
-            for(index_t i=0; i < global_num_domains; i++)
+            for (index_t i = 0; i < global_num_domains; i ++)
             {
                 // file id == domain id
                 part_map_file_vals[i]   = i;
                 part_map_domain_vals[i] = i;
             }
 
-            std::string tmp;
+            std::string tmp, dirname;
             utils::rsplit_path(output_dir_base,
-                               output_file_pattern,
+                               dirname,
                                tmp);
 
-            output_partition_pattern = conduit::utils::join_file_path(
-                                                output_file_pattern,
-                                                "domain_{domain:06d}.silo:/");
-
-            output_file_pattern = conduit::utils::join_file_path(
-                                                output_file_pattern,
-                                                "domain_%06d.silo");
-            output_tree_pattern = "/";
+            output_silo_path = conduit::utils::join_file_path(dirname, "domain_{:06d}.silo") + 
+                ":" + opts_mesh_name + "/{}";
         }
+        // m to n case
         else
         {
-            std::string tmp;
+            // we generated the partition map earlier
+            
+            std::string tmp, dirname;
             utils::rsplit_path(output_dir_base,
-                               output_file_pattern,
+                               dirname,
                                tmp);
 
-            output_partition_pattern = conduit::utils::join_file_path(
-                                                output_file_pattern,
-                                                "file_{file:06d}.silo:/domain_{domain:06d}");
-
-            output_file_pattern = conduit::utils::join_file_path(
-                                                output_file_pattern,
-                                                "file_%06d.silo");
-            output_tree_pattern = "/domain_%06d";
+            output_silo_path = conduit::utils::join_file_path(dirname, "file_{:06d}.silo") + 
+                ":" + "domain_{:06d}" + "/" + opts_mesh_name + "/{}";
         }
 
         /////////////////////////////
         // mesh partition map
         /////////////////////////////
-        // example of cases:
+        // example of cases (for opts_mesh_name == "mesh"):
         // root only, single domain
-        // partition_pattern: "out.root"
+        // silo_path: "mesh/{}"
         //
         // root only, multi domain
-        // partition_pattern: "out.root:domain_{domain:06d}"
+        // silo_path: "domain_{:06d}/mesh/{}"
         // partition_map:
         //   domain: [0, 1, 2, 3, 4 ]
         //
         // # domains == # files:
-        // partition_pattern: "out/domain_{domain:06d}.hdf5"
+        // silo_path: "out/domain_{:06d}.silo:mesh/{}"
         // partition_map:
         //   file:  [ 0, 1, 2, 3, 4 ]
         //   domain: [ 0, 1, 2, 3, 4 ]
         //
         // N domains to M files:
-        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // silo_path: "out/file_{:06d}.silo:domain_{:06d}/mesh/{}"
         // partition_map:
         //   file:  [ 0, 0, 1, 2, 2 ]
         //   domain: [ 0, 1, 2, 3, 4 ]
         //
         // N domains to M files (non trivial domain order):
-        // partition_pattern: "out/file_{file:06d}.hdf5:domain_{domain:06d}"
+        // silo_path: "out/file_{:06d}.silo:domain_{:06d}/mesh/{}"
         // partition_map:
         //    file:  [ 0, 0, 1, 2, 2 ]
         //    domain: [ 4, 0, 3, 2, 1 ]
-        //
-        // NOTE: do to save vs write cases, these updates should be
-        // single mesh only
-        bp_idx[opts_mesh_name]["state/partition_pattern"] = output_partition_pattern;
 
         if (output_partition_map.number_of_children() > 0 )
         {
@@ -3801,8 +3814,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["number_of_files"]  = num_files;
         root["number_of_trees"]  = global_num_domains;
 
-        root["file_pattern"] = output_file_pattern;
-        root["tree_pattern"] = output_tree_pattern;
+        root["silo_path"] = output_silo_path;
 
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
             nullptr, 
@@ -3832,9 +3844,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
-        const bool singleFile = opts_file_style == "root_only";
-        write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, singleFile, root);
-        write_multivars(dbfile.getSiloObject(), opts_mesh_name, singleFile, root);
+        write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, root);
+        write_multivars(dbfile.getSiloObject(), opts_mesh_name, root);
         // TODO
         // write_multimaterial();
 
