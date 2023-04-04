@@ -221,36 +221,33 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 
         Node info;
 
-        // EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-        // for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
-        // {
-        //     // The Blueprint to Silo transformation changes several names 
-        //     // and some information is lost. We manually make changes so 
-        //     // that the diff will pass.
-        //     save_mesh[child]["coordsets"].rename_child("coords", "topo");
-        //     save_mesh[child]["topologies"]["topo"]["coordset"].reset();
-        //     save_mesh[child]["topologies"]["topo"]["coordset"] = "topo";
-        //     save_mesh[child]["fields"].rename_child("dist", "domain_00000" + std::to_string(child) + "_dist");
-        // }
+        for (index_t child = 0; child < save_mesh.number_of_children(); ++child)
+        {
+            // The Blueprint to Silo transformation changes several names 
+            // and some information is lost. We manually make changes so 
+            // that the diff will pass.
+            save_mesh[child]["coordsets"].rename_child("coords", "mesh_topo");
+            save_mesh[child]["topologies"].rename_child("topo", "mesh_topo");
+            save_mesh[child]["topologies"]["mesh_topo"]["coordset"].reset();
+            save_mesh[child]["topologies"]["mesh_topo"]["coordset"] = "mesh_topo";
+            save_mesh[child]["fields"].rename_child("dist", "mesh_dist");
+            save_mesh[child]["fields"]["mesh_dist"]["topology"].reset();
+            save_mesh[child]["fields"]["mesh_dist"]["topology"] = "mesh_topo";
 
-        // save_mesh.print();
+        }
 
-        // load_mesh.print();
+        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        NodeConstIterator l_itr = load_mesh.children();
+        NodeConstIterator s_itr = save_mesh.children();
+        while(l_itr.has_next())
+        {
+            const Node &l_curr = l_itr.next();
+            const Node &s_curr = s_itr.next();
 
-        // // the loaded mesh will be in the multidomain format
-        // // (it will be a list containing a single mesh domain)
-        // // but the saved mesh is in the single domain format
-        // EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-        // NodeConstIterator l_itr = load_mesh.children();
-        // NodeConstIterator s_itr = save_mesh.children();
-        // while(l_itr.has_next())
-        // {
-        //     const Node &l_curr = l_itr.next();
-        //     const Node &s_curr = s_itr.next();
-
-        //     EXPECT_FALSE(l_curr.diff(s_curr, info));
-        // }
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
+        }
     }
 }
 
