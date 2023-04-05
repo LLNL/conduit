@@ -1140,7 +1140,7 @@ read_root_silo_index(const std::string &root_file_path,
         }
     }
 
-    // should look like this:
+    // our silo index should look like this:
 
     // mesh:
     //    nblocks: 5
@@ -1159,17 +1159,6 @@ read_root_silo_index(const std::string &root_file_path,
     //               ...
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
     //       ...
-
-
-    // code from james
-    // // read in the multimesh and add it to the mesh Node
-    // read_multimesh(silofile, filemap, dirname, multimesh.get(), mesh);
-    // // get the multivars matching the multimesh
-    // read_all_multivars(silofile, toc, filemap, dirname,
-    //     mmesh_name, multimesh.get()->nblocks, mesh);
-    // // get the multimaterials matching the multimesh
-    // read_all_multimats(silofile, toc, filemap, dirname, mmesh_name,
-    //                     multimesh.get()->nblocks, mesh);
 
     return true;
 }
@@ -1283,26 +1272,6 @@ read_mesh(const std::string &root_file_path,
     domain_start = rank_offset;
     domain_end = rank_offset + read_size;
 #endif
-
-    // our root_index should look like this:
-
-    // mesh:
-    //    nblocks: 5
-    //    nameschemes: "no"
-    //    mesh_paths:
-    //       - "domain_000000.silo:mesh"
-    //       - "domain_000001.silo:mesh" 
-    //         ...
-    //    mesh_types: [UCD_MESH, UCD_MESH, ...]
-    //    vars:
-    //       field:
-    //          nameschemes: "no"
-    //          var_paths:
-    //             - "domain_000000.silo:field"
-    //             - "domain_000001.silo:field"
-    //               ...
-    //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
-    //       ...
 
     bool mesh_nameschemes = false;
     if (mesh_index.has_child("nameschemes") &&
@@ -1481,41 +1450,6 @@ void load_mesh(const std::string &root_file_path,
               opts,
               mesh);
 #endif
-}
-
-//---------------------------------------------------------------------------//
-DBoptlist *
-silo_generate_state_optlist(const Node &n)
-{
-    DBoptlist *res = NULL;
-
-    if (n.has_path("state"))
-    {
-        int silo_error = 0;
-        const Node &n_state = n["state"];
-        res = DBMakeOptlist(2);
-
-        if(n.has_path("cycle"))
-        {
-            int cyc_value = n_state["cycle"].to_int();
-            silo_error += DBAddOption(res,
-                                      DBOPT_CYCLE,
-                                      &cyc_value);
-        }
-
-        if(n.has_path("time"))
-        {
-            double time_value =  n_state["time"].to_double();
-            silo_error += DBAddOption(res,
-                                      DBOPT_DTIME,
-                                      &time_value);
-        }
-
-        CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " creating state optlist (time, cycle) ");
-    }
-
-    return res;
 }
 
 //---------------------------------------------------------------------------//
@@ -2311,10 +2245,35 @@ void silo_mesh_write(const Node &n,
                                  << silo_obj_path);
     }
 
+    // create state optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
-        silo_generate_state_optlist(n), 
+        nullptr, 
         &DBFreeOptlist,
         "Error freeing state optlist."};
+    if (n.has_path("state"))
+    {
+        silo_error = 0;
+        const Node &n_state = n["state"];
+        state_optlist.setSiloObject(DBMakeOptlist(2));
+        if (!state_optlist.getSiloObject())
+            CONDUIT_ERROR("Error creating state optlist");
+        if (n.has_path("cycle"))
+        {
+            int cyc_value = n_state["cycle"].to_int();
+            silo_error += DBAddOption(state_optlist.getSiloObject(),
+                                      DBOPT_CYCLE,
+                                      &cyc_value);
+        }
+        if (n.has_path("time"))
+        {
+            double time_value =  n_state["time"].to_double();
+            silo_error += DBAddOption(state_optlist.getSiloObject(),
+                                      DBOPT_DTIME,
+                                      &time_value);
+        }
+        CONDUIT_CHECK_SILO_ERROR(silo_error,
+                                 " creating state optlist (time, cycle) ");
+    }
 
     Node n_mesh_info;
 
