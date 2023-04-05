@@ -137,65 +137,69 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 // TODO: add tests for matsets
 TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
-    const std::vector<std::string> mesh_types = {
-        "uniform", "rectilinear", "structured",
-        "tris", "quads"};
+    const std::vector<std::pair<std::string, int>> mesh_types = {
+        std::make_pair("uniform", 2), std::make_pair("uniform", 3), 
+        std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
+        std::make_pair("structured", 2), std::make_pair("structured", 3),
+        std::make_pair("tris", 2),
+        std::make_pair("quads", 2),
+        // std::make_pair("polygons", 2),
+        std::make_pair("tets", 3),
+        std::make_pair("hexs", 3),
+        // std::make_pair("wedges", 3),
+        // std::make_pair("pyramids", 3),
+        // std::make_pair("polyhedra", 3)
+    };
     for (int i = 0; i < mesh_types.size(); ++i)
     {
-        for (int nx = 2; nx < 4; ++nx)
+        int dim = mesh_types[i].second;
+        index_t nx = 3;
+        index_t ny = 4;
+        index_t nz = (dim == 2 ? 0 : 2);
+
+        std::string mesh_type = mesh_types[i].first;
+
+        std::cout << mesh_type << std::endl;
+
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
+        io::silo::save_mesh(save_mesh, "basic");
+        io::silo::load_mesh("basic.root", load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+        // The silo conversion will transform uniform to rectilinear
+        // so we will do the same to allow the diff to succeed
+        if (mesh_type == "uniform")
         {
-            Node save_mesh;
-            int npts_z = 0;
-            if (mesh_types[i] != "tris" && mesh_types[i] != "quads")
-            {
-                npts_z = (nx - 2) * 2 + (mesh_types[i] == "structured" ? 1 : 0);
-            }
-            blueprint::mesh::examples::basic(mesh_types[i], 
-                nx, nx, npts_z, save_mesh);
-
-            Node info;
-            
-            io::silo::save_mesh(save_mesh, "basic");
-
-            Node load_mesh;
-            io::silo::load_mesh("basic.root", load_mesh);
-            
-            EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
-
-            // The silo conversion will transform uniform to rectilinear
-            // so we will do the same to allow the diff to succeed
-            if (mesh_types[i] == "uniform")
-            {
-                Node save_mesh_rect;
-                Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["coords"];
-                Node &save_mesh_rect_topo = save_mesh_rect["topologies"]["mesh"];
-                blueprint::mesh::topology::uniform::to_rectilinear(
-                    save_mesh["topologies"]["mesh"], 
-                    save_mesh_rect_topo, save_mesh_rect_coords);
-                save_mesh["topologies"]["mesh"].set(save_mesh_rect_topo);
-                save_mesh["coordsets"]["coords"].set(save_mesh_rect_coords);
-            }
-
-            // The Blueprint to Silo transformation changes several names 
-            // and some information is lost. We manually make changes so 
-            // that the diff will pass.
-            save_mesh["coordsets"].rename_child("coords", "mesh_mesh");
-            save_mesh["topologies"].rename_child("mesh", "mesh_mesh");
-            save_mesh["fields"].rename_child("field", "mesh_field");
-            save_mesh["topologies"]["mesh_mesh"]["coordset"].reset();
-            save_mesh["topologies"]["mesh_mesh"]["coordset"] = "mesh_mesh";
-            save_mesh["fields"]["mesh_field"]["topology"].reset();
-            save_mesh["fields"]["mesh_field"]["topology"] = "mesh_mesh";
-            save_mesh["fields"]["mesh_field"].remove_child("volume_dependent");
-
-            // the loaded mesh will be in the multidomain format
-            // (it will be a list containing a single mesh domain)
-            // but the saved mesh is in the single domain format
-            EXPECT_EQ(load_mesh.number_of_children(), 1);
-            EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
-
-            EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+            Node save_mesh_rect;
+            Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["coords"];
+            Node &save_mesh_rect_topo = save_mesh_rect["topologies"]["mesh"];
+            blueprint::mesh::topology::uniform::to_rectilinear(
+                save_mesh["topologies"]["mesh"], 
+                save_mesh_rect_topo, save_mesh_rect_coords);
+            save_mesh["topologies"]["mesh"].set(save_mesh_rect_topo);
+            save_mesh["coordsets"]["coords"].set(save_mesh_rect_coords);
         }
+
+        // The Blueprint to Silo transformation changes several names 
+        // and some information is lost. We manually make changes so 
+        // that the diff will pass.
+        save_mesh["coordsets"].rename_child("coords", "mesh_mesh");
+        save_mesh["topologies"].rename_child("mesh", "mesh_mesh");
+        save_mesh["fields"].rename_child("field", "mesh_field");
+        save_mesh["topologies"]["mesh_mesh"]["coordset"].reset();
+        save_mesh["topologies"]["mesh_mesh"]["coordset"] = "mesh_mesh";
+        save_mesh["fields"]["mesh_field"]["topology"].reset();
+        save_mesh["fields"]["mesh_field"]["topology"] = "mesh_mesh";
+        save_mesh["fields"]["mesh_field"].remove_child("volume_dependent");
+
+        // the loaded mesh will be in the multidomain format
+        // (it will be a list containing a single mesh domain)
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), 1);
+        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
     }
 }
 

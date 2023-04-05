@@ -332,7 +332,6 @@ public:
         if (obj)
         {
             del(obj);
-            obj = nullptr;
         }
     }
 };
@@ -362,7 +361,6 @@ public:
                 // CONDUIT_ERROR() TODO hmmmm
                 std::cout << errmsg << std::endl;
             }
-            obj = nullptr;
         }
     }
 };
@@ -1644,31 +1642,24 @@ assign_coords_ptrs(void *coords_ptrs[3],
 {
 
     DataType dtype = n_coords_compact[coordsys_labels[0]].dtype();
-    CONDUIT_ASSERT(dtype.compatible(n_coords_compact[coordsys_labels[1]].dtype()),
+    CONDUIT_ASSERT(dtype.id() == n_coords_compact[coordsys_labels[1]].dtype().id(),
                    "all coordinate arrays must have same type, got " << dtype.to_string()
                     << " and " << n_coords_compact[coordsys_labels[1]].dtype().to_string());
     if (ndims == 3)
     {
-        CONDUIT_ASSERT(dtype.compatible(n_coords_compact[coordsys_labels[2]].dtype()),
-                       "all coordinate arrays must have same type");
+        CONDUIT_ASSERT(dtype.id() == n_coords_compact[coordsys_labels[2]].dtype().id(),
+                       "all coordinate arrays must have same type, got " << dtype.to_string()
+                        << " and " << n_coords_compact[coordsys_labels[2]].dtype().to_string());
     }
+    coords_ptrs[0] = n_coords_compact[coordsys_labels[0]].data_ptr();
+    coords_ptrs[1] = n_coords_compact[coordsys_labels[1]].data_ptr();
+    if (ndims == 3)
+        coords_ptrs[2] = n_coords_compact[coordsys_labels[2]].data_ptr();
 
     if (dtype.is_float())
-    {
-        coords_ptrs[0] = (void *)n_coords_compact[coordsys_labels[0]].as_float_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact[coordsys_labels[1]].as_float_ptr();
-        if (ndims == 3)
-            coords_ptrs[2] = (void *)n_coords_compact[coordsys_labels[2]].as_float_ptr();
         return DB_FLOAT;
-    }
     else if (dtype.is_double())
-    {
-        coords_ptrs[0] = (void *)n_coords_compact[coordsys_labels[0]].as_double_ptr();
-        coords_ptrs[1] = (void *)n_coords_compact[coordsys_labels[1]].as_double_ptr();
-        if (ndims == 3)
-            coords_ptrs[2] = (void *)n_coords_compact[coordsys_labels[2]].as_double_ptr();
         return DB_DOUBLE;
-    }
     else
     {
         CONDUIT_ERROR("coords data type not implemented, found "
@@ -2518,7 +2509,7 @@ void write_multimeshes(DBfile *dbfile,
 
         std::string multimesh_name = opts_mesh_name + "_" + topo_name;
 
-        // TODO add any dboptions?
+        // TODO add any dboptions? - only if nameschemes show up here
 
         CONDUIT_CHECK_SILO_ERROR(
             DBPutMultimesh(
@@ -2527,7 +2518,7 @@ void write_multimeshes(DBfile *dbfile,
                 global_num_domains,
                 domain_name_ptrs.data(),
                 mesh_types.data(),
-                NULL), // TODO do we really want null?
+                NULL),
             "Error putting multimesh corresponding to topo: " << topo_name);
     }
 }
