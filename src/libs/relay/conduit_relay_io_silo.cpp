@@ -446,15 +446,11 @@ silo_wedge_connectivity_to_conduit(Node &n_mesh_conn)
     for (int i = 0; i < conn_size; i += 6)
     {
         auto conn0 = conn_ptr[i + 0];
-        auto conn1 = conn_ptr[i + 1];
         auto conn2 = conn_ptr[i + 2];
-        auto conn3 = conn_ptr[i + 3];
         auto conn4 = conn_ptr[i + 4];
         auto conn5 = conn_ptr[i + 5];
         conn_ptr[i + 0] = conn2;
-        conn_ptr[i + 1] = conn1;
         conn_ptr[i + 2] = conn5;
-        conn_ptr[i + 3] = conn3;
         conn_ptr[i + 4] = conn0;
         conn_ptr[i + 5] = conn4;
     }
@@ -470,15 +466,11 @@ conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
     for (int i = 0; i < conn_size; i += 6)
     {
         auto conn0 = conn_ptr[i + 0];
-        auto conn1 = conn_ptr[i + 1];
         auto conn2 = conn_ptr[i + 2];
-        auto conn3 = conn_ptr[i + 3];
         auto conn4 = conn_ptr[i + 4];
         auto conn5 = conn_ptr[i + 5];
         conn_ptr[i + 2] = conn0;
-        conn_ptr[i + 1] = conn1;
         conn_ptr[i + 5] = conn2;
-        conn_ptr[i + 3] = conn3;
         conn_ptr[i + 0] = conn4;
         conn_ptr[i + 4] = conn5;
     }
