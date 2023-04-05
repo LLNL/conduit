@@ -415,21 +415,73 @@ shapetype_to_string(int shapetype)
 {
     if (shapetype == DB_ZONETYPE_BEAM)
         return "line";
-    if (shapetype == DB_ZONETYPE_TRIANGLE)
+    else if (shapetype == DB_ZONETYPE_TRIANGLE)
         return "tri";
-    if (shapetype == DB_ZONETYPE_QUAD)
+    else if (shapetype == DB_ZONETYPE_QUAD)
         return "quad";
-    if (shapetype == DB_ZONETYPE_TET)
+    else if (shapetype == DB_ZONETYPE_TET)
         return "tet";
-    if (shapetype == DB_ZONETYPE_HEX)
+    else if (shapetype == DB_ZONETYPE_HEX)
         return "hex";
-    if (shapetype == DB_ZONETYPE_POLYHEDRON)
+    else if (shapetype == DB_ZONETYPE_PRISM)
+        return "wedge";
+    else if (shapetype == DB_ZONETYPE_PYRAMID)
+        return "pyramid";
+    else if (shapetype == DB_ZONETYPE_POLYHEDRON)
         return "polyhedral";
-    if (shapetype == DB_ZONETYPE_POLYGON)
+    else if (shapetype == DB_ZONETYPE_POLYGON)
         return "polygonal";
 
     CONDUIT_ERROR("Unsupported zone type " << shapetype);
     return "";
+}
+
+//---------------------------------------------------------------------------//
+template<typename T>
+void
+silo_wedge_connectivity_to_conduit(Node &n_mesh_conn)
+{
+    const int conn_size = n_mesh_conn.dtype().number_of_elements();
+    T *conn_ptr = n_mesh_conn.value();
+    for (int i = 0; i < conn_size; i += 6)
+    {
+        auto conn0 = conn_ptr[i + 0];
+        auto conn1 = conn_ptr[i + 1];
+        auto conn2 = conn_ptr[i + 2];
+        auto conn3 = conn_ptr[i + 3];
+        auto conn4 = conn_ptr[i + 4];
+        auto conn5 = conn_ptr[i + 5];
+        conn_ptr[i + 0] = conn2;
+        conn_ptr[i + 1] = conn1;
+        conn_ptr[i + 2] = conn5;
+        conn_ptr[i + 3] = conn3;
+        conn_ptr[i + 4] = conn0;
+        conn_ptr[i + 5] = conn4;
+    }
+}
+
+//---------------------------------------------------------------------------//
+template<typename T>
+void
+conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
+{
+    const int conn_size = n_mesh_conn.dtype().number_of_elements();
+    T *conn_ptr = n_mesh_conn.value();
+    for (int i = 0; i < conn_size; i += 6)
+    {
+        auto conn0 = conn_ptr[i + 0];
+        auto conn1 = conn_ptr[i + 1];
+        auto conn2 = conn_ptr[i + 2];
+        auto conn3 = conn_ptr[i + 3];
+        auto conn4 = conn_ptr[i + 4];
+        auto conn5 = conn_ptr[i + 5];
+        conn_ptr[i + 2] = conn0;
+        conn_ptr[i + 1] = conn1;
+        conn_ptr[i + 5] = conn2;
+        conn_ptr[i + 3] = conn3;
+        conn_ptr[i + 0] = conn4;
+        conn_ptr[i + 4] = conn5;
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -560,6 +612,25 @@ add_shape_info(DBzonelist *zones,
     copy_and_assign(zones->nodelist,
                     zones->lnodelist,
                     elements["connectivity"]);
+    if (zones->shapetype[0] == DB_ZONETYPE_PRISM)
+    {
+        // we must reorder the wedge connectivity b/c conduit uses the 
+        // vtk ordering, NOT the silo ordering
+        DataType dtype = elements["connectivity"].dtype();
+
+        // swizzle the connectivity
+        if (dtype.is_uint64())
+            silo_wedge_connectivity_to_conduit<uint64>(elements["connectivity"]);
+        else if (dtype.is_uint32())
+            silo_wedge_connectivity_to_conduit<uint32>(elements["connectivity"]);
+        else if (dtype.is_int64())
+            silo_wedge_connectivity_to_conduit<int64>(elements["connectivity"]);
+        else if (dtype.is_int32())
+            silo_wedge_connectivity_to_conduit<int32>(elements["connectivity"]);
+        else
+            CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
+    }
+
     if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
         // TODO: support polyhedra
@@ -1771,30 +1842,6 @@ void silo_write_pointmesh(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
-template<typename T>
-void
-conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
-{
-    const int conn_size = n_mesh_conn.dtype().number_of_elements();
-    T *conn_ptr = n_mesh_conn.value();
-    for (int i = 0; i < conn_size; i += 6)
-    {
-        auto conn0 = conn_ptr[i + 0];
-        auto conn1 = conn_ptr[i + 1];
-        auto conn2 = conn_ptr[i + 2];
-        auto conn3 = conn_ptr[i + 3];
-        auto conn4 = conn_ptr[i + 4];
-        auto conn5 = conn_ptr[i + 5];
-        conn_ptr[i + 2] = conn0;
-        conn_ptr[i + 1] = conn1;
-        conn_ptr[i + 5] = conn2;
-        conn_ptr[i + 3] = conn3;
-        conn_ptr[i + 0] = conn4;
-        conn_ptr[i + 4] = conn5;
-    }
-}
-
-//---------------------------------------------------------------------------//
 void silo_write_ucd_zonelist(DBfile *dbfile,
                              const std::string &topo_name,
                              const Node &n_topo,
@@ -1854,27 +1901,18 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         if (topo_shape == "wedge")
         {
             n_mesh_conn.set(shape_block->fetch("connectivity"));
+            DataType dtype = n_mesh_conn.dtype();
             // swizzle the connectivity
-            if (n_mesh_conn.dtype().is_uint64())
-            {
+            if (dtype.is_uint64())
                 conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
-            }
-            else if (n_mesh_conn.dtype().is_uint32())
-            {
+            else if (dtype.is_uint32())
                 conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
-            }
-            else if (n_mesh_conn.dtype().is_int64())
-            {
+            else if (dtype.is_int64())
                 conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
-            }
-            else if (n_mesh_conn.dtype().is_int32())
-            {
+            else if (dtype.is_int32())
                 conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
-            }
             else
-            {
-                CONDUIT_ERROR("Unsupported connectivity type in " << n_mesh_conn.dtype().to_yaml());
-            }
+                CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
         }
         else
         {

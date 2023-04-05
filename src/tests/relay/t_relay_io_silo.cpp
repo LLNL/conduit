@@ -146,7 +146,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
         // std::make_pair("polygons", 2),
         std::make_pair("tets", 3),
         std::make_pair("hexs", 3),
-        // std::make_pair("wedges", 3),
+        std::make_pair("wedges", 3),
         // std::make_pair("pyramids", 3),
         // std::make_pair("polyhedra", 3)
     };
