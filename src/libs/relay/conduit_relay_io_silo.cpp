@@ -435,6 +435,19 @@ shapetype_to_string(int shapetype)
 }
 
 //---------------------------------------------------------------------------//
+int get_coordset_silo_type(const std::string &sys)
+{
+    if (sys == "cartesian")
+        return DB_CARTESIAN;
+    else if (sys == "cylindrical")
+        return DB_CYLINDRICAL;
+    else if (sys == "spherical")
+        return DB_SPHERICAL;
+    CONDUIT_ERROR("Unrecognized coordinate system " << sys);
+    return -1;
+}
+
+//---------------------------------------------------------------------------//
 std::vector<const char *>
 get_coordset_axis_labels(const int sys)
 {
@@ -460,19 +473,6 @@ get_coordset_axis_labels(const int sys)
     else
         CONDUIT_ERROR("Unrecognized coordinate system " << sys);
     return coordnames;
-}
-
-//---------------------------------------------------------------------------//
-int get_coordset_silo_type(const std::string &sys)
-{
-    if (sys == "cartesian")
-        return DB_CARTESIAN;
-    else if (sys == "cylindrical")
-        return DB_CYLINDRICAL;
-    else if (sys == "spherical")
-        return DB_SPHERICAL;
-    CONDUIT_ERROR("Unrecognized coordinate system " << sys);
-    return -1;
 }
 
 //-----------------------------------------------------------------------------
