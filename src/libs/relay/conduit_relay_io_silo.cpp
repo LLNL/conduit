@@ -2607,7 +2607,7 @@ void write_multimeshes(DBfile *dbfile,
                 {
                     silo_meshname = conduit_fmt::format(silo_path, d, safe_meshname);
                 }
-            }            
+            }
             // num domains == num files case
             else if (global_num_domains == num_files)
             {
@@ -3711,11 +3711,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // root_file_writer will now write out the root file
     if(par_rank == root_file_writer)
     {
-        std::string output_dir_base, output_dir_path;
-        conduit::utils::rsplit_file_path(output_dir,
-                                         output_dir_base,
-                                         output_dir_path);
-
         std::string output_silo_path;
 
         // NOTE: 
@@ -3743,42 +3738,46 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 part_map_domain_vals[i] = i;
             }
         }
-        // num domains == num files case
-        else if (global_num_domains == num_files)
-        {
-            // generate partition map
-            output_partition_map["file"].set(DataType::index_t(global_num_domains));
-            output_partition_map["domain"].set(DataType::index_t(global_num_domains));
-            index_t_array part_map_file_vals   = output_partition_map["file"].value();
-            index_t_array part_map_domain_vals = output_partition_map["domain"].value();
-
-            for (index_t i = 0; i < global_num_domains; i ++)
-            {
-                // file id == domain id
-                part_map_file_vals[i]   = i;
-                part_map_domain_vals[i] = i;
-            }
-
-            std::string tmp, dirname;
-            utils::rsplit_path(output_dir_base,
-                               dirname,
-                               tmp);
-
-            output_silo_path = conduit::utils::join_file_path(dirname, "domain_{:06d}.silo") + 
-                ":" + opts_mesh_name + "/{}";
-        }
-        // m to n case
         else
         {
-            // we generated the partition map earlier
-            
+            std::string output_dir_base, output_dir_path;
+            utils::rsplit_file_path(output_dir,
+                                    output_dir_base,
+                                    output_dir_path);
+
             std::string tmp, dirname;
             utils::rsplit_path(output_dir_base,
                                dirname,
                                tmp);
 
-            output_silo_path = conduit::utils::join_file_path(dirname, "file_{:06d}.silo") + 
-                ":" + "domain_{:06d}" + "/" + opts_mesh_name + "/{}";
+            // num domains == num files case
+            if (global_num_domains == num_files)
+            {
+                // generate partition map
+                output_partition_map["file"].set(DataType::index_t(global_num_domains));
+                output_partition_map["domain"].set(DataType::index_t(global_num_domains));
+                index_t_array part_map_file_vals   = output_partition_map["file"].value();
+                index_t_array part_map_domain_vals = output_partition_map["domain"].value();
+
+                for (index_t i = 0; i < global_num_domains; i ++)
+                {
+                    // file id == domain id
+                    part_map_file_vals[i]   = i;
+                    part_map_domain_vals[i] = i;
+                }
+
+                output_silo_path = conduit::utils::join_file_path(dirname, "domain_{:06d}.silo") + ":"
+                                 + opts_mesh_name + "/{}";
+            }
+            // m to n case
+            else
+            {
+                // we generated the partition map earlier
+
+                output_silo_path = conduit::utils::join_file_path(dirname, "file_{:06d}.silo") + ":"
+                                 + "domain_{:06d}" + "/" 
+                                 + opts_mesh_name + "/{}";
+            }
         }
 
         /////////////////////////////
@@ -3841,7 +3840,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
                 if (!dbfile.getSiloObject())
                 {
-                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename );
+                    CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
                 }
             }
         }
