@@ -411,60 +411,6 @@ std::string sanitize_silo_varname(const std::string &varname)
 // -- end conduit::relay::<mpi>::io::silo::detail --
 //-----------------------------------------------------------------------------
 
-
-
-//-----------------------------------------------------------------------------
-// Fetch the DBfile * associated with 'filename' from 'filemap'.
-// If the map does not contain an entry for 'filename', open
-// the file and add it to the map before returning the pointer.
-// 'type' should be either DB_READ or DB_APPEND.
-//-----------------------------------------------------------------------------
-DBfile *
-get_or_open(std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-            const std::string &filename,
-            int mode = DB_READ)
-{
-
-    DBfile *fileptr;
-    auto search = filemap.find(filename);
-    
-    if (search != filemap.end())
-    {
-        return search->second.get();
-    }
-    else
-    {
-        if (!(fileptr = DBOpen(filename.c_str(), DB_UNKNOWN, mode)))
-        {
-            CONDUIT_ERROR("Error opening silo file " << filename);
-        }
-        
-        filemap.emplace(std::piecewise_construct,
-                        std::make_tuple(filename),
-                        std::make_tuple(fileptr, &DBClose));
-        return fileptr;
-    }
-}
-
-//-----------------------------------------------------------------------------
-// Split a silo path into file path and silo name components.
-// If there is no file path component (because the path points to an entry in
-// the same file) the file path component will be empty.
-//-----------------------------------------------------------------------------
-void
-split_silo_path(const std::string &path,
-                const std::string &relative_dir,
-                std::string &file_path,
-                std::string &silo_name)
-{
-
-    conduit::utils::rsplit_file_path(path, ":", silo_name, file_path);
-    if (!file_path.empty())
-    {
-        file_path = conduit::utils::join_file_path(relative_dir, file_path);
-    }
-}
-
 //-----------------------------------------------------------------------------
 std::string
 shapetype_to_string(int shapetype)
@@ -488,12 +434,53 @@ shapetype_to_string(int shapetype)
     return "";
 }
 
+//---------------------------------------------------------------------------//
+std::vector<const char *>
+get_coordset_axis_labels(const int sys)
+{
+    std::vector<const char *> coordnames;
+    if (sys == DB_CARTESIAN)
+    {
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[0].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[1].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[2].c_str());
+    }
+    else if (sys == DB_CYLINDRICAL)
+    {
+        coordnames.push_back(conduit::blueprint::mesh::utils::CYLINDRICAL_AXES[0].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CYLINDRICAL_AXES[1].c_str());
+        coordnames.push_back(nullptr);
+    }
+    else if (sys == DB_SPHERICAL)
+    {
+        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[0].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[1].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[2].c_str());
+    }
+    else
+        CONDUIT_ERROR("Unrecognized coordinate system " << sys);
+    return coordnames;
+}
+
+//---------------------------------------------------------------------------//
+int get_coordset_silo_type(const std::string &sys)
+{
+    if (sys == "cartesian")
+        return DB_CARTESIAN;
+    else if (sys == "cylindrical")
+        return DB_CYLINDRICAL;
+    else if (sys == "spherical")
+        return DB_SPHERICAL;
+    CONDUIT_ERROR("Unrecognized coordinate system " << sys);
+    return -1;
+}
+
 //-----------------------------------------------------------------------------
 // copy data and assign it to a Node
 template <typename T>
 void
 copy_and_assign(T *data,
-                int data_length,
+                const int data_length,
                 conduit::Node &target)
 {
     T *data_copy = new T[data_length];
@@ -504,49 +491,43 @@ copy_and_assign(T *data,
 //-----------------------------------------------------------------------------
 template <typename T>
 void
-copy_point_coords(void *coords[3],
-                  int ndims,
-                  int *dims,
-                  int coord_sys,
-                  conduit::Node &node)
+copy_point_coords_helper(void *coords[3],
+                         int ndims,
+                         const int *dims,
+                         const int coord_sys,
+                         conduit::Node &node)
 {
 
     ndims = ndims < 3 ? ndims : 3;
-    const std::vector<std::string> *labels;
-    if (coord_sys == DB_CARTESIAN)
-    {
-        labels = &conduit::blueprint::mesh::utils::CARTESIAN_AXES;
-    }
-    else if (coord_sys == DB_CYLINDRICAL)
-    {
-        labels = &conduit::blueprint::mesh::utils::CYLINDRICAL_AXES;
-        if (ndims >= 3)
-        {
-            CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");
-        }
-    }
-    else if (coord_sys == DB_SPHERICAL)
-    {
-        labels = &conduit::blueprint::mesh::utils::SPHERICAL_AXES;
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported coordinate system " << coord_sys);
-    }
-    
-    for (int i = 0; i < ndims; i++)
+    std::vector<const char *> labels = get_coordset_axis_labels(coord_sys);
+    if (coord_sys == DB_CYLINDRICAL && ndims >= 3)
+        CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");    
+    for (int i = 0; i < ndims; i ++)
     {
         if (coords[i] != NULL)
-        {
             copy_and_assign(static_cast<T *>(coords[i]),
                             dims[i],
-                            node[(*labels)[i]]);
-        }
+                            node[labels[i]]);
         else
-        {
             return;
-        }
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+copy_point_coords(const int datatype,
+                  void *coords[3],
+                  int ndims,
+                  int *dims,
+                  const int coord_sys,
+                  conduit::Node &node)
+{
+    if (datatype == DB_DOUBLE)
+        copy_point_coords_helper<double>(coords, ndims, dims, coord_sys, node);
+    else if (datatype == DB_FLOAT)
+        copy_point_coords_helper<float>(coords, ndims, dims, coord_sys, node);
+    else 
+        CONDUIT_ERROR("Unsupported mesh data type " << datatype);
 }
 
 //-----------------------------------------------------------------------------
@@ -599,13 +580,13 @@ add_shape_info(DBzonelist *zones,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+read_ucdmesh_domain(DBfile *dbfile,
                     const std::string &mesh_name,
                     const std::string &multimesh_name,
                     conduit::Node &mesh_domain)
 {
     detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
-        DBGetUcdmesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        DBGetUcdmesh(dbfile, mesh_name.c_str()), 
         &DBFreeUcdmesh};
     DBucdmesh *ucdmesh_ptr;
     if (!(ucdmesh_ptr = ucdmesh.getSiloObject()))
@@ -627,7 +608,6 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
         CONDUIT_ERROR("Silo ucdmesh phzones not yet supported");
         mesh_domain["topologies"][multimesh_name]["elements"]["shape"] =
             shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
-
     }
     else
     {
@@ -643,38 +623,24 @@ read_ucdmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClos
                   ucdmesh_ptr->nnodes,
                   ucdmesh_ptr->nnodes};
 
-    if (ucdmesh_ptr->datatype == DB_DOUBLE)
-    {
-        copy_point_coords<double>(ucdmesh_ptr->coords,
-                                  ucdmesh_ptr->ndims,
-                                  dims,
-                                  ucdmesh_ptr->coord_sys,
-                                  mesh_domain["coordsets"][multimesh_name]["values"]);
-    }
-    else if (ucdmesh_ptr->datatype == DB_FLOAT)
-    {
-        copy_point_coords<float>(ucdmesh_ptr->coords,
-                                 ucdmesh_ptr->ndims,
-                                 dims,
-                                 ucdmesh_ptr->coord_sys,
-                                 mesh_domain["coordsets"][multimesh_name]["values"]);
-    }
-    else 
-    {
-        CONDUIT_ERROR("Unsupported mesh data type " << ucdmesh_ptr->datatype);
-    }
+    copy_point_coords(ucdmesh_ptr->datatype,
+                      ucdmesh_ptr->coords,
+                      ucdmesh_ptr->ndims,
+                      dims,
+                      ucdmesh_ptr->coord_sys,
+                      mesh_domain["coordsets"][multimesh_name]["values"]);
 }
 
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+read_quadmesh_domain(DBfile *dbfile,
                      const std::string &mesh_name,
                      const std::string &multimesh_name,
                      conduit::Node &mesh_domain)
 {
     detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
-        DBGetQuadmesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        DBGetQuadmesh(dbfile, mesh_name.c_str()), 
         &DBFreeQuadmesh};
     DBquadmesh *quadmesh_ptr;
     if (! (quadmesh_ptr = quadmesh.getSiloObject()))
@@ -723,39 +689,25 @@ read_quadmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClo
         if (ndims > 2) origin["i"] = quadmesh_ptr->base_index[2];
     }
 
-    if (quadmesh_ptr->datatype == DB_DOUBLE)
-    {
-        copy_point_coords<double>(quadmesh_ptr->coords,
-                                  ndims,
-                                  real_dims,
-                                  quadmesh_ptr->coord_sys,
-                                  mesh_domain["coordsets"][multimesh_name]["values"]);
-    }
-    else if (quadmesh_ptr->datatype == DB_FLOAT)
-    {
-        copy_point_coords<float>(quadmesh_ptr->coords,
-                                 ndims,
-                                 real_dims,
-                                 quadmesh_ptr->coord_sys,
-                                 mesh_domain["coordsets"][multimesh_name]["values"]);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported mesh data type " << quadmesh_ptr->datatype);
-    }
+    copy_point_coords(quadmesh_ptr->datatype,
+                      quadmesh_ptr->coords,
+                      ndims,
+                      real_dims,
+                      quadmesh_ptr->coord_sys,
+                      mesh_domain["coordsets"][multimesh_name]["values"]);
 }
 
 
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &dbfile,
+read_pointmesh_domain(DBfile *dbfile,
                       const std::string &mesh_name,
                       const std::string &multimesh_name,
                       conduit::Node &mesh_domain)
 {
     detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
-        DBGetPointmesh(dbfile.getSiloObject(), mesh_name.c_str()), 
+        DBGetPointmesh(dbfile, mesh_name.c_str()), 
         &DBFreePointmesh};
     DBpointmesh *pointmesh_ptr;
     if (! (pointmesh_ptr = pointmesh.getSiloObject()))
@@ -769,27 +721,13 @@ read_pointmesh_domain(detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBCl
     int dims[] = { pointmesh_ptr->nels,
                    pointmesh_ptr->nels,
                    pointmesh_ptr->nels};
-    
-    if (pointmesh_ptr->datatype == DB_DOUBLE)
-    {
-        copy_point_coords<double>(pointmesh_ptr->coords,
-                                  pointmesh_ptr->ndims,
-                                  dims,
-                                  DB_CARTESIAN,
-                                  mesh_domain["coordsets"][multimesh_name]["values"]);
-    }
-    else if (pointmesh_ptr->datatype == DB_FLOAT)
-    {
-        copy_point_coords<float>(pointmesh_ptr->coords,
-                                 pointmesh_ptr->ndims,
-                                 dims,
-                                 DB_CARTESIAN,
-                                 mesh_domain["coordsets"][multimesh_name]["values"]);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported mesh data type " << pointmesh_ptr->datatype);
-    }
+
+    copy_point_coords(pointmesh_ptr->datatype,
+                      pointmesh_ptr->coords,
+                      pointmesh_ptr->ndims,
+                      dims,
+                      DB_CARTESIAN,
+                      mesh_domain["coordsets"][multimesh_name]["values"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -841,197 +779,197 @@ read_variable_domain(const T *var_ptr,
     }
 }
 
-//-----------------------------------------------------------------------------
-// Read a material domain from a Silo file.
-// 'file' must be a pointer into the file containing the material domain
-// 'mat_name' must be the name of the material within the file.
-//-----------------------------------------------------------------------------
-void
-read_material_domain(DBfile *file,
-                     std::string &mat_name,
-                     conduit::Node &matsets)
-{
-    DBmaterial *material_ptr;
-    if (!(material_ptr = DBGetMaterial(file, mat_name.c_str())))
-    {
-        CONDUIT_ERROR("Error fetching variable " << mat_name);
-    }
+// //-----------------------------------------------------------------------------
+// // Read a material domain from a Silo file.
+// // 'file' must be a pointer into the file containing the material domain
+// // 'mat_name' must be the name of the material within the file.
+// //-----------------------------------------------------------------------------
+// void
+// read_material_domain(DBfile *file,
+//                      std::string &mat_name,
+//                      conduit::Node &matsets)
+// {
+//     DBmaterial *material_ptr;
+//     if (!(material_ptr = DBGetMaterial(file, mat_name.c_str())))
+//     {
+//         CONDUIT_ERROR("Error fetching variable " << mat_name);
+//     }
 
-    std::unique_ptr<DBmaterial, decltype(&DBFreeMaterial)> material{
-        material_ptr, &DBFreeMaterial};
-    conduit::Node &curr_matset = matsets[material_ptr->name];
-    curr_matset["topology"] = material_ptr->meshname;
-    for (int i = 0; i < material_ptr->nmat; ++i)
-    {
-        // material names may be NULL
-        std::string material_name;
-        if (material_ptr->matnames)
-        {
-            material_name = material_ptr->matnames[i];
-        }
-        else
-        {
-            // but matnos should always be
-            material_name = std::to_string(material_ptr->matnos[i]);
-        }
-        curr_matset["material_map"][material_name] = material_ptr->matnos[i];
-    }
-    // TODO: support multi-dimensional materials
-    CONDUIT_ASSERT(material_ptr->ndims == 1,
-                   "Only single-dimension materials supported, got "
-                       << material_ptr->ndims);
-    if (material_ptr->mixlen > 0)
-    {
-        // The struct has volume fractions.
-        // In this case, the struct is very confusing.
-        // If an entry in the `matlist` is negative, it implies that the
-        // associated zone has mixed materials, and `-(value) - 1` gives the
-        // first index into mix_vf and mix_mat for that zone. mix_next is then
-        // used to find the rest of the indices into mix_vf and mix_mat for
-        // the zone.
-        std::vector<double> volume_fractions;
-        std::vector<int> material_ids;
-        std::vector<int> sizes;
-        std::vector<int> offsets;
-        int curr_offset = 0;
-        for (int i = 0; i < material_ptr->dims[0]; ++i)
-        {
-            int matlist_entry = material_ptr->matlist[i];
-            if (matlist_entry >= 0)
-            {
-                volume_fractions.push_back(1.0);
-                material_ids.push_back(matlist_entry);
-                sizes.push_back(1);
-                offsets.push_back(curr_offset);
-                curr_offset++;
-            }
-            else
-            {
-                int mix_id = -(matlist_entry)-1;
-                int curr_size = 0;
-                while (mix_id >= 0)
-                {
-                    material_ids.push_back(material_ptr->mix_mat[mix_id]);
-                    if (material_ptr->datatype == DB_DOUBLE)
-                    {
-                        volume_fractions.push_back(static_cast<double *>(
-                            material_ptr->mix_vf)[mix_id]);
-                    }
-                    else if (material_ptr->datatype == DB_FLOAT)
-                    {
-                        volume_fractions.push_back(
-                            static_cast<float *>(material_ptr->mix_vf)[mix_id]);
-                    }
-                    curr_size++;
-                    mix_id = material_ptr->mix_next[mix_id] - 1;
-                }
-                sizes.push_back(curr_size);
-                offsets.push_back(curr_offset);
-                curr_offset += curr_size;
-            }
-        }
-        curr_matset["material_ids"].set(material_ids.data(), material_ids.size());
-        curr_matset["volume_fractions"].set(volume_fractions.data(),
-                                       volume_fractions.size());
-        curr_matset["sizes"].set(sizes.data(), sizes.size());
-        curr_matset["offsets"].set(offsets.data(), offsets.size());
-    }
-    else
-    {
-        // TODO: remove, since this is just a special case of the above logic, I think?
-        // no volume fractions. All zones are single-material.
-        int arr_len = material_ptr->dims[0];
-        copy_and_assign(material_ptr->matlist,
-                        arr_len,
-                        curr_matset["material_ids"]);
+//     std::unique_ptr<DBmaterial, decltype(&DBFreeMaterial)> material{
+//         material_ptr, &DBFreeMaterial};
+//     conduit::Node &curr_matset = matsets[material_ptr->name];
+//     curr_matset["topology"] = material_ptr->meshname;
+//     for (int i = 0; i < material_ptr->nmat; ++i)
+//     {
+//         // material names may be NULL
+//         std::string material_name;
+//         if (material_ptr->matnames)
+//         {
+//             material_name = material_ptr->matnames[i];
+//         }
+//         else
+//         {
+//             // but matnos should always be
+//             material_name = std::to_string(material_ptr->matnos[i]);
+//         }
+//         curr_matset["material_map"][material_name] = material_ptr->matnos[i];
+//     }
+//     // TODO: support multi-dimensional materials
+//     CONDUIT_ASSERT(material_ptr->ndims == 1,
+//                    "Only single-dimension materials supported, got "
+//                        << material_ptr->ndims);
+//     if (material_ptr->mixlen > 0)
+//     {
+//         // The struct has volume fractions.
+//         // In this case, the struct is very confusing.
+//         // If an entry in the `matlist` is negative, it implies that the
+//         // associated zone has mixed materials, and `-(value) - 1` gives the
+//         // first index into mix_vf and mix_mat for that zone. mix_next is then
+//         // used to find the rest of the indices into mix_vf and mix_mat for
+//         // the zone.
+//         std::vector<double> volume_fractions;
+//         std::vector<int> material_ids;
+//         std::vector<int> sizes;
+//         std::vector<int> offsets;
+//         int curr_offset = 0;
+//         for (int i = 0; i < material_ptr->dims[0]; ++i)
+//         {
+//             int matlist_entry = material_ptr->matlist[i];
+//             if (matlist_entry >= 0)
+//             {
+//                 volume_fractions.push_back(1.0);
+//                 material_ids.push_back(matlist_entry);
+//                 sizes.push_back(1);
+//                 offsets.push_back(curr_offset);
+//                 curr_offset++;
+//             }
+//             else
+//             {
+//                 int mix_id = -(matlist_entry)-1;
+//                 int curr_size = 0;
+//                 while (mix_id >= 0)
+//                 {
+//                     material_ids.push_back(material_ptr->mix_mat[mix_id]);
+//                     if (material_ptr->datatype == DB_DOUBLE)
+//                     {
+//                         volume_fractions.push_back(static_cast<double *>(
+//                             material_ptr->mix_vf)[mix_id]);
+//                     }
+//                     else if (material_ptr->datatype == DB_FLOAT)
+//                     {
+//                         volume_fractions.push_back(
+//                             static_cast<float *>(material_ptr->mix_vf)[mix_id]);
+//                     }
+//                     curr_size++;
+//                     mix_id = material_ptr->mix_next[mix_id] - 1;
+//                 }
+//                 sizes.push_back(curr_size);
+//                 offsets.push_back(curr_offset);
+//                 curr_offset += curr_size;
+//             }
+//         }
+//         curr_matset["material_ids"].set(material_ids.data(), material_ids.size());
+//         curr_matset["volume_fractions"].set(volume_fractions.data(),
+//                                        volume_fractions.size());
+//         curr_matset["sizes"].set(sizes.data(), sizes.size());
+//         curr_matset["offsets"].set(offsets.data(), offsets.size());
+//     }
+//     else
+//     {
+//         // TODO: remove, since this is just a special case of the above logic, I think?
+//         // no volume fractions. All zones are single-material.
+//         int arr_len = material_ptr->dims[0];
+//         copy_and_assign(material_ptr->matlist,
+//                         arr_len,
+//                         curr_matset["material_ids"]);
 
-        double *volume_fractions = new double[arr_len];
-        int *sizes = new int[arr_len];
-        int *offsets = new int[arr_len];
-        for (int i = 0; i < arr_len; ++i)
-        {
-            volume_fractions[i] = 1.0;
-            offsets[i] = i;
-            sizes[i] = 1;
-        }
-        curr_matset["volume_fractions"].set(volume_fractions, arr_len);
-        curr_matset["sizes"].set(sizes, arr_len);
-        curr_matset["offsets"].set(offsets, arr_len);
-    }
-}
+//         double *volume_fractions = new double[arr_len];
+//         int *sizes = new int[arr_len];
+//         int *offsets = new int[arr_len];
+//         for (int i = 0; i < arr_len; ++i)
+//         {
+//             volume_fractions[i] = 1.0;
+//             offsets[i] = i;
+//             sizes[i] = 1;
+//         }
+//         curr_matset["volume_fractions"].set(volume_fractions, arr_len);
+//         curr_matset["sizes"].set(sizes, arr_len);
+//         curr_matset["offsets"].set(offsets, arr_len);
+//     }
+// }
 
-//-----------------------------------------------------------------------------
-// Read a multimaterial from a Silo file.
-// 'root_file' should be the file containing the multivar entry
-// 'filemap' should be a mapping providing DBfile* for files which have
-//  already been opened.
-// 'dirname' should be the directory containing the root file, as if the
-// `dirname` command were called on the root file path. This directory is used
-// to concretize the paths given by the multimat.
-//-----------------------------------------------------------------------------
-void
-read_multimaterial(DBfile *root_file,
-                   std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-                   const std::string &dirname,
-                   DBmultimat *multimat,
-                   conduit::Node &mesh)
-{
+// //-----------------------------------------------------------------------------
+// // Read a multimaterial from a Silo file.
+// // 'root_file' should be the file containing the multivar entry
+// // 'filemap' should be a mapping providing DBfile* for files which have
+// //  already been opened.
+// // 'dirname' should be the directory containing the root file, as if the
+// // `dirname` command were called on the root file path. This directory is used
+// // to concretize the paths given by the multimat.
+// //-----------------------------------------------------------------------------
+// void
+// read_multimaterial(DBfile *root_file,
+//                    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+//                    const std::string &dirname,
+//                    DBmultimat *multimat,
+//                    conduit::Node &mesh)
+// {
 
-    std::string file_path, silo_name;
-    for (index_t i = 0; i < multimat->nmats; ++i)
-    {
-        Node &matsets = mesh[i]["matsets"];
-        split_silo_path(multimat->matnames[i], dirname, file_path, silo_name);
-        if (!file_path.empty())
-        {
-            read_material_domain(get_or_open(filemap, file_path),
-                                 silo_name,
-                                 matsets);
-        }
-        else
-        {
-            read_material_domain(root_file, silo_name, matsets);
-        }
-    }
-}
+//     std::string file_path, silo_name;
+//     for (index_t i = 0; i < multimat->nmats; ++i)
+//     {
+//         Node &matsets = mesh[i]["matsets"];
+//         split_silo_path(multimat->matnames[i], dirname, file_path, silo_name);
+//         if (!file_path.empty())
+//         {
+//             read_material_domain(get_or_open(filemap, file_path),
+//                                  silo_name,
+//                                  matsets);
+//         }
+//         else
+//         {
+//             read_material_domain(root_file, silo_name, matsets);
+//         }
+//     }
+// }
 
-//---------------------------------------------------------------------------//
-void
-read_all_multimats(DBfile *root_file,
-                  DBtoc *toc,
-                  std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-                  const std::string &dirname,
-                  const std::string &mmesh_name,
-                  int expected_domains,
-                  conduit::Node &mesh)
-{
+// //---------------------------------------------------------------------------//
+// void
+// read_all_multimats(DBfile *root_file,
+//                   DBtoc *toc,
+//                   std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
+//                   const std::string &dirname,
+//                   const std::string &mmesh_name,
+//                   int expected_domains,
+//                   conduit::Node &mesh)
+// {
 
-    for (int i = 0; i < toc->nmultimat; ++i)
-    {
-        std::unique_ptr<DBmultimat, decltype(&DBFreeMultimat)> multimat{
-            DBGetMultimat(root_file, toc->multimat_names[i]), &DBFreeMultimat};
-        if (!multimat.get()) {
-            multimat.release();
-            CONDUIT_ERROR("Error fetching multimaterial "
-                          << multimat.get()->matnames[i]);
-        }
+//     for (int i = 0; i < toc->nmultimat; ++i)
+//     {
+//         std::unique_ptr<DBmultimat, decltype(&DBFreeMultimat)> multimat{
+//             DBGetMultimat(root_file, toc->multimat_names[i]), &DBFreeMultimat};
+//         if (!multimat.get()) {
+//             multimat.release();
+//             CONDUIT_ERROR("Error fetching multimaterial "
+//                           << multimat.get()->matnames[i]);
+//         }
 
-        if (multimat.get()->mmesh_name != NULL &&
-            multimat.get()->mmesh_name == mmesh_name)
-        {
-            CONDUIT_ASSERT(multimat.get()->nmats == expected_domains,
-                           "Domain count mismatch between multimaterial "
-                               << multimat.get()->matnames[i]
-                               << "and multimesh");
-            // read in the multimaterial and add it to the mesh Node
-            read_multimaterial(root_file,
-                               filemap,
-                               dirname,
-                               multimat.get(),
-                               mesh);
-        }
-    }
-}
+//         if (multimat.get()->mmesh_name != NULL &&
+//             multimat.get()->mmesh_name == mmesh_name)
+//         {
+//             CONDUIT_ASSERT(multimat.get()->nmats == expected_domains,
+//                            "Domain count mismatch between multimaterial "
+//                                << multimat.get()->matnames[i]
+//                                << "and multimesh");
+//             // read in the multimaterial and add it to the mesh Node
+//             read_multimaterial(root_file,
+//                                filemap,
+//                                dirname,
+//                                multimat.get(),
+//                                mesh);
+//         }
+//     }
+// }
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
@@ -1403,11 +1341,11 @@ read_mesh(const std::string &root_file_path,
         Node &mesh_out = mesh[mesh_path];
 
         if (meshtype == DB_UCDMESH)
-            read_ucdmesh_domain(mesh_domain_file, mesh_name, multimesh_name, mesh_out);
+            read_ucdmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
         else if (meshtype == DB_QUADMESH)
-            read_quadmesh_domain(mesh_domain_file, mesh_name, multimesh_name, mesh_out);
+            read_quadmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
         else if (meshtype == DB_POINTMESH)
-            read_pointmesh_domain(mesh_domain_file, mesh_name, multimesh_name, mesh_out);
+            read_pointmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
         else
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
 
@@ -1578,47 +1516,6 @@ silo_generate_state_optlist(const Node &n)
     }
 
     return res;
-}
-
-//---------------------------------------------------------------------------//
-std::vector<const char *>
-get_coordset_axis_labels(const std::string &sys)
-{
-    std::vector<const char *> coordnames;
-    if (sys == "cartesian")
-    {
-        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[0].c_str());
-        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[1].c_str());
-        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[2].c_str());
-    }
-    else if (sys == "cylindrical")
-    {
-        coordnames.push_back(conduit::blueprint::mesh::utils::CYLINDRICAL_AXES[0].c_str());
-        coordnames.push_back(conduit::blueprint::mesh::utils::CYLINDRICAL_AXES[1].c_str());
-        coordnames.push_back(nullptr);
-    }
-    else if (sys == "spherical")
-    {
-        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[0].c_str());
-        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[1].c_str());
-        coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[2].c_str());
-    }
-    else
-        CONDUIT_ERROR("Unrecognized coordinate system " << sys);
-    return coordnames;
-}
-
-//---------------------------------------------------------------------------//
-int get_coordset_silo_type(const std::string &sys)
-{
-    if (sys == "cartesian")
-        return DB_CARTESIAN;
-    else if (sys == "cylindrical")
-        return DB_CYLINDRICAL;
-    else if (sys == "spherical")
-        return DB_SPHERICAL;
-    CONDUIT_ERROR("Unrecognized coordinate system " << sys);
-    return -1;
 }
 
 //---------------------------------------------------------------------------//
@@ -1906,7 +1803,7 @@ void silo_write_pointmesh(DBfile *dbfile,
 
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = get_coordset_silo_type(coordsys);
-    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(silo_coordsys_type);
 
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
@@ -2173,7 +2070,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = get_coordset_silo_type(coordsys);
-    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(silo_coordsys_type);
 
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
@@ -2231,7 +2128,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = get_coordset_silo_type(coordsys);
-    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(silo_coordsys_type);
 
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
@@ -2313,7 +2210,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
 
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = get_coordset_silo_type(coordsys);
-    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(coordsys);
+    std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(silo_coordsys_type);
 
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                           DBOPT_COORDSYS,
