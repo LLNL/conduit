@@ -1975,6 +1975,47 @@ PointQuery::DomainIds() const
     return domainIds;
 }
 
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+const int MembershipQuery::NotFound = -1;
+
+//---------------------------------------------------------------------------
+MembershipQuery::MembershipQuery(const conduit::Node &mesh) : m_mesh(mesh),
+    m_Requests()
+{
+}
+
+//---------------------------------------------------------------------------
+void
+MembershipQuery::Add(int dom, int query_dom, MembershipQuery::id_type id)
+{
+    auto key = std::make_pair(dom, query_dom);
+    m_Requests[key].insert(id);
+}
+
+//---------------------------------------------------------------------------
+bool
+MembershipQuery::Exists(int dom, int query_dom, MembershipQuery::id_type id) const
+{
+    // NOTE: We reverse the dom/query_dom args when making the id since we
+    //       consider the query to return true if the other guy added the entity.
+    bool retval = false;
+    auto oppositeKey = std::make_pair(query_dom, dom);
+    auto it = m_Requests.find(oppositeKey);
+    if(it != m_Requests.end())
+    {
+        retval = it->second.find(id) != it->second.end();
+    }
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+void
+MembershipQuery::Execute()
+{
+    // Nothing to do in serial.
+}
+
 
 }
 //-----------------------------------------------------------------------------

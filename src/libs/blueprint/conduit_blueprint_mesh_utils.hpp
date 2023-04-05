@@ -546,6 +546,59 @@ protected:
     std::vector<int> DomainIds() const;
 };
 
+//---------------------------------------------------------------------------
+/**
+ @brief A simple membership query that uses the questions asked by various
+        domains to determine whether an entity exists. If the calling code
+        asks whether (0, 1, eid1) exists and also whether (1, 0, eid1)
+        exists then that entity is considered to exist. If the code then
+        asks for (0, 1, eid2) but nobody asked for (1, 0, eid2) then the
+        query for (0, 1, eid2) would return false.
+
+        We can exploit these 2 sided queries in adjacency set creation.
+ */
+class MembershipQuery
+{
+public:
+    static const int NotFound;
+
+    typedef conduit_uint64 id_type;
+
+    /**
+     @brief Constructor
+     @param mesh The input mesh(es). Each mesh domain must have state/domain_id
+                 that uniquely identifies the domain.
+     */
+    MembershipQuery(const conduit::Node &mesh);
+
+    /**
+     @brief Add an entity that will be queried on domain \a dom.
+     @param dom The domain that is asking the questions.
+     @param query_dom The domain that is being queried.
+     @param entityId A global identifier that represents the entity.
+     */
+    void Add(int dom, int query_dom, id_type entityId);
+
+    /**
+     @brief Execute all of the queries.
+     */
+    virtual void Execute();
+
+    /**
+     @brief Return whether the entity exists on query_dom.
+     @param dom The domain that is asking the questions.
+     @param query_dom The domain that is being queried.
+     @param entityId A global identifier that represents the entity.
+
+     @return True if the entityId exists in query_dom.
+     */
+    virtual bool Exists(int dom, int query_dom, id_type entityId) const;
+
+protected:
+    const conduit::Node &m_mesh;
+    std::map<std::pair<int,int>, std::set<id_type>> m_Requests;
+};
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::query --

@@ -16,7 +16,7 @@
 #include "conduit_annotations.hpp"
 #include "conduit_relay_mpi.hpp"
 
-//#define DEBUG_PRINT
+#define DEBUG_PRINT
 #ifdef DEBUG_PRINT
 // NOTE: if DEBUG_PRINT is defined then the library must also depend on conduit_relay
 #include "conduit_relay_io.hpp"
@@ -305,6 +305,170 @@ PointQuery::Execute(const std::string &coordsetName)
     for(auto it = result_sends.begin(); it != result_sends.end(); it++)
         delete it->second;
 }
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+MembershipQuery::MembershipQuery(const conduit::Node &mesh, MPI_Comm comm) :
+    conduit::blueprint::mesh::utils::query::MembershipQuery(mesh), m_comm(comm)
+{
+}
+
+//---------------------------------------------------------------------------
+void
+MembershipQuery::Execute()
+{
+    int rank, size;
+    MPI_Comm_rank(m_comm, &rank);
+    MPI_Comm_size(m_comm, &size);
+
+    // If we have a bunch of requests A,B  C,D then we need to get the entity
+    // arrays for B,A and D,C. The second int indicates the rank that owns the
+    // entity data.
+
+    // Make a set of ints <dom, query_dom, nents> for each map entry. Each
+    // rank owns the domains indicated by dom.
+    std::vector<int> queries;
+    queries.reserve(m_Requests.size() * 4);
+    for(auto it = m_Requests.begin(); it != m_Requests.end(); it++)
+    {
+        queries.push_back(rank);
+        queries.push_back(it->first.first);
+        queries.push_back(it->first.second);
+        queries.push_back(it->second.size());
+    }
+
+    // Let all ranks know the sizes of the queries vectors.
+    int nq = queries.size();
+    std::vector<int> qsize(size, 0);
+    MPI_Allgather(&nq, 1, MPI_INT, &qsize[0], 1, MPI_INT, m_comm);
+
+    // Make an offset array and total the sizes.
+    std::vector<int> qoffset(size, 0);
+    for(int i = 1; i < size; i++)
+        qoffset[i] = qoffset[i-1] + qsize[i-1];
+    int total_qsize = 0;
+    for(int i = 0; i < size; i++)
+        total_qsize += qsize[i];
+
+    // Gather the queries to all ranks.
+    std::vector<int> allqueries(total_qsize, 0);
+    MPI_Allgatherv(&queries[0], nq, MPI_INT,
+                   &allqueries[0], &qsize[0], &qoffset[0], MPI_INT,
+                   m_comm);
+
+    // Look up a rank that owns a domain.
+    auto domain_to_rank = [](const std::vector<int> &allqueries, int d) -> int
+    {
+        for(size_t i = 0; i < allqueries.size(); i += 4)
+        {
+            int owner = allqueries[i];
+            int domain = allqueries[i + 1];
+            //int query_domain = allqueries[i + 2];
+            //int nents = allqueries[i + 3];
+            if(domain == d)
+                return owner;
+        }
+        return -1;
+    };
+
+#ifdef DEBUG_PRINT
+    // Print out some debugging information to files.
+    conduit::Node debug;
+    debug["rank"] = rank;
+    debug["size"] = size;
+    debug["queries"].set(queries);
+    debug["nq"] = nq;
+    debug["qsize"].set(qsize);
+    debug["qoffset"].set(qoffset);
+    debug["total_qsize"] = total_qsize;
+    debug["allqueries"].set(allqueries);
+
+    // Store the points that we'll ask of each domain.
+    conduit::Node &qi = debug["inputs"];
+    for(auto it = m_Requests.begin(); it != m_Requests.end(); it++)
+    {
+        std::vector<id_type> qvals(it->second.begin(), it->second.end());
+        conduit::Node &qid = qi.append();
+        qid["domain"] = it->first.first;
+        qid["query_domain"] = it->first.first;
+        qid["values"].set(qvals);
+    }
+
+    std::stringstream ss;
+    ss << "membershipquery." << rank << ".yaml";
+    std::string filename(ss.str());
+    conduit::relay::io::save(debug, filename, "yaml");
+#endif
+
+    // Send/recv entity data.
+    conduit::relay::mpi::communicate_using_schema C(m_comm);
+#ifdef DEBUG_PRINT
+    // Turn on logging.
+    C.set_logging_root("mpi_membershipquery");
+    C.set_logging(true);
+#endif
+    std::map<std::pair<int,int>, conduit::Node *> sendNodes, recvNodes;
+    int query_tag = 77000000;    
+    for(size_t i = 0; i < allqueries.size(); i += 4)
+    {
+        int owner = allqueries[i];
+        int domain = allqueries[i + 1];
+        int query_domain = allqueries[i + 2];
+        int nents = allqueries[i + 3];
+
+        auto oppositeKey = std::make_pair(query_domain, domain);
+
+        if(owner == rank)
+        {
+            // The query was asked by this rank. We need to prepare to
+            // receive the opposite query, which is the answer.
+
+            if(m_Requests.find(oppositeKey) == m_Requests.end())
+            {
+                int remote = domain_to_rank(allqueries, query_domain);
+
+                // The domain whose entities we're querying is on a remote rank.
+                // We need to receive entities from it.
+                recvNodes[oppositeKey] = new conduit::Node;
+                conduit::Node &r = *recvNodes[oppositeKey];
+                C.add_irecv(r, remote, query_tag + query_domain);
+            }
+        }
+        else
+        {
+            // We're not the rank that requested the data.
+            // See if we own the answer. Note the key swap.
+
+            auto it = m_Requests.find(oppositeKey);
+            if(it != m_Requests.end())
+            {
+                int remote = domain_to_rank(allqueries, domain);
+
+                // The domain whose entities we're querying is on a remote rank.
+                // We need to receive entities from it.
+                sendNodes[oppositeKey] = new conduit::Node;
+                conduit::Node &s = *sendNodes[oppositeKey];
+                s["entities"].set(std::vector<int>(it->second.begin(), it->second.end()));
+
+                C.add_isend(s, remote, query_tag + query_domain);
+            }
+        }
+    }
+
+    C.execute();
+
+    // Now if we iterate over recvNodes, we should have answers to all of the
+    // questions that were asked. Put them into the m_Requests using the
+    // opposite key, which was used to set up the recv.
+    for(auto it = recvNodes.begin(); it != recvNodes.end(); it++)
+    {
+        auto acc = it->second->fetch_existing("entities").as_int_accessor();
+        auto &res = m_Requests[it->first];
+        for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
+            res.insert(acc[i]);
+    }
+}
+
 
 }
 //-----------------------------------------------------------------------------
