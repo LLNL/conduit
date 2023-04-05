@@ -1518,6 +1518,9 @@ void silo_write_field(DBfile *dbfile,
 
     DataType dtype = n_var["values"].dtype();
 
+    // TODO investigate this: is casting to void ptr after generating a new ptr type
+    // giving us anything? if not, we can make a function that goes from dtype to vals type
+    // to clean this up
     if (dtype.is_float())
     {
         vals_type = DB_FLOAT;
@@ -1660,7 +1663,6 @@ assign_coords_ptrs(void *coords_ptrs[3],
     }
     else if (dtype.is_double())
     {
-        
         coords_ptrs[0] = (void *)n_coords_compact[coordsys_labels[0]].as_double_ptr();
         coords_ptrs[1] = (void *)n_coords_compact[coordsys_labels[1]].as_double_ptr();
         if (ndims == 3)
@@ -1676,10 +1678,11 @@ assign_coords_ptrs(void *coords_ptrs[3],
 }
 
 //---------------------------------------------------------------------------//
+// compaction is necessary to support ragged arrays
 void compact_coords(const Node &n_coords,
                     Node &n_coords_compact)
 {
-    // compaction is necessary to support ragged arrays
+    // are we already compact?
     if (n_coords["values"].dtype().is_compact())
     {
         n_coords_compact.set_external(n_coords["values"]);
@@ -1691,6 +1694,7 @@ void compact_coords(const Node &n_coords,
         {
             const Node &n_val = val_itr.next();
             std::string label = val_itr.name();
+            // is this piece already compact?
             if (n_coords["values"][label].dtype().is_compact())
             {
                 n_coords_compact[label].set_external(n_val);
@@ -1714,7 +1718,7 @@ int get_explicit_num_pts(const Node &n_vals)
     }
     const Node &n_first_val = val_itr.next();
     int num_pts = n_first_val.dtype().number_of_elements();
-    while(val_itr.has_next())
+    while (val_itr.has_next())
     {
         const Node &n_val = val_itr.next();
         if (num_pts != n_val.dtype().number_of_elements())
@@ -1732,6 +1736,8 @@ void silo_write_pointmesh(DBfile *dbfile,
                           DBoptlist *state_optlist,
                           Node &n_mesh_info) 
 {
+    // TODO look into refactoring the commonalities of this method with the other 
+    // mesh writing methods
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
     CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
 
@@ -2371,7 +2377,6 @@ void silo_mesh_write(const Node &n,
         {
             const Node &n_var = itr.next();
             std::string var_name = itr.name();
-
             silo_write_field(dbfile, var_name, n_var, n_mesh_info);
         }
     }
@@ -2379,7 +2384,6 @@ void silo_mesh_write(const Node &n,
     if (!silo_obj_path.empty()) 
     {
         silo_error = DBSetDir(dbfile, silo_prev_dir);
-
         CONDUIT_CHECK_SILO_ERROR(silo_error,
                                  " changing silo directory to previous path");
     }
@@ -2411,26 +2415,20 @@ void write_multimeshes(DBfile *dbfile,
         int mesh_type;
 
         if (topo_type == "points")
-        {
             mesh_type = DB_POINTMESH;
-        }
         else if (topo_type == "uniform" || 
                  topo_type == "rectilinear" || 
                  topo_type == "structured")
-        {
             mesh_type = DB_QUADMESH;
-        }
         else if (topo_type == "unstructured")
-        {
             mesh_type = DB_UCDMESH;
-        }
         else
-        {
             CONDUIT_ERROR("Unsupported topo type in " << topo_type);
-        }
 
         std::string silo_path = root["silo_path"].as_string();
 
+        // TODO can I refactor the below logic so that mmesh, mvar, and eventually mmat
+        // can all use the same logic?
         std::vector<std::string> domain_name_strings;
         std::vector<const char *> domain_name_ptrs;
         std::vector<int> mesh_types;
@@ -2513,40 +2511,40 @@ void write_multimeshes(DBfile *dbfile,
 
 //-----------------------------------------------------------------------------
 // TODO rework this function and use it
-void
-write_multimaterial(DBfile *root,
-                    const std::string &mmat_name,
-                    const std::string &mmesh_name,
-                    std::vector<std::string> mat_domains) 
-{
-    std::vector<const char *> domain_name_ptrs;
-    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-            DBMakeOptlist(1),
-            &DBFreeOptlist,
-            "Error freeing optlist."};
-    if (!optlist.getSiloObject())
-    {
-        CONDUIT_ERROR("Error creating options");
-    }
+// void
+// write_multimaterial(DBfile *root,
+//                     const std::string &mmat_name,
+//                     const std::string &mmesh_name,
+//                     std::vector<std::string> mat_domains) 
+// {
+//     std::vector<const char *> domain_name_ptrs;
+//     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+//             DBMakeOptlist(1),
+//             &DBFreeOptlist,
+//             "Error freeing optlist."};
+//     if (!optlist.getSiloObject())
+//     {
+//         CONDUIT_ERROR("Error creating options");
+//     }
 
-    // have to const_cast because converting to void *
-    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-                                          DBOPT_MMESH_NAME,
-                                          const_cast<char *>(mmesh_name.c_str())),
-                              "Error creating options for putting multimat");
+//     // have to const_cast because converting to void *
+//     CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
+//                                           DBOPT_MMESH_NAME,
+//                                           const_cast<char *>(mmesh_name.c_str())),
+//                               "Error creating options for putting multimat");
     
-    for (auto domain : mat_domains) 
-    {
-        domain_name_ptrs.push_back(domain.c_str());
-    }
+//     for (auto domain : mat_domains) 
+//     {
+//         domain_name_ptrs.push_back(domain.c_str());
+//     }
 
-    CONDUIT_CHECK_SILO_ERROR( DBPutMultimat(root,
-                                            detail::sanitize_silo_varname(mmat_name).c_str(),
-                                            mat_domains.size(),
-                                            domain_name_ptrs.data(),
-                                            optlist.getSiloObject()),
-                              "Error putting multimaterial");
-}
+//     CONDUIT_CHECK_SILO_ERROR( DBPutMultimat(root,
+//                                             detail::sanitize_silo_varname(mmat_name).c_str(),
+//                                             mat_domains.size(),
+//                                             domain_name_ptrs.data(),
+//                                             optlist.getSiloObject()),
+//                               "Error putting multimaterial");
+// }
 
 //-----------------------------------------------------------------------------
 void
@@ -2574,23 +2572,15 @@ write_multivars(DBfile *dbfile,
 
         int var_type;
         if (linked_topo_type == "unstructured")
-        {
             var_type = DB_UCDVAR;
-        }
         else if (linked_topo_type == "rectilinear" || 
                  linked_topo_type == "uniform" || 
                  linked_topo_type == "structured")
-        {
             var_type = DB_QUADVAR;
-        }
         else if (linked_topo_type == "points")
-        {
             var_type = DB_POINTVAR;
-        }
         else
-        {
             CONDUIT_ERROR("Unsupported topo type in " << linked_topo_type);
-        }
 
         std::string silo_path = root["silo_path"].as_string();
 
@@ -2663,9 +2653,7 @@ write_multivars(DBfile *dbfile,
             &DBFreeOptlist,
             "Error freeing optlist."};
         if (!optlist.getSiloObject())
-        {
             CONDUIT_ERROR("Error creating options");
-        }
 
         std::string multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
 
@@ -2717,6 +2705,8 @@ write_multivars(DBfile *dbfile,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
+/// note: we have made the choice to output ALL topologies... TODO finish explantion
+// TODO add explanation to read_mesh too
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
@@ -3696,6 +3686,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
                 if (!dbfile.getSiloObject())
                 {
+                    // TODO do these errors need to be handled like in read_mesh?
                     CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
                 }
             }
