@@ -2390,6 +2390,83 @@ void silo_mesh_write(const Node &n,
 }
 
 //-----------------------------------------------------------------------------
+void
+generate_silo_names(const conduit::Node &n_mesh_state,
+                    const std::string &silo_path,
+                    const std::string &safe_name,
+                    const int num_files,
+                    const int global_num_domains,
+                    const int type,
+                    std::vector<std::string> &name_strings,
+                    std::vector<const char *> &name_ptrs,
+                    std::vector<int> &types)
+{
+    for (index_t i = 0; i < global_num_domains; i ++)
+    {
+        std::string silo_name;
+
+        // determine which domain
+        index_t d;
+        if (n_mesh_state.has_path("partition_map/domain"))
+        {
+            index_t_array part_map_domain_vals = n_mesh_state["partition_map"]["domain"].value();
+            d = part_map_domain_vals[i];
+        }
+        else
+        {
+            d = i;
+        }
+
+        // we have three cases, just as we had in write_mesh
+        // we don't want to be making any choices here, just using 
+        // what was already decided in write_mesh
+
+        // single file case
+        if (num_files == 1)
+        {
+            if (global_num_domains == 1)
+            {
+                silo_name = conduit_fmt::format(silo_path, safe_name);
+            }
+            else
+            {
+                silo_name = conduit_fmt::format(silo_path, d, safe_name);
+            }
+        }
+        // num domains == num files case
+        else if (global_num_domains == num_files)
+        {
+            silo_name = conduit_fmt::format(silo_path, d, safe_name);
+        }
+        // m to n case
+        else
+        {
+            // determine which file
+            index_t f;
+            if (n_mesh_state.has_path("partition_map/file"))
+            {
+                index_t_array part_map_file_vals = n_mesh_state["partition_map"]["file"].value();
+                f = part_map_file_vals[i];
+            }
+            else
+            {
+                f = i;
+            }
+
+            silo_name = conduit_fmt::format(silo_path, f, d, safe_name);
+        }
+
+        // we create the silo names
+        name_strings.push_back(silo_name);
+        name_ptrs.push_back(name_strings.back().c_str());
+        
+        // we assume all mesh/var types for a given mesh/var to be the same, 
+        // so we push back the same mesh/var type for each domain
+        types.push_back(type);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void write_multimeshes(DBfile *dbfile,
                        const std::string &opts_mesh_name,
                        const conduit::Node &root)
@@ -2413,7 +2490,6 @@ void write_multimeshes(DBfile *dbfile,
         std::string safe_meshname = detail::sanitize_silo_varname(topo_name);
 
         int mesh_type;
-
         if (topo_type == "points")
             mesh_type = DB_POINTMESH;
         else if (topo_type == "uniform" || 
@@ -2427,71 +2503,18 @@ void write_multimeshes(DBfile *dbfile,
 
         std::string silo_path = root["silo_path"].as_string();
 
-        // TODO can I refactor the below logic so that mmesh, mvar, and eventually mmat
-        // can all use the same logic?
         std::vector<std::string> domain_name_strings;
         std::vector<const char *> domain_name_ptrs;
         std::vector<int> mesh_types;
-        for (index_t i = 0; i < global_num_domains; i ++)
-        {
-            std::string silo_meshname;
-
-            // determine which domain
-            index_t d;
-            if (n_mesh["state"].has_path("partition_map/domain"))
-            {
-                index_t_array part_map_domain_vals = n_mesh["state"]["partition_map"]["domain"].value();
-                d = part_map_domain_vals[i];
-            }
-            else
-            {
-                d = i;
-            }
-
-            // we have three cases, just as we had in write_mesh
-
-            // single file case
-            if (num_files == 1)
-            {
-                if (global_num_domains == 1)
-                {
-                    silo_meshname = conduit_fmt::format(silo_path, safe_meshname);
-                }
-                else
-                {
-                    silo_meshname = conduit_fmt::format(silo_path, d, safe_meshname);
-                }
-            }
-            // num domains == num files case
-            else if (global_num_domains == num_files)
-            {
-                silo_meshname = conduit_fmt::format(silo_path, d, safe_meshname);
-            }
-            // m to n case
-            else
-            {
-                // determine which file
-                index_t f;
-                if (n_mesh["state"].has_path("partition_map/file"))
-                {
-                    index_t_array part_map_file_vals = n_mesh["state"]["partition_map"]["file"].value();
-                    f = part_map_file_vals[i];
-                }
-                else
-                {
-                    f = i;
-                }
-
-                silo_meshname = conduit_fmt::format(silo_path, f, d, safe_meshname);
-            }
-
-            // we create the silo meshnames
-            domain_name_strings.push_back(silo_meshname);
-            domain_name_ptrs.push_back(domain_name_strings.back().c_str());
-            
-            // we assume all mesh types for a given mesh to be the same, so we push back the same mesh type for each domain
-            mesh_types.push_back(mesh_type);
-        }
+        generate_silo_names(n_mesh["state"],
+                            silo_path,
+                            safe_meshname,
+                            num_files,
+                            global_num_domains,
+                            mesh_type,
+                            domain_name_strings,
+                            domain_name_ptrs,
+                            mesh_types);
 
         std::string multimesh_name = opts_mesh_name + "_" + topo_name;
 
@@ -2557,6 +2580,7 @@ write_multivars(DBfile *dbfile,
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
     // TODO check in visit for if there are domains where vars are not defined what does it do
+    // or use the domain num check I have in multimesh write
     const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
     auto field_itr = n_mesh["fields"].children();
     while (field_itr.has_next())
@@ -2567,7 +2591,7 @@ write_multivars(DBfile *dbfile,
         std::string linked_topo_name = n_var["topology"].as_string();
         std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
 
-        std::string safe_var_name = detail::sanitize_silo_varname(var_name); 
+        std::string safe_varname = detail::sanitize_silo_varname(var_name); 
         std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name); 
 
         int var_type;
@@ -2587,66 +2611,15 @@ write_multivars(DBfile *dbfile,
         std::vector<std::string> var_name_strings;
         std::vector<const char *> var_name_ptrs;
         std::vector<int> var_types;
-        for (index_t i = 0; i < global_num_domains; i ++)
-        {
-            std::string silo_varname;
-
-            // determine which domain
-            index_t d;
-            if (n_mesh["state"].has_path("partition_map/domain"))
-            {
-                index_t_array part_map_domain_vals = n_mesh["state"]["partition_map"]["domain"].value();
-                d = part_map_domain_vals[i];
-            }
-            else
-            {
-                d = i;
-            }
-
-            // we have three cases, just as we had in write_mesh
-
-            // single file case
-            if (num_files == 1)
-            {
-                if (global_num_domains == 1)
-                {
-                    silo_varname = conduit_fmt::format(silo_path, safe_var_name);
-                }
-                else
-                {
-                    silo_varname = conduit_fmt::format(silo_path, d, safe_var_name);
-                }
-            }            
-            // num domains == num files case
-            else if (global_num_domains == num_files)
-            {
-                silo_varname = conduit_fmt::format(silo_path, d, safe_var_name);
-            }
-            // m to n case
-            else
-            {
-                // determine which file
-                index_t f;
-                if (n_mesh["state"].has_path("partition_map/file"))
-                {
-                    index_t_array part_map_file_vals = n_mesh["state"]["partition_map"]["file"].value();
-                    f = part_map_file_vals[i];
-                }
-                else
-                {
-                    f = i;
-                }
-
-                silo_varname = conduit_fmt::format(silo_path, f, d, safe_var_name);
-            }
-
-            // we create the silo varnames
-            var_name_strings.push_back(silo_varname);
-            var_name_ptrs.push_back(var_name_strings.back().c_str());
-            
-            // we assume all var types for a given var to be the same, so we push back the same var type for each domain
-            var_types.push_back(var_type);
-        }
+        generate_silo_names(n_mesh["state"],
+                            silo_path,
+                            safe_varname,
+                            num_files,
+                            global_num_domains,
+                            var_type,
+                            var_name_strings,
+                            var_name_ptrs,
+                            var_types);
 
         detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
             DBMakeOptlist(1),
@@ -2663,7 +2636,7 @@ write_multivars(DBfile *dbfile,
                                               const_cast<char *>(multimesh_name.c_str())),
                                   "Error creating options for putting multivar");
 
-        std::string multivar_name = opts_mesh_name + "_" + safe_var_name;
+        std::string multivar_name = opts_mesh_name + "_" + safe_varname;
 
         CONDUIT_CHECK_SILO_ERROR(
             DBPutMultivar(
