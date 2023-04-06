@@ -2005,6 +2005,20 @@ hash(const index_t *k, unsigned int length)
                                length * sizeof(index_t));
 }
 
+uint64
+hash(const float64 *k, unsigned int length)
+{
+    return hashing::hash_uint8(reinterpret_cast<const uint8 *>(k),
+                               length * sizeof(float64));
+}
+
+uint64
+hash(const uint64 *k, unsigned int length)
+{
+    return hashing::hash_uint8(reinterpret_cast<const uint8 *>(k),
+                               length * sizeof(uint64));
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::utils --

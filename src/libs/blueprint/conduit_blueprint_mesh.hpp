@@ -229,6 +229,16 @@ void CONDUIT_BLUEPRINT_API generate_points(conduit::Node &mesh,
                                            const std::string& dst_adjset_name,
                                            const std::string& dst_topo_name,
                                            conduit::Node& s2dmap,
+                                           conduit::Node& d2smap,
+                                           conduit::blueprint::mesh::utils::query::MembershipQuery &query);
+
+//-------------------------------------------------------------------------
+//[[deprecated]]
+void CONDUIT_BLUEPRINT_API generate_points(conduit::Node &mesh,
+                                           const std::string& src_adjset_name,
+                                           const std::string& dst_adjset_name,
+                                           const std::string& dst_topo_name,
+                                           conduit::Node& s2dmap,
                                            conduit::Node& d2smap);
 
 //-------------------------------------------------------------------------
@@ -237,9 +247,29 @@ void CONDUIT_BLUEPRINT_API generate_lines(conduit::Node &mesh,
                                           const std::string& dst_adjset_name,
                                           const std::string& dst_topo_name,
                                           conduit::Node& s2dmap,
+                                          conduit::Node& d2smap,
+                                          conduit::blueprint::mesh::utils::query::MembershipQuery &query);
+
+//-------------------------------------------------------------------------
+//[[deprecated]]
+void CONDUIT_BLUEPRINT_API generate_lines(conduit::Node &mesh,
+                                          const std::string& src_adjset_name,
+                                          const std::string& dst_adjset_name,
+                                          const std::string& dst_topo_name,
+                                          conduit::Node& s2dmap,
                                           conduit::Node& d2smap);
 
 //-------------------------------------------------------------------------
+void CONDUIT_BLUEPRINT_API generate_faces(conduit::Node &mesh,
+                                          const std::string& src_adjset_name,
+                                          const std::string& dst_adjset_name,
+                                          const std::string& dst_topo_name,
+                                          conduit::Node& s2dmap,
+                                          conduit::Node& d2smap,
+                                          conduit::blueprint::mesh::utils::query::MembershipQuery &query);
+
+//-------------------------------------------------------------------------
+//[[deprecated]]
 void CONDUIT_BLUEPRINT_API generate_faces(conduit::Node &mesh,
                                           const std::string& src_adjset_name,
                                           const std::string& dst_adjset_name,

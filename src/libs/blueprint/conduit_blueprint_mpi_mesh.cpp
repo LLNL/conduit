@@ -2571,14 +2571,16 @@ generate_points(conduit::Node &mesh,
                 const std::string &dst_topo_name,
                 conduit::Node &s2dmap,
                 conduit::Node &d2smap,
-                MPI_Comm /*comm*/)
+                MPI_Comm comm)
 {
+    conduit::blueprint::mpi::mesh::utils::query::MembershipQuery query(mesh, comm);
     conduit::blueprint::mesh::generate_points(mesh,
                                               src_adjset_name,
                                               dst_adjset_name,
                                               dst_topo_name,
                                               s2dmap,
-                                              d2smap);
+                                              d2smap,
+                                              query);
 }
 
 
@@ -2590,14 +2592,16 @@ generate_lines(conduit::Node &mesh,
                const std::string &dst_topo_name,
                conduit::Node &s2dmap,
                conduit::Node &d2smap,
-               MPI_Comm /*comm*/)
+               MPI_Comm comm)
 {
+    conduit::blueprint::mpi::mesh::utils::query::MembershipQuery query(mesh, comm);
     conduit::blueprint::mesh::generate_lines(mesh,
                                              src_adjset_name,
                                              dst_adjset_name,
                                              dst_topo_name,
                                              s2dmap,
-                                             d2smap);
+                                             d2smap,
+                                             query);
 }
 
 
@@ -2609,14 +2613,16 @@ generate_faces(conduit::Node &mesh,
                const std::string& dst_topo_name,
                conduit::Node& s2dmap,
                conduit::Node& d2smap,
-               MPI_Comm /*comm*/)
+               MPI_Comm comm)
 {
+    conduit::blueprint::mpi::mesh::utils::query::MembershipQuery query(mesh, comm);
     conduit::blueprint::mesh::generate_faces(mesh,
                                              src_adjset_name,
                                              dst_adjset_name,
                                              dst_topo_name,
                                              s2dmap,
-                                             d2smap);
+                                             d2smap,
+                                             query);
 }
 
 

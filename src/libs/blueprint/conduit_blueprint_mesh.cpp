@@ -2762,9 +2762,13 @@ generate_derived_entities(conduit::Node &mesh,
                           const std::string &dst_topo_name,
                           conduit::Node &s2dmap,
                           conduit::Node &d2smap,
-                          GenDerivedFun generate_derived)
+                          GenDerivedFun generate_derived,
+                          conduit::blueprint::mesh::utils::query::MembershipQuery &Q)
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     // loop over all domains and call generate_derived on each domain
+    CONDUIT_ANNOTATE_MARK_BEGIN("Setup");
     const std::vector<DomMapsTuple> doms_and_maps = group_domains_and_maps(mesh, s2dmap, d2smap);
     for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
     {
@@ -2784,8 +2788,12 @@ generate_derived_entities(conduit::Node &mesh,
         dst_adjset["association"].set("element");
         dst_adjset["topology"].set(dst_topo_name);
     }
+    CONDUIT_ANNOTATE_MARK_END("Setup");
 
+    CONDUIT_ANNOTATE_MARK_BEGIN("dom_entity_neighbor_map.start");
     Node src_data, dst_data;
+    std::vector<std::tuple<int,int,int,uint64>> query_guide;
+    std::map<int,std::map<index_t, std::set<index_t>>> dom_entity_neighbor_map;
     for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
     {
         conduit::Node &domain = *std::get<0>(doms_and_maps[di]);
@@ -2831,7 +2839,7 @@ generate_derived_entities(conduit::Node &mesh,
         index_t_accessor d2s_sizes = domain_d2smap["sizes"].value();
 
         // {(entity id in topology): <(neighbor domain ids that contain this entity)>}
-        std::map<index_t, std::set<index_t>> entity_neighbor_map;
+        auto &entity_neighbor_map = dom_entity_neighbor_map[domain_id];
         for(index_t ei = 0; ei < dst_topo_len; ei++)
         {
             // if we are dealing with anything but points
@@ -2856,18 +2864,133 @@ generate_derived_entities(conduit::Node &mesh,
 
                     // if the element is fully in the adjset, and it is not an internal element
                     // (count of d2s > 1), include it in the map
+#if 0
+// This is where we would have to check in the neighbor whether the face really exists because
+// checking that the points are active here in this domain leads to selection of faces that 
+// do not exist in the neighbor domain.
+conduit::Node filters;
+filters["domain0/group_0_2/values"].set(std::vector<int>({11,14}));
+filters["domain1/group_1_2/values"].set(std::vector<int>({21, 23, 20}));
 
+std::stringstream ss;
+ss << "domain" << domain_id << "/group_" << domain_id << "_" << ni << "/values";
+std::string key(ss.str());
+if(filters.has_path(key))
+{
+    auto values = filters[key].as_int_accessor();
+    for(int qq = 0; qq < values.number_of_elements(); qq++)
+    {
+        if(values[qq] == ei)
+        {
+            entity_in_neighbor = false;
+            std::cout << "!!!! Filtering domain " << domain_id << " entity " << ei << " from adjacency list where neighbor is " << ni << std::endl;
+        }
+    }
+}
+#endif
                     if(entity_in_neighbor)
                     {
+#if 1
+                        // In an ideal case, the entity is in the neighbor. However,
+                        // in some corner cases, it might be that the entity's ids
+                        // are simply all activated from other entities that really
+                        // are in the neighbor. We use a MembershipQuery to find
+                        // out for sure.
+
+                        // Make a unique entity id for the entity that should be
+                        // valid across domains. We use some hashing on the points.
+                        std::vector<uint64> hashes;
+                        hashes.reserve(entity_pidxs.size());
+
+std::stringstream ss;
+ss << domain_id << "->" << ni << ": ";
+                        for(const index_t &entity_pidx : entity_pidxs)
+                        {
+                            const std::vector<float64> point_coords = bputils::coordset::_explicit::coords(
+                                                                          src_cset, entity_pidx);
+
+ss << "("
+   << point_coords[0] << ", " 
+   << point_coords[1] << ", " 
+   << point_coords[2] << "), ";
+
+                            uint64 hval = hash(&point_coords[0], point_coords.size());
+                            hashes.push_back(hval);
+                        }
+                        if(hashes.size() > 1)
+                            std::sort(hashes.begin(), hashes.end());
+                        uint64 eid = hash(&hashes[0], hashes.size());
+ss << ", eid=" << eid << std::endl;
+if(domain_id == 0 && ni == 2 ||
+   domain_id == 2 && ni == 0)
+{
+    std::cout << ss.str();
+}
+                        // Add the entity to the query.
+                        Q.Add(domain_id, ni, eid);
+
+                        // Add the candidate entity to the membership query, which
+                        // will help resolve things across domains.
+                        query_guide.push_back(std::make_tuple(domain_id, ni, ei, eid));
+#else
                         entity_neighbor_map[ei].insert(ni);
+#endif
                     }
                 }
             }
         }
+    }
+    CONDUIT_ANNOTATE_MARK_END("dom_entity_neighbor_map.start");
+
+    // Execute the queries.
+    CONDUIT_ANNOTATE_MARK_BEGIN("query");
+    Q.Execute();
+    CONDUIT_ANNOTATE_MARK_END("query");
+
+    // Use Q results to finish building entity_neighbor_map.
+    CONDUIT_ANNOTATE_MARK_BEGIN("dom_entity_neighbor_map.finish");
+    for(const auto &obj : query_guide)
+    {
+        int domain_id = std::get<0>(obj);
+        int ni = std::get<1>(obj);
+        int ei = std::get<2>(obj);
+        uint64 eid = std::get<3>(obj);
+        if(Q.Exists(domain_id, ni, eid))
+        {
+            auto &entity_neighbor_map = dom_entity_neighbor_map[domain_id];
+            entity_neighbor_map[ei].insert(ni);
+        }
+#if 1
+        else
+        {
+            std::cout << "!!!! NOT adding domain " << domain_id << " entity " << ei << " to entity_neighbor_map for neighbor " << ni << std::endl;
+        }
+#endif
+    }
+    CONDUIT_ANNOTATE_MARK_END("dom_entity_neighbor_map.finish");
+
+    // Finish building the adjset.
+    CONDUIT_ANNOTATE_MARK_BEGIN("build");
+    for(index_t di = 0; di < (index_t)doms_and_maps.size(); di++)
+    {
+        conduit::Node &domain = *std::get<0>(doms_and_maps[di]);
+        const index_t domain_id = domain["state/domain_id"].to_index_t();
+
+        const Node *src_topo_ptr = bputils::find_reference_node(domain["adjsets"][src_adjset_name], "topology");
+        const Node &src_topo = *src_topo_ptr;
+        const Node *src_cset_ptr = bputils::find_reference_node(src_topo, "coordset");
+        const Node &src_cset = *src_cset_ptr;
+
+        const Node &dst_topo = domain["topologies"][dst_topo_name];
+        const index_t dst_topo_len = bputils::topology::length(dst_topo);
+
+        const conduit::Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
+        conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
         // Use Entity Interfaces to Construct Group Entity Lists //
 
         std::map<std::set<index_t>, std::vector<std::tuple<std::set<PointTuple>, index_t>>> group_entity_map;
+        const auto &entity_neighbor_map = dom_entity_neighbor_map[domain_id];
         for(const auto &entity_neighbor_pair : entity_neighbor_map)
         {
             const index_t &ei = entity_neighbor_pair.first;
@@ -2951,6 +3074,7 @@ generate_derived_entities(conduit::Node &mesh,
             }
         }
     }
+    CONDUIT_ANNOTATE_MARK_END("build");
 }
 
 
@@ -3342,16 +3466,50 @@ mesh::generate_points(conduit::Node &mesh,
                       const std::string &dst_adjset_name,
                       const std::string &dst_topo_name,
                       conduit::Node &s2dmap,
-                      conduit::Node &d2smap)
+                      conduit::Node &d2smap,
+                      conduit::blueprint::mesh::utils::query::MembershipQuery &query)
 {
     verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
-        conduit::blueprint::mesh::topology::unstructured::generate_points);
+        conduit::blueprint::mesh::topology::unstructured::generate_points, query);
 }
 
+//-----------------------------------------------------------------------------
+//[[deprecated]]
+void
+mesh::generate_points(conduit::Node &mesh,
+                      const std::string &src_adjset_name,
+                      const std::string &dst_adjset_name,
+                      const std::string &dst_topo_name,
+                      conduit::Node &s2dmap,
+                      conduit::Node &d2smap)
+{
+    verify_generate_mesh(mesh, src_adjset_name);
+    conduit::blueprint::mesh::utils::query::MembershipQuery query(mesh);
+    generate_derived_entities(
+        mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
+        conduit::blueprint::mesh::topology::unstructured::generate_points, query);
+}
 
 //-----------------------------------------------------------------------------
+void
+mesh::generate_lines(conduit::Node &mesh,
+                     const std::string &src_adjset_name,
+                     const std::string &dst_adjset_name,
+                     const std::string &dst_topo_name,
+                     conduit::Node &s2dmap,
+                     conduit::Node &d2smap,
+                     conduit::blueprint::mesh::utils::query::MembershipQuery &query)
+{
+    verify_generate_mesh(mesh, src_adjset_name);
+    generate_derived_entities(
+        mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
+        conduit::blueprint::mesh::topology::unstructured::generate_lines, query);
+}
+
+//-----------------------------------------------------------------------------
+//[[deprecated]]
 void
 mesh::generate_lines(conduit::Node &mesh,
                      const std::string &src_adjset_name,
@@ -3361,9 +3519,10 @@ mesh::generate_lines(conduit::Node &mesh,
                      conduit::Node &d2smap)
 {
     verify_generate_mesh(mesh, src_adjset_name);
+    conduit::blueprint::mesh::utils::query::MembershipQuery query(mesh);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
-        conduit::blueprint::mesh::topology::unstructured::generate_lines);
+        conduit::blueprint::mesh::topology::unstructured::generate_lines, query);
 }
 
 
@@ -3374,14 +3533,31 @@ mesh::generate_faces(conduit::Node &mesh,
                      const std::string& dst_adjset_name,
                      const std::string& dst_topo_name,
                      conduit::Node& s2dmap,
-                     conduit::Node& d2smap)
+                     conduit::Node& d2smap,
+                     conduit::blueprint::mesh::utils::query::MembershipQuery &query)
 {
     verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
-        conduit::blueprint::mesh::topology::unstructured::generate_faces);
+        conduit::blueprint::mesh::topology::unstructured::generate_faces, query);
 }
 
+//-----------------------------------------------------------------------------
+//[[deprecated]]
+void
+mesh::generate_faces(conduit::Node &mesh,
+                     const std::string& src_adjset_name,
+                     const std::string& dst_adjset_name,
+                     const std::string& dst_topo_name,
+                     conduit::Node& s2dmap,
+                     conduit::Node& d2smap)
+{
+    verify_generate_mesh(mesh, src_adjset_name);
+    conduit::blueprint::mesh::utils::query::MembershipQuery query(mesh);
+    generate_derived_entities(
+        mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
+        conduit::blueprint::mesh::topology::unstructured::generate_faces, query);
+}
 
 //-----------------------------------------------------------------------------
 void

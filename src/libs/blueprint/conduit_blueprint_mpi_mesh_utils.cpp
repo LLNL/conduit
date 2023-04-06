@@ -390,7 +390,7 @@ MembershipQuery::Execute()
         std::vector<id_type> qvals(it->second.begin(), it->second.end());
         conduit::Node &qid = qi.append();
         qid["domain"] = it->first.first;
-        qid["query_domain"] = it->first.first;
+        qid["query_domain"] = it->first.second;
         qid["values"].set(qvals);
     }
 
@@ -448,7 +448,7 @@ MembershipQuery::Execute()
                 // We need to receive entities from it.
                 sendNodes[oppositeKey] = new conduit::Node;
                 conduit::Node &s = *sendNodes[oppositeKey];
-                s["entities"].set(std::vector<int>(it->second.begin(), it->second.end()));
+                s["entities"].set(std::vector<id_type>(it->second.begin(), it->second.end()));
 
                 C.add_isend(s, remote, query_tag + query_domain);
             }
@@ -462,11 +462,25 @@ MembershipQuery::Execute()
     // opposite key, which was used to set up the recv.
     for(auto it = recvNodes.begin(); it != recvNodes.end(); it++)
     {
-        auto acc = it->second->fetch_existing("entities").as_int_accessor();
+        conduit::Node &e = it->second->fetch_existing("entities");
+        auto acc = e.as_uint64_accessor();
         auto &res = m_Requests[it->first];
         for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
             res.insert(acc[i]);
+#ifdef DEBUG_PRINT
+        // Add the results to the debug node.
+        conduit::Node &n = debug["recv"].append();
+        n["domain_id"] = it->first.first;
+        n["query_domain"] = it->first.second;
+        n["results"].set_external(*it->second);
+        n["results_type"].set(e.dtype().name());
+#endif
     }
+
+#ifdef DEBUG_PRINT
+    // Overwrite the old file with the recv results.
+    conduit::relay::io::save(debug, filename, "yaml");
+#endif
 }
 
 
