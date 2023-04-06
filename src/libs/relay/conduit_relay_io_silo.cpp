@@ -1578,6 +1578,7 @@ void silo_write_field(DBfile *dbfile,
     void *vals_ptr = NULL;
 
     DataType dtype = n_var["values"].dtype();
+    // TODO what if we show up with vector values here? "values/u" and "values/v"? How to support this case?
 
     // TODO investigate this: is casting to void ptr after generating a new ptr type
     // giving us anything? if not, we can make a function that goes from dtype to vals type

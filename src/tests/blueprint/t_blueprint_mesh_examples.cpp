@@ -232,9 +232,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                 continue;
             }
 
-            relay::io::save(mesh,
-                            "braid_2d_" + name +  "_example.silo:mesh",
-                            "conduit_silo_mesh");
+            relay::io::silo::save_mesh(mesh, "braid_2d_" + name +  "_example.silo:mesh");
         }
     }
 }
@@ -367,9 +365,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                 continue;
             }
 
-            relay::io::save(mesh,
-                            "braid_3d_" + name +  "_example.silo:mesh",
-                            "conduit_silo_mesh");
+            relay::io::silo::save_mesh(mesh, "braid_3d_" + name +  "_example.silo:mesh");
         }
     }
 }

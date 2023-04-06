@@ -228,6 +228,72 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
     }
 }
 
+// TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
+// {
+//     const std::vector<std::pair<std::string, int>> mesh_types = {
+//         std::make_pair("uniform", 2), // std::make_pair("uniform", 3),
+//         // std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
+//         // std::make_pair("structured", 2), std::make_pair("structured", 3),
+//         // std::make_pair("point", 2), std::make_pair("point", 3),
+//         // std::make_pair("lines", 2), std::make_pair("lines", 3),
+//         // std::make_pair("tris", 2),
+//         // std::make_pair("quads", 2),
+//         // std::make_pair("tets", 3),
+//         // std::make_pair("hexs", 3),
+//         // std::make_pair("wedges", 3),
+//         // std::make_pair("pyramids", 3),
+//         // std::make_pair("mixed_2d", 2),
+//         // std::make_pair("mixed", 3),
+//     };
+//     for (int i = 0; i < mesh_types.size(); ++i)
+//     {
+//         int dim = mesh_types[i].second;
+//         index_t nx = 3;
+//         index_t ny = 4;
+//         index_t nz = (dim == 2 ? 0 : 2);
+
+//         std::string mesh_type = mesh_types[i].first;
+
+//         // std::cout << mesh_type << std::endl;
+
+//         Node save_mesh, load_mesh, info;
+//         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
+
+//         save_mesh.remove("state"); // TODO uncomment this and add functionality for it
+
+//         save_mesh.print();
+
+
+//         io::silo::save_mesh(save_mesh, "braid");
+//         // io::silo::load_mesh("braid.root", load_mesh);
+//         // EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+//         // // The silo conversion will transform uniform to rectilinear
+//         // // so we will do the same to allow the diff to succeed
+//         // if (mesh_type == "uniform")
+//         //     silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+
+
+
+//         // // The Blueprint to Silo transformation changes several names 
+//         // // and some information is lost. We manually make changes so 
+//         // // that the diff will pass.
+//         // silo_name_changer("coords",
+//         //                   "mesh",
+//         //                   "field",
+//         //                   "mesh",
+//         //                   save_mesh);
+
+//         // // the loaded mesh will be in the multidomain format
+//         // // (it will be a list containing a single mesh domain)
+//         // // but the saved mesh is in the single domain format
+//         // EXPECT_EQ(load_mesh.number_of_children(), 1);
+//         // EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+//         // EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+//     }
+// }
+
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
     for (int ndomains = 2; ndomains < 6; ndomains ++)
@@ -264,7 +330,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             const Node &l_curr = l_itr.next();
             const Node &s_curr = s_itr.next();
 
-            // EXPECT_FALSE(l_curr.diff(s_curr, info));
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
         }
     }
 }
