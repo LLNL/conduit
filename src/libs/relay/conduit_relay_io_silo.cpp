@@ -1986,6 +1986,11 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
             shapecnt[i] = num_elems;
             total_num_elems += num_elems;
         }
+        else
+        {
+            // TODO why were polygons and polyhedra never added to this list?
+            CONDUIT_ERROR("TODO we do not yet support topo shape " << topo_shape);
+        }
     }
 
     // Final Compaction

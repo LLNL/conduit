@@ -29,6 +29,42 @@ relay_test_silo_data_path(const std::string &test_fname)
     return utils::join_file_path(res, test_fname);
 }
 
+void
+silo_uniform_to_rect_conversion(const std::string &coordset_name,
+                                const std::string &topo_name,
+                                conduit::Node &save_mesh)
+{
+    Node save_mesh_rect;
+    Node &save_mesh_rect_coords = save_mesh_rect["coordsets"][coordset_name];
+    Node &save_mesh_rect_topo = save_mesh_rect["topologies"][topo_name];
+    blueprint::mesh::topology::uniform::to_rectilinear(
+        save_mesh["topologies"][topo_name], 
+        save_mesh_rect_topo, save_mesh_rect_coords);
+    save_mesh["topologies"][topo_name].set(save_mesh_rect_topo);
+    save_mesh["coordsets"][coordset_name].set(save_mesh_rect_coords);
+}
+
+void
+silo_name_changer(const std::string &coordset_name,
+                  const std::string &topo_name,
+                  const std::string &field_name,
+                  const std::string &mmesh_name,
+                  conduit::Node &save_mesh)
+{
+    std::string new_coordset_name = mmesh_name + "_" + topo_name;
+    std::string new_topo_name = mmesh_name + "_" + topo_name;
+    std::string new_field_name = mmesh_name + "_" + field_name;    
+
+    save_mesh["coordsets"].rename_child(coordset_name, new_coordset_name);
+    save_mesh["topologies"].rename_child(topo_name, new_topo_name);
+    save_mesh["fields"].rename_child(field_name, new_field_name);
+    save_mesh["topologies"][new_topo_name]["coordset"].reset();
+    save_mesh["topologies"][new_topo_name]["coordset"] = new_coordset_name;
+    save_mesh["fields"][new_field_name]["topology"].reset();
+    save_mesh["fields"][new_field_name]["topology"] = new_topo_name;
+    save_mesh["fields"][new_field_name].remove_child("volume_dependent");
+}
+
 
 TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
 {
@@ -138,7 +174,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
-        std::make_pair("uniform", 2), std::make_pair("uniform", 3), 
+        std::make_pair("uniform", 2), std::make_pair("uniform", 3),
         std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
         std::make_pair("structured", 2), std::make_pair("structured", 3),
         std::make_pair("tris", 2),
@@ -159,7 +195,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 
         std::string mesh_type = mesh_types[i].first;
 
-        std::cout << mesh_type << std::endl;
+        // std::cout << mesh_type << std::endl;
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
@@ -170,28 +206,16 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
         // The silo conversion will transform uniform to rectilinear
         // so we will do the same to allow the diff to succeed
         if (mesh_type == "uniform")
-        {
-            Node save_mesh_rect;
-            Node &save_mesh_rect_coords = save_mesh_rect["coordsets"]["coords"];
-            Node &save_mesh_rect_topo = save_mesh_rect["topologies"]["mesh"];
-            blueprint::mesh::topology::uniform::to_rectilinear(
-                save_mesh["topologies"]["mesh"], 
-                save_mesh_rect_topo, save_mesh_rect_coords);
-            save_mesh["topologies"]["mesh"].set(save_mesh_rect_topo);
-            save_mesh["coordsets"]["coords"].set(save_mesh_rect_coords);
-        }
+            silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
 
         // The Blueprint to Silo transformation changes several names 
         // and some information is lost. We manually make changes so 
         // that the diff will pass.
-        save_mesh["coordsets"].rename_child("coords", "mesh_mesh");
-        save_mesh["topologies"].rename_child("mesh", "mesh_mesh");
-        save_mesh["fields"].rename_child("field", "mesh_field");
-        save_mesh["topologies"]["mesh_mesh"]["coordset"].reset();
-        save_mesh["topologies"]["mesh_mesh"]["coordset"] = "mesh_mesh";
-        save_mesh["fields"]["mesh_field"]["topology"].reset();
-        save_mesh["fields"]["mesh_field"]["topology"] = "mesh_mesh";
-        save_mesh["fields"]["mesh_field"].remove_child("volume_dependent");
+        silo_name_changer("coords",
+                          "mesh",
+                          "field",
+                          "mesh",
+                          save_mesh);
 
         // the loaded mesh will be in the multidomain format
         // (it will be a list containing a single mesh domain)
