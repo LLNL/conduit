@@ -2755,7 +2755,39 @@ group_domains_and_maps(conduit::Node &mesh, conduit::Node &s2dmap, conduit::Node
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-void
+/**
+ @brief Used to generate derived entities from the source mesh. The main work
+        is done by the \a generate_derived function. The bulk of this function
+        is dedicated to constructing a new adjset from the source mesh's adjset.
+
+        In practice, this mostly does smoothly. However, there can be corner
+        cases, that would erroneously add elements into the derived adjset.
+        This happens depending on the domain decomposition. To avoid introducing
+        unwanted entities, a MatchQuery is used. The MatchQuery keeps track of
+        all of the local entities that were requested and then checks to make
+        sure matching entities were also requested in the adjacent domain. Note
+        that this step involves coordinate comparisons (because they can have
+        epsilon deltas across domain boundaries) and exchanging entity query
+        topologies.
+
+        
+        The query is passed in so parallel functions can pass in a parallel
+        version of the MatchQuery.
+
+  @param mesh The input mesh, which may contain multiple domains.
+  @param src_adjset_name The source adjset name that will be used to guide
+                         construction of the new adjset.
+  @param dst_adjset_name The name of the new adjset.
+  @param dst_topo_name   The name of the new topology to contain the derived
+                         entities.
+  @param s2dmap          A source to dest map for source elements to derived elements.
+  @param d2smap          A dest to source map for derived elements to source elements.
+  @param generate_derived A function that will be applied to the source domains
+                          to generate derived domains.
+  @param Q                A MatchQuery instance that helps in constructing the
+                          derived adjset.
+ */
+static void
 generate_derived_entities(conduit::Node &mesh,
                           const std::string &src_adjset_name,
                           const std::string &dst_adjset_name,
@@ -2763,7 +2795,7 @@ generate_derived_entities(conduit::Node &mesh,
                           conduit::Node &s2dmap,
                           conduit::Node &d2smap,
                           GenDerivedFun generate_derived,
-                          conduit::blueprint::mesh::utils::query::MembershipQuery &Q)
+                          conduit::blueprint::mesh::utils::query::MatchQuery &Q)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
@@ -2809,6 +2841,9 @@ generate_derived_entities(conduit::Node &mesh,
 
         const conduit::Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
         conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
+
+        // Tell the query which topology to use.
+        Q.SelectTopology(src_topo.name());
 
         // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
         //
@@ -2864,77 +2899,15 @@ generate_derived_entities(conduit::Node &mesh,
 
                     // if the element is fully in the adjset, and it is not an internal element
                     // (count of d2s > 1), include it in the map
-#if 0
-// This is where we would have to check in the neighbor whether the face really exists because
-// checking that the points are active here in this domain leads to selection of faces that 
-// do not exist in the neighbor domain.
-conduit::Node filters;
-filters["domain0/group_0_2/values"].set(std::vector<int>({11,14}));
-filters["domain1/group_1_2/values"].set(std::vector<int>({21, 23, 20}));
 
-std::stringstream ss;
-ss << "domain" << domain_id << "/group_" << domain_id << "_" << ni << "/values";
-std::string key(ss.str());
-if(filters.has_path(key))
-{
-    auto values = filters[key].as_int_accessor();
-    for(int qq = 0; qq < values.number_of_elements(); qq++)
-    {
-        if(values[qq] == ei)
-        {
-            entity_in_neighbor = false;
-            std::cout << "!!!! Filtering domain " << domain_id << " entity " << ei << " from adjacency list where neighbor is " << ni << std::endl;
-        }
-    }
-}
-#endif
                     if(entity_in_neighbor)
                     {
-#if 1
-                        // In an ideal case, the entity is in the neighbor. However,
-                        // in some corner cases, it might be that the entity's ids
-                        // are simply all activated from other entities that really
-                        // are in the neighbor. We use a MembershipQuery to find
-                        // out for sure.
-
-                        // Make a unique entity id for the entity that should be
-                        // valid across domains. We use some hashing on the points.
-                        std::vector<uint64> hashes;
-                        hashes.reserve(entity_pidxs.size());
-
-std::stringstream ss;
-ss << domain_id << "->" << ni << ": ";
-                        for(const index_t &entity_pidx : entity_pidxs)
-                        {
-                            const std::vector<float64> point_coords = bputils::coordset::_explicit::coords(
-                                                                          src_cset, entity_pidx);
-
-ss << "("
-   << point_coords[0] << ", " 
-   << point_coords[1] << ", " 
-   << point_coords[2] << "), ";
-
-                            uint64 hval = hash(&point_coords[0], point_coords.size());
-                            hashes.push_back(hval);
-                        }
-                        if(hashes.size() > 1)
-                            std::sort(hashes.begin(), hashes.end());
-                        uint64 eid = hash(&hashes[0], hashes.size());
-ss << ", eid=" << eid << std::endl;
-if(domain_id == 0 && ni == 2 ||
-   domain_id == 2 && ni == 0)
-{
-    std::cout << ss.str();
-}
-                        // Add the entity to the query.
-                        Q.Add(domain_id, ni, eid);
+                        // Add the entity to the query for consideration.
+                        uint64 qid = Q.Add(domain_id, ni, entity_pidxs);
 
                         // Add the candidate entity to the membership query, which
                         // will help resolve things across domains.
-                        query_guide.push_back(std::make_tuple(domain_id, ni, ei, eid));
-#else
-                        entity_neighbor_map[ei].insert(ni);
-#endif
+                        query_guide.push_back(std::make_tuple(domain_id, ni, ei, qid));
                     }
                 }
             }
@@ -2947,7 +2920,7 @@ if(domain_id == 0 && ni == 2 ||
     Q.Execute();
     CONDUIT_ANNOTATE_MARK_END("query");
 
-    // Use Q results to finish building entity_neighbor_map.
+    // Use query results to finish building entity_neighbor_map.
     CONDUIT_ANNOTATE_MARK_BEGIN("dom_entity_neighbor_map.finish");
     for(const auto &obj : query_guide)
     {
@@ -3467,7 +3440,7 @@ mesh::generate_points(conduit::Node &mesh,
                       const std::string &dst_topo_name,
                       conduit::Node &s2dmap,
                       conduit::Node &d2smap,
-                      conduit::blueprint::mesh::utils::query::MembershipQuery &query)
+                      conduit::blueprint::mesh::utils::query::MatchQuery &query)
 {
     verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
@@ -3486,7 +3459,7 @@ mesh::generate_points(conduit::Node &mesh,
                       conduit::Node &d2smap)
 {
     verify_generate_mesh(mesh, src_adjset_name);
-    conduit::blueprint::mesh::utils::query::MembershipQuery query(mesh);
+    conduit::blueprint::mesh::utils::query::MatchQuery query(mesh);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
         conduit::blueprint::mesh::topology::unstructured::generate_points, query);
@@ -3500,7 +3473,7 @@ mesh::generate_lines(conduit::Node &mesh,
                      const std::string &dst_topo_name,
                      conduit::Node &s2dmap,
                      conduit::Node &d2smap,
-                     conduit::blueprint::mesh::utils::query::MembershipQuery &query)
+                     conduit::blueprint::mesh::utils::query::MatchQuery &query)
 {
     verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
@@ -3519,7 +3492,7 @@ mesh::generate_lines(conduit::Node &mesh,
                      conduit::Node &d2smap)
 {
     verify_generate_mesh(mesh, src_adjset_name);
-    conduit::blueprint::mesh::utils::query::MembershipQuery query(mesh);
+    conduit::blueprint::mesh::utils::query::MatchQuery query(mesh);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
         conduit::blueprint::mesh::topology::unstructured::generate_lines, query);
@@ -3534,7 +3507,7 @@ mesh::generate_faces(conduit::Node &mesh,
                      const std::string& dst_topo_name,
                      conduit::Node& s2dmap,
                      conduit::Node& d2smap,
-                     conduit::blueprint::mesh::utils::query::MembershipQuery &query)
+                     conduit::blueprint::mesh::utils::query::MatchQuery &query)
 {
     verify_generate_mesh(mesh, src_adjset_name);
     generate_derived_entities(
@@ -3553,7 +3526,7 @@ mesh::generate_faces(conduit::Node &mesh,
                      conduit::Node& d2smap)
 {
     verify_generate_mesh(mesh, src_adjset_name);
-    conduit::blueprint::mesh::utils::query::MembershipQuery query(mesh);
+    conduit::blueprint::mesh::utils::query::MatchQuery query(mesh);
     generate_derived_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, s2dmap, d2smap,
         conduit::blueprint::mesh::topology::unstructured::generate_faces, query);

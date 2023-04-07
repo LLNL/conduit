@@ -16,7 +16,7 @@
 #include "conduit_annotations.hpp"
 #include "conduit_relay_mpi.hpp"
 
-#define DEBUG_PRINT
+//#define DEBUG_PRINT
 #ifdef DEBUG_PRINT
 // NOTE: if DEBUG_PRINT is defined then the library must also depend on conduit_relay
 #include "conduit_relay_io.hpp"
@@ -308,33 +308,58 @@ PointQuery::Execute(const std::string &coordsetName)
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-MembershipQuery::MembershipQuery(const conduit::Node &mesh, MPI_Comm comm) :
-    conduit::blueprint::mesh::utils::query::MembershipQuery(mesh), m_comm(comm)
+MatchQuery::MatchQuery(const conduit::Node &mesh, MPI_Comm comm) :
+    conduit::blueprint::mesh::utils::query::MatchQuery(mesh), m_comm(comm)
 {
 }
 
 //---------------------------------------------------------------------------
 void
-MembershipQuery::Execute()
+MatchQuery::Execute()
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
     int rank, size;
     MPI_Comm_rank(m_comm, &rank);
     MPI_Comm_size(m_comm, &size);
+
+    // Build the query geometries. Store them in the query_topo node.
+    CONDUIT_ANNOTATE_MARK_BEGIN("build");
+    std::string shape;
+    for(auto it = m_query.begin(); it != m_query.end(); it++)
+    {
+        int dom = it->first.first;
+        int query_dom = it->first.second;
+
+        if(shape.empty())
+        {
+            // We have not determined the shape yet. Do that now so the subset
+            // topologies can be built.
+            const auto dtopo = GetDomainTopology(dom);
+            conduit::blueprint::mesh::utils::ShapeCascade c(*dtopo);
+            const auto &s = c.get_shape((c.dim == 0) ? c.dim : (c.dim - 1));
+            shape = s.type;
+        }
+
+        it->second.builder->Execute(it->second.query_mesh, shape);
+    }
+    CONDUIT_ANNOTATE_MARK_END("build");
 
     // If we have a bunch of requests A,B  C,D then we need to get the entity
     // arrays for B,A and D,C. The second int indicates the rank that owns the
     // entity data.
 
+    CONDUIT_ANNOTATE_MARK_BEGIN("setup");
     // Make a set of ints <dom, query_dom, nents> for each map entry. Each
     // rank owns the domains indicated by dom.
+    const int ntuple_values = 3;
     std::vector<int> queries;
-    queries.reserve(m_Requests.size() * 4);
-    for(auto it = m_Requests.begin(); it != m_Requests.end(); it++)
+    queries.reserve(m_query.size() * ntuple_values);
+    for(auto it = m_query.begin(); it != m_query.end(); it++)
     {
         queries.push_back(rank);
         queries.push_back(it->first.first);
         queries.push_back(it->first.second);
-        queries.push_back(it->second.size());
     }
 
     // Let all ranks know the sizes of the queries vectors.
@@ -357,14 +382,13 @@ MembershipQuery::Execute()
                    m_comm);
 
     // Look up a rank that owns a domain.
-    auto domain_to_rank = [](const std::vector<int> &allqueries, int d) -> int
+    auto domain_to_rank = [&ntuple_values](const std::vector<int> &allqueries, int d) -> int
     {
-        for(size_t i = 0; i < allqueries.size(); i += 4)
+        for(size_t i = 0; i < allqueries.size(); i += ntuple_values)
         {
             int owner = allqueries[i];
             int domain = allqueries[i + 1];
             //int query_domain = allqueries[i + 2];
-            //int nents = allqueries[i + 3];
             if(domain == d)
                 return owner;
         }
@@ -385,36 +409,35 @@ MembershipQuery::Execute()
 
     // Store the points that we'll ask of each domain.
     conduit::Node &qi = debug["inputs"];
-    for(auto it = m_Requests.begin(); it != m_Requests.end(); it++)
+    for(auto it = m_query.begin(); it != m_query.end(); it++)
     {
-        std::vector<id_type> qvals(it->second.begin(), it->second.end());
         conduit::Node &qid = qi.append();
         qid["domain"] = it->first.first;
         qid["query_domain"] = it->first.second;
-        qid["values"].set(qvals);
+        qid["query_topo"] = it->second.query_mesh;
     }
 
     std::stringstream ss;
-    ss << "membershipquery." << rank << ".yaml";
+    ss << "matchquery." << rank << ".yaml";
     std::string filename(ss.str());
     conduit::relay::io::save(debug, filename, "yaml");
 #endif
+    CONDUIT_ANNOTATE_MARK_END("setup");
 
     // Send/recv entity data.
+    CONDUIT_ANNOTATE_MARK_BEGIN("communication");
     conduit::relay::mpi::communicate_using_schema C(m_comm);
 #ifdef DEBUG_PRINT
     // Turn on logging.
-    C.set_logging_root("mpi_membershipquery");
+    C.set_logging_root("mpi_matchquery");
     C.set_logging(true);
 #endif
-    std::map<std::pair<int,int>, conduit::Node *> sendNodes, recvNodes;
     int query_tag = 77000000;    
-    for(size_t i = 0; i < allqueries.size(); i += 4)
+    for(size_t i = 0; i < allqueries.size(); i += ntuple_values)
     {
         int owner = allqueries[i];
         int domain = allqueries[i + 1];
         int query_domain = allqueries[i + 2];
-        int nents = allqueries[i + 3];
 
         auto oppositeKey = std::make_pair(query_domain, domain);
 
@@ -423,59 +446,82 @@ MembershipQuery::Execute()
             // The query was asked by this rank. We need to prepare to
             // receive the opposite query, which is the answer.
 
-            if(m_Requests.find(oppositeKey) == m_Requests.end())
+            if(m_query.find(oppositeKey) == m_query.end())
             {
                 int remote = domain_to_rank(allqueries, query_domain);
 
                 // The domain whose entities we're querying is on a remote rank.
                 // We need to receive entities from it.
-                recvNodes[oppositeKey] = new conduit::Node;
-                conduit::Node &r = *recvNodes[oppositeKey];
+                auto &q = m_query[oppositeKey];
+                conduit::Node &r = q.query_mesh;
                 C.add_irecv(r, remote, query_tag + query_domain);
             }
         }
         else
         {
             // We're not the rank that requested the data.
-            // See if we own the answer. Note the key swap.
+            // See if we own the answer. If so, send. Note the key swap.
 
-            auto it = m_Requests.find(oppositeKey);
-            if(it != m_Requests.end())
+            auto it = m_query.find(oppositeKey);
+            if(it != m_query.end())
             {
                 int remote = domain_to_rank(allqueries, domain);
 
-                // The domain whose entities we're querying is on a remote rank.
-                // We need to receive entities from it.
-                sendNodes[oppositeKey] = new conduit::Node;
-                conduit::Node &s = *sendNodes[oppositeKey];
-                s["entities"].set(std::vector<id_type>(it->second.begin(), it->second.end()));
-
+                // Send the query_topo to the remote rank.
+                conduit::Node &s = it->second.query_mesh;
                 C.add_isend(s, remote, query_tag + query_domain);
             }
         }
     }
 
+    // Do the communication.
     C.execute();
+    CONDUIT_ANNOTATE_MARK_END("communication");
 
-    // Now if we iterate over recvNodes, we should have answers to all of the
-    // questions that were asked. Put them into the m_Requests using the
-    // opposite key, which was used to set up the recv.
-    for(auto it = recvNodes.begin(); it != recvNodes.end(); it++)
+    // Now, m_query should contain query topos for A,B and B,A. For all the
+    // domains owned by this rank, make the results.
+    CONDUIT_ANNOTATE_MARK_BEGIN("results");
+    for(size_t i = 0; i < allqueries.size(); i += ntuple_values)
     {
-        conduit::Node &e = it->second->fetch_existing("entities");
-        auto acc = e.as_uint64_accessor();
-        auto &res = m_Requests[it->first];
-        for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
-            res.insert(acc[i]);
+        int owner = allqueries[i];
+        int domain = allqueries[i + 1];
+        int query_domain = allqueries[i + 2];
+
+        if(owner == rank)
+        {
+            auto key = std::make_pair(domain, query_domain);
+            auto oppositeKey = std::make_pair(query_domain, domain);
+
+            // Try and get the geometries.
+            auto it = m_query.find(key);
+            auto oppit = m_query.find(oppositeKey);
+            if(it == m_query.end() || oppit == m_query.end())
+            {
+                CONDUIT_ERROR("MatchQuery is missing the topologies for "
+                    << domain << ":" << query_domain);
+            }
+
+            // Get both of the topologies.
+            conduit::Node &mesh1 = it->second.query_mesh;
+            conduit::Node &mesh2 = oppit->second.query_mesh;
+            std::string topoKey("topologies/" + topoName);
+            conduit::Node &topo1 = mesh1[topoKey];
+            conduit::Node &topo2 = mesh2[topoKey];
+
+            // Perform the search and store the results.
+            it->second.results = conduit::blueprint::mesh::utils::topology::search(topo2, topo1);
+
 #ifdef DEBUG_PRINT
-        // Add the results to the debug node.
-        conduit::Node &n = debug["recv"].append();
-        n["domain_id"] = it->first.first;
-        n["query_domain"] = it->first.second;
-        n["results"].set_external(*it->second);
-        n["results_type"].set(e.dtype().name());
+            conduit::Node &n = debug["queries"].append();
+            n["domain_id"] = it->first.first;
+            n["query_domain"] = it->first.second;
+            n["mesh"].set_external(mesh1);
+            n["query_mesh"].set_external(mesh2);
+            n["results"].set_external(it->second.results);
 #endif
+        }
     }
+    CONDUIT_ANNOTATE_MARK_END("results");
 
 #ifdef DEBUG_PRINT
     // Overwrite the old file with the recv results.

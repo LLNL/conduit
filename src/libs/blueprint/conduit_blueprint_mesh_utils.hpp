@@ -18,6 +18,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -370,6 +371,73 @@ namespace topology
                                               conduit::Node& out_topo);
 
     //-------------------------------------------------------------------------
+    /**
+     @brief Given a single topology, make a series of Add calls that add an
+            entity using the source mesh's coordinates but with a potentially
+            different shape from the original topology. We can for example have
+            a volume mesh and make a face mesh from it. This class takes care
+            of creating the new sub-topology and renumbering coordinates, etc.
+     */
+    class CONDUIT_BLUEPRINT_API TopologyBuilder
+    {
+    public:
+        /**
+         @brief Constructor
+         @param _topo The input mesh node.
+         */
+        TopologyBuilder(const conduit::Node &_topo);
+        TopologyBuilder(const conduit::Node *_topo);
+
+        /**
+         @brief Add a new entity with the given point list.
+    
+         @param pts A list of point ids in the selected coordset.
+         @param npts The number of points in the list.
+         */
+        size_t Add(const index_t *pts, index_t npts);
+
+        /**
+         @brief Add a new entity with the given point list.
+    
+         @param pts The list of points in the entity.     
+         */
+        size_t Add(const std::vector<index_t> &pts);
+
+        /**
+         @brief Make the new topologies, using the specified shape type.
+
+         @param newMesh A node to contain the new topo and coordset.
+         @param shape The name of the shape type to use in the new topologies.
+         */
+        void Execute(conduit::Node &newMesh, const std::string &shape);
+
+    protected:
+        index_t NewPointId(index_t oldPointId);
+        void Clear();
+    protected:
+        const conduit::Node       &topo;
+        std::map<index_t, index_t> old_to_new;
+        std::vector<index_t>       topo_conn;
+        std::vector<index_t>       topo_sizes;
+    };
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Determines whether topo2 elements exist in topo1. First the topo2
+            coordinates are matched against topo1 using PointQuery. Then topo2
+            entities are defined in terms of topo1 coordinates, if possible.
+            Then, if that works for an entity, the entity is looked for in topo1.
+
+     @param topo1 A single topology.
+     @param topo2 A single topology.
+
+     @return A vector of ints, sized length(topo2), that contains 1 if the
+             entity exists in topo1 and 0 otherwise.
+     */
+    std::vector<int> CONDUIT_BLUEPRINT_API search(const conduit::Node &topo1,
+                                                  const conduit::Node &topo2);
+
+    //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::topology::unstructured --
     //-------------------------------------------------------------------------
     namespace unstructured
@@ -425,7 +493,7 @@ namespace query
         queries but it does not actually execute them. It will return results
         that indicate that all the queries succeeded.
  */
-class NullPointQuery
+class CONDUIT_BLUEPRINT_API NullPointQuery
 {
 public:
     static const int NotFound;
@@ -496,7 +564,7 @@ protected:
         serial against the domains in the input mesh. This class actually
         executes the queries.
  */
-class PointQuery : public NullPointQuery
+class CONDUIT_BLUEPRINT_API PointQuery : public NullPointQuery
 {
 public:
     /**
@@ -523,7 +591,7 @@ protected:
      @param dom The domain id.
      @return A Node pointer or nullptr if it is not found.
      */
-    const conduit::Node *GetDomain(int dom);
+    const conduit::Node *GetDomain(int dom) const;
 
     /**
      @brief Find the input points in the input mesh's coordset and make a result
@@ -548,20 +616,13 @@ protected:
 
 //---------------------------------------------------------------------------
 /**
- @brief A simple membership query that uses the questions asked by various
-        domains to determine whether an entity exists. If the calling code
-        asks whether (0, 1, eid1) exists and also whether (1, 0, eid1)
-        exists then that entity is considered to exist. If the code then
-        asks for (0, 1, eid2) but nobody asked for (1, 0, eid2) then the
-        query for (0, 1, eid2) would return false.
-
-        We can exploit these 2 sided queries in adjacency set creation.
+ @brief A match membership query that uses the questions asked by various
+        domains to built new topologies that are exchanged. The topologies
+        are then compared with their counterparts to determine overlap.
  */
-class MembershipQuery
+class CONDUIT_BLUEPRINT_API MatchQuery
 {
 public:
-    static const int NotFound;
-
     typedef conduit_uint64 id_type;
 
     /**
@@ -569,18 +630,27 @@ public:
      @param mesh The input mesh(es). Each mesh domain must have state/domain_id
                  that uniquely identifies the domain.
      */
-    MembershipQuery(const conduit::Node &mesh);
+    MatchQuery(const conduit::Node &mesh);
+
+    /**
+     @brief Select the topology that will be used.
+     @param name The topology name.
+     */
+    void SelectTopology(const std::string &name);
 
     /**
      @brief Add an entity that will be queried on domain \a dom.
      @param dom The domain that is asking the questions.
      @param query_dom The domain that is being queried.
-     @param entityId A global identifier that represents the entity.
+     @param ids A list of point ids that make up the entity.
+     @param nids The number of point ids that make up the entity.
      */
-    void Add(int dom, int query_dom, id_type entityId);
+    size_t Add(int dom, int query_dom, const index_t *ids, index_t nids);
+    size_t Add(int dom, int query_dom, const std::vector<index_t> &ids);
 
     /**
      @brief Execute all of the queries.
+     @param shape The shape type for the queried entities.
      */
     virtual void Execute();
 
@@ -595,8 +665,28 @@ public:
     virtual bool Exists(int dom, int query_dom, id_type entityId) const;
 
 protected:
+    /**
+     @brief Attempt to return the selected topology for the requested domain.
+            The topology is selected by topoName.
+     @param domain The domain number.
+     @return A node that points to the domain's selected topology. If no
+             such node is located, nullptr is returned.
+     */
+    const conduit::Node *GetDomainTopology(int domain) const;
+
+    /**
+     @brief Contains information for one domain:query_domain query.
+     */
+    struct QueryInfo
+    {
+        std::shared_ptr<topology::TopologyBuilder> builder;
+        std::vector<int>                           results;
+        conduit::Node                              query_mesh;
+    };
+
     const conduit::Node &m_mesh;
-    std::map<std::pair<int,int>, std::set<id_type>> m_Requests;
+    std::string topoName;
+    std::map<std::pair<int,int>, QueryInfo> m_query;
 };
 
 }

@@ -103,8 +103,8 @@ protected:
  @brief Execute a set of membership queries in parallel where queries were
         issued by multiple MPI ranks.
  */
-class CONDUIT_BLUEPRINT_API MembershipQuery :
-    public conduit::blueprint::mesh::utils::query::MembershipQuery
+class CONDUIT_BLUEPRINT_API MatchQuery :
+    public conduit::blueprint::mesh::utils::query::MatchQuery
 {
 public:
     /**
@@ -113,10 +113,12 @@ public:
      @param mesh A node that holds one or more domains.
      @param comm The MPI communicator that will be used for communication.
      */
-    MembershipQuery(const conduit::Node &mesh, MPI_Comm comm);
+    MatchQuery(const conduit::Node &mesh, MPI_Comm comm);
 
     /**
      @brief Execute all of the queries.
+
+     @param shape The type of shapes being queried.
 
      @note This method must be called on all ranks in the communicator.
      */

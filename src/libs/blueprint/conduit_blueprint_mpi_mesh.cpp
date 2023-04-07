@@ -2573,7 +2573,7 @@ generate_points(conduit::Node &mesh,
                 conduit::Node &d2smap,
                 MPI_Comm comm)
 {
-    conduit::blueprint::mpi::mesh::utils::query::MembershipQuery query(mesh, comm);
+    conduit::blueprint::mpi::mesh::utils::query::MatchQuery query(mesh, comm);
     conduit::blueprint::mesh::generate_points(mesh,
                                               src_adjset_name,
                                               dst_adjset_name,
@@ -2594,7 +2594,7 @@ generate_lines(conduit::Node &mesh,
                conduit::Node &d2smap,
                MPI_Comm comm)
 {
-    conduit::blueprint::mpi::mesh::utils::query::MembershipQuery query(mesh, comm);
+    conduit::blueprint::mpi::mesh::utils::query::MatchQuery query(mesh, comm);
     conduit::blueprint::mesh::generate_lines(mesh,
                                              src_adjset_name,
                                              dst_adjset_name,
@@ -2615,7 +2615,7 @@ generate_faces(conduit::Node &mesh,
                conduit::Node& d2smap,
                MPI_Comm comm)
 {
-    conduit::blueprint::mpi::mesh::utils::query::MembershipQuery query(mesh, comm);
+    conduit::blueprint::mpi::mesh::utils::query::MatchQuery query(mesh, comm);
     conduit::blueprint::mesh::generate_faces(mesh,
                                              src_adjset_name,
                                              dst_adjset_name,
