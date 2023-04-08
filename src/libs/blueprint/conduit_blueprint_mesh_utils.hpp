@@ -633,7 +633,10 @@ public:
     MatchQuery(const conduit::Node &mesh);
 
     /**
-     @brief Select the topology that will be used.
+     @brief Select the topology that will be used. This should be an existing
+            topology. The name will be used internally to construct query
+            topologies and to identify the coordset to be used for pulling
+            points. This must be called before calling <Execute>"()".
      @param name The topology name.
      */
     void SelectTopology(const std::string &name);
@@ -663,6 +666,18 @@ public:
      @return True if the entityId exists in query_dom.
      */
     virtual bool Exists(int dom, int query_dom, id_type entityId) const;
+
+    /**
+     @brief Return a vector of pairs that contain dom,query_dom values.
+     @return A vector of pairs.
+     */
+    std::vector<std::pair<int,int>> QueryDomainIds() const;
+
+    /**
+     @brief Return the results vector for a given dom,query_dom pair.
+     @return A results vector containing 1 (found), 0 (not found).
+     */
+    const std::vector<int> &Results(int dom, int query_dom) const;
 
 protected:
     /**

@@ -1800,7 +1800,7 @@ topology::TopologyBuilder::Execute(conduit::Node &new_topo, const std::string &s
         auto acc = origcset[key].as_double_accessor();
 
         conduit::Node &coords = cset[key];
-        coords.set(DataType(DataType::FLOAT64_ID, npts));
+        coords.set(DataType::float64(npts));
         auto coords_ptr = static_cast<double *>(coords.element_ptr(0));
         for(auto it = old_to_new.begin(); it != old_to_new.end(); it++)
         {
@@ -1815,19 +1815,8 @@ topology::TopologyBuilder::Execute(conduit::Node &new_topo, const std::string &s
     n_ele["shape"] = shape;
     n_ele["connectivity"].set(topo_conn);
     n_ele["sizes"].set(topo_sizes);
-
     unstructured::generate_offsets_inline(topo);
-/*
-    std::vector<int> offsets;
-    offsets.reserve(topo_sizes.size());
-    int off = 0;
-    for(const auto &s : topo_sizes)
-    {
-        offsets.push_back(off);
-        off += s;
-    }
-    n_ele["offsets"].set(offsets);
-*/
+
     Clear();
 }
 
@@ -2364,6 +2353,32 @@ MatchQuery::Execute()
     }
 }
 
+//---------------------------------------------------------------------------
+std::vector<std::pair<int,int>>
+MatchQuery::QueryDomainIds() const
+{
+    std::vector<std::pair<int,int>> ids;
+    for(auto it = m_query.begin(); it != m_query.end(); it++)
+    {
+        // If we issued the request on this rank, the topo builder will not be nullptr.
+        if(it->second.builder)
+            ids.push_back(it->first);
+    }
+    return ids;
+}
+
+//---------------------------------------------------------------------------
+const std::vector<int> &
+MatchQuery::Results(int dom, int query_dom) const
+{
+    auto it = m_query.find(std::make_pair(dom, query_dom));
+    if(it == m_query.end())
+    {
+        CONDUIT_ERROR("Results are not available for query "
+            << dom << ", " << query_dom);
+    }
+    return it->second.results;
+}
 
 }
 //-----------------------------------------------------------------------------

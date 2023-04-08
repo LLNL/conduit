@@ -2933,7 +2933,7 @@ generate_derived_entities(conduit::Node &mesh,
             auto &entity_neighbor_map = dom_entity_neighbor_map[domain_id];
             entity_neighbor_map[ei].insert(ni);
         }
-#if 1
+#ifdef DEBUG_PRINT
         else
         {
             std::cout << "!!!! NOT adding domain " << domain_id << " entity " << ei << " to entity_neighbor_map for neighbor " << ni << std::endl;

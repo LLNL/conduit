@@ -797,6 +797,45 @@ state:
 }
 
 //-----------------------------------------------------------------------------
+template <typename Func>
+inline void
+iterate_adjset(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
+{
+    // Get the domains in the mesh for this rank.
+    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
+
+    // Iterate over the corner mesh's adjacency sets for each domain and make
+    // sure all points are found using a PointQuery.
+    for(auto dom_ptr : domains)
+    {
+        const conduit::Node &dom = *dom_ptr;
+        const conduit::Node &adjset = dom["adjsets/" + adjsetName];
+        const conduit::Node &groups = adjset["groups"];
+        int domain_id = static_cast<int>(conduit::blueprint::mesh::utils::find_domain_id(dom));
+
+        const conduit::Node *topo = conduit::blueprint::mesh::utils::find_reference_node(adjset, "topology");
+        const conduit::Node *cset = conduit::blueprint::mesh::utils::find_reference_node(*topo, "coordset");
+
+        for(conduit::index_t gi = 0; gi < groups.number_of_children(); gi++)
+        {
+            int_accessor neighbors = groups[gi]["neighbors"].as_int_accessor();
+            int_accessor values = groups[gi]["values"].as_int_accessor();
+
+            for(conduit::index_t ni = 0; ni < neighbors.number_of_elements(); ni++)
+            {
+                int nbr = neighbors[ni];
+                for(conduit::index_t vi = 0; vi < values.number_of_elements(); vi++)
+                {
+                    int val = values[vi];
+
+                    func(domain_id, nbr, val, cset, topo);
+                }
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, generate_corners_wonky)
 {
     // There is a 3x3x3 zone mesh that was giving generate_corners a problem
@@ -818,59 +857,77 @@ TEST(conduit_blueprint_mesh_examples, generate_corners_wonky)
                                                     d2smap,
                                                     MPI_COMM_WORLD);
 
-    // Get the domains in the mesh for this rank.
-    const std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
 
     conduit::blueprint::mpi::mesh::utils::query::PointQuery Q(mesh, MPI_COMM_WORLD);
 
-    // Iterate over the corner mesh's adjacency sets for each domain and make
-    // sure all points are found using a PointQuery.
-    for(auto dom_ptr : domains)
-    {
-        const conduit::Node &dom = *dom_ptr;
-        //int domain_id = dom["state/domain_id"].to_int();
-        const conduit::Node &groups = dom["adjsets/corner_adjset/groups"];
-        const conduit::Node &cset = dom["coordsets/corner_coords"];
-        for(conduit::index_t gi = 0; gi < groups.number_of_children(); gi++)
+    // Iterate over the points in the adjset and add them to the 
+    iterate_adjset(mesh, "corner_adjset",
+        [&](int /*dom*/, int nbr, int val, const conduit::Node *cset, const conduit::Node */*topo*/)
         {
-            int_accessor neighbors = groups[gi]["neighbors"].as_int_accessor();
-            int_accessor values = groups[gi]["values"].as_int_accessor();
+            // Get the point (it might not be 3D)
+            auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(*cset, val);
+            double pt3[3];
+            pt3[0] = pt[0];
+            pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
+            pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
 
-            for(conduit::index_t ni = 0; ni < neighbors.number_of_elements(); ni++)
-            {
-                int nbr = neighbors[ni];
-                for(conduit::index_t vi = 0; vi < values.number_of_elements(); vi++)
-                {
-                    int val = values[vi];
-
-                    // Get the point (it might not be 3D)
-                    auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(cset, val);
-                    double pt3[3];
-                    pt3[0] = pt[0];
-                    pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
-                    pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
-
-                    Q.Add(nbr, pt3);
-                }
-            }
-        }
-    }
+            Q.Add(nbr, pt3);
+        });
 
     // Execute the query.
     Q.Execute("corner_coords");
 
     // If this rank had domains, check the query results. There should be no
     // occurrances of NotFound.
-    if(!domains.empty())
+    for(auto domainId : Q.QueryDomainIds())
     {
-        for(auto domainId : Q.QueryDomainIds())
-        {
-            const auto &r = Q.Results(domainId);
-            auto it = std::find(r.begin(), r.end(), Q.NotFound);
-            bool found = it != r.end();
-            EXPECT_FALSE(found);
-        }
+        const auto &r = Q.Results(domainId);
+        auto it = std::find(r.begin(), r.end(), Q.NotFound);
+        bool found = it != r.end();
+        EXPECT_FALSE(found);
     }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, generate_faces_wonky)
+{
+    conduit::Node mesh, s2dmap, d2smap;
+    generate_wonky_mesh(mesh);
+
+    // Make the face mesh from the wonky mesh. Internally, it will use a MatchQuery
+    // to avoid putting a few faces into the faces. This means that the face adjset
+    // should be produced properly so all match query results should have 1's.
+    conduit::blueprint::mpi::mesh::generate_faces(mesh,
+                                                  "main_adjset",
+                                                  "face_adjset",
+                                                  "face_mesh",
+                                                  s2dmap,
+                                                  d2smap,
+                                                  MPI_COMM_WORLD);
+
+    conduit::blueprint::mpi::mesh::utils::query::MatchQuery Q(mesh, MPI_COMM_WORLD);
+    Q.SelectTopology("main");
+
+    // Iterate over the faces in the face adjset and add them to the match query.
+    iterate_adjset(mesh, "face_adjset",
+        [&](int dom, int nbr, int ei, const conduit::Node */*cset*/, const conduit::Node *topo)
+        {
+            // Get the points for the face and add them to the query.
+            std::vector<index_t> facepts = conduit::blueprint::mesh::utils::topology::unstructured::points(*topo, ei);
+            Q.Add(dom, nbr, facepts);
+        });
+
+    // Execute the query.
+    Q.Execute();
+
+    // If this rank had domains, check the query results. They should all be 1.
+    for(const auto &qid : Q.QueryDomainIds())
+    {
+        const auto &r = Q.Results(qid.first, qid.second);
+        auto it = std::find_if_not(r.begin(), r.end(), [](int value){ return value == 1;} );
+        bool found = it != r.end();
+        EXPECT_FALSE(found);
+    }  
 }
 
 /// Test Driver ///
