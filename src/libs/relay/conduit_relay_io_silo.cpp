@@ -517,13 +517,13 @@ get_coordset_axis_labels(const int sys)
 }
 
 //-----------------------------------------------------------------------------
-template <typename T>
 void
-copy_point_coords_helper(void *coords[3],
-                         int ndims,
-                         const int *dims,
-                         const int coord_sys,
-                         conduit::Node &node)
+copy_point_coords(const int datatype,
+                  void *coords[3],
+                  int ndims,
+                  int *dims,
+                  const int coord_sys,
+                  conduit::Node &node)
 {
     ndims = ndims < 3 ? ndims : 3;
     std::vector<const char *> labels = get_coordset_axis_labels(coord_sys);
@@ -533,36 +533,23 @@ copy_point_coords_helper(void *coords[3],
     {
         if (coords[i] != NULL)
         {
-            // TODO is the static case needed?
-            node[labels[i]].set(static_cast<T *>(coords[i]), dims[i]);
+            if (datatype == DB_DOUBLE)
+            {
+                node[labels[i]].set(static_cast<double *>(coords[i]), dims[i]);
+            }
+            else if (datatype == DB_FLOAT)
+            {
+                node[labels[i]].set(static_cast<float *>(coords[i]), dims[i]);
+            }
+            else
+            {
+                CONDUIT_ERROR("Unsupported mesh data type " << datatype);
+            }
         }
         else
         {
             return;
         }
-    }
-}
-
-//-----------------------------------------------------------------------------
-void
-copy_point_coords(const int datatype,
-                  void *coords[3],
-                  int ndims,
-                  int *dims,
-                  const int coord_sys,
-                  conduit::Node &node)
-{
-    if (datatype == DB_DOUBLE)
-    {
-        copy_point_coords_helper<double>(coords, ndims, dims, coord_sys, node);
-    }
-    else if (datatype == DB_FLOAT)
-    {
-        copy_point_coords_helper<float>(coords, ndims, dims, coord_sys, node);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported mesh data type " << datatype);
     }
 }
 
