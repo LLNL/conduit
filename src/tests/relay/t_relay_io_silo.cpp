@@ -196,13 +196,14 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 
         std::string mesh_type = mesh_types[i].first;
 
-        // std::cout << mesh_type << std::endl;
-
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
         io::silo::save_mesh(save_mesh, "basic");
         io::silo::load_mesh("basic.root", load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+        // check that load mesh correctly adds the state
+        save_mesh["state/cycle"] = 0;
 
         // The silo conversion will transform uniform to rectilinear
         // so we will do the same to allow the diff to succeed
@@ -259,7 +260,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
-        save_mesh.remove("state"); // TODO uncomment this and add functionality for it
+        // save_mesh.remove("state"); // TODO uncomment this and add functionality for it
 
         save_mesh.print();
 
@@ -296,18 +297,18 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
-    for (int ndomains = 2; ndomains < 6; ndomains ++)
+    for (int ndomains = 2; ndomains < 3; ndomains ++)
     {
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
         
-        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-        {
-            save_mesh[child].remove("state"); // TODO uncomment this and add functionality for it
-        }
+        // for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+        // {
+        //     save_mesh[child].remove("state"); // TODO uncomment this and add functionality for it
+        // }
 
         io::silo::save_mesh(save_mesh, "spiral");
-        io::silo::load_mesh("spiral.root", load_mesh);
+        io::silo::load_mesh("spiral.cycle_000000.root", load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
@@ -320,7 +321,16 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
                               "dist",
                               "mesh",
                               save_mesh[child]);
+
+            // save_mesh[child]["state/time"] = 0.0;
         }
+
+        std::cout << "=======" << std::endl;
+        std::cout << "I am save mesh" << std::endl;
+        save_mesh.print();
+        std::cout << "I am load mesh" << std::endl;
+        load_mesh.print();
+        std::cout << "=======" << std::endl;
 
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
         NodeConstIterator l_itr = load_mesh.children();

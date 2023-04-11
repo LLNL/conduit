@@ -631,6 +631,49 @@ add_shape_info(DBzonelist *zones,
 }
 
 //-----------------------------------------------------------------------------
+void
+add_state(DBfile *dbfile, Node &mesh_domain, std::string &multimesh_name)
+{
+    std::cout << "what the heck" << std::endl;
+    // look for dtime then time like VisIt
+
+    std::string dtime_str = multimesh_name + "/dtime";
+    std::string ftime_str = multimesh_name + "/time";
+
+    if (DBInqVarExists(dbfile, dtime_str.c_str()))
+    {
+        float dtime;
+        DBReadVar(dbfile, dtime_str.c_str(), &dtime);
+        mesh_domain["state"]["time"] = dtime;
+    }
+    else if (DBInqVarExists(dbfile, ftime_str.c_str()))
+    {
+        double ftime;
+        DBReadVar(dbfile, ftime_str.c_str(), &ftime);
+        mesh_domain["state"]["time"] = (double) ftime;
+    }
+    else
+    {
+        std::cout << "no time" << std::endl;
+    }
+
+    // double ftime = (double) mesh_ptr->time;
+    // double dtime = mesh_ptr->dtime;
+    // mesh_domain["state"]["time"] = (double) ftime;
+
+    if (DBInqVarExists(dbfile, "cycle"))
+    {
+        int cycle;
+        DBReadVar(dbfile, "cycle", &cycle);
+        mesh_domain["state"]["cycle"] = cycle;
+    }
+    else
+    {
+        std::cout << "no cycle" << std::endl;
+    }
+}
+
+//-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
 read_ucdmesh_domain(DBfile *dbfile,
@@ -683,12 +726,6 @@ read_ucdmesh_domain(DBfile *dbfile,
                       dims,
                       ucdmesh_ptr->coord_sys,
                       mesh_domain["coordsets"][multimesh_name]["values"]);
-
-    // TODO state here
-    // float ftime = 
-
-    // mesh_domain["state"]["time"] = ucdmesh_ptr->time;
-    // mesh_domain["state"]["cycle"] = ucdmesh_ptr->cycle;
 }
 
 //-----------------------------------------------------------------------------
@@ -778,9 +815,9 @@ read_pointmesh_domain(DBfile *dbfile,
     mesh_domain["topologies"][multimesh_name]["type"] = "points";
     mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
     mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
-    int dims[] = { pointmesh_ptr->nels,
-                   pointmesh_ptr->nels,
-                   pointmesh_ptr->nels};
+    int dims[] = {pointmesh_ptr->nels,
+                  pointmesh_ptr->nels,
+                  pointmesh_ptr->nels};
 
     copy_point_coords(pointmesh_ptr->datatype,
                       pointmesh_ptr->coords,
@@ -1370,13 +1407,23 @@ read_mesh(const std::string &root_file_path,
         Node &mesh_out = mesh[mesh_path];
 
         if (meshtype == DB_UCDMESH)
+        {
             read_ucdmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
+        }
         else if (meshtype == DB_QUADMESH)
+        {
             read_quadmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
+        }
         else if (meshtype == DB_POINTMESH)
+        {
             read_pointmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
+        }
         else
+        {
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
+        }
+
+        add_state(mesh_domain_file.getSiloObject(), mesh_out, multimesh_name);
 
         // for each mesh domain, we would like to iterate through all the variables
         // and extract the same domain from them.
@@ -2189,25 +2236,28 @@ void silo_mesh_write(const Node &n,
 
     // create state optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
-        nullptr, 
+        DBMakeOptlist(2), 
         &DBFreeOptlist,
         "Error freeing state optlist."};
-    if (n.has_path("state"))
+    if (n.has_child("state"))
     {
         silo_error = 0;
         const Node &n_state = n["state"];
-        state_optlist.setSiloObject(DBMakeOptlist(2));
         if (!state_optlist.getSiloObject())
-            CONDUIT_ERROR("Error creating state optlist");
-        if (n.has_path("cycle"))
         {
+            CONDUIT_ERROR("Error creating state optlist");
+        }
+        if (n_state.has_child("cycle"))
+        {
+            std::cout << "im doing cycle" << std::endl;
             int cyc_value = n_state["cycle"].to_int();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_CYCLE,
                                       &cyc_value);
         }
-        if (n.has_path("time"))
+        if (n_state.has_child("time"))
         {
+            std::cout << "im doing time" << std::endl;
             float ftime = n_state["time"].to_float();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_TIME,
