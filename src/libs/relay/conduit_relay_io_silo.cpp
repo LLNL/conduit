@@ -613,8 +613,8 @@ add_shape_info(DBzonelist *zones,
     if (zones->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
         CONDUIT_ERROR("Polygonal not yet supported");
-        // TODO yes be concerned Justin
-        // I will have to loop over the shapes array and expand it out to resemble the blueprint approach
+        // TODO zones->shapesize is NOT zones->nzones elements long; see docs
+        // TODO need to loop over the shapes array and expand it out to resemble the blueprint approach
         elements["sizes"].set(zones->shapesize, zones->nzones);
         add_offsets(zones, elements);
     }
@@ -672,6 +672,12 @@ read_ucdmesh_domain(DBfile *dbfile,
                       dims,
                       ucdmesh_ptr->coord_sys,
                       mesh_domain["coordsets"][multimesh_name]["values"]);
+
+    // TODO state here
+    // float ftime = 
+
+    // mesh_domain["state"]["time"] = ucdmesh_ptr->time;
+    // mesh_domain["state"]["cycle"] = ucdmesh_ptr->cycle;
 }
 
 //-----------------------------------------------------------------------------
@@ -1441,8 +1447,8 @@ read_mesh(const std::string &root_file_path,
             }
         }
 
-        // TODO we need to read multimaterials
-        // TODO we need to generate the state node if possible
+        // TODO read multimaterials
+        // TODO generate the state node if possible
     }
 }
 
@@ -1561,43 +1567,34 @@ void silo_write_field(DBfile *dbfile,
     // TODO what if we show up with vector values here? "values/u" and "values/v"? How to support this case?
     // there is logic to do this, use the non "1" versions of the putvar functions
 
-    // TODO investigate this: is casting to void ptr after generating a new ptr type
-    // giving us anything? if not, we can make a function that goes from dtype to vals type
-    // to clean this up - no, clean this up
+    vals_ptr = n_values.element_ptr(0);
     if (dtype.is_float())
     {
         vals_type = DB_FLOAT;
-        vals_ptr = n_values.element_ptr(0);
     }
     else if (dtype.is_double())
     {
         vals_type = DB_DOUBLE;
-        vals_ptr = (void *)n_values.as_double_ptr();
     }
     else if (dtype.is_int())
     {
         vals_type = DB_INT;
-        vals_ptr = (void *)n_values.as_int_ptr();
     }
     else if (dtype.is_long())
     {
         vals_type = DB_LONG;
-        vals_ptr = (void *)n_values.as_long_ptr();
     }
     else if (dtype.is_long_long())
     {
         vals_type = DB_LONG_LONG;
-        vals_ptr = (void *)n_values.as_long_long_ptr();
     }
     else if (dtype.is_char())
     {
         vals_type = DB_CHAR;
-        vals_ptr = (void *)n_values.as_char_ptr();
     }
     else if (dtype.is_short())
     {
         vals_type = DB_SHORT;
-        vals_ptr = (void *)n_values.as_short_ptr();
     }
     else
     {
@@ -1884,15 +1881,25 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
             DataType dtype = n_mesh_conn.dtype();
             // swizzle the connectivity
             if (dtype.is_uint64())
+            {
                 conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
+            }
             else if (dtype.is_uint32())
+            {
                 conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
+            }
             else if (dtype.is_int64())
+            {
                 conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
+            }
             else if (dtype.is_int32())
+            {
                 conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
+            }
             else
+            {
                 CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
+            }
         }
         else
         {
@@ -2287,10 +2294,14 @@ void silo_mesh_write(const Node &n,
         }
         if (n.has_path("time"))
         {
-            double time_value =  n_state["time"].to_double();
+            float ftime = n_state["time"].to_float();
+            silo_error += DBAddOption(state_optlist.getSiloObject(),
+                                      DBOPT_TIME,
+                                      &ftime);
+            double dtime = n_state["time"].to_double();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_DTIME,
-                                      &time_value);
+                                      &dtime);
         }
         CONDUIT_CHECK_SILO_ERROR(silo_error,
                                  " creating state optlist (time, cycle) ");
