@@ -1655,17 +1655,17 @@ void silo_write_field(DBfile *dbfile,
             dims[2] += 1;
         }
 
-        silo_error = DBPutQuadvar1( dbfile,
-                                    detail::sanitize_silo_varname(var_name).c_str(),
-                                    detail::sanitize_silo_varname(topo_name).c_str(),
-                                    vals_ptr,
-                                    dims,
-                                    num_dims,
-                                    NULL,
-                                    0,
-                                    vals_type,
-                                    centering,
-                                    NULL);
+        silo_error = DBPutQuadvar1(dbfile,
+                                   detail::sanitize_silo_varname(var_name).c_str(),
+                                   detail::sanitize_silo_varname(topo_name).c_str(),
+                                   vals_ptr,
+                                   dims,
+                                   num_dims,
+                                   NULL,
+                                   0,
+                                   vals_type,
+                                   centering,
+                                   NULL);
     }
     else if (mesh_type == "points") 
     {
@@ -1977,53 +1977,6 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
-void silo_write_ucd_mesh(DBfile *dbfile,
-                         const std::string &topo_name,
-                         const Node &n_coords,
-                         DBoptlist *state_optlist,
-                         const int ndims,
-                         const std::vector<const char *> &silo_coordset_axis_labels,
-                         Node &n_mesh_info)
-{
-    if (n_coords["type"].as_string() != "explicit")
-    {
-        CONDUIT_ERROR("Expected an explicit coordset when writing ucd mesh " << topo_name);
-    }
-
-    Node n_coords_compact;
-    compact_coords(n_coords, n_coords_compact);
-    // unstructured topo must have explicit coords so this is the right way to calculate num pts
-    int num_pts = get_explicit_num_pts(n_coords_compact);
-
-    n_mesh_info[topo_name]["num_pts"].set(num_pts);
-
-    void *coords_ptrs[3] = {NULL, NULL, NULL};
-    int coords_dtype = assign_coords_ptrs(coords_ptrs,
-                                          ndims,
-                                          n_coords_compact,
-                                          silo_coordset_axis_labels);
-
-    int num_elems = n_mesh_info[topo_name]["num_elems"].value();
-
-    // TODO there is a different approach for polyhedral zone lists
-    std::string zlist_name = topo_name + "_connectivity";
-
-    int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
-                                  detail::sanitize_silo_varname(topo_name).c_str(),           // mesh name
-                                  ndims,                       // number of dims
-                                  silo_coordset_axis_labels.data(), // coord names
-                                  coords_ptrs,                 // coords values
-                                  num_pts,            // number of points
-                                  num_elems,          // number of elements
-                                  detail::sanitize_silo_varname(zlist_name).c_str(), // zone list name
-                                  NULL,               // face list names
-                                  coords_dtype,       // type of data array
-                                  state_optlist);     // opt list
-
-    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutUcdmesh");
-}
-
-//---------------------------------------------------------------------------//
 void silo_write_quad_rect_mesh(DBfile *dbfile,
                                const std::string &topo_name,
                                const Node &n_topo,
@@ -2091,32 +2044,47 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
+void silo_write_ucd_mesh(DBfile *dbfile,
+                         const std::string &topo_name,
+                         DBoptlist *state_optlist,
+                         const int ndims,
+                         const int num_pts,
+                         char const * const coordnames[],
+                         const void *coords_ptrs,
+                         const int coords_dtype,
+                         Node &n_mesh_info)
+{
+    int num_elems = n_mesh_info[topo_name]["num_elems"].value();
+
+    // TODO there is a different approach for polyhedral zone lists
+    std::string zlist_name = topo_name + "_connectivity";
+
+    int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
+                                  detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                  ndims,                       // number of dims
+                                  coordnames, // coord names
+                                  coords_ptrs,                 // coords values
+                                  num_pts,            // number of points
+                                  num_elems,          // number of elements
+                                  detail::sanitize_silo_varname(zlist_name).c_str(), // zone list name
+                                  NULL,               // face list names
+                                  coords_dtype,       // type of data array
+                                  state_optlist);     // opt list
+
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutUcdmesh");
+}
+
+//---------------------------------------------------------------------------//
 void silo_write_structured_mesh(DBfile *dbfile,
                                 const std::string &topo_name,
                                 const Node &n_topo,
-                                const Node &n_coords,
                                 DBoptlist *state_optlist,
                                 const int ndims,
-                                const std::vector<const char *> &silo_coordset_axis_labels,
+                                char const * const coordnames[],
+                                const void *coords_ptrs,
+                                const int coords_dtype,
                                 Node &n_mesh_info) 
 {
-    if (n_coords["type"].as_string() != "explicit")
-    {
-        CONDUIT_ERROR("Expected an explicit coordset when writing structured mesh " << topo_name);
-    }
-
-    Node n_coords_compact;
-    compact_coords(n_coords, n_coords_compact);
-    // structured topo must have explicit points so this is the right way to calculate num pts
-    int num_pts = get_explicit_num_pts(n_coords_compact);
-
-    void *coords_ptrs[3] = {NULL, NULL, NULL};
-
-    int coords_dtype = assign_coords_ptrs(coords_ptrs,
-                                          ndims,
-                                          n_coords_compact,
-                                          silo_coordset_axis_labels);
-
     int ele_dims[3];
     ele_dims[0] = n_topo["elements/dims/i"].to_value();
     ele_dims[1] = n_topo["elements/dims/j"].to_value();
@@ -2132,12 +2100,10 @@ void silo_write_structured_mesh(DBfile *dbfile,
 
     // silo needs the node dims to define a structured grid
     int pts_dims[3];
-
     pts_dims[0] = ele_dims[0] + 1;
     pts_dims[1] = ele_dims[1] + 1;
     pts_dims[2] = 1;
 
-    n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_elems);
     n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
     n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
@@ -2168,7 +2134,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
                       detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                      silo_coordset_axis_labels.data(), // coord names
+                      coordnames, // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
                       ndims,                       // number of dims
@@ -2182,29 +2148,14 @@ void silo_write_structured_mesh(DBfile *dbfile,
 //---------------------------------------------------------------------------//
 void silo_write_pointmesh(DBfile *dbfile,
                           const std::string &topo_name,
-                          const Node &n_coords,
                           DBoptlist *state_optlist,
                           const int ndims,
-                          const std::vector<const char *> &silo_coordset_axis_labels,
+                          const int num_pts,
+                          const void *coords_ptrs,
+                          const int coords_dtype,
                           Node &n_mesh_info)
 {
-    if (n_coords["type"].as_string() != "explicit")
-    {
-        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
-    }
-
-    Node n_coords_compact;
-    compact_coords(n_coords, n_coords_compact);
-    int num_pts = get_explicit_num_pts(n_coords_compact);
-
-    n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
-
-    void *coords_ptrs[3] = {NULL, NULL, NULL};
-    int coords_dtype = assign_coords_ptrs(coords_ptrs,
-                                          ndims,
-                                          n_coords_compact,
-                                          silo_coordset_axis_labels);
 
     int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
                                     detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
@@ -2321,9 +2272,11 @@ void silo_mesh_write(const Node &n,
 
         const Node &n_coords = n["coordsets"][coordset_name];
 
+        // check dims
         int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
         CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
 
+        // get coordsys info
         std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
         int silo_coordsys_type = get_coordset_silo_type(coordsys);
         std::vector<const char *> silo_coordset_axis_labels = get_coordset_axis_labels(silo_coordsys_type);
@@ -2332,21 +2285,65 @@ void silo_mesh_write(const Node &n,
                                               &silo_coordsys_type),
                                  "error adding coordsys option");
 
-        if (topo_type == "unstructured")
+        if (topo_type == "unstructured" ||
+            topo_type == "structured" ||
+            topo_type == "points")
         {
-            silo_write_ucd_mesh(dbfile, topo_name, n_coords,
-                                state_optlist.getSiloObject(), 
-                                ndims, silo_coordset_axis_labels,
-                                n_mesh_info);
+            // check for explicit coords
+            if (n_coords["type"].as_string() != "explicit")
+            {
+                CONDUIT_ERROR("Expected an explicit coordset when writing " << topo_type 
+                              << " mesh " << topo_name);
+            }
+
+            // compact arrays
+            Node n_coords_compact;
+            compact_coords(n_coords, n_coords_compact);
+
+            // get num pts
+            const int num_pts = get_explicit_num_pts(n_coords_compact);
+            n_mesh_info[topo_name]["num_pts"].set(num_pts);
+
+            // get coords ptrs
+            void *coords_ptrs[3] = {NULL, NULL, NULL};
+            int coords_dtype = assign_coords_ptrs(coords_ptrs,
+                                                  ndims,
+                                                  n_coords_compact,
+                                                  silo_coordset_axis_labels);
+
+            if (topo_type == "unstructured")
+            {
+                silo_write_ucd_mesh(dbfile, topo_name,
+                                    state_optlist.getSiloObject(), 
+                                    ndims, num_pts, silo_coordset_axis_labels.data(),
+                                    coords_ptrs, coords_dtype,
+                                    n_mesh_info);
+            }
+            else if (topo_type == "structured")
+            {
+                silo_write_structured_mesh(dbfile, topo_name, n_topo,
+                                           state_optlist.getSiloObject(), 
+                                           ndims, silo_coordset_axis_labels.data(),
+                                           coords_ptrs, coords_dtype,
+                                           n_mesh_info);
+            }
+            else if (topo_type == "points")
+            {
+                silo_write_pointmesh(dbfile, topo_name,
+                                     state_optlist.getSiloObject(), 
+                                     ndims, num_pts,
+                                     coords_ptrs, coords_dtype,
+                                     n_mesh_info);
+            }
         }
-        else if (topo_type == "rectilinear") 
+        else if (topo_type == "rectilinear")
         {
             silo_write_quad_rect_mesh(dbfile, topo_name, n_topo, n_coords,
                                       state_optlist.getSiloObject(), 
                                       ndims, silo_coordset_axis_labels,
                                       n_mesh_info);
         }
-        else if (topo_type == "uniform") 
+        else if (topo_type == "uniform")
         {
             // silo doesn't have a direct path for a uniform mesh
             // we need to convert its implicit uniform coords to
@@ -2362,21 +2359,10 @@ void silo_mesh_write(const Node &n,
                                       state_optlist.getSiloObject(), 
                                       ndims, silo_coordset_axis_labels,
                                       n_mesh_info);
-
         }
-        else if (topo_type == "structured")
+        else
         {
-            silo_write_structured_mesh(dbfile, topo_name, n_topo, n_coords,
-                                       state_optlist.getSiloObject(), 
-                                       ndims, silo_coordset_axis_labels,
-                                       n_mesh_info);
-        }
-        else if (topo_type == "points")
-        {
-            silo_write_pointmesh(dbfile, topo_name, n_coords,
-                                 state_optlist.getSiloObject(), 
-                                 ndims, silo_coordset_axis_labels,
-                                 n_mesh_info);
+            CONDUIT_ERROR("Unknown topo type in " << topo_type);
         }
     }
 
