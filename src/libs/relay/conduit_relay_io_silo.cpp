@@ -1777,44 +1777,6 @@ int get_explicit_num_pts(const Node &n_vals)
 }
 
 //---------------------------------------------------------------------------//
-void silo_write_pointmesh(DBfile *dbfile,
-                          const std::string &topo_name,
-                          const Node &n_coords,
-                          DBoptlist *state_optlist,
-                          const int ndims,
-                          const std::vector<const char *> &silo_coordset_axis_labels,
-                          Node &n_mesh_info)
-{
-    if (n_coords["type"].as_string() != "explicit")
-    {
-        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
-    }
-
-    Node n_coords_compact;
-    compact_coords(n_coords, n_coords_compact);
-    int num_pts = get_explicit_num_pts(n_coords_compact);
-
-    n_mesh_info[topo_name]["num_pts"].set(num_pts);
-    n_mesh_info[topo_name]["num_elems"].set(num_pts);
-
-    void *coords_ptrs[3] = {NULL, NULL, NULL};
-    int coords_dtype = assign_coords_ptrs(coords_ptrs,
-                                          ndims,
-                                          n_coords_compact,
-                                          silo_coordset_axis_labels);
-
-    int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
-                                    detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                                    ndims,             // num_dims
-                                    coords_ptrs,       // coords values
-                                    num_pts,           // num eles = num pts
-                                    coords_dtype,      // type of data array
-                                    state_optlist);    // opt list
-
-    CONDUIT_CHECK_SILO_ERROR(silo_error, " after saving DBPutPointmesh");
-}
-
-//---------------------------------------------------------------------------//
 void silo_write_ucd_zonelist(DBfile *dbfile,
                              const std::string &topo_name,
                              const Node &n_topo,
@@ -2087,17 +2049,13 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
         pts_dims[2] = n_coords_compact[silo_coordset_axis_labels[2]].dtype().number_of_elements();
         num_pts *= pts_dims[2];
         num_elems *= (pts_dims[2] - 1);
+        n_mesh_info[topo_name]["elements/k"] = pts_dims[2] - 1;
     }
 
     n_mesh_info[topo_name]["num_pts"].set(num_pts);
     n_mesh_info[topo_name]["num_elems"].set(num_elems);
     n_mesh_info[topo_name]["elements/i"] = pts_dims[0] - 1;
     n_mesh_info[topo_name]["elements/j"] = pts_dims[1] - 1;
-    
-    if (ndims == 3) 
-    {
-        n_mesh_info[topo_name]["elements/k"] = pts_dims[2] - 1;
-    }
 
     void *coords_ptrs[3] = {NULL, NULL, NULL};
     int coords_dtype = assign_coords_ptrs(coords_ptrs,
@@ -2195,7 +2153,11 @@ void silo_write_structured_mesh(DBfile *dbfile,
     {
         base_index[0] = n_topo["elements/origin/i"].as_int();
         base_index[1] = n_topo["elements/origin/j"].as_int();
-        base_index[2] = n_topo["elements/origin/k"].as_int();
+        if (ndims == 3)
+        {
+            base_index[2] = n_topo["elements/origin/k"].as_int();
+        }
+        
 
         CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
                                               DBOPT_BASEINDEX,
@@ -2215,6 +2177,44 @@ void silo_write_structured_mesh(DBfile *dbfile,
                       state_optlist);  // opt list
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutQuadmesh");
+}
+
+//---------------------------------------------------------------------------//
+void silo_write_pointmesh(DBfile *dbfile,
+                          const std::string &topo_name,
+                          const Node &n_coords,
+                          DBoptlist *state_optlist,
+                          const int ndims,
+                          const std::vector<const char *> &silo_coordset_axis_labels,
+                          Node &n_mesh_info)
+{
+    if (n_coords["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("Expected an explicit coordset when writing point mesh " << topo_name);
+    }
+
+    Node n_coords_compact;
+    compact_coords(n_coords, n_coords_compact);
+    int num_pts = get_explicit_num_pts(n_coords_compact);
+
+    n_mesh_info[topo_name]["num_pts"].set(num_pts);
+    n_mesh_info[topo_name]["num_elems"].set(num_pts);
+
+    void *coords_ptrs[3] = {NULL, NULL, NULL};
+    int coords_dtype = assign_coords_ptrs(coords_ptrs,
+                                          ndims,
+                                          n_coords_compact,
+                                          silo_coordset_axis_labels);
+
+    int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
+                                    detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                    ndims,             // num_dims
+                                    coords_ptrs,       // coords values
+                                    num_pts,           // num eles = num pts
+                                    coords_dtype,      // type of data array
+                                    state_optlist);    // opt list
+
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " after saving DBPutPointmesh");
 }
 
 //---------------------------------------------------------------------------//
