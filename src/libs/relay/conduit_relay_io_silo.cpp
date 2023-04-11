@@ -358,8 +358,7 @@ public:
         {
             if (del(obj) != 0)
             {
-                // CONDUIT_ERROR() TODO hmmmm
-                std::cout << errmsg << std::endl;
+                CONDUIT_ERROR(errmsg);
             }
         }
     }
@@ -518,19 +517,6 @@ get_coordset_axis_labels(const int sys)
 }
 
 //-----------------------------------------------------------------------------
-// copy data and assign it to a Node
-template <typename T>
-void
-copy_and_assign(T *data,
-                const int data_length,
-                conduit::Node &target)
-{
-    T *data_copy = new T[data_length];
-    memcpy(data_copy, data, data_length * sizeof(T));
-    target.set(data_copy, data_length);
-}
-
-//-----------------------------------------------------------------------------
 template <typename T>
 void
 copy_point_coords_helper(void *coords[3],
@@ -539,7 +525,6 @@ copy_point_coords_helper(void *coords[3],
                          const int coord_sys,
                          conduit::Node &node)
 {
-
     ndims = ndims < 3 ? ndims : 3;
     std::vector<const char *> labels = get_coordset_axis_labels(coord_sys);
     if (coord_sys == DB_CYLINDRICAL && ndims >= 3)
@@ -547,11 +532,14 @@ copy_point_coords_helper(void *coords[3],
     for (int i = 0; i < ndims; i ++)
     {
         if (coords[i] != NULL)
-            copy_and_assign(static_cast<T *>(coords[i]),
-                            dims[i],
-                            node[labels[i]]);
+        {
+            // TODO is the static case needed?
+            node[labels[i]].set(static_cast<T *>(coords[i]), dims[i]);
+        }
         else
+        {
             return;
+        }
     }
 }
 
@@ -565,11 +553,17 @@ copy_point_coords(const int datatype,
                   conduit::Node &node)
 {
     if (datatype == DB_DOUBLE)
+    {
         copy_point_coords_helper<double>(coords, ndims, dims, coord_sys, node);
+    }
     else if (datatype == DB_FLOAT)
+    {
         copy_point_coords_helper<float>(coords, ndims, dims, coord_sys, node);
-    else 
+    }
+    else
+    {
         CONDUIT_ERROR("Unsupported mesh data type " << datatype);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -601,9 +595,7 @@ add_shape_info(DBzonelist *zones,
     }
 
     elements["shape"] = shapetype_to_string(zones->shapetype[0]);
-    copy_and_assign(zones->nodelist,
-                    zones->lnodelist,
-                    elements["connectivity"]);
+    elements["connectivity"].set(zones->nodelist, zones->lnodelist);
     if (zones->shapetype[0] == DB_ZONETYPE_PRISM)
     {
         // we must reorder the wedge connectivity b/c conduit uses the 
@@ -627,13 +619,16 @@ add_shape_info(DBzonelist *zones,
     {
         // TODO: support polyhedra
         CONDUIT_ERROR("Polyhedra not yet supported");
-        copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
+        elements["sizes"].set(zones->shapesize, zones->nzones);
         // TODO: no idea if this is right
         add_offsets(zones, elements["subelements"]); 
     }
     if (zones->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
-        copy_and_assign(zones->shapesize, zones->nzones, elements["sizes"]);
+        CONDUIT_ERROR("Polygonal not yet supported");
+        // TODO yes be concerned Justin
+        // I will have to loop over the shapes array and expand it out to resemble the blueprint approach
+        elements["sizes"].set(zones->shapesize, zones->nzones);
         add_offsets(zones, elements);
     }
 }
@@ -802,7 +797,7 @@ apply_values(void **vals,
 {
     for (int i = 0; i < num_arrays; ++i)
     {
-        copy_and_assign(static_cast<T *>(vals[i]), num_elems, values);
+        values.set(static_cast<T *>(vals[i]), num_elems);
     }
 }
 
@@ -1462,8 +1457,6 @@ read_mesh(const std::string &root_file_path,
         // TODO we need to read multimaterials
         // TODO we need to generate the state node if possible
     }
-
-    // TODO should I call verify at the end here?
 }
 
 //-----------------------------------------------------------------------------
@@ -1579,14 +1572,15 @@ void silo_write_field(DBfile *dbfile,
 
     DataType dtype = n_var["values"].dtype();
     // TODO what if we show up with vector values here? "values/u" and "values/v"? How to support this case?
+    // there is logic to do this, use the non "1" versions of the putvar functions
 
     // TODO investigate this: is casting to void ptr after generating a new ptr type
     // giving us anything? if not, we can make a function that goes from dtype to vals type
-    // to clean this up
+    // to clean this up - no, clean this up
     if (dtype.is_float())
     {
         vals_type = DB_FLOAT;
-        vals_ptr = (void *)n_values.as_float_ptr();
+        vals_ptr = n_values.element_ptr(0);
     }
     else if (dtype.is_double())
     {
@@ -1704,7 +1698,7 @@ assign_coords_ptrs(void *coords_ptrs[3],
                    conduit::Node &n_coords_compact,
                    std::vector<const char *> &coordsys_labels)
 {
-
+    // TODO think about dtype stuff with Cyrus
     DataType dtype = n_coords_compact[coordsys_labels[0]].dtype();
     CONDUIT_ASSERT(dtype.id() == n_coords_compact[coordsys_labels[1]].dtype().id(),
                    "all coordinate arrays must have same type, got " << dtype.to_string()
@@ -1715,15 +1709,21 @@ assign_coords_ptrs(void *coords_ptrs[3],
                        "all coordinate arrays must have same type, got " << dtype.to_string()
                         << " and " << n_coords_compact[coordsys_labels[2]].dtype().to_string());
     }
-    coords_ptrs[0] = n_coords_compact[coordsys_labels[0]].data_ptr();
-    coords_ptrs[1] = n_coords_compact[coordsys_labels[1]].data_ptr();
+    coords_ptrs[0] = n_coords_compact[coordsys_labels[0]].element_ptr(0);
+    coords_ptrs[1] = n_coords_compact[coordsys_labels[1]].element_ptr(0);
     if (ndims == 3)
-        coords_ptrs[2] = n_coords_compact[coordsys_labels[2]].data_ptr();
+    {
+        coords_ptrs[2] = n_coords_compact[coordsys_labels[2]].element_ptr(0);
+    }
 
     if (dtype.is_float())
+    {
         return DB_FLOAT;
+    }
     else if (dtype.is_double())
+    {
         return DB_DOUBLE;
+    }
     else
     {
         CONDUIT_ERROR("coords data type not implemented, found "
@@ -1990,7 +1990,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         else
         {
             // TODO why were polygons and polyhedra never added to this list?
-            CONDUIT_ERROR("TODO we do not yet support topo shape " << topo_shape);
+            CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
         }
     }
 
@@ -2064,6 +2064,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
+    // TODO there is a different approach for polyhedral zone lists
     std::string zlist_name = topo_name + "_connectivity";
 
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
@@ -2499,7 +2500,7 @@ void write_multimeshes(DBfile *dbfile,
                        const conduit::Node &root)
 {
     const int num_files = root["number_of_files"].as_int32();
-    const int global_num_domains = root["number_of_trees"].as_int32();
+    const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
     if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
@@ -2603,7 +2604,7 @@ write_multivars(DBfile *dbfile,
                 const conduit::Node &root)
 {
     const int num_files = root["number_of_files"].as_int32();
-    const int global_num_domains = root["number_of_trees"].as_int32();
+    const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
     // TODO check in visit for if there are domains where vars are not defined what does it do
@@ -3668,7 +3669,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["protocol/version"] = CONDUIT_VERSION;
 
         root["number_of_files"]  = num_files;
-        root["number_of_trees"]  = global_num_domains;
+        root["number_of_domains"]  = global_num_domains;
 
         root["silo_path"] = output_silo_path;
 
