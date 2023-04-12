@@ -1555,6 +1555,40 @@ void load_mesh(const std::string &root_file_path,
 }
 
 //---------------------------------------------------------------------------//
+int dtype_to_silo_type(DataType dtype)
+{
+    if (dtype.is_float())
+    {
+        return DB_FLOAT;
+    }
+    else if (dtype.is_double())
+    {
+        return DB_DOUBLE;
+    }
+    else if (dtype.is_int())
+    {
+        return DB_INT;
+    }
+    else if (dtype.is_long())
+    {
+        return DB_LONG;
+    }
+    else if (dtype.is_long_long())
+    {
+        return DB_LONG_LONG;
+    }
+    else if (dtype.is_char())
+    {
+        return DB_CHAR;
+    }
+    else if (dtype.is_short())
+    {
+        return DB_SHORT;
+    }
+    return DB_NOTYPE;
+}
+
+//---------------------------------------------------------------------------//
 void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
@@ -1615,7 +1649,6 @@ void silo_write_field(DBfile *dbfile,
     n_var["values"].compact_to(n_values);
 
     // create a name
-    int vals_type = 0;
     void *vals_ptr = NULL;
 
     DataType dtype = n_var["values"].dtype();
@@ -1623,35 +1656,8 @@ void silo_write_field(DBfile *dbfile,
     // there is logic to do this, use the non "1" versions of the putvar functions
 
     vals_ptr = n_values.element_ptr(0);
-    if (dtype.is_float())
-    {
-        vals_type = DB_FLOAT;
-    }
-    else if (dtype.is_double())
-    {
-        vals_type = DB_DOUBLE;
-    }
-    else if (dtype.is_int())
-    {
-        vals_type = DB_INT;
-    }
-    else if (dtype.is_long())
-    {
-        vals_type = DB_LONG;
-    }
-    else if (dtype.is_long_long())
-    {
-        vals_type = DB_LONG_LONG;
-    }
-    else if (dtype.is_char())
-    {
-        vals_type = DB_CHAR;
-    }
-    else if (dtype.is_short())
-    {
-        vals_type = DB_SHORT;
-    }
-    else
+    int vals_type = dtype_to_silo_type(dtype);
+    if (vals_type == DB_NOTYPE)
     {
         // skip the field if we don't support its type
         CONDUIT_INFO("skipping field "
@@ -1662,7 +1668,6 @@ void silo_write_field(DBfile *dbfile,
     }
 
     int silo_error = 0;
-
     if (mesh_type == "unstructured")
     {
         silo_error = DBPutUcdvar1(dbfile, 
