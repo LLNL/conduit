@@ -632,13 +632,12 @@ add_shape_info(DBzonelist *zones,
 
 //-----------------------------------------------------------------------------
 void
-add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir)
+add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir, int dom_id)
 {
-    // look for dtime then time like VisIt
-
     std::string dtime_str = mesh_dir + "/dtime";
     std::string ftime_str = mesh_dir + "/time";
 
+    // look for dtime then time like VisIt
     if (DBInqVarExists(dbfile, dtime_str.c_str()))
     {
         float dtime;
@@ -651,29 +650,16 @@ add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir)
         DBReadVar(dbfile, ftime_str.c_str(), &ftime);
         mesh_domain["state"]["time"] = (double) ftime;
     }
-    else
-    {
-        std::cout << "no time" << std::endl;
-    }
-
-    // double ftime = (double) mesh_ptr->time;
-    // double dtime = mesh_ptr->dtime;
-    // mesh_domain["state"]["time"] = (double) ftime;
 
     std::string cycle_str = mesh_dir + "/cycle";
-
-    std::cout << "cycle_str: "  << cycle_str << std::endl;
-
     if (DBInqVarExists(dbfile, cycle_str.c_str()))
     {
         int cycle;
         DBReadVar(dbfile, cycle_str.c_str(), &cycle);
         mesh_domain["state"]["cycle"] = cycle;
     }
-    else
-    {
-        std::cout << "no cycle" << std::endl;
-    }
+
+    mesh_domain["state"]["domain_id"] = dom_id;
 }
 
 //-----------------------------------------------------------------------------
@@ -1385,7 +1371,7 @@ read_mesh(const std::string &root_file_path,
     std::string silo_name, relative_dir;
     utils::rsplit_file_path(root_file_path, silo_name, relative_dir);
 
-    for (int i = domain_start; i < domain_end; i++)
+    for (int i = domain_start; i < domain_end; i ++)
     {
         std::string silo_mesh_path = mesh_index["mesh_paths"][i].as_string();
         int_accessor meshtypes = mesh_index["mesh_types"].value();
@@ -1428,7 +1414,7 @@ read_mesh(const std::string &root_file_path,
 
         std::string mesh_dir, tmp;
         utils::split_string(mesh_name, "/", mesh_dir, tmp);
-        add_state(mesh_domain_file.getSiloObject(), mesh_out, mesh_dir);
+        add_state(mesh_domain_file.getSiloObject(), mesh_out, mesh_dir, i);
 
         // for each mesh domain, we would like to iterate through all the variables
         // and extract the same domain from them.
@@ -1835,7 +1821,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 {
     Node ucd_zlist;
 
-    index_t num_shapes = 0;
+    index_t num_shapes = 1;
     ucd_zlist["shapetype"].set(DataType::c_int(1));
     ucd_zlist["shapesize"].set(DataType::c_int(1));
     ucd_zlist["shapecnt"].set(DataType::c_int(1));
@@ -2216,7 +2202,6 @@ void silo_mesh_write(const Node &n,
         }
         if (n_state.has_child("cycle"))
         {
-            std::cout << "im doing cycle" << std::endl;
             int cyc_value = n_state["cycle"].to_int();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_CYCLE,
@@ -2224,7 +2209,6 @@ void silo_mesh_write(const Node &n,
         }
         if (n_state.has_child("time"))
         {
-            std::cout << "im doing time" << std::endl;
             float ftime = n_state["time"].to_float();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_TIME,

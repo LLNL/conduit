@@ -204,7 +204,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 
         // check that load mesh correctly adds the state
         save_mesh["state/cycle"] = 0;
-
+        save_mesh["state/domain_id"] = 0;
         // The silo conversion will transform uniform to rectilinear
         // so we will do the same to allow the diff to succeed
         if (mesh_type == "uniform")
@@ -297,8 +297,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
-    // TODO change back to 6
-    for (int ndomains = 2; ndomains < 3; ndomains ++)
+    for (int ndomains = 2; ndomains < 6; ndomains ++)
     {
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
@@ -321,13 +320,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 
             // save_mesh[child]["state/time"] = 0.0;
         }
-
-        std::cout << "=======" << std::endl;
-        std::cout << "I am save mesh" << std::endl;
-        save_mesh.print();
-        std::cout << "I am load mesh" << std::endl;
-        load_mesh.print();
-        std::cout << "=======" << std::endl;
 
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
         NodeConstIterator l_itr = load_mesh.children();
