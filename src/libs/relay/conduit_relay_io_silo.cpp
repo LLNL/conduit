@@ -1648,24 +1648,69 @@ void silo_write_field(DBfile *dbfile,
     Node n_values;
     n_var["values"].compact_to(n_values);
 
-    // create a name
-    void *vals_ptr = NULL;
+    DataType dtype = n_values.dtype();
+    bool vector_data = false;
+    int vals_type = DB_NOTYPE;
 
-    DataType dtype = n_var["values"].dtype();
+    int nvars = 0;
+    std::vector<std::string> comp_name_strings;
+    std::vector<const char *> comp_name_ptrs;
+    std::vector<const void *> comp_vals_ptrs;
+
+    // if we have vector/tensor values instead
+    if (dtype.is_object())
+    {
+        vector_data = true;
+        nvars = n_values.number_of_children();
+
+        if (nvars > 0)
+        {
+            vals_type = dtype_to_silo_type(n_values[0].dtype());
+            if (vals_type == DB_NOTYPE)
+            {
+                // skip the field if we don't support its type
+                CONDUIT_INFO("skipping field "
+                             << var_name
+                             << ", since its type is not implemented, found "
+                             << dtype.name());
+                return;
+            }
+        }
+
+        auto val_itr = n_var["values"].children();
+        while (val_itr.has_next())
+        {
+            const Node &n_comp = val_itr.next();
+            std::string comp_name = val_itr.name();
+
+            if (vals_type != dtype_to_silo_type(n_comp.dtype()))
+            {
+                CONDUIT_ERROR("Inconsistent values types across vector components in field " << var_name);
+            }
+
+            comp_name_strings.push_back(comp_name);
+            comp_name_ptrs.push_back(comp_name_strings.back().c_str());
+            comp_vals_ptrs.push_back(n_comp.element_ptr(0));
+        }
+    }
+    else
+    {
+        vals_type = dtype_to_silo_type(dtype);
+        if (vals_type == DB_NOTYPE)
+        {
+            // skip the field if we don't support its type
+            CONDUIT_INFO("skipping field "
+                         << var_name
+                         << ", since its type is not implemented, found "
+                         << dtype.name());
+            return;
+        }
+        comp_vals_ptrs.push_back(n_values.element_ptr(0));
+    }
+
+
     // TODO what if we show up with vector values here? "values/u" and "values/v"? How to support this case?
     // there is logic to do this, use the non "1" versions of the putvar functions
-
-    vals_ptr = n_values.element_ptr(0);
-    int vals_type = dtype_to_silo_type(dtype);
-    if (vals_type == DB_NOTYPE)
-    {
-        // skip the field if we don't support its type
-        CONDUIT_INFO("skipping field "
-                     << var_name
-                     << ", since its type is not implemented, found "
-                     << dtype.name());
-        return;
-    }
 
     int silo_error = 0;
     if (mesh_type == "unstructured")
@@ -1673,7 +1718,7 @@ void silo_write_field(DBfile *dbfile,
         silo_error = DBPutUcdvar1(dbfile, 
                                   detail::sanitize_silo_varname(var_name).c_str(),
                                   detail::sanitize_silo_varname(topo_name).c_str(),
-                                  vals_ptr,
+                                  comp_vals_ptrs.data()[0],
                                   num_values,
                                   NULL,
                                   0,
@@ -1704,27 +1749,47 @@ void silo_write_field(DBfile *dbfile,
             dims[2] += 1;
         }
 
-        silo_error = DBPutQuadvar1(dbfile,
-                                   detail::sanitize_silo_varname(var_name).c_str(),
-                                   detail::sanitize_silo_varname(topo_name).c_str(),
-                                   vals_ptr,
-                                   dims,
-                                   num_dims,
-                                   NULL,
-                                   0,
-                                   vals_type,
-                                   centering,
-                                   NULL);
+        // TODO generalize
+        if (vector_data)
+        {
+            silo_error = DBPutQuadvar(dbfile, // Database file pointer
+                                      detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                      detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                      nvars, // number of variable components
+                                      comp_name_ptrs.data(), // variable component names
+                                      comp_vals_ptrs.data(), // the data values
+                                      dims, // the dimensions of the data
+                                      num_dims, // number of dimensions
+                                      NULL, // mixed data arrays
+                                      0, // lenght of mixed data arrays
+                                      vals_type, // Datatype of the variable
+                                      centering, // centering (nodal or zonal)
+                                      NULL); // optlist
+        }
+        else
+        {
+            silo_error = DBPutQuadvar1(dbfile, // Database file pointer
+                                       detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                       detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                       comp_vals_ptrs.data()[0], // data values
+                                       dims, // the dimensions of the data
+                                       num_dims, // number of dimensions
+                                       NULL, // mixed data arrays
+                                       0, // lenght of mixed data arrays
+                                       vals_type, // Datatype of the variable
+                                       centering, // centering (nodal or zonal)
+                                       NULL); // optlist
+        }
     }
     else if (mesh_type == "points") 
     {
-        silo_error = DBPutPointvar1(dbfile, // dbfile Database file pointer.
+        silo_error = DBPutPointvar1(dbfile, // Database file pointer.
                                     detail::sanitize_silo_varname(var_name).c_str(),  // variable name
                                     detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                                    vals_ptr,          // data values
-                                    num_pts, // Number of elements (points).
-                                    vals_type, // Datatype of the variable.
-                                    NULL);
+                                    comp_vals_ptrs.data()[0], // data values
+                                    num_pts, // Number of elements (points)
+                                    vals_type, // Datatype of the variable
+                                    NULL); // optlist
     }
     else
     {

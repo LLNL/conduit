@@ -232,9 +232,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
-        std::make_pair("uniform", 2), // std::make_pair("uniform", 3),
-        // std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
-        // std::make_pair("structured", 2), std::make_pair("structured", 3),
+        std::make_pair("uniform", 2), std::make_pair("uniform", 3),
+        std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
+        std::make_pair("structured", 2), std::make_pair("structured", 3),
         // std::make_pair("point", 2), std::make_pair("point", 3),
         // std::make_pair("lines", 2), std::make_pair("lines", 3),
         // std::make_pair("tris", 2),
@@ -255,13 +255,12 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 
         std::string mesh_type = mesh_types[i].first;
 
-        // std::cout << mesh_type << std::endl;
+        std::cout << mesh_type << std::endl;
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
-        save_mesh.print();
-
+        // save_mesh.print();
 
         io::silo::save_mesh(save_mesh, "braid");
         // io::silo::load_mesh("braid.root", load_mesh);
