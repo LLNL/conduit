@@ -368,7 +368,7 @@ class SiloTreePathGenerator
 {
 private:
     bool nameschemes;
-    // TODO other stuff to support nameschemes
+    // TODO_LATER more work is required to support nameschemes
 
 public:
     SiloTreePathGenerator(bool nameschemes_on) : nameschemes(nameschemes_on) {}
@@ -612,19 +612,19 @@ add_shape_info(DBzonelist *zones,
         }
     }
 
+    // TODO_LATER polytopal support
     if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
-        // TODO: support polyhedra
         CONDUIT_ERROR("Polyhedra not yet supported");
         elements["sizes"].set(zones->shapesize, zones->nzones);
-        // TODO: no idea if this is right
+        // TODO_LATER double check this approach
         add_offsets(zones, elements["subelements"]); 
     }
     if (zones->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
         CONDUIT_ERROR("Polygons not yet supported");
-        // TODO zones->shapesize is NOT zones->nzones elements long; see docs
-        // TODO need to loop over the shapes array and expand it out to resemble the blueprint approach
+        // TODO_LATER zones->shapesize is NOT zones->nzones elements long; see docs
+        // TODO_LATER need to loop over the shapes array and expand it out to resemble the blueprint approach
         elements["sizes"].set(zones->shapesize, zones->nzones);
         add_offsets(zones, elements);
     }
@@ -689,7 +689,7 @@ read_ucdmesh_domain(DBfile *dbfile,
     }
     else if (ucdmesh_ptr->phzones)
     {
-        // TODO: implement support for phzones
+        // TODO_LATER implement support for phzones
         CONDUIT_ERROR("Silo ucdmesh phzones not yet supported");
         mesh_domain["topologies"][multimesh_name]["elements"]["shape"] =
             shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
@@ -865,6 +865,7 @@ read_variable_domain(const T *var_ptr,
     }
 }
 
+// TODO_LATER support material read
 // //-----------------------------------------------------------------------------
 // // Read a material domain from a Silo file.
 // // 'file' must be a pointer into the file containing the material domain
@@ -900,7 +901,7 @@ read_variable_domain(const T *var_ptr,
 //         }
 //         curr_matset["material_map"][material_name] = material_ptr->matnos[i];
 //     }
-//     // TODO: support multi-dimensional materials
+//     // TODO_LATER: support multi-dimensional materials
 //     CONDUIT_ASSERT(material_ptr->ndims == 1,
 //                    "Only single-dimension materials supported, got "
 //                        << material_ptr->ndims);
@@ -962,7 +963,7 @@ read_variable_domain(const T *var_ptr,
 //     }
 //     else
 //     {
-//         // TODO: remove, since this is just a special case of the above logic, I think?
+//         // TODO_LATER: remove, since this is just a special case of the above logic, I think?
 //         // no volume fractions. All zones are single-material.
 //         int arr_len = material_ptr->dims[0];
 //         copy_and_assign(material_ptr->matlist,
@@ -1161,10 +1162,9 @@ read_root_silo_index(const std::string &root_file_path,
     root_node[multimesh_name]["nblocks"] = nblocks;
 
     bool nameschemes = false;
-    // TODO nameschemes
+    // TODO_LATER nameschemes
     if (nameschemes)
     {
-        // TODO
         root_node[multimesh_name]["nameschemes"] = "yes";
     }
     else
@@ -1204,11 +1204,10 @@ read_root_silo_index(const std::string &root_file_path,
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
             bool var_nameschemes = false;
-            // TODO var_nameschemes
+            // TODO_LATER var_nameschemes
             if (var_nameschemes)
             {
                 var["nameschemes"] = "yes";
-                // TODO
             }
             else
             {
@@ -1255,6 +1254,10 @@ read_root_silo_index(const std::string &root_file_path,
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
+///
+/// note: we have made the choice to read ONLY the multimesh with the name
+/// mesh_name. We also read all multivariables which are associated with the
+/// chosen multimesh.
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
@@ -1364,7 +1367,7 @@ read_mesh(const std::string &root_file_path,
         mesh_index["nameschemes"].as_string() == "yes")
     {
         mesh_nameschemes = true;
-        CONDUIT_ERROR("TODO no support for nameschemes yet");
+        CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
     }
     detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
 
@@ -1432,7 +1435,7 @@ read_mesh(const std::string &root_file_path,
                     n_var["nameschemes"].as_string() == "yes")
                 {
                     var_nameschemes = true;
-                    CONDUIT_ERROR("TODO no support for nameschemes yet");
+                    CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
                 }
                 detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
 
@@ -1496,8 +1499,7 @@ read_mesh(const std::string &root_file_path,
             }
         }
 
-        // TODO read multimaterials
-        // TODO generate the state node if possible
+        // TODO_LATER read multimaterials
     }
 }
 
@@ -1528,6 +1530,10 @@ void load_mesh(const std::string &root_file_path,
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
+///
+/// note: we have made the choice to read ONLY the multimesh with the name
+/// mesh_name. We also read all multivariables which are associated with the
+/// chosen multimesh.
 //-----------------------------------------------------------------------------
 void load_mesh(const std::string &root_file_path,
                const conduit::Node &opts,
@@ -1943,7 +1949,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
     else
     {
-        // TODO add polygons and polyhedra and mixed
+        // TODO_LATER add polygons and polyhedra and mixed
         CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
     }
 
@@ -2056,7 +2062,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 {
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
-    // TODO there is a different approach for polyhedral zone lists
+    // TODO_LATER there is a different approach for polyhedral zone lists
     std::string zlist_name = topo_name + "_connectivity";
 
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
@@ -2515,7 +2521,7 @@ void write_multimeshes(DBfile *dbfile,
 
         std::string multimesh_name = opts_mesh_name + "_" + topo_name;
 
-        // TODO add any dboptions? - only if nameschemes show up here
+        // TODO_LATER add dboptions for nameschemes
 
         CONDUIT_CHECK_SILO_ERROR(
             DBPutMultimesh(
@@ -2530,7 +2536,7 @@ void write_multimeshes(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
-// TODO rework this function and use it
+// TODO_LATER support multimaterial write
 // void
 // write_multimaterial(DBfile *root,
 //                     const std::string &mmat_name,
@@ -2657,13 +2663,12 @@ write_multivars(DBfile *dbfile,
 ///            when # of domains == 1,  "default"   ==> "root_only"
 ///            else,                    "default"   ==> "multi_file"
 ///
-///      silo_type: "default", "pdb", "hdf5", ARE ALL WE WANT FOR NOW
-
-// these other ones are BONUS TODO - make a note here about how these are options that exist but we won't support them right away
-// "hdf5_sec2", "hdf5_stdio",
-///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
+///      silo_type: "default", "pdb", "hdf5", "unknown"
 ///            when 'path' exists, "default" ==> "unknown"
 ///            else,               "default" ==> "hdf5"
+///         note: these are additional silo_type options that we could add 
+///         support for in the future:
+///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
 ///
 ///      suffix: "default", "cycle", "none"
 ///            when # of domains == 1,  "default"   ==> "none"
@@ -2676,8 +2681,8 @@ write_multivars(DBfile *dbfile,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
-/// note: we have made the choice to output ALL topologies... TODO finish explantion
-// TODO add explanation to read_mesh too
+/// note: we have made the choice to output ALL topologies as multimeshes. We
+/// prepend the provided mesh_name to each of these topo names.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
@@ -2750,11 +2755,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     }
 
     // check for + validate silo_type option
-    // TODO add more in later?
     if (opts.has_child("silo_type") && opts["silo_type"].dtype().is_string())
     {
         opts_silo_type = opts["silo_type"].as_string();
 
+        // TODO_LATER if we were to add additional silo_type options in the future,
+        // they would need to be added here.
         if(opts_silo_type != "default" && 
            opts_silo_type != "pdb" &&
            opts_silo_type != "hdf5" &&
@@ -2789,7 +2795,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     {
         silo_type = DB_UNKNOWN;
     }
-    // TODO use these later? - make note
+    // TODO_LATER these are the additional silo_type options we could add support 
+    // for in the future.
     // else if (opts_silo_type == "hdf5_sec2")
     // {
     //     silo_type = DB_HDF5_SEC2;
@@ -2802,11 +2809,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // {
     //     silo_type = DB_HDF5_MPIO;
     // }
-    // // TODO when can I uncomment this
-    // // else if (opts_silo_type == "hdf5_mpiposix")
-    // // {
-    // //     silo_type = DB_HDF5_MPIPOSIX; 
-    // // }
+    // else if (opts_silo_type == "hdf5_mpiposix")
+    // {
+    //     silo_type = DB_HDF5_MPIPOSIX; 
+    // }
     // else if (opts_silo_type == "taurus") 
     // {
     //     silo_type = DB_TAURUS;
@@ -3673,8 +3679,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, root);
         write_multivars(dbfile.getSiloObject(), opts_mesh_name, root);
-        // TODO
-        // write_multimaterial();
+        // write_multimaterials(); // TODO_LATER
 
     }
 
@@ -3743,13 +3748,12 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///            when # of domains == 1,  "default"   ==> "root_only"
 ///            else,                    "default"   ==> "multi_file"
 ///
-///      silo_type: "default", "pdb", "hdf5", ARE ALL WE WANT FOR NOW
-
-// these other ones are BONUS TODO
-// "hdf5_sec2", "hdf5_stdio",
-///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
+///      silo_type: "default", "pdb", "hdf5", "unknown"
 ///            when 'path' exists, "default" ==> "unknown"
 ///            else,               "default" ==> "hdf5"
+///         note: these are additional silo_type options that we could add 
+///         support for in the future:
+///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
 ///
 ///      suffix: "default", "cycle", "none"
 ///            when # of domains == 1,  "default"   ==> "none"
@@ -3762,6 +3766,8 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
+/// note: we have made the choice to output ALL topologies as multimeshes. We
+/// prepend the provided mesh_name to each of these topo names.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
@@ -3807,3 +3813,5 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
+
+// TODO change TODO_LATER back everywhere
