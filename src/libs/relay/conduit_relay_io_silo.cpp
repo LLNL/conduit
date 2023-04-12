@@ -632,13 +632,12 @@ add_shape_info(DBzonelist *zones,
 
 //-----------------------------------------------------------------------------
 void
-add_state(DBfile *dbfile, Node &mesh_domain, std::string &multimesh_name)
+add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir)
 {
-    std::cout << "what the heck" << std::endl;
     // look for dtime then time like VisIt
 
-    std::string dtime_str = multimesh_name + "/dtime";
-    std::string ftime_str = multimesh_name + "/time";
+    std::string dtime_str = mesh_dir + "/dtime";
+    std::string ftime_str = mesh_dir + "/time";
 
     if (DBInqVarExists(dbfile, dtime_str.c_str()))
     {
@@ -661,10 +660,14 @@ add_state(DBfile *dbfile, Node &mesh_domain, std::string &multimesh_name)
     // double dtime = mesh_ptr->dtime;
     // mesh_domain["state"]["time"] = (double) ftime;
 
-    if (DBInqVarExists(dbfile, "cycle"))
+    std::string cycle_str = mesh_dir + "/cycle";
+
+    std::cout << "cycle_str: "  << cycle_str << std::endl;
+
+    if (DBInqVarExists(dbfile, cycle_str.c_str()))
     {
         int cycle;
-        DBReadVar(dbfile, "cycle", &cycle);
+        DBReadVar(dbfile, cycle_str.c_str(), &cycle);
         mesh_domain["state"]["cycle"] = cycle;
     }
     else
@@ -1423,7 +1426,9 @@ read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
         }
 
-        add_state(mesh_domain_file.getSiloObject(), mesh_out, multimesh_name);
+        std::string mesh_dir, tmp;
+        utils::split_string(mesh_name, "/", mesh_dir, tmp);
+        add_state(mesh_domain_file.getSiloObject(), mesh_out, mesh_dir);
 
         // for each mesh domain, we would like to iterate through all the variables
         // and extract the same domain from them.
@@ -1740,7 +1745,6 @@ assign_coords_ptrs(void *coords_ptrs[3],
                    conduit::Node &n_coords_compact,
                    const std::vector<const char *> &coordsys_labels)
 {
-    // TODO think about dtype stuff with Cyrus
     DataType dtype = n_coords_compact[coordsys_labels[0]].dtype();
     CONDUIT_ASSERT(dtype.id() == n_coords_compact[coordsys_labels[1]].dtype().id(),
                    "all coordinate arrays must have same type, got " << dtype.to_string()
@@ -1839,19 +1843,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     const Node &n_elements = n_topo["elements"];
     std::string coordset_name = n_topo["coordset"].as_string();
 
-    bool shape_list = true;
-
-    if (n_elements.dtype().is_object())
-    {
-        // simple path case
-        num_shapes = 1;
-    } 
-    else if (n_elements.dtype().is_list())
-    {
-        shape_list = false;
-        num_shapes = n_elements.number_of_children();
-    } 
-    else
+    if (!n_elements.dtype().is_object())
     {
         CONDUIT_ERROR("Invalid elements for 'unstructured' case");
     }
@@ -1862,135 +1854,111 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 
     int total_num_elems = 0;
 
-    const Node *shape_block = &n_elements;
     Node n_conn;
 
-    for (index_t i = 0; i < num_shapes; i++)
+    std::string topo_shape = n_elements["shape"].as_string();
+
+    Node n_mesh_conn;
+    
+    // We are using the vtk ordering for our wedges; silo wedges (prisms)
+    // expect a different ordering. Thus before we output to silo, we must
+    // change the ordering of each of our wedges.
+    if (topo_shape == "wedge")
     {
-        if (shape_list) 
+        n_mesh_conn.set(n_elements["connectivity"]);
+        DataType dtype = n_mesh_conn.dtype();
+        // swizzle the connectivity
+        if (dtype.is_uint64())
         {
-            // TODO: This is wrong, re work silo logic post bp verify merge
-            // const Node *shape_block = n_elements.child_ptr(i);
+            conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
         }
-
-        std::string topo_shape = shape_block->fetch("shape").as_string();
-
-        Node n_mesh_conn;
-        
-        // We are using the vtk ordering for our wedges; silo wedges (prisms)
-        // expect a different ordering. Thus before we output to silo, we must
-        // change the ordering of each of our wedges.
-        if (topo_shape == "wedge")
+        else if (dtype.is_uint32())
         {
-            n_mesh_conn.set(shape_block->fetch("connectivity"));
-            DataType dtype = n_mesh_conn.dtype();
-            // swizzle the connectivity
-            if (dtype.is_uint64())
-            {
-                conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
-            }
-            else if (dtype.is_uint32())
-            {
-                conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
-            }
-            else if (dtype.is_int64())
-            {
-                conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
-            }
-            else if (dtype.is_int32())
-            {
-                conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
-            }
-            else
-            {
-                CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
-            }
+            conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
+        }
+        else if (dtype.is_int64())
+        {
+            conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
+        }
+        else if (dtype.is_int32())
+        {
+            conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
         }
         else
         {
-            n_mesh_conn.set_external(shape_block->fetch("connectivity"));
+            CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
         }
+    }
+    else
+    {
+        n_mesh_conn.set_external(n_elements["connectivity"]);
+    }
 
-        // convert to compact ints ...
-        if (shape_list)
-        {
-            n_mesh_conn.compact_to(n_conn.append());
-        }
-        else 
-        {
-            n_mesh_conn.compact_to(n_conn);
-        }
+    // convert to compact ints ...
+    n_mesh_conn.compact_to(n_conn);
 
-        if (topo_shape == "quad")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems = n_mesh_conn.dtype().number_of_elements() / 4;
-            shapetype[i] = DB_ZONETYPE_QUAD;
-            shapesize[i] = 4;
-            shapecnt[i] = num_elems;
-            total_num_elems += num_elems;
+    if (topo_shape == "quad")
+    {
+        int num_elems = n_mesh_conn.dtype().number_of_elements() / 4;
+        shapetype[0] = DB_ZONETYPE_QUAD;
+        shapesize[0] = 4;
+        shapecnt[0] = num_elems;
+        total_num_elems += num_elems;
 
-        }
-        else if (topo_shape == "tri")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems = n_mesh_conn.dtype().number_of_elements() / 3;
-            shapetype[i] = DB_ZONETYPE_TRIANGLE;
-            shapesize[i] = 3;
-            shapecnt[i] = num_elems;
-            total_num_elems += num_elems;
-        }
-        else if (topo_shape == "hex")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems = n_mesh_conn.dtype().number_of_elements() / 8;
-            shapetype[i] = DB_ZONETYPE_HEX;
-            shapesize[i] = 8;
-            shapecnt[i] = num_elems;
-            total_num_elems += num_elems;
+    }
+    else if (topo_shape == "tri")
+    {
+        int num_elems = n_mesh_conn.dtype().number_of_elements() / 3;
+        shapetype[0] = DB_ZONETYPE_TRIANGLE;
+        shapesize[0] = 3;
+        shapecnt[0] = num_elems;
+        total_num_elems += num_elems;
+    }
+    else if (topo_shape == "hex")
+    {
+        int num_elems = n_mesh_conn.dtype().number_of_elements() / 8;
+        shapetype[0] = DB_ZONETYPE_HEX;
+        shapesize[0] = 8;
+        shapecnt[0] = num_elems;
+        total_num_elems += num_elems;
 
-        }
-        else if (topo_shape == "tet")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems = n_mesh_conn.dtype().number_of_elements() / 4;
-            shapetype[i] = DB_ZONETYPE_TET;
-            shapesize[i] = 4;
-            shapecnt[i] = num_elems;
-            total_num_elems += num_elems;
-        }
-        else if( topo_shape == "wedge")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 6;
-            shapetype[i] = DB_ZONETYPE_PRISM;
-            shapesize[i] = 6;
-            shapecnt[i]  = num_elems;
-            total_num_elems  += num_elems;
-        }
-        else if( topo_shape == "pyramid")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems    = n_mesh_conn.dtype().number_of_elements() / 5;
-            shapetype[i] = DB_ZONETYPE_PYRAMID;
-            shapesize[i] = 5;
-            shapecnt[i]  = num_elems;
-            total_num_elems  += num_elems;
-        }
-        else if (topo_shape == "line")
-        {
-            // TODO: check for explicit # of elems
-            int num_elems = n_mesh_conn.dtype().number_of_elements() / 2;
-            shapetype[i] = DB_ZONETYPE_BEAM;
-            shapesize[i] = 2;
-            shapecnt[i] = num_elems;
-            total_num_elems += num_elems;
-        }
-        else
-        {
-            // TODO why were polygons and polyhedra never added to this list?
-            CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
-        }
+    }
+    else if (topo_shape == "tet")
+    {
+        int num_elems = n_mesh_conn.dtype().number_of_elements() / 4;
+        shapetype[0] = DB_ZONETYPE_TET;
+        shapesize[0] = 4;
+        shapecnt[0] = num_elems;
+        total_num_elems += num_elems;
+    }
+    else if( topo_shape == "wedge")
+    {
+        int num_elems    = n_mesh_conn.dtype().number_of_elements() / 6;
+        shapetype[0] = DB_ZONETYPE_PRISM;
+        shapesize[0] = 6;
+        shapecnt[0]  = num_elems;
+        total_num_elems  += num_elems;
+    }
+    else if( topo_shape == "pyramid")
+    {
+        int num_elems    = n_mesh_conn.dtype().number_of_elements() / 5;
+        shapetype[0] = DB_ZONETYPE_PYRAMID;
+        shapesize[0] = 5;
+        shapecnt[0]  = num_elems;
+        total_num_elems  += num_elems;
+    }
+    else if (topo_shape == "line")
+    {
+        int num_elems = n_mesh_conn.dtype().number_of_elements() / 2;
+        shapetype[0] = DB_ZONETYPE_BEAM;
+        shapesize[0] = 2;
+        shapecnt[0] = num_elems;
+        total_num_elems += num_elems;
+    }
+    else
+    {
+        // TODO add polygons and polyhedra and mixed
+        CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
     }
 
     // Final Compaction
@@ -2035,7 +2003,6 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
 {
     Node n_coords_compact;
     compact_coords(n_coords, n_coords_compact);
-
 
     int pts_dims[3];
     pts_dims[0] = n_coords_compact[silo_coordset_axis_labels[0]].dtype().number_of_elements();
@@ -2627,6 +2594,7 @@ write_multivars(DBfile *dbfile,
 
     // TODO check in visit for if there are domains where vars are not defined what does it do
     // or use the domain num check I have in multimesh write
+    // test this out yourself!
     const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
     auto field_itr = n_mesh["fields"].children();
     while (field_itr.has_next())
@@ -2707,7 +2675,7 @@ write_multivars(DBfile *dbfile,
 ///
 ///      silo_type: "default", "pdb", "hdf5", ARE ALL WE WANT FOR NOW
 
-// these other ones are BONUS TODO
+// these other ones are BONUS TODO - make a note here about how these are options that exist but we won't support them right away
 // "hdf5_sec2", "hdf5_stdio",
 ///                 "hdf5_mpio", "hdf5_mpiposix", "taurus", "unknown"
 ///            when 'path' exists, "default" ==> "unknown"
@@ -2837,7 +2805,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     {
         silo_type = DB_UNKNOWN;
     }
-    // TODO use these later?
+    // TODO use these later? - make note
     // else if (opts_silo_type == "hdf5_sec2")
     // {
     //     silo_type = DB_HDF5_SEC2;
@@ -3705,7 +3673,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
                 if (!dbfile.getSiloObject())
                 {
-                    // TODO do these errors need to be handled like in read_mesh?
                     CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
                 }
             }

@@ -13,6 +13,7 @@
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 #include "conduit_fmt/conduit_fmt.h"
+#include "conduit_relay_io_silo.hpp"
 
 #include <math.h>
 #include <iostream>

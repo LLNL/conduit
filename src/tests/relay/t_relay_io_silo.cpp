@@ -297,6 +297,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
+    // TODO change back to 6
     for (int ndomains = 2; ndomains < 3; ndomains ++)
     {
         Node save_mesh, load_mesh, info;
@@ -316,11 +317,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             // The Blueprint to Silo transformation changes several names 
             // and some information is lost. We manually make changes so 
             // that the diff will pass.
-            silo_name_changer("coords",
-                              "topo",
-                              "dist",
-                              "mesh",
-                              save_mesh[child]);
+            silo_name_changer("coords", "topo", "dist", "mesh", save_mesh[child]);
 
             // save_mesh[child]["state/time"] = 0.0;
         }
