@@ -853,6 +853,7 @@ read_variable_domain(const T *var_ptr,
     else
         CONDUIT_ERROR("Unsupported field association " << var_ptr->centering);
 
+    // TODO we probably need more logic here for vector fields
     if (var_ptr->datatype == DB_FLOAT)
     {
         apply_values<float>(var_ptr->vals, var_ptr->nvals,
@@ -1711,10 +1712,6 @@ void silo_write_field(DBfile *dbfile,
         comp_vals_ptrs.push_back(n_values.element_ptr(0));
     }
 
-
-    // TODO what if we show up with vector values here? "values/u" and "values/v"? How to support this case?
-    // there is logic to do this, use the non "1" versions of the putvar functions
-
     int silo_error = 0;
     if (mesh_type == "unstructured")
     {
@@ -1751,7 +1748,7 @@ void silo_write_field(DBfile *dbfile,
             dims[1] += 1;
             dims[2] += 1;
         }
-
+        // TODO do the others; pointvar and ucdvar
         silo_error = DBPutQuadvar(dbfile, // Database file pointer
                                   detail::sanitize_silo_varname(var_name).c_str(), // variable name
                                   detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
