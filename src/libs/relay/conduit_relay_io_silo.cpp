@@ -1695,6 +1695,7 @@ void silo_write_field(DBfile *dbfile,
     }
     else
     {
+        nvars = 1;
         vals_type = dtype_to_silo_type(dtype);
         if (vals_type == DB_NOTYPE)
         {
@@ -1705,6 +1706,8 @@ void silo_write_field(DBfile *dbfile,
                          << dtype.name());
             return;
         }
+        comp_name_strings.push_back("unused");
+        comp_name_ptrs.push_back(comp_name_strings.back().c_str());
         comp_vals_ptrs.push_back(n_values.element_ptr(0));
     }
 
@@ -1749,37 +1752,19 @@ void silo_write_field(DBfile *dbfile,
             dims[2] += 1;
         }
 
-        // TODO generalize
-        if (vector_data)
-        {
-            silo_error = DBPutQuadvar(dbfile, // Database file pointer
-                                      detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                      detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                                      nvars, // number of variable components
-                                      comp_name_ptrs.data(), // variable component names
-                                      comp_vals_ptrs.data(), // the data values
-                                      dims, // the dimensions of the data
-                                      num_dims, // number of dimensions
-                                      NULL, // mixed data arrays
-                                      0, // lenght of mixed data arrays
-                                      vals_type, // Datatype of the variable
-                                      centering, // centering (nodal or zonal)
-                                      NULL); // optlist
-        }
-        else
-        {
-            silo_error = DBPutQuadvar1(dbfile, // Database file pointer
-                                       detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                       detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                                       comp_vals_ptrs.data()[0], // data values
-                                       dims, // the dimensions of the data
-                                       num_dims, // number of dimensions
-                                       NULL, // mixed data arrays
-                                       0, // lenght of mixed data arrays
-                                       vals_type, // Datatype of the variable
-                                       centering, // centering (nodal or zonal)
-                                       NULL); // optlist
-        }
+        silo_error = DBPutQuadvar(dbfile, // Database file pointer
+                                  detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                  detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                  nvars, // number of variable components
+                                  comp_name_ptrs.data(), // variable component names
+                                  comp_vals_ptrs.data(), // the data values
+                                  dims, // the dimensions of the data
+                                  num_dims, // number of dimensions
+                                  NULL, // mixed data arrays
+                                  0, // lenght of mixed data arrays
+                                  vals_type, // Datatype of the variable
+                                  centering, // centering (nodal or zonal)
+                                  NULL); // optlist
     }
     else if (mesh_type == "points") 
     {
