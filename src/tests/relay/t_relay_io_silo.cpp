@@ -260,8 +260,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
-        // save_mesh.remove("state"); // TODO uncomment this and add functionality for it
-
         save_mesh.print();
 
 
@@ -301,12 +299,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
     {
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
-        
-        // for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-        // {
-        //     save_mesh[child].remove("state"); // TODO uncomment this and add functionality for it
-        // }
-
         io::silo::save_mesh(save_mesh, "spiral");
         io::silo::load_mesh("spiral.cycle_000000.root", load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
@@ -317,8 +309,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             // and some information is lost. We manually make changes so 
             // that the diff will pass.
             silo_name_changer("coords", "topo", "dist", "mesh", save_mesh[child]);
-
-            // save_mesh[child]["state/time"] = 0.0;
         }
 
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
@@ -333,8 +323,5 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
         }
     }
 }
-
-// TODO we might want "round trip" tests for all the different mesh types
-// not round trip though, since not everything will come back unchanged
 
 // TODO units?

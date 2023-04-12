@@ -2195,17 +2195,18 @@ void silo_mesh_write(const Node &n,
 
     // create state optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
-        DBMakeOptlist(2), 
+        DBMakeOptlist(1), 
         &DBFreeOptlist,
         "Error freeing state optlist."};
+    if (!state_optlist.getSiloObject())
+    {
+        CONDUIT_ERROR("Error creating state optlist");
+    }
+    
     if (n.has_child("state"))
     {
         silo_error = 0;
         const Node &n_state = n["state"];
-        if (!state_optlist.getSiloObject())
-        {
-            CONDUIT_ERROR("Error creating state optlist");
-        }
         if (n_state.has_child("cycle"))
         {
             int cyc_value = n_state["cycle"].to_int();
@@ -2822,6 +2823,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // if the file exists and we are not truncating
     if (conduit::utils::is_file(path + ".root") && !opts_truncate)
     {
+        // TODO not sure this is right; what about if cycle info is in the filename?
         // then silo type must be unknown
         silo_type = DB_UNKNOWN;
     }
@@ -2895,6 +2897,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // figure out what cycle we are
     if(local_num_domains > 0 && is_valid)
     {
+        // TODO let's investigate this
         Node dom = multi_dom.child(0);
         if(!dom.has_path("state/cycle"))
         {
