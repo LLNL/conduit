@@ -50,9 +50,9 @@ TEST(blueprint_mpi_relay, basic_use)
     int par_size = mpi::size(comm);
 
     std::cout<<"Rank "<<par_rank<<" of "<<par_size<<"\n";
-    index_t npts_x = 2;
-    index_t npts_y = 2;
-    index_t npts_z = 2;
+    index_t npts_x = 10;
+    index_t npts_y = 10;
+    index_t npts_z = 10;
 
     Node dset;
     blueprint::mesh::examples::braid("uniform",
@@ -64,7 +64,7 @@ TEST(blueprint_mpi_relay, basic_use)
     // the example data set has the bounds -10 to 10 in all dims
     // Offset this along x to create mpi 'pencil'
 
-    dset["coordsets/coords/origin/x"] = -2.0 + 4.0 * par_rank;
+    dset["coordsets/coords/origin/x"] = -10.0 + 20.0 * par_rank;
     dset["state/domain_id"] = par_rank;
     // set cycle to 0, so we can construct the correct root file
     dset["state/cycle"] = 0;
