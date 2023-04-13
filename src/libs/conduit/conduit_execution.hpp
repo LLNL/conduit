@@ -11,11 +11,15 @@
 #ifndef CONDUIT_EXECUTION_HPP
 #define CONDUIT_EXECUTION_HPP
 
+#include "conduit_config.h"
+
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit_execution_serial.hpp"
+#if defined(CONDUIT_USE_OPENMP)
 #include "conduit_execution_omp.hpp"
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -38,12 +42,14 @@ struct SerialExec
     using sort_policy = seq::sort_policy;
 };
 
+#if defined(CONDUIT_USE_OPENMP)
 //---------------------------------------------------------------------------
 struct OpenMPExec
 {
     using for_policy = omp::for_policy;
     using sort_policy = omp::sort_policy;
 };
+#endif
 
 //---------------------------------------------------------------------------
 template <typename ExecutionPolicy, typename Func>

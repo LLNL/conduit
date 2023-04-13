@@ -86,6 +86,11 @@ else()
     message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == TRUE)")
 endif()
 
+if(ENABLE_OPENMP)
+    set(CONDUIT_USE_OPENMP TRUE)
+    message(STATUS "OpenMP support enabled (CONDUIT_USE_OPENMP == TRUE)")
+endif()
+
 ################################
 # Examples and Utils Flags
 ################################

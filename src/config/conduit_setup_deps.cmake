@@ -37,6 +37,16 @@ if(UNIX AND NOT APPLE)
 endif()
 
 ###############################################################################
+# Setup OpenMP
+###############################################################################
+if(CONDUIT_USE_OPENMP)
+    # config openmp if not already found
+    if(NOT TARGET OpenMP::OpenMP_CXX)
+        find_dependency(OpenMP REQUIRED)
+    endif()
+endif()
+
+###############################################################################
 # Setup Caliper
 ###############################################################################
 if(NOT CALIPER_DIR)
@@ -70,6 +80,26 @@ if(CALIPER_DIR)
                  PATHS ${CALIPER_DIR}/share/cmake/caliper)
 endif()
 
+###############################################################################
+# Setup Zlib
+###############################################################################
+if(CONDUIT_ZLIB_DIR)
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Conduit was built with Zlib Support")
+    endif()
+
+    if(NOT ZLIB_DIR)
+        # if conduit was configured with ZLib, we need to include it
+        set(ZLIB_DIR ${CONDUIT_ZLIB_DIR})
+    endif()
+    set(ZLIB_ROOT ${ZLIB_DIR})
+
+    if(NOT Conduit_FIND_QUIETLY)
+        message(STATUS "Looking for Zlib at: " ${ZLIB_DIR})
+    endif()
+
+    find_package(ZLIB REQUIRED)
+endif()
 
 ###############################################################################
 # Setup HDF5

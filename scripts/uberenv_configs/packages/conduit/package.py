@@ -43,6 +43,9 @@ class Conduit(CMakePackage):
     # is to bridge any spack dependencies that are still using the name master
     version("master", branch="develop", submodules=True)
     # note: 2021-05-05 latest tagged release is now preferred instead of develop
+    version("0.8.7", sha256="f3bf44d860783f4e0d61517c5e280c88144af37414569f4cf86e2d29b3ba5293")
+    version("0.8.6", sha256="8ca5d37033143ed7181c7286dd25a3f6126ba0358889066f13a2b32f68fc647e")
+    version("0.8.5", sha256="b4a6f269a81570a4597e2565927fd0ed2ac45da0a2500ce5a71c26f7c92c5483")
     version("0.8.4", sha256="55c37ddc668dbc45d43b60c440192f76e688a530d64f9fe1a9c7fdad8cd525fd")
     version("0.8.3", sha256="a9e60945366f3b8c37ee6a19f62d79a8d5888be7e230eabc31af2f837283ed1a")
     version("0.8.2", sha256="928eb8496bc50f6d8404f5bfa70220250876645d68d4f35ce0b99ecb85546284")
@@ -95,6 +98,9 @@ class Conduit(CMakePackage):
     variant("silo", default=False, description="Build Conduit Silo support")
     variant("adios", default=False, description="Build Conduit ADIOS support")
     variant("parmetis", default=True, description="Build Conduit Parmetis support")
+
+    # openmp support
+    variant("openmp", default=False, description="Build Conduit OpenMP support")
 
     # zfp compression
     variant("zfp", default=False, description="Build Conduit ZFP support")
@@ -535,6 +541,16 @@ class Conduit(CMakePackage):
                 cfg.write(cmake_cache_entry("DOXYGEN_EXECUTABLE", doxygen_exe))
         else:
             cfg.write(cmake_cache_entry("ENABLE_DOCS", "OFF"))
+
+        #######################
+        # OpenMP
+        #######################
+
+        cfg.write("# OpenMP Support\n")
+        if "+openmp" in spec:
+            cfg.write(cmake_cache_entry("ENABLE_OPENMP", "ON"))
+        else:
+            cfg.write(cmake_cache_entry("ENABLE_OPENMP", "OFF"))
 
         #######################
         # MPI

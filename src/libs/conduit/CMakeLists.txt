@@ -25,6 +25,14 @@ if(FORTRAN_FOUND)
     set(CONDUIT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
+if(ENABLE_OPENMP)
+    set(CONDUIT_OPENMP_ENABLED TRUE)
+endif()
+
+if(OPENMP_FOUND)
+    list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
+endif()
+
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h")
@@ -133,6 +141,15 @@ if(FORTRAN_FOUND)
 
 endif()
 
+set(conduit_thirdparty_libs "")
+
+if(CALIPER_FOUND)
+    list(APPEND conduit_thirdparty_libs caliper)
+endif()
+
+if(OPENMP_FOUND)
+    list(APPEND conduit_thirdparty_libs ${conduit_blt_openmp_deps})
+endif()
 
 #
 # Setup the conduit lib
@@ -144,11 +161,15 @@ add_compiled_library(NAME   conduit
                              $<TARGET_OBJECTS:conduit_b64>
                              $<TARGET_OBJECTS:conduit_libyaml>
                      HEADERS_DEST_DIR include/conduit
-                     FOLDER libs)
+                     FOLDER libs
+                     DEPENDS_ON ${conduit_thirdparty_libs})
 
-if(CALIPER_FOUND)
-    target_link_libraries(conduit caliper)
+
+
+if(OPENMP_FOUND)
+    list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
 endif()
+
 
 target_include_directories(conduit
                            PUBLIC
