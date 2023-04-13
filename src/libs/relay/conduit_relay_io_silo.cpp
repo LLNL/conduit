@@ -817,17 +817,24 @@ read_pointmesh_domain(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
-// add a set of data arrays to a Node.
-template <typename T>
+template <class T>
 void
-apply_values(void **vals,
-             int num_arrays,
-             int num_elems,
-             conduit::Node &values)
+assign_values(int nvals,
+              int nels,
+              void **vals,
+              Node &field_values)
 {
-    for (int i = 0; i < num_arrays; ++i)
+    if (nvals == 1)
     {
-        values.set(static_cast<T *>(vals[i]), num_elems);
+        field_values.set(static_cast<T *>(vals[0]), nels);
+    }
+    else
+    {
+        for (int i = 0; i < nvals; i ++)
+        {
+            // need to put the values under a vector component
+            field_values[std::to_string(i)].set(static_cast<T *>(vals[i]), nels);
+        }
     }
 }
 
@@ -859,16 +866,25 @@ read_variable_domain(const T *var_ptr,
         CONDUIT_ERROR("Unsupported field association " << var_ptr->centering);
     }
 
-    // TODO we probably need more logic here for vector fields
-    if (var_ptr->datatype == DB_FLOAT)
+    int datatype = var_ptr->datatype;
+
+    if (datatype == DB_FLOAT)
     {
-        apply_values<float>(var_ptr->vals, var_ptr->nvals,
-                            var_ptr->nels, field["values"]);
+        assign_values<float>(var_ptr->nvals, 
+                             var_ptr->nels,
+                             var_ptr->vals,
+                             field["values"]);
     }
-    else if (var_ptr->datatype == DB_DOUBLE)
+    else if (datatype == DB_DOUBLE)
     {
-        apply_values<double>(var_ptr->vals, var_ptr->nvals,
-                             var_ptr->nels, field["values"]);
+        assign_values<double>(var_ptr->nvals, 
+                              var_ptr->nels,
+                              var_ptr->vals,
+                              field["values"]);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported type in " << datatype);
     }
 }
 

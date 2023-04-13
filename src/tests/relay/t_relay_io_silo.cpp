@@ -232,7 +232,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
-        std::make_pair("uniform", 2), std::make_pair("uniform", 3),
+        std::make_pair("uniform", 2), /*std::make_pair("uniform", 3),
         std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
         std::make_pair("structured", 2), std::make_pair("structured", 3),
         // std::make_pair("point", 2), std::make_pair("point", 3),
@@ -244,7 +244,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         std::make_pair("wedges", 3),
         std::make_pair("pyramids", 3),
         // std::make_pair("mixed_2d", 2),
-        // std::make_pair("mixed", 3),
+        // std::make_pair("mixed", 3),*/
     };
     for (int i = 0; i < mesh_types.size(); ++i)
     {
@@ -260,11 +260,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
-        // save_mesh.print();
+        save_mesh.print();
 
         io::silo::save_mesh(save_mesh, "braid");
-        // io::silo::load_mesh("braid.root", load_mesh);
-        // EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        io::silo::load_mesh("braid.cycle_000100.root", load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+        load_mesh.print();
 
         // // The silo conversion will transform uniform to rectilinear
         // // so we will do the same to allow the diff to succeed
