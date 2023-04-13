@@ -25,14 +25,9 @@ if(FORTRAN_FOUND)
     set(CONDUIT_FORTRAN_COMPILER ${CMAKE_Fortran_COMPILER})
 endif()
 
-if(ENABLE_OPENMP)
+if(OPENMP_FOUND)
     set(CONDUIT_OPENMP_ENABLED TRUE)
 endif()
-
-if(OPENMP_FOUND)
-    list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
-endif()
-
 
 configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_config.h.in"
                 "${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h")
