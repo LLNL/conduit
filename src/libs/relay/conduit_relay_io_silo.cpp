@@ -847,11 +847,17 @@ read_variable_domain(const T *var_ptr,
     field["topology"] = multimesh_name;
 
     if (var_ptr->centering == DB_NODECENT)
+    {
         field["association"] = "vertex";
+    }
     else if (var_ptr->centering == DB_ZONECENT)
+    {
         field["association"] = "element";
+    }
     else
+    {
         CONDUIT_ERROR("Unsupported field association " << var_ptr->centering);
+    }
 
     // TODO we probably need more logic here for vector fields
     if (var_ptr->datatype == DB_FLOAT)
@@ -1323,6 +1329,12 @@ read_mesh(const std::string &root_file_path,
         conduit::relay::mpi::broadcast_using_schema(root_node,
                                                     0,
                                                     mpi_comm);
+    }
+#else
+    // non MPI case, throw error
+    if(error == 1)
+    {
+        CONDUIT_ERROR(error_oss.str());
     }
 #endif
     const Node &mesh_index = root_node[multimesh_name];
