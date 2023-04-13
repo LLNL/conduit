@@ -1650,9 +1650,7 @@ void silo_write_field(DBfile *dbfile,
     n_var["values"].compact_to(n_values);
 
     DataType dtype = n_values.dtype();
-    bool vector_data = false;
     int vals_type = DB_NOTYPE;
-
     int nvars = 0;
     std::vector<std::string> comp_name_strings;
     std::vector<const char *> comp_name_ptrs;
@@ -1661,9 +1659,7 @@ void silo_write_field(DBfile *dbfile,
     // if we have vector/tensor values instead
     if (dtype.is_object())
     {
-        vector_data = true;
         nvars = n_values.number_of_children();
-
         if (nvars > 0)
         {
             vals_type = dtype_to_silo_type(n_values[0].dtype());
@@ -1715,16 +1711,18 @@ void silo_write_field(DBfile *dbfile,
     int silo_error = 0;
     if (mesh_type == "unstructured")
     {
-        silo_error = DBPutUcdvar1(dbfile, 
-                                  detail::sanitize_silo_varname(var_name).c_str(),
-                                  detail::sanitize_silo_varname(topo_name).c_str(),
-                                  comp_vals_ptrs.data()[0],
-                                  num_values,
-                                  NULL,
-                                  0,
-                                  vals_type,
-                                  centering,
-                                  NULL);
+        silo_error = DBPutUcdvar(dbfile, // Database file pointer
+                                 detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                 detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                 nvars, // number of variable components
+                                 comp_name_ptrs.data(), // variable component names
+                                 comp_vals_ptrs.data(), // the data values
+                                 num_values, // number of elements
+                                 NULL, // mixed data arrays
+                                 0, // lenght of mixed data arrays
+                                 vals_type, // Datatype of the variable
+                                 centering, // centering (nodal or zonal)
+                                 NULL); // optlist
     }
     else if (mesh_type == "rectilinear" || 
              mesh_type == "uniform" ||
@@ -1748,7 +1746,6 @@ void silo_write_field(DBfile *dbfile,
             dims[1] += 1;
             dims[2] += 1;
         }
-        // TODO do the others; pointvar and ucdvar
         silo_error = DBPutQuadvar(dbfile, // Database file pointer
                                   detail::sanitize_silo_varname(var_name).c_str(), // variable name
                                   detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
@@ -1758,20 +1755,21 @@ void silo_write_field(DBfile *dbfile,
                                   dims, // the dimensions of the data
                                   num_dims, // number of dimensions
                                   NULL, // mixed data arrays
-                                  0, // lenght of mixed data arrays
+                                  0, // length of mixed data arrays
                                   vals_type, // Datatype of the variable
                                   centering, // centering (nodal or zonal)
                                   NULL); // optlist
     }
     else if (mesh_type == "points") 
     {
-        silo_error = DBPutPointvar1(dbfile, // Database file pointer.
-                                    detail::sanitize_silo_varname(var_name).c_str(),  // variable name
-                                    detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
-                                    comp_vals_ptrs.data()[0], // data values
-                                    num_pts, // Number of elements (points)
-                                    vals_type, // Datatype of the variable
-                                    NULL); // optlist
+        silo_error = DBPutPointvar(dbfile, // Database file pointer.
+                                   detail::sanitize_silo_varname(var_name).c_str(),  // variable name
+                                   detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                   nvars, // number of variable components
+                                   comp_vals_ptrs.data(), // data values
+                                   num_pts, // Number of elements (points)
+                                   vals_type, // Datatype of the variable
+                                   NULL); // optlist
     }
     else
     {
