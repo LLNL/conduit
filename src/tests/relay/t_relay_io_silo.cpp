@@ -44,26 +44,78 @@ silo_uniform_to_rect_conversion(const std::string &coordset_name,
     save_mesh["coordsets"][coordset_name].set(save_mesh_rect_coords);
 }
 
+// we assume 1 coordset, 1 topo, and fields
 void
-silo_name_changer(const std::string &coordset_name,
-                  const std::string &topo_name,
-                  const std::string &field_name,
-                  const std::string &mmesh_name,
+silo_name_changer(const std::string &mmesh_name,
                   conduit::Node &save_mesh)
 {
+    Node &coordsets = save_mesh["coordsets"];
+    Node &topologies = save_mesh["topologies"];
+    Node &fields = save_mesh["fields"];
+
+    // we assume only 1 child for each
+    std::string coordset_name = coordsets.children().next().name();
+    std::string topo_name = topologies.children().next().name();
+
+    // come up with new names for coordset and topo
     std::string new_coordset_name = mmesh_name + "_" + topo_name;
     std::string new_topo_name = mmesh_name + "_" + topo_name;
-    std::string new_field_name = mmesh_name + "_" + field_name;
 
-    save_mesh["coordsets"].rename_child(coordset_name, new_coordset_name);
-    save_mesh["topologies"].rename_child(topo_name, new_topo_name);
-    save_mesh["fields"].rename_child(field_name, new_field_name);
-    save_mesh["topologies"][new_topo_name]["coordset"].reset();
-    save_mesh["topologies"][new_topo_name]["coordset"] = new_coordset_name;
-    save_mesh["fields"][new_field_name]["topology"].reset();
-    save_mesh["fields"][new_field_name]["topology"] = new_topo_name;
-    if (save_mesh["fields"][new_field_name].has_child("volume_dependent"))
-        save_mesh["fields"][new_field_name].remove_child("volume_dependent");
+    // rename the coordset and references to it
+    coordsets.rename_child(coordset_name, new_coordset_name);
+    topologies[topo_name]["coordset"].reset();
+    topologies[topo_name]["coordset"] = new_coordset_name;
+
+    // rename the topo
+    topologies.rename_child(topo_name, new_topo_name);
+
+    auto field_itr = fields.children();
+    while (field_itr.has_next())
+    {
+        Node &n_field = field_itr.next();
+        std::string field_name = field_itr.name();
+
+        // use new topo name
+        n_field["topology"].reset();
+        n_field["topology"] = new_topo_name;
+
+        // remove vol dep
+        if (n_field.has_child("volume_dependent"))
+        {
+            n_field.remove_child("volume_dependent");
+        }
+
+        // we need to rename vector components
+        if (n_field["values"].dtype().is_object())
+        {
+            if (n_field["values"].number_of_children() > 0)
+            {
+                int child_index = 0;
+                auto val_itr = n_field["values"].children();
+                while (val_itr.has_next())
+                {
+                    val_itr.next();
+                    std::string comp_name = val_itr.name();
+
+                    // rename vector components
+                    n_field["values"].rename_child(comp_name, std::to_string(child_index));
+
+                    child_index ++;
+                }
+            }
+        }
+
+        // come up with new field name
+        std::string new_field_name = mmesh_name + "_" + field_name;
+
+        // rename the field
+        fields.rename_child(field_name, new_field_name);
+    }
+
+    if (!save_mesh.has_path("state/domain_id"))
+    {
+        save_mesh["state"]["domain_id"] = 0;
+    }
 }
 
 
@@ -213,11 +265,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
         // The Blueprint to Silo transformation changes several names 
         // and some information is lost. We manually make changes so 
         // that the diff will pass.
-        silo_name_changer("coords",
-                          "mesh",
-                          "field",
-                          "mesh",
-                          save_mesh);
+        silo_name_changer("mesh", save_mesh);
 
         // the loaded mesh will be in the multidomain format
         // (it will be a list containing a single mesh domain)
@@ -232,7 +280,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
-        std::make_pair("uniform", 2), /*std::make_pair("uniform", 3),
+        std::make_pair("uniform", 2), std::make_pair("uniform", 3),
         std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
         std::make_pair("structured", 2), std::make_pair("structured", 3),
         // std::make_pair("point", 2), std::make_pair("point", 3),
@@ -244,7 +292,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         std::make_pair("wedges", 3),
         std::make_pair("pyramids", 3),
         // std::make_pair("mixed_2d", 2),
-        // std::make_pair("mixed", 3),*/
+        // std::make_pair("mixed", 3),
     };
     for (int i = 0; i < mesh_types.size(); ++i)
     {
@@ -255,42 +303,39 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 
         std::string mesh_type = mesh_types[i].first;
 
-        std::cout << mesh_type << std::endl;
-
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
-
-        save_mesh.print();
 
         io::silo::save_mesh(save_mesh, "braid");
         io::silo::load_mesh("braid.cycle_000100.root", load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        load_mesh.print();
+        // The silo conversion will transform uniform to rectilinear
+        // so we will do the same to allow the diff to succeed
+        if (mesh_type == "uniform")
+        {
+            silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+        }
 
-        // // The silo conversion will transform uniform to rectilinear
-        // // so we will do the same to allow the diff to succeed
-        // if (mesh_type == "uniform")
-        //     silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+        // The Blueprint to Silo transformation changes several names 
+        // and some information is lost. We manually make changes so 
+        // that the diff will pass.
+        silo_name_changer("mesh", save_mesh);
 
+        // silo will store this value as an int32. For whatever reason,
+        // braid stores cycle as a uint64, unlike the other mesh blueprint
+        // examples. We must change this so the diff will pass.
+        int cycle = save_mesh["state"]["cycle"].as_uint64();
+        save_mesh["state"]["cycle"].reset();
+        save_mesh["state"]["cycle"] = (int32) cycle;
 
+        // the loaded mesh will be in the multidomain format
+        // (it will be a list containing a single mesh domain)
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), 1);
+        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-        // // The Blueprint to Silo transformation changes several names 
-        // // and some information is lost. We manually make changes so 
-        // // that the diff will pass.
-        // silo_name_changer("coords",
-        //                   "mesh",
-        //                   "field",
-        //                   "mesh",
-        //                   save_mesh);
-
-        // // the loaded mesh will be in the multidomain format
-        // // (it will be a list containing a single mesh domain)
-        // // but the saved mesh is in the single domain format
-        // EXPECT_EQ(load_mesh.number_of_children(), 1);
-        // EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
-
-        // EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
     }
 }
 
@@ -309,7 +354,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             // The Blueprint to Silo transformation changes several names 
             // and some information is lost. We manually make changes so 
             // that the diff will pass.
-            silo_name_changer("coords", "topo", "dist", "mesh", save_mesh[child]);
+            silo_name_changer("mesh", save_mesh[child]);
         }
 
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());

@@ -640,13 +640,13 @@ add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir, int dom_id)
     // look for dtime then time like VisIt
     if (DBInqVarExists(dbfile, dtime_str.c_str()))
     {
-        float dtime;
+        double dtime;
         DBReadVar(dbfile, dtime_str.c_str(), &dtime);
         mesh_domain["state"]["time"] = dtime;
     }
     else if (DBInqVarExists(dbfile, ftime_str.c_str()))
     {
-        double ftime;
+        float ftime;
         DBReadVar(dbfile, ftime_str.c_str(), &ftime);
         mesh_domain["state"]["time"] = (double) ftime;
     }
@@ -867,7 +867,6 @@ read_variable_domain(const T *var_ptr,
     }
 
     int datatype = var_ptr->datatype;
-
     if (datatype == DB_FLOAT)
     {
         assign_values<float>(var_ptr->nvals, 
