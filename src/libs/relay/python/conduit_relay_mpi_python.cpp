@@ -90,7 +90,7 @@ PyRelay_MPI_Request_new(PyTypeObject *type,
                         PyObject*, // args -- unused
                         PyObject*) // kwds -- unused
 {
-    PyRelay_MPI_Request *self = (PyRelay_MPI_Request*)type->tp_alloc(type, 0);
+    PyRelay_MPI_Request *self = (PyRelay_MPI_Request*)PyType_GenericAlloc(type, 0);
 
     return ((PyObject*)self);
 }
@@ -99,7 +99,12 @@ PyRelay_MPI_Request_new(PyTypeObject *type,
 static void
 PyRelay_MPI_Request_dealloc(PyRelay_MPI_Request *self)
 {
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -130,6 +135,26 @@ static PyMethodDef PyRelay_MPI_Request_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyRelay_MPI_Request_SLOTS[]  = {
+  {Py_tp_dealloc,        (void*) PyRelay_MPI_Request_dealloc},
+  {Py_tp_methods,        (void*) PyRelay_MPI_Request_METHODS},
+  {Py_tp_init,           (void*) PyRelay_MPI_Request_init},
+  {Py_tp_new,            (void*) PyRelay_MPI_Request_new},
+  {Py_tp_doc,            (void*) "Conduit Relay MPI Request objects"},
+  {0,0},
+};
+
+static PyType_Spec PyRelay_MPI_Request_SPEC =
+{
+   "Request",                                /* tp_name */
+   sizeof(PyRelay_MPI_Request),              /* tp_basicsize */
+   0,                                        /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+   PyRelay_MPI_Request_SLOTS,                /* tp_slots */
+};
+
+#else
 
 static PyTypeObject PyRelay_MPI_Request_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -183,6 +208,8 @@ static PyTypeObject PyRelay_MPI_Request_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+
+#endif
 
 
 //---------------------------------------------------------------------------//
@@ -1896,6 +1923,9 @@ static PyMethodDef relay_mpi_python_funcs[] =
 
 struct module_state {
     PyObject *error;
+    #ifdef Py_LIMITED_API
+    PyTypeObject*  PyRelay_MPI_Request_TYPE;
+    #endif
 };
 
 //---------------------------------------------------------------------------//
@@ -1907,6 +1937,11 @@ static struct module_state _state;
 #endif
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module.
+PyObject* GLOBAL_MODULE = NULL;
+#endif
+
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
 //---------------------------------------------------------------------------//
@@ -1916,6 +1951,9 @@ static int
 relay_mpi_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_VISIT(GETSTATE(m)->PyRelay_MPI_Request_TYPE);
+    #endif
     return 0;
 }
 
@@ -1924,6 +1962,9 @@ static int
 relay_mpi_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_CLEAR(GETSTATE(m)->PyRelay_MPI_Request_TYPE);
+    #endif
     return 0;
 }
 
@@ -2006,6 +2047,18 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_mpi_python(void)
     // init our custom types
     //-----------------------------------------------------------------------//
 
+    #ifdef Py_LIMITED_API
+    module_state* state = GETSTATE(relay_mpi_module);
+    state->PyRelay_MPI_Request_TYPE = (PyTypeObject *)PyType_FromModuleAndSpec((PyObject*)relay_mpi_module, &PyRelay_MPI_Request_SPEC, NULL);
+    if (state->PyRelay_MPI_Request_TYPE == NULL)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    if (PyModule_AddType((PyObject*)relay_mpi_module,state->PyRelay_MPI_Request_TYPE) < 0)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    #else
     if (PyType_Ready(&PyRelay_MPI_Request_TYPE) < 0)
     {
         PY_MODULE_INIT_RETURN_ERROR;
@@ -2018,6 +2071,11 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_mpi_python(void)
     PyModule_AddObject(relay_mpi_module,
                        "Request",
                        (PyObject*)&PyRelay_MPI_Request_TYPE);
+    #endif
+
+#ifdef Py_LIMITED_API
+    GLOBAL_MODULE = relay_mpi_module;
+#endif
 
 #if defined(IS_PY3K)
     return relay_mpi_module;
