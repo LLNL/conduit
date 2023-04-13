@@ -164,13 +164,6 @@ add_compiled_library(NAME   conduit
                      FOLDER libs
                      DEPENDS_ON ${conduit_thirdparty_libs})
 
-
-
-if(OPENMP_FOUND)
-    list(APPEND ascent_thirdparty_libs ${ascent_blt_openmp_deps})
-endif()
-
-
 target_include_directories(conduit
                            PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
