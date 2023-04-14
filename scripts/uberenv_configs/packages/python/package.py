@@ -419,7 +419,7 @@ class Python(Package):
     patch("python-2.7.17+-distutils-C++-fixup.patch", when="@2.7.17:2.7.18")
     patch("python-3.6.8-distutils-C++.patch", when="@3.6.8,3.7.2")
     patch("python-3.7.3-distutils-C++.patch", when="@3.7.3")
-    patch("python-3.7.4+-distutils-C++.patch", when="@3.7.4:")
+    patch("python-3.7.4+-distutils-C++.patch", when="@3.7.4:3.10.6")
     patch("python-3.7.4+-distutils-C++-testsuite.patch", when="@3.7.4:3.10.6")
     patch("cpython-windows-externals.patch", when="@:3.9.6 platform=windows")
     patch("tkinter.patch", when="@:2.8,3.3:3.7 platform=darwin")
