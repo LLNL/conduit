@@ -419,8 +419,8 @@ class Python(Package):
     patch("python-2.7.17+-distutils-C++-fixup.patch", when="@2.7.17:2.7.18")
     patch("python-3.6.8-distutils-C++.patch", when="@3.6.8,3.7.2")
     patch("python-3.7.3-distutils-C++.patch", when="@3.7.3")
-    patch("python-3.7.4+-distutils-C++.patch", when="@3.7.4:3.10.6")
-    patch("python-3.7.4+-distutils-C++-testsuite.patch", when="@3.7.4:3.10.6")
+    patch("python-3.7.4+-distutils-C++.patch", when="@3.7.4:3.10.99")
+    patch("python-3.7.4+-distutils-C++-testsuite.patch", when="@3.7.4:3.10.99")
     patch("cpython-windows-externals.patch", when="@:3.9.6 platform=windows")
     patch("tkinter.patch", when="@:2.8,3.3:3.7 platform=darwin")
     # Patch the setup script to deny that tcl/x11 exists rather than allowing
@@ -435,7 +435,7 @@ class Python(Package):
     # Ensure that distutils chooses correct compiler option for RPATH on fj:
     patch("fj-rpath-2.3.patch", when="@2.3:3.0.1 %fj")
     patch("fj-rpath-3.1.patch", when="@3.1:3.9.7,3.10.0  %fj")
-    patch("fj-rpath-3.9.patch", when="@3.9.8:3.9,3.10.1:  %fj")
+    patch("fj-rpath-3.9.patch", when="@3.9.8:3.9,3.10.1:3.10.99  %fj")
 
     # Fixes an alignment problem with more aggressive optimization in gcc8
     # https://github.com/python/cpython/commit/0b91f8a668201fc58fa732b8acc496caedfdbae0
