@@ -169,7 +169,7 @@ foreach(dep ${BLT_TPL_DEPS_EXPORTS})
     get_target_property(_is_imported ${dep} IMPORTED)
     if(NOT ${_is_imported})
         install(TARGETS              ${dep}
-                EXPORT               ascent
+                EXPORT               conduit
                 DESTINATION          lib)
         # Namespace target to avoid conflicts
         set_target_properties(${dep} PROPERTIES EXPORT_NAME conduit::blt_tpl_exports_${dep})
