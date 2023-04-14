@@ -275,25 +275,28 @@ class Conduit(CMakePackage):
             example = Executable("./conduit_example")
             example()
 
-    # TODO: Replace this method and its 'get' use for cmake path with
-    #   join_path(self.spec['cmake'].prefix.bin, 'cmake') once stand-alone
-    #   tests can access build dependencies through self.spec['cmake'].
-    def cmake_bin(self, set=True):
-        """(Hack) Set/get cmake dependency path."""
-        filepath = join_path(self.install_test_root, "cmake_bin_path.txt")
-        if set:
-            with open(filepath, "w") as out_file:
-                cmake_bin = join_path(self.spec["cmake"].prefix.bin, "cmake")
-                out_file.write("{0}\n".format(cmake_bin))
-        else:
-            with open(filepath, "r") as in_file:
-                return in_file.read().strip()
-
-    @run_after("build")
-    def setup_smoke_test(self):
-        """Setup info needed for spack smoke tests"""
-        # TODO: Remove once self.spec['cmake'] is available in `spack test run`
-        self.cmake_bin(set=True)
+    #############################
+    # NOTE: 2023/04/14 This logic is undermining installs, so it is disabled
+    #############################
+    # # TODO: Replace this method and its 'get' use for cmake path with
+    # #   join_path(self.spec['cmake'].prefix.bin, 'cmake') once stand-alone
+    # #   tests can access build dependencies through self.spec['cmake'].
+    # def cmake_bin(self, set=True):
+    #     """(Hack) Set/get cmake dependency path."""
+    #     filepath = join_path(self.install_test_root, "cmake_bin_path.txt")
+    #     if set:
+    #         with open(filepath, "w") as out_file:
+    #             cmake_bin = join_path(self.spec["cmake"].prefix.bin, "cmake")
+    #             out_file.write("{0}\n".format(cmake_bin))
+    #     else:
+    #         with open(filepath, "r") as in_file:
+    #             return in_file.read().strip()
+    #
+    # @run_after("build")
+    # def setup_smoke_test(self):
+    #     """Setup info needed for spack smoke tests"""
+    #     # TODO: Remove once self.spec['cmake'] is available in `spack test run`
+    #     self.cmake_bin(set=True)
 
     def test(self):
         """
@@ -326,9 +329,9 @@ class Conduit(CMakePackage):
             #  How do we properly locate 'cmake' and 'make' in the
             # `spack test run` environment ?
             #
-            # For now we are using a shared hack to locate cmake
-            # ( see cmake_bin def ) and assuming make is available.
-            self.run_test(self.cmake_bin(False), opts)
+            # For now we assume cmake is in our path
+            # cmake_bin hack was undermining installs
+            self.run_test("cmake", opts)
             self.run_test("make", purpose="build example")
             self.run_test("conduit_example", purpose="run example")
         #####
