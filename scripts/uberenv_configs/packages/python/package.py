@@ -426,7 +426,7 @@ class Python(Package):
     # Patch the setup script to deny that tcl/x11 exists rather than allowing
     # autodetection of (possibly broken) system components
     patch("tkinter-3.8.patch", when="@3.8:3.9 ~tkinter")
-    patch("tkinter-3.10.patch", when="@3.10: ~tkinter")
+    patch("tkinter-3.10.patch", when="@3.10:3.10.99 ~tkinter")
 
     # Ensure that distutils chooses correct compiler option for RPATH on cray:
     patch("cray-rpath-2.3.patch", when="@2.3:3.0.1 platform=cray")
