@@ -16,7 +16,9 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 
-#if defined(_OPENMP)
+#include "conduit_config.h"
+
+#if defined(CONDUIT_USE_OPENMP)
 #include <omp.h>
 #endif
 
@@ -44,7 +46,7 @@ struct for_policy
     template <typename Func>
     inline void operator()(index_t begin, index_t end, Func &&func)
     {
-#if defined(_OPENMP)
+#if defined(CONDUIT_USE_OPENMP)
 //        #pragma message("omp::for_policy -> OMP")
         #pragma omp parallel for
         for(index_t i = begin; i < end; i++)
