@@ -277,13 +277,14 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
     }
 }
 
+// we are testing vector fields in this test
 TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
         std::make_pair("uniform", 2), std::make_pair("uniform", 3),
         std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
         std::make_pair("structured", 2), std::make_pair("structured", 3),
-        // std::make_pair("point", 2), std::make_pair("point", 3),
+        // std::make_pair("point", 2), std::make_pair("point", 3), // TODO
         std::make_pair("lines", 2), std::make_pair("lines", 3),
         std::make_pair("tris", 2),
         std::make_pair("quads", 2),
@@ -339,6 +340,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
     }
 }
 
+// multidomain test
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
     for (int ndomains = 2; ndomains < 6; ndomains ++)

@@ -632,7 +632,7 @@ add_shape_info(DBzonelist *zones,
 
 //-----------------------------------------------------------------------------
 void
-add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir, int dom_id)
+add_state(DBfile *dbfile, Node &mesh_state, std::string &mesh_dir, int dom_id)
 {
     std::string dtime_str = mesh_dir + "/dtime";
     std::string ftime_str = mesh_dir + "/time";
@@ -642,13 +642,13 @@ add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir, int dom_id)
     {
         double dtime;
         DBReadVar(dbfile, dtime_str.c_str(), &dtime);
-        mesh_domain["state"]["time"] = dtime;
+        mesh_state["time"] = dtime;
     }
     else if (DBInqVarExists(dbfile, ftime_str.c_str()))
     {
         float ftime;
         DBReadVar(dbfile, ftime_str.c_str(), &ftime);
-        mesh_domain["state"]["time"] = (double) ftime;
+        mesh_state["time"] = (double) ftime;
     }
 
     std::string cycle_str = mesh_dir + "/cycle";
@@ -656,10 +656,10 @@ add_state(DBfile *dbfile, Node &mesh_domain, std::string &mesh_dir, int dom_id)
     {
         int cycle;
         DBReadVar(dbfile, cycle_str.c_str(), &cycle);
-        mesh_domain["state"]["cycle"] = cycle;
+        mesh_state["cycle"] = cycle;
     }
 
-    mesh_domain["state"]["domain_id"] = dom_id;
+    mesh_state["domain_id"] = dom_id;
 }
 
 //-----------------------------------------------------------------------------
@@ -1445,7 +1445,7 @@ read_mesh(const std::string &root_file_path,
 
         std::string mesh_dir, tmp;
         utils::split_string(mesh_name, "/", mesh_dir, tmp);
-        add_state(mesh_domain_file.getSiloObject(), mesh_out, mesh_dir, i);
+        add_state(mesh_domain_file.getSiloObject(), mesh_out["state"], mesh_dir, i);
 
         // for each mesh domain, we would like to iterate through all the variables
         // and extract the same domain from them.
@@ -2660,10 +2660,11 @@ write_multivars(DBfile *dbfile,
     const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
-    // TODO check in visit for if there are domains where vars are not defined what does it do
-    // or use the domain num check I have in multimesh write
-    // test this out yourself!
-    const int64 num_domains = n_mesh["state/number_of_domains"].as_int64();
+    if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
+    {
+        CONDUIT_ERROR("Domain count mismatch");
+    }
+
     auto field_itr = n_mesh["fields"].children();
     while (field_itr.has_next())
     {
@@ -2724,7 +2725,7 @@ write_multivars(DBfile *dbfile,
             DBPutMultivar(
                 dbfile,
                 multivar_name.c_str(),
-                num_domains,
+                global_num_domains,
                 var_name_ptrs.data(),
                 var_types.data(),
                 optlist.getSiloObject()),
