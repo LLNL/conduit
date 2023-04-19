@@ -2556,6 +2556,8 @@ void write_multimeshes(DBfile *dbfile,
     const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
+    // these should be the same b/c the num domains the bp index was given
+    // was global_num_domains
     if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
     {
         CONDUIT_ERROR("Domain count mismatch");
@@ -2660,6 +2662,8 @@ write_multivars(DBfile *dbfile,
     const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
+    // these should be the same b/c the num domains the bp index was given
+    // was global_num_domains
     if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
     {
         CONDUIT_ERROR("Domain count mismatch");
