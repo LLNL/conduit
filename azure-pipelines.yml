@@ -308,34 +308,35 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py311_cmake_3_26_hdf5_1_14:
-          containerImage: ${{ variables.ubuntu_18_tag }}
-          COMPILER_CC: gcc
-          COMPILER_CXX: g++
-          COMPILER_FC: gfortran
-          COMPILER_SPEC: gcc
-          FORCE_COMPILERS: OFF
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: OFF
-          ENABLE_MPI: ON
-          ENABLE_DOCS: ON
-          ENABLE_RELAY_WEBSERVER: ON
-          ENABLE_OPENMP: ON
-          ENABLE_HDF5: ON
-          ENABLE_HDF5_COMPAT: OFF
-          HDF5_SPEC: "hdf5@1.14.0~mpi"
-          # silo requires hdf5 1.10, so for now we can't
-          # test both silo and hdf5 1.14 support
-          ENABLE_SILO: OFF
-          ENABLE_ADIOS: OFF
-          ENABLE_PARMETIS: ON
-          ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.11.2
-          CMAKE_VERSION: 3.26.0
-          BLT_CXX_STD: c++11
-          BLT_ENABLE_FIND_MPI: ON
+        # TODO: Need to solve spack mysterty to enable this
+        # ub_18_shared_py311_cmake_3_26_hdf5_1_14:
+        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   COMPILER_CC: gcc
+        #   COMPILER_CXX: g++
+        #   COMPILER_FC: gfortran
+        #   COMPILER_SPEC: gcc
+        #   FORCE_COMPILERS: OFF
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_COVERAGE: OFF
+        #   ENABLE_MPI: ON
+        #   ENABLE_DOCS: ON
+        #   ENABLE_RELAY_WEBSERVER: ON
+        #   ENABLE_OPENMP: ON
+        #   ENABLE_HDF5: ON
+        #   ENABLE_HDF5_COMPAT: OFF
+        #   HDF5_SPEC: "hdf5@1.14.0~mpi"
+        #   # silo requires hdf5 1.10, so for now we can't
+        #   # test both silo and hdf5 1.14 support
+        #   ENABLE_SILO: OFF
+        #   ENABLE_ADIOS: OFF
+        #   ENABLE_PARMETIS: ON
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_PYTHON2: OFF
+        #   PYTHON_VERSION: 3.11.2
+        #   CMAKE_VERSION: 3.26.0
+        #   BLT_CXX_STD: c++11
+        #   BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_mpi_compilers_direct_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
