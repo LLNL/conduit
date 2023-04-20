@@ -56,7 +56,8 @@ namespace silo
 
 void CONDUIT_RELAY_API silo_mesh_write(const Node &n, 
                      DBfile *dbfile,
-                     const std::string &silo_obj_path);
+                     const std::string &silo_obj_path,
+                     bool overlink);
 
 //-----------------------------------------------------------------------------
 // -- end <>::silo --
