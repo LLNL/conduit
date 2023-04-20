@@ -2747,8 +2747,8 @@ write_multivars(DBfile *dbfile,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      silo_type: "default", "pdb", "hdf5", "unknown"
-///            when 'path' exists, "default" ==> "unknown"
-///            else,               "default" ==> "hdf5"
+///            when the file we are writing to exists, "default" ==> "unknown"
+///            else,                                   "default" ==> "hdf5"
 ///         note: these are additional silo_type options that we could add 
 ///         support for in the future:
 ///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
@@ -2857,14 +2857,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
     if (opts_silo_type == "default")
     {
-        if (conduit::utils::is_file(path + ".root")) 
-        {
-            silo_type = DB_UNKNOWN;
-        }
-        else
-        {
-            silo_type = DB_HDF5;
-        }
+        silo_type = DB_UNKNOWN;
+        // "default" logic will be handled later, once we know
+        // what the `root_filename` is.
     }
     else if (opts_silo_type == "pdb")
     {
@@ -2901,27 +2896,14 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     //     silo_type = DB_TAURUS;
     // }
 
-    // uses the truncate option so needs to happen after it is set
-    // if the file exists and we are not truncating
-    if (conduit::utils::is_file(path + ".root") && !opts_truncate)
-    {
-        // TODO not sure this is right; what about if cycle info is in the filename?
-        // then silo type must be unknown
-        silo_type = DB_UNKNOWN;
-    }
-    // if the file does not exist or we are truncating
-    else if (silo_type == DB_UNKNOWN)
-    {
-        // silo type can be anything except unknown
-        silo_type = DB_HDF5;
-    }
-
     // special logic for overlink
     if (opts_file_style == "overlink")
     {
         opts_mesh_name = "MMESH";
-        opts_file_style == "multi_file";
-        // TODO this isn't quite right - more stuff needs to happen for overlink
+        // check everywhere where there is `multi_file` logic and add a case for overlink
+        
+        opts_suffix = "none"; // force no suffix for overlink case - this shouldn't matter later anyway
+        // TODO this isn't right - way more stuff needs to happen for overlink
     }
 
     int num_files = opts_num_files;
@@ -2979,7 +2961,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // figure out what cycle we are
     if(local_num_domains > 0 && is_valid)
     {
-        // TODO let's investigate this
         Node dom = multi_dom.child(0);
         if(!dom.has_path("state/cycle"))
         {
@@ -3083,6 +3064,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     }
 
     std::string output_dir = "";
+    std::string overlink_top_level_output_dir = "";
 
     // resolve file_style == default
     // 
@@ -3102,15 +3084,31 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // ----------------------------------------------------
     // if using multi_file, create output dir
     // ----------------------------------------------------
-    if(opts_file_style == "multi_file")
+    if (opts_file_style == "multi_file" ||
+        opts_file_style == "overlink")
     {
         // setup the directory
-        output_dir = path;
-        // at this point for suffix, we should only see
-        // cycle or none -- default has been resolved
-        if(opts_suffix == "cycle")
+        
+
+        if (opts_file_style == "overlink")
         {
-            output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
+            // overlink_top_level_output_dir = "/path/to/directory"
+            // output_dir = "/path/to/directory/directory"
+            overlink_top_level_output_dir = path;
+            std::string dirname, tmp;
+            utils::rsplit_file_path(overlink_top_level_output_dir, dirname, tmp);
+            output_dir = utils::join_file_path(overlink_top_level_output_dir, dirname);
+        }
+        else
+        {
+            output_dir = path;
+
+            // at this point for suffix, we should only see
+            // cycle or none -- default has been resolved
+            if(opts_suffix == "cycle")
+            {
+                output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
+            }
         }
 
         bool dir_ok = false;
@@ -3149,16 +3147,51 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // ----------------------------------------------------
     // setup root file name
     // ----------------------------------------------------
-    std::string root_filename = path;
-
-    // at this point for suffix, we should only see 
-    // cycle or none -- default has been resolved
-    if(opts_suffix == "cycle")
+    std::string root_filename;
+    if (opts_file_style == "overlink")
     {
-        root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
+        root_filename = utils::join_file_path(
+            overlink_top_level_output_dir, "OvlTop.silo");
+    }
+    else
+    {
+        root_filename = path;
+
+        // at this point for suffix, we should only see 
+        // cycle or none -- default has been resolved
+        if(opts_suffix == "cycle")
+        {
+            root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
+        }
+
+        root_filename += ".root";
     }
 
-    root_filename += ".root";
+    // ----------------------------------------------------
+    // check silo type now that root file name is known
+    // ----------------------------------------------------
+    // if the file exists and we are not truncating
+    if (utils::is_file(root_filename) && !opts_truncate)
+    {
+        // then silo type must be unknown
+        if (silo_type != DB_UNKNOWN)
+        {
+            silo_type = DB_UNKNOWN;
+            CONDUIT_INFO("Overriding silo type to DB_UNKNOWN because the "
+                         "file already exists and truncation is disabled.");
+        }
+    }
+    else // the file does not exist or we are truncating
+    {
+        // then silo type can be anything except unknown
+        if (silo_type == DB_UNKNOWN)
+        {
+            // silo type can be anything except unknown
+            silo_type = DB_HDF5;
+            CONDUIT_INFO("Overriding silo type to DB_HDF5 because either "
+                         "the file does not exist or truncation is enabled.");
+        }
+    }
 
     // zero or negative (default cases), use one file per domain
     if(num_files <= 0)
@@ -3263,7 +3296,39 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         #endif
         }
     }
-    else if(global_num_domains == num_files)
+    else if (opts_file_style == "overlink")
+    {
+        // this is similar to the multi file case below
+
+        // write out each domain
+        // writes are independent, so no baton here
+        for(int i = 0; i < local_num_domains; ++i)
+        {
+            const Node &dom = multi_dom.child(i);
+            uint64 domain = dom["state/domain_id"].to_uint64();
+
+            std::string output_file  = conduit::utils::join_file_path(output_dir,
+                                                conduit_fmt::format("domain_{:06d}.silo",
+                                                                    domain));
+            // properly support truncate vs non truncate
+
+            detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
+                nullptr, 
+                &DBClose,
+                "Error closing Silo file: " + output_file};
+
+            if (opts_truncate)
+                dbfile.setSiloObject(DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
+            else
+                dbfile.setSiloObject(DBOpen(output_file.c_str(), silo_type, DB_APPEND));
+            if (!dbfile.getSiloObject())
+                CONDUIT_ERROR("Error opening Silo file for writing: " << output_file );
+
+            // write to mesh name subpath
+            silo_mesh_write(dom, dbfile.getSiloObject(), opts_mesh_name);
+        }
+    }
+    else if (global_num_domains == num_files)
     {
         // write out each domain
         // writes are independent, so no baton here
@@ -3648,6 +3713,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
         else
         {
+            // TODO use rsplit file path in other places
             std::string output_dir_base, output_dir_path;
             utils::rsplit_file_path(output_dir,
                                     output_dir_base,
@@ -3674,7 +3740,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     part_map_domain_vals[i] = i;
                 }
 
-                output_silo_path = conduit::utils::join_file_path(dirname, "domain_{:06d}.silo") + ":"
+                output_silo_path = utils::join_file_path(dirname, "domain_{:06d}.silo") + ":"
                                  + opts_mesh_name + "/{}";
             }
             // m to n case
@@ -3682,7 +3748,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             {
                 // we generated the partition map earlier
 
-                output_silo_path = conduit::utils::join_file_path(dirname, "file_{:06d}.silo") + ":"
+                output_silo_path = utils::join_file_path(dirname, "file_{:06d}.silo") + ":"
                                  + "domain_{:06d}" + "/" 
                                  + opts_mesh_name + "/{}";
             }
