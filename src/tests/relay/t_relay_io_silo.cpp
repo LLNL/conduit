@@ -337,6 +337,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+        info.print();
     }
 }
 
