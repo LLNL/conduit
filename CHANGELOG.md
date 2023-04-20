@@ -6,6 +6,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## Unreleased
 
+### Added
+
+#### General
+- Added Python 3 Stable ABI compatibility (Py_LIMITED_API) build support. Enabled by default when building against Python 3.11 or newer.
+
 ### Fixed
 
 #### General
