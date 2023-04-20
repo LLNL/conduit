@@ -13,7 +13,9 @@
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 #include "conduit_fmt/conduit_fmt.h"
+#if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
 #include "conduit_relay_io_silo.hpp"
+#endif
 
 #include <math.h>
 #include <iostream>
@@ -209,7 +211,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
     dsets.remove("mixed_2d");
 
     braid_save_helper(dsets,"braid_2d_examples");
-
+#if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
     if(silo_enabled)
     {
         // we removed datasets above, so we need an updated iterator
@@ -236,6 +238,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             relay::io::silo::save_mesh(mesh, "braid_2d_" + name +  "_example.silo:mesh");
         }
     }
+#endif
 }
 
 
@@ -342,7 +345,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
     dsets.remove("mixed");
 
     braid_save_helper(dsets,"braid_3d_examples");
-
+#if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
     if(silo_enabled)
     {
         // we removed datasets above, so we need an updated iterator
@@ -369,6 +372,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
             relay::io::silo::save_mesh(mesh, "braid_3d_" + name +  "_example.silo:mesh");
         }
     }
+#endif
 }
 
 //-----------------------------------------------------------------------------
