@@ -1423,6 +1423,7 @@ read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
         }
 
+        // TODO hi isn't this wrong?
         std::string mesh_path = conduit_fmt::format("domain_{:06d}", i);
         Node &mesh_out = mesh[mesh_path];
 
@@ -2435,7 +2436,6 @@ void silo_mesh_write(const Node &n,
         CONDUIT_ERROR("Error creating state optlist");
     }
     
-    // TODO do we want these things for overlink?
     if (n.has_child("state"))
     {
         silo_error = 0;
@@ -2601,11 +2601,75 @@ generate_silo_names(const conduit::Node &n_mesh_state,
 }
 
 //-----------------------------------------------------------------------------
-void write_multimeshes(DBfile *dbfile,
-                       const std::string &opts_mesh_name,
-                       const conduit::Node &root)
+void write_multimesh(const Node &n_mesh,
+                     const std::string &topo_name,
+                     const conduit::Node &root,
+                     const int global_num_domains,
+                     const std::string &multimesh_name,
+                     DBfile *dbfile)
 {
     const int num_files = root["number_of_files"].as_int32();
+
+    const Node &n_topo = n_mesh["topologies"][topo_name];
+    std::string topo_type = n_topo["type"].as_string();
+
+    std::string safe_meshname = detail::sanitize_silo_varname(topo_name);
+
+    int mesh_type;
+    if (topo_type == "points")
+    {
+        mesh_type = DB_POINTMESH;
+    }
+    else if (topo_type == "uniform" || 
+             topo_type == "rectilinear" || 
+             topo_type == "structured")
+    {
+        mesh_type = DB_QUADMESH;
+    }
+    else if (topo_type == "unstructured")
+    {
+        mesh_type = DB_UCDMESH;
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported topo type in " << topo_type);
+    }
+
+    std::string silo_path = root["silo_path"].as_string();
+
+    std::vector<std::string> domain_name_strings;
+    std::vector<const char *> domain_name_ptrs;
+    std::vector<int> mesh_types;
+    generate_silo_names(n_mesh["state"],
+                        silo_path,
+                        safe_meshname,
+                        num_files,
+                        global_num_domains,
+                        mesh_type,
+                        domain_name_strings,
+                        domain_name_ptrs,
+                        mesh_types);
+
+    // TODO_LATER add dboptions for nameschemes
+
+    CONDUIT_CHECK_SILO_ERROR(
+        DBPutMultimesh(
+            dbfile,
+            detail::sanitize_silo_varname(multimesh_name).c_str(),
+            global_num_domains,
+            domain_name_ptrs.data(),
+            mesh_types.data(),
+            NULL),
+        "Error putting multimesh corresponding to topo: " << topo_name);
+}
+
+//-----------------------------------------------------------------------------
+void write_multimeshes(DBfile *dbfile,
+                       const std::string &opts_mesh_name,
+                       const conduit::Node &root,
+                       bool overlink)
+{
+    
     const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
 
@@ -2616,55 +2680,33 @@ void write_multimeshes(DBfile *dbfile,
         CONDUIT_ERROR("Domain count mismatch");
     }
 
-    auto topo_itr = n_mesh["topologies"].children();
-    while (topo_itr.has_next())
+    // write only the chosen mesh for overlink case
+    if (overlink)
     {
-        const Node &n_topo = topo_itr.next();
-        std::string topo_name = topo_itr.name();
-        std::string topo_type = n_topo["type"].as_string();
-
-        std::string safe_meshname = detail::sanitize_silo_varname(topo_name);
-
-        int mesh_type;
-        if (topo_type == "points")
-            mesh_type = DB_POINTMESH;
-        else if (topo_type == "uniform" || 
-                 topo_type == "rectilinear" || 
-                 topo_type == "structured")
-            mesh_type = DB_QUADMESH;
-        else if (topo_type == "unstructured")
-            mesh_type = DB_UCDMESH;
-        else
-            CONDUIT_ERROR("Unsupported topo type in " << topo_type);
-
-        std::string silo_path = root["silo_path"].as_string();
-
-        std::vector<std::string> domain_name_strings;
-        std::vector<const char *> domain_name_ptrs;
-        std::vector<int> mesh_types;
-        generate_silo_names(n_mesh["state"],
-                            silo_path,
-                            safe_meshname,
-                            num_files,
+        std::string multimesh_name = "MMESH";
+        write_multimesh(n_mesh,
+                        opts_mesh_name, // this is the topo name
+                        root,
+                        global_num_domains,
+                        multimesh_name,
+                        dbfile);
+    }
+    // write all meshes for nonoverlink case
+    else
+    {
+        auto topo_itr = n_mesh["topologies"].children();
+        while (topo_itr.has_next())
+        {
+            topo_itr.next();
+            std::string topo_name = topo_itr.name();
+            std::string multimesh_name = opts_mesh_name + "_" + topo_name;
+            write_multimesh(n_mesh,
+                            topo_name,
+                            root,
                             global_num_domains,
-                            mesh_type,
-                            domain_name_strings,
-                            domain_name_ptrs,
-                            mesh_types);
-
-        std::string multimesh_name = opts_mesh_name + "_" + topo_name;
-
-        // TODO_LATER add dboptions for nameschemes
-
-        CONDUIT_CHECK_SILO_ERROR(
-            DBPutMultimesh(
-                dbfile,
-                detail::sanitize_silo_varname(multimesh_name).c_str(),
-                global_num_domains,
-                domain_name_ptrs.data(),
-                mesh_types.data(),
-                NULL),
-            "Error putting multimesh corresponding to topo: " << topo_name);
+                            multimesh_name,
+                            dbfile);
+        }
     }
 }
 
@@ -2709,7 +2751,8 @@ void write_multimeshes(DBfile *dbfile,
 void
 write_multivars(DBfile *dbfile,
                 const std::string &opts_mesh_name,
-                const conduit::Node &root)
+                const conduit::Node &root,
+                bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
     const int global_num_domains = root["number_of_domains"].as_int32();
@@ -2729,64 +2772,84 @@ write_multivars(DBfile *dbfile,
         std::string var_name = field_itr.name();
 
         std::string linked_topo_name = n_var["topology"].as_string();
-        std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
 
-        std::string safe_varname = detail::sanitize_silo_varname(var_name); 
-        std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name); 
+        if (! overlink || linked_topo_name == opts_mesh_name)
+        {
+            std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
 
-        int var_type;
-        if (linked_topo_type == "unstructured")
-            var_type = DB_UCDVAR;
-        else if (linked_topo_type == "rectilinear" || 
-                 linked_topo_type == "uniform" || 
-                 linked_topo_type == "structured")
-            var_type = DB_QUADVAR;
-        else if (linked_topo_type == "points")
-            var_type = DB_POINTVAR;
-        else
-            CONDUIT_ERROR("Unsupported topo type in " << linked_topo_type);
+            std::string safe_varname = detail::sanitize_silo_varname(var_name); 
+            std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name); 
 
-        std::string silo_path = root["silo_path"].as_string();
+            int var_type;
+            if (linked_topo_type == "unstructured")
+            {
+                var_type = DB_UCDVAR;
+            }
+            else if (linked_topo_type == "rectilinear" || 
+                     linked_topo_type == "uniform" || 
+                     linked_topo_type == "structured")
+            {
+                var_type = DB_QUADVAR;
+            }
+            else if (linked_topo_type == "points")
+            {
+                var_type = DB_POINTVAR;
+            }
+            else
+            {
+                CONDUIT_ERROR("Unsupported topo type in " << linked_topo_type);
+            }
 
-        std::vector<std::string> var_name_strings;
-        std::vector<const char *> var_name_ptrs;
-        std::vector<int> var_types;
-        generate_silo_names(n_mesh["state"],
-                            silo_path,
-                            safe_varname,
-                            num_files,
-                            global_num_domains,
-                            var_type,
-                            var_name_strings,
-                            var_name_ptrs,
-                            var_types);
+            std::string silo_path = root["silo_path"].as_string();
 
-        detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-            DBMakeOptlist(1),
-            &DBFreeOptlist,
-            "Error freeing optlist."};
-        if (!optlist.getSiloObject())
-            CONDUIT_ERROR("Error creating options");
+            std::vector<std::string> var_name_strings;
+            std::vector<const char *> var_name_ptrs;
+            std::vector<int> var_types;
+            generate_silo_names(n_mesh["state"],
+                                silo_path,
+                                safe_varname,
+                                num_files,
+                                global_num_domains,
+                                var_type,
+                                var_name_strings,
+                                var_name_ptrs,
+                                var_types);
 
-        std::string multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
+            detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+                DBMakeOptlist(1),
+                &DBFreeOptlist,
+                "Error freeing optlist."};
+            if (!optlist.getSiloObject())
+                CONDUIT_ERROR("Error creating options");
 
-        // have to const_cast because converting to void *
-        CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-                                              DBOPT_MMESH_NAME,
-                                              const_cast<char *>(multimesh_name.c_str())),
-                                  "Error creating options for putting multivar");
+            std::string multimesh_name, multivar_name;
+            if (overlink)
+            {
+                multimesh_name = "MMESH";
+                multivar_name = safe_varname;
+            }
+            else
+            {
+                multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
+                multivar_name = opts_mesh_name + "_" + safe_varname;
+            }
 
-        std::string multivar_name = opts_mesh_name + "_" + safe_varname;
+            // have to const_cast because converting to void *
+            CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
+                                                  DBOPT_MMESH_NAME,
+                                                  const_cast<char *>(multimesh_name.c_str())),
+                                      "Error creating options for putting multivar");
 
-        CONDUIT_CHECK_SILO_ERROR(
-            DBPutMultivar(
-                dbfile,
-                multivar_name.c_str(),
-                global_num_domains,
-                var_name_ptrs.data(),
-                var_types.data(),
-                optlist.getSiloObject()),
-            "Error putting multivar corresponding to field: " << var_name);
+            CONDUIT_CHECK_SILO_ERROR(
+                DBPutMultivar(
+                    dbfile,
+                    multivar_name.c_str(),
+                    global_num_domains,
+                    var_name_ptrs.data(),
+                    var_types.data(),
+                    optlist.getSiloObject()),
+                "Error putting multivar corresponding to field: " << var_name);
+        }        
     }
 }
 
@@ -2819,6 +2882,17 @@ write_multivars(DBfile *dbfile,
 ///
 /// note: we have made the choice to output ALL topologies as multimeshes. We
 /// prepend the provided mesh_name to each of these topo names.
+
+
+// TODO two options, one for overlink and one not for overlink
+// output something name for not overlink
+// input topo name for overlink
+
+// TODO email jeff grandy to ask about an overlink file format validator
+
+// TODO figure out the domain_XXXXXX vs domainX discrepancy and how much it matters
+
+
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
@@ -3399,8 +3473,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         #endif
         }
     }
-    else if (opts_file_style == "overlink" || 
-             global_num_domains == num_files)
+    else if (global_num_domains == num_files)
     {
         // write out each domain
         // writes are independent, so no baton here
@@ -3409,9 +3482,20 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             const Node &dom = multi_dom.child(i);
             uint64 domain = dom["state/domain_id"].to_uint64();
 
-            std::string output_file = conduit::utils::join_file_path(output_dir,
+            std::string output_file;
+            if (opts_file_style == "overlink")
+            {
+                output_file = conduit::utils::join_file_path(output_dir,
+                                                conduit_fmt::format("domain{:06d}.silo",
+                                                                    domain));
+            }
+            else
+            {
+                output_file = conduit::utils::join_file_path(output_dir,
                                                 conduit_fmt::format("domain_{:06d}.silo",
                                                                     domain));
+            }
+
             // properly support truncate vs non truncate
 
             detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
@@ -3584,18 +3668,34 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                             uint64 domain_id = dom["state/domain_id"].to_uint64();
 
                             // construct file name
-                            std::string file_name = conduit_fmt::format(
-                                                        "file_{:06d}.silo",
-                                                        f);
+                            std::string file_name;
+                            if (opts_file_style == "overlink")
+                            {
+                                file_name = conduit_fmt::format("domfile{:06d}.silo", f);
+                            }
+                            else
+                            {
+                                file_name = conduit_fmt::format("file_{:06d}.silo", f);
+                            }
 
                             std::string output_file = conduit::utils::join_file_path(output_dir,
                                                                                      file_name);
 
                             // now the path in the file, and domain id
-                            std::string curr_path = conduit_fmt::format(
-                                                            "domain_{:06d}/{}",
-                                                             domain_id,
-                                                             opts_mesh_name);
+                            std::string curr_path;
+                            if (opts_file_style == "overlink")
+                            {
+                                curr_path = conduit_fmt::format("domain{:06d}/{}",
+                                                                domain_id,
+                                                                opts_mesh_name);
+                            }
+                            else
+                            {
+                                curr_path = conduit_fmt::format("domain_{:06d}/{}",
+                                                                domain_id,
+                                                                opts_mesh_name);
+                            }
+                            
 
                             try
                             {
@@ -3792,25 +3892,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                     output_dir_base,
                                     output_dir_path);
 
-            if (opts_file_style == "overlink")
-            {
-                // generate partition map
-                output_partition_map["file"].set(DataType::index_t(global_num_domains));
-                output_partition_map["domain"].set(DataType::index_t(global_num_domains));
-                index_t_array part_map_file_vals   = output_partition_map["file"].value();
-                index_t_array part_map_domain_vals = output_partition_map["domain"].value();
-
-                for (index_t i = 0; i < global_num_domains; i ++)
-                {
-                    // file id == domain id
-                    part_map_file_vals[i]   = i;
-                    part_map_domain_vals[i] = i;
-                }
-
-            }
             // num domains == num files case
-            else if (opts_file_style == "overlink" ||
-                     global_num_domains == num_files)
+            if (global_num_domains == num_files)
             {
                 // generate partition map
                 output_partition_map["file"].set(DataType::index_t(global_num_domains));
@@ -3827,7 +3910,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 if (opts_file_style == "overlink")
                 {
-                    output_silo_path = utils::join_file_path(output_dir_base, "domain_{:06d}.silo") + ":"
+                    output_silo_path = utils::join_file_path(output_dir_base, "domain{:06d}.silo") + ":"
                                      + "MESH" + "/{}";
                 }
                 else
@@ -3841,9 +3924,20 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             {
                 // we generated the partition map earlier
 
-                output_silo_path = utils::join_file_path(output_dir_base, "file_{:06d}.silo") + ":"
+                if (opts_file_style == "overlink")
+                {
+                    output_silo_path = utils::join_file_path(output_dir_base, "domfile{:06d}.silo") + ":"
+                                     + "domain{:06d}" + "/" 
+                                     + "MESH" + "/{}";
+                }
+                else
+                {
+                    output_silo_path = utils::join_file_path(output_dir_base, "file_{:06d}.silo") + ":"
                                  + "domain_{:06d}" + "/" 
                                  + opts_mesh_name + "/{}";
+                }
+
+                
             }
         }
 
@@ -3921,8 +4015,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
-        write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, root);
-        write_multivars(dbfile.getSiloObject(), opts_mesh_name, root);
+        write_multimeshes(dbfile.getSiloObject(), opts_mesh_name, root, opts_file_style == "overlink");
+        write_multivars(dbfile.getSiloObject(), opts_mesh_name, root, opts_file_style == "overlink");
         // write_multimaterials(); // TODO_LATER
 
     }
