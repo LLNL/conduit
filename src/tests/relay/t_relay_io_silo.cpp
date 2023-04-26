@@ -341,7 +341,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         std::cout << "dtype for save mesh state/cycle: " << std::endl;
         std::cout << save_mesh["state"]["cycle"].dtype().to_string() << std::endl;
         std::cout << "dtype for load mesh state/cycle: " << std::endl;
-        std::cout << load_mesh["state"]["cycle"].dtype().to_string() << std::endl;
+        std::cout << load_mesh[0]["state"]["cycle"].dtype().to_string() << std::endl;
         std::cout << "==========================" << std::endl;
     }
 }
