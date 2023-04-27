@@ -3281,8 +3281,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         opts_out_mesh_name = "MMESH";
         CONDUIT_INFO("Silo save: overlink: out_mesh_name set to " + opts_out_mesh_name);
-
-        // check everywhere where there is `multi_file` logic and add a case for overlink
         
         // TODO way more stuff needs to happen for overlink
     }
@@ -3915,7 +3913,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
         else
         {
-            // TODO use rsplit file path in other places
             std::string output_dir_base, output_dir_path;
             utils::rsplit_file_path(output_dir,
                                     output_dir_base,
@@ -4128,8 +4125,8 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      silo_type: "default", "pdb", "hdf5", "unknown"
-///            when 'path' exists, "default" ==> "unknown"
-///            else,               "default" ==> "hdf5"
+///            when the file we are writing to exists, "default" ==> "unknown"
+///            else,                                   "default" ==> "hdf5"
 ///         note: these are additional silo_type options that we could add 
 ///         support for in the future:
 ///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
@@ -4140,13 +4137,25 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
+///      ovl_topo_name: (used if present, default ==> "")
+///
 ///      number_of_files:  {# of files}
 ///            when "multi_file" or "overlink":
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
-/// note: we have made the choice to output ALL topologies as multimeshes. We
-/// prepend the provided mesh_name to each of these topo names.
+/// Note: 
+///  In the non-overlink case...
+///   1) We have made the choice to output ALL topologies as multimeshes. 
+///   2) We prepend the provided mesh_name to each of these topo names. We 
+///      also use the mesh_name as the name of the silo directory within each
+///      silo file where data is stored.
+///   3) ovl_topo_name is ignored if provided.
+///  In the overlink case...
+///   1) We have made ther choice to output only one topology as a multimesh.
+///   2) mesh_name is ignored if provided and changed to "MMESH"
+///   3) ovl_topo_name is the name of the topo we are outputting. If it is not
+///      provided, we choose the first topology in the blueprint.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,

@@ -222,8 +222,6 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     }
 }
 
-
-// TODO: add tests for matsets
 TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
@@ -260,7 +258,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
         // The silo conversion will transform uniform to rectilinear
         // so we will do the same to allow the diff to succeed
         if (mesh_type == "uniform")
+        {
             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+        }
 
         // The Blueprint to Silo transformation changes several names 
         // and some information is lost. We manually make changes so 
@@ -393,4 +393,52 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
     }
 }
 
+TEST(conduit_relay_io_silo, save_mesh_geometry_julia)
+{
+    Node save_mesh, load_mesh, info;
+    index_t nx = 5;
+    index_t ny = 5;
+    float64 x_min = 0;
+    float64 x_max = 10;
+    float64 y_min = 2;
+    float64 y_max = 7;
+    float64 c_re = 3;
+    float64 c_im = 4;
+    blueprint::mesh::examples::julia(nx,
+                                     ny,
+                                     x_min,
+                                     x_max,
+                                     y_min,
+                                     y_max,
+                                     c_re,
+                                     c_im,
+                                     save_mesh);
+    save_mesh.print();
+    io::silo::save_mesh(save_mesh, "julia");
+    io::silo::load_mesh("julia.root", load_mesh);
+    load_mesh.print();
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    // check that load mesh correctly adds the state
+    save_mesh["state/cycle"] = 0;
+    save_mesh["state/domain_id"] = 0;
+
+    // The Blueprint to Silo transformation changes several names 
+    // and some information is lost. We manually make changes so 
+    // that the diff will pass.
+    silo_name_changer("mesh", save_mesh);
+
+    // // the loaded mesh will be in the multidomain format
+    // // (it will be a list containing a single mesh domain)
+    // // but the saved mesh is in the single domain format
+    // EXPECT_EQ(load_mesh.number_of_children(), 1);
+    // EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+    // EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+}
+
 // TODO units?
+// TODO add tests for...
+//  - materials once they are supported
+//  - polytopal meshes once they are supported
+//  - etc.
