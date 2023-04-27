@@ -3677,35 +3677,25 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                             const Node &dom = multi_dom.child(d);
                             uint64 domain_id = dom["state/domain_id"].to_uint64();
 
-                            // construct file name
-                            std::string file_name;
+                            // construct file name and path name
+                            std::string file_name, curr_path;
                             if (opts_file_style == "overlink")
                             {
                                 file_name = conduit_fmt::format("domfile{:d}.silo", f);
-                            }
-                            else
-                            {
-                                file_name = conduit_fmt::format("file_{:06d}.silo", f);
-                            }
-
-                            std::string output_file = conduit::utils::join_file_path(output_dir,
-                                                                                     file_name);
-
-                            // now the path in the file, and domain id
-                            std::string curr_path;
-                            if (opts_file_style == "overlink")
-                            {
                                 curr_path = conduit_fmt::format("domain{:d}/{}",
                                                                 domain_id,
                                                                 opts_out_mesh_name);
                             }
                             else
                             {
+                                file_name = conduit_fmt::format("file_{:06d}.silo", f);
                                 curr_path = conduit_fmt::format("domain_{:06d}/{}",
                                                                 domain_id,
                                                                 opts_out_mesh_name);
                             }
-                            
+
+                            std::string output_file = conduit::utils::join_file_path(output_dir,
+                                                                                     file_name);
 
                             try
                             {
