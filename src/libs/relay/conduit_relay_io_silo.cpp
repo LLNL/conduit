@@ -656,7 +656,7 @@ add_state(DBfile *dbfile, Node &mesh_state, std::string &mesh_dir, int dom_id)
     {
         int cycle;
         DBReadVar(dbfile, cycle_str.c_str(), &cycle);
-        mesh_state["cycle"] = cycle;
+        mesh_state["cycle"] = (index_t) cycle;
     }
 
     mesh_state["domain_id"] = dom_id;

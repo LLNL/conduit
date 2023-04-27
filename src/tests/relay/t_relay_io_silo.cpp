@@ -267,6 +267,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
         // that the diff will pass.
         silo_name_changer("mesh", save_mesh);
 
+        // silo will store this value as an int32. For whatever reason,
+        // braid stores cycle as a uint64, unlike the other mesh blueprint
+        // examples. We must change this so the diff will pass.
+        int cycle = save_mesh["state"]["cycle"].as_int32();
+        save_mesh["state"]["cycle"].reset();
+        save_mesh["state"]["cycle"] = (int64) cycle;
+
         // the loaded mesh will be in the multidomain format
         // (it will be a list containing a single mesh domain)
         // but the saved mesh is in the single domain format
@@ -323,12 +330,12 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         // that the diff will pass.
         silo_name_changer("mesh", save_mesh);
 
-        // silo will store this value as an int32. For whatever reason,
+        // silo will store this value as an index_t. For whatever reason,
         // braid stores cycle as a uint64, unlike the other mesh blueprint
         // examples. We must change this so the diff will pass.
         int cycle = save_mesh["state"]["cycle"].as_uint64();
         save_mesh["state"]["cycle"].reset();
-        save_mesh["state"]["cycle"] = (int32) cycle;
+        save_mesh["state"]["cycle"] = (int64) cycle;
 
         // the loaded mesh will be in the multidomain format
         // (it will be a list containing a single mesh domain)
@@ -337,12 +344,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-
-        std::cout << "dtype for save mesh state/cycle: " << std::endl;
-        std::cout << save_mesh["state"]["cycle"].dtype().to_string() << std::endl;
-        std::cout << "dtype for load mesh state/cycle: " << std::endl;
-        std::cout << load_mesh[0]["state"]["cycle"].dtype().to_string() << std::endl;
-        std::cout << "==========================" << std::endl;
     }
 }
 
@@ -363,6 +364,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
             // and some information is lost. We manually make changes so 
             // that the diff will pass.
             silo_name_changer("mesh", save_mesh[child]);
+
+            // silo will store this value as an index_t. For whatever reason,
+            // braid stores cycle as a uint64, unlike the other mesh blueprint
+            // examples. We must change this so the diff will pass.
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
         }
 
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
