@@ -346,10 +346,10 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 
         std::cout << "save mesh" << std::endl;
-        save_mesh.print();
+        save_mesh["state"].print();
         std::cout << "load mesh" << std::endl;
-        load_mesh[0].print();
-        
+        load_mesh[0]["state"].print();
+
         info.print();
     }
 }

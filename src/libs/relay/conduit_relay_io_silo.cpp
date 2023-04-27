@@ -634,6 +634,8 @@ add_shape_info(DBzonelist *zones,
 void
 add_state(DBfile *dbfile, Node &mesh_state, std::string &mesh_dir, int dom_id)
 {
+    std::cout << "mesh_dir: " << mesh_dir << std::endl;
+
     std::string dtime_str = mesh_dir + "/dtime";
     std::string ftime_str = mesh_dir + "/time";
 
@@ -654,8 +656,10 @@ add_state(DBfile *dbfile, Node &mesh_state, std::string &mesh_dir, int dom_id)
     std::string cycle_str = mesh_dir + "/cycle";
     if (DBInqVarExists(dbfile, cycle_str.c_str()))
     {
+        std::cout << "cycle is here!" << std::endl;
         int cycle;
         DBReadVar(dbfile, cycle_str.c_str(), &cycle);
+        std::cout << "cycle is " << cycle << std::endl;
         mesh_state["cycle"] = (index_t) cycle;
     }
 
@@ -1135,7 +1139,7 @@ read_root_silo_index(const std::string &root_file_path,
 
     // get table of contents
     DBtoc *toc = DBGetToc(dbfile.getSiloObject()); // shouldn't be free'd
-    // get the multimesh
+    // check for multimeshes
     if (toc->nmultimesh <= 0)
     {
         error_oss << "No multimesh found in file: " << root_file_path;
@@ -1148,6 +1152,7 @@ read_root_silo_index(const std::string &root_file_path,
         multimesh_name = opts["mesh_name"].as_string();
     }
 
+    // check multimesh name
     if (multimesh_name.empty())
     {
         multimesh_name = toc->multimesh_names[0];
@@ -1281,7 +1286,6 @@ read_root_silo_index(const std::string &root_file_path,
 /// mesh_name. We also read all multivariables which are associated with the
 /// chosen multimesh.
 //-----------------------------------------------------------------------------
-//-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
 read_mesh(const std::string &root_file_path,
           const Node &opts,
@@ -1404,6 +1408,10 @@ read_mesh(const std::string &root_file_path,
 
     for (int i = domain_start; i < domain_end; i ++)
     {
+        //
+        // Read Mesh
+        //
+
         std::string silo_mesh_path = mesh_index["mesh_paths"][i].as_string();
         int_accessor meshtypes = mesh_index["mesh_types"].value();
         int meshtype = meshtypes[i];
@@ -1415,14 +1423,16 @@ read_mesh(const std::string &root_file_path,
         {
             mesh_domain_filename = root_file_path;
         }
-        detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{nullptr, &DBClose};
-        mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
-        mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+        detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
+            DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ), 
+            &DBClose,
+            "Error closing Silo file: " + mesh_domain_filename};
         if (! mesh_domain_file.getSiloObject())
         {
             CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
         }
 
+        // this is for the blueprint mesh output
         std::string mesh_path = conduit_fmt::format("domain_{:06d}", i);
         Node &mesh_out = mesh[mesh_path];
 
@@ -1453,8 +1463,13 @@ read_mesh(const std::string &root_file_path,
         }
 
         std::string mesh_dir, tmp;
+        // this isn't a file path it is a silo path, so we want to use "/"
         utils::split_string(mesh_name, "/", mesh_dir, tmp);
         add_state(mesh_domain_file.getSiloObject(), mesh_out["state"], mesh_dir, i);
+
+        //
+        // Read Fields
+        //
 
         // for each mesh domain, we would like to iterate through all the variables
         // and extract the same domain from them.
@@ -1488,8 +1503,10 @@ read_mesh(const std::string &root_file_path,
                     var_domain_filename = root_file_path;
                 }
 
-                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{nullptr, &DBClose};
-                var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
+                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
+                    nullptr, 
+                    &DBClose,
+                    "Error closing Silo file: " + var_domain_filename};
                 DBfile *domain_file_to_use = nullptr;
 
                 // if the var domain is stored in the same file as the mesh domain then we
@@ -1515,27 +1532,37 @@ read_mesh(const std::string &root_file_path,
                     detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
                         DBGetUcdvar(domain_file_to_use, var_name.c_str()),
                         &DBFreeUcdvar};
-                    read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), var_name, multimesh_name, field_out);
+                    read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), 
+                                                   var_name, 
+                                                   multimesh_name, 
+                                                   field_out);
                 }
                 else if (vartype == DB_QUADVAR)
                 {
                     detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
                         DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeQuadvar};
-                    read_variable_domain<DBquadvar>(quadvar.getSiloObject(), var_name, multimesh_name, field_out);
+                    read_variable_domain<DBquadvar>(quadvar.getSiloObject(), 
+                                                    var_name, 
+                                                    multimesh_name, 
+                                                    field_out);
                 }
                 else if (vartype == DB_POINTVAR)
                 {
                     detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
                         DBGetPointvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeMeshvar};
-                    read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), var_name, multimesh_name, field_out);
+                    read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), 
+                                                    var_name, 
+                                                    multimesh_name, 
+                                                    field_out);
                 }
                 else
+                {
                     CONDUIT_ERROR("Unsupported variable type " << vartype);
+                }
             }
         }
-
         // TODO_LATER read multimaterials
     }
 }
@@ -2884,8 +2911,6 @@ write_multivars(DBfile *dbfile,
 ///      provided, we choose the first topology in the blueprint.
 
 // TODO email jeff grandy to ask about an overlink file format validator
-
-// TODO the overlink spec wants domainX not domain_XXXXXX; for overlink we will follow it to the letter
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
