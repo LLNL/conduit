@@ -1423,21 +1423,29 @@ read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
         }
 
-        // TODO hi isn't this wrong?
         std::string mesh_path = conduit_fmt::format("domain_{:06d}", i);
         Node &mesh_out = mesh[mesh_path];
 
         if (meshtype == DB_UCDMESH)
         {
-            read_ucdmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
+            read_ucdmesh_domain(mesh_domain_file.getSiloObject(), 
+                                mesh_name, 
+                                multimesh_name, 
+                                mesh_out);
         }
         else if (meshtype == DB_QUADMESH)
         {
-            read_quadmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
+            read_quadmesh_domain(mesh_domain_file.getSiloObject(), 
+                                mesh_name, 
+                                multimesh_name, 
+                                mesh_out);
         }
         else if (meshtype == DB_POINTMESH)
         {
-            read_pointmesh_domain(mesh_domain_file.getSiloObject(), mesh_name, multimesh_name, mesh_out);
+            read_pointmesh_domain(mesh_domain_file.getSiloObject(), 
+                                mesh_name, 
+                                multimesh_name, 
+                                mesh_out);
         }
         else
         {
@@ -2855,20 +2863,25 @@ write_multivars(DBfile *dbfile,
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
+///      ovl_topo_name: (used if present, default ==> "")
+///
 ///      number_of_files:  {# of files}
 ///            when "multi_file" or "overlink":
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
-/// note: we have made the choice to output ALL topologies as multimeshes. We
-/// prepend the provided mesh_name to each of these topo names.
-// TODO this note is not true for overlink
-
-// TODO rework how opts_mesh_name works:
-// there will be a new argument
-// one will be used in the overlink case, and the other used in the non-overlink case
-// the overlink one will be the name of the topo to save out (maybe opts_output_topo?)
-// and the non-overlink one will be the save name used for folder names, file names, etc
+/// Note: 
+///  In the non-overlink case...
+///   1) We have made the choice to output ALL topologies as multimeshes. 
+///   2) We prepend the provided mesh_name to each of these topo names. We 
+///      also use the mesh_name as the name of the silo directory within each
+///      silo file where data is stored.
+///   3) ovl_topo_name is ignored if provided.
+///  In the overlink case...
+///   1) We have made ther choice to output only one topology as a multimesh.
+///   2) mesh_name is ignored if provided and changed to "MMESH"
+///   3) ovl_topo_name is the name of the topo we are outputting. If it is not
+///      provided, we choose the first topology in the blueprint.
 
 // TODO email jeff grandy to ask about an overlink file format validator
 
@@ -3252,12 +3265,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // ----------------------------------------------------
     // if using multi_file or overlink, create output dir
     // ----------------------------------------------------
-    if (opts_file_style == "multi_file" ||
-        opts_file_style == "overlink")
+    if (opts_file_style == "multi_file")
     {
         // setup the directory
-        
-
         if (opts_file_style == "overlink")
         {
             // overlink_top_level_output_dir = "/path/to/directory"
@@ -3273,7 +3283,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
             // at this point for suffix, we should only see
             // cycle or none -- default has been resolved
-            if(opts_suffix == "cycle")
+            if (opts_suffix == "cycle")
             {
                 output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
             }
@@ -3412,7 +3422,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 {
                     // if truncate, first rank to touch the file needs
                     // to open at
-                    if( !dbfile.getSiloObject()
+                    if (!dbfile.getSiloObject()
                         && (global_root_file_created.as_int() == 0)
                         && opts_truncate)
                     {
@@ -3424,7 +3434,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         local_root_file_created.set((int)1);
                     }
                     
-                    if(!dbfile.getSiloObject())
+                    if (!dbfile.getSiloObject())
                     {
                         dbfile.setSiloObject(DBOpen(root_filename.c_str(), silo_type, DB_APPEND));
                         if (!dbfile.getSiloObject())
@@ -3449,6 +3459,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         mesh_path = conduit_fmt::format("domain_{:06d}/{}",
                                                         domain,
                                                         opts_out_mesh_name);
+                        // we cannot have overlink in the root_only case so no need to handle it
                     }
                     silo_mesh_write(dom,
                                     dbfile.getSiloObject(),
@@ -3670,7 +3681,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                             std::string file_name;
                             if (opts_file_style == "overlink")
                             {
-                                file_name = conduit_fmt::format("domfile{:06d}.silo", f);
+                                file_name = conduit_fmt::format("domfile{:d}.silo", f);
                             }
                             else
                             {
@@ -3684,7 +3695,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                             std::string curr_path;
                             if (opts_file_style == "overlink")
                             {
-                                curr_path = conduit_fmt::format("domain{:06d}/{}",
+                                curr_path = conduit_fmt::format("domain{:d}/{}",
                                                                 domain_id,
                                                                 opts_out_mesh_name);
                             }
@@ -3913,14 +3924,38 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 output_silo_path = utils::join_file_path(output_dir_base, "domain_{:06d}.silo") + ":"
                                  + opts_out_mesh_name + "/{}";
+
+                if (opts_file_style == "overlink")
+                {
+                    output_silo_path = utils::join_file_path(output_dir_base, "domain{:d}.silo") + ":"
+                                     + opts_out_mesh_name + "/{}";
+                }
+                else
+                {
+                    output_silo_path = utils::join_file_path(output_dir_base, "domain_{:06d}.silo") + ":"
+                                     + opts_out_mesh_name + "/{}";
+                }
             }
             // m to n case
             else
             {
                 // we generated the partition map earlier
-                output_silo_path = utils::join_file_path(output_dir_base, "file_{:06d}.silo") + ":"
-                                 + "domain_{:06d}" + "/" 
-                                 + opts_out_mesh_name + "/{}";
+
+                if (opts_file_style == "overlink")
+                {
+                    output_silo_path = utils::join_file_path(output_dir_base, "domfile{:d}.silo") + ":"
+                                     + "domain{:d}" + "/" 
+                                     + opts_out_mesh_name + "/{}";
+                }
+                else
+                {
+                    output_silo_path = utils::join_file_path(output_dir_base, "file_{:06d}.silo") + ":"
+                                     + "domain_{:06d}" + "/" 
+                                     + opts_out_mesh_name + "/{}";
+                }
+                
+
+                
             }
         }
 
