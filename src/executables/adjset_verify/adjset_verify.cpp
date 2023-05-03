@@ -9,7 +9,10 @@
 //-----------------------------------------------------------------------------
 
 #include <conduit.hpp>
+#include <conduit_blueprint.hpp>
 #include <conduit_relay.hpp>
+#include <conduit_blueprint_mesh_topology_metadata.hpp>
+#include <conduit_blueprint_mesh_utils.hpp>
 
 #include <iostream>
 #include <cstring>
@@ -38,196 +41,39 @@ to_string(const conduit::Node &n)
 }
 
 //---------------------------------------------------------------------------
-std::string
-protocolFromFile(const std::string &filename)
-{
-    std::string p("hdf5");
-
-    if(filename.find("hdf5") != std::string::npos)
-        p = "hdf5";
-    else if(filename.find("yaml") != std::string::npos)
-        p = "yaml";
-    else if(filename.find("json") != std::string::npos)
-        p = "json";
-
-    return p;
-}
-
-//---------------------------------------------------------------------------
-/**
- @brief This class lets us ask for a node that contains a domain and we do not
-        need to care whether it comes from various files on disk or from the
-        root node.
- */
-class Domains
-{
-public:
-    //-----------------------------------------------------------------------
-    Domains(const conduit::Node &r, const std::string &path) : root(r),
-        rootPath(path), maxDomains(-1), domains()
-    {
-    }
-
-    //-----------------------------------------------------------------------
-    const conduit::Node &getRoot() const
-    {
-        return root;
-    }
-
-    //-----------------------------------------------------------------------
-    bool isRootFile() const
-    {
-        return root.has_child("number_of_files") && root.has_child("file_pattern");
-    }
-
-    //-----------------------------------------------------------------------
-    const conduit::Node *getDomain(int domainId)
-    {
-        const conduit::Node *retval = nullptr;
-        if(isRootFile())
-            retval = getDomainFromRootFile(domainId);
-        else
-            retval = getDomainFromNode(domainId);
-
-        if(retval == nullptr)
-        {
-            CONDUIT_ERROR("Domain " << domainId << " could not be retrieved.");
-        }
-
-        return retval;
-    }
-
-    //-----------------------------------------------------------------------
-    int getMaxDomains()
-    {
-        if(maxDomains == -1)
-        {
-            if(isRootFile())
-            {
-                maxDomains = root.fetch_existing("number_of_files").value();
-            }
-            else
-            {
-                // Count child nodes that begin with domain and contain a topologies node.
-                maxDomains = 0;
-                for(conduit::index_t i = 0; i < root.number_of_children(); i++)
-                {
-                    if(strncmp(root[i].name().c_str(), "domain", 6) == 0 &&
-                       root[i].has_child("topologies"))
-                    {
-                        maxDomains++;
-                    }
-                }
-            }
-        }
-        return maxDomains;
-    }
-
-private:
-    //-----------------------------------------------------------------------
-    std::string domainFilename(int domainId)
-    {
-        std::string retval;
-        if(domainId < 0 || domainId >= getMaxDomains())
-        {
-            CONDUIT_ERROR(domainId << " is not a valid domain number.");
-        }
-        std::string pattern = to_string(root.fetch_existing("file_pattern"));
-        char *tmp = new char[pattern.size() + 32];
-        sprintf(tmp, pattern.c_str(), domainId);
-        retval = tmp;
-        delete [] tmp;
-        return retval;
-    }
-
-    //-----------------------------------------------------------------------
-    const conduit::Node *getDomainFromRootFile(int domainId)
-    {
-        const conduit::Node *retval = nullptr;
-        // Check whether we've read the domain before.
-        std::map<int, conduit::Node *>::const_iterator it = domains.find(domainId);
-        if(it == domains.cend())
-        {
-            // Get the protocol to use for reading.
-            std::string protocol("hdf5");
-            if(root.has_path("protocol/name"))
-                protocol = to_string(root.fetch_existing("protocol/name"));
-
-            // Load the new domain file.
-            auto newNode = new conduit::Node;
-            std::string filename(conduit::utils::join_file_path(rootPath, domainFilename(domainId)));
-            cout << "Reading " << filename << " as " << protocol << endl;
-            conduit::relay::io::load(filename, protocol, *newNode);
-
-            // Store it in the map.
-            domains[domainId] = newNode;
-            retval = newNode;
-        }
-        else
-        {
-            retval = it->second;
-        }
-        return retval;
-    }
-
-    //-----------------------------------------------------------------------
-    const conduit::Node *getDomainFromNode(int domainId)
-    {
-        const conduit::Node *retval = nullptr;
-
-        std::stringstream ss;
-        ss << "domain" << domainId;
-        std::string domName(ss.str());
-        if(root.has_child(domName))
-            retval = root.fetch_ptr(domName);
-        return retval;
-    }
-
-private:
-    const conduit::Node &root;
-    std::string rootPath;
-    int maxDomains;
-    std::map<int, conduit::Node *> domains;
-};
-
-//---------------------------------------------------------------------------
 std::vector<const conduit::Node *>
-GetAdjsets(Domains &d)
+GetAdjsets(const conduit::Node &doms)
 {
     std::vector<const conduit::Node *> adjsets;
-    const conduit::Node *srcNode = nullptr;
-    if(d.isRootFile())
+    auto domains = conduit::blueprint::mesh::domains(doms);
+    for(const auto &dom : domains)
     {
-        if(d.getRoot().has_path("blueprint_index/mesh/adjsets"))
-            srcNode = d.getRoot().fetch_ptr("blueprint_index/mesh/adjsets");
-    }
-    if(srcNode == nullptr)
-    {
-        auto d0 = d.getDomain(0);
-        if(d0->has_child("adjsets"))
+        if(dom->has_child("adjsets"))
         {
-            srcNode = d0->fetch_ptr("adjsets");
+            const auto srcNode = dom->fetch_ptr("adjsets");
+            for(conduit::index_t i = 0; i < srcNode->number_of_children(); i++)
+                adjsets.push_back(srcNode->child_ptr(i));
+            break;
         }
-    }
-    if(srcNode != nullptr)
-    {
-        for(conduit::index_t i = 0; i < srcNode->number_of_children(); i++)
-            adjsets.push_back(srcNode->child_ptr(i));
     }
     return adjsets;
 }
 
 //---------------------------------------------------------------------------
 bool
-AllDomainsHaveAdjsets(Domains &d, std::vector<const conduit::Node *> &adjsets)
+AllDomainsHaveAdjsets(const conduit::Node &doms, std::vector<const conduit::Node *> &adjsets)
 {
-    int ndoms = d.getMaxDomains();
-    bool allDomsHaveAdjsets = true;
-    for(int domainId = 0; domainId < ndoms; domainId++)
-    {
-        auto dom = d.getDomain(domainId);
-        const conduit::Node &dom_adjsets = dom->fetch_existing("adjsets");
+    auto domains = conduit::blueprint::mesh::domains(doms);
 
+    int ndoms = domains.size();
+    bool allDomsHaveAdjsets = true;
+    for(const auto dom : domains)
+    {
+        int domainId = 0;
+        if(dom->has_path("state/domain_id"))
+            domainId = dom->fetch_existing("state/domain_id").to_int();
+
+        const conduit::Node &dom_adjsets = dom->fetch_existing("adjsets");
         for(size_t ai = 0; ai < adjsets.size(); ai++)
         {
             std::string name(adjsets[ai]->name());
@@ -381,7 +227,7 @@ CoordinateToPointId(const conduit::Node &coordset, const double coord[3], int &p
  @brief Look through the current domain's adjset and see whether it looks ok
         and that we can locate corresponding points in the connected domains.
 
- @param doms The Domains object that lets us retrieve domains.
+ @param doms The node that contains all of the domains.
  @param domainId The domain id that we're operating on.
  @param adjsetName The name of the adjset we're operating on.
  @param[out] info The node to which we add any error messages.
@@ -389,15 +235,28 @@ CoordinateToPointId(const conduit::Node &coordset, const double coord[3], int &p
  @return True if the adjset is good; False otherwise.
  */
 bool
-VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
-    conduit::Node &info)
+VerifyDomainAdjset(const conduit::Node &doms, int domainId,
+    const std::string &adjsetName, conduit::Node &info)
 {
+    auto domains = conduit::blueprint::mesh::domains(doms);
+    auto getDomainById = [](const std::vector<const conduit::Node *> &domains, int domainId) -> const conduit::Node *
+    {
+        for(auto dom : domains)
+        {
+            if(dom->has_path("state/domain_id"))
+            {
+                if(dom->fetch_existing("state/domain_id").to_int() == domainId)
+                    return dom;
+            }
+        }
+        return nullptr;
+    };
+
     bool retval = true;
-    auto dom = doms.getDomain(domainId);
+    auto dom = getDomainById(domains, domainId);
     std::string adjsetPath("adjsets/" + adjsetName);
     const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
     std::string association = to_string(adjset.fetch_existing("association"));
-
     std::string topoName = to_string(adjset.fetch_existing("topology"));
 
     // Get the coordset name for the adjset's topology.
@@ -424,7 +283,7 @@ VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
             {
                 // Validate the neighbor number.
                 int nbr = neighbors[ni];
-                if(nbr < 0 || nbr >= doms.getMaxDomains())
+                if(nbr < 0 || nbr >= domains.size())
                 {
                     std::stringstream ss;
                     ss << "Domain " << domainId << " adjset " << adjsetName
@@ -440,7 +299,7 @@ VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
                 }
 
                 // Get the neighbor domain and its coordset.
-                auto ndom = doms.getDomain(nbr);
+                auto ndom = getDomainById(domains, nbr);
                 const conduit::Node &ndom_coordset = ndom->fetch_existing("coordsets/"+coordsetName);
 
                 for(int vi = 0; vi < values.number_of_elements(); vi++)
@@ -504,6 +363,297 @@ VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
 }
 
 //---------------------------------------------------------------------------
+/*!
+ * @brief Accepts a node that has multiple domains and determines whether the
+ *        specified adjset is set up properly by using queries.
+ */
+bool
+adjset_verify(const conduit::Node &doms,
+              const std::string &adjsetName,
+              conduit::Node &info)
+{
+    using index_t = conduit::index_t;
+    using TopologyMetadata = conduit::blueprint::mesh::utils::TopologyMetadata;
+
+    bool retval = false;
+    auto domains = conduit::blueprint::mesh::domains(doms);
+
+cout << "adjset_verify: adjsetName=" << adjsetName << endl;
+
+    // Determine whether the adjset exists in the first domain.
+    std::string adjsetPath("adjsets/" + adjsetName);
+    const auto dom0 = domains[0];
+    if(!dom0->has_path(adjsetPath))
+        return retval;
+
+cout << "adjset_verify: domains.size=" << domains.size() << endl;
+
+    // Use the first domain in the list to determine the adjset association.
+    const conduit::Node &adjset = dom0->fetch_existing(adjsetPath);
+    std::string association = to_string(adjset.fetch_existing("association"));
+    std::string topologyName = to_string(adjset.fetch_existing("topology"));
+cout << "adjset_verify: association=" << association << endl;
+cout << "adjset_verify: topologyName=" << topologyName << endl;
+cout << "adjset_verify: topologies={";
+const conduit::Node &topos = dom0->fetch_existing("topologies");
+for(int i = 0; i < topos.number_of_children(); i++)
+    cout << topos[i].name() << ", ";
+cout << "}" << endl;
+adjset.print();
+
+    if(association == "vertex")
+    {
+        conduit::blueprint::mesh::utils::query::PointQuery Q(doms);
+
+        // Iterate over the domains so we can add their adjset points to the
+        // point query.
+        std::string coordsetName;
+        std::vector<std::tuple<index_t, index_t, index_t, index_t, std::string, std::vector<double>>> query_guide;
+        for(auto dom : domains)
+        {
+            auto domainId = conduit::blueprint::mesh::utils::find_domain_id(*dom);
+
+            // Get the domain's topo and coordset.
+            const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+            coordsetName = topo["coordset"].as_string();
+            const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
+
+            // Get the domain's adjset and groups.
+            const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+            const conduit::Node &adjset_groups = adjset.fetch_existing("groups");
+
+            // Iterate over this domain's adjset to help build up the point query.
+            for(const std::string &group_name : adjset_groups.child_names())
+            {
+                const conduit::Node &src_group = adjset_groups[group_name];
+                conduit::index_t_accessor src_neighbors = src_group["neighbors"].value();
+                conduit::index_t_accessor src_values = src_group["values"].value();
+
+                // Neighbors
+                for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
+                {
+                    int nbr = src_neighbors[ni];
+                    // Point ids
+                    for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
+                    {
+                        // Look up the point in the local coordset to get the coordinate.
+                        int ptid = src_values[pi];
+                        auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(coordset, ptid);
+                        double pt3[3];
+                        pt3[0] = pt[0];
+                        pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
+                        pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
+
+                        // Ask domain nbr if they have point pt3
+                        auto idx = Q.Add(nbr, pt3);
+                        query_guide.emplace_back(domainId, ptid, nbr, idx, group_name, pt);
+                    }
+                }
+            }
+        }
+
+        // Execut the query.
+        Q.Execute(coordsetName);
+
+        // Iterate over the query results to flag any problems.
+        retval = true;
+        for(const auto &obj : query_guide)
+        {
+            index_t domain_id = std::get<0>(obj);
+            index_t ptid = std::get<1>(obj);
+            index_t nbr = std::get<2>(obj);
+            index_t idx = std::get<3>(obj);
+            const std::string &group_name = std::get<4>(obj);
+            const std::vector<double> &coord = std::get<5>(obj);
+
+            const auto &res = Q.Results(domain_id);
+            if(res[idx] == conduit::blueprint::mesh::utils::query::PointQuery::NotFound)
+            {
+                retval = false;
+                std::stringstream dss;
+                dss << "domain_" << domain_id;
+                std::string dname(dss.str());
+
+                conduit::Node &vn = info[dname][adjsetName][group_name].append();
+
+                std::stringstream ss;
+                ss << "Domain " << domain_id << " adjset " << adjsetName
+                   << " group " << group_name
+                   << ": vertex " << ptid
+                   << " (" << coord[0] << ", " << coord[1]
+                   << ", " << coord[2] << ") at index " << ptid
+                   << " could not be located in neighbor domain "
+                   << nbr << ".";
+
+                vn["message"].set(ss.str());
+                vn["vertex"] = ptid;
+                vn["neighbor"] = nbr;
+                vn["coordinate"] = coord;
+            }
+        }
+    }
+    else if(association == "element")
+    {
+        // Make topology metadata for each domain so we can access the lower
+        // level topology (external surfaces/edges). Make a new extdoms node
+        // that contains these as domains.
+        std::map<int, TopologyMetadata *> topo_mds;
+        conduit::Node extdoms;
+        for(size_t i = 0; i < domains.size(); i++)
+        {
+            const conduit::Node *dom = domains[i];
+            auto domain_id = conduit::blueprint::mesh::utils::find_domain_id(*dom);
+
+            // Get the domain's topo and coordset of interest.
+            const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+            std::string coordsetName = topo["coordset"].as_string();
+            const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
+
+            // Get the topology dimension.
+            size_t dim = conduit::blueprint::mesh::utils::topology::dims(topo);
+            size_t lower_dim = dim - 1;
+
+            // Produce the lower topology via cascade.
+            std::vector<std::pair<size_t,size_t> > desired_maps;
+            desired_maps.push_back(std::make_pair(dim, lower_dim));
+            desired_maps.push_back(std::make_pair(lower_dim, dim));
+            topo_mds[domain_id] = new TopologyMetadata(topo, coordset, lower_dim, desired_maps);
+
+            // Reference the lower topo in extdoms.
+            std::stringstream ss;
+            ss << "domain_" << domain_id;
+            std::string domKey(ss.str());
+            extdoms[domKey]["state/domain_id"] = domain_id;
+            const auto &lower_topo = topo_mds[domain_id]->get_topology(lower_dim);
+            extdoms[domKey]["topologies/" + topologyName].set_external(lower_topo);
+        }
+
+        // Make a MatchQuerty that will examine the extdoms domains.
+        conduit::blueprint::mesh::utils::query::MatchQuery Q(extdoms);
+        Q.SelectTopology(topologyName);
+
+        std::vector<std::tuple<int, int, int, conduit::uint64>> query_guide;
+        for(auto dom : domains)
+        {
+            auto domain_id = conduit::blueprint::mesh::utils::find_domain_id(*dom);
+
+            // Get the domain's adjset and groups.
+            const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+            const conduit::Node &adjset_groups = adjset.fetch_existing("groups");
+
+            // Get the domain's topo and coordset.
+            const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+            std::string coordsetName = topo["coordset"].as_string();
+            const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
+
+            // Get the topology dimension.
+            size_t dim = conduit::blueprint::mesh::utils::topology::dims(topo);
+            size_t lower_dim = dim - 1;
+
+            // Iterate over the adjset data to build up neighbors to points map.
+            std::map<index_t, std::set<index_t>> neighbor_pidxs_map;
+            for(const std::string &group_name : adjset_groups.child_names())
+            {
+                const conduit::Node &group = adjset_groups[group_name];
+                conduit::index_t_accessor neighbors = group["neighbors"].value();
+                conduit::index_t_accessor values    = group["values"].value();
+
+                for(index_t ni = 0; ni < neighbors.dtype().number_of_elements(); ni++)
+                {
+                    std::set<index_t> &neighbor_pidxs = neighbor_pidxs_map[neighbors[ni]];
+                    for(index_t pi = 0; pi < values.dtype().number_of_elements(); pi++)
+                    {
+                        neighbor_pidxs.insert(values[pi]);
+                    }
+                }
+            }
+
+            // We need the external faces (or edges) for this domain. We then
+            // iterate over them to see whether all of an entity's points are
+            // in the adjset. If so, it is a candidate that we'll check for
+            // validity (i.e. Does the entity also exist in the neighbor domain?).
+            const auto topo_md = topo_mds[domain_id];
+            const auto &lower_topo = topo_md->get_topology(lower_dim);
+            index_t lower_topo_nelem = conduit::blueprint::mesh::utils::topology::length(lower_topo);
+            for(index_t ei = 0; ei < lower_topo_nelem; ei++)
+            {
+                // if we are dealing with anything but points
+                // we don't want to include duplicated entities 
+                // (that means they are internal to the domain)
+                std::vector<index_t> entity_pidxs = conduit::blueprint::mesh::utils::topology::unstructured::points(lower_topo, ei);
+                const auto d2s_sizes = topo_md->get_global_association(ei, lower_dim, dim);
+                if(d2s_sizes.size() < 2 || entity_pidxs.size() == 1)
+                {
+                    for(const auto &neighbor_pair : neighbor_pidxs_map)
+                    {
+                        const index_t &ni = neighbor_pair.first;
+                        const std::set<index_t> &neighbor_pidxs = neighbor_pair.second;
+
+                        // check if the new element has all of its points
+                        // contained inside of the adjset
+   
+                        bool entity_in_neighbor = true;
+                        for(index_t pi = 0; pi < (index_t)entity_pidxs.size() && entity_in_neighbor; pi++)
+                        {
+                            entity_in_neighbor &= neighbor_pidxs.find(entity_pidxs[pi]) != neighbor_pidxs.end();
+                        }
+
+                        // if the element is fully in the adjset, add to query.
+                        if(entity_in_neighbor)
+                        {
+                            // Add the entity to the query for consideration.
+                            conduit::uint64 qid = Q.Add(domain_id, ni, entity_pidxs);
+
+                            // Add the candidate entity to the membership query, which
+                            // will help resolve things across domains.
+                            query_guide.push_back(std::make_tuple(domain_id, ni, ei, qid));
+                        }
+                    }
+                }
+            }
+        }
+
+        Q.Execute();
+
+        // Iterate over the query results to flag any problems.
+        retval = true;
+        for(const auto &obj : query_guide)
+        {
+            int domain_id = std::get<0>(obj);
+            int nbr = std::get<1>(obj);
+            int ei = std::get<2>(obj);
+            conduit::uint64 eid = std::get<3>(obj);
+
+            if(!Q.Exists(domain_id, nbr, eid))
+            {
+                retval = false;
+                std::stringstream dss;
+                dss << "domain_" << domain_id;
+                std::string dname(dss.str());
+
+                conduit::Node &vn = info[dname][adjsetName].append();
+
+                std::stringstream ss;
+                ss << "Domain " << domain_id << " adjset " << adjsetName
+                   << ": element " << ei << " could not be located in neighbor domain "
+                   << nbr << ".";
+
+                vn["message"].set(ss.str());
+                vn["element"] = ei;
+                vn["neighbor"] = nbr;
+            }
+        }
+
+        // Clean up
+        extdoms.reset();
+        for(auto it = topo_mds.begin(); it != topo_mds.end(); it++)
+            delete it->second;
+    }
+
+    return retval;
+}
+
+//---------------------------------------------------------------------------
 /**
  @brief Iterate over all domains and each adjset and make sure that the vertices
         in the adjset are in range and match a vertex in other domains.
@@ -511,48 +661,19 @@ VerifyDomainAdjset(Domains &doms, int domainId, const std::string &adjsetName,
  @return True on success; False on failure.
  */
 bool
-VerifyAdjsets(Domains &doms,
-    const std::vector<int> &inputDomainList,
+VerifyAdjsets(const conduit::Node &doms,
     const std::vector<const conduit::Node *> &adjsets,
     conduit::Node &info)
 {
     bool retval = true;
-    int maxdoms = doms.getMaxDomains();
-
-    // If the domain list is empty, fill it.
-    std::vector<int> domainList(inputDomainList);
-    if(domainList.empty())
+    info.reset();
+    // Iterate over the adjsets.
+    for(size_t ai = 0; ai < adjsets.size(); ai++)
     {
-        domainList.resize(maxdoms);
-        std::iota(domainList.begin(), domainList.end(), 0);
+        std::string name(adjsets[ai]->name());
+        adjset_verify(doms, name, info);
     }
-
-    // Iterate over the domain list.
-    for(int domainId : domainList)
-    {
-        for(size_t ai = 0; ai < adjsets.size(); ai++)
-        {
-            std::string name(adjsets[ai]->name());
-
-            // Make a node to contain messages/errors.
-            std::stringstream ss;
-            ss << "domain" << domainId << "/" << name;
-            std::string path(ss.str());
-            conduit::Node &domInfo = info[path];
-
-            cout << "Checking domain " << domainId << " adjset " << name << "... ";
-            if(!VerifyDomainAdjset(doms, domainId, name, domInfo))
-            {
-                cout << "FAIL" << endl;
-                retval = false;
-            }
-            else
-            {
-                cout << "PASS" << endl;
-            }
-        }
-    }
-    return retval;
+    return info.number_of_children() == 0;
 }
 
 //---------------------------------------------------------------------------
@@ -589,7 +710,8 @@ writePoints(const conduit::Node &info)
                         if(fp != nullptr)
                         {
                             conduit::double_accessor da = err["coordinate"].as_double_accessor();
-                            int nbr = err["neighbor"].to_int();
+                            int nbr = err["vertex"].to_int();
+                            //int nbr = err["neighbor"].to_int();
                             fprintf(fp, "%lg %lg %lg %d\n", da[0], da[1], da[2], nbr);
                         }
                     }
@@ -626,8 +748,6 @@ int
 main(int argc, char *argv[])
 {
     std::string input, protocol;
-    std::vector<int> domainList;
-
     for(int i = 1; i < argc; i++)
     {
         if(strcmp(argv[i], "-help") == 0 || strcmp(argv[i], "-h") == 0)
@@ -645,11 +765,6 @@ main(int argc, char *argv[])
             protocol = argv[i+1];
             i++;
         }
-        else if(strcmp(argv[i], "-domain") == 0 && (i+1) < argc)
-        {
-            domainList.push_back(atoi(argv[i+1]));
-            i++;
-        }
     }
 
     if(input.empty())
@@ -657,8 +772,6 @@ main(int argc, char *argv[])
         printUsage(argv[0]);
         return -1;
     }
-    if(protocol.empty())
-        protocol = protocolFromFile(input);
 
     // Print some info about Conduit.
     //cout << conduit::relay::io::about() << endl;
@@ -667,17 +780,11 @@ main(int argc, char *argv[])
     try
     {
         conduit::Node root;
-        conduit::relay::io::load(input, protocol, root);
+        conduit::relay::io::blueprint::load_mesh(input, root);
         //root.print();
 
-        std::string inputpath, inputfile;
-        conduit::utils::rsplit_file_path(input, inputfile, inputpath);
-        //cout << "inputpath=" << inputpath << endl;
-
-        Domains doms(root, inputpath);
-
         // Print the adjset names.
-        std::vector<const conduit::Node *> adjsets(GetAdjsets(doms));
+        std::vector<const conduit::Node *> adjsets(GetAdjsets(root));
         cout << "Adjsets: ";
         for(size_t i = 0; i < adjsets.size(); i++)
         {
@@ -689,7 +796,7 @@ main(int argc, char *argv[])
 
         // Make sure all domains have the list of adjsets.
         std::string msg("Check if all domains have compatible adjsets... ");
-        if(AllDomainsHaveAdjsets(doms, adjsets))
+        if(AllDomainsHaveAdjsets(root, adjsets))
             cout << msg << "PASS" << endl;
         else
         {
@@ -700,7 +807,7 @@ main(int argc, char *argv[])
         // Look through the adjsets to see if the points are all good.
         std::string msg2("Check adjsets... ");
         conduit::Node info;
-        if(VerifyAdjsets(doms, domainList, adjsets, info))
+        if(VerifyAdjsets(root, adjsets, info))
             cout << msg2 << "PASS" << endl;
         else
         {
