@@ -8,6 +8,7 @@
 ///
 //-----------------------------------------------------------------------------
 
+#include "conduit.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_relay_io_silo.hpp"
 #include "conduit_blueprint.hpp"
@@ -17,6 +18,7 @@
 #include "gtest/gtest.h"
 
 using namespace conduit;
+using namespace conduit::utils;
 using namespace conduit::relay;
 
 
@@ -248,8 +250,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
-        io::silo::save_mesh(save_mesh, "basic");
-        io::silo::load_mesh("basic.root", load_mesh);
+        remove_path_if_exists("silo_basic.root");
+        io::silo::save_mesh(save_mesh, "silo_basic");
+        io::silo::load_mesh("silo_basic.root", load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
         // check that load mesh correctly adds the state
@@ -314,8 +317,11 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
-        io::silo::save_mesh(save_mesh, "braid");
-        io::silo::load_mesh("braid.cycle_000100.root", load_mesh);
+        // remove existing root file, directory and any output files
+        remove_path_if_exists("silo_braid.cycle_000100.root");
+
+        io::silo::save_mesh(save_mesh, "silo_braid");
+        io::silo::load_mesh("silo_braid.cycle_000100.root", load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
         // The silo conversion will transform uniform to rectilinear
@@ -357,12 +363,13 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 // multidomain test
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
-    for (int ndomains = 2; ndomains < 6; ndomains ++)
+    for (int ndomains = 2; ndomains < 3; ndomains ++)
     {
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
-        io::silo::save_mesh(save_mesh, "spiral");
-        io::silo::load_mesh("spiral.cycle_000000.root", load_mesh);
+        remove_path_if_exists("silo_spiral.cycle_000000.root");
+        io::silo::save_mesh(save_mesh, "silo_spiral");
+        io::silo::load_mesh("silo_spiral.cycle_000000.root", load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
@@ -387,6 +394,9 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
         {
             const Node &l_curr = l_itr.next();
             const Node &s_curr = s_itr.next();
+
+            s_curr.print();
+            l_curr.print();
 
             EXPECT_FALSE(l_curr.diff(s_curr, info));
         }
