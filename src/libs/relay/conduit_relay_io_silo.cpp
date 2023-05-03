@@ -2469,6 +2469,7 @@ void silo_mesh_write(const Node &n,
         if (n_state.has_child("cycle"))
         {
             int cyc_value = n_state["cycle"].to_int();
+            std::cout << "I am writing cycle: " << cyc_value << std::endl;
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_CYCLE,
                                       &cyc_value);
@@ -2905,7 +2906,7 @@ write_multivars(DBfile *dbfile,
 ///      silo file where data is stored.
 ///   3) ovl_topo_name is ignored if provided.
 ///  In the overlink case...
-///   1) We have made ther choice to output only one topology as a multimesh.
+///   1) We have made the choice to output only one topology as a multimesh.
 ///   2) mesh_name is ignored if provided and changed to "MMESH"
 ///   3) ovl_topo_name is the name of the topo we are outputting. If it is not
 ///      provided, we choose the first topology in the blueprint.
