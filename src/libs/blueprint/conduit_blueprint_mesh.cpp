@@ -2874,7 +2874,6 @@ generate_derived_entities(conduit::Node &mesh,
         index_t_accessor d2s_sizes = domain_d2smap["sizes"].value();
 
         // {(entity id in topology): <(neighbor domain ids that contain this entity)>}
-        auto &entity_neighbor_map = dom_entity_neighbor_map[domain_id];
         for(index_t ei = 0; ei < dst_topo_len; ei++)
         {
             // if we are dealing with anything but points

@@ -2192,9 +2192,7 @@ PointQuery::DomainIds() const
     domainIds.reserve(doms.size());
     for(const auto d : doms)
     {
-       int domain_id = 0;
-       if(d->has_path("state/domain_id"))
-           domain_id = d->fetch_existing("state/domain_id").to_int();
+       int domain_id = static_cast<int>(find_domain_id(*d));
        domainIds.push_back(domain_id); 
     }
 
@@ -2221,26 +2219,23 @@ MatchQuery::GetDomainTopology(int domain) const
     auto doms = domains(m_mesh);
     for(const auto &dom : doms)
     {
-        if(dom->has_path("state/domain_id"))
+        auto domain_id = static_cast<int>(find_domain_id(*dom));
+        if(domain_id == domain)
         {
-            int domain_id = dom->fetch_existing("state/domain_id").to_int();
-            if(domain_id == domain)
+            const conduit::Node &topos = dom->fetch_existing("topologies");
+            if(!topoName.empty())
             {
-                const conduit::Node &topos = dom->fetch_existing("topologies");
-                if(!topoName.empty())
-                {
-                    if(topos.has_child(topoName))
-                        return topos.fetch_ptr(topoName);
-                    else
-                    {
-                        CONDUIT_ERROR("Topology " << topoName
-                            << " was not found in domain " << domain);
-                    }
-                }
+                if(topos.has_child(topoName))
+                    return topos.fetch_ptr(topoName);
                 else
                 {
-                    return topos.child_ptr(0);
+                    CONDUIT_ERROR("Topology " << topoName
+                        << " was not found in domain " << domain);
                 }
+            }
+            else
+            {
+                return topos.child_ptr(0);
             }
         }
     }
