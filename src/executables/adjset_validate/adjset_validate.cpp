@@ -4,7 +4,7 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: adjset_verify.cpp
+/// file: adjset_validate.cpp
 ///
 //-----------------------------------------------------------------------------
 
@@ -136,15 +136,12 @@ main(int argc, char *argv[])
         return -1;
     }
 
-    // Print some info about Conduit.
-    //std::cout << conduit::relay::io::about() << std::endl;
-
     int retval = 0;
     try
     {
+        // Load the mesh
         conduit::Node root;
         conduit::relay::io::blueprint::load_mesh(input, root);
-        //root.print();
 
         // Get adjsets.
         std::vector<const conduit::Node *> adjsets(GetAdjsets(root));
