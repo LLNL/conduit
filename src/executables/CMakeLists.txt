@@ -2,4 +2,4 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 
-add_subdirectory(adjset_verify)
+add_subdirectory(adjset_validate)
