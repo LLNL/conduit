@@ -835,22 +835,24 @@ read_variable_domain(const T *var_ptr,
     }
 
     int datatype = var_ptr->datatype;
-    if (datatype == DB_FLOAT)
+    if (datatype == DB_INT)
     {
-        assign_values<float>(var_ptr->nvals, 
-                             var_ptr->nels,
-                             var_ptr->vals,
-                             field["values"]);
+        assign_values<int>(var_ptr->nvals, var_ptr->nels, 
+                           var_ptr->vals, field["values"]);
+    }
+    else if (datatype == DB_FLOAT)
+    {
+        assign_values<float>(var_ptr->nvals, var_ptr->nels, 
+                             var_ptr->vals, field["values"]);
     }
     else if (datatype == DB_DOUBLE)
     {
-        assign_values<double>(var_ptr->nvals, 
-                              var_ptr->nels,
-                              var_ptr->vals,
-                              field["values"]);
+        assign_values<double>(var_ptr->nvals, var_ptr->nels,
+                              var_ptr->vals, field["values"]);
     }
     else
     {
+        // TODO do we want to support DB_CHAR and DB_VARIABLE?
         CONDUIT_ERROR("Unsupported type in " << datatype);
     }
 }
@@ -2912,13 +2914,10 @@ write_multivars(DBfile *dbfile,
 ///      silo file where data is stored.
 ///   3) ovl_topo_name is ignored if provided.
 ///  In the overlink case...
-///   1) We have made the choice to output only one topology as a multimesh.
+///   1) We have made the choice to output only ONE topology as a multimesh.
 ///   2) mesh_name is ignored if provided and changed to "MMESH"
 ///   3) ovl_topo_name is the name of the topo we are outputting. If it is not
 ///      provided, we choose the first topology in the blueprint.
-
-// TODO email jeff grandy to ask about an overlink file format validator
-
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                   const std::string &path,
