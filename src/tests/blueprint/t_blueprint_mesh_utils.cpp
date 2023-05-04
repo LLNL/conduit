@@ -24,6 +24,13 @@ using namespace conduit::utils;
 namespace bputils = conduit::blueprint::mesh::utils;
 
 //---------------------------------------------------------------------------
+void save_mesh(const conduit::Node &root, const std::string &filebase)
+{
+    const std::string protocol("hdf5");
+    conduit::relay::io::blueprint::save_mesh(root, filebase, protocol);
+}
+
+//---------------------------------------------------------------------------
 void create_2_domain_0d_mesh(conduit::Node &root)
 {
     // The adjset is properly set up.
@@ -277,12 +284,9 @@ domain1:
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_utils, adjset_validate_element_0d)
 {
-    const std::string protocol("hdf5");
-
     conduit::Node root, info;
     create_2_domain_0d_mesh(root);
-    conduit::relay::io::blueprint::save_mesh(root,"adjset_validate_element_0d",protocol);
-
+    save_mesh(root, "adjset_validate_element_0d");
     bool res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_TRUE(res);
 
@@ -290,6 +294,7 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_0d)
     root["domain0/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{0});
     root["domain1/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{2});
     info.reset();
+    save_mesh(root, "adjset_validate_element_0d_bad");
     res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_FALSE(res);
     info.print();
@@ -316,11 +321,9 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_0d)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_utils, adjset_validate_element_1d)
 {
-    const std::string protocol("hdf5");
     conduit::Node root, info;
     create_2_domain_1d_mesh(root);
-    conduit::relay::io::blueprint::save_mesh(root,"adjset_validate_element_1d",protocol);
-
+    save_mesh(root, "adjset_validate_element_1d");
     bool res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_TRUE(res);
 
@@ -328,6 +331,7 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_1d)
     root["domain0/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{0});
     root["domain1/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{1});
     info.reset();
+    save_mesh(root, "adjset_validate_element_1d_bad");
     res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_FALSE(res);
     info.print();
@@ -354,11 +358,9 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_1d)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_utils, adjset_validate_element_2d)
 {
-    const std::string protocol("hdf5");
     conduit::Node root, info;
     create_2_domain_2d_mesh(root);
-    conduit::relay::io::blueprint::save_mesh(root,"adjset_validate_element_2d",protocol);
-
+    save_mesh(root, "adjset_validate_element_2d");
     bool res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_TRUE(res);
     info.print();
@@ -366,6 +368,7 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_2d)
     // Now, adjust the adjset for domain1 so it includes an element not present in domain 0
     root["domain1/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{0,2,4});
     info.reset();
+    save_mesh(root, "adjset_validate_element_2d_bad");
     res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_FALSE(res);
     info.print();
@@ -384,12 +387,9 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_2d)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_utils, adjset_validate_element_3d)
 {
-    const std::string protocol("hdf5");
-
     conduit::Node root, info;
     create_2_domain_3d_mesh(root);
-    conduit::relay::io::blueprint::save_mesh(root,"adjset_validate_element_3d",protocol);
-
+    save_mesh(root, "adjset_validate_element_3d");
     bool res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_TRUE(res);
 
@@ -397,6 +397,7 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_3d)
     root["domain0/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{0});
     root["domain1/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{2});
     info.reset();
+    save_mesh(root, "adjset_validate_element_3d_bad");
     res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_FALSE(res);
     info.print();
