@@ -1777,21 +1777,21 @@ topology::TopologyBuilder::Add(const std::vector<index_t> &ids)
 
 //---------------------------------------------------------------------------
 void
-topology::TopologyBuilder::Execute(conduit::Node &new_topo, const std::string &shape)
+topology::TopologyBuilder::Execute(conduit::Node &n_out, const std::string &shape)
 {
-    new_topo.reset();
+    n_out.reset();
 
-    // Get the topo and coordset name for the input topo.
+    // Get the topo and coordset names for the input topo.
     const conduit::Node &origcset = coordset(topo);
     std::string topoName(topo.name());
     std::string coordsetName(origcset.name());
 
     // Build the new topology.
-    conduit::Node &cset = new_topo["coordsets/"+coordsetName];
-    conduit::Node &topo = new_topo["topologies/"+topoName];
+    conduit::Node &newcset = n_out["coordsets/"+coordsetName];
+    conduit::Node &newtopo = n_out["topologies/"+topoName];
 
     // Iterate over the selected original points and make a new coordset
-    cset["type"] = "explicit";
+    newcset["type"] = "explicit";
     auto axes = coordset::axes(origcset);
     auto npts = static_cast<index_t>(old_to_new.size());
     for(const auto &axis : axes)
@@ -1799,7 +1799,7 @@ topology::TopologyBuilder::Execute(conduit::Node &new_topo, const std::string &s
         std::string key("values/" + axis);
         auto acc = origcset[key].as_double_accessor();
 
-        conduit::Node &coords = cset[key];
+        conduit::Node &coords = newcset[key];
         coords.set(DataType::float64(npts));
         auto coords_ptr = static_cast<double *>(coords.element_ptr(0));
         for(auto it = old_to_new.begin(); it != old_to_new.end(); it++)
@@ -1809,13 +1809,13 @@ topology::TopologyBuilder::Execute(conduit::Node &new_topo, const std::string &s
     }
 
     // Fill in the topo information.
-    topo["type"] = "unstructured";
-    topo["coordset"] = coordsetName;
-    conduit::Node &n_ele = topo["elements"];
+    newtopo["type"] = "unstructured";
+    newtopo["coordset"] = coordsetName;
+    conduit::Node &n_ele = newtopo["elements"];
     n_ele["shape"] = shape;
     n_ele["connectivity"].set(topo_conn);
     n_ele["sizes"].set(topo_sizes);
-    unstructured::generate_offsets_inline(topo);
+    unstructured::generate_offsets_inline(newtopo);
 
     Clear();
 }
@@ -2062,7 +2062,7 @@ NullPointQuery::Execute(const std::string & /*coordsetName*/)
     {
         int npts = it->second.size() / 3;
         std::vector<int> &result = m_domResults[it->first];
-        result.resize(npts, 0); // success is anything != -1
+        result.resize(npts, 0); // success is anything != NotFound
     }
 }
 
@@ -2111,7 +2111,6 @@ PointQuery::GetDomain(int dom) const
         std::vector<const conduit::Node *> doms = domains(m_mesh);
         for(const auto d : doms)
         {
-            int domain_id = 0;
             if(d->has_path("state/domain_id"))
             {
                 int domain_id = d->fetch_existing("state/domain_id").to_int();
@@ -2135,6 +2134,7 @@ PointQuery::FindPointsInDomain(const conduit::Node &mesh,
     conduit::index_t numInputPts = input.size() / 3;
     result.resize(numInputPts, NotFound);
 
+    // Get the coords that will be used for queries.
     const conduit::Node &cset = mesh.fetch_existing("coordsets/" + coordsetName);
     const conduit::Node *coords[3] = {nullptr, nullptr, nullptr};
     std::vector<std::string> axes(coordset::axes(cset));
@@ -2192,8 +2192,10 @@ PointQuery::DomainIds() const
     domainIds.reserve(doms.size());
     for(const auto d : doms)
     {
-       int domain_id = static_cast<int>(find_domain_id(*d));
-       domainIds.push_back(domain_id); 
+        int domain_id = 0;
+        if(d->has_path("state/domain_id"))
+            domain_id = d->fetch_existing("state/domain_id").to_int();
+        domainIds.push_back(domain_id); 
     }
 
     return domainIds;
@@ -2219,23 +2221,26 @@ MatchQuery::GetDomainTopology(int domain) const
     auto doms = domains(m_mesh);
     for(const auto &dom : doms)
     {
-        auto domain_id = static_cast<int>(find_domain_id(*dom));
-        if(domain_id == domain)
+        if(dom->has_path("state/domain_id"))
         {
-            const conduit::Node &topos = dom->fetch_existing("topologies");
-            if(!topoName.empty())
+            int domain_id = dom->fetch_existing("state/domain_id").to_int();
+            if(domain_id == domain)
             {
-                if(topos.has_child(topoName))
-                    return topos.fetch_ptr(topoName);
+                const conduit::Node &topos = dom->fetch_existing("topologies");
+                if(!topoName.empty())
+                {
+                    if(topos.has_child(topoName))
+                        return topos.fetch_ptr(topoName);
+                    else
+                    {
+                        CONDUIT_ERROR("Topology " << topoName
+                            << " was not found in domain " << domain);
+                    }
+                }
                 else
                 {
-                    CONDUIT_ERROR("Topology " << topoName
-                        << " was not found in domain " << domain);
+                    return topos.child_ptr(0);
                 }
-            }
-            else
-            {
-                return topos.child_ptr(0);
             }
         }
     }

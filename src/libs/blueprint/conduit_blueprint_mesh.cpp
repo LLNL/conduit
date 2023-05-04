@@ -2904,7 +2904,7 @@ generate_derived_entities(conduit::Node &mesh,
                         // Add the entity to the query for consideration.
                         uint64 qid = Q.Add(domain_id, ni, entity_pidxs);
 
-                        // Add the candidate entity to the membership query, which
+                        // Add the candidate entity to the match query, which
                         // will help resolve things across domains.
                         query_guide.push_back(std::make_tuple(domain_id, ni, ei, qid));
                     }

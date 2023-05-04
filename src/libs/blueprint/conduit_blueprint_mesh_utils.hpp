@@ -406,7 +406,8 @@ namespace topology
         /**
          @brief Make the new topologies, using the specified shape type.
 
-         @param newMesh A node to contain the new topo and coordset.
+         @param newMesh A node to contain the new topo and coordset. This node
+                        will get topologies and coordset nodes too.
          @param shape The name of the shape type to use in the new topologies.
          */
         void Execute(conduit::Node &newMesh, const std::string &shape);
