@@ -1992,6 +1992,245 @@ adjset::canonicalize(Node &adjset)
     }
 }
 
+//---------------------------------------------------------------------------
+bool
+adjset::validate(const conduit::Node &doms,
+                 const std::string &adjsetName,
+                 conduit::Node &info)
+{
+    bool retval = false;
+
+    // It seems that in some datasets, quotes come as part of the strings.
+    // We do NOT want that.
+    auto to_string = [](const conduit::Node &n) -> std::string
+    {
+        std::string s(n.to_string());
+        if(s.find("\"") == 0)
+            s = s.substr(1, s.size() - 2);
+        return s;
+    };
+
+    // Make sure that there are multiple domains.
+    if(!conduit::blueprint::mesh::is_multi_domain(doms))
+    {
+        info["errors"].append().set("The dataset is not multidomain.");
+        return retval;
+    }
+
+    // Ensure adjset exists in all domains.
+    auto domains = conduit::blueprint::mesh::domains(doms);
+    std::string adjsetPath("adjsets/" + adjsetName);
+    size_t count = 0;
+    for(size_t i = 0; i < domains.size(); i++)
+    {
+        if(domains[i]->has_path(adjsetPath))
+            count++;
+        else
+        {
+            std::stringstream ss;
+            ss << "Domain " << i << " lacks adjset " << adjsetName;
+            info["errors"].append().set(ss.str());
+        }
+    }
+    if(count != domains.size())
+        return retval;
+
+    // Use the first domain in the list to determine the adjset association.
+    const conduit::Node &adjset = domains[0]->fetch_existing(adjsetPath);
+    std::string association = to_string(adjset.fetch_existing("association"));
+    std::string topologyName = to_string(adjset.fetch_existing("topology"));
+
+    if(association == "vertex")
+    {
+        query::PointQuery Q(doms);
+
+        // Iterate over the domains so we can add their adjset points to the
+        // point query.
+        std::string coordsetName;
+        std::vector<std::tuple<index_t, index_t, index_t, index_t, size_t, std::string, std::vector<double>>> query_guide;
+        for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
+        {
+            const auto dom = domains[domIdx];
+            auto domainId = conduit::blueprint::mesh::utils::find_domain_id(*dom);
+
+            // Get the domain's topo and coordset.
+            const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+            coordsetName = topo["coordset"].as_string();
+            const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
+
+            // Get the domain's adjset and groups.
+            const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+            const conduit::Node &adjset_groups = adjset.fetch_existing("groups");
+
+            // Iterate over this domain's adjset to help build up the point query.
+            for(const std::string &groupName : adjset_groups.child_names())
+            {
+                const conduit::Node &src_group = adjset_groups[groupName];
+                conduit::index_t_accessor src_neighbors = src_group["neighbors"].value();
+                conduit::index_t_accessor src_values = src_group["values"].value();
+
+                // Neighbors
+                for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
+                {
+                    int nbr = src_neighbors[ni];
+                    // Point ids
+                    for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
+                    {
+                        // Look up the point in the local coordset to get the coordinate.
+                        int ptid = src_values[pi];
+                        auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(coordset, ptid);
+                        double pt3[3];
+                        pt3[0] = pt[0];
+                        pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
+                        pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
+
+                        // Ask domain nbr if they have point pt3
+                        auto idx = Q.Add(nbr, pt3);
+                        query_guide.emplace_back(domainId, ptid, nbr, idx, domIdx, groupName, pt);
+                    }
+                }
+            }
+        }
+
+        // Execut the query.
+        Q.Execute(coordsetName);
+
+        // Iterate over the query results to flag any problems.
+        retval = true;
+        for(const auto &obj : query_guide)
+        {
+            index_t domain_id = std::get<0>(obj);
+            index_t ptid = std::get<1>(obj);
+            index_t nbr = std::get<2>(obj);
+            index_t idx = std::get<3>(obj);
+            size_t domIdx = std::get<4>(obj);
+            const std::string &groupName = std::get<5>(obj);
+            const std::vector<double> &coord = std::get<6>(obj);
+
+            const auto &res = Q.Results(nbr);
+            if(res[idx] == conduit::blueprint::mesh::utils::query::PointQuery::NotFound)
+            {
+                retval = false;
+                std::string domainName(domains[domIdx]->name());
+                conduit::Node &vn = info[domainName][adjsetName][groupName].append();
+
+                std::stringstream ss;
+                ss << "Domain " << domain_id << " adjset " << adjsetName
+                   << " group " << groupName
+                   << ": vertex " << ptid
+                   << " (" << coord[0] << ", " << coord[1]
+                   << ", " << coord[2] << ") at index " << ptid
+                   << " could not be located in neighbor domain "
+                   << nbr << ".";
+
+                vn["message"].set(ss.str());
+                vn["vertex"] = ptid;
+                vn["neighbor"] = nbr;
+                vn["coordinate"] = coord;
+            }
+        }
+    }
+    else if(association == "element")
+    {
+        // Here we are dealing with an element adjset. An element adjset
+        // contains the element ids for the topology elements that touch
+        // a neighbor domain. If the adjset is valid, the neighbor will
+        // have a corresponding entity that matches up with the element.
+        // If that is not the case then the adjset is not valid.
+
+        // Make a MatchQuerty that will examine the extdoms domains.
+        query::MatchQuery Q(doms);
+        Q.SelectTopology(topologyName);
+
+        std::vector<std::tuple<int, int, int, conduit::uint64, size_t, std::string>> query_guide;
+        for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
+        {
+            const auto dom = domains[domIdx];
+            auto domain_id = conduit::blueprint::mesh::utils::find_domain_id(*dom);
+
+            // Get the domain's adjset and groups.
+            const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+            const conduit::Node &adjset_groups = adjset.fetch_existing("groups");
+
+            // Get the domain's topo and coordset.
+            const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+            std::string coordsetName = topo["coordset"].as_string();
+            const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
+
+            // Get the number of elements in the topology.
+            index_t topo_len = conduit::blueprint::mesh::utils::topology::length(topo);
+
+            // Iterate over the adjset data to build up the query.
+            for(const std::string &groupName : adjset_groups.child_names())
+            {
+                const conduit::Node &group = adjset_groups[groupName];
+                conduit::index_t_accessor neighbors = group["neighbors"].value();
+                conduit::index_t_accessor values    = group["values"].value();
+
+                for(index_t ni = 0; ni < neighbors.dtype().number_of_elements(); ni++)
+                {
+                    index_t nbr = neighbors[ni];
+                    for(index_t vi = 0; vi < values.dtype().number_of_elements(); vi++)
+                    {
+                        index_t ei = values[vi];
+
+                        // Get the points for the element id if the element id is valid.
+                        std::vector<index_t> entity_pidxs;
+                        if(ei >= 0 && ei < topo_len)
+                            entity_pidxs = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
+
+                        // Add the entity to the query for consideration.
+                        conduit::uint64 qid = Q.Add(domain_id, nbr, entity_pidxs);
+
+                        // Add the candidate entity to the match query, which
+                        // will help resolve things across domains.
+                        query_guide.push_back(std::make_tuple(domain_id, nbr, ei, qid, domIdx, groupName));
+                    }
+                }
+            }
+        }
+
+        // Execute the query.
+        Q.Execute();
+
+        // Iterate over the query results to flag any problems.
+        retval = true;
+        for(const auto &obj : query_guide)
+        {
+            int domain_id = std::get<0>(obj);
+            int nbr = std::get<1>(obj);
+            int ei = std::get<2>(obj);
+            conduit::uint64 eid = std::get<3>(obj);
+            size_t domIdx = std::get<4>(obj);
+            const std::string &groupName = std::get<5>(obj);
+
+            if(!Q.Exists(domain_id, nbr, eid))
+            {
+                retval = false;
+                std::string domainName(domains[domIdx]->name());
+                conduit::Node &vn = info[domainName][adjsetName][groupName].append();
+
+                std::stringstream ss;
+                ss << "Domain " << domain_id << " adjset " << adjsetName
+                   << " group " << groupName
+                   << ": element " << ei << " could not be located in neighbor domain "
+                   << nbr << ".";
+
+                vn["message"].set(ss.str());
+                vn["element"] = ei;
+                vn["neighbor"] = nbr;
+            }
+        }
+    }
+    else
+    {
+        info["errors"].append().
+            set(std::string("Unsupported association: ") + association);
+    }
+
+    return retval;
+}
+
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------

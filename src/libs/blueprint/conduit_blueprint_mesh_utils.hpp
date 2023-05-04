@@ -477,6 +477,24 @@ namespace adjset
 {
     //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Given a set of domains, make sure that the specified adjset in them
+            is valid and flag any errors in the info node. This function will
+            make sure that each domain's adjset references valid entities in
+            neighboring domains.
+
+     @param doms A node containing the domains. There must be multiple domains.
+     @param adjsetName The name of the adjset in all domains. It must exist.
+     @param[out] info A node that contains any errors.
+
+     @return True if the adjsets in all domains contained no errors; False if
+             there were errors.
+     */
+    bool CONDUIT_BLUEPRINT_API validate(const Node &doms,
+                                        const std::string &adjsetName,
+                                        Node &info);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
