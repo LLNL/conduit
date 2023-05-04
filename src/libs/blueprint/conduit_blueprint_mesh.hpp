@@ -303,7 +303,7 @@ void CONDUIT_BLUEPRINT_API generate_corners(conduit::Node& mesh,
                                             const std::string& dst_cset_name,
                                             conduit::Node& s2dmap,
                                             conduit::Node& d2smap,
-                                            conduit::blueprint::mesh::utils::query::NullPointQuery &query);
+                                            conduit::blueprint::mesh::utils::query::PointQueryBase &query);
 
 //-------------------------------------------------------------------------
 //[[deprecated]]

@@ -249,4 +249,286 @@ make_field_selection_example(conduit::Node &output, int mask)
 // -- end parition --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// -- begin generate --
+//-----------------------------------------------------------------------------
+namespace generate
+{
+
+//---------------------------------------------------------------------------
+void create_2_domain_0d_mesh(conduit::Node &root, int rank, int size)
+{
+    // The adjset is properly set up.
+    //
+    // dom0 *       *       *
+    // dom1         *       *       *
+    const char *example = R"(
+domain0:
+  state:
+    domain_id: 0
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [0.,1.,2.]
+        y: [0.,0.,0.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: point
+        connectivity: [0,1,2]
+        offsets: [0,1,2]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 1
+          values: [1,2]
+domain1:
+  state:
+    domain_id: 1
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [1.,2.,3.]
+        y: [0.,0.,0.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: point
+        connectivity: [0,1,2]
+        offsets: [0,1,2]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 0
+          values: [0,1]
+)";
+
+    conduit::Node n;
+    n.parse(example, "yaml");
+    if(rank == 0 || size == 1)
+        root["domain0"].set(n["domain0"]);
+    if(rank == 1 || size == 1)
+        root["domain1"].set(n["domain1"]);
+}
+
+//---------------------------------------------------------------------------
+void create_2_domain_1d_mesh(conduit::Node &root, int rank, int size)
+{
+    // The adjset is properly set up.
+    //
+    // dom0 *-------*-------*
+    // dom1         *-------*-------*
+    const char *example = R"(
+domain0:
+  state:
+    domain_id: 0
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [0.,1.,2.]
+        y: [0.,0.,0.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: line
+        connectivity: [0,1,1,2]
+        offsets: [0,2]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 1
+          values: 1
+domain1:
+  state:
+    domain_id: 1
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [1.,2.,3.]
+        y: [0.,0.,0.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: line
+        connectivity: [0,1,1,2]
+        offsets: [0,2]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 0
+          values: 0
+)";
+
+    conduit::Node n;
+    n.parse(example, "yaml");
+    if(rank == 0 || size == 1)
+        root["domain0"].set(n["domain0"]);
+    if(rank == 1 || size == 1)
+        root["domain1"].set(n["domain1"]);
+}
+
+//---------------------------------------------------------------------------
+void create_2_domain_2d_mesh(conduit::Node &root, int rank, int size)
+{
+    // The adjset is properly set up
+    const char *example = R"(
+domain0:
+  state:
+    domain_id: 0
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [0.,1.,2.,3.,0.,1.,2.,3.,0.,1.,2.,3.,0.,1.,2.,3.]
+        y: [0.,0.,0.,0.,1.,1.,1.,1.,2.,2.,2.,2.,3.,3.,3.,3.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: quad
+        connectivity: [0,1,5,4,1,2,6,5,2,3,7,6,4,5,9,8,8,9,13,12,9,10,14,13,10,11,15,14]
+        offsets: [0,4,8,12,16,20,24]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 1
+          values: [2, 6]
+domain1:
+  state:
+    domain_id: 1
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [2.,3.,4.,2.,3.,4.,2.,3.,4.,2.,3.,4.]
+        y: [0.,0.,0.,1.,1.,1.,2.,2.,2.,3.,3.,3.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: quad
+        connectivity: [0,1,4,3,1,2,5,4,3,4,7,6,4,5,8,7,6,7,10,9,7,8,11,10]
+        offsets: [0,4,8,12,16,20]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 0
+          values: [0,4]
+)";
+
+    conduit::Node n;
+    n.parse(example, "yaml");
+    if(rank == 0 || size == 1)
+        root["domain0"].set(n["domain0"]);
+    if(rank == 1 || size == 1)
+        root["domain1"].set(n["domain1"]);
+}
+
+//---------------------------------------------------------------------------
+void create_2_domain_3d_mesh(conduit::Node &root, int rank, int size)
+{
+    // The adjset is properly set up.
+    //
+    // dom0 *-------*-------*-------*
+    // dom1         *-------*-------*-------*
+    const char *example = R"(
+domain0:
+  state:
+    domain_id: 0
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [0.,1.,2.,3.,0.,1.,2.,3.,0.,1.,2.,3.,0.,1.,2.,3.]
+        y: [0.,0.,0.,0.,1.,1.,1.,1.,0.,0.,0.,0.,1.,1.,1.,1.]
+        z: [0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.,1.,1.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: hex
+        connectivity: [0,1,5,4,8,9,13,12,1,2,6,5,9,10,14,13,2,3,7,6,10,11,15,14]
+        offsets: [0,8,16]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 1
+          values: [1,2]
+domain1:
+  state:
+    domain_id: 1
+  coordsets:
+    coords:
+      type: explicit
+      values:
+        x: [1.,2.,3.,4.,1.,2.,3.,4.,1.,2.,3.,4.,1.,2.,3.,4.]
+        y: [0.,0.,0.,0.,1.,1.,1.,1.,0.,0.,0.,0.,1.,1.,1.,1.]
+        z: [0.,0.,0.,0.,0.,0.,0.,0.,1.,1.,1.,1.,1.,1.,1.,1.]
+  topologies:
+    main:
+      type: unstructured
+      coordset: coords
+      elements:
+        shape: hex
+        connectivity: [0,1,5,4,8,9,13,12,1,2,6,5,9,10,14,13,2,3,7,6,10,11,15,14]
+        offsets: [0,8,16]
+  adjsets:
+    main_adjset:
+      association: element
+      topology: main
+      groups:
+        domain0_1:
+          neighbors: 0
+          values: [0,1]
+)";
+
+    conduit::Node n;
+    n.parse(example, "yaml");
+    if(rank == 0 || size == 1)
+        root["domain0"].set(n["domain0"]);
+    if(rank == 1 || size == 1)
+        root["domain1"].set(n["domain1"]);
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end generate --
+//-----------------------------------------------------------------------------
+
 #endif

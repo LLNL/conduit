@@ -471,36 +471,6 @@ namespace topology
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::utils::adjset --
-//-----------------------------------------------------------------------------
-namespace adjset
-{
-    //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
-
-    //-------------------------------------------------------------------------
-    /**
-     @brief Given a set of domains, make sure that the specified adjset in them
-            is valid and flag any errors in the info node. This function will
-            make sure that each domain's adjset references valid entities in
-            neighboring domains.
-
-     @param doms A node containing the domains. There must be multiple domains.
-     @param adjsetName The name of the adjset in all domains. It must exist.
-     @param[out] info A node that contains any errors.
-
-     @return True if the adjsets in all domains contained no errors; False if
-             there were errors.
-     */
-    bool CONDUIT_BLUEPRINT_API validate(const Node &doms,
-                                        const std::string &adjsetName,
-                                        Node &info);
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::utils::adjset --
-//-----------------------------------------------------------------------------
-
-//-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::query --
 //-----------------------------------------------------------------------------
 namespace query
@@ -510,9 +480,9 @@ namespace query
 /**
  @brief Base class for point queries. The class can build up a set of point
         queries but it does not actually execute them. It will return results
-        that indicate that all the queries succeeded.
+        that indicate that all the queries succeeded (no real work is done).
  */
-class CONDUIT_BLUEPRINT_API NullPointQuery
+class CONDUIT_BLUEPRINT_API PointQueryBase
 {
 public:
     static const int NotFound;
@@ -522,12 +492,12 @@ public:
      @param mesh The input mesh(es). Each mesh domain must have state/domain_id
                  that uniquely identifies the domain.
      */
-    NullPointQuery(const conduit::Node &mesh);
+    PointQueryBase(const conduit::Node &mesh);
 
     /**
      @brief Destructor
      */
-    virtual ~NullPointQuery() = default;
+    virtual ~PointQueryBase() = default;
 
     /**
      @brief Reset the query to try again.
@@ -583,7 +553,7 @@ protected:
         serial against the domains in the input mesh. This class actually
         executes the queries.
  */
-class CONDUIT_BLUEPRINT_API PointQuery : public NullPointQuery
+class CONDUIT_BLUEPRINT_API PointQuery : public PointQueryBase
 {
 public:
     /**
@@ -636,14 +606,16 @@ protected:
 //---------------------------------------------------------------------------
 /**
  @brief A match membership query that uses the questions asked by various
-        domains to built new topologies that are exchanged. The topologies
-        are then compared with their counterparts to determine overlap.
+        domains to build new topologies that are exchanged. The topologies
+        are then compared with their counterparts on remote ranks to determine
+        overlap. The topologies are sent back to the original rank with a
+        results field. The query results for an entity can be determined
+        by passing the id returned from Add() to the Exists() method along with
+        the domain and query domain.
  */
 class CONDUIT_BLUEPRINT_API MatchQuery
 {
 public:
-    typedef conduit_uint64 id_type;
-
     /**
      @brief Constructor
      @param mesh The input mesh(es). Each mesh domain must have state/domain_id
@@ -666,6 +638,8 @@ public:
      @param query_dom The domain that is being queried.
      @param ids A list of point ids that make up the entity.
      @param nids The number of point ids that make up the entity.
+
+     @return An identifier that represents the entity.
      */
     size_t Add(int dom, int query_dom, const index_t *ids, index_t nids);
     size_t Add(int dom, int query_dom, const std::vector<index_t> &ids);
@@ -681,10 +655,11 @@ public:
      @param dom The domain that is asking the questions.
      @param query_dom The domain that is being queried.
      @param entityId A global identifier that represents the entity.
+                     This was returned from Add()
 
      @return True if the entityId exists in query_dom.
      */
-    virtual bool Exists(int dom, int query_dom, id_type entityId) const;
+    virtual bool Exists(int dom, int query_dom, size_t entityId) const;
 
     /**
      @brief Return a vector of pairs that contain dom,query_dom values.
@@ -726,6 +701,69 @@ protected:
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::query --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::adjset --
+//-----------------------------------------------------------------------------
+namespace adjset
+{
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Given a set of domains, make sure that the specified adjset in them
+            is valid and flag any errors in the info node. This function will
+            make sure that each domain's adjset references valid entities in
+            neighboring domains.
+
+     @param doms A node containing the domains. There must be multiple domains.
+     @param adjsetName The name of the adjset in all domains. It must exist.
+     @param[out] info A node that contains any errors.
+
+     @return True if the adjsets in all domains contained no errors; False if
+             there were errors.
+     */
+    bool CONDUIT_BLUEPRINT_API validate(const Node &doms,
+                                        const std::string &adjsetName,
+                                        Node &info);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Given a set of domains, make sure that the specified adjset in them
+            is valid and flag any errors in the info node. This function will
+            make sure that each domain's adjset references valid entities in
+            neighboring domains.
+
+     @param doms A node containing the domains. There must be multiple domains.
+     @param adjsetName The name of the adjset in all domains. It must exist.
+     @param association Then type of the adjset's association.
+     @param topologyName The name of the adjset's topology.
+     @param coordsetName The name of the topology coordset.
+     @param[out] info A node that contains any errors.
+     @param PQ The PointQuery that will handle vertex association queries.
+     @param MQ The MatchQuery that will handle element association queries.
+
+     @note The association, topologyName, and coordsetName are passed in so
+           the routine does not have to figure them out. In parallel, the
+           rank might not have any domain to get them from. We can handle
+           the parallel problem from the parallel calling routine.
+
+     @return True if the adjsets in all domains contained no errors; False if
+             there were errors.
+     */
+    bool CONDUIT_BLUEPRINT_API validate(const conduit::Node &doms,
+                                        const std::string &adjsetName,
+                                        const std::string &association,
+                                        const std::string &topologyName,
+                                        const std::string &coordsetName,
+                                        conduit::Node &info,
+                                        query::PointQuery &PQ,
+                                        query::MatchQuery &MQ);
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 
 }

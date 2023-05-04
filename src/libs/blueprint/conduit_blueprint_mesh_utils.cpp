@@ -1998,10 +1998,6 @@ adjset::validate(const conduit::Node &doms,
                  const std::string &adjsetName,
                  conduit::Node &info)
 {
-    bool retval = false;
-
-    // It seems that in some datasets, quotes come as part of the strings.
-    // We do NOT want that.
     auto to_string = [](const conduit::Node &n) -> std::string
     {
         std::string s(n.to_string());
@@ -2010,6 +2006,45 @@ adjset::validate(const conduit::Node &doms,
         return s;
     };
 
+    // Create serial queries.
+    query::PointQuery PQ(doms);
+    query::MatchQuery MQ(doms);
+
+    // We need to figure out the association, topologyName, and coordsetName.
+    std::string association, topologyName, coordsetName;
+    auto domains = conduit::blueprint::mesh::domains(doms);
+    if(!domains.empty())
+    {
+        const auto dom = domains[0];
+
+        std::string adjsetPath("adjsets/" + adjsetName);
+        const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+
+        association = to_string(adjset.fetch_existing("association"));
+        topologyName = to_string(adjset.fetch_existing("topology"));
+
+        const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+        coordsetName = to_string(topo["coordset"]);
+    }
+
+    return adjset::validate(doms,
+                            adjsetName, association, topologyName, coordsetName,
+                            info, PQ, MQ);
+}
+
+//---------------------------------------------------------------------------
+bool
+adjset::validate(const conduit::Node &doms,
+                 const std::string &adjsetName,
+                 const std::string &association,
+                 const std::string &topologyName,
+                 const std::string &coordsetName,
+                 conduit::Node &info,
+                 query::PointQuery &PQ,
+                 query::MatchQuery &MQ)
+{
+    bool retval = false;
+
     // Make sure that there are multiple domains.
     if(!conduit::blueprint::mesh::is_multi_domain(doms))
     {
@@ -2017,7 +2052,8 @@ adjset::validate(const conduit::Node &doms,
         return retval;
     }
 
-    // Ensure adjset exists in all domains.
+    // Ensure adjset exists in all domains. This still succeeds when there
+    // are no domains.
     auto domains = conduit::blueprint::mesh::domains(doms);
     std::string adjsetPath("adjsets/" + adjsetName);
     size_t count = 0;
@@ -2035,15 +2071,8 @@ adjset::validate(const conduit::Node &doms,
     if(count != domains.size())
         return retval;
 
-    // Use the first domain in the list to determine the adjset association.
-    const conduit::Node &adjset = domains[0]->fetch_existing(adjsetPath);
-    std::string association = to_string(adjset.fetch_existing("association"));
-    std::string topologyName = to_string(adjset.fetch_existing("topology"));
-
     if(association == "vertex")
     {
-        query::PointQuery Q(doms);
-
         // Iterate over the domains so we can add their adjset points to the
         // point query.
         std::string coordsetName;
@@ -2055,7 +2084,6 @@ adjset::validate(const conduit::Node &doms,
 
             // Get the domain's topo and coordset.
             const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
-            coordsetName = topo["coordset"].as_string();
             const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
 
             // Get the domain's adjset and groups.
@@ -2085,7 +2113,7 @@ adjset::validate(const conduit::Node &doms,
                         pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
 
                         // Ask domain nbr if they have point pt3
-                        auto idx = Q.Add(nbr, pt3);
+                        auto idx = PQ.Add(nbr, pt3);
                         query_guide.emplace_back(domainId, ptid, nbr, idx, domIdx, groupName, pt);
                     }
                 }
@@ -2093,7 +2121,7 @@ adjset::validate(const conduit::Node &doms,
         }
 
         // Execut the query.
-        Q.Execute(coordsetName);
+        PQ.Execute(coordsetName);
 
         // Iterate over the query results to flag any problems.
         retval = true;
@@ -2107,7 +2135,7 @@ adjset::validate(const conduit::Node &doms,
             const std::string &groupName = std::get<5>(obj);
             const std::vector<double> &coord = std::get<6>(obj);
 
-            const auto &res = Q.Results(nbr);
+            const auto &res = PQ.Results(nbr);
             if(res[idx] == conduit::blueprint::mesh::utils::query::PointQuery::NotFound)
             {
                 retval = false;
@@ -2138,9 +2166,8 @@ adjset::validate(const conduit::Node &doms,
         // have a corresponding entity that matches up with the element.
         // If that is not the case then the adjset is not valid.
 
-        // Make a MatchQuerty that will examine the extdoms domains.
-        query::MatchQuery Q(doms);
-        Q.SelectTopology(topologyName);
+        // Set up MatchQuery that will examine the extdoms domains.
+        MQ.SelectTopology(topologyName);
 
         std::vector<std::tuple<int, int, int, conduit::uint64, size_t, std::string>> query_guide;
         for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
@@ -2180,7 +2207,7 @@ adjset::validate(const conduit::Node &doms,
                             entity_pidxs = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
 
                         // Add the entity to the query for consideration.
-                        conduit::uint64 qid = Q.Add(domain_id, nbr, entity_pidxs);
+                        conduit::uint64 qid = MQ.Add(domain_id, nbr, entity_pidxs);
 
                         // Add the candidate entity to the match query, which
                         // will help resolve things across domains.
@@ -2191,7 +2218,7 @@ adjset::validate(const conduit::Node &doms,
         }
 
         // Execute the query.
-        Q.Execute();
+        MQ.Execute();
 
         // Iterate over the query results to flag any problems.
         retval = true;
@@ -2204,7 +2231,7 @@ adjset::validate(const conduit::Node &doms,
             size_t domIdx = std::get<4>(obj);
             const std::string &groupName = std::get<5>(obj);
 
-            if(!Q.Exists(domain_id, nbr, eid))
+            if(!MQ.Exists(domain_id, nbr, eid))
             {
                 retval = false;
                 std::string domainName(domains[domIdx]->name());
@@ -2241,17 +2268,17 @@ adjset::validate(const conduit::Node &doms,
 namespace query
 {
 
-const int NullPointQuery::NotFound = -1;
+const int PointQueryBase::NotFound = -1;
 
 //---------------------------------------------------------------------------
-NullPointQuery::NullPointQuery(const conduit::Node &mesh) : m_mesh(mesh),
+PointQueryBase::PointQueryBase(const conduit::Node &mesh) : m_mesh(mesh),
     m_domInputs(), m_domResults()
 {
 }
 
 //---------------------------------------------------------------------------
 void
-NullPointQuery::Reset()
+PointQueryBase::Reset()
 {
     m_domInputs.clear();
     m_domResults.clear();
@@ -2259,7 +2286,7 @@ NullPointQuery::Reset()
 
 //---------------------------------------------------------------------------
 conduit::index_t
-NullPointQuery::Add(int dom, const double pt[3])
+PointQueryBase::Add(int dom, const double pt[3])
 {
     std::vector<double> &coords = m_domInputs[dom];
     conduit::index_t idx = coords.size() / 3;
@@ -2271,7 +2298,7 @@ NullPointQuery::Add(int dom, const double pt[3])
 
 //---------------------------------------------------------------------------
 const std::vector<double> &
-NullPointQuery::Inputs(int dom) const
+PointQueryBase::Inputs(int dom) const
 {
     auto it = m_domInputs.find(dom);
     if(it == m_domInputs.end())
@@ -2283,7 +2310,7 @@ NullPointQuery::Inputs(int dom) const
 
 //---------------------------------------------------------------------------
 const std::vector<int> &
-NullPointQuery::Results(int dom) const
+PointQueryBase::Results(int dom) const
 {
     auto it = m_domResults.find(dom);
     if(it == m_domResults.end())
@@ -2295,7 +2322,7 @@ NullPointQuery::Results(int dom) const
 
 //---------------------------------------------------------------------------
 void
-NullPointQuery::Execute(const std::string & /*coordsetName*/)
+PointQueryBase::Execute(const std::string & /*coordsetName*/)
 {
     for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
     {
@@ -2307,7 +2334,7 @@ NullPointQuery::Execute(const std::string & /*coordsetName*/)
 
 //---------------------------------------------------------------------------
 std::vector<int>
-NullPointQuery::QueryDomainIds() const
+PointQueryBase::QueryDomainIds() const
 {
     std::vector<int> retval;
     for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
@@ -2317,7 +2344,7 @@ NullPointQuery::QueryDomainIds() const
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
-PointQuery::PointQuery(const conduit::Node &mesh) : NullPointQuery(mesh)
+PointQuery::PointQuery(const conduit::Node &mesh) : PointQueryBase(mesh)
 {
 }
 

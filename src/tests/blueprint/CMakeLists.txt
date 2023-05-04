@@ -75,7 +75,8 @@ set(BLUEPRINT_MPI_TESTS_RANKS_2
 set(BLUEPRINT_RELAY_MPI_TESTS
     t_blueprint_mpi_mesh_relay
     t_blueprint_mpi_mesh_polytopal
-    t_blueprint_mpi_mesh_distribute_2_ranks)
+    t_blueprint_mpi_mesh_distribute_2_ranks
+    t_blueprint_mpi_mesh_utils)
 
 set(BLUEPRINT_RELAY_PARMETIS_MPI_TESTS
     t_blueprint_mpi_mesh_parmetis

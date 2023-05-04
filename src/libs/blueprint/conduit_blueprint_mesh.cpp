@@ -3087,7 +3087,7 @@ generate_decomposed_entities(conduit::Node &mesh,
                              GenDecomposedFun generate_decomposed,
                              IdDecomposedFun  identify_decomposed,
                              const std::vector<index_t> &decomposed_centroid_dims,
-                             conduit::blueprint::mesh::utils::query::NullPointQuery &query)
+                             conduit::blueprint::mesh::utils::query::PointQueryBase &query)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
@@ -3557,7 +3557,7 @@ mesh::generate_centroids(conduit::Node& mesh,
     const std::vector<index_t> centroid_dims = calculate_decomposed_dims(
         mesh, src_adjset_name, calculate_centroid_dims);
 
-    conduit::blueprint::mesh::utils::query::NullPointQuery query(mesh);
+    conduit::blueprint::mesh::utils::query::PointQueryBase query(mesh);
 
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap,
@@ -3609,7 +3609,7 @@ mesh::generate_sides(conduit::Node& mesh,
     const std::vector<index_t> side_dims = calculate_decomposed_dims(
         mesh, src_adjset_name, calculate_side_dims);
 
-    conduit::blueprint::mesh::utils::query::NullPointQuery query(mesh);
+    conduit::blueprint::mesh::utils::query::PointQueryBase query(mesh);
 
     generate_decomposed_entities(
         mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name, s2dmap, d2smap,
@@ -3626,7 +3626,7 @@ mesh::generate_corners(conduit::Node& mesh,
                        const std::string& dst_cset_name,
                        conduit::Node& s2dmap,
                        conduit::Node& d2smap,
-                       conduit::blueprint::mesh::utils::query::NullPointQuery &query)
+                       conduit::blueprint::mesh::utils::query::PointQueryBase &query)
 {
     const static auto identify_corner = []
         (const bputils::TopologyMetadata &topo_data, const index_t ei, const index_t di)
@@ -3675,8 +3675,8 @@ mesh::generate_corners(conduit::Node& mesh,
                        conduit::Node& d2smap)
 {
     // Q: Should we use PointQuery instead so it actually checks for non-existent points?
-    //    The NullPointQuery will preserve prior behavior.
-    conduit::blueprint::mesh::utils::query::NullPointQuery query(mesh);
+    //    The PointQueryBase will preserve prior behavior.
+    conduit::blueprint::mesh::utils::query::PointQueryBase query(mesh);
     generate_corners(mesh, src_adjset_name, dst_adjset_name, dst_topo_name, dst_cset_name,
                      s2dmap, d2smap, query);
 }

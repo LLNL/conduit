@@ -13,6 +13,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
 #include "conduit_blueprint_mpi_mesh_utils.hpp"
+#include "conduit_blueprint_mesh.hpp"
 #include "conduit_annotations.hpp"
 #include "conduit_relay_mpi.hpp"
 
@@ -21,6 +22,8 @@
 // NOTE: if DEBUG_PRINT is defined then the library must also depend on conduit_relay
 #include "conduit_relay_io.hpp"
 #endif
+
+#include <cstring>
 
 //-----------------------------------------------------------------------------
 // -- begin conduit --
@@ -529,10 +532,119 @@ MatchQuery::Execute()
 #endif
 }
 
-
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mpi::mesh::utils::query --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mpi::mesh::utils::adjset --
+//-----------------------------------------------------------------------------
+
+bool
+adjset::validate(const Node &doms,
+                 const std::string &adjsetName,
+                 Node &info,
+                 MPI_Comm comm)
+{
+    auto to_string = [](const conduit::Node &n) -> std::string
+    {
+        std::string s(n.to_string());
+        if(s.find("\"") == 0)
+            s = s.substr(1, s.size() - 2);
+        return s;
+    };
+
+    auto agree = [](bool res, MPI_Comm comm) -> bool
+    {
+        int size = 1;
+        MPI_Comm_size(comm, &size);
+        int val = res ? 1 : 0;
+        int globalval = 0;
+        MPI_Allreduce(&val, &globalval, 1, MPI_INT, MPI_SUM, comm);
+        return globalval == size;
+    };
+
+    // Make sure that there are multiple domains.
+    bool retval = false;
+    bool md = conduit::blueprint::mesh::is_multi_domain(doms);
+    // Make sure all ranks agree on the answer.
+    md = agree(md, comm);
+    if(!md)
+    {
+        info["errors"].append().set("The dataset is not multidomain.");
+        return retval;
+    }
+
+    // Decide whether all ranks have data.
+    auto domains = conduit::blueprint::mesh::domains(doms);
+
+    // We need to figure out the association, topologyName, and coordsetName.
+    // Get them from the domains, if available.
+    std::string association, topologyName, coordsetName;
+    if(!domains.empty())
+    {
+        const auto dom = domains[0];
+
+        std::string adjsetPath("adjsets/" + adjsetName);
+        const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+
+        association = to_string(adjset.fetch_existing("association"));
+        topologyName = to_string(adjset.fetch_existing("topology"));
+
+        const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+        coordsetName = to_string(topo["coordset"]);
+    }
+
+    // Some ranks might not have domains from which to figure out association,
+    // etc. Make a YAML string with the answers if we have association. Then
+    // allreduce on the characters so ranks with no data will get their buffers
+    // updated. We use a fixed size buffer.
+    constexpr int MAX_BUFFER_SIZE = 1024;
+    char *local = new char[MAX_BUFFER_SIZE];
+    memset(local, 0, sizeof(char) * MAX_BUFFER_SIZE);
+    if(!association.empty())
+    {
+        std::stringstream ss;
+        ss << "association: " << association << std::endl
+           << "topology: " << topologyName << std::endl
+           << "coordset: " << coordsetName << std::endl;
+        std::string msg(ss.str());
+        if(msg.size()+1 >= MAX_BUFFER_SIZE)
+        {
+            delete [] local;
+            CONDUIT_ERROR("Message size exceeded max " << MAX_BUFFER_SIZE);
+        }
+        strncpy(local, msg.c_str(), msg.size());
+    }
+    char *global = new char[MAX_BUFFER_SIZE];
+    memset(global, 0, sizeof(char) * MAX_BUFFER_SIZE);
+    MPI_Allreduce(local, global, MAX_BUFFER_SIZE, MPI_CHAR, MPI_MAX, comm);
+    global[MAX_BUFFER_SIZE - 1] = '\0';
+    conduit::Node s;
+    s.parse(global, "yaml");
+    delete [] local;
+    delete [] global;
+    association = s["association"].as_string();
+    topologyName = s["topology"].as_string();
+    coordsetName = s["coordset"].as_string();
+
+    // Make parallel queries and do the validation.
+    conduit::blueprint::mpi::mesh::utils::query::PointQuery PQ(doms, comm);
+    conduit::blueprint::mpi::mesh::utils::query::MatchQuery MQ(doms, comm);
+
+    // Do the validation.
+    retval = conduit::blueprint::mesh::utils::adjset::validate(doms,
+                 adjsetName, association, topologyName, coordsetName,
+                 info, PQ, MQ);
+
+    // Make sure all ranks agree on the answer.
+    retval = agree(retval, comm);
+    return retval;
+}
+
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mpi::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 
 }
