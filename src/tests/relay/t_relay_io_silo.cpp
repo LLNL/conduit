@@ -363,7 +363,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 // multidomain test
 TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 {
-    for (int ndomains = 2; ndomains < 3; ndomains ++)
+    for (int ndomains = 2; ndomains < 6; ndomains ++)
     {
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
@@ -394,9 +394,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
         {
             const Node &l_curr = l_itr.next();
             const Node &s_curr = s_itr.next();
-
-            s_curr.print();
-            l_curr.print();
 
             EXPECT_FALSE(l_curr.diff(s_curr, info));
         }

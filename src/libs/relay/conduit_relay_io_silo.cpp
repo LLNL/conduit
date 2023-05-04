@@ -2649,6 +2649,9 @@ void write_multimesh(const Node &n_mesh,
         if (n_state.has_child("cycle"))
         {
             int cycle = n_state["cycle"].to_int();
+            std::cout << "This is what blueprint thinks the cycle is: " << std::endl;
+            n_state["cycle"].print();
+            std::cout << "This is what we write it to silo as: " << cycle << std::endl;
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_CYCLE,
                                       &cycle);
