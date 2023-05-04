@@ -187,3 +187,94 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_query, point_query)
+{
+    using PointQuery = conduit::blueprint::mesh::utils::query::PointQuery;
+    constexpr int nx = 3, ny = 3, nz = 0;
+    constexpr int npts = nx * ny;
+    constexpr int domain0 = 0;
+    constexpr int domain1 = 1;
+
+    auto getcoord = [](const conduit::Node &coordset, int ptid, double pt3[3])
+    {
+        auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(coordset, ptid);
+        pt3[0] = pt[0];
+        pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
+        pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
+    };
+
+    // Make 2 domains.
+    Node doms;
+    blueprint::mesh::examples::grid("quads",
+                                    nx, ny, nz, // Number of points in x,y,z
+                                    2, 1, 1,    // 2 domains in X
+                                    doms);
+
+    // Run the point query so we ask for all of the points in domain 0 using
+    // the points of domain 0. We should hit them all and have 0..npts-1 for
+    // the results.
+    PointQuery Q(doms);
+    auto domains = conduit::blueprint::mesh::domains(doms);
+    const std::string coordsetName("coords");
+    conduit::Node &coordset = domains[0]->fetch_existing("coordsets/" + coordsetName);
+    for(int ptid = 0; ptid < npts; ptid++)
+    {
+        double pt3[3];
+        getcoord(coordset, ptid, pt3);
+
+        Q.Add(domain0, pt3);
+    }
+    Q.Execute(coordsetName);
+    const auto &res = Q.Results(domain0);
+    EXPECT_EQ(res.size(), npts);
+    for(size_t i = 0; i < res.size(); i++)
+       EXPECT_EQ(res[i], i);
+
+    // Now, add some points that do not exist and re-run the query.
+    double bad0[] = {1.23,1.23,1.23};
+    double bad1[] = {1.34,1.34,1.34};
+    double bad2[] = {1.45,1.45,1.45};
+    Q.Add(domain0, bad0);
+    Q.Add(domain0, bad1);
+    Q.Add(domain0, bad2);
+    Q.Execute(coordsetName);
+    EXPECT_EQ(res.size(), npts + 3);
+    for(size_t i = 0; i < res.size(); i++)
+    {
+        if(i < npts)
+        {
+            EXPECT_EQ(res[i], i);
+        }
+        else
+        {
+            EXPECT_EQ(res[i], PointQuery::NotFound);
+        }
+    }
+
+    // Now, ask domain1 about domain0's points. There should be 3 that match.
+    Q.Reset();
+    for(int ptid = 0; ptid < npts; ptid++)
+    {
+        double pt3[3];
+        getcoord(coordset, ptid, pt3);
+
+        Q.Add(domain1, pt3);
+    }
+    Q.Execute(coordsetName);
+    const auto &res1 = Q.Results(domain1);
+    EXPECT_EQ(res1.size(), npts);
+    for(size_t i = 0; i < res1.size(); i++)
+    {
+        if(i % nx == (nx - 1))
+        {
+            EXPECT_EQ(res1[i], i - (nx - 1));
+        }
+        else
+        {
+            EXPECT_EQ(res1[i], PointQuery::NotFound);
+        }
+    }
+
+}
