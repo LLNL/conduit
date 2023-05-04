@@ -2636,35 +2636,35 @@ void write_multimesh(const Node &n_mesh,
 
     // create state optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
-        DBMakeOptlist(2), 
+        DBMakeOptlist(3), 
         &DBFreeOptlist,
         "Error freeing state optlist."};
     if (!state_optlist.getSiloObject())
     {
         CONDUIT_ERROR("Error creating state optlist");
     }
-    
+
+    int cycle;
+    float ftime;
+    double dtime;
     if (n_mesh.has_child("state"))
     {
         int silo_error = 0;
         const Node &n_state = n_mesh["state"];
         if (n_state.has_child("cycle"))
         {
-            int cycle = n_state["cycle"].to_int();
-            std::cout << "This is what blueprint thinks the cycle is: " << std::endl;
-            n_state["cycle"].print();
-            std::cout << "This is what we write it to silo as: " << cycle << std::endl;
+            cycle = n_state["cycle"].to_int();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_CYCLE,
                                       &cycle);
         }
         if (n_state.has_child("time"))
         {
-            float ftime = n_state["time"].to_float();
+            ftime = n_state["time"].to_float();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_TIME,
                                       &ftime);
-            double dtime = n_state["time"].to_double();
+            dtime = n_state["time"].to_double();
             silo_error += DBAddOption(state_optlist.getSiloObject(),
                                       DBOPT_DTIME,
                                       &dtime);

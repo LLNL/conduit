@@ -291,7 +291,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
-        std::make_pair("uniform", 2), /*std::make_pair("uniform", 3),
+        std::make_pair("uniform", 2), std::make_pair("uniform", 3),
         std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
         std::make_pair("structured", 2), std::make_pair("structured", 3),
         // std::make_pair("point", 2), std::make_pair("point", 3), // TODO
@@ -303,7 +303,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         std::make_pair("wedges", 3),
         std::make_pair("pyramids", 3),
         // std::make_pair("mixed_2d", 2),
-        // std::make_pair("mixed", 3),*/
+        // std::make_pair("mixed", 3),
     };
     for (int i = 0; i < mesh_types.size(); ++i)
     {
@@ -350,13 +350,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-
-        std::cout << "save mesh" << std::endl;
-        save_mesh["state"].print();
-        std::cout << "load mesh" << std::endl;
-        load_mesh[0]["state"].print();
-
-        info.print();
     }
 }
 
@@ -440,13 +433,12 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_julia)
     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-    info.print();
 }
 
 // TODO overlink i/o tests
 
-// TODO units?
 // TODO add tests for...
 //  - materials once they are supported
 //  - polytopal meshes once they are supported
+//  - units once they are supported
 //  - etc.
