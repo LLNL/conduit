@@ -2423,7 +2423,11 @@ PointQuery::FindPointsInDomain(const conduit::Node &mesh,
     // TODO: Use acceleration structure for search.
     conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
     const double *input_ptr = &input[0];
+#if defined(CONDUIT_USE_OPENMP)
     using policy = conduit::execution::OpenMPExec;
+#else
+    using policy = conduit::execution::SerialExec;
+#endif
     conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
     {
         constexpr double EPS = 1.e-10;
