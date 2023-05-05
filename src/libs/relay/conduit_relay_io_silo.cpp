@@ -852,7 +852,7 @@ read_variable_domain(const T *var_ptr,
     }
     else
     {
-        // TODO do we want to support DB_CHAR and DB_VARIABLE?
+        // TODO do we want to support DB_CHAR and DB_VARIABLE? yes and others see teams chat with cyrus
         CONDUIT_ERROR("Unsupported type in " << datatype);
     }
 }
