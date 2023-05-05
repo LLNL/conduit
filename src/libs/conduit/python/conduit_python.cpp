@@ -9,6 +9,7 @@
 #include <Python.h>
 #include <structmember.h>
 #include "bytesobject.h"
+#include <string.h> // for strdup
 
 #if PY_MAJOR_VERSION >= 3
 #define IS_PY3K
@@ -100,7 +101,7 @@ PyString_AsString(PyObject *py_obj)
                                                           "strict"); // Owned reference
         if(temp_bytes != NULL)
         {
-            res = _conduit_strdup(PyBytes_AS_STRING(temp_bytes));
+            res = _conduit_strdup(PyBytes_AsString(temp_bytes));
             Py_DECREF(temp_bytes);
         }
         else
@@ -110,7 +111,7 @@ PyString_AsString(PyObject *py_obj)
     }
     else if(PyBytes_Check(py_obj))
     {
-        res = _conduit_strdup(PyBytes_AS_STRING(py_obj));
+        res = _conduit_strdup(PyBytes_AsString(py_obj));
     }
     else
     {
@@ -139,9 +140,16 @@ static PyObject *
 PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
                                     int string_len)
 {
+    #ifdef Py_LIMITED_API
+    return PyUnicode_Decode(unicode_buffer,
+                             string_len,
+                             "utf-32",
+                             "strict");
+    #else
     return PyUnicode_FromKindAndData(PyUnicode_4BYTE_KIND,
                                      unicode_buffer,
-                                     string_len);
+                                     string_len/4);
+    #endif
 }
 
 //-----------------------------------------------------------------------------
@@ -184,6 +192,67 @@ PyUnicode_From_UTF32_Unicode_Buffer(const char *unicode_buffer,
 //-----------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// Module Code
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+struct module_state {
+    PyObject *error;
+    #ifdef Py_LIMITED_API
+    PyTypeObject* PyConduit_DataType_TYPE;
+    PyTypeObject* PyConduit_Generator_TYPE;
+    PyTypeObject* PyConduit_Schema_TYPE;
+    PyTypeObject* PyConduit_NodeIterator_TYPE;
+    PyTypeObject* PyConduit_Node_TYPE;
+    PyTypeObject* PyConduit_Endianness_TYPE;
+    #endif
+};
+
+//---------------------------------------------------------------------------//
+#if defined(IS_PY3K)
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+//---------------------------------------------------------------------------//
+
+
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module. 
+// Ideally it should be aquired from the type each time using get_state_from_type 
+// But many functions like PyConduit_Node_Check don't have access to the type
+PyObject* GLOBAL_MODULE = NULL;
+
+static inline module_state *
+get_module_state()
+{
+    void *state = PyModule_GetState(GLOBAL_MODULE);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+static inline module_state *
+get_state_from_type(PyTypeObject *tp)
+{
+    void *state = PyType_GetModuleState(tp);
+    assert(state != NULL);
+    return (module_state*)state;
+}
+#endif                                                    
+
+
+#ifdef Py_LIMITED_API                            
+
+#define Set_PyTypeObject_Macro(type,NAME)                \
+module_state* state = get_module_state();  \
+assert(state != NULL);                                   \
+type = state->NAME 
+#else
+#define Set_PyTypeObject_Macro(type,NAME) type = (PyTypeObject*)&NAME                             
+#endif
+
 struct PyConduit_DataType
 {
     PyObject_HEAD
@@ -271,7 +340,7 @@ PyConduit_DataType_new(PyTypeObject* type,
         return (NULL);
     }
 
-    PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
+    PyConduit_DataType* self = (PyConduit_DataType*)PyType_GenericAlloc(type,0);
     return ((PyObject*)self);
 }
 
@@ -467,7 +536,12 @@ PyConduit_DataType_init(PyConduit_DataType* self,
 static void
 PyConduit_DataType_dealloc(PyConduit_DataType *self)
 {
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -3156,7 +3230,25 @@ static PyMethodDef PyConduit_DataType_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_DataType_SLOTS[]  = {
+  {Py_tp_dealloc, (void*) PyConduit_DataType_dealloc},
+  {Py_tp_str,     (void*) PyConduit_DataType_str},
+  {Py_tp_methods, (void*) PyConduit_DataType_METHODS},
+  {Py_tp_init,    (void*) PyConduit_DataType_init},
+  {Py_tp_new,     (void*) PyConduit_DataType_new},
+  {0,0},
+};
 
+static PyType_Spec PyConduit_DataType_SPEC = 
+{
+   "DataType",                                /* tp_name */
+   sizeof(PyConduit_DataType),                /* tp_basicsize */
+   0,                                         /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,  /* tp_flags */
+   PyConduit_DataType_SLOTS,                  /* tp_slots */
+};
+#else
 static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "DataType",
@@ -3210,20 +3302,24 @@ static PyTypeObject PyConduit_DataType_TYPE = {
    PyVarObject_TAIL
 };
 
+#endif
 
 //---------------------------------------------------------------------------//
 static PyConduit_DataType *
 PyConduit_DataType_Python_Create()
 {
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_DataType_TYPE;
-    return (PyConduit_DataType*)type->tp_alloc(type,0);
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type,PyConduit_DataType_TYPE);
+    return (PyConduit_DataType*)PyType_GenericAlloc(type,0);
 }
 
 //---------------------------------------------------------------------------//
 static int
 PyConduit_DataType_Check(PyObject *obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_DataType_TYPE));
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type,PyConduit_DataType_TYPE);
+    return (PyObject_TypeCheck(obj, type));
 }
 
 
@@ -3241,7 +3337,7 @@ PyConduit_Generator_new(PyTypeObject *type,
                         PyObject*, // args -- unused
                         PyObject*) // kwds -- unused
 {
-    PyConduit_Generator *self = (PyConduit_Generator*)type->tp_alloc(type, 0);
+    PyConduit_Generator *self = (PyConduit_Generator*)PyType_GenericAlloc(type,0);
 
     if (self)
     {
@@ -3260,7 +3356,12 @@ PyConduit_Generator_dealloc(PyConduit_Generator *self)
         delete self->generator;
     }
     
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 
@@ -3430,6 +3531,25 @@ static PyMethodDef PyConduit_Generator_METHODS[] = {
 //---------------------------------------------------------------------------//
 
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_Generator_SLOTS[]  = {
+  {Py_tp_dealloc, (void*) PyConduit_Generator_dealloc},
+  {Py_tp_methods, (void*) PyConduit_Generator_METHODS},
+  {Py_tp_init,    (void*) PyConduit_Generator_init},
+  {Py_tp_new,     (void*) PyConduit_Generator_new},
+  {0,0},
+};
+
+static PyType_Spec PyConduit_Generator_SPEC = 
+{
+   "Generator",                                /* tp_name */
+   sizeof(PyConduit_Generator),                /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyConduit_Generator_SLOTS,                  /* tp_slots */
+};
+
+#else
 static PyTypeObject PyConduit_Generator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Generator",
@@ -3482,13 +3602,16 @@ static PyTypeObject PyConduit_Generator_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
 static int
 PyConduit_Generator_Check(PyObject* obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_Generator_TYPE));
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Generator_TYPE);
+    return (PyObject_TypeCheck(obj, type));
 }
 
 
@@ -3509,7 +3632,7 @@ PyConduit_Schema_new(PyTypeObject* type,
                      PyObject*) // kwds -- unused
 {
 
-    PyConduit_Schema* self = (PyConduit_Schema*)type->tp_alloc(type, 0);
+    PyConduit_Schema *self = (PyConduit_Schema*)PyType_GenericAlloc(type,0);
     
     if (self)
     {
@@ -3575,7 +3698,12 @@ PyConduit_Schema_dealloc(PyConduit_Schema* self)
         delete self->schema;
     }
     
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -4470,15 +4598,41 @@ static PyMethodDef PyConduit_Schema_METHODS[] = {
 };
 
 //---------------------------------------------------------------------------//
+#ifndef Py_LIMITED_API
+// The limited API does not include PyMappingMethods,
+// The corresponding slots are set directly in _SLOTS
 static PyMappingMethods PyConduit_Schema_as_mapping = {
    (lenfunc)0,    // len operator is not supported
    (binaryfunc)PyConduit_Schema_get_item,
    (objobjargproc)PyConduit_Schema_set_item
 };
+#endif
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_Schema_SLOTS[]  = {
+  {Py_tp_dealloc, (void*) PyConduit_Schema_dealloc},
+  {Py_tp_methods, (void*) PyConduit_Schema_METHODS},
+  {Py_tp_init,    (void*) PyConduit_Schema_init},
+  {Py_tp_new,     (void*) PyConduit_Schema_new},
+  {Py_tp_str,     (void*) PyConduit_Schema_str},
+  {Py_mp_subscript, (void*) PyConduit_Schema_get_item},
+  {Py_mp_ass_subscript, (void*) PyConduit_Schema_set_item},
+  {0,0},
+};
+
+static PyType_Spec PyConduit_Schema_SPEC = 
+{
+   "Schema",                                   /* tp_name */
+   sizeof(PyConduit_Schema),                   /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyConduit_Schema_SLOTS,                     /* tp_slots */
+};
+
+#else
 
 static PyTypeObject PyConduit_Schema_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -4532,6 +4686,7 @@ static PyTypeObject PyConduit_Schema_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
@@ -4551,7 +4706,7 @@ PyConduit_NodeIterator_new(PyTypeObject *type,
         return (NULL);
     }
     
-    PyConduit_DataType *self = (PyConduit_DataType*)type->tp_alloc(type, 0);
+    PyConduit_DataType *self = (PyConduit_DataType*)PyType_GenericAlloc(type,0);
     return ((PyObject*)self);
 }
 
@@ -4588,7 +4743,12 @@ PyConduit_NodeIterator_init(PyConduit_NodeIterator* self,
 static void
 PyConduit_NodeIterator_dealloc(PyConduit_NodeIterator *self)
 {
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -4841,7 +5001,28 @@ static PyMethodDef PyConduit_NodeIterator_METHODS[] = {
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_NodeIterator_SLOTS[]  = {
+  {Py_tp_dealloc,  (void*) PyConduit_NodeIterator_dealloc},
+  {Py_tp_methods,  (void*) PyConduit_NodeIterator_METHODS},
+  {Py_tp_init,     (void*) PyConduit_NodeIterator_init},
+  {Py_tp_new,      (void*) PyConduit_NodeIterator_new},
+  {Py_tp_str,      (void*) PyConduit_NodeIterator_str},
+  {Py_tp_iter,     (void*) PyConduit_NodeIterator_iter},
+  {Py_tp_iternext, (void*) PyConduit_NodeIterator_iternext},
+  {0,0},
+};
 
+static PyType_Spec PyConduit_NodeIterator_SPEC = 
+{
+   "NodeIterator",                             /* tp_name */
+   sizeof(PyConduit_NodeIterator),             /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyConduit_NodeIterator_SLOTS,               /* tp_slots */
+};
+
+#else
 static PyTypeObject PyConduit_NodeIterator_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Iterator",
@@ -4894,14 +5075,16 @@ static PyTypeObject PyConduit_NodeIterator_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
 static PyConduit_NodeIterator *
 PyConduit_NodeIterator_Python_Create()
 {
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_NodeIterator_TYPE;
-    return (PyConduit_NodeIterator*)type->tp_alloc(type,0);
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_NodeIterator_TYPE);
+    return (PyConduit_NodeIterator*)PyType_GenericAlloc(type,0);
 }
 
 
@@ -5025,7 +5208,7 @@ PyConduit_Node_new(PyTypeObject* type,
         return (NULL);
     }
 
-    PyConduit_Node* self = (PyConduit_Node*)type->tp_alloc(type, 0);
+    PyConduit_Node* self = (PyConduit_Node*)PyType_GenericAlloc(type,0);
 
     if (self)
     {
@@ -5075,7 +5258,12 @@ PyConduit_Node_dealloc(PyConduit_Node* self)
        delete self->node;
     }
 
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = ((freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free));
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -6041,11 +6229,7 @@ PyConduit_Node_print_detailed(PyConduit_Node *self)
 {
     std::ostringstream oss;
     self->node->to_string_stream(oss,"conduit_json");
-    // create python string from our c++ stream and call std print
-    PyObject *py_str = Py_BuildValue("s", oss.str().c_str());
-    PyObject_Print(py_str, stdout, Py_PRINT_RAW);
-    // dec ref for python string
-    Py_DECREF(py_str);
+    std::fprintf(stdout,"%s",oss.str().c_str());
     Py_RETURN_NONE;
 }
 
@@ -7125,6 +7309,29 @@ static PyMethodDef PyConduit_Node_METHODS[] = {
     {NULL, NULL, 0, NULL}
 };
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_Node_SLOTS[]  = {
+  {Py_tp_dealloc,        (void*) PyConduit_Node_dealloc},
+  {Py_tp_methods,        (void*) PyConduit_Node_METHODS},
+  {Py_tp_init,           (void*) PyConduit_Node_init},
+  {Py_tp_new,            (void*) PyConduit_Node_new},
+  {Py_tp_str,            (void*) PyConduit_Node_str},
+  {Py_mp_subscript,      (void*) PyConduit_Node_GetItem},
+  {Py_mp_ass_subscript,  (void*) PyConduit_Node_SetItem},
+  {Py_tp_iter,           (void*) PyConduit_Node_iter},
+  {0,0},
+};
+
+static PyType_Spec PyConduit_Node_SPEC = 
+{
+   "Node",                                     /* tp_name */
+   sizeof(PyConduit_Node),                     /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyConduit_Node_SLOTS,                       /* tp_slots */
+};
+
+#else
 //---------------------------------------------------------------------------//
 static PyMappingMethods node_as_mapping = {
    (lenfunc)0,    // len operator is not supported
@@ -7188,6 +7395,7 @@ static PyTypeObject PyConduit_Node_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
@@ -7225,7 +7433,9 @@ static PyMethodDef conduit_python_funcs[] =
 static int
 PyConduit_Schema_Check(PyObject* obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_Schema_TYPE));
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Schema_TYPE);
+    return (PyObject_TypeCheck(obj, type));
 }
 
 
@@ -7233,9 +7443,9 @@ PyConduit_Schema_Check(PyObject* obj)
 static PyObject *
 PyConduit_Schema_Python_Wrap(Schema *schema, int python_owns)
 {
-    PyTypeObject *type = (PyTypeObject*)&PyConduit_Schema_TYPE;
-
-    PyConduit_Schema *retval = (PyConduit_Schema*)type->tp_alloc(type, 0);
+    PyTypeObject *type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Schema_TYPE);
+    PyConduit_Schema *retval = (PyConduit_Schema*)PyType_GenericAlloc(type,0);
     retval->schema = schema;
     retval->python_owns = python_owns;
     return ((PyObject*)retval);
@@ -7246,7 +7456,9 @@ PyConduit_Schema_Python_Wrap(Schema *schema, int python_owns)
 static int
 PyConduit_Node_Check(PyObject *obj)
 {
-    return (PyObject_TypeCheck(obj, &PyConduit_Node_TYPE));
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Node_TYPE);
+    return (PyObject_TypeCheck(obj, type));
 }
 
 //---------------------------------------------------------------------------//
@@ -7260,8 +7472,9 @@ PyConduit_Node_Get_Node_Ptr(PyObject *obj)
 static PyObject *
 PyConduit_Node_Python_Wrap(Node *node, int python_owns)
 {
-    PyTypeObject* type = (PyTypeObject*)&PyConduit_Node_TYPE;
-    PyConduit_Node* retval = (PyConduit_Node*)type->tp_alloc(type, 0);
+    PyTypeObject* type = NULL;
+    Set_PyTypeObject_Macro(type, PyConduit_Node_TYPE);
+    PyConduit_Node *retval = (PyConduit_Node*)PyType_GenericAlloc(type,0);
     retval->node = node;
     retval->python_owns = python_owns;
     return ((PyObject*)retval);
@@ -7286,7 +7499,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
     // like json and yaml cases, identify if we are 
     // a numeric case, or a more general case
     
-    Py_ssize_t list_size = PyList_GET_SIZE(value);
+    Py_ssize_t list_size = PyList_Size(value);
 
     if(list_size == 0)
     {
@@ -7301,7 +7514,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
     
     for(Py_ssize_t idx=0; idx < list_size && homogenous_numeric; idx++)
     {
-        PyObject *py_entry = PyList_GET_ITEM(value, idx);
+        PyObject *py_entry = PyList_GetItem(value, idx);
         if (PyInt_Check(py_entry) || PyLong_Check(py_entry))
         {
             // int64 still ok
@@ -7325,7 +7538,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
             int64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < list_size; idx++)
             {
-                PyObject *py_entry = PyList_GET_ITEM(value, idx);
+                PyObject *py_entry = PyList_GetItem(value, idx);
                 if (PyInt_Check(py_entry))
                 {
                     vals_ptr[idx] = (int64)PyInt_AsLong(py_entry);
@@ -7342,7 +7555,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
             float64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < list_size; idx++)
             {
-                PyObject *py_entry = PyList_GET_ITEM(value, idx);
+                PyObject *py_entry = PyList_GetItem(value, idx);
 
                 if (PyInt_Check(py_entry))
                 {
@@ -7354,7 +7567,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
                 }
                 else // float
                 {
-                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                    vals_ptr[idx] = (float64)PyFloat_AsDouble(py_entry);
                 }
             }
         }
@@ -7366,7 +7579,7 @@ PyConduit_Node_Set_From_Python_List(Node &node,
         ok = true;
         for(Py_ssize_t idx=0; idx < list_size && ok; idx++)
         {
-            PyObject *py_entry = PyList_GET_ITEM(value, idx);
+            PyObject *py_entry = PyList_GetItem(value, idx);
             Node &cld = node.append();
             if( PyConduit_Node_Set_From_Python(cld,py_entry) != 0 )
             {
@@ -7391,7 +7604,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
     // a numeric case, or a more general case
     
     
-    Py_ssize_t tuple_size = PyTuple_GET_SIZE(value);
+    Py_ssize_t tuple_size = PyTuple_Size(value);
     
     if(tuple_size == 0)
     {
@@ -7406,7 +7619,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
     
     for(Py_ssize_t idx=0; idx < tuple_size && homogenous_numeric; idx++)
     {
-        PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+        PyObject *py_entry = PyTuple_GetItem(value, idx);
         if (PyInt_Check(py_entry) || PyLong_Check(py_entry))
         {
             // int64 still ok
@@ -7432,7 +7645,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
             int64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < tuple_size; idx++)
             {
-                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+                PyObject *py_entry = PyTuple_GetItem(value, idx);
                 if (PyInt_Check(py_entry))
                 {
                     vals_ptr[idx] = (int64)PyInt_AsLong(py_entry);
@@ -7449,7 +7662,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
             float64 *vals_ptr = node.value();
             for(Py_ssize_t idx=0; idx < tuple_size; idx++)
             {
-                PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+                PyObject *py_entry = PyTuple_GetItem(value, idx);
 
                 if (PyInt_Check(py_entry))
                 {
@@ -7461,7 +7674,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
                 }
                 else // float
                 {
-                    vals_ptr[idx] = (float64)PyFloat_AS_DOUBLE(py_entry);
+                    vals_ptr[idx] = (float64)PyFloat_AsDouble(py_entry);
                 }
             }
         }
@@ -7473,7 +7686,7 @@ PyConduit_Node_Set_From_Python_Tuple(Node &node,
         ok = true;
         for(Py_ssize_t idx=0; idx < tuple_size && ok; idx++)
         {
-            PyObject *py_entry = PyTuple_GET_ITEM(value, idx);
+            PyObject *py_entry = PyTuple_GetItem(value, idx);
             Node &cld = node.append();
             if( PyConduit_Node_Set_From_Python(cld,py_entry) != 0 )
             {
@@ -7529,9 +7742,8 @@ PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
 
         // get unicode data and construct a python unicode object from it
         void *unicode_buffer_ptr = PyArray_GETPTR1(py_arr,i);
-        int unicode_str_len = ((int)(buffer_len)) / 4;
         PyObject *py_temp_unicode = PyUnicode_From_UTF32_Unicode_Buffer((const char*)unicode_buffer_ptr,
-                                                                        unicode_str_len);
+                                                                        buffer_len);
             
         if(py_temp_unicode == NULL)
         {
@@ -7555,7 +7767,7 @@ PyConduit_Node_Set_From_Numpy_Unicode_Array(Node &node,
         }
 
         // copy data into conduit node
-        cld.set_char8_str(PyBytes_AS_STRING(py_temp_bytes));
+        cld.set_char8_str(PyBytes_AsString(py_temp_bytes));
         // cleanup temp bytes
         Py_DECREF(py_temp_bytes);
     }
@@ -7609,7 +7821,7 @@ PyConduit_Node_Set_From_Python(Node &node,
     }
     else if (PyFloat_Check(value))
     {
-        node = PyFloat_AS_DOUBLE(value);
+      node = PyFloat_AsDouble(value);
     }
     else if (PyArray_Check(value))
     {
@@ -8070,7 +8282,22 @@ static PyMethodDef PyConduit_Endianness_METHODS[] =
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyConduit_Endianness_SLOTS[]  = {
+  {Py_tp_methods,        (void*) PyConduit_Endianness_METHODS},
+  {0,0},
+};
 
+static PyType_Spec PyConduit_Endianness_SPEC = 
+{
+   "Endianness",               /* tp_name */
+   0,                          /* tp_basicsize */
+   0,                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT,         /* tp_flags */
+   PyConduit_Endianness_SLOTS, /* tp_slots */
+};
+
+#else
 static PyTypeObject PyConduit_Endianness_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "Endianness",
@@ -8123,26 +8350,9 @@ static PyTypeObject PyConduit_Endianness_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
-
-
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-// Module Init Code
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-
-struct module_state {
-    PyObject *error;
-};
-
-//---------------------------------------------------------------------------//
-#if defined(IS_PY3K)
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-#else
-#define GETSTATE(m) (&_state)
-static struct module_state _state;
 #endif
-//---------------------------------------------------------------------------//
+
+
 
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
@@ -8153,6 +8363,14 @@ static int
 conduit_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_VISIT(GETSTATE(m)->PyConduit_DataType_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_Generator_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_Schema_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_NodeIterator_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_Node_TYPE);
+    Py_VISIT(GETSTATE(m)->PyConduit_Endianness_TYPE);
+    #endif
     return 0;
 }
 
@@ -8161,6 +8379,13 @@ static int
 conduit_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_CLEAR(GETSTATE(m)->PyConduit_DataType_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_Generator_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_Schema_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_NodeIterator_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyConduit_Endianness_TYPE);
+    #endif
     return 0;
 }
 
@@ -8187,6 +8412,46 @@ static struct PyModuleDef conduit_python_module_def =
 #define PY_MODULE_INIT_RETURN_ERROR return NULL
 #else
 #define PY_MODULE_INIT_RETURN_ERROR return
+#endif
+
+//---------------------------------------------------------------------------//
+// This macro allows register a type whether we are using heap- or static-
+// allocated Python types
+//---------------------------------------------------------------------------//
+#define CONDUIT_SPEC_OBJECT(name) PyConduit_##name##_SPEC
+#define CONDUIT_TYPE_OBJECT(name) PyConduit_##name##_TYPE
+#define CONDUIT_STRINGIFY(x) #x
+#define CONDUIT_TOSTRING(x) CONDUIT_STRINGIFY(x)
+
+#ifdef Py_LIMITED_API
+
+#define ADD_TYPE(module, name)                                                                                  \
+do {                                                                                                            \
+    module_state* state = GETSTATE(module);                                                                     \
+    PyType_Spec* spec = &(CONDUIT_SPEC_OBJECT(name));                                                           \
+    state->CONDUIT_TYPE_OBJECT(name) = (PyTypeObject *)PyType_FromModuleAndSpec((PyObject*)module, spec, NULL); \
+    if (state->CONDUIT_TYPE_OBJECT(name) == NULL)                                                               \
+    {                                                                                                           \
+       PY_MODULE_INIT_RETURN_ERROR;                                                                             \
+    }                                                                                                           \
+    if (PyModule_AddType((PyObject*)module,state->CONDUIT_TYPE_OBJECT(name)) < 0)                               \
+    {                                                                                                           \
+       PY_MODULE_INIT_RETURN_ERROR;                                                                             \
+    }                                                                                                           \
+} while (0) 
+#else
+
+#define ADD_TYPE(module, name)                                      \
+do {                                                                \
+    if (PyType_Ready(&CONDUIT_TYPE_OBJECT(name)) < 0)               \
+    {                                                               \
+        PY_MODULE_INIT_RETURN_ERROR;                                \
+    }                                                               \
+    Py_INCREF(&CONDUIT_TYPE_OBJECT(name));                          \
+    PyModule_AddObject(module,                                      \
+                       CONDUIT_TOSTRING(name),                      \
+                       (PyObject*)&CONDUIT_TYPE_OBJECT(name))  ;    \
+} while (0) 
 #endif
 //---------------------------------------------------------------------------//
 
@@ -8234,92 +8499,12 @@ void CONDUIT_PYTHON_API initconduit_python(void)
     // init our custom types
     //-----------------------------------------------------------------------//
 
-    if (PyType_Ready(&PyConduit_DataType_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Schema_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Generator_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_NodeIterator_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Node_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-    if (PyType_Ready(&PyConduit_Endianness_TYPE) < 0)
-    {
-        PY_MODULE_INIT_RETURN_ERROR;
-    }
-
-
-    //-----------------------------------------------------------------------//
-    // add DataType
-    //-----------------------------------------------------------------------//
-    
-    Py_INCREF(&PyConduit_DataType_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "DataType",
-                       (PyObject*)&PyConduit_DataType_TYPE);
-    //-----------------------------------------------------------------------//
-    // add Schema
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Schema_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Schema",
-                       (PyObject*)&PyConduit_Schema_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Generator
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Generator_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Generator",
-                       (PyObject*)&PyConduit_Generator_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add NodeIterator
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_NodeIterator_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "NodeIterator",
-                       (PyObject*)&PyConduit_NodeIterator_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Node
-    //-----------------------------------------------------------------------//
-
-    Py_INCREF(&PyConduit_Node_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Node",
-                       (PyObject*)&PyConduit_Node_TYPE);
-
-    //-----------------------------------------------------------------------//
-    // add Endianness
-    //-----------------------------------------------------------------------//
-
-
-    Py_INCREF(&PyConduit_Endianness_TYPE);
-    PyModule_AddObject(conduit_module,
-                       "Endianness",
-                       (PyObject*)&PyConduit_Endianness_TYPE);
-
-
+    ADD_TYPE(conduit_module, DataType);
+    ADD_TYPE(conduit_module, Schema);
+    ADD_TYPE(conduit_module, Generator);
+    ADD_TYPE(conduit_module, NodeIterator);
+    ADD_TYPE(conduit_module, Node);
+    ADD_TYPE(conduit_module, Endianness);
 
     static void *PyConduit_API[PyConduit_API_number_of_entries];
 
@@ -8339,10 +8524,19 @@ void CONDUIT_PYTHON_API initconduit_python(void)
 
     // req setup for numpy
     import_array();
+
+#ifdef Py_LIMITED_API
+    GLOBAL_MODULE = conduit_module;
+#endif
     
 #if defined(IS_PY3K)
     return conduit_module;
 #endif
 
 }
+#undef ADD_TYPE
+#undef CONDUIT_TYPE_OBJECT
+#undef CONDUIT_SPEC_OBJECT
+#undef CONDUIT_STRINGIFY
+#undef CONDUIT_TOSTRING
 

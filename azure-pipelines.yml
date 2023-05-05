@@ -71,6 +71,7 @@ stages:
           ENABLE_MPI: OFF
           ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: OFF
+          ENABLE_OPENMP: OFF
           ENABLE_HDF5: OFF
           ENABLE_HDF5_COMPAT: ON
           HDF5_SPEC: "hdf5~mpi"
@@ -96,6 +97,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: ON
           HDF5_SPEC: "hdf5~mpi"
@@ -123,6 +125,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: OFF
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: ON
           HDF5_SPEC: "hdf5~mpi"
@@ -150,6 +153,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: ON
           HDF5_SPEC: "hdf5~mpi"
@@ -176,6 +180,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: ON
           HDF5_SPEC: "hdf5~mpi"
@@ -202,6 +207,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: OFF
           HDF5_SPEC: "hdf5@1.10.7~mpi"
@@ -228,6 +234,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: OFF
           HDF5_SPEC: "hdf5@1.12.0~mpi"
@@ -256,6 +263,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: OFF
           HDF5_SPEC: "hdf5@1.14.0~mpi"
@@ -284,6 +292,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: OFF
           HDF5_SPEC: "hdf5@1.14.0~mpi"
@@ -299,6 +308,36 @@ stages:
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
+        # TODO: Need to solve spack mysterty to enable this
+        # ub_18_shared_py311_cmake_3_26_hdf5_1_14:
+        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        #   COMPILER_CC: gcc
+        #   COMPILER_CXX: g++
+        #   COMPILER_FC: gfortran
+        #   COMPILER_SPEC: gcc
+        #   FORCE_COMPILERS: OFF
+        #   BUILD_SHARED_LIBS: ON
+        #   CMAKE_BUILD_TYPE: Debug
+        #   ENABLE_COVERAGE: OFF
+        #   ENABLE_MPI: ON
+        #   ENABLE_DOCS: ON
+        #   ENABLE_RELAY_WEBSERVER: ON
+        #   ENABLE_OPENMP: ON
+        #   ENABLE_HDF5: ON
+        #   ENABLE_HDF5_COMPAT: OFF
+        #   HDF5_SPEC: "hdf5@1.14.0~mpi"
+        #   # silo requires hdf5 1.10, so for now we can't
+        #   # test both silo and hdf5 1.14 support
+        #   ENABLE_SILO: OFF
+        #   ENABLE_ADIOS: OFF
+        #   ENABLE_PARMETIS: ON
+        #   ENABLE_PYTHON: ON
+        #   ENABLE_PYTHON2: OFF
+        #   PYTHON_VERSION: 3.11.2
+        #   CMAKE_VERSION: 3.26.0
+        #   BLT_CXX_STD: c++11
+        #   BLT_ENABLE_FIND_MPI: ON
+
         ub_18_shared_mpi_compilers_direct_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: mpicc
@@ -311,6 +350,8 @@ stages:
           ENABLE_COVERAGE: OFF
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
+          ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: ON
           HDF5_SPEC: "hdf5~mpi"
@@ -334,6 +375,7 @@ stages:
           ENABLE_MPI: ON
           ENABLE_DOCS: ON
           ENABLE_RELAY_WEBSERVER: ON
+          ENABLE_OPENMP: ON
           ENABLE_HDF5: ON
           ENABLE_HDF5_COMPAT: ON
           HDF5_SPEC: "hdf5~mpi"
@@ -394,6 +436,9 @@ stages:
            # docs
            if [ $ENABLE_DOCS  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+doc"; fi
            if [ $ENABLE_DOCS  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~doc"; fi
+           # openmp
+           if [ $ENABLE_OPENMP  = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC}+openmp"; fi
+           if [ $ENABLE_OPENMP  = 'OFF' ]; then export SPACK_SPEC="${SPACK_SPEC}~openmp"; fi
            # package ver selections and extra tweaks
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            # python constraints
@@ -631,6 +676,7 @@ stages:
           echo $PATH
           which cmake
           mv install bananas
+          # TODO: cmake_ghost_of_location_past.py relocate
           cd bananas/examples/conduit/using-with-cmake
           rm -rf _test_build
           mkdir _test_build

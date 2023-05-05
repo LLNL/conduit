@@ -4,6 +4,18 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+#### General
+- Added Python 3 Stable ABI compatibility (Py_LIMITED_API) build support. Enabled by default when building against Python 3.11 or newer.
+
+### Fixed
+
+#### General
+- Added explicit control for OpenMP Features with CMake `ENABLE_OPENMP` option (default = OFF). Adds `CONDUIT_USE_OPENMP` define to `conduit_config.h`. Guards all use of OpenMP with `CONDUIT_USE_OPENMP`. Prior to these guards, downstream users could enable OpenMP and macros could evaluate inconsistently with how Conduit was built causing OpenMP related linking errors.
+
 ## [0.8.7] - Released 2023-03-23
 
 ### Added

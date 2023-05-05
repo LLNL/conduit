@@ -49,6 +49,8 @@
 
 #cmakedefine CONDUIT_USE_CALIPER
 
+#cmakedefine CONDUIT_USE_OPENMP
+
 #endif
 
 
