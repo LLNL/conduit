@@ -69,6 +69,34 @@ using namespace conduit::relay::web;
 #define PyVarObject_TAIL
 #endif
 
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// Module Init Code
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+struct module_state {
+    PyObject *error;
+    #ifdef Py_LIMITED_API
+    PyTypeObject* PyRelay_Web_WebServer_TYPE;
+    PyTypeObject* PyRelay_Web_WebSocket_TYPE;
+    #endif
+};
+
+//---------------------------------------------------------------------------//
+#if defined(IS_PY3K)
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module.
+PyObject* GLOBAL_MODULE = NULL;
+#endif
+//---------------------------------------------------------------------------//
+
 
 //---------------------------------------------------------------------------//
 struct PyRelay_Web_WebServer
@@ -109,7 +137,7 @@ PyRelay_Web_WebServer_new(PyTypeObject *type,
                           PyObject*, // args -- unused
                           PyObject*) // kwds -- unused
 {
-    PyRelay_Web_WebServer *self = (PyRelay_Web_WebServer*)type->tp_alloc(type, 0);
+    PyRelay_Web_WebServer *self = (PyRelay_Web_WebServer*)PyType_GenericAlloc(type, 0);
 
     if (self)
     {
@@ -128,7 +156,12 @@ PyRelay_Web_WebServer_dealloc(PyRelay_Web_WebServer *self)
         delete self->webserver;
     }
     
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free);
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 
@@ -523,7 +556,26 @@ static PyMethodDef PyRelay_Web_WebServer_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+#ifdef Py_LIMITED_API
+static PyType_Slot PyRelay_Web_WebServer_SLOTS[]  = {
+  {Py_tp_dealloc,        (void*) PyRelay_Web_WebServer_dealloc},
+  {Py_tp_methods,        (void*) PyRelay_Web_WebServer_METHODS},
+  {Py_tp_init,           (void*) PyRelay_Web_WebServer_init},
+  {Py_tp_new,            (void*) PyRelay_Web_WebServer_new},
+  {Py_tp_doc,            (void*) "Conduit Relay WebServer objects"},
+  {0,0},
+};
 
+static PyType_Spec PyRelay_Web_WebServer_SPEC = 
+{
+   "WebServer",                                 /* tp_name */
+   sizeof(PyRelay_Web_WebServer),               /* tp_basicsize */
+   0,                                           /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,    /* tp_flags */
+   PyRelay_Web_WebServer_SLOTS,                 /* tp_slots */
+};
+
+#else
 
 static PyTypeObject PyRelay_Web_WebServer_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
@@ -577,6 +629,7 @@ static PyTypeObject PyRelay_Web_WebServer_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
@@ -605,7 +658,7 @@ PyRelay_Web_WebSocket_new(PyTypeObject *type,
                           PyObject*, // args -- unused
                           PyObject*) // kwds -- unused
 {
-    PyRelay_Web_WebSocket *self = (PyRelay_Web_WebSocket*)type->tp_alloc(type, 0);
+    PyRelay_Web_WebSocket *self = (PyRelay_Web_WebSocket*)PyType_GenericAlloc(type, 0);
 
     if (self)
     {
@@ -621,7 +674,12 @@ PyRelay_Web_WebSocket_dealloc(PyRelay_Web_WebSocket *self)
 {
     // cpp "socket" pointer is owned by the parent web server, no
     // need to clean them up from python
+    #ifdef Py_LIMITED_API
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free);
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 
@@ -718,10 +776,28 @@ static PyMethodDef PyRelay_Web_WebSocket_METHODS[] = {
 };
 
 
+#ifdef Py_LIMITED_API
+static PyType_Slot PyRelay_Web_WebSocket_SLOTS[]  = {
+  {Py_tp_dealloc,        (void*) PyRelay_Web_WebSocket_dealloc},
+  {Py_tp_methods,        (void*) PyRelay_Web_WebSocket_METHODS},
+  {Py_tp_init,           (void*) PyRelay_Web_WebSocket_init},
+  {Py_tp_new,            (void*) PyRelay_Web_WebSocket_new},
+  {Py_tp_doc,            (void*) "Conduit Relay WebSocket objects"},
+  {0,0},
+};
+
+static PyType_Spec PyRelay_Web_WebSocket_SPEC = 
+{
+   "WebSocket",                              /* tp_name */
+   sizeof(PyRelay_Web_WebSocket),            /* tp_basicsize */
+   0,                                        /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* tp_flags */
+   PyRelay_Web_WebSocket_SLOTS,              /* tp_slots */
+};
+
+#else
 
 //---------------------------------------------------------------------------//
-
-
 static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "WebSocket",
@@ -772,7 +848,7 @@ static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
    0
    PyVarObject_TAIL
 };
-
+#endif
 
 //---------------------------------------------------------------------------//
 // Leave commented until we need to use.
@@ -790,9 +866,17 @@ static PyTypeObject PyRelay_Web_WebSocket_TYPE = {
 static PyObject *
 PyRelay_Web_WebSocket_python_wrap(WebSocket *websocket)
 {
-    PyTypeObject *type = (PyTypeObject*)&PyRelay_Web_WebSocket_TYPE;
+    PyTypeObject *type = NULL;
 
-    PyRelay_Web_WebSocket *retval = (PyRelay_Web_WebSocket*)type->tp_alloc(type, 0);
+    #ifdef Py_LIMITED_API
+    module_state* state = GETSTATE(GLOBAL_MODULE);
+    assert(state != NULL);
+    type = state->PyRelay_Web_WebSocket_TYPE;
+    #else
+    type = (PyTypeObject*)&PyRelay_Web_WebSocket_TYPE;
+    #endif
+
+    PyRelay_Web_WebSocket *retval = (PyRelay_Web_WebSocket*)PyType_GenericAlloc(type, 0);
     retval->websocket = websocket;
     return ((PyObject*)retval);
 }
@@ -809,24 +893,6 @@ static PyMethodDef relay_web_python_funcs[] =
     {NULL, NULL, METH_VARARGS, NULL}
 };
 
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-// Module Init Code
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-
-struct module_state {
-    PyObject *error;
-};
-
-//---------------------------------------------------------------------------//
-#if defined(IS_PY3K)
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-#else
-#define GETSTATE(m) (&_state)
-static struct module_state _state;
-#endif
-//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
@@ -837,6 +903,10 @@ static int
 relay_web_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_VISIT(GETSTATE(m)->PyRelay_Web_WebServer_TYPE);
+    Py_VISIT(GETSTATE(m)->PyRelay_Web_WebSocket_TYPE);
+    #endif
     return 0;
 }
 
@@ -845,6 +915,10 @@ static int
 relay_web_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_CLEAR(GETSTATE(m)->PyRelay_Web_WebServer_TYPE);
+    Py_CLEAR(GETSTATE(m)->PyRelay_Web_WebSocket_TYPE);
+    #endif
     return 0;
 }
 
@@ -927,6 +1001,28 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_web_python(void)
     // init our custom types
     //-----------------------------------------------------------------------//
 
+ #ifdef Py_LIMITED_API
+    module_state* state = GETSTATE(relay_web_module);
+    state->PyRelay_Web_WebServer_TYPE = (PyTypeObject *)PyType_FromModuleAndSpec((PyObject*)relay_web_module, &PyRelay_Web_WebServer_SPEC, NULL);
+    if (state->PyRelay_Web_WebServer_TYPE == NULL)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    if (PyModule_AddType((PyObject*)relay_web_module,state->PyRelay_Web_WebServer_TYPE) < 0)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    
+    state->PyRelay_Web_WebSocket_TYPE = (PyTypeObject *)PyType_FromModuleAndSpec((PyObject*)relay_web_module, &PyRelay_Web_WebSocket_SPEC, NULL);
+    if (state->PyRelay_Web_WebSocket_TYPE == NULL)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    if (PyModule_AddType((PyObject*)relay_web_module,state->PyRelay_Web_WebSocket_TYPE) < 0)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+#else
     if (PyType_Ready(&PyRelay_Web_WebServer_TYPE) < 0)
     {
         PY_MODULE_INIT_RETURN_ERROR;
@@ -939,7 +1035,11 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_web_python(void)
     PyModule_AddObject(relay_web_module,
                        "WebServer",
                        (PyObject*)&PyRelay_Web_WebServer_TYPE);
+#endif
 
+#ifdef Py_LIMITED_API
+  GLOBAL_MODULE = relay_web_module;
+#endif
 #if defined(IS_PY3K)
     return relay_web_module;
 #endif

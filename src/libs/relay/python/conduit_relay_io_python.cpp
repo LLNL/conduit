@@ -69,6 +69,59 @@ using namespace conduit::relay::io;
 #define PyVarObject_TAIL
 #endif
 
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+// Module Init Code
+//---------------------------------------------------------------------------//
+//---------------------------------------------------------------------------//
+
+struct module_state {
+    PyObject *error;
+    #ifdef Py_LIMITED_API
+    PyTypeObject* PyRelay_IOHandle_TYPE;
+    #endif
+};
+
+//---------------------------------------------------------------------------//
+#if defined(IS_PY3K)
+#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
+#else
+#define GETSTATE(m) (&_state)
+static struct module_state _state;
+#endif
+//---------------------------------------------------------------------------//
+#ifdef Py_LIMITED_API
+// A pointer to the initialized module.
+PyObject* GLOBAL_MODULE = NULL;
+
+static inline module_state *
+get_module_state()
+{
+    void *state = PyModule_GetState(GLOBAL_MODULE);
+    assert(state != NULL);
+    return (module_state *)state;
+}
+
+static inline module_state *
+get_state_from_type(PyTypeObject *tp)
+{
+    void *state = PyType_GetModuleState(tp);
+    assert(state != NULL);
+    return (module_state*)state;
+}
+#endif
+
+
+#ifdef Py_LIMITED_API
+
+#define Set_PyTypeObject_Macro(type,NAME)                \
+module_state* state = get_module_state();  \
+assert(state != NULL);                                   \
+type = state->NAME
+#else
+#define Set_PyTypeObject_Macro(type,NAME) type = (PyTypeObject*)&NAME
+#endif
+
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 // Begin Functions to help with Python 2/3 Compatibility.
@@ -114,7 +167,7 @@ PyRelay_IOHandle_new(PyTypeObject *type,
                      PyObject*, // args -- unused
                      PyObject*) // kwds -- unused
 {
-    PyRelay_IOHandle *self = (PyRelay_IOHandle*)type->tp_alloc(type, 0);
+    PyRelay_IOHandle *self = (PyRelay_IOHandle*)PyType_GenericAlloc(type, 0);
 
     if (self)
     {
@@ -132,8 +185,12 @@ PyRelay_IOHandle_dealloc(PyRelay_IOHandle *self)
     {
         delete self->handle;
     }
-    
+    #ifdef Py_LIMITED_API 
+    freefunc tp_free = (freefunc)PyType_GetSlot(Py_TYPE((PyObject*)self), Py_tp_free);
+    tp_free((PyObject*)self);
+    #else
     Py_TYPE(self)->tp_free((PyObject*)self);
+    #endif
 }
 
 //---------------------------------------------------------------------------//
@@ -574,8 +631,25 @@ static PyMethodDef PyRelay_IOHandle_METHODS[] = {
 
 //---------------------------------------------------------------------------//
 //---------------------------------------------------------------------------//
+#ifdef Py_LIMITED_API
+static PyType_Slot PyRelay_IOHandle_SLOTS[]  = {
+  {Py_tp_dealloc,        (void*) PyRelay_IOHandle_dealloc},
+  {Py_tp_methods,        (void*) PyRelay_IOHandle_METHODS},
+  {Py_tp_init,           (void*) PyRelay_IOHandle_init},
+  {Py_tp_new,            (void*) PyRelay_IOHandle_new},
+  {0,0},
+};
 
+static PyType_Spec PyRelay_IOHandle_SPEC = 
+{
+   "IOHandle",                                 /* tp_name */
+   sizeof(PyRelay_IOHandle),                   /* tp_basicsize */
+   0,                                          /* tp_itemsize */
+   Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,   /* tp_flags */
+   PyRelay_IOHandle_SLOTS,                     /* tp_slots */
+};
 
+#else
 static PyTypeObject PyRelay_IOHandle_TYPE = {
    PyVarObject_HEAD_INIT(NULL, 0)
    "IOHandle",
@@ -628,6 +702,7 @@ static PyTypeObject PyRelay_IOHandle_TYPE = {
    0  /* tp_version_tag */
    PyVarObject_TAIL
 };
+#endif
 
 
 //---------------------------------------------------------------------------//
@@ -969,24 +1044,6 @@ static PyMethodDef relay_io_python_funcs[] =
     {NULL, NULL, METH_VARARGS, NULL}
 };
 
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-// Module Init Code
-//---------------------------------------------------------------------------//
-//---------------------------------------------------------------------------//
-
-struct module_state {
-    PyObject *error;
-};
-
-//---------------------------------------------------------------------------//
-#if defined(IS_PY3K)
-#define GETSTATE(m) ((struct module_state*)PyModule_GetState(m))
-#else
-#define GETSTATE(m) (&_state)
-static struct module_state _state;
-#endif
-//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 // Extra Module Setup Logic for Python3
@@ -997,6 +1054,9 @@ static int
 relay_io_python_traverse(PyObject *m, visitproc visit, void *arg)
 {
     Py_VISIT(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_VISIT(GETSTATE(m)->PyRelay_IOHandle_TYPE);
+    #endif
     return 0;
 }
 
@@ -1005,6 +1065,9 @@ static int
 relay_io_python_clear(PyObject *m)
 {
     Py_CLEAR(GETSTATE(m)->error);
+    #ifdef Py_LIMITED_API
+    Py_CLEAR(GETSTATE(m)->PyRelay_IOHandle_TYPE);
+    #endif
     return 0;
 }
 
@@ -1088,6 +1151,19 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_io_python(void)
     // init our custom types
     //-----------------------------------------------------------------------//
 
+#ifdef Py_LIMITED_API
+    module_state* state = GETSTATE(relay_io_module);
+    state->PyRelay_IOHandle_TYPE = (PyTypeObject *)PyType_FromModuleAndSpec((PyObject*)relay_io_module, &PyRelay_IOHandle_SPEC, NULL);
+    if (state->PyRelay_IOHandle_TYPE == NULL)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+    if (PyModule_AddType((PyObject*)relay_io_module,state->PyRelay_IOHandle_TYPE) < 0)
+    {
+       PY_MODULE_INIT_RETURN_ERROR;
+    }
+#else
+
     if (PyType_Ready(&PyRelay_IOHandle_TYPE) < 0)
     {
         PY_MODULE_INIT_RETURN_ERROR;
@@ -1101,7 +1177,11 @@ CONDUIT_RELAY_PYTHON_API void initconduit_relay_io_python(void)
     PyModule_AddObject(relay_io_module,
                        "IOHandle",
                        (PyObject*)&PyRelay_IOHandle_TYPE);
+#endif
 
+#ifdef Py_LIMITED_API
+    GLOBAL_MODULE = relay_io_module;
+#endif
 #if defined(IS_PY3K)
     return relay_io_module;
 #endif

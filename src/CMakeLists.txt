@@ -33,6 +33,7 @@ option(ENABLE_PYTHON      "Build Python Support"        OFF)
 option(ENABLE_FORTRAN     "Build Fortran Support"       OFF)
 
 option(ENABLE_MPI         "Build MPI Support"           OFF)
+option(ENABLE_OPENMP      "Build OpenMP Support"        OFF)
 
 # Add another option that provides extra 
 # control over conduit tests for cases where 

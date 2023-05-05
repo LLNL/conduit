@@ -23,6 +23,10 @@ if(NOT ENABLE_FOLDERS)
     set(ENABLE_FOLDERS TRUE CACHE STRING "")
 endif()
 
+################################################################
+# make sure BLT exports its tpl targets.
+################################################################
+set(BLT_EXPORT_THIRDPARTY ON CACHE BOOL "")
 
 ################################################################
 # init blt using BLT_SOURCE_DIR
@@ -90,6 +94,28 @@ if(ENABLE_MPI)
     endif()
 endif()
 
+if(ENABLE_OPENMP)
+    # adjust OpenMP from BLT
+    if( ${CMAKE_VERSION} VERSION_LESS "3.9.0" )
+        # older cmake, we use BLT's openmp support, it uses 
+        # the name openmp
+        set(conduit_blt_openmp_deps openmp CACHE STRING "")
+        set(CONDUIT_USE_CMAKE_OPENMP_TARGETS FALSE CACHE BOOL "")
+    else()
+        if(TARGET OpenMP::OpenMP_CXX)
+            set(CONDUIT_USE_CMAKE_OPENMP_TARGETS TRUE CACHE BOOL "")
+            message(STATUS "Using OpenMP CMake imported target: OpenMP::OpenMP_CXX")
+            # newer cmake we openmp targets directly
+            set(conduit_blt_openmp_deps OpenMP::OpenMP_CXX CACHE STRING "")
+        else()
+            message(FATAL_ERROR "Cannot use CMake imported targets for OpenMP."
+                                "(CMake > 3.9, ENABLE_OPENMP == ON, but "
+                                "OpenMP::OpenMP_CXX CMake target is missing.)")
+        endif()
+    endif()
+endif()
+
+
 ################################################################
 # apply folders to a few ungrouped blt targets
 ################################################################
@@ -117,3 +143,36 @@ endif()
 if(TARGET style)
     blt_set_target_folder( TARGET style FOLDER blt)
 endif()
+
+
+####################################################
+# finish export of blt builtin tpl targets
+####################################################
+
+#
+# Note: With newer version of cmake, we are using bonafide
+# CMake targets for these, so these exports wont be used
+#
+
+set(BLT_TPL_DEPS_EXPORTS)
+
+if(ENABLE_MPI AND ENABLE_FIND_MPI AND NOT CONDUIT_USE_CMAKE_MPI_TARGETS)
+    list(APPEND BLT_TPL_DEPS_EXPORTS mpi)
+endif()
+
+if(ENABLE_OPENMP AND NOT CONDUIT_USE_CMAKE_OPENMP_TARGETS)
+    list(APPEND BLT_TPL_DEPS_EXPORTS openmp)
+endif()
+
+foreach(dep ${BLT_TPL_DEPS_EXPORTS})
+    # If the target is EXPORTABLE, add it to the export set
+    get_target_property(_is_imported ${dep} IMPORTED)
+    if(NOT ${_is_imported})
+        install(TARGETS              ${dep}
+                EXPORT               conduit
+                DESTINATION          lib)
+        # Namespace target to avoid conflicts
+        set_target_properties(${dep} PROPERTIES EXPORT_NAME conduit::blt_tpl_exports_${dep})
+    endif()
+endforeach()
+
