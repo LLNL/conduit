@@ -840,6 +840,16 @@ read_variable_domain(const T *var_ptr,
         assign_values<int>(var_ptr->nvals, var_ptr->nels, 
                            var_ptr->vals, field["values"]);
     }
+    else if (datatype == DB_SHORT)
+    {
+        assign_values<short>(var_ptr->nvals, var_ptr->nels, 
+                             var_ptr->vals, field["values"]);
+    }
+    else if (datatype == DB_LONG)
+    {
+        assign_values<long>(var_ptr->nvals, var_ptr->nels, 
+                            var_ptr->vals, field["values"]);
+    }
     else if (datatype == DB_FLOAT)
     {
         assign_values<float>(var_ptr->nvals, var_ptr->nels, 
@@ -850,9 +860,29 @@ read_variable_domain(const T *var_ptr,
         assign_values<double>(var_ptr->nvals, var_ptr->nels,
                               var_ptr->vals, field["values"]);
     }
+    else if (datatype == DB_CHAR)
+    {
+        // implementation taken from assign_values
+        if (var_ptr->nvals == 1)
+        {
+            field["values"].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
+        }
+        else
+        {
+            for (int i = 0; i < var_ptr->nvals; i ++)
+            {
+                // need to put the values under a vector component
+                field["values"][std::to_string(i)].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
+            }
+        }
+    }
+    else if (datatype == DB_LONG_LONG)
+    {
+        assign_values<long long>(var_ptr->nvals, var_ptr->nels,
+                                 var_ptr->vals, field["values"]);
+    }
     else
     {
-        // TODO do we want to support DB_CHAR and DB_VARIABLE? yes and others see teams chat with cyrus
         CONDUIT_ERROR("Unsupported type in " << datatype);
     }
 }
