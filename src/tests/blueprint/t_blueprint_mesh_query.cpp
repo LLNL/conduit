@@ -10,8 +10,10 @@
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mesh_kdtree.hpp"
 #include "conduit_log.hpp"
 
+#include <cmath>
 #include <set>
 #include <vector>
 #include <string>
@@ -19,6 +21,7 @@
 
 using namespace conduit;
 using namespace conduit::utils;
+using PointQuery = conduit::blueprint::mesh::utils::query::PointQuery;
 
 /// Testing Constants ///
 
@@ -191,7 +194,6 @@ TEST(conduit_blueprint_mesh_query, adjset_formats)
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_query, point_query)
 {
-    using PointQuery = conduit::blueprint::mesh::utils::query::PointQuery;
     constexpr int nx = 3, ny = 3, nz = 0;
     constexpr int npts = nx * ny;
     constexpr int domain0 = 0;
@@ -276,5 +278,266 @@ TEST(conduit_blueprint_mesh_query, point_query)
             EXPECT_EQ(res1[i], PointQuery::NotFound);
         }
     }
+}
 
+//---------------------------------------------------------------------------
+template <typename T>
+void make_coords_3d(T **coords, int dims[3])
+{
+    // Initialization.
+    int npts = dims[0] * dims[1] * dims[2];
+    for(int dim = 0; dim < 3; dim++)
+        coords[dim] = new T[npts];
+
+    // Make coordinates.
+    int idx = 0;
+    for(int k = 0; k < dims[2]; k++)
+    for(int j = 0; j < dims[1]; j++)
+    for(int i = 0; i < dims[0]; i++, idx++)
+    {
+        coords[0][idx] = i;
+        coords[1][idx] = j;
+        coords[2][idx] = k;
+    } 
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+void free_coords_3d(T **coords)
+{
+    delete [] coords[0];
+    delete [] coords[1];
+    delete [] coords[2];
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+void make_coords_2d(T **coords, int dims[2])
+{
+    // Initialization.
+    int npts = dims[0] * dims[1];
+    for(int dim = 0; dim < 2; dim++)
+        coords[dim] = new T[npts];
+
+    // Make coordinates.
+    int idx = 0;
+    for(int j = 0; j < dims[1]; j++)
+    for(int i = 0; i < dims[0]; i++, idx++)
+    {
+        coords[0][idx] = i;
+        coords[1][idx] = j;
+    } 
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+void free_coords_2d(T **coords)
+{
+    delete [] coords[0];
+    delete [] coords[1];
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+void kdtree_3d(int dims[3])
+{
+    // Initialization.
+    T *coords[3];
+    make_coords_3d(coords, dims);
+    int npts = dims[0] * dims[1] * dims[2];
+    
+    // Make sure we can identify all of the coordinates.
+    conduit::blueprint::mesh::utils::kdtree<T *, T, 3> search;
+    search.initialize(coords, npts);
+    int found, foundCount = 0;
+    for(int i = 0; i < npts; i++)
+    {
+        T pt[3];
+        pt[0] = coords[0][i];
+        pt[1] = coords[1][i];
+        pt[2] = coords[2][i];
+
+        found = search.findPoint(pt);
+        EXPECT_EQ(found, i);
+
+        foundCount += (found != search.NotFound) ? 1 : 0;
+    }
+    EXPECT_EQ(foundCount, npts);
+
+    // Make sure some bad points fail.
+    T badpt[] = {-1., -1., -1.};
+    found = search.findPoint(badpt);
+    EXPECT_EQ(found, search.NotFound);
+
+    free_coords_3d(coords);
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+void kdtree_2d(int dims[2])
+{
+    // Initialization.
+    T *coords[2];
+    make_coords_2d(coords, dims);
+    int npts = dims[0] * dims[1];
+
+    conduit::blueprint::mesh::utils::kdtree<T *, T, 2> search;
+    search.initialize(coords, npts);
+    int found, foundCount = 0;
+    for(int i = 0; i < npts; i++)
+    {
+        T pt[2];
+        pt[0] = coords[0][i];
+        pt[1] = coords[1][i];
+
+        found = search.findPoint(pt);
+        EXPECT_EQ(found, i);
+
+        foundCount += (found != search.NotFound) ? 1 : 0;
+    }
+    EXPECT_EQ(foundCount, npts);
+
+    // Make sure some bad points fail.
+    T badpt[] = {-1., -1.};
+    found = search.findPoint(badpt);
+    EXPECT_EQ(found, search.NotFound);
+
+    free_coords_2d(coords);
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+void single_domain_point_query_3d(int dims[3])
+{
+    // Initialization.
+    T *coords[3];
+    make_coords_3d(coords, dims);
+    int npts = dims[0] * dims[1] * dims[2];
+
+    // NOTE: We don't need the topology.
+    conduit::Node mesh;
+    mesh["coordsets/coords/type"] = "explicit";
+    mesh["coordsets/coords/values/x"].set_external(coords[0], npts);
+    mesh["coordsets/coords/values/y"].set_external(coords[1], npts);
+    mesh["coordsets/coords/values/z"].set_external(coords[2], npts);
+
+    // Make sure we can identify all of the coordinates.
+    PointQuery Q(mesh);
+    const int domain0 = 0;
+    for(int i = 0; i < npts; i++)
+    {
+        double pt[3];
+        pt[0] = coords[0][i];
+        pt[1] = coords[1][i];
+        pt[2] = coords[2][i];
+
+        Q.Add(domain0, pt);
+    }
+
+    // Add 1 bad point at the end.
+    double badpt[] = {-1., -1., -1.};
+    auto badIdx = Q.Add(domain0, badpt);
+
+    // Execute
+    Q.Execute("coords");
+
+    // The first npts query points should exist.
+    const auto &res = Q.Results(domain0);
+    for(int i = 0; i < npts; i++)
+    {
+        EXPECT_EQ(res[i], i);
+    }
+    // The last query point should not exist.
+    EXPECT_EQ(res[badIdx], Q.NotFound);
+
+    free_coords_3d(coords);
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+void single_domain_point_query_2d(int dims[2])
+{
+    // Initialization.
+    T *coords[2];
+    make_coords_2d(coords, dims);
+    int npts = dims[0] * dims[1];
+
+    // NOTE: We don't need the topology.
+    conduit::Node mesh;
+    mesh["coordsets/coords/type"] = "explicit";
+    mesh["coordsets/coords/values/x"].set_external(coords[0], npts);
+    mesh["coordsets/coords/values/y"].set_external(coords[1], npts);
+
+    // Make sure we can identify all of the coordinates.
+    PointQuery Q(mesh);
+    const int domain0 = 0;
+    for(int i = 0; i < npts; i++)
+    {
+        double pt[3];
+        pt[0] = coords[0][i];
+        pt[1] = coords[1][i];
+        pt[2] = 0.;
+
+        Q.Add(domain0, pt);
+    }
+
+    // Add 1 bad point at the end.
+    double badpt[] = {-1., -1., -1.};
+    auto badIdx = Q.Add(domain0, badpt);
+
+    // Execute
+    Q.Execute("coords");
+
+    // The first npts query points should exist.
+    const auto &res = Q.Results(domain0);
+    for(int i = 0; i < npts; i++)
+    {
+        EXPECT_EQ(res[i], i);
+    }
+    // The last query point should not exist.
+    EXPECT_EQ(res[badIdx], Q.NotFound);
+
+    free_coords_2d(coords);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_query, kdtree_3d)
+{
+    int dims[3]={30,30,30};
+    kdtree_3d<double>(dims);
+    kdtree_3d<float>(dims);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_query, kdtree_2d)
+{
+    int dims[2]={30,30};
+    kdtree_2d<double>(dims);
+    kdtree_2d<float>(dims);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_query, point_query_3d)
+{
+    // Pick dimensions that are larger than the search threshold so it will
+    // attempt accelerated search.
+    int dims[3];
+    dims[0] = 3 + static_cast<int>(pow(PointQuery::SEARCH_THRESHOLD, 1./3.));
+    dims[1] = dims[2] = dims[0];
+
+    single_domain_point_query_3d<double>(dims);
+    single_domain_point_query_3d<float>(dims);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_query, point_query_2d)
+{
+    // Pick dimensions that are larger than the search threshold so it will
+    // attempt accelerated search.
+    int dims[2];
+    dims[0] = 3 + static_cast<int>(pow(PointQuery::SEARCH_THRESHOLD, 1./2.));
+    dims[1] = dims[0];
+
+    single_domain_point_query_2d<double>(dims);
+    single_domain_point_query_2d<float>(dims);
 }

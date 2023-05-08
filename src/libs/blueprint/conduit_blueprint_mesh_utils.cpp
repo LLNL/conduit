@@ -30,6 +30,7 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_execution.hpp"
 #include "conduit_annotations.hpp"
+#include "conduit_blueprint_mesh_kdtree.hpp"
 
 // access one-to-many index types
 namespace o2mrelation = conduit::blueprint::o2mrelation;
@@ -2344,8 +2345,22 @@ PointQueryBase::QueryDomainIds() const
 
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
+
+// NOTE: The exect threshold could be platform-specific. This is in the ballpark.
+const int PointQuery::SEARCH_THRESHOLD = 25 * 25 * 25;
+
+//---------------------------------------------------------------------------
 PointQuery::PointQuery(const conduit::Node &mesh) : PointQueryBase(mesh)
 {
+    constexpr double DEFAULT_POINT_TOLERANCE = 1.e-9;
+    setPointTolerance(DEFAULT_POINT_TOLERANCE);
+}
+
+//---------------------------------------------------------------------------
+void
+PointQuery::setPointTolerance(double tolerance)
+{
+    m_pointTolerance = tolerance;
 }
 
 //---------------------------------------------------------------------------
@@ -2403,12 +2418,15 @@ PointQuery::FindPointsInDomain(const conduit::Node &mesh,
     // Get the coords that will be used for queries.
     const conduit::Node &cset = mesh.fetch_existing("coordsets/" + coordsetName);
     const conduit::Node *coords[3] = {nullptr, nullptr, nullptr};
+    conduit::index_t coordTypes[3];
     std::vector<std::string> axes(coordset::axes(cset));
-    int ci = 0;
+    int ndims = 0;
     const conduit::Node &cvals = cset.fetch_existing("values");
     for(const std::string &axis : axes)
     {
-        coords[ci++] = cvals.fetch_ptr(axis);
+        coords[ndims] = cvals.fetch_ptr(axis);
+        coordTypes[ndims] = coords[ndims]->dtype().id();
+        ndims++;
     }
     if(coords[0] == nullptr)
     {
@@ -2416,42 +2434,228 @@ PointQuery::FindPointsInDomain(const conduit::Node &mesh,
         // result is full of NotFound.
         return;
     }
+    // Check whether all of the coordinate types are the same.
+    bool sameTypes = true;
+    for(int i = 1; i < ndims; i++)
+        sameTypes &= (coordTypes[0] == coordTypes[i]);
 
-    // Look up each input query point in the coordset and record its point id
-    // or NotFound if we can't find it.
-    //
-    // TODO: Use acceleration structure for search.
-    conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
+    // Try an accelerated search first, if it applies.
+    if(!AcceleratedSearch(ndims, sameTypes, coords, coordTypes, input, result))
+    {
+        // AcceleratedSearch did not handle it. Do normal search.
+        NormalSearch(ndims, sameTypes, coords, coordTypes, input, result);
+    }
+}
+
+//---------------------------------------------------------------------------
+bool
+PointQuery::AcceleratedSearch(int ndims,
+    bool sameTypes,
+    const conduit::Node *coords[3],
+    const conduit::index_t coordTypes[3],
+    const std::vector<double> &input,
+    std::vector<int> &result) const
+{
+    bool handled = false;
+
+    conduit::index_t numInputPts = input.size() / 3;
     const double *input_ptr = &input[0];
     int *result_ptr = &result[0];
+    conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
+
 #if defined(CONDUIT_USE_OPENMP)
     using policy = conduit::execution::OpenMPExec;
 #else
     using policy = conduit::execution::SerialExec;
 #endif
-    conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
-    {
-        constexpr double EPS = 1.e-10;
-        const double *searchPt = &input_ptr[i * 3];
-        int found = NotFound;
-        for(conduit::index_t pi = 0; pi < numCoordsetPts; pi++)
-        {
-            double p[3] = {0., 0., 0.};
-            for(int ii = 0; ii < ci; ii++)
-                p[ii] = coords[ii] ? coords[ii]->as_double_accessor()[pi] : 0.;
 
-            double dx = p[0] - searchPt[0];
-            double dy = p[1] - searchPt[1];
-            double dz = p[2] - searchPt[2];
-            double dSquared = dx * dx + dy * dy + dz * dz;
-            if(dSquared < EPS)
+    // Special case a few large searches where the types are the same.
+    if(ndims == 3 &&
+       sameTypes &&
+       numCoordsetPts >= SEARCH_THRESHOLD &&
+       coordTypes[0] == conduit::DataType::FLOAT64_ID)
+    {
+        // 3D points are all doubles.
+        float64 *typedCoords[3];
+        typedCoords[0] = const_cast<float64 *>(coords[0]->as_float64_ptr());
+        typedCoords[1] = const_cast<float64 *>(coords[1]->as_float64_ptr());
+        typedCoords[2] = const_cast<float64 *>(coords[2]->as_float64_ptr());
+        conduit::blueprint::mesh::utils::kdtree<float64 *, float64, 3> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(m_pointTolerance);
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float64 searchPt[3] = {static_cast<float64>(input[i * 3 + 0]),
+                                   static_cast<float64>(input[i * 3 + 1]),
+                                   static_cast<float64>(input[i * 3 + 2])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    else if(ndims == 3 &&
+            sameTypes &&
+            numCoordsetPts >= SEARCH_THRESHOLD &&
+            coordTypes[0] == conduit::DataType::FLOAT32_ID)
+    {
+        // 3D points are all float.
+        float32 *typedCoords[3];
+        typedCoords[0] = const_cast<float32 *>(coords[0]->as_float32_ptr());
+        typedCoords[1] = const_cast<float32 *>(coords[1]->as_float32_ptr());
+        typedCoords[2] = const_cast<float32 *>(coords[2]->as_float32_ptr());
+        conduit::blueprint::mesh::utils::kdtree<float32 *, float32, 3> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(m_pointTolerance);
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float32 searchPt[3] = {static_cast<float32>(input[i * 3 + 0]),
+                                   static_cast<float32>(input[i * 3 + 1]),
+                                   static_cast<float32>(input[i * 3 + 2])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    // Large searches of 2D coordinates.
+    else if(ndims == 2 &&
+            sameTypes &&
+            numCoordsetPts >= SEARCH_THRESHOLD &&
+            coordTypes[0] == conduit::DataType::FLOAT64_ID)
+    {
+        // 2D points are all doubles.
+        float64 *typedCoords[2];
+        typedCoords[0] = const_cast<float64 *>(coords[0]->as_float64_ptr());
+        typedCoords[1] = const_cast<float64 *>(coords[1]->as_float64_ptr());
+        conduit::blueprint::mesh::utils::kdtree<float64 *, float64, 2> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(m_pointTolerance);
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float64 searchPt[2] = {static_cast<float64>(input[i * 3 + 0]),
+                                   static_cast<float64>(input[i * 3 + 1])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    else if(ndims == 2 &&
+            sameTypes &&
+            numCoordsetPts >= SEARCH_THRESHOLD &&
+            coordTypes[0] == conduit::DataType::FLOAT32_ID)
+    {
+        // 2D points are all float.
+        float32 *typedCoords[2];
+        typedCoords[0] = const_cast<float32 *>(coords[0]->as_float32_ptr());
+        typedCoords[1] = const_cast<float32 *>(coords[1]->as_float32_ptr());
+        conduit::blueprint::mesh::utils::kdtree<float32 *, float32, 2> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(m_pointTolerance);
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float32 searchPt[2] = {static_cast<float32>(input[i * 3 + 0]),
+                                   static_cast<float32>(input[i * 3 + 1])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    return handled;
+}
+
+//---------------------------------------------------------------------------
+bool
+PointQuery::NormalSearch(int ndims,
+    bool sameTypes,
+    const conduit::Node *coords[3],
+    const conduit::index_t coordTypes[3],
+    const std::vector<double> &input,
+    std::vector<int> &result) const
+{
+    bool handled = false;
+
+    conduit::index_t numInputPts = input.size() / 3;
+    const double *input_ptr = &input[0];
+    int *result_ptr = &result[0];
+    conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
+    double EPS_SQ = m_pointTolerance * m_pointTolerance;
+
+#if defined(CONDUIT_USE_OPENMP)
+    using policy = conduit::execution::OpenMPExec;
+#else
+    using policy = conduit::execution::SerialExec;
+#endif
+
+    // Back up to a brute force search
+    if(ndims == 3)
+    {
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            const double *searchPt = &input_ptr[i * 3];
+            int found = NotFound;
+            const auto x = coords[0]->as_double_accessor();
+            const auto y = coords[1]->as_double_accessor();
+            const auto z = coords[2]->as_double_accessor();
+            for(conduit::index_t ptid = 0; ptid < numCoordsetPts; ptid++)
             {
-                found = static_cast<int>(pi);
-                break;
+                double dx = x[ptid] - searchPt[0];
+                double dy = y[ptid] - searchPt[1];
+                double dz = z[ptid] - searchPt[2];
+                double dSquared = dx * dx + dy * dy + dz * dz;
+                if(dSquared < EPS_SQ)
+                {
+                    found = static_cast<int>(ptid);
+                    break;
+                }
             }
-        }
-        result_ptr[i] = found;
-    });
+            result_ptr[i] = found;
+        });
+        handled = true;
+    }
+    else if(ndims == 2)
+    {
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            const double *searchPt = &input_ptr[i * 3];
+            int found = NotFound;
+            const auto x = coords[0]->as_double_accessor();
+            const auto y = coords[1]->as_double_accessor();
+            for(conduit::index_t ptid = 0; ptid < numCoordsetPts; ptid++)
+            {
+                double dx = x[ptid] - searchPt[0];
+                double dy = y[ptid] - searchPt[1];
+                double dSquared = dx * dx + dy * dy;
+                if(dSquared < EPS_SQ)
+                {
+                    found = static_cast<int>(ptid);
+                    break;
+                }
+            }
+            result_ptr[i] = found;
+        });
+        handled = true;
+    }
+    else if(ndims == 1)
+    {
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            const double *searchPt = &input_ptr[i * 3];
+            int found = NotFound;
+            const auto x = coords[0]->as_double_accessor();
+            for(conduit::index_t ptid = 0; ptid < numCoordsetPts; ptid++)
+            {
+                double dx = x[ptid] - searchPt[0];
+                double dSquared = dx * dx;
+                if(dSquared < EPS_SQ)
+                {
+                    found = static_cast<int>(ptid);
+                    break;
+                }
+            }
+            result_ptr[i] = found;
+        });
+        handled = true;
+    }
+    return handled;
 }
 
 //---------------------------------------------------------------------------

@@ -556,6 +556,9 @@ protected:
 class CONDUIT_BLUEPRINT_API PointQuery : public PointQueryBase
 {
 public:
+    /// Point threshold after which it makes sense to switch search methods.
+    static const int SEARCH_THRESHOLD;
+
     /**
      @brief Constructor
      @param mesh The input mesh(es). Each mesh domain must have state/domain_id
@@ -567,6 +570,12 @@ public:
      @brief Destructor
      */
     virtual ~PointQuery() = default;
+
+    /**
+     @brief Set the point tolerance used to decide which points are the same.
+     @param tolerance The tolderance value.
+     */
+    void setPointTolerance(double tolerance);
 
     /**
      @brief Execute all of the point queries.
@@ -597,10 +606,48 @@ protected:
                             std::vector<int> &result) const;
 
     /**
+     @brief Find the input points in the input mesh's coordset using kdtree strategy.
+     @param ndims The number of dimensions in the coordset.
+     @param sameTypes Whether the coordinates are all the same type.
+     @param coords The nodes for the individual coordset axis values.
+     @param coordTypes The coordinate types.
+     @param input The input vector of x,y,z triples that we're looking for.
+     @param result The output vector containing the node id of each point or
+                   -1 if not found.
+     @return True if the method completed the search; False otherwise.
+     */
+    bool AcceleratedSearch(int ndims,
+                           bool sameTypes,
+                           const conduit::Node *coords[3],
+                           const conduit::index_t coordTypes[3],
+                           const std::vector<double> &input,
+                           std::vector<int> &result) const;
+
+    /**
+     @brief Find the input points in the input mesh's coordset using normal strategy.
+     @param ndims The number of dimensions in the coordset.
+     @param sameTypes Whether the coordinates are all the same type.
+     @param coords The nodes for the individual coordset axis values.
+     @param coordTypes The coordinate types.
+     @param input The input vector of x,y,z triples that we're looking for.
+     @param result The output vector containing the node id of each point or
+                   -1 if not found.
+     @return True if the method completed the search; False otherwise.
+     */
+    bool NormalSearch(int ndims,
+                      bool sameTypes,
+                      const conduit::Node *coords[3],
+                      const conduit::index_t coordTypes[3],
+                      const std::vector<double> &input,
+                      std::vector<int> &result) const;
+    /**
      @brief Return a list of domain ids that exist locally.
      @return A list of local domain ids.
      */
     std::vector<int> DomainIds() const;
+
+protected:
+    double m_pointTolerance;
 };
 
 //---------------------------------------------------------------------------
