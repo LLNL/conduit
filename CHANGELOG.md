@@ -18,6 +18,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `TopologyBuilder` class that can be used to build up a new topology subset from a source topology. The new topology shape does not have to match the original topology shape. A new coordset is created based on the points that are referenced from the original topology.
 - Added `topology::search` function that allows one topology to be searched for in another topology. The topologies must have the same shape type and their respective coordsets can have points in different orders. The shapes are matched using coordinate matching.
 - Added `adjset::validate` function which tests adjacency sets for correctness and flags any errors in a Conduit node. There are serial and parallel versions of the function. The functions apply PointQuery for vertex association adjsets and MatchQuery for element association adjsets. Each domain's adjset will make queries to its neighboring domains as to whether the vertex or element of interest exists in the neighbor's topology.
+- Added `utils::kdtree` class that can be used to accelerate point lookups for coordsets.
 
 ### Fixed
 
@@ -25,7 +26,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added explicit control for OpenMP Features with CMake `ENABLE_OPENMP` option (default = OFF). Adds `CONDUIT_USE_OPENMP` define to `conduit_config.h`. Guards all use of OpenMP with `CONDUIT_USE_OPENMP`. Prior to these guards, downstream users could enable OpenMP and macros could evaluate inconsistently with how Conduit was built causing OpenMP related linking errors.
 
 #### Blueprint
-- Functions such as `generate_corners` or `generate_faces` that accept adjsets and construct new adjsets for the derived topology using the original adjset now include a filtering stage. This filtering stage uses PointQuery and MatchQuery to ensure that vertices in the local derived adjset actually have counterparts in the neighboring domain.
+- Functions such as `generate_corners` or `generate_faces` that accept adjsets now include a filtering stage to improve adjset quality. This filtering stage uses `PointQuery` and `MatchQuery` to ensure that entities referenced in a remote domain actually exist in the neighboring domain.
 
 ## [0.8.7] - Released 2023-03-23
 
