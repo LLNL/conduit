@@ -2843,7 +2843,7 @@ generate_derived_entities(conduit::Node &mesh,
         conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
         // Tell the query which topology to use.
-        Q.SelectTopology(src_topo.name());
+        Q.selectTopology(src_topo.name());
 
         // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
         //
@@ -2902,7 +2902,7 @@ generate_derived_entities(conduit::Node &mesh,
                     if(entity_in_neighbor)
                     {
                         // Add the entity to the query for consideration.
-                        uint64 qid = Q.Add(domain_id, ni, entity_pidxs);
+                        uint64 qid = Q.add(domain_id, ni, entity_pidxs);
 
                         // Add the candidate entity to the match query, which
                         // will help resolve things across domains.
@@ -2916,7 +2916,7 @@ generate_derived_entities(conduit::Node &mesh,
 
     // Execute the queries.
     CONDUIT_ANNOTATE_MARK_BEGIN("query");
-    Q.Execute();
+    Q.execute();
     CONDUIT_ANNOTATE_MARK_END("query");
 
     // Use query results to finish building entity_neighbor_map.
@@ -2927,7 +2927,7 @@ generate_derived_entities(conduit::Node &mesh,
         int ni = std::get<1>(obj);
         int ei = std::get<2>(obj);
         uint64 eid = std::get<3>(obj);
-        if(Q.Exists(domain_id, ni, eid))
+        if(Q.exists(domain_id, ni, eid))
         {
             auto &entity_neighbor_map = dom_entity_neighbor_map[domain_id];
             entity_neighbor_map[ei].insert(ni);
@@ -3234,7 +3234,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
                             // Add the point to the query and store some information
                             // help finish up later.
-                            auto idx = query.Add(ni, pt3);
+                            auto idx = query.add(ni, pt3);
                             query_guide.emplace_back(domain_id, entity_cidx, ni, idx);
                         }
                         else
@@ -3252,7 +3252,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
     // Perform the queries for the points that we need to know about.
     CONDUIT_ANNOTATE_MARK_BEGIN("query");
-    query.Execute(dst_cset_name);
+    query.execute(dst_cset_name);
     CONDUIT_ANNOTATE_MARK_END("query");
 
     // Use the point query results to finish building entity_neighbor_map.
@@ -3267,7 +3267,7 @@ generate_decomposed_entities(conduit::Node &mesh,
         auto &entity_neighbor_map = dom_entity_neighbor_map[domain_id];
         // Add the entity to entity_neighbor_map if its point existed on
         // the remote domain.
-        const auto &results = query.Results(ni);
+        const auto &results = query.results(ni);
         if(results[idx] > query.NotFound)
         {
             entity_neighbor_map[entity_cidx].insert(ni);

@@ -226,10 +226,10 @@ TEST(conduit_blueprint_mesh_query, point_query)
         double pt3[3];
         getcoord(coordset, ptid, pt3);
 
-        Q.Add(domain0, pt3);
+        Q.add(domain0, pt3);
     }
-    Q.Execute(coordsetName);
-    const auto &res = Q.Results(domain0);
+    Q.execute(coordsetName);
+    const auto &res = Q.results(domain0);
     EXPECT_EQ(res.size(), npts);
     for(size_t i = 0; i < res.size(); i++)
        EXPECT_EQ(res[i], i);
@@ -238,10 +238,10 @@ TEST(conduit_blueprint_mesh_query, point_query)
     double bad0[] = {1.23,1.23,1.23};
     double bad1[] = {1.34,1.34,1.34};
     double bad2[] = {1.45,1.45,1.45};
-    Q.Add(domain0, bad0);
-    Q.Add(domain0, bad1);
-    Q.Add(domain0, bad2);
-    Q.Execute(coordsetName);
+    Q.add(domain0, bad0);
+    Q.add(domain0, bad1);
+    Q.add(domain0, bad2);
+    Q.execute(coordsetName);
     EXPECT_EQ(res.size(), npts + 3);
     for(size_t i = 0; i < res.size(); i++)
     {
@@ -256,16 +256,16 @@ TEST(conduit_blueprint_mesh_query, point_query)
     }
 
     // Now, ask domain1 about domain0's points. There should be 3 that match.
-    Q.Reset();
+    Q.reset();
     for(int ptid = 0; ptid < npts; ptid++)
     {
         double pt3[3];
         getcoord(coordset, ptid, pt3);
 
-        Q.Add(domain1, pt3);
+        Q.add(domain1, pt3);
     }
-    Q.Execute(coordsetName);
-    const auto &res1 = Q.Results(domain1);
+    Q.execute(coordsetName);
+    const auto &res1 = Q.results(domain1);
     EXPECT_EQ(res1.size(), npts);
     for(size_t i = 0; i < res1.size(); i++)
     {
@@ -431,18 +431,18 @@ void single_domain_point_query_3d(int dims[3])
         pt[1] = coords[1][i];
         pt[2] = coords[2][i];
 
-        Q.Add(domain0, pt);
+        Q.add(domain0, pt);
     }
 
     // Add 1 bad point at the end.
     double badpt[] = {-1., -1., -1.};
-    auto badIdx = Q.Add(domain0, badpt);
+    auto badIdx = Q.add(domain0, badpt);
 
     // Execute
-    Q.Execute("coords");
+    Q.execute("coords");
 
     // The first npts query points should exist.
-    const auto &res = Q.Results(domain0);
+    const auto &res = Q.results(domain0);
     for(int i = 0; i < npts; i++)
     {
         EXPECT_EQ(res[i], i);
@@ -478,18 +478,18 @@ void single_domain_point_query_2d(int dims[2])
         pt[1] = coords[1][i];
         pt[2] = 0.;
 
-        Q.Add(domain0, pt);
+        Q.add(domain0, pt);
     }
 
     // Add 1 bad point at the end.
     double badpt[] = {-1., -1., -1.};
-    auto badIdx = Q.Add(domain0, badpt);
+    auto badIdx = Q.add(domain0, badpt);
 
     // Execute
-    Q.Execute("coords");
+    Q.execute("coords");
 
     // The first npts query points should exist.
-    const auto &res = Q.Results(domain0);
+    const auto &res = Q.results(domain0);
     for(int i = 0; i < npts; i++)
     {
         EXPECT_EQ(res[i], i);

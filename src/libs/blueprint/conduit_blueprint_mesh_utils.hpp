@@ -394,14 +394,14 @@ namespace topology
          @param pts A list of point ids in the selected coordset.
          @param npts The number of points in the list.
          */
-        size_t Add(const index_t *pts, index_t npts);
+        size_t add(const index_t *pts, index_t npts);
 
         /**
          @brief Add a new entity with the given point list.
     
          @param pts The list of points in the entity.     
          */
-        size_t Add(const std::vector<index_t> &pts);
+        size_t add(const std::vector<index_t> &pts);
 
         /**
          @brief Make the new topologies, using the specified shape type.
@@ -410,11 +410,11 @@ namespace topology
                         will get topologies and coordset nodes too.
          @param shape The name of the shape type to use in the new topologies.
          */
-        void Execute(conduit::Node &newMesh, const std::string &shape);
+        void execute(conduit::Node &newMesh, const std::string &shape);
 
     protected:
-        index_t NewPointId(index_t oldPointId);
-        void Clear();
+        index_t newPointId(index_t oldPointId);
+        void clear();
     protected:
         const conduit::Node       &topo;
         std::map<index_t, index_t> old_to_new;
@@ -502,20 +502,20 @@ public:
     /**
      @brief Reset the query to try again.
      */
-    virtual void Reset();
+    virtual void reset();
 
     /**
      @brief Add a point to the list of points that will be queried on domain \a dom.
      @param dom The domain that will be queried.
      @param pt The point that will be queried.
      */
-    conduit::index_t Add(int dom, const double pt[3]);
+    conduit::index_t add(int dom, const double pt[3]);
 
     /**
      @brief Execute all of the point queries.
      @param coordsetName The name of the coordset we're searching in the domains.
      */
-    virtual void Execute(const std::string &coordsetName);
+    virtual void execute(const std::string &coordsetName);
 
     /**
      @brief Get the input points vector for a domain.
@@ -523,7 +523,7 @@ public:
 
      @return A vector of coordinates for the domain.
      */
-    const std::vector<double> &Inputs(int dom) const;
+    const std::vector<double> &inputs(int dom) const;
 
     /**
      @brief Get the results vector for a domain.
@@ -532,7 +532,7 @@ public:
      @return A vector of results for the domain. Each element represents a
              point id. If the point is not found, it contains -1.
      */
-    const std::vector<int> &Results(int dom) const;
+    const std::vector<int> &results(int dom) const;
 
     /**
      @brief Return a vector of the unique domain ids (the keys of the 
@@ -540,7 +540,7 @@ public:
 
      @return A vector of unique domain ids.
      */
-    std::vector<int> QueryDomainIds() const;
+    std::vector<int> queryDomainIds() const;
 protected:
     const conduit::Node &m_mesh;
     std::map<int, std::vector<double>> m_domInputs;
@@ -581,7 +581,7 @@ public:
      @brief Execute all of the point queries.
      @param coordsetName The name of the coordset we're searching in the domains.
      */
-    virtual void Execute(const std::string &coordsetName) override;
+    virtual void execute(const std::string &coordsetName) override;
 
 protected:
     /**
@@ -589,7 +589,7 @@ protected:
      @param dom The domain id.
      @return A Node pointer or nullptr if it is not found.
      */
-    const conduit::Node *GetDomain(int dom) const;
+    const conduit::Node *getDomain(int dom) const;
 
     /**
      @brief Find the input points in the input mesh's coordset and make a result
@@ -600,7 +600,7 @@ protected:
      @param result The output vector containing the node id of each point or
                    -1 if not found.
      */
-    void FindPointsInDomain(const conduit::Node &mesh,
+    void findPointsInDomain(const conduit::Node &mesh,
                             const std::string &coordsetName,
                             const std::vector<double> &input,
                             std::vector<int> &result) const;
@@ -616,7 +616,7 @@ protected:
                    -1 if not found.
      @return True if the method completed the search; False otherwise.
      */
-    bool AcceleratedSearch(int ndims,
+    bool acceleratedSearch(int ndims,
                            bool sameTypes,
                            const conduit::Node *coords[3],
                            const conduit::index_t coordTypes[3],
@@ -634,7 +634,7 @@ protected:
                    -1 if not found.
      @return True if the method completed the search; False otherwise.
      */
-    bool NormalSearch(int ndims,
+    bool normalSearch(int ndims,
                       bool sameTypes,
                       const conduit::Node *coords[3],
                       const conduit::index_t coordTypes[3],
@@ -644,7 +644,7 @@ protected:
      @brief Return a list of domain ids that exist locally.
      @return A list of local domain ids.
      */
-    std::vector<int> DomainIds() const;
+    std::vector<int> domainIds() const;
 
 protected:
     double m_pointTolerance;
@@ -677,7 +677,7 @@ public:
             points. This must be called before calling <Execute>"()".
      @param name The topology name.
      */
-    void SelectTopology(const std::string &name);
+    void selectTopology(const std::string &name);
 
     /**
      @brief Add an entity that will be queried on domain \a dom.
@@ -688,14 +688,14 @@ public:
 
      @return An identifier that represents the entity.
      */
-    size_t Add(int dom, int query_dom, const index_t *ids, index_t nids);
-    size_t Add(int dom, int query_dom, const std::vector<index_t> &ids);
+    size_t add(int dom, int query_dom, const index_t *ids, index_t nids);
+    size_t add(int dom, int query_dom, const std::vector<index_t> &ids);
 
     /**
      @brief Execute all of the queries.
      @param shape The shape type for the queried entities.
      */
-    virtual void Execute();
+    virtual void execute();
 
     /**
      @brief Return whether the entity exists on query_dom.
@@ -706,19 +706,19 @@ public:
 
      @return True if the entityId exists in query_dom.
      */
-    virtual bool Exists(int dom, int query_dom, size_t entityId) const;
+    virtual bool exists(int dom, int query_dom, size_t entityId) const;
 
     /**
      @brief Return a vector of pairs that contain dom,query_dom values.
      @return A vector of pairs.
      */
-    std::vector<std::pair<int,int>> QueryDomainIds() const;
+    std::vector<std::pair<int,int>> queryDomainIds() const;
 
     /**
      @brief Return the results vector for a given dom,query_dom pair.
      @return A results vector containing 1 (found), 0 (not found).
      */
-    const std::vector<int> &Results(int dom, int query_dom) const;
+    const std::vector<int> &results(int dom, int query_dom) const;
 
 protected:
     /**
@@ -728,7 +728,7 @@ protected:
      @return A node that points to the domain's selected topology. If no
              such node is located, nullptr is returned.
      */
-    const conduit::Node *GetDomainTopology(int domain) const;
+    const conduit::Node *getDomainTopology(int domain) const;
 
     /**
      @brief Contains information for one domain:query_domain query.
@@ -741,7 +741,7 @@ protected:
     };
 
     const conduit::Node &m_mesh;
-    std::string topoName;
+    std::string m_topoName;
     std::map<std::pair<int,int>, QueryInfo> m_query;
 };
 

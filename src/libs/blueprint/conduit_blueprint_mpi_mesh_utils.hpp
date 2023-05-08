@@ -92,7 +92,7 @@ public:
 
      @note This method must be called on all ranks in the communicator.
      */
-    virtual void Execute(const std::string &coordsetName) override;
+    virtual void execute(const std::string &coordsetName) override;
 
 protected:
     MPI_Comm m_comm;  
@@ -122,7 +122,7 @@ public:
 
      @note This method must be called on all ranks in the communicator.
      */
-    virtual void Execute() override;
+    virtual void execute() override;
 
 protected:
     MPI_Comm m_comm;

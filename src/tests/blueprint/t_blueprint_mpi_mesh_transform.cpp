@@ -871,17 +871,17 @@ TEST(conduit_blueprint_mesh_examples, generate_corners_wonky)
             pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
             pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
 
-            Q.Add(nbr, pt3);
+            Q.add(nbr, pt3);
         });
 
     // Execute the query.
-    Q.Execute("corner_coords");
+    Q.execute("corner_coords");
 
     // If this rank had domains, check the query results. There should be no
     // occurrances of NotFound.
-    for(auto domainId : Q.QueryDomainIds())
+    for(auto domainId : Q.queryDomainIds())
     {
-        const auto &r = Q.Results(domainId);
+        const auto &r = Q.results(domainId);
         auto it = std::find(r.begin(), r.end(), Q.NotFound);
         bool found = it != r.end();
         EXPECT_FALSE(found);
@@ -906,7 +906,7 @@ TEST(conduit_blueprint_mesh_examples, generate_faces_wonky)
                                                   MPI_COMM_WORLD);
 
     conduit::blueprint::mpi::mesh::utils::query::MatchQuery Q(mesh, MPI_COMM_WORLD);
-    Q.SelectTopology("main");
+    Q.selectTopology("main");
 
     // Iterate over the faces in the face adjset and add them to the match query.
     iterate_adjset(mesh, "face_adjset",
@@ -914,16 +914,16 @@ TEST(conduit_blueprint_mesh_examples, generate_faces_wonky)
         {
             // Get the points for the face and add them to the query.
             std::vector<index_t> facepts = conduit::blueprint::mesh::utils::topology::unstructured::points(*topo, ei);
-            Q.Add(dom, nbr, facepts);
+            Q.add(dom, nbr, facepts);
         });
 
     // Execute the query.
-    Q.Execute();
+    Q.execute();
 
     // If this rank had domains, check the query results. They should all be 1.
-    for(const auto &qid : Q.QueryDomainIds())
+    for(const auto &qid : Q.queryDomainIds())
     {
-        const auto &r = Q.Results(qid.first, qid.second);
+        const auto &r = Q.results(qid.first, qid.second);
         auto it = std::find_if_not(r.begin(), r.end(), [](int value){ return value == 1;} );
         bool found = it != r.end();
         EXPECT_FALSE(found);

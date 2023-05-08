@@ -1737,7 +1737,7 @@ topology::TopologyBuilder::TopologyBuilder(const conduit::Node *_topo) : topo(*_
 
 //---------------------------------------------------------------------------
 index_t
-topology::TopologyBuilder::NewPointId(index_t oldPointId)
+topology::TopologyBuilder::newPointId(index_t oldPointId)
 {
     auto it = old_to_new.find(oldPointId);
     index_t newpt;
@@ -1755,14 +1755,14 @@ topology::TopologyBuilder::NewPointId(index_t oldPointId)
 
 //---------------------------------------------------------------------------
 size_t
-topology::TopologyBuilder::Add(const index_t *ids, index_t nids)
+topology::TopologyBuilder::add(const index_t *ids, index_t nids)
 {
     // Iterate over the ids and renumber them and add the renumbered points
     // to the new connectivity.
     size_t retval = topo_sizes.size();
     for(index_t i = 0; i < nids; i++)
     {
-        index_t newpid = NewPointId(ids[i]);
+        index_t newpid = newPointId(ids[i]);
         topo_conn.push_back(newpid);
     }
     topo_sizes.push_back(nids);
@@ -1771,14 +1771,14 @@ topology::TopologyBuilder::Add(const index_t *ids, index_t nids)
 
 //---------------------------------------------------------------------------
 size_t
-topology::TopologyBuilder::Add(const std::vector<index_t> &ids)
+topology::TopologyBuilder::add(const std::vector<index_t> &ids)
 {
-    return Add(&ids[0], ids.size());
+    return add(&ids[0], ids.size());
 }
 
 //---------------------------------------------------------------------------
 void
-topology::TopologyBuilder::Execute(conduit::Node &n_out, const std::string &shape)
+topology::TopologyBuilder::execute(conduit::Node &n_out, const std::string &shape)
 {
     n_out.reset();
 
@@ -1818,12 +1818,12 @@ topology::TopologyBuilder::Execute(conduit::Node &n_out, const std::string &shap
     n_ele["sizes"].set(topo_sizes);
     unstructured::generate_offsets_inline(newtopo);
 
-    Clear();
+    clear();
 }
 
 //---------------------------------------------------------------------------
 void
-topology::TopologyBuilder::Clear()
+topology::TopologyBuilder::clear()
 {
     old_to_new.clear();
     topo_conn.clear();
@@ -1863,11 +1863,11 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
         pt3[0] = pc[0];
         pt3[1] = (pclen > 1) ? pc[1] : 0.;
         pt3[2] = (pclen > 2) ? pc[2] : 0.;
-        P.Add(domain_id, pt3);
+        P.add(domain_id, pt3);
     }
 
     // Do the query.
-    P.Execute(cset2.name());
+    P.execute(cset2.name());
 
     const conduit::Node &n_topo1_conn = topo1["elements/connectivity"];
     const conduit::Node &n_topo1_size = topo1["elements/sizes"];
@@ -1892,7 +1892,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
 
     // Get the query results for each mesh2 point. This is a vector of point
     // ids from mesh 1 or NotFound.
-    auto &r = P.Results(domain_id);
+    const auto &r = P.results(domain_id);
 
     // Iterate over the entities in mesh2 and map their points to mesh 1 points
     // if possible before computing hashids for them. If a mesh2 entity's points
@@ -2114,7 +2114,7 @@ adjset::validate(const conduit::Node &doms,
                         pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
 
                         // Ask domain nbr if they have point pt3
-                        auto idx = PQ.Add(nbr, pt3);
+                        auto idx = PQ.add(nbr, pt3);
                         query_guide.emplace_back(domainId, ptid, nbr, idx, domIdx, groupName, pt);
                     }
                 }
@@ -2122,7 +2122,7 @@ adjset::validate(const conduit::Node &doms,
         }
 
         // Execut the query.
-        PQ.Execute(coordsetName);
+        PQ.execute(coordsetName);
 
         // Iterate over the query results to flag any problems.
         retval = true;
@@ -2136,7 +2136,7 @@ adjset::validate(const conduit::Node &doms,
             const std::string &groupName = std::get<5>(obj);
             const std::vector<double> &coord = std::get<6>(obj);
 
-            const auto &res = PQ.Results(nbr);
+            const auto &res = PQ.results(nbr);
             if(res[idx] == conduit::blueprint::mesh::utils::query::PointQuery::NotFound)
             {
                 retval = false;
@@ -2168,7 +2168,7 @@ adjset::validate(const conduit::Node &doms,
         // If that is not the case then the adjset is not valid.
 
         // Set up MatchQuery that will examine the extdoms domains.
-        MQ.SelectTopology(topologyName);
+        MQ.selectTopology(topologyName);
 
         std::vector<std::tuple<int, int, int, conduit::uint64, size_t, std::string>> query_guide;
         for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
@@ -2208,7 +2208,7 @@ adjset::validate(const conduit::Node &doms,
                             entity_pidxs = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
 
                         // Add the entity to the query for consideration.
-                        conduit::uint64 qid = MQ.Add(domain_id, nbr, entity_pidxs);
+                        conduit::uint64 qid = MQ.add(domain_id, nbr, entity_pidxs);
 
                         // Add the candidate entity to the match query, which
                         // will help resolve things across domains.
@@ -2219,7 +2219,7 @@ adjset::validate(const conduit::Node &doms,
         }
 
         // Execute the query.
-        MQ.Execute();
+        MQ.execute();
 
         // Iterate over the query results to flag any problems.
         retval = true;
@@ -2232,7 +2232,7 @@ adjset::validate(const conduit::Node &doms,
             size_t domIdx = std::get<4>(obj);
             const std::string &groupName = std::get<5>(obj);
 
-            if(!MQ.Exists(domain_id, nbr, eid))
+            if(!MQ.exists(domain_id, nbr, eid))
             {
                 retval = false;
                 std::string domainName(domains[domIdx]->name());
@@ -2279,7 +2279,7 @@ PointQueryBase::PointQueryBase(const conduit::Node &mesh) : m_mesh(mesh),
 
 //---------------------------------------------------------------------------
 void
-PointQueryBase::Reset()
+PointQueryBase::reset()
 {
     m_domInputs.clear();
     m_domResults.clear();
@@ -2287,7 +2287,7 @@ PointQueryBase::Reset()
 
 //---------------------------------------------------------------------------
 conduit::index_t
-PointQueryBase::Add(int dom, const double pt[3])
+PointQueryBase::add(int dom, const double pt[3])
 {
     std::vector<double> &coords = m_domInputs[dom];
     conduit::index_t idx = coords.size() / 3;
@@ -2299,7 +2299,7 @@ PointQueryBase::Add(int dom, const double pt[3])
 
 //---------------------------------------------------------------------------
 const std::vector<double> &
-PointQueryBase::Inputs(int dom) const
+PointQueryBase::inputs(int dom) const
 {
     auto it = m_domInputs.find(dom);
     if(it == m_domInputs.end())
@@ -2311,7 +2311,7 @@ PointQueryBase::Inputs(int dom) const
 
 //---------------------------------------------------------------------------
 const std::vector<int> &
-PointQueryBase::Results(int dom) const
+PointQueryBase::results(int dom) const
 {
     auto it = m_domResults.find(dom);
     if(it == m_domResults.end())
@@ -2323,7 +2323,7 @@ PointQueryBase::Results(int dom) const
 
 //---------------------------------------------------------------------------
 void
-PointQueryBase::Execute(const std::string & /*coordsetName*/)
+PointQueryBase::execute(const std::string & /*coordsetName*/)
 {
     for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
     {
@@ -2335,7 +2335,7 @@ PointQueryBase::Execute(const std::string & /*coordsetName*/)
 
 //---------------------------------------------------------------------------
 std::vector<int>
-PointQueryBase::QueryDomainIds() const
+PointQueryBase::queryDomainIds() const
 {
     std::vector<int> retval;
     for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
@@ -2365,13 +2365,13 @@ PointQuery::setPointTolerance(double tolerance)
 
 //---------------------------------------------------------------------------
 void
-PointQuery::Execute(const std::string &coordsetName)
+PointQuery::execute(const std::string &coordsetName)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
     for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
     {
-        const conduit::Node *dom = GetDomain(it->first);
+        const conduit::Node *dom = getDomain(it->first);
         if(dom == nullptr)
         {
             CONDUIT_ERROR("Domain " << it->first << " was requested but not found.");
@@ -2379,13 +2379,13 @@ PointQuery::Execute(const std::string &coordsetName)
 
         const std::vector<double> &input = it->second;
         std::vector<int> &result = m_domResults[it->first];
-        FindPointsInDomain(*dom, coordsetName, input, result);
+        findPointsInDomain(*dom, coordsetName, input, result);
     }
 }
 
 //---------------------------------------------------------------------------
 const conduit::Node *
-PointQuery::GetDomain(int dom) const
+PointQuery::getDomain(int dom) const
 {
     if(is_multi_domain(m_mesh))
     {
@@ -2407,11 +2407,12 @@ PointQuery::GetDomain(int dom) const
 
 //---------------------------------------------------------------------------
 void
-PointQuery::FindPointsInDomain(const conduit::Node &mesh,
+PointQuery::findPointsInDomain(const conduit::Node &mesh,
     const std::string &coordsetName,
     const std::vector<double> &input,
     std::vector<int> &result) const
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
     conduit::index_t numInputPts = input.size() / 3;
     result.resize(numInputPts, NotFound);
 
@@ -2440,22 +2441,23 @@ PointQuery::FindPointsInDomain(const conduit::Node &mesh,
         sameTypes &= (coordTypes[0] == coordTypes[i]);
 
     // Try an accelerated search first, if it applies.
-    if(!AcceleratedSearch(ndims, sameTypes, coords, coordTypes, input, result))
+    if(!acceleratedSearch(ndims, sameTypes, coords, coordTypes, input, result))
     {
         // AcceleratedSearch did not handle it. Do normal search.
-        NormalSearch(ndims, sameTypes, coords, coordTypes, input, result);
+        normalSearch(ndims, sameTypes, coords, coordTypes, input, result);
     }
 }
 
 //---------------------------------------------------------------------------
 bool
-PointQuery::AcceleratedSearch(int ndims,
+PointQuery::acceleratedSearch(int ndims,
     bool sameTypes,
     const conduit::Node *coords[3],
     const conduit::index_t coordTypes[3],
     const std::vector<double> &input,
     std::vector<int> &result) const
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
     bool handled = false;
 
     conduit::index_t numInputPts = input.size() / 3;
@@ -2564,13 +2566,14 @@ PointQuery::AcceleratedSearch(int ndims,
 
 //---------------------------------------------------------------------------
 bool
-PointQuery::NormalSearch(int ndims,
+PointQuery::normalSearch(int ndims,
     bool sameTypes,
     const conduit::Node *coords[3],
     const conduit::index_t coordTypes[3],
     const std::vector<double> &input,
     std::vector<int> &result) const
 {
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
     bool handled = false;
 
     conduit::index_t numInputPts = input.size() / 3;
@@ -2660,7 +2663,7 @@ PointQuery::NormalSearch(int ndims,
 
 //---------------------------------------------------------------------------
 std::vector<int>
-PointQuery::DomainIds() const
+PointQuery::domainIds() const
 {
     std::vector<const conduit::Node *> doms = domains(m_mesh);
     std::vector<int> domainIds;
@@ -2679,19 +2682,20 @@ PointQuery::DomainIds() const
 //---------------------------------------------------------------------------
 //---------------------------------------------------------------------------
 MatchQuery::MatchQuery(const conduit::Node &mesh) : m_mesh(mesh),
-    m_query()
+    m_topoName(), m_query()
 {
 }
 
+//---------------------------------------------------------------------------
 void
-MatchQuery::SelectTopology(const std::string &name)
+MatchQuery::selectTopology(const std::string &name)
 {
-    topoName = name;
+    m_topoName = name;
 }
 
 //---------------------------------------------------------------------------
 const conduit::Node *
-MatchQuery::GetDomainTopology(int domain) const
+MatchQuery::getDomainTopology(int domain) const
 {
     auto doms = domains(m_mesh);
     for(const auto &dom : doms)
@@ -2702,13 +2706,13 @@ MatchQuery::GetDomainTopology(int domain) const
             if(domain_id == domain)
             {
                 const conduit::Node &topos = dom->fetch_existing("topologies");
-                if(!topoName.empty())
+                if(!m_topoName.empty())
                 {
-                    if(topos.has_child(topoName))
-                        return topos.fetch_ptr(topoName);
+                    if(topos.has_child(m_topoName))
+                        return topos.fetch_ptr(m_topoName);
                     else
                     {
-                        CONDUIT_ERROR("Topology " << topoName
+                        CONDUIT_ERROR("Topology " << m_topoName
                             << " was not found in domain " << domain);
                     }
                 }
@@ -2724,39 +2728,39 @@ MatchQuery::GetDomainTopology(int domain) const
 
 //---------------------------------------------------------------------------
 size_t
-MatchQuery::Add(int dom, int query_dom, const index_t *ids, index_t nids)
+MatchQuery::add(int dom, int query_dom, const index_t *ids, index_t nids)
 {
     auto key = std::make_pair(dom, query_dom);
     auto it = m_query.find(key);
     if(it == m_query.end())
     {
-        const conduit::Node *dtopo = GetDomainTopology(dom);
+        const conduit::Node *dtopo = getDomainTopology(dom);
         auto &q = m_query[key];
         q.builder = std::make_shared<topology::TopologyBuilder>(dtopo);
         it = m_query.find(key);
     }
-    return it->second.builder->Add(ids, nids);
+    return it->second.builder->add(ids, nids);
 }
 
 //---------------------------------------------------------------------------
 size_t
-MatchQuery::Add(int dom, int query_dom, const std::vector<index_t> &ids)
+MatchQuery::add(int dom, int query_dom, const std::vector<index_t> &ids)
 {
     auto key = std::make_pair(dom, query_dom);
     auto it = m_query.find(key);
     if(it == m_query.end())
     {
-        const conduit::Node *dtopo = GetDomainTopology(dom);
+        const conduit::Node *dtopo = getDomainTopology(dom);
         auto &q = m_query[key];
         q.builder = std::make_shared<topology::TopologyBuilder>(dtopo);
         it = m_query.find(key);
     }
-    return it->second.builder->Add(ids);
+    return it->second.builder->add(ids);
 }
 
 //---------------------------------------------------------------------------
 bool
-MatchQuery::Exists(int dom, int query_dom, size_t ei) const
+MatchQuery::exists(int dom, int query_dom, size_t ei) const
 {
     auto key = std::make_pair(dom, query_dom);
     auto it = m_query.find(key);
@@ -2775,7 +2779,7 @@ MatchQuery::Exists(int dom, int query_dom, size_t ei) const
 
 //---------------------------------------------------------------------------
 void
-MatchQuery::Execute()
+MatchQuery::execute()
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
@@ -2790,13 +2794,13 @@ MatchQuery::Execute()
         {
             // We have not determined the shape yet. Do that now so the subset
             // topologies can be built.
-            const auto dtopo = GetDomainTopology(dom);
+            const auto dtopo = getDomainTopology(dom);
             ShapeCascade c(*dtopo);
             const auto &s = c.get_shape((c.dim == 0) ? c.dim : (c.dim - 1));
             shape = s.type;
         }
 
-        it->second.builder->Execute(it->second.query_mesh, shape);
+        it->second.builder->execute(it->second.query_mesh, shape);
         it->second.query_mesh["state/domain_id"] = dom;
     }
 
@@ -2819,7 +2823,7 @@ MatchQuery::Execute()
         // Get both of the topologies.
         conduit::Node &mesh1 = it->second.query_mesh;
         conduit::Node &mesh2 = oppit->second.query_mesh;
-        std::string topoKey("topologies/" + topoName);
+        std::string topoKey("topologies/" + m_topoName);
         conduit::Node &topo1 = mesh1[topoKey];
         conduit::Node &topo2 = mesh2[topoKey];
 
@@ -2830,7 +2834,7 @@ MatchQuery::Execute()
 
 //---------------------------------------------------------------------------
 std::vector<std::pair<int,int>>
-MatchQuery::QueryDomainIds() const
+MatchQuery::queryDomainIds() const
 {
     std::vector<std::pair<int,int>> ids;
     for(auto it = m_query.begin(); it != m_query.end(); it++)
@@ -2844,7 +2848,7 @@ MatchQuery::QueryDomainIds() const
 
 //---------------------------------------------------------------------------
 const std::vector<int> &
-MatchQuery::Results(int dom, int query_dom) const
+MatchQuery::results(int dom, int query_dom) const
 {
     auto it = m_query.find(std::make_pair(dom, query_dom));
     if(it == m_query.end())

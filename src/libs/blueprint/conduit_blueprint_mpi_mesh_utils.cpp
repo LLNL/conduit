@@ -69,7 +69,7 @@ PointQuery::PointQuery(const conduit::Node &mesh, MPI_Comm comm) :
 
 //---------------------------------------------------------------------------
 void
-PointQuery::Execute(const std::string &coordsetName)
+PointQuery::execute(const std::string &coordsetName)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
@@ -79,7 +79,7 @@ PointQuery::Execute(const std::string &coordsetName)
 
     // Figure out which ranks own the domains. Get the domain ids on this rank
     // and sum the number of domains on all ranks.
-    std::vector<int> localDomains = DomainIds();
+    std::vector<int> localDomains = domainIds();
     int ndoms = localDomains.size(), ntotal_doms = 0;
     MPI_Allreduce(&ndoms, &ntotal_doms, 1, MPI_INT, MPI_SUM, m_comm);
 
@@ -202,8 +202,8 @@ PointQuery::Execute(const std::string &coordsetName)
                         // Query the domain and store the results in r.
                         std::vector<int> &r = m_domResults[domain];
                         r.resize(npts);
-                        const conduit::Node *dom = GetDomain(domain);
-                        FindPointsInDomain(*dom, coordsetName, Inputs(domain), r);
+                        const conduit::Node *dom = getDomain(domain);
+                        findPointsInDomain(*dom, coordsetName, inputs(domain), r);
                     }
                 }
                 else
@@ -215,10 +215,10 @@ PointQuery::Execute(const std::string &coordsetName)
                     if(pass == 0)
                     {
                         // Wrap the inputs as a Conduit node and post an isend.
-                        const std::vector<double> &inputs = Inputs(domain);
+                        const std::vector<double> &inp = inputs(domain);
                         input_sends[id] = new conduit::Node;
                         conduit::Node &q = *input_sends[id];
-                        q["inputs"].set_external(const_cast<double *>(&inputs[0]), inputs.size());
+                        q["inputs"].set_external(const_cast<double *>(&inp[0]), inp.size());
                         C.add_isend(q, owner, inputs_tag + domain);
                     }
 
@@ -257,8 +257,8 @@ PointQuery::Execute(const std::string &coordsetName)
 
                     // Do the query.
                     std::vector<int> result;
-                    const conduit::Node *dom = GetDomain(domain);
-                    FindPointsInDomain(*dom, coordsetName, input, result);
+                    const conduit::Node *dom = getDomain(domain);
+                    findPointsInDomain(*dom, coordsetName, input, result);
 
                     // Make a node to send the results back to the asker.
                     result_sends[id] = new conduit::Node;
@@ -318,7 +318,7 @@ MatchQuery::MatchQuery(const conduit::Node &mesh, MPI_Comm comm) :
 
 //---------------------------------------------------------------------------
 void
-MatchQuery::Execute()
+MatchQuery::execute()
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
@@ -338,13 +338,13 @@ MatchQuery::Execute()
         {
             // We have not determined the shape yet. Do that now so the subset
             // topologies can be built.
-            const auto dtopo = GetDomainTopology(dom);
+            const auto dtopo = getDomainTopology(dom);
             conduit::blueprint::mesh::utils::ShapeCascade c(*dtopo);
             const auto &s = c.get_shape((c.dim == 0) ? c.dim : (c.dim - 1));
             shape = s.type;
         }
 
-        it->second.builder->Execute(it->second.query_mesh, shape);
+        it->second.builder->execute(it->second.query_mesh, shape);
     }
     CONDUIT_ANNOTATE_MARK_END("build");
 
@@ -507,7 +507,7 @@ MatchQuery::Execute()
             // Get both of the topologies.
             conduit::Node &mesh1 = it->second.query_mesh;
             conduit::Node &mesh2 = oppit->second.query_mesh;
-            std::string topoKey("topologies/" + topoName);
+            std::string topoKey("topologies/" + m_topoName);
             conduit::Node &topo1 = mesh1[topoKey];
             conduit::Node &topo2 = mesh2[topoKey];
 
