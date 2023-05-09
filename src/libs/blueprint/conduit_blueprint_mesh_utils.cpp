@@ -1886,7 +1886,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
         for(index_t pi = 0; pi < s; pi++)
             ids.push_back(topo1_conn[idx++]);
         std::sort(ids.begin(), ids.end());
-        uint64 h = conduit::utils::hash(&ids[0], ids.size());
+        uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
         topo1_entity_ids[h] = i;
     }
 
@@ -1932,7 +1932,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
             // The entity can be defined in terms of topo1's coordset. Make a
             // hash id for it and see if it matches any entities in topo1.
             std::sort(ids.begin(), ids.end());
-            uint64 h = conduit::utils::hash(&ids[0], ids.size());
+            uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
 
             bool found = topo1_entity_ids.find(h) != topo1_entity_ids.end();
             exists.push_back(found ? 1 : 0);
@@ -2099,12 +2099,12 @@ adjset::validate(const conduit::Node &doms,
                 // Neighbors
                 for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
                 {
-                    int nbr = src_neighbors[ni];
+                    auto nbr = src_neighbors[ni];
                     // Point ids
                     for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
                     {
                         // Look up the point in the local coordset to get the coordinate.
-                        int ptid = src_values[pi];
+                        auto ptid = src_values[pi];
                         auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(coordset, ptid);
                         double pt3[3];
                         pt3[0] = pt[0];
@@ -2112,7 +2112,7 @@ adjset::validate(const conduit::Node &doms,
                         pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
 
                         // Ask domain nbr if they have point pt3
-                        auto idx = PQ.add(nbr, pt3);
+                        auto idx = PQ.add(static_cast<int>(nbr), pt3);
                         query_guide.emplace_back(domainId, ptid, nbr, idx, domIdx, groupName, pt);
                     }
                 }
@@ -2134,7 +2134,7 @@ adjset::validate(const conduit::Node &doms,
             const std::string &groupName = std::get<5>(obj);
             const std::vector<double> &coord = std::get<6>(obj);
 
-            const auto &res = PQ.results(nbr);
+            const auto &res = PQ.results(static_cast<int>(nbr));
             if(res[idx] == conduit::blueprint::mesh::utils::query::PointQuery::NotFound)
             {
                 retval = false;
@@ -2204,7 +2204,9 @@ adjset::validate(const conduit::Node &doms,
                             entity_pidxs = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
 
                         // Add the entity to the query for consideration.
-                        conduit::uint64 qid = MQ.add(domain_id, nbr, entity_pidxs);
+                        conduit::uint64 qid = MQ.add(static_cast<int>(domain_id),
+                                                     static_cast<int>(nbr),
+                                                     entity_pidxs);
 
                         // Add the candidate entity to the match query, which
                         // will help resolve things across domains.

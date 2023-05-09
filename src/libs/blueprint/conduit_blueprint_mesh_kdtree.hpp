@@ -180,7 +180,7 @@ kdtree<Indexable, T, NDIMS>::kdtree() : boxes(), index()
         coords[i] = Indexable{};
     }
     coordlen = 0;
-    constexpr T DEFAULT_POINT_TOLERANCE = 1.e-9;
+    constexpr T DEFAULT_POINT_TOLERANCE = (T)(1.e-9);
     setPointTolerance(DEFAULT_POINT_TOLERANCE);
 }
 

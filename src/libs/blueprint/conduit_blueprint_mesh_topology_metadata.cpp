@@ -1052,8 +1052,8 @@ private:
 
                     // Emit the face definition (as defined by the first element
                     // that referenced it.
-                    int faceelem = ef / faces_per_elem;
-                    int facecase = ef % faces_per_elem;
+                    index_t faceelem = ef / faces_per_elem;
+                    index_t facecase = ef % faces_per_elem;
                     index_t elemstart = faceelem * points_per_elem;
                     index_t *embed = &shape.embedding[facecase * points_per_face];
                     for(index_t i = 0; i < points_per_face; i++)
@@ -1086,8 +1086,8 @@ private:
 
                     // Emit the face definition (as defined by the first element
                     // that referenced it.
-                    int faceelem = ef / faces_per_elem;
-                    int facecase = ef % faces_per_elem;
+                    index_t faceelem = ef / faces_per_elem;
+                    index_t facecase = ef % faces_per_elem;
                     index_t elemstart = faceelem * points_per_elem;
                     index_t *embed = &shape.embedding[facecase * points_per_face];
                     for(index_t i = 0; i < points_per_face; i++)
