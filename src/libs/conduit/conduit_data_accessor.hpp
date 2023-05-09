@@ -81,7 +81,7 @@ public:
                     {
                          return static_cast<const char*>(m_data) +
                                   m_dtype.element_index(idx);
-                    };
+                    }
 
     index_t         number_of_elements() const 
                         {return m_dtype.number_of_elements();}

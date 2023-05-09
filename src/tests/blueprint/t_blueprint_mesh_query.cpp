@@ -295,9 +295,9 @@ void make_coords_3d(T **coords, int dims[3])
     for(int j = 0; j < dims[1]; j++)
     for(int i = 0; i < dims[0]; i++, idx++)
     {
-        coords[0][idx] = i;
-        coords[1][idx] = j;
-        coords[2][idx] = k;
+        coords[0][idx] = static_cast<T>(i);
+        coords[1][idx] = static_cast<T>(j);
+        coords[2][idx] = static_cast<T>(k);
     } 
 }
 
@@ -324,8 +324,8 @@ void make_coords_2d(T **coords, int dims[2])
     for(int j = 0; j < dims[1]; j++)
     for(int i = 0; i < dims[0]; i++, idx++)
     {
-        coords[0][idx] = i;
-        coords[1][idx] = j;
+        coords[0][idx] = static_cast<T>(i);
+        coords[1][idx] = static_cast<T>(j);
     } 
 }
 

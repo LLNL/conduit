@@ -2503,7 +2503,7 @@ PointQuery::acceleratedSearch(int ndims,
         typedCoords[2] = coords[2]->as_float32_array();
         conduit::blueprint::mesh::utils::kdtree<float32_array, float32, 3> search;
         search.initialize(typedCoords, numCoordsetPts);
-        search.setPointTolerance(m_pointTolerance);
+        search.setPointTolerance(static_cast<float32>(m_pointTolerance));
         conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
         {
             float32 searchPt[3] = {static_cast<float32>(input_ptr[i * 3 + 0]),
@@ -2547,7 +2547,7 @@ PointQuery::acceleratedSearch(int ndims,
         typedCoords[1] = coords[1]->as_float32_array();
         conduit::blueprint::mesh::utils::kdtree<float32_array, float32, 2> search;
         search.initialize(typedCoords, numCoordsetPts);
-        search.setPointTolerance(m_pointTolerance);
+        search.setPointTolerance(static_cast<float32>(m_pointTolerance));
         conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
         {
             float32 searchPt[2] = {static_cast<float32>(input_ptr[i * 3 + 0]),

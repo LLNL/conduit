@@ -5018,12 +5018,12 @@ namespace detail
         {
             for (int i = 0; i < new_num_shapes; i ++)
             {
-                float64 x1 = coords_x[connec[i * 3 + 0]];
-                float64 y1 = coords_y[connec[i * 3 + 0]];
-                float64 x2 = coords_x[connec[i * 3 + 1]];
-                float64 y2 = coords_y[connec[i * 3 + 1]];
-                float64 x3 = coords_x[connec[i * 3 + 2]];
-                float64 y3 = coords_y[connec[i * 3 + 2]];
+                float64 x1 = static_cast<float64>(coords_x[connec[i * 3 + 0]]);
+                float64 y1 = static_cast<float64>(coords_y[connec[i * 3 + 0]]);
+                float64 x2 = static_cast<float64>(coords_x[connec[i * 3 + 1]]);
+                float64 y2 = static_cast<float64>(coords_y[connec[i * 3 + 1]]);
+                float64 x3 = static_cast<float64>(coords_x[connec[i * 3 + 2]]);
+                float64 y3 = static_cast<float64>(coords_y[connec[i * 3 + 2]]);
 
                 tri_volumes[i] = triangle_area(x1, y1, x2, y2, x3, y3);
             }
@@ -5034,18 +5034,18 @@ namespace detail
 
             for (int i = 0; i < new_num_shapes; i ++)
             {
-                vec3 a = vec3(coords_x[connec[i * 4 + 0]],
-                              coords_y[connec[i * 4 + 0]],
-                              coords_z[connec[i * 4 + 0]]);
-                vec3 b = vec3(coords_x[connec[i * 4 + 1]],
-                              coords_y[connec[i * 4 + 1]],
-                              coords_z[connec[i * 4 + 1]]);
-                vec3 c = vec3(coords_x[connec[i * 4 + 2]],
-                              coords_y[connec[i * 4 + 2]],
-                              coords_z[connec[i * 4 + 2]]);
-                vec3 d = vec3(coords_x[connec[i * 4 + 3]],
-                              coords_y[connec[i * 4 + 3]],
-                              coords_z[connec[i * 4 + 3]]);
+                vec3 a = vec3(static_cast<float64>(coords_x[connec[i * 4 + 0]]),
+                              static_cast<float64>(coords_y[connec[i * 4 + 0]]),
+                              static_cast<float64>(coords_z[connec[i * 4 + 0]]));
+                vec3 b = vec3(static_cast<float64>(coords_x[connec[i * 4 + 1]]),
+                              static_cast<float64>(coords_y[connec[i * 4 + 1]]),
+                              static_cast<float64>(coords_z[connec[i * 4 + 1]]));
+                vec3 c = vec3(static_cast<float64>(coords_x[connec[i * 4 + 2]]),
+                              static_cast<float64>(coords_y[connec[i * 4 + 2]]),
+                              static_cast<float64>(coords_z[connec[i * 4 + 2]]));
+                vec3 d = vec3(static_cast<float64>(coords_x[connec[i * 4 + 3]]),
+                              static_cast<float64>(coords_y[connec[i * 4 + 3]]),
+                              static_cast<float64>(coords_z[connec[i * 4 + 3]]));
                 tri_volumes[i] = tetrahedron_volume(a,b,c,d);
             }
         }
@@ -5179,7 +5179,7 @@ namespace detail
         // points that are in both the old and new topologies
         for (int i = 0; i < orig_num_points; i ++)
         {
-            values_array[i] = poly_field_data[i];
+            values_array[i] = static_cast<U>(poly_field_data[i]);
         }
 
         // this map will record for each new point (represented by
@@ -5213,7 +5213,9 @@ namespace detail
                         {
                             // then add or modify an entry in the map to reflect
                             // the new information
-                            info[new_connec[j]].insert(new_connec[k]);
+                            auto ikey = static_cast<int>(new_connec[j]);
+                            auto ivalue = static_cast<int>(new_connec[k]);
+                            info[ikey].insert(ivalue);
                         }
                     }
                 }
@@ -5335,11 +5337,11 @@ namespace detail
                 // if our field is volume dependent
                 if (vol_dep)
                 {
-                    values_array[i] = poly_field_data[tri_to_poly[i]] * volume_ratio[i];
+                    values_array[i] = static_cast<U>(poly_field_data[tri_to_poly[i]] * volume_ratio[i]);
                 }
                 else
                 {
-                    values_array[i] = poly_field_data[tri_to_poly[i]];
+                    values_array[i] = static_cast<U>(poly_field_data[tri_to_poly[i]]);
                 }
             }
         }

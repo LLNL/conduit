@@ -278,9 +278,10 @@ void kdtree<Indexable, T, NDIMS>::cutBox(const BoxType &input, int dimension,
     //       coordinates to get an idea of their center and store a t value
     //       to lerp the dimension min/max. This would help with long dimensions
     //       where points are clustered unevenly.
+    constexpr T two = 2.;
     memcpy(A, input, sizeof(BoxType));
     memcpy(B, input, sizeof(BoxType));
-    T mid = (input[dimension][0] + input[dimension][1]) / 2.;
+    T mid = (input[dimension][0] + input[dimension][1]) / two;
     A[dimension][1] = mid;
     B[dimension][0] = mid;
 }
@@ -464,9 +465,9 @@ void kdtree<Indexable, T, NDIMS>::construct()
 
     // Figure out a number of levels that we want to use. We take the floor so
     // the leaf nodes may have multiple elements.
-    int maxLevels = static_cast<int>(floor(log(coordlen) / log(2.)));
+    int maxLevels = static_cast<int>(std::floor(std::log((double)coordlen) / std::log((double)2.)));
     // This is the summation of all of the levels
-    int nBoxes = static_cast<int>(pow(2., maxLevels + 1) - 1);
+    int nBoxes = static_cast<int>(std::pow(2., maxLevels + 1) - 1);
 
     boxes.resize(nBoxes);
 
@@ -480,7 +481,7 @@ void kdtree<Indexable, T, NDIMS>::construct()
     // Build the box for level 0.
     RangeType range;
     range.offset = 0;
-    range.size = coordlen;
+    range.size = static_cast<int>(coordlen);
     constructBox(0, range, box, 0, maxLevels);
 }
 

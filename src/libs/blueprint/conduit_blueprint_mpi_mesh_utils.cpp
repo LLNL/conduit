@@ -102,7 +102,7 @@ PointQuery::execute(const std::string &coordsetName)
     }
 
     // Let all ranks know the sizes of the queries vectors.
-    int nq = queries.size();
+    auto nq = static_cast<int>(queries.size());
     std::vector<int> qsize(size, 0);
     MPI_Allgather(&nq, 1, MPI_INT, &qsize[0], 1, MPI_INT, m_comm);
 

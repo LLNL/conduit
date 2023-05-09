@@ -81,7 +81,7 @@ public:
     /**
      @brief Destructor.
      */
-    virtual ~PointQuery() = default;
+    virtual ~PointQuery() override = default;
 
     /**
      @brief Execute all of the point queries. If a rank queries a point that
@@ -114,6 +114,11 @@ public:
      @param comm The MPI communicator that will be used for communication.
      */
     MatchQuery(const conduit::Node &mesh, MPI_Comm comm);
+
+    /**
+     @brief Destructor.
+     */
+    virtual ~MatchQuery() override = default;
 
     /**
      @brief Execute all of the queries.

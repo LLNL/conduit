@@ -125,7 +125,7 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
     // Save all topos together to a dataset for visualization.
     save_visit(base, vis);
 #endif
-    for(int d = maxdim; d >= 0; d--)
+    for(index_t d = maxdim; d >= 0; d--)
     {
         std::stringstream oss;
         oss << "lengths/topo" << d;
@@ -136,8 +136,8 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
     std::vector<std::string> mapkeys{"values", "sizes", "offsets"};
 
     // Get all the maps and add them to the rep.
-    for(int e = maxdim; e >= 0; e--)
-    for(int a = maxdim; a >= 0; a--)
+    for(index_t e = maxdim; e >= 0; e--)
+    for(index_t a = maxdim; a >= 0; a--)
     {
         {
             std::stringstream oss;
@@ -177,7 +177,7 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
         }
     }
 
-    for(int d = maxdim; d >= 0; d--)
+    for(index_t d = maxdim; d >= 0; d--)
     {
         const std::vector<index_t> &le2ge = md.get_local_to_global_map(d);
 
@@ -209,7 +209,7 @@ test_topmd(const std::string &base, conduit::Node &topo, conduit::Node &coords)
 
             std::vector<index_t> pts = conduit::blueprint::mesh::utils::topology::unstructured::points(md.get_topology(3), ei);
             bool equal = (pts == elempts_vec);
-            EXPECT_EQ(pts, elempts_vec);
+            EXPECT_TRUE(equal);
         }
     }
 

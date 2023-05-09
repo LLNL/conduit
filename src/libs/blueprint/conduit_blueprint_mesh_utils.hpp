@@ -154,7 +154,7 @@ static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
     &TOPO_TRI_EMBEDDING[0][0], &TOPO_QUAD_EMBEDDING[0][0],
     &TOPO_TET_EMBEDDING[0][0], &TOPO_HEX_EMBEDDING[0][0],
     &TOPO_WEDGE_EMBEDDING[0][0], &TOPO_PYRAMID_EMBEDDING[0][0],
-    NULL, NULL};
+    nullptr, nullptr};
 
 //-----------------------------------------------------------------------------
 /// blueprint mesh utility structures
@@ -543,8 +543,8 @@ public:
     std::vector<int> queryDomainIds() const;
 protected:
     const conduit::Node &m_mesh;
-    std::map<int, std::vector<double>> m_domInputs;
-    std::map<int, std::vector<int>>    m_domResults;
+    std::map<int, std::vector<double> > m_domInputs;
+    std::map<int, std::vector<int> >    m_domResults;
 };
 
 //---------------------------------------------------------------------------
@@ -569,7 +569,7 @@ public:
     /**
      @brief Destructor
      */
-    virtual ~PointQuery() = default;
+    virtual ~PointQuery() override = default;
 
     /**
      @brief Set the point tolerance used to decide which points are the same.
@@ -669,6 +669,11 @@ public:
                  that uniquely identifies the domain.
      */
     MatchQuery(const conduit::Node &mesh);
+
+    /**
+     @brief Destructor (marked as virtual)
+     */
+    virtual ~MatchQuery() = default;
 
     /**
      @brief Select the topology that will be used. This should be an existing
