@@ -91,7 +91,7 @@ distribute_domains(int rank, const int ndomains[4],
 
     // Limit to just the domains for this rank.
     domains.reset();
-    for(size_t i = 0; i < ndomains[rank]; i++)
+    for(int i = 0; i < ndomains[rank]; i++)
     {
         conduit::Node &dom = domains.append();
         dom.set_external(src_domains[offsets[rank] + i]);

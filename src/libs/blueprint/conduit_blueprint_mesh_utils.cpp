@@ -2076,15 +2076,13 @@ adjset::validate(const conduit::Node &doms,
     {
         // Iterate over the domains so we can add their adjset points to the
         // point query.
-        std::string coordsetName;
         std::vector<std::tuple<index_t, index_t, index_t, index_t, size_t, std::string, std::vector<double>>> query_guide;
         for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
         {
             const auto dom = domains[domIdx];
             auto domainId = conduit::blueprint::mesh::utils::find_domain_id(*dom);
 
-            // Get the domain's topo and coordset.
-            const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+            // Get the domain's coordset.
             const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
 
             // Get the domain's adjset and groups.
@@ -2180,10 +2178,8 @@ adjset::validate(const conduit::Node &doms,
             const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
             const conduit::Node &adjset_groups = adjset.fetch_existing("groups");
 
-            // Get the domain's topo and coordset.
+            // Get the domain's topo.
             const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
-            std::string coordsetName = topo["coordset"].as_string();
-            const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
 
             // Get the number of elements in the topology.
             index_t topo_len = conduit::blueprint::mesh::utils::topology::length(topo);
@@ -2327,7 +2323,7 @@ PointQueryBase::execute(const std::string & /*coordsetName*/)
 {
     for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
     {
-        int npts = it->second.size() / 3;
+        size_t npts = it->second.size() / 3;
         std::vector<int> &result = m_domResults[it->first];
         result.resize(npts, 0); // success is anything != NotFound
     }
@@ -2478,18 +2474,18 @@ PointQuery::acceleratedSearch(int ndims,
        coordTypes[0] == conduit::DataType::FLOAT64_ID)
     {
         // 3D points are all doubles.
-        float64 *typedCoords[3];
-        typedCoords[0] = const_cast<float64 *>(coords[0]->as_float64_ptr());
-        typedCoords[1] = const_cast<float64 *>(coords[1]->as_float64_ptr());
-        typedCoords[2] = const_cast<float64 *>(coords[2]->as_float64_ptr());
-        conduit::blueprint::mesh::utils::kdtree<float64 *, float64, 3> search;
+        float64_array typedCoords[3];
+        typedCoords[0] = coords[0]->as_float64_array();
+        typedCoords[1] = coords[1]->as_float64_array();
+        typedCoords[2] = coords[2]->as_float64_array();
+        conduit::blueprint::mesh::utils::kdtree<float64_array, float64, 3> search;
         search.initialize(typedCoords, numCoordsetPts);
         search.setPointTolerance(m_pointTolerance);
         conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
         {
-            float64 searchPt[3] = {static_cast<float64>(input[i * 3 + 0]),
-                                   static_cast<float64>(input[i * 3 + 1]),
-                                   static_cast<float64>(input[i * 3 + 2])};
+            float64 searchPt[3] = {static_cast<float64>(input_ptr[i * 3 + 0]),
+                                   static_cast<float64>(input_ptr[i * 3 + 1]),
+                                   static_cast<float64>(input_ptr[i * 3 + 2])};
             int found = search.findPoint(searchPt);
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
@@ -2501,18 +2497,18 @@ PointQuery::acceleratedSearch(int ndims,
             coordTypes[0] == conduit::DataType::FLOAT32_ID)
     {
         // 3D points are all float.
-        float32 *typedCoords[3];
-        typedCoords[0] = const_cast<float32 *>(coords[0]->as_float32_ptr());
-        typedCoords[1] = const_cast<float32 *>(coords[1]->as_float32_ptr());
-        typedCoords[2] = const_cast<float32 *>(coords[2]->as_float32_ptr());
-        conduit::blueprint::mesh::utils::kdtree<float32 *, float32, 3> search;
+        float32_array typedCoords[3];
+        typedCoords[0] = coords[0]->as_float32_array();
+        typedCoords[1] = coords[1]->as_float32_array();
+        typedCoords[2] = coords[2]->as_float32_array();
+        conduit::blueprint::mesh::utils::kdtree<float32_array, float32, 3> search;
         search.initialize(typedCoords, numCoordsetPts);
         search.setPointTolerance(m_pointTolerance);
         conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
         {
-            float32 searchPt[3] = {static_cast<float32>(input[i * 3 + 0]),
-                                   static_cast<float32>(input[i * 3 + 1]),
-                                   static_cast<float32>(input[i * 3 + 2])};
+            float32 searchPt[3] = {static_cast<float32>(input_ptr[i * 3 + 0]),
+                                   static_cast<float32>(input_ptr[i * 3 + 1]),
+                                   static_cast<float32>(input_ptr[i * 3 + 2])};
             int found = search.findPoint(searchPt);
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
@@ -2525,16 +2521,16 @@ PointQuery::acceleratedSearch(int ndims,
             coordTypes[0] == conduit::DataType::FLOAT64_ID)
     {
         // 2D points are all doubles.
-        float64 *typedCoords[2];
-        typedCoords[0] = const_cast<float64 *>(coords[0]->as_float64_ptr());
-        typedCoords[1] = const_cast<float64 *>(coords[1]->as_float64_ptr());
-        conduit::blueprint::mesh::utils::kdtree<float64 *, float64, 2> search;
+        float64_array typedCoords[2];
+        typedCoords[0] = coords[0]->as_float64_array();
+        typedCoords[1] = coords[1]->as_float64_array();
+        conduit::blueprint::mesh::utils::kdtree<float64_array, float64, 2> search;
         search.initialize(typedCoords, numCoordsetPts);
         search.setPointTolerance(m_pointTolerance);
         conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
         {
-            float64 searchPt[2] = {static_cast<float64>(input[i * 3 + 0]),
-                                   static_cast<float64>(input[i * 3 + 1])};
+            float64 searchPt[2] = {static_cast<float64>(input_ptr[i * 3 + 0]),
+                                   static_cast<float64>(input_ptr[i * 3 + 1])};
             int found = search.findPoint(searchPt);
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
@@ -2546,16 +2542,16 @@ PointQuery::acceleratedSearch(int ndims,
             coordTypes[0] == conduit::DataType::FLOAT32_ID)
     {
         // 2D points are all float.
-        float32 *typedCoords[2];
-        typedCoords[0] = const_cast<float32 *>(coords[0]->as_float32_ptr());
-        typedCoords[1] = const_cast<float32 *>(coords[1]->as_float32_ptr());
-        conduit::blueprint::mesh::utils::kdtree<float32 *, float32, 2> search;
+        float32_array typedCoords[2];
+        typedCoords[0] = coords[0]->as_float32_array();
+        typedCoords[1] = coords[1]->as_float32_array();
+        conduit::blueprint::mesh::utils::kdtree<float32_array, float32, 2> search;
         search.initialize(typedCoords, numCoordsetPts);
         search.setPointTolerance(m_pointTolerance);
         conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
         {
-            float32 searchPt[2] = {static_cast<float32>(input[i * 3 + 0]),
-                                   static_cast<float32>(input[i * 3 + 1])};
+            float32 searchPt[2] = {static_cast<float32>(input_ptr[i * 3 + 0]),
+                                   static_cast<float32>(input_ptr[i * 3 + 1])};
             int found = search.findPoint(searchPt);
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
@@ -2567,9 +2563,9 @@ PointQuery::acceleratedSearch(int ndims,
 //---------------------------------------------------------------------------
 bool
 PointQuery::normalSearch(int ndims,
-    bool sameTypes,
+    bool /*sameTypes*/,
     const conduit::Node *coords[3],
-    const conduit::index_t coordTypes[3],
+    const conduit::index_t /*coordTypes*/[3],
     const std::vector<double> &input,
     std::vector<int> &result) const
 {
@@ -2788,7 +2784,6 @@ MatchQuery::execute()
     for(auto it = m_query.begin(); it != m_query.end(); it++)
     {
         int dom = it->first.first;
-        int query_dom = it->first.second;
 
         if(shape.empty())
         {

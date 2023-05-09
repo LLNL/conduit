@@ -1100,11 +1100,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_types)
         conduit::Node topo;
         make_ph_topo(topo, true, true);
         auto &offsets = topo["elements/offsets"];
-        int t0 = offsets.dtype().id();
-        int st0 = topo["subelements/offsets"].dtype().id();
+        auto t0 = offsets.dtype().id();
+        auto st0 = topo["subelements/offsets"].dtype().id();
         conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
-        int t1 = topo["elements/offsets"].dtype().id();
-        int st1 = topo["subelements/offsets"].dtype().id();
+        auto t1 = topo["elements/offsets"].dtype().id();
+        auto st1 = topo["subelements/offsets"].dtype().id();
         // The types better be equal
         EXPECT_EQ(t0, t1);
         EXPECT_EQ(st0, st1);
@@ -1124,10 +1124,10 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_types)
         conduit::Node topo;
         make_ph_topo(topo, true, false);
         auto &offsets = topo["elements/offsets"];
-        int t0 = offsets.dtype().id();
+        auto t0 = offsets.dtype().id();
         conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
         EXPECT_EQ(topo["elements"].has_child("offsets"), true);
-        int t1 = topo["elements/offsets"].dtype().id();
+        auto t1 = topo["elements/offsets"].dtype().id();
         // The types better be equal
         EXPECT_EQ(t0, t1);
     }
@@ -1137,11 +1137,11 @@ TEST(conduit_blueprint_generate_unstructured, generate_offsets_types)
         conduit::Node topo;
         make_ph_topo(topo, false, true);
         auto &offsets = topo["elements/offsets"];
-        int st0 = topo["subelements/offsets"].dtype().id();
+        auto st0 = topo["subelements/offsets"].dtype().id();
         conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, offsets);
         EXPECT_EQ(topo["elements"].has_child("offsets"), true);
         EXPECT_EQ(topo["subelements"].has_child("offsets"), true);
-        int st1 = topo["subelements/offsets"].dtype().id();
+        auto st1 = topo["subelements/offsets"].dtype().id();
         // The types better be equal
         EXPECT_EQ(st0, st1);
     }

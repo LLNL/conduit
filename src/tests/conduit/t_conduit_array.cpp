@@ -651,7 +651,7 @@ TEST(conduit_array, fill)
     float32_array va_float32 = n["v_float32"].value();
     float64_array va_float64 = n["v_float64"].value();
 
-    for(size_t i=0;i<num_ele; i++)
+    for(int i=0;i<num_ele; i++)
     {
         EXPECT_NE(va_int8[i],-1);
         EXPECT_NE(va_int16[i],-1);
@@ -684,7 +684,7 @@ TEST(conduit_array, fill)
 
     n.print();
 
-    for(size_t i=0;i<num_ele; i++)
+    for(int i=0;i<num_ele; i++)
     {
         EXPECT_EQ(va_int8[i],-1);
         EXPECT_EQ(va_int16[i],-1);

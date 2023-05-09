@@ -27,7 +27,6 @@
 // conduit lib includes
 //-----------------------------------------------------------------------------
 #include "conduit.hpp"
-#include "conduit_blueprint_exports.h"
 
 // This macro enables some kdtree debugging information.
 // #define CONDUIT_DEBUG_KDTREE
@@ -66,7 +65,7 @@ namespace utils
  @tparam NDIMS The number of dimensions in a coordinate.
  */
 template <typename Indexable, typename T, int NDIMS>
-class CONDUIT_BLUEPRINT_API kdtree
+class kdtree
 {
 public:
     static const int NoChild;
@@ -449,7 +448,7 @@ void kdtree<Indexable, T, NDIMS>::calculateExtents()
     // Expand the box a little
     for(int i = 0; i < dims(); i++)
     {
-        T d = (box[i][1] - box[i][0]) / 200.;
+        T d = (box[i][1] - box[i][0]) / static_cast<T>(200.);
         box[i][0] -= d;
         box[i][1] += d;
     }

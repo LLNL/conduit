@@ -946,7 +946,8 @@ private:
                 uint64 element_face = facestart + face;
 
                 std::sort(face_pts_start, face_pts_end);
-                uint64 faceid = conduit::utils::hash(face_pts_start, points_per_face);
+                uint64 faceid = conduit::utils::hash(face_pts_start,
+                                    static_cast<unsigned int>(points_per_face));
 
                 // Store the faceid and ef values.
                 faceid_to_ef[element_face] = std::make_pair(faceid, element_face);

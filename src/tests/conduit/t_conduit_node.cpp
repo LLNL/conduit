@@ -870,7 +870,7 @@ TEST(conduit_node, check_path_in_bad_access)
     {
         std::string s = n["a/b/c/d/e/f"].as_string();
     }
-    catch(Error e)
+    catch(Error &e)
     {
         EXPECT_TRUE(e.message().find("a/b/c/d/e/f") != std::string::npos);
     }

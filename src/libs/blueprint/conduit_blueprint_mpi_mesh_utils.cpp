@@ -80,7 +80,8 @@ PointQuery::execute(const std::string &coordsetName)
     // Figure out which ranks own the domains. Get the domain ids on this rank
     // and sum the number of domains on all ranks.
     std::vector<int> localDomains = domainIds();
-    int ndoms = localDomains.size(), ntotal_doms = 0;
+    int ndoms = static_cast<int>(localDomains.size());
+    int ntotal_doms = 0;
     MPI_Allreduce(&ndoms, &ntotal_doms, 1, MPI_INT, MPI_SUM, m_comm);
 
     // Make sure each rank knows who owns which domains. This assumes that
@@ -160,7 +161,7 @@ PointQuery::execute(const std::string &coordsetName)
     for(size_t i = 0; i < allqueries.size(); i += 3)
     {
         int domain = allqueries[i+1];
-        if(domain < 0 || domain >= domain_to_rank.size())
+        if(domain < 0 || domain >= static_cast<int>(domain_to_rank.size()))
         {
             CONDUIT_ERROR("An adjacency set referenced domain " << domain
                 << ", which is not a valid domain in the input mesh.");
@@ -252,8 +253,8 @@ PointQuery::execute(const std::string &coordsetName)
                     auto acc = q["inputs"].as_double_accessor();
                     std::vector<double> input;
                     input.reserve(acc.number_of_elements());
-                    for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
-                        input.push_back(acc[i]);
+                    for(conduit::index_t j = 0; j < acc.number_of_elements(); j++)
+                        input.push_back(acc[j]);
 
                     // Do the query.
                     std::vector<int> result;
@@ -332,7 +333,6 @@ MatchQuery::execute()
     for(auto it = m_query.begin(); it != m_query.end(); it++)
     {
         int dom = it->first.first;
-        int query_dom = it->first.second;
 
         if(shape.empty())
         {
@@ -366,7 +366,7 @@ MatchQuery::execute()
     }
 
     // Let all ranks know the sizes of the queries vectors.
-    int nq = queries.size();
+    int nq = static_cast<int>(queries.size());
     std::vector<int> qsize(size, 0);
     MPI_Allgather(&nq, 1, MPI_INT, &qsize[0], 1, MPI_INT, m_comm);
 

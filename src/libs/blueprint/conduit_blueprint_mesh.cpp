@@ -2833,14 +2833,11 @@ generate_derived_entities(conduit::Node &mesh,
 
         const Node *src_topo_ptr = bputils::find_reference_node(domain["adjsets"][src_adjset_name], "topology");
         const Node &src_topo = *src_topo_ptr;
-        const Node *src_cset_ptr = bputils::find_reference_node(src_topo, "coordset");
-        const Node &src_cset = *src_cset_ptr;
 
         const Node &dst_topo = domain["topologies"][dst_topo_name];
         const index_t dst_topo_len = bputils::topology::length(dst_topo);
 
         const conduit::Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
-        conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
         // Tell the query which topology to use.
         Q.selectTopology(src_topo.name());
@@ -2954,7 +2951,6 @@ generate_derived_entities(conduit::Node &mesh,
         const Node &src_cset = *src_cset_ptr;
 
         const Node &dst_topo = domain["topologies"][dst_topo_name];
-        const index_t dst_topo_len = bputils::topology::length(dst_topo);
 
         const conduit::Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
         conduit::Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
@@ -3147,7 +3143,6 @@ generate_decomposed_entities(conduit::Node &mesh,
         const Node &dst_cset = domain["coordsets"][dst_cset_name];
 
         const Node &src_adjset_groups = domain["adjsets"][src_adjset_name]["groups"];
-        Node &dst_adjset_groups = domain["adjsets"][dst_adjset_name]["groups"];
 
         // Organize Adjset Points into Interfaces (Pair-Wise Groups) //
         //
@@ -5251,12 +5246,12 @@ namespace detail
                 // the size of the set, since there are neighbors which
                 // may go unused, since they are not from the original
                 // coordset
-                values_array[i] = sum / num_neighbors;
+                values_array[i] = static_cast<U>(sum / num_neighbors);
             }
             // if the points go unused in the topology, we assign them 0
             else
             {
-                values_array[i] = 0.0;
+                values_array[i] = static_cast<U>(0.0);
             }
         }
     }
