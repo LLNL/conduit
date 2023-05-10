@@ -2483,10 +2483,16 @@ void silo_mesh_write(const Node &n,
     if (!silo_obj_path.empty())
     {
         silo_error += DBGetDir(dbfile, silo_prev_dir);
-        silo_error += DBMkDir(dbfile, silo_obj_path.c_str());
-        silo_error += DBSetDir(dbfile, silo_obj_path.c_str());
+
+        std::string dir; 
+        std::stringstream ss(silo_obj_path);
+        while (getline(ss, dir, '/'))
+        {
+            silo_error += DBMkDir(dbfile, dir.c_str());
+            silo_error += DBSetDir(dbfile, dir.c_str());
+        }
         CONDUIT_CHECK_SILO_ERROR(silo_error,
-                                 " failed to make silo directory:"
+                                 " failed to make silo directory: "
                                  << silo_obj_path);
     }
 
@@ -2928,8 +2934,8 @@ write_multivars(DBfile *dbfile,
 ///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
 ///
 ///      suffix: "default", "cycle", "none"
-///            when # of domains == 1,  "default"   ==> "none"
-///            else,                    "default"   ==> "cycle"
+///            when cycle is present,  "default"   ==> "cycle"
+///            else,                   "default"   ==> "none"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
@@ -3430,8 +3436,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             // silo type can be anything except unknown
             silo_type = DB_HDF5;
-            CONDUIT_INFO("Overriding silo type to DB_HDF5 because either "
-                         "the file does not exist or truncation is enabled.");
+            CONDUIT_INFO("Overriding chosen silo type (DB_UNKNOWN) to DB_HDF5 "
+                         "because either the file does not exist or "
+                         "truncation is enabled.");
         }
     }
 
@@ -3509,7 +3516,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                     const Node &dom = multi_dom.child(i);
                     // figure out the proper mesh path the file
-                    std::string mesh_path = "";
+                    std::string mesh_path;
 
                     if (global_num_domains == 1)
                     {
@@ -4174,8 +4181,8 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
 ///
 ///      suffix: "default", "cycle", "none"
-///            when # of domains == 1,  "default"   ==> "none"
-///            else,                    "default"   ==> "cycle"
+///            when cycle is present,  "default"   ==> "cycle"
+///            else,                   "default"   ==> "none"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///

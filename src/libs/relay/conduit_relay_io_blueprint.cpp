@@ -763,8 +763,8 @@ void save_mesh(const Node &mesh,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      suffix: "default", "cycle", "none" 
-///            when # of domains == 1,  "default"   ==> "none"
-///            else,                    "default"   ==> "cycle"
+///            when cycle is present,  "default"   ==> "cycle"
+///            else,                   "default"   ==> "none"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
@@ -775,10 +775,10 @@ void save_mesh(const Node &mesh,
 ///
 //-----------------------------------------------------------------------------
 void save_mesh(const Node &mesh,
-                const std::string &path,
-                const std::string &protocol,
-                const Node &opts
-                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+               const std::string &path,
+               const std::string &protocol,
+               const Node &opts
+               CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     // we force overwrite to true, so we need a copy of the const opts passed.
     Node save_opts;
@@ -859,8 +859,8 @@ void write_mesh(const Node &mesh,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      suffix: "default", "cycle", "none" 
-///            when # of domains == 1,  "default"   ==> "none"
-///            else,                    "default"   ==> "cycle"
+///            when cycle is present,  "default"   ==> "cycle"
+///            else,                   "default"   ==> "none"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
