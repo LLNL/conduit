@@ -2545,6 +2545,7 @@ generate_silo_names(const conduit::Node &n_mesh_state,
                     const int num_files,
                     const int global_num_domains,
                     const int type,
+                    const bool root_only,
                     std::vector<std::string> &name_strings,
                     std::vector<const char *> &name_ptrs,
                     std::vector<int> &types)
@@ -2570,7 +2571,7 @@ generate_silo_names(const conduit::Node &n_mesh_state,
         // what was already decided in write_mesh
 
         // single file case
-        if (num_files == 1)
+        if (root_only)
         {
             if (global_num_domains == 1)
             {
@@ -2623,6 +2624,7 @@ void write_multimesh(const Node &n_mesh,
                      DBfile *dbfile)
 {
     const int num_files = root["number_of_files"].as_int32();
+    const bool root_only = root["file_style"].as_string() == "root_only";
 
     const Node &n_topo = n_mesh["topologies"][topo_name];
     std::string topo_type = n_topo["type"].as_string();
@@ -2660,6 +2662,7 @@ void write_multimesh(const Node &n_mesh,
                         num_files,
                         global_num_domains,
                         mesh_type,
+                        root_only,
                         domain_name_strings,
                         domain_name_ptrs,
                         mesh_types);
@@ -2723,7 +2726,6 @@ void write_multimeshes(DBfile *dbfile,
                        const conduit::Node &root,
                        bool overlink)
 {
-    
     const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_out_mesh_name];
 
@@ -2811,6 +2813,7 @@ write_multivars(DBfile *dbfile,
     const int num_files = root["number_of_files"].as_int32();
     const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    const bool root_only = root["file_style"].as_string() == "root_only";
 
     // these should be the same b/c the num domains the bp index was given
     // was global_num_domains
@@ -2865,6 +2868,7 @@ write_multivars(DBfile *dbfile,
                                 num_files,
                                 global_num_domains,
                                 var_type,
+                                root_only,
                                 var_name_strings,
                                 var_name_ptrs,
                                 var_types);
@@ -3324,7 +3328,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // ----------------------------------------------------
     // if using multi_file or overlink, create output dir
     // ----------------------------------------------------
-    if (opts_file_style == "multi_file")
+    if (opts_file_style == "multi_file" ||
+        opts_file_style == "overlink")
     {
         // setup the directory
         if (opts_file_style == "overlink")
@@ -4052,6 +4057,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         root["number_of_domains"]  = global_num_domains;
 
         root["silo_path"] = output_silo_path;
+        root["file_style"] = opts_file_style;
 
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> dbfile{
             nullptr, 

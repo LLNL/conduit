@@ -46,11 +46,15 @@ silo_uniform_to_rect_conversion(const std::string &coordset_name,
     save_mesh["coordsets"][coordset_name].set(save_mesh_rect_coords);
 }
 
-// we assume 1 coordset, 1 topo, and fields
+// The Blueprint to Silo transformation changes several names 
+// and some information is lost. We manually make changes so 
+// that the diff will pass.
 void
 silo_name_changer(const std::string &mmesh_name,
                   conduit::Node &save_mesh)
 {
+    // we assume 1 coordset, 1 topo, and fields
+
     Node &coordsets = save_mesh["coordsets"];
     Node &topologies = save_mesh["topologies"];
     Node &fields = save_mesh["fields"];
@@ -224,7 +228,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     }
 }
 
-TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
+TEST(conduit_relay_io_silo, round_trip_basic)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
         std::make_pair("uniform", 2), std::make_pair("uniform", 3),
@@ -265,9 +269,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
         }
 
-        // The Blueprint to Silo transformation changes several names 
-        // and some information is lost. We manually make changes so 
-        // that the diff will pass.
         silo_name_changer("mesh", save_mesh);
 
         // silo will store this value as an int32. For whatever reason,
@@ -288,7 +289,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_basic)
 }
 
 // we are testing vector fields in this test
-TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
+TEST(conduit_relay_io_silo, round_trip_braid)
 {
     const std::vector<std::pair<std::string, int>> mesh_types = {
         std::make_pair("uniform", 2), std::make_pair("uniform", 3),
@@ -331,9 +332,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
         }
 
-        // The Blueprint to Silo transformation changes several names 
-        // and some information is lost. We manually make changes so 
-        // that the diff will pass.
         silo_name_changer("mesh", save_mesh);
 
         // silo will store this value as an index_t. For whatever reason,
@@ -354,7 +352,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_braid)
 }
 
 // multidomain test
-TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
+TEST(conduit_relay_io_silo, round_trip_spiral)
 {
     for (int ndomains = 2; ndomains < 6; ndomains ++)
     {
@@ -367,9 +365,6 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
 
         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
         {
-            // The Blueprint to Silo transformation changes several names 
-            // and some information is lost. We manually make changes so 
-            // that the diff will pass.
             silo_name_changer("mesh", save_mesh[child]);
 
             // silo will store this value as an index_t. For whatever reason,
@@ -393,7 +388,7 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_spiral)
     }
 }
 
-TEST(conduit_relay_io_silo, save_mesh_geometry_julia)
+TEST(conduit_relay_io_silo, round_trip_julia)
 {
     Node save_mesh, load_mesh, info;
     index_t nx = 5;
@@ -413,17 +408,15 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_julia)
                                      c_re,
                                      c_im,
                                      save_mesh);
-    io::silo::save_mesh(save_mesh, "julia");
-    io::silo::load_mesh("julia.root", load_mesh);
+    remove_path_if_exists("silo_julia.root");
+    io::silo::save_mesh(save_mesh, "silo_julia");
+    io::silo::load_mesh("silo_julia.root", load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
     // check that load mesh correctly adds the state
     save_mesh["state/cycle"] = (int64) 0;
     save_mesh["state/domain_id"] = 0;
 
-    // The Blueprint to Silo transformation changes several names 
-    // and some information is lost. We manually make changes so 
-    // that the diff will pass.
     silo_name_changer("mesh", save_mesh);
 
     // the loaded mesh will be in the multidomain format
@@ -436,6 +429,160 @@ TEST(conduit_relay_io_silo, save_mesh_geometry_julia)
 }
 
 // TODO overlink i/o tests
+
+// save option tests
+
+/// opts:
+///
+///      file_style: "overlink"
+///
+///      silo_type: "default", "pdb", "hdf5", "unknown"
+///            when the file we are writing to exists, "default" ==> "unknown"
+///            else,                                   "default" ==> "hdf5"
+///         note: these are additional silo_type options that we could add 
+///         support for in the future:
+///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
+///
+///      suffix: "default", "cycle", "none"
+///            when # of domains == 1,  "default"   ==> "none"
+///            else,                    "default"   ==> "cycle"
+///
+///      mesh_name:  (used if present, default ==> "mesh")
+///
+///      ovl_topo_name: (used if present, default ==> "")
+///
+///      number_of_files:  {# of files}
+///            when "multi_file" or "overlink":
+///                 <= 0, use # of files == # of domains
+///                  > 0, # of files == number_of_files
+
+// TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
+// {
+//     // we will do overlink tests separately
+//     const std::vector<std::string> file_styles = {"default", "root_only", "multi_file"};
+//     for (int i = 0; i < file_styles.size(); i ++)
+//     {
+//         Node opts;
+//         opts["file_style"] = file_styles[i];
+//         opts["suffix"] = "none";
+
+//         for (int ndomains = 1; ndomains < 5; ndomains += 3)
+//         {
+//             Node save_mesh, load_mesh, info;
+//             blueprint::mesh::examples::spiral(ndomains, save_mesh);
+//             remove_path_if_exists("silo_save_option_file_style_spiral.root");
+//             io::silo::save_mesh(save_mesh, "silo_save_option_file_style_spiral");
+//             io::silo::load_mesh("silo_save_option_file_style_spiral.root", load_mesh);
+//             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+//             for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+//             {
+//                 silo_name_changer("mesh", save_mesh[child]);
+
+//                 // silo will store this value as an index_t. For whatever reason,
+//                 // braid stores cycle as a uint64, unlike the other mesh blueprint
+//                 // examples. We must change this so the diff will pass.
+//                 int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+//                 save_mesh[child]["state"]["cycle"].reset();
+//                 save_mesh[child]["state"]["cycle"] = (int64) cycle;
+//             }
+
+//             EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+//             NodeConstIterator l_itr = load_mesh.children();
+//             NodeConstIterator s_itr = save_mesh.children();
+//             while (l_itr.has_next())
+//             {
+//                 const Node &l_curr = l_itr.next();
+//                 const Node &s_curr = s_itr.next();
+
+//                 EXPECT_FALSE(l_curr.diff(s_curr, info));
+//             }
+//         }
+//     }
+// }
+
+// TEST(conduit_relay_io_silo, round_trip_save_option_suffix)
+// {
+//     const std::vector<std::string> suffixes = {"default", "cycle", "none"};
+//     const std::string basename = "silo_save_option_suffix_spiral";
+//     const std::vector<std::string> file_suffixes = {
+//         "",              // # domains == 1 so no suffix
+//         "cycle_000000.", // # domains != 1 so yes suffix
+//         "cycle_000000.", // cycle is turned on
+//         "cycle_000000.", // cycle is turned on
+//         "",              // cycle is turned off
+//         "",              // cycle is turned off
+//     };
+//     for (int i = 0; i < suffixes.size() * 2; i ++)
+//     {
+//         std::cout << i << std::endl;
+//         Node opts;
+//         opts["suffix"] = suffixes[i / 2];
+
+//         for (int ndomains = 1; ndomains < 3; ndomains ++)
+//         {
+//             Node save_mesh, load_mesh, info;
+//             blueprint::mesh::examples::spiral(ndomains, save_mesh);
+
+//             std::string filename = basename + file_suffixes[i];
+//             std::string filename_w_ext = basename + file_suffixes[i] + ".root";
+
+//             remove_path_if_exists(filename_w_ext);
+//             io::blueprint::save_mesh(save_mesh, "whatever", "hdf5", opts);
+//             io::silo::save_mesh(save_mesh, filename, opts);
+//             io::silo::load_mesh(filename_w_ext, load_mesh);
+//             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+//             for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+//             {
+//                 silo_name_changer("mesh", save_mesh[child]);
+
+//                 // silo will store this value as an index_t. For whatever reason,
+//                 // braid stores cycle as a uint64, unlike the other mesh blueprint
+//                 // examples. We must change this so the diff will pass.
+//                 int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+//                 save_mesh[child]["state"]["cycle"].reset();
+//                 save_mesh[child]["state"]["cycle"] = (int64) cycle;
+//             }
+
+//             EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+//             NodeConstIterator l_itr = load_mesh.children();
+//             NodeConstIterator s_itr = save_mesh.children();
+//             while (l_itr.has_next())
+//             {
+//                 const Node &l_curr = l_itr.next();
+//                 const Node &s_curr = s_itr.next();
+
+//                 EXPECT_FALSE(l_curr.diff(s_curr, info));
+//             }
+//         }
+//     }
+// }
+
+TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
+{
+    Node opts;
+    opts["mesh_name"] = "mymesh";
+
+    Node save_mesh, load_mesh, info;
+    blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
+    remove_path_if_exists("silo_save_option_mesh_name_basic.root");
+    io::silo::save_mesh(save_mesh, "silo_save_option_mesh_name_basic", opts);
+    io::silo::load_mesh("silo_save_option_mesh_name_basic.root", load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    // check that load mesh correctly adds the state
+    save_mesh["state/cycle"] = (int64) 0;
+    save_mesh["state/domain_id"] = 0;
+
+    silo_name_changer("mymesh", save_mesh);
+
+    // the loaded mesh will be in the multidomain format
+    // but the saved mesh is in the single domain format
+    EXPECT_EQ(load_mesh.number_of_children(), 1);
+    EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+}
 
 // TODO add tests for...
 //  - materials once they are supported
