@@ -604,7 +604,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
 
 TEST(conduit_relay_io_silo, read_silo)
 {
-    const std::vector<std::string> basenames = {/*"multi_curv3d",*/ /*"tire",*/ "galaxy0000", /*"emptydomains"*/};
+    const std::vector<std::string> basenames = {/*"multi_curv3d",*/ "tire", "galaxy0000", /*"emptydomains"*/};
     for (int i = 0; i < basenames.size(); ++i) 
     {
         Node load_mesh, info;
@@ -614,11 +614,11 @@ TEST(conduit_relay_io_silo, read_silo)
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
         load_mesh.print();
 
-        // // save for blueprint vs silo diff
-        // io::blueprint::save_mesh(load_mesh, basenames[i], "hdf5");
+        // save for blueprint vs silo diff
+        io::blueprint::save_mesh(load_mesh, basenames[i] + "_blueprint", "hdf5");
 
-        // // save for silo vs silo diff
-        // io::silo::save_mesh(load_mesh, basenames[i]);
+        // save for silo vs silo diff
+        io::silo::save_mesh(load_mesh, basenames[i] + "_silo");
     }
 }
 

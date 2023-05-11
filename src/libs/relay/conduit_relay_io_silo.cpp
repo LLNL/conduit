@@ -523,7 +523,10 @@ get_coordset_axis_labels(const int sys)
     }
     else if (sys == DB_OTHER)
     {
-        CONDUIT_ERROR("Conduit Blueprint does not support DB_OTHER coordinate systems.");
+        CONDUIT_INFO("Encountered DB_OTHER, we will default to a cartesian coordinate system.");
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[0].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[1].c_str());
+        coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[2].c_str());
     }
     else
     {
@@ -1512,7 +1515,9 @@ read_mesh(const std::string &root_file_path,
                                 multimesh_name, 
                                 mesh_out);
         }
-        else if (meshtype == DB_QUADMESH)
+        else if (meshtype == DB_QUADMESH ||
+                 meshtype == DB_QUADCURV ||
+                 meshtype == DB_QUADRECT)
         {
             read_quadmesh_domain(mesh_domain_file.getSiloObject(), 
                                 mesh_name, 
