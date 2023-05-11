@@ -99,6 +99,11 @@ add_subdirectory(libs)
 add_subdirectory(examples)
 
 ################################
+# Add our executables
+################################
+add_subdirectory(executables)
+
+################################
 # Add docs
 ################################
 if(ENABLE_DOCS)

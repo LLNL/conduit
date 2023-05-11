@@ -28,6 +28,9 @@
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_execution.hpp"
+#include "conduit_annotations.hpp"
+#include "conduit_blueprint_mesh_kdtree.hpp"
 
 // access one-to-many index types
 namespace o2mrelation = conduit::blueprint::o2mrelation;
@@ -1717,6 +1720,228 @@ topology::unstructured::points(const Node &n,
     return std::vector<index_t>(pidxs.begin(), pidxs.end());
 }
 
+
+//---------------------------------------------------------------------------
+topology::TopologyBuilder::TopologyBuilder(const conduit::Node &_topo) : topo(_topo),
+    old_to_new(), topo_conn(), topo_sizes()
+{
+    
+}
+
+//---------------------------------------------------------------------------
+topology::TopologyBuilder::TopologyBuilder(const conduit::Node *_topo) : topo(*_topo),
+    old_to_new(), topo_conn(), topo_sizes()
+{
+    
+}
+
+//---------------------------------------------------------------------------
+index_t
+topology::TopologyBuilder::newPointId(index_t oldPointId)
+{
+    auto it = old_to_new.find(oldPointId);
+    index_t newpt;
+    if(it == old_to_new.end())
+    {
+        newpt = old_to_new.size();
+        old_to_new[oldPointId] = newpt;
+    }
+    else
+    {
+        newpt = it->second;
+    }
+    return newpt;
+}
+
+//---------------------------------------------------------------------------
+size_t
+topology::TopologyBuilder::add(const index_t *ids, index_t nids)
+{
+    // Iterate over the ids and renumber them and add the renumbered points
+    // to the new connectivity.
+    size_t retval = topo_sizes.size();
+    for(index_t i = 0; i < nids; i++)
+    {
+        index_t newpid = newPointId(ids[i]);
+        topo_conn.push_back(newpid);
+    }
+    topo_sizes.push_back(nids);
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+size_t
+topology::TopologyBuilder::add(const std::vector<index_t> &ids)
+{
+    return add(&ids[0], ids.size());
+}
+
+//---------------------------------------------------------------------------
+void
+topology::TopologyBuilder::execute(conduit::Node &n_out, const std::string &shape)
+{
+    n_out.reset();
+
+    // Get the topo and coordset names for the input topo.
+    const conduit::Node &origcset = coordset(topo);
+    std::string topoName(topo.name());
+    std::string coordsetName(origcset.name());
+
+    // Build the new topology.
+    conduit::Node &newcset = n_out["coordsets/"+coordsetName];
+    conduit::Node &newtopo = n_out["topologies/"+topoName];
+
+    // Iterate over the selected original points and make a new coordset
+    newcset["type"] = "explicit";
+    auto axes = coordset::axes(origcset);
+    auto npts = static_cast<index_t>(old_to_new.size());
+    for(const auto &axis : axes)
+    {
+        std::string key("values/" + axis);
+        auto acc = origcset[key].as_double_accessor();
+
+        conduit::Node &coords = newcset[key];
+        coords.set(DataType::float64(npts));
+        auto coords_ptr = static_cast<double *>(coords.element_ptr(0));
+        for(auto it = old_to_new.begin(); it != old_to_new.end(); it++)
+        {
+            coords_ptr[it->second] = acc[it->first];
+        }
+    }
+
+    // Fill in the topo information.
+    newtopo["type"] = "unstructured";
+    newtopo["coordset"] = coordsetName;
+    conduit::Node &n_ele = newtopo["elements"];
+    n_ele["shape"] = shape;
+    n_ele["connectivity"].set(topo_conn);
+    n_ele["sizes"].set(topo_sizes);
+    unstructured::generate_offsets_inline(newtopo);
+
+    clear();
+}
+
+//---------------------------------------------------------------------------
+void
+topology::TopologyBuilder::clear()
+{
+    old_to_new.clear();
+    topo_conn.clear();
+    topo_sizes.clear();
+}
+
+
+//---------------------------------------------------------------------------
+std::vector<int>
+topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
+{
+    // The domain_id is not too important in this case.
+    int domain_id = 0;
+
+    // Get the mesh for topo1 (2 levels up)
+    const conduit::Node *mesh1 = nullptr;
+    if(topo1.parent() != nullptr &&
+       topo1.parent()->parent() != nullptr)
+    {
+        // Go from the topology up a couple levels to the mesh.
+        mesh1 = topo1.parent()->parent();
+    }
+    else
+    {
+        CONDUIT_ERROR("No parent for topo1.");
+    }
+
+    // Iterate over mesh2's points to see if its points exist in mesh1.
+    conduit::blueprint::mesh::utils::query::PointQuery P(*mesh1);
+    const conduit::Node &cset2 = topology::coordset(topo2);
+    index_t npts = conduit::blueprint::mesh::utils::coordset::length(cset2);
+    for(index_t i = 0; i < npts; i++)
+    {
+        const std::vector<float64> pc = coordset::_explicit::coords(cset2, i);
+        auto pclen = pc.size();
+        double pt3[3];
+        pt3[0] = pc[0];
+        pt3[1] = (pclen > 1) ? pc[1] : 0.;
+        pt3[2] = (pclen > 2) ? pc[2] : 0.;
+        P.add(domain_id, pt3);
+    }
+
+    // Do the query.
+    P.execute(cset2.name());
+
+    const conduit::Node &n_topo1_conn = topo1["elements/connectivity"];
+    const conduit::Node &n_topo1_size = topo1["elements/sizes"];
+    auto topo1_conn = n_topo1_conn.as_index_t_accessor();
+    auto topo1_size = n_topo1_size.as_index_t_accessor();
+
+    // Iterate over the entities in mesh1 and make hash ids for the entities
+    // by hashing their sorted points.
+    index_t nelem = topo1_size.dtype().number_of_elements();
+    std::map<uint64, index_t> topo1_entity_ids;
+    index_t idx = 0;
+    for(index_t i = 0; i < nelem; i++)
+    {
+        std::vector<index_t> ids;
+        index_t s = topo1_size[i];
+        for(index_t pi = 0; pi < s; pi++)
+            ids.push_back(topo1_conn[idx++]);
+        std::sort(ids.begin(), ids.end());
+        uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+        topo1_entity_ids[h] = i;
+    }
+
+    // Get the query results for each mesh2 point. This is a vector of point
+    // ids from mesh 1 or NotFound.
+    const auto &r = P.results(domain_id);
+
+    // Iterate over the entities in mesh2 and map their points to mesh 1 points
+    // if possible before computing hashids for them. If a mesh2 entity's points
+    // can all be defined in mesh1 then the entity exists in both meshes.
+    const conduit::Node &n_topo2_conn = topo2["elements/connectivity"];
+    const conduit::Node &n_topo2_size = topo2["elements/sizes"];
+    auto topo2_conn = n_topo2_conn.as_index_t_accessor();
+    auto topo2_size = n_topo2_size.as_index_t_accessor();
+
+    index_t nelem2 = topo2_size.dtype().number_of_elements();
+    std::map<uint64, index_t> topo2_entity_ids;
+    idx = 0;
+    std::vector<int> exists;
+    exists.reserve(nelem2);
+    std::vector<index_t> ids;
+    ids.reserve(10);
+    for(index_t i = 0; i < nelem2; i++)
+    {
+        index_t s = topo2_size[i];
+
+        // Try and map all of the topo2 entity's points to topo1's coordset.
+        // If we can do that then the entity may exist.
+        bool badEntity = false;
+        ids.clear();
+        for(index_t pi = 0; pi < s; pi++)
+        {
+            index_t pt = topo2_conn[idx++];
+            // See if the point exists in mesh1.
+            badEntity |= (r[pt] == P.NotFound);
+            ids.push_back(r[pt]);
+        }
+
+        if(badEntity)
+            exists.push_back(0);
+        else
+        {
+            // The entity can be defined in terms of topo1's coordset. Make a
+            // hash id for it and see if it matches any entities in topo1.
+            std::sort(ids.begin(), ids.end());
+            uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+
+            bool found = topo1_entity_ids.find(h) != topo1_entity_ids.end();
+            exists.push_back(found ? 1 : 0);
+        }
+    }
+
+    return exists;
+}
+
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::topology --
 //-----------------------------------------------------------------------------
@@ -1768,8 +1993,872 @@ adjset::canonicalize(Node &adjset)
     }
 }
 
+//---------------------------------------------------------------------------
+bool
+adjset::validate(const conduit::Node &doms,
+                 const std::string &adjsetName,
+                 conduit::Node &info)
+{
+    auto to_string = [](const conduit::Node &n) -> std::string
+    {
+        std::string s(n.to_string());
+        if(s.find("\"") == 0)
+            s = s.substr(1, s.size() - 2);
+        return s;
+    };
+
+    // Create serial queries.
+    query::PointQuery PQ(doms);
+    query::MatchQuery MQ(doms);
+
+    // We need to figure out the association, topologyName, and coordsetName.
+    std::string association, topologyName, coordsetName;
+    auto domains = conduit::blueprint::mesh::domains(doms);
+    if(!domains.empty())
+    {
+        const auto dom = domains[0];
+
+        std::string adjsetPath("adjsets/" + adjsetName);
+        const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+
+        association = to_string(adjset.fetch_existing("association"));
+        topologyName = to_string(adjset.fetch_existing("topology"));
+
+        const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+        coordsetName = to_string(topo["coordset"]);
+    }
+
+    return adjset::validate(doms,
+                            adjsetName, association, topologyName, coordsetName,
+                            info, PQ, MQ);
+}
+
+//---------------------------------------------------------------------------
+bool
+adjset::validate(const conduit::Node &doms,
+                 const std::string &adjsetName,
+                 const std::string &association,
+                 const std::string &topologyName,
+                 const std::string &coordsetName,
+                 conduit::Node &info,
+                 query::PointQuery &PQ,
+                 query::MatchQuery &MQ)
+{
+    bool retval = false;
+
+    // Make sure that there are multiple domains.
+    if(!conduit::blueprint::mesh::is_multi_domain(doms))
+    {
+        info["errors"].append().set("The dataset is not multidomain.");
+        return retval;
+    }
+
+    // Ensure adjset exists in all domains. This still succeeds when there
+    // are no domains.
+    auto domains = conduit::blueprint::mesh::domains(doms);
+    std::string adjsetPath("adjsets/" + adjsetName);
+    size_t count = 0;
+    for(size_t i = 0; i < domains.size(); i++)
+    {
+        if(domains[i]->has_path(adjsetPath))
+            count++;
+        else
+        {
+            std::stringstream ss;
+            ss << "Domain " << i << " lacks adjset " << adjsetName;
+            info["errors"].append().set(ss.str());
+        }
+    }
+    if(count != domains.size())
+        return retval;
+
+    if(association == "vertex")
+    {
+        // Iterate over the domains so we can add their adjset points to the
+        // point query.
+        std::vector<std::tuple<index_t, index_t, index_t, index_t, size_t, std::string, std::vector<double>>> query_guide;
+        for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
+        {
+            const auto dom = domains[domIdx];
+            auto domainId = conduit::blueprint::mesh::utils::find_domain_id(*dom);
+
+            // Get the domain's coordset.
+            const conduit::Node &coordset = dom->fetch_existing("coordsets/"+coordsetName);
+
+            // Get the domain's adjset and groups.
+            const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+            const conduit::Node &adjset_groups = adjset.fetch_existing("groups");
+
+            // Iterate over this domain's adjset to help build up the point query.
+            for(const std::string &groupName : adjset_groups.child_names())
+            {
+                const conduit::Node &src_group = adjset_groups[groupName];
+                conduit::index_t_accessor src_neighbors = src_group["neighbors"].value();
+                conduit::index_t_accessor src_values = src_group["values"].value();
+
+                // Neighbors
+                for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
+                {
+                    auto nbr = src_neighbors[ni];
+                    // Point ids
+                    for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
+                    {
+                        // Look up the point in the local coordset to get the coordinate.
+                        auto ptid = src_values[pi];
+                        auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(coordset, ptid);
+                        double pt3[3];
+                        pt3[0] = pt[0];
+                        pt3[1] = (pt.size() > 1) ? pt[1] : 0.;
+                        pt3[2] = (pt.size() > 2) ? pt[2] : 0.;
+
+                        // Ask domain nbr if they have point pt3
+                        auto idx = PQ.add(static_cast<int>(nbr), pt3);
+                        query_guide.emplace_back(domainId, ptid, nbr, idx, domIdx, groupName, pt);
+                    }
+                }
+            }
+        }
+
+        // Execut the query.
+        PQ.execute(coordsetName);
+
+        // Iterate over the query results to flag any problems.
+        retval = true;
+        for(const auto &obj : query_guide)
+        {
+            index_t domain_id = std::get<0>(obj);
+            index_t ptid = std::get<1>(obj);
+            index_t nbr = std::get<2>(obj);
+            index_t idx = std::get<3>(obj);
+            size_t domIdx = std::get<4>(obj);
+            const std::string &groupName = std::get<5>(obj);
+            const std::vector<double> &coord = std::get<6>(obj);
+
+            const auto &res = PQ.results(static_cast<int>(nbr));
+            if(res[idx] == conduit::blueprint::mesh::utils::query::PointQuery::NotFound)
+            {
+                retval = false;
+                std::string domainName(domains[domIdx]->name());
+                conduit::Node &vn = info[domainName][adjsetName][groupName].append();
+
+                std::stringstream ss;
+                ss << "Domain " << domain_id << " adjset " << adjsetName
+                   << " group " << groupName
+                   << ": vertex " << ptid
+                   << " (" << coord[0] << ", " << coord[1]
+                   << ", " << coord[2] << ") at index " << ptid
+                   << " could not be located in neighbor domain "
+                   << nbr << ".";
+
+                vn["message"].set(ss.str());
+                vn["vertex"] = ptid;
+                vn["neighbor"] = nbr;
+                vn["coordinate"] = coord;
+            }
+        }
+    }
+    else if(association == "element")
+    {
+        // Here we are dealing with an element adjset. An element adjset
+        // contains the element ids for the topology elements that touch
+        // a neighbor domain. If the adjset is valid, the neighbor will
+        // have a corresponding entity that matches up with the element.
+        // If that is not the case then the adjset is not valid.
+
+        // Set up MatchQuery that will examine the extdoms domains.
+        MQ.selectTopology(topologyName);
+
+        std::vector<std::tuple<int, int, int, conduit::uint64, size_t, std::string>> query_guide;
+        for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
+        {
+            const auto dom = domains[domIdx];
+            auto domain_id = conduit::blueprint::mesh::utils::find_domain_id(*dom);
+
+            // Get the domain's adjset and groups.
+            const conduit::Node &adjset = dom->fetch_existing(adjsetPath);
+            const conduit::Node &adjset_groups = adjset.fetch_existing("groups");
+
+            // Get the domain's topo.
+            const conduit::Node &topo = dom->fetch_existing("topologies/"+topologyName);
+
+            // Get the number of elements in the topology.
+            index_t topo_len = conduit::blueprint::mesh::utils::topology::length(topo);
+
+            // Iterate over the adjset data to build up the query.
+            for(const std::string &groupName : adjset_groups.child_names())
+            {
+                const conduit::Node &group = adjset_groups[groupName];
+                conduit::index_t_accessor neighbors = group["neighbors"].value();
+                conduit::index_t_accessor values    = group["values"].value();
+
+                for(index_t ni = 0; ni < neighbors.dtype().number_of_elements(); ni++)
+                {
+                    index_t nbr = neighbors[ni];
+                    for(index_t vi = 0; vi < values.dtype().number_of_elements(); vi++)
+                    {
+                        index_t ei = values[vi];
+
+                        // Get the points for the element id if the element id is valid.
+                        std::vector<index_t> entity_pidxs;
+                        if(ei >= 0 && ei < topo_len)
+                            entity_pidxs = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
+
+                        // Add the entity to the query for consideration.
+                        conduit::uint64 qid = MQ.add(static_cast<int>(domain_id),
+                                                     static_cast<int>(nbr),
+                                                     entity_pidxs);
+
+                        // Add the candidate entity to the match query, which
+                        // will help resolve things across domains.
+                        query_guide.push_back(std::make_tuple(domain_id, nbr, ei, qid, domIdx, groupName));
+                    }
+                }
+            }
+        }
+
+        // Execute the query.
+        MQ.execute();
+
+        // Iterate over the query results to flag any problems.
+        retval = true;
+        for(const auto &obj : query_guide)
+        {
+            int domain_id = std::get<0>(obj);
+            int nbr = std::get<1>(obj);
+            int ei = std::get<2>(obj);
+            conduit::uint64 eid = std::get<3>(obj);
+            size_t domIdx = std::get<4>(obj);
+            const std::string &groupName = std::get<5>(obj);
+
+            if(!MQ.exists(domain_id, nbr, eid))
+            {
+                retval = false;
+                std::string domainName(domains[domIdx]->name());
+                conduit::Node &vn = info[domainName][adjsetName][groupName].append();
+
+                std::stringstream ss;
+                ss << "Domain " << domain_id << " adjset " << adjsetName
+                   << " group " << groupName
+                   << ": element " << ei << " could not be located in neighbor domain "
+                   << nbr << ".";
+
+                vn["message"].set(ss.str());
+                vn["element"] = ei;
+                vn["neighbor"] = nbr;
+            }
+        }
+    }
+    else
+    {
+        info["errors"].append().
+            set(std::string("Unsupported association: ") + association);
+    }
+
+    return retval;
+}
+
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::query --
+//-----------------------------------------------------------------------------
+namespace query
+{
+
+const int PointQueryBase::NotFound = -1;
+
+//---------------------------------------------------------------------------
+PointQueryBase::PointQueryBase(const conduit::Node &mesh) : m_mesh(mesh),
+    m_domInputs(), m_domResults()
+{
+}
+
+//---------------------------------------------------------------------------
+void
+PointQueryBase::reset()
+{
+    m_domInputs.clear();
+    m_domResults.clear();
+}
+
+//---------------------------------------------------------------------------
+conduit::index_t
+PointQueryBase::add(int dom, const double pt[3])
+{
+    std::vector<double> &coords = m_domInputs[dom];
+    conduit::index_t idx = coords.size() / 3;
+    coords.push_back(pt[0]);
+    coords.push_back(pt[1]);
+    coords.push_back(pt[2]);
+    return idx;
+}
+
+//---------------------------------------------------------------------------
+const std::vector<double> &
+PointQueryBase::inputs(int dom) const
+{
+    auto it = m_domInputs.find(dom);
+    if(it == m_domInputs.end())
+    {
+        CONDUIT_ERROR("Domain " << dom << " inputs were requested but not found.");
+    }
+    return it->second;
+}
+
+//---------------------------------------------------------------------------
+const std::vector<int> &
+PointQueryBase::results(int dom) const
+{
+    auto it = m_domResults.find(dom);
+    if(it == m_domResults.end())
+    {
+        CONDUIT_ERROR("Domain " << dom << " results were requested but not found.");
+    }
+    return it->second;
+}
+
+//---------------------------------------------------------------------------
+void
+PointQueryBase::execute(const std::string & /*coordsetName*/)
+{
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+    {
+        size_t npts = it->second.size() / 3;
+        std::vector<int> &result = m_domResults[it->first];
+        result.resize(npts, 0); // success is anything != NotFound
+    }
+}
+
+//---------------------------------------------------------------------------
+std::vector<int>
+PointQueryBase::queryDomainIds() const
+{
+    std::vector<int> retval;
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+        retval.push_back(it->first);
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+
+// NOTE: The exect threshold could be platform-specific. This is in the ballpark.
+const int PointQuery::SEARCH_THRESHOLD = 25 * 25 * 25;
+
+//---------------------------------------------------------------------------
+PointQuery::PointQuery(const conduit::Node &mesh) : PointQueryBase(mesh)
+{
+    constexpr double DEFAULT_POINT_TOLERANCE = 1.e-9;
+    setPointTolerance(DEFAULT_POINT_TOLERANCE);
+}
+
+//---------------------------------------------------------------------------
+void
+PointQuery::setPointTolerance(double tolerance)
+{
+    m_pointTolerance = tolerance;
+}
+
+//---------------------------------------------------------------------------
+void
+PointQuery::execute(const std::string &coordsetName)
+{
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    for(auto it = m_domInputs.begin(); it != m_domInputs.end(); it++)
+    {
+        const conduit::Node *dom = getDomain(it->first);
+        if(dom == nullptr)
+        {
+            CONDUIT_ERROR("Domain " << it->first << " was requested but not found.");
+        }
+
+        const std::vector<double> &input = it->second;
+        std::vector<int> &result = m_domResults[it->first];
+        findPointsInDomain(*dom, coordsetName, input, result);
+    }
+}
+
+//---------------------------------------------------------------------------
+const conduit::Node *
+PointQuery::getDomain(int dom) const
+{
+    if(is_multi_domain(m_mesh))
+    {
+        std::vector<const conduit::Node *> doms = domains(m_mesh);
+        for(const auto d : doms)
+        {
+            if(d->has_path("state/domain_id"))
+            {
+                int domain_id = d->fetch_existing("state/domain_id").to_int();
+                if(domain_id == dom)
+                    return d;
+            }
+        }
+        return nullptr;
+    }
+    // single domain, return the mesh.
+    return &m_mesh;
+}
+
+//---------------------------------------------------------------------------
+void
+PointQuery::findPointsInDomain(const conduit::Node &mesh,
+    const std::string &coordsetName,
+    const std::vector<double> &input,
+    std::vector<int> &result) const
+{
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+    conduit::index_t numInputPts = input.size() / 3;
+    result.resize(numInputPts, NotFound);
+
+    // Get the coords that will be used for queries.
+    const conduit::Node &cset = mesh.fetch_existing("coordsets/" + coordsetName);
+    const conduit::Node *coords[3] = {nullptr, nullptr, nullptr};
+    conduit::index_t coordTypes[3];
+    std::vector<std::string> axes(coordset::axes(cset));
+    int ndims = 0;
+    const conduit::Node &cvals = cset.fetch_existing("values");
+    for(const std::string &axis : axes)
+    {
+        coords[ndims] = cvals.fetch_ptr(axis);
+        coordTypes[ndims] = coords[ndims]->dtype().id();
+        ndims++;
+    }
+    if(coords[0] == nullptr)
+    {
+        CONDUIT_ERROR("Coordinates not found in coordset " << coordsetName << ".");
+        // result is full of NotFound.
+        return;
+    }
+    // Check whether all of the coordinate types are the same.
+    bool sameTypes = true;
+    for(int i = 1; i < ndims; i++)
+        sameTypes &= (coordTypes[0] == coordTypes[i]);
+
+    // Try an accelerated search first, if it applies.
+    if(!acceleratedSearch(ndims, sameTypes, coords, coordTypes, input, result))
+    {
+        // AcceleratedSearch did not handle it. Do normal search.
+        normalSearch(ndims, sameTypes, coords, coordTypes, input, result);
+    }
+}
+
+//---------------------------------------------------------------------------
+bool
+PointQuery::acceleratedSearch(int ndims,
+    bool sameTypes,
+    const conduit::Node *coords[3],
+    const conduit::index_t coordTypes[3],
+    const std::vector<double> &input,
+    std::vector<int> &result) const
+{
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+    bool handled = false;
+
+    conduit::index_t numInputPts = input.size() / 3;
+    const double *input_ptr = &input[0];
+    int *result_ptr = &result[0];
+    conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
+
+#if defined(CONDUIT_USE_OPENMP)
+    using policy = conduit::execution::OpenMPExec;
+#else
+    using policy = conduit::execution::SerialExec;
+#endif
+
+    // Special case a few large searches where the types are the same.
+    if(ndims == 3 &&
+       sameTypes &&
+       numCoordsetPts >= SEARCH_THRESHOLD &&
+       coordTypes[0] == conduit::DataType::FLOAT64_ID)
+    {
+        // 3D points are all doubles.
+        float64_array typedCoords[3];
+        typedCoords[0] = coords[0]->as_float64_array();
+        typedCoords[1] = coords[1]->as_float64_array();
+        typedCoords[2] = coords[2]->as_float64_array();
+        conduit::blueprint::mesh::utils::kdtree<float64_array, float64, 3> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(m_pointTolerance);
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float64 searchPt[3] = {static_cast<float64>(input_ptr[i * 3 + 0]),
+                                   static_cast<float64>(input_ptr[i * 3 + 1]),
+                                   static_cast<float64>(input_ptr[i * 3 + 2])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    else if(ndims == 3 &&
+            sameTypes &&
+            numCoordsetPts >= SEARCH_THRESHOLD &&
+            coordTypes[0] == conduit::DataType::FLOAT32_ID)
+    {
+        // 3D points are all float.
+        float32_array typedCoords[3];
+        typedCoords[0] = coords[0]->as_float32_array();
+        typedCoords[1] = coords[1]->as_float32_array();
+        typedCoords[2] = coords[2]->as_float32_array();
+        conduit::blueprint::mesh::utils::kdtree<float32_array, float32, 3> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(static_cast<float32>(m_pointTolerance));
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float32 searchPt[3] = {static_cast<float32>(input_ptr[i * 3 + 0]),
+                                   static_cast<float32>(input_ptr[i * 3 + 1]),
+                                   static_cast<float32>(input_ptr[i * 3 + 2])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    // Large searches of 2D coordinates.
+    else if(ndims == 2 &&
+            sameTypes &&
+            numCoordsetPts >= SEARCH_THRESHOLD &&
+            coordTypes[0] == conduit::DataType::FLOAT64_ID)
+    {
+        // 2D points are all doubles.
+        float64_array typedCoords[2];
+        typedCoords[0] = coords[0]->as_float64_array();
+        typedCoords[1] = coords[1]->as_float64_array();
+        conduit::blueprint::mesh::utils::kdtree<float64_array, float64, 2> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(m_pointTolerance);
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float64 searchPt[2] = {static_cast<float64>(input_ptr[i * 3 + 0]),
+                                   static_cast<float64>(input_ptr[i * 3 + 1])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    else if(ndims == 2 &&
+            sameTypes &&
+            numCoordsetPts >= SEARCH_THRESHOLD &&
+            coordTypes[0] == conduit::DataType::FLOAT32_ID)
+    {
+        // 2D points are all float.
+        float32_array typedCoords[2];
+        typedCoords[0] = coords[0]->as_float32_array();
+        typedCoords[1] = coords[1]->as_float32_array();
+        conduit::blueprint::mesh::utils::kdtree<float32_array, float32, 2> search;
+        search.initialize(typedCoords, numCoordsetPts);
+        search.setPointTolerance(static_cast<float32>(m_pointTolerance));
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            float32 searchPt[2] = {static_cast<float32>(input_ptr[i * 3 + 0]),
+                                   static_cast<float32>(input_ptr[i * 3 + 1])};
+            int found = search.findPoint(searchPt);
+            result_ptr[i] = (found != search.NotFound) ? found : NotFound;
+        });
+        handled = true;
+    }
+    return handled;
+}
+
+//---------------------------------------------------------------------------
+bool
+PointQuery::normalSearch(int ndims,
+    bool /*sameTypes*/,
+    const conduit::Node *coords[3],
+    const conduit::index_t /*coordTypes*/[3],
+    const std::vector<double> &input,
+    std::vector<int> &result) const
+{
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+    bool handled = false;
+
+    conduit::index_t numInputPts = input.size() / 3;
+    const double *input_ptr = &input[0];
+    int *result_ptr = &result[0];
+    conduit::index_t numCoordsetPts = coords[0]->dtype().number_of_elements();
+    double EPS_SQ = m_pointTolerance * m_pointTolerance;
+
+#if defined(CONDUIT_USE_OPENMP)
+    using policy = conduit::execution::OpenMPExec;
+#else
+    using policy = conduit::execution::SerialExec;
+#endif
+
+    // Back up to a brute force search
+    if(ndims == 3)
+    {
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            const double *searchPt = &input_ptr[i * 3];
+            int found = NotFound;
+            const auto x = coords[0]->as_double_accessor();
+            const auto y = coords[1]->as_double_accessor();
+            const auto z = coords[2]->as_double_accessor();
+            for(conduit::index_t ptid = 0; ptid < numCoordsetPts; ptid++)
+            {
+                double dx = x[ptid] - searchPt[0];
+                double dy = y[ptid] - searchPt[1];
+                double dz = z[ptid] - searchPt[2];
+                double dSquared = dx * dx + dy * dy + dz * dz;
+                if(dSquared < EPS_SQ)
+                {
+                    found = static_cast<int>(ptid);
+                    break;
+                }
+            }
+            result_ptr[i] = found;
+        });
+        handled = true;
+    }
+    else if(ndims == 2)
+    {
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            const double *searchPt = &input_ptr[i * 3];
+            int found = NotFound;
+            const auto x = coords[0]->as_double_accessor();
+            const auto y = coords[1]->as_double_accessor();
+            for(conduit::index_t ptid = 0; ptid < numCoordsetPts; ptid++)
+            {
+                double dx = x[ptid] - searchPt[0];
+                double dy = y[ptid] - searchPt[1];
+                double dSquared = dx * dx + dy * dy;
+                if(dSquared < EPS_SQ)
+                {
+                    found = static_cast<int>(ptid);
+                    break;
+                }
+            }
+            result_ptr[i] = found;
+        });
+        handled = true;
+    }
+    else if(ndims == 1)
+    {
+        conduit::execution::for_all<policy>(0, numInputPts, [&](conduit::index_t i)
+        {
+            const double *searchPt = &input_ptr[i * 3];
+            int found = NotFound;
+            const auto x = coords[0]->as_double_accessor();
+            for(conduit::index_t ptid = 0; ptid < numCoordsetPts; ptid++)
+            {
+                double dx = x[ptid] - searchPt[0];
+                double dSquared = dx * dx;
+                if(dSquared < EPS_SQ)
+                {
+                    found = static_cast<int>(ptid);
+                    break;
+                }
+            }
+            result_ptr[i] = found;
+        });
+        handled = true;
+    }
+    return handled;
+}
+
+//---------------------------------------------------------------------------
+std::vector<int>
+PointQuery::domainIds() const
+{
+    std::vector<const conduit::Node *> doms = domains(m_mesh);
+    std::vector<int> domainIds;
+    domainIds.reserve(doms.size());
+    for(const auto d : doms)
+    {
+        int domain_id = 0;
+        if(d->has_path("state/domain_id"))
+            domain_id = d->fetch_existing("state/domain_id").to_int();
+        domainIds.push_back(domain_id); 
+    }
+
+    return domainIds;
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+MatchQuery::MatchQuery(const conduit::Node &mesh) : m_mesh(mesh),
+    m_topoName(), m_query()
+{
+}
+
+//---------------------------------------------------------------------------
+void
+MatchQuery::selectTopology(const std::string &name)
+{
+    m_topoName = name;
+}
+
+//---------------------------------------------------------------------------
+const conduit::Node *
+MatchQuery::getDomainTopology(int domain) const
+{
+    auto doms = domains(m_mesh);
+    for(const auto &dom : doms)
+    {
+        if(dom->has_path("state/domain_id"))
+        {
+            int domain_id = dom->fetch_existing("state/domain_id").to_int();
+            if(domain_id == domain)
+            {
+                const conduit::Node &topos = dom->fetch_existing("topologies");
+                if(!m_topoName.empty())
+                {
+                    if(topos.has_child(m_topoName))
+                        return topos.fetch_ptr(m_topoName);
+                    else
+                    {
+                        CONDUIT_ERROR("Topology " << m_topoName
+                            << " was not found in domain " << domain);
+                    }
+                }
+                else
+                {
+                    return topos.child_ptr(0);
+                }
+            }
+        }
+    }
+    return nullptr;
+}
+
+//---------------------------------------------------------------------------
+size_t
+MatchQuery::add(int dom, int query_dom, const index_t *ids, index_t nids)
+{
+    auto key = std::make_pair(dom, query_dom);
+    auto it = m_query.find(key);
+    if(it == m_query.end())
+    {
+        const conduit::Node *dtopo = getDomainTopology(dom);
+        auto &q = m_query[key];
+        q.builder = std::make_shared<topology::TopologyBuilder>(dtopo);
+        it = m_query.find(key);
+    }
+    return it->second.builder->add(ids, nids);
+}
+
+//---------------------------------------------------------------------------
+size_t
+MatchQuery::add(int dom, int query_dom, const std::vector<index_t> &ids)
+{
+    auto key = std::make_pair(dom, query_dom);
+    auto it = m_query.find(key);
+    if(it == m_query.end())
+    {
+        const conduit::Node *dtopo = getDomainTopology(dom);
+        auto &q = m_query[key];
+        q.builder = std::make_shared<topology::TopologyBuilder>(dtopo);
+        it = m_query.find(key);
+    }
+    return it->second.builder->add(ids);
+}
+
+//---------------------------------------------------------------------------
+bool
+MatchQuery::exists(int dom, int query_dom, size_t ei) const
+{
+    auto key = std::make_pair(dom, query_dom);
+    auto it = m_query.find(key);
+    if(it == m_query.end())
+    {
+        CONDUIT_ERROR("MatchQuery is missing the results for "
+            << dom << ":" << query_dom);
+    }
+    bool exists = false;
+    if(ei < it->second.results.size())
+    {
+        exists = it->second.results[ei] > 0;
+    }
+    return exists;
+}
+
+//---------------------------------------------------------------------------
+void
+MatchQuery::execute()
+{
+    CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    // Build the query geometries. Store them in the query_mesh node.
+    std::string shape;
+    for(auto it = m_query.begin(); it != m_query.end(); it++)
+    {
+        int dom = it->first.first;
+
+        if(shape.empty())
+        {
+            // We have not determined the shape yet. Do that now so the subset
+            // topologies can be built.
+            const auto dtopo = getDomainTopology(dom);
+            ShapeCascade c(*dtopo);
+            const auto &s = c.get_shape((c.dim == 0) ? c.dim : (c.dim - 1));
+            shape = s.type;
+        }
+
+        it->second.builder->execute(it->second.query_mesh, shape);
+        it->second.query_mesh["state/domain_id"] = dom;
+    }
+
+    // Now that the query geometries are built, on a single rank, we should
+    // have A,B and B,A in the keys.
+    for(auto it = m_query.begin(); it != m_query.end(); it++)
+    {
+        int dom = it->first.first;
+        int query_domain = it->first.second;
+
+        // Try and get the opposite side's geometry.
+        auto oppositeKey = std::make_pair(query_domain, dom);
+        auto oppit = m_query.find(oppositeKey);
+        if(oppit == m_query.end())
+        {
+            CONDUIT_ERROR("MatchQuery is missing the topology for "
+                << dom << ":" << query_domain);
+        }
+
+        // Get both of the topologies.
+        conduit::Node &mesh1 = it->second.query_mesh;
+        conduit::Node &mesh2 = oppit->second.query_mesh;
+        std::string topoKey("topologies/" + m_topoName);
+        conduit::Node &topo1 = mesh1[topoKey];
+        conduit::Node &topo2 = mesh2[topoKey];
+
+        // Perform the search and store the results.
+        it->second.results = topology::search(topo2, topo1);
+    }
+}
+
+//---------------------------------------------------------------------------
+std::vector<std::pair<int,int>>
+MatchQuery::queryDomainIds() const
+{
+    std::vector<std::pair<int,int>> ids;
+    for(auto it = m_query.begin(); it != m_query.end(); it++)
+    {
+        // If we issued the request on this rank, the topo builder will not be nullptr.
+        if(it->second.builder)
+            ids.push_back(it->first);
+    }
+    return ids;
+}
+
+//---------------------------------------------------------------------------
+const std::vector<int> &
+MatchQuery::results(int dom, int query_dom) const
+{
+    auto it = m_query.find(std::make_pair(dom, query_dom));
+    if(it == m_query.end())
+    {
+        CONDUIT_ERROR("Results are not available for query "
+            << dom << ", " << query_dom);
+    }
+    return it->second.results;
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::query --
 //-----------------------------------------------------------------------------
 
 }

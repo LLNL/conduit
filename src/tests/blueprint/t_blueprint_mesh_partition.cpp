@@ -1865,7 +1865,6 @@ TEST(blueprint_mesh_combine, structured)
                 for(j = 0; j < dims[1]; j++)
                 {
                     const int j1 = j+1;
-                    double t = 0.;
                     for(i = 0; i < dims[0]; i++, id++)
                     {
                         vfield[id]     = id;

@@ -292,6 +292,12 @@ public:
     void set_logging(bool val);
 
     /**
+     @brief Set the name used for creating the log files.
+     @param filename The filename that is used to create the actual log files.
+     */
+    void set_logging_root(const std::string &filename);
+
+    /**
      @brief Schedule the node for movement to another rank.
      @param node The node to move to another rank.
      @param dest The rank to which the node will be moved.
@@ -333,6 +339,7 @@ private:
 
     MPI_Comm comm;
     std::vector<operation> operations;
+    std::string loggingRoot;
     bool logging;
 };
 

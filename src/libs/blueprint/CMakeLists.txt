@@ -31,6 +31,7 @@ set(blueprint_headers
     conduit_blueprint.hpp
     conduit_blueprint_mesh.hpp
     conduit_blueprint_mesh_utils.hpp
+    conduit_blueprint_mesh_kdtree.hpp
     conduit_blueprint_mesh_topology_metadata.hpp
     conduit_blueprint_mesh_examples.hpp
     conduit_blueprint_mesh_examples_julia.hpp
@@ -199,6 +200,7 @@ set(conduit_blueprint_mpi_sources
     conduit_blueprint_mpi_mesh_distribute.cpp
     conduit_blueprint_mpi_mesh_flatten.cpp
     conduit_blueprint_mpi_mesh_partition.cpp
+    conduit_blueprint_mpi_mesh_utils.cpp
     )
 
 #
@@ -209,6 +211,7 @@ set(conduit_blueprint_mpi_headers
     conduit_blueprint_mpi_mesh.hpp
     conduit_blueprint_mpi_mesh_partition.hpp
     conduit_blueprint_mpi_mesh_examples.hpp
+    conduit_blueprint_mpi_mesh_utils.hpp
 ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_exports.h)
 
 #

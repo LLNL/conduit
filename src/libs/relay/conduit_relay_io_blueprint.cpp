@@ -1079,9 +1079,8 @@ void write_mesh(const Node &mesh,
 
     index_t_accessor counts = n_reduced.value();
     index_t idx = -1;
-    index_t i =0;
     NodeConstIterator counts_itr = n_reduced.children();
-    while(counts_itr.has_next() && idx < 0)
+    for(index_t i = 0; counts_itr.has_next() && idx < 0; i++)
     {
         const Node &curr = counts_itr.next();
         index_t count = curr.to_index_t();
@@ -1089,7 +1088,6 @@ void write_mesh(const Node &mesh,
         {
             idx = i;
         }
-        i++;
     }
 
     // now broadcast from idx
@@ -2125,7 +2123,7 @@ void read_mesh(const std::string &root_file_path,
         if(mesh_index.has_path("state/partition_map/domain"))
         {
             index_t_accessor doms = mesh_index["state/partition_map/domain"].value();
-            num_domains = doms.max() + 1;
+            num_domains = static_cast<int>(doms.max()) + 1;
         }
         else
         {

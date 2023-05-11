@@ -614,11 +614,14 @@ namespace utils
                                    unsigned int initval = 0);
 
 //-----------------------------------------------------------------------------
-// index_t hash functions
+// Other hash functions
 //-----------------------------------------------------------------------------
      uint64       CONDUIT_API hash(const index_t *k,
                                    unsigned int length);
-
+     uint64       CONDUIT_API hash(const float64 *k,
+                                   unsigned int length);
+     uint64       CONDUIT_API hash(const uint64 *k,
+                                   unsigned int length);
 
 }
 //-----------------------------------------------------------------------------

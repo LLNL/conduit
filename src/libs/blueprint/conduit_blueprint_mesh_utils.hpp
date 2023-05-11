@@ -18,6 +18,7 @@
 #include <set>
 #include <string>
 #include <vector>
+#include <memory>
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
@@ -153,7 +154,7 @@ static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
     &TOPO_TRI_EMBEDDING[0][0], &TOPO_QUAD_EMBEDDING[0][0],
     &TOPO_TET_EMBEDDING[0][0], &TOPO_HEX_EMBEDDING[0][0],
     &TOPO_WEDGE_EMBEDDING[0][0], &TOPO_PYRAMID_EMBEDDING[0][0],
-    NULL, NULL};
+    nullptr, nullptr};
 
 //-----------------------------------------------------------------------------
 /// blueprint mesh utility structures
@@ -370,6 +371,74 @@ namespace topology
                                               conduit::Node& out_topo);
 
     //-------------------------------------------------------------------------
+    /**
+     @brief Given a single topology, make a series of Add calls that add an
+            entity using the source mesh's coordinates but with a potentially
+            different shape from the original topology. We can for example have
+            a volume mesh and make a face mesh from it. This class takes care
+            of creating the new sub-topology and renumbering coordinates, etc.
+     */
+    class CONDUIT_BLUEPRINT_API TopologyBuilder
+    {
+    public:
+        /**
+         @brief Constructor
+         @param _topo The input mesh node.
+         */
+        TopologyBuilder(const conduit::Node &_topo);
+        TopologyBuilder(const conduit::Node *_topo);
+
+        /**
+         @brief Add a new entity with the given point list.
+    
+         @param pts A list of point ids in the selected coordset.
+         @param npts The number of points in the list.
+         */
+        size_t add(const index_t *pts, index_t npts);
+
+        /**
+         @brief Add a new entity with the given point list.
+    
+         @param pts The list of points in the entity.     
+         */
+        size_t add(const std::vector<index_t> &pts);
+
+        /**
+         @brief Make the new topologies, using the specified shape type.
+
+         @param newMesh A node to contain the new topo and coordset. This node
+                        will get topologies and coordset nodes too.
+         @param shape The name of the shape type to use in the new topologies.
+         */
+        void execute(conduit::Node &newMesh, const std::string &shape);
+
+    protected:
+        index_t newPointId(index_t oldPointId);
+        void clear();
+    protected:
+        const conduit::Node       &topo;
+        std::map<index_t, index_t> old_to_new;
+        std::vector<index_t>       topo_conn;
+        std::vector<index_t>       topo_sizes;
+    };
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Determines whether topo2 elements exist in topo1. First the topo2
+            coordinates are matched against topo1 using PointQuery. Then topo2
+            entities are defined in terms of topo1 coordinates, if possible.
+            Then, if that works for an entity, the entity is looked for in topo1.
+
+     @param topo1 A single topology.
+     @param topo2 A single topology.
+
+     @return A vector of ints, sized length(topo2), that contains 1 if the
+             entity exists in topo1 and 0 otherwise.
+     */
+    std::vector<int> CONDUIT_BLUEPRINT_API search(const conduit::Node &topo1,
+                                                  const conduit::Node &topo2);
+
+    //-------------------------------------------------------------------------
     // -- begin conduit::blueprint::mesh::utils::topology::unstructured --
     //-------------------------------------------------------------------------
     namespace unstructured
@@ -402,12 +471,348 @@ namespace topology
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::query --
+//-----------------------------------------------------------------------------
+namespace query
+{
+
+//---------------------------------------------------------------------------
+/**
+ @brief Base class for point queries. The class can build up a set of point
+        queries but it does not actually execute them. It will return results
+        that indicate that all the queries succeeded (no real work is done).
+ */
+class CONDUIT_BLUEPRINT_API PointQueryBase
+{
+public:
+    static const int NotFound;
+
+    /**
+     @brief Constructor
+     @param mesh The input mesh(es). Each mesh domain must have state/domain_id
+                 that uniquely identifies the domain.
+     */
+    PointQueryBase(const conduit::Node &mesh);
+
+    /**
+     @brief Destructor
+     */
+    virtual ~PointQueryBase() = default;
+
+    /**
+     @brief Reset the query to try again.
+     */
+    virtual void reset();
+
+    /**
+     @brief Add a point to the list of points that will be queried on domain \a dom.
+     @param dom The domain that will be queried.
+     @param pt The point that will be queried.
+     */
+    conduit::index_t add(int dom, const double pt[3]);
+
+    /**
+     @brief Execute all of the point queries.
+     @param coordsetName The name of the coordset we're searching in the domains.
+     */
+    virtual void execute(const std::string &coordsetName);
+
+    /**
+     @brief Get the input points vector for a domain.
+     @param dom The domain id.
+
+     @return A vector of coordinates for the domain.
+     */
+    const std::vector<double> &inputs(int dom) const;
+
+    /**
+     @brief Get the results vector for a domain.
+     @param dom The domain id.
+
+     @return A vector of results for the domain. Each element represents a
+             point id. If the point is not found, it contains -1.
+     */
+    const std::vector<int> &results(int dom) const;
+
+    /**
+     @brief Return a vector of the unique domain ids (the keys of the 
+            m_domInputs map) that were requested via calls to Add.
+
+     @return A vector of unique domain ids.
+     */
+    std::vector<int> queryDomainIds() const;
+protected:
+    const conduit::Node &m_mesh;
+    std::map<int, std::vector<double> > m_domInputs;
+    std::map<int, std::vector<int> >    m_domResults;
+};
+
+//---------------------------------------------------------------------------
+/**
+ @brief This class can build up a set of point queries and execute them in
+        serial against the domains in the input mesh. This class actually
+        executes the queries.
+ */
+class CONDUIT_BLUEPRINT_API PointQuery : public PointQueryBase
+{
+public:
+    /// Point threshold after which it makes sense to switch search methods.
+    static const int SEARCH_THRESHOLD;
+
+    /**
+     @brief Constructor
+     @param mesh The input mesh(es). Each mesh domain must have state/domain_id
+                 that uniquely identifies the domain.
+     */
+    PointQuery(const conduit::Node &mesh);
+
+    /**
+     @brief Destructor
+     */
+    virtual ~PointQuery() override = default;
+
+    /**
+     @brief Set the point tolerance used to decide which points are the same.
+     @param tolerance The tolderance value.
+     */
+    void setPointTolerance(double tolerance);
+
+    /**
+     @brief Execute all of the point queries.
+     @param coordsetName The name of the coordset we're searching in the domains.
+     */
+    virtual void execute(const std::string &coordsetName) override;
+
+protected:
+    /**
+     @brief Get the domain that has state/domain_id == dom.
+     @param dom The domain id.
+     @return A Node pointer or nullptr if it is not found.
+     */
+    const conduit::Node *getDomain(int dom) const;
+
+    /**
+     @brief Find the input points in the input mesh's coordset and make a result
+            vector that contains the point ids of the looked-up points.
+     @param mesh The node that contains the mesh.
+     @param coordsetName The name of the coordset that will be searched.
+     @param input The input vector of x,y,z triples that we're looking for.
+     @param result The output vector containing the node id of each point or
+                   -1 if not found.
+     */
+    void findPointsInDomain(const conduit::Node &mesh,
+                            const std::string &coordsetName,
+                            const std::vector<double> &input,
+                            std::vector<int> &result) const;
+
+    /**
+     @brief Find the input points in the input mesh's coordset using kdtree strategy.
+     @param ndims The number of dimensions in the coordset.
+     @param sameTypes Whether the coordinates are all the same type.
+     @param coords The nodes for the individual coordset axis values.
+     @param coordTypes The coordinate types.
+     @param input The input vector of x,y,z triples that we're looking for.
+     @param result The output vector containing the node id of each point or
+                   -1 if not found.
+     @return True if the method completed the search; False otherwise.
+     */
+    bool acceleratedSearch(int ndims,
+                           bool sameTypes,
+                           const conduit::Node *coords[3],
+                           const conduit::index_t coordTypes[3],
+                           const std::vector<double> &input,
+                           std::vector<int> &result) const;
+
+    /**
+     @brief Find the input points in the input mesh's coordset using normal strategy.
+     @param ndims The number of dimensions in the coordset.
+     @param sameTypes Whether the coordinates are all the same type.
+     @param coords The nodes for the individual coordset axis values.
+     @param coordTypes The coordinate types.
+     @param input The input vector of x,y,z triples that we're looking for.
+     @param result The output vector containing the node id of each point or
+                   -1 if not found.
+     @return True if the method completed the search; False otherwise.
+     */
+    bool normalSearch(int ndims,
+                      bool sameTypes,
+                      const conduit::Node *coords[3],
+                      const conduit::index_t coordTypes[3],
+                      const std::vector<double> &input,
+                      std::vector<int> &result) const;
+    /**
+     @brief Return a list of domain ids that exist locally.
+     @return A list of local domain ids.
+     */
+    std::vector<int> domainIds() const;
+
+protected:
+    double m_pointTolerance;
+};
+
+//---------------------------------------------------------------------------
+/**
+ @brief A match membership query that uses the questions asked by various
+        domains to build new topologies that are exchanged. The topologies
+        are then compared with their counterparts on remote ranks to determine
+        overlap. The topologies are sent back to the original rank with a
+        results field. The query results for an entity can be determined
+        by passing the id returned from Add() to the Exists() method along with
+        the domain and query domain.
+ */
+class CONDUIT_BLUEPRINT_API MatchQuery
+{
+public:
+    /**
+     @brief Constructor
+     @param mesh The input mesh(es). Each mesh domain must have state/domain_id
+                 that uniquely identifies the domain.
+     */
+    MatchQuery(const conduit::Node &mesh);
+
+    /**
+     @brief Destructor (marked as virtual)
+     */
+    virtual ~MatchQuery() = default;
+
+    /**
+     @brief Select the topology that will be used. This should be an existing
+            topology. The name will be used internally to construct query
+            topologies and to identify the coordset to be used for pulling
+            points. This must be called before calling <Execute>"()".
+     @param name The topology name.
+     */
+    void selectTopology(const std::string &name);
+
+    /**
+     @brief Add an entity that will be queried on domain \a dom.
+     @param dom The domain that is asking the questions.
+     @param query_dom The domain that is being queried.
+     @param ids A list of point ids that make up the entity.
+     @param nids The number of point ids that make up the entity.
+
+     @return An identifier that represents the entity.
+     */
+    size_t add(int dom, int query_dom, const index_t *ids, index_t nids);
+    size_t add(int dom, int query_dom, const std::vector<index_t> &ids);
+
+    /**
+     @brief Execute all of the queries.
+     @param shape The shape type for the queried entities.
+     */
+    virtual void execute();
+
+    /**
+     @brief Return whether the entity exists on query_dom.
+     @param dom The domain that is asking the questions.
+     @param query_dom The domain that is being queried.
+     @param entityId A global identifier that represents the entity.
+                     This was returned from Add()
+
+     @return True if the entityId exists in query_dom.
+     */
+    virtual bool exists(int dom, int query_dom, size_t entityId) const;
+
+    /**
+     @brief Return a vector of pairs that contain dom,query_dom values.
+     @return A vector of pairs.
+     */
+    std::vector<std::pair<int,int>> queryDomainIds() const;
+
+    /**
+     @brief Return the results vector for a given dom,query_dom pair.
+     @return A results vector containing 1 (found), 0 (not found).
+     */
+    const std::vector<int> &results(int dom, int query_dom) const;
+
+protected:
+    /**
+     @brief Attempt to return the selected topology for the requested domain.
+            The topology is selected by topoName.
+     @param domain The domain number.
+     @return A node that points to the domain's selected topology. If no
+             such node is located, nullptr is returned.
+     */
+    const conduit::Node *getDomainTopology(int domain) const;
+
+    /**
+     @brief Contains information for one domain:query_domain query.
+     */
+    struct QueryInfo
+    {
+        std::shared_ptr<topology::TopologyBuilder> builder;
+        std::vector<int>                           results;
+        conduit::Node                              query_mesh;
+    };
+
+    const conduit::Node &m_mesh;
+    std::string m_topoName;
+    std::map<std::pair<int,int>, QueryInfo> m_query;
+};
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::query --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 namespace adjset
 {
     //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Given a set of domains, make sure that the specified adjset in them
+            is valid and flag any errors in the info node. This function will
+            make sure that each domain's adjset references valid entities in
+            neighboring domains.
+
+     @param doms A node containing the domains. There must be multiple domains.
+     @param adjsetName The name of the adjset in all domains. It must exist.
+     @param[out] info A node that contains any errors.
+
+     @return True if the adjsets in all domains contained no errors; False if
+             there were errors.
+     */
+    bool CONDUIT_BLUEPRINT_API validate(const Node &doms,
+                                        const std::string &adjsetName,
+                                        Node &info);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Given a set of domains, make sure that the specified adjset in them
+            is valid and flag any errors in the info node. This function will
+            make sure that each domain's adjset references valid entities in
+            neighboring domains.
+
+     @param doms A node containing the domains. There must be multiple domains.
+     @param adjsetName The name of the adjset in all domains. It must exist.
+     @param association Then type of the adjset's association.
+     @param topologyName The name of the adjset's topology.
+     @param coordsetName The name of the topology coordset.
+     @param[out] info A node that contains any errors.
+     @param PQ The PointQuery that will handle vertex association queries.
+     @param MQ The MatchQuery that will handle element association queries.
+
+     @note The association, topologyName, and coordsetName are passed in so
+           the routine does not have to figure them out. In parallel, the
+           rank might not have any domain to get them from. We can handle
+           the parallel problem from the parallel calling routine.
+
+     @return True if the adjsets in all domains contained no errors; False if
+             there were errors.
+     */
+    bool CONDUIT_BLUEPRINT_API validate(const conduit::Node &doms,
+                                        const std::string &adjsetName,
+                                        const std::string &association,
+                                        const std::string &topologyName,
+                                        const std::string &coordsetName,
+                                        conduit::Node &info,
+                                        query::PointQuery &PQ,
+                                        query::MatchQuery &MQ);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
