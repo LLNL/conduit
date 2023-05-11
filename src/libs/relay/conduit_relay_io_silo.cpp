@@ -1135,6 +1135,11 @@ read_root_silo_index(const std::string &root_file_path,
 
     // get table of contents
     DBtoc *toc = DBGetToc(dbfile.getSiloObject()); // shouldn't be free'd
+    if (!toc)
+    {
+        error_oss << "Table of contents could not be extracted from file: " << root_file_path;
+        return false;
+    }
     // check for multimeshes
     if (toc->nmultimesh <= 0)
     {
@@ -1169,7 +1174,7 @@ read_root_silo_index(const std::string &root_file_path,
             error_oss << "No multimesh found matching " << multimesh_name;
             return false;
         }
-    }    
+    }
 
     // extract the multimesh
     detail::SiloObjectWrapper<DBmultimesh, decltype(&DBFreeMultimesh)> multimesh{
@@ -1185,10 +1190,16 @@ read_root_silo_index(const std::string &root_file_path,
     root_node[multimesh_name]["nblocks"] = nblocks;
 
     bool nameschemes = false;
+    if (!multimesh.getSiloObject()->meshnames || !multimesh.getSiloObject()->meshtypes)
+    {
+        nameschemes = true;
+    }
     // TODO_LATER nameschemes
     if (nameschemes)
     {
         root_node[multimesh_name]["nameschemes"] = "yes";
+        error_oss << "multimesh " << multimesh_name << " uses nameschemes which are not yet supported.";
+        return false;
     }
     else
     {
@@ -1217,7 +1228,12 @@ read_root_silo_index(const std::string &root_file_path,
             error_oss << "Error opening multivar " << multivar_name;
             return false;
         }
-        else if (multivar.getSiloObject()->mmesh_name == multimesh_name)
+        if (!multivar.getSiloObject()->mmesh_name)
+        {
+            error_oss << "Multivar " << multivar_name << " has no associated multimesh";
+            return false;
+        }
+        if (multivar.getSiloObject()->mmesh_name == multimesh_name)
         {
             if (multivar.getSiloObject()->nvars != nblocks)
             {
@@ -1227,22 +1243,28 @@ read_root_silo_index(const std::string &root_file_path,
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
             bool var_nameschemes = false;
+            if (!multivar.getSiloObject()->varnames || !multivar.getSiloObject()->vartypes)
+            {
+                var_nameschemes = true;
+            }
             // TODO_LATER var_nameschemes
             if (var_nameschemes)
             {
                 var["nameschemes"] = "yes";
+                error_oss << "multivar " << multivar_name << " uses nameschemes which are not yet supported.";
+                return false;
             }
             else
             {
                 var["nameschemes"] = "no";
                 var["var_types"].set(DataType::int64(nblocks));
                 int64 *var_types = var["var_types"].value();
-                for (int i = 0; i < nblocks; i ++)
+                for (int j = 0; j < nblocks; j ++)
                 {
                     // save the mesh name and mesh type
                     Node &var_path = var["var_paths"].append();
-                    var_path.set(multivar.getSiloObject()->varnames[i]);
-                    var_types[i] = multivar.getSiloObject()->vartypes[i];
+                    var_path.set(multivar.getSiloObject()->varnames[j]);
+                    var_types[j] = multivar.getSiloObject()->vartypes[j];
                 }
             }
         }
