@@ -438,6 +438,8 @@ TEST(conduit_relay_io_silo, round_trip_julia)
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 
+// TODO need to do read option tests
+
 TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
 {
     // we will do overlink tests separately
@@ -593,6 +595,30 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    }
+}
+
+//
+// read silo tests
+//
+
+TEST(conduit_relay_io_silo, read_silo)
+{
+    const std::vector<std::string> basenames = {/*"multi_curv3d",*/ /*"tire",*/ "galaxy0000", /*"emptydomains"*/};
+    for (int i = 0; i < basenames.size(); ++i) 
+    {
+        Node load_mesh, info;
+        std::string input_file = relay_test_silo_data_path(basenames[i] + ".silo");
+
+        io::silo::load_mesh(input_file, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        load_mesh.print();
+
+        // // save for blueprint vs silo diff
+        // io::blueprint::save_mesh(load_mesh, basenames[i], "hdf5");
+
+        // // save for silo vs silo diff
+        // io::silo::save_mesh(load_mesh, basenames[i]);
     }
 }
 

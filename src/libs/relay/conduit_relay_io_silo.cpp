@@ -479,11 +479,17 @@ conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
 int get_coordset_silo_type(const std::string &sys)
 {
     if (sys == "cartesian")
+    {
         return DB_CARTESIAN;
+    }
     else if (sys == "cylindrical")
+    {
         return DB_CYLINDRICAL;
+    }
     else if (sys == "spherical")
+    {
         return DB_SPHERICAL;
+    }
     CONDUIT_ERROR("Unrecognized coordinate system " << sys);
     return -1;
 }
@@ -511,8 +517,18 @@ get_coordset_axis_labels(const int sys)
         coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[1].c_str());
         coordnames.push_back(conduit::blueprint::mesh::utils::SPHERICAL_AXES[2].c_str());
     }
+    else if (sys == DB_NUMERICAL)
+    {
+        CONDUIT_ERROR("Conduit Blueprint does not support DB_NUMERICAL coordinate systems.");
+    }
+    else if (sys == DB_OTHER)
+    {
+        CONDUIT_ERROR("Conduit Blueprint does not support DB_OTHER coordinate systems.");
+    }
     else
-        CONDUIT_ERROR("Unrecognized coordinate system " << sys);
+    {
+        CONDUIT_ERROR("Invalid coordinate system " << sys);
+    }
     return coordnames;
 }
 
@@ -528,7 +544,9 @@ copy_point_coords(const int datatype,
     ndims = ndims < 3 ? ndims : 3;
     std::vector<const char *> labels = get_coordset_axis_labels(coord_sys);
     if (coord_sys == DB_CYLINDRICAL && ndims >= 3)
+    {
         CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");    
+    }
     for (int i = 0; i < ndims; i ++)
     {
         if (coords[i] != NULL)
@@ -820,19 +838,6 @@ read_variable_domain(const T *var_ptr,
     }
 
     field["topology"] = multimesh_name;
-
-    if (var_ptr->centering == DB_NODECENT)
-    {
-        field["association"] = "vertex";
-    }
-    else if (var_ptr->centering == DB_ZONECENT)
-    {
-        field["association"] = "element";
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported field association " << var_ptr->centering);
-    }
 
     int datatype = var_ptr->datatype;
     if (datatype == DB_INT)
@@ -1228,12 +1233,38 @@ read_root_silo_index(const std::string &root_file_path,
             error_oss << "Error opening multivar " << multivar_name;
             return false;
         }
-        if (!multivar.getSiloObject()->mmesh_name)
+
+        // does this variable use nameschemes?
+        bool var_nameschemes = false;
+        if (!multivar.getSiloObject()->varnames || !multivar.getSiloObject()->vartypes)
         {
-            error_oss << "Multivar " << multivar_name << " has no associated multimesh";
+            var_nameschemes = true;
+            error_oss << "multivar " << multivar_name << " uses nameschemes which are not yet supported.";
             return false;
         }
-        if (multivar.getSiloObject()->mmesh_name == multimesh_name)
+
+        // is this multivar associated with a multimesh?
+        bool multimesh_assoc = false;
+
+        // there are two cases:
+        // 1. the multivar is directly associated with a multimesh
+        // 2. the components of the multivar are associatd with components of a multimesh
+
+        // we begin with the second case:
+        if (!multivar.getSiloObject()->mmesh_name)
+        {
+            CONDUIT_INFO("Multivar " + multivar_name + " has no associated multimesh. "
+                         "We will assume it is associated with multimesh " + multimesh_name + ".")
+            multimesh_assoc = true;
+            
+        }
+        // and then the first case
+        else if (multivar.getSiloObject()->mmesh_name == multimesh_name)
+        {
+            multimesh_assoc = true;
+        }
+
+        if (multimesh_assoc)
         {
             if (multivar.getSiloObject()->nvars != nblocks)
             {
@@ -1242,17 +1273,10 @@ read_root_silo_index(const std::string &root_file_path,
                 return false;
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
-            bool var_nameschemes = false;
-            if (!multivar.getSiloObject()->varnames || !multivar.getSiloObject()->vartypes)
-            {
-                var_nameschemes = true;
-            }
             // TODO_LATER var_nameschemes
             if (var_nameschemes)
             {
                 var["nameschemes"] = "yes";
-                error_oss << "multivar " << multivar_name << " uses nameschemes which are not yet supported.";
-                return false;
             }
             else
             {
@@ -1582,6 +1606,7 @@ read_mesh(const std::string &root_file_path,
                     detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
                         DBGetUcdvar(domain_file_to_use, var_name.c_str()),
                         &DBFreeUcdvar};
+                    field_out["association"] = ucdvar.getSiloObject()->centering == DB_ZONECENT ? "element" : "vertex";
                     read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), 
                                                    var_name, 
                                                    multimesh_name, 
@@ -1592,6 +1617,7 @@ read_mesh(const std::string &root_file_path,
                     detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
                         DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeQuadvar};
+                    field_out["association"] = quadvar.getSiloObject()->centering == DB_NODECENT ? "vertex" : "element";
                     read_variable_domain<DBquadvar>(quadvar.getSiloObject(), 
                                                     var_name, 
                                                     multimesh_name, 
@@ -1602,6 +1628,7 @@ read_mesh(const std::string &root_file_path,
                     detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
                         DBGetPointvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeMeshvar};
+                    field_out["association"] = "vertex";
                     read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), 
                                                     var_name, 
                                                     multimesh_name, 
