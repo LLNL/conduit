@@ -149,6 +149,7 @@ public:
     static int         compression_level;
 
     static std::string libver;
+    static std::string messages;
 
 public:
 
@@ -159,6 +160,11 @@ public:
         if(opts.has_child("libver"))
         {
             libver = opts["libver"].as_string();
+        }
+
+        if(opts.has_child("messages"))
+        {
+            messages = opts["messages"].as_string();
         }
 
         if(opts.has_child("compact_storage"))
@@ -295,6 +301,8 @@ std::string HDF5Options::compression_method = "gzip";
 int         HDF5Options::compression_level  = 5;
 
 std::string HDF5Options::libver             = "default";
+// quiet (default) suppresses hdf5 diag warnings in outer relay API layers
+std::string HDF5Options::messages           = "quiet";
 
 //-----------------------------------------------------------------------------
 void
@@ -314,23 +322,34 @@ hdf5_options(Node &opts)
 // Private class used to suppress HDF5 error messages.
 //
 // Creating an instance of this class will disable the current HDF5 error
-// callbacks.  The default HDF5 callback print error messages  we probing
-// properties of the HDF5 tree. When the instance is destroyed, the previous
+// callbacks. The default HDF5 callbacks print error messages when probing
+// properties of the HDF5 tree. When the instance is destroyed, the prevsous
 // error state is restored.
+//
+// Suppression is only enabled when HDF5Options::messages == "quiet"
 //-----------------------------------------------------------------------------
 class HDF5ErrorStackSupressor
 {
 public:
         HDF5ErrorStackSupressor()
         :  herr_func(NULL),
-           herr_func_client_data(NULL)
+           herr_func_client_data(NULL),
+           active(true)
         {
-            disable_hdf5_error_func();
+            active = (HDF5Options::messages == "quiet");
+            if(active)
+            {
+                disable_hdf5_error_func();
+            }
         }
 
        ~HDF5ErrorStackSupressor()
         {
-            restore_hdf5_error_func();
+            if(active)
+            {
+                restore_hdf5_error_func();
+            }
+            active = false;
         }
 
 private:
@@ -360,6 +379,8 @@ private:
     H5E_auto2_t  herr_func;
     // data container for hdf5 error interface callback
     void         *herr_func_client_data;
+    // reflects if suppression is on
+    bool          active;
 };
 
 //-----------------------------------------------------------------------------

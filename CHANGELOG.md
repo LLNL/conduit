@@ -45,6 +45,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `conduit::blueprint::o2mrelation::O2MIndex` class.  Instantiate with O2M relation Node; get flatindex for a given one_index and many_index.  Alternative to Java-style iterator.
 - Added `conduit::blueprint::examples::mesh::rz_cylinder` function that generates example 2D cylindrical (RZ) meshes.
 
+#### Relay
+- Added verbose mode option for Relay I/O HDF5 diagnostic messages. See `src/tests/relay/t_relay_io_hdf5_diag_verbose.cpp` for an example of how to enable verbose output.
+
 ### Fixed
 #### General
 - Fixed a logic issue undermining C++ type mapping when using CMake 3.26.
