@@ -1344,8 +1344,6 @@ read_root_silo_index(const std::string &root_file_path,
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
     //       ...
 
-    root_node.print();
-
     return true;
 }
 
@@ -1498,6 +1496,9 @@ read_mesh(const std::string &root_file_path,
             continue;
         }
 
+        std::string bottom_level_mesh_name, tmp;
+        conduit::utils::rsplit_file_path(mesh_name, "/", bottom_level_mesh_name, tmp);
+
         if (mesh_domain_filename.empty())
         {
             mesh_domain_filename = root_file_path;
@@ -1627,6 +1628,13 @@ read_mesh(const std::string &root_file_path,
                         CONDUIT_INFO("Unable to fetch DB_UCDVAR " + var_name + ". Skipping.");
                         continue;
                     }
+                    if (ucdvar.getSiloObject()->meshname != bottom_level_mesh_name)
+                    {
+                        CONDUIT_INFO("DB_UCDVAR " + var_name + " is not "
+                                     "associated with mesh " + bottom_level_mesh_name +
+                                     ". Skipping.");
+                        continue;
+                    }
                     Node &field_out = mesh_out["fields"][multivar_name];
                     field_out["association"] = ucdvar.getSiloObject()->centering == DB_ZONECENT ? "element" : "vertex";
                     read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), 
@@ -1644,6 +1652,13 @@ read_mesh(const std::string &root_file_path,
                         CONDUIT_INFO("Unable to fetch DB_QUADVAR " + var_name + ". Skipping.");
                         continue;
                     }
+                    if (quadvar.getSiloObject()->meshname != bottom_level_mesh_name)
+                    {
+                        CONDUIT_INFO("DB_QUADVAR " + var_name + " is not "
+                                     "associated with mesh " + bottom_level_mesh_name +
+                                     ". Skipping.");
+                        continue;
+                    }
                     Node &field_out = mesh_out["fields"][multivar_name];
                     field_out["association"] = quadvar.getSiloObject()->centering == DB_NODECENT ? "vertex" : "element";
                     read_variable_domain<DBquadvar>(quadvar.getSiloObject(), 
@@ -1659,6 +1674,13 @@ read_mesh(const std::string &root_file_path,
                     if (!meshvar.getSiloObject())
                     {
                         CONDUIT_INFO("Unable to fetch DB_POINTVAR " + var_name + ". Skipping.");
+                        continue;
+                    }
+                    if (meshvar.getSiloObject()->meshname != bottom_level_mesh_name)
+                    {
+                        CONDUIT_INFO("DB_POINTVAR " + var_name + " is not "
+                                     "associated with mesh " + bottom_level_mesh_name +
+                                     ". Skipping.");
                         continue;
                     }
                     Node &field_out = mesh_out["fields"][multivar_name];
