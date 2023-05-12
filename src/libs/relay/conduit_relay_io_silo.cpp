@@ -830,10 +830,10 @@ assign_values(int nvals,
 //-----------------------------------------------------------------------------
 template <class T>
 void
-read_variable_domain_helper(const T *var_ptr,
-                            const std::string &var_name,
-                            const std::string &multimesh_name,
-                            conduit::Node &field)
+read_variable_domain(const T *var_ptr,
+                     const std::string &var_name,
+                     const std::string &multimesh_name,
+                     conduit::Node &field)
 {
     if (!var_ptr)
     {
@@ -1617,8 +1617,6 @@ read_mesh(const std::string &root_file_path,
                     }
                 }
 
-                Node &field_out = mesh_out["fields"][multivar_name];
-
                 if (vartype == DB_UCDVAR)
                 {
                     detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
@@ -1626,13 +1624,15 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeUcdvar};
                     if (!ucdvar.getSiloObject())
                     {
-                        CONDUIT_ERROR("Unable to fetch DB_UCDVAR " + var_name + ".");
+                        CONDUIT_INFO("Unable to fetch DB_UCDVAR " + var_name + ". Skipping.");
+                        continue;
                     }
+                    Node &field_out = mesh_out["fields"][multivar_name];
                     field_out["association"] = ucdvar.getSiloObject()->centering == DB_ZONECENT ? "element" : "vertex";
-                    read_variable_domain_helper<DBucdvar>(ucdvar.getSiloObject(), 
-                                                          var_name, 
-                                                          multimesh_name, 
-                                                          field_out);
+                    read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), 
+                                                   var_name, 
+                                                   multimesh_name, 
+                                                   field_out);
                 }
                 else if (vartype == DB_QUADVAR)
                 {
@@ -1641,13 +1641,15 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeQuadvar};
                     if (!quadvar.getSiloObject())
                     {
-                        CONDUIT_ERROR("Unable to fetch DB_QUADVAR " + var_name + ".");
+                        CONDUIT_INFO("Unable to fetch DB_QUADVAR " + var_name + ". Skipping.");
+                        continue;
                     }
+                    Node &field_out = mesh_out["fields"][multivar_name];
                     field_out["association"] = quadvar.getSiloObject()->centering == DB_NODECENT ? "vertex" : "element";
-                    read_variable_domain_helper<DBquadvar>(quadvar.getSiloObject(), 
-                                                           var_name, 
-                                                           multimesh_name, 
-                                                           field_out);
+                    read_variable_domain<DBquadvar>(quadvar.getSiloObject(), 
+                                                    var_name, 
+                                                    multimesh_name, 
+                                                    field_out);
                 }
                 else if (vartype == DB_POINTVAR)
                 {
@@ -1656,13 +1658,15 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeMeshvar};
                     if (!meshvar.getSiloObject())
                     {
-                        CONDUIT_ERROR("Unable to fetch DB_POINTVAR " + var_name + ".");
+                        CONDUIT_INFO("Unable to fetch DB_POINTVAR " + var_name + ". Skipping.");
+                        continue;
                     }
+                    Node &field_out = mesh_out["fields"][multivar_name];
                     field_out["association"] = "vertex";
-                    read_variable_domain_helper<DBmeshvar>(meshvar.getSiloObject(), 
-                                                           var_name, 
-                                                           multimesh_name, 
-                                                           field_out);
+                    read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), 
+                                                    var_name, 
+                                                    multimesh_name, 
+                                                    field_out);
                 }
                 else
                 {
