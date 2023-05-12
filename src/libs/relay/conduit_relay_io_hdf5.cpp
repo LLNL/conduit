@@ -301,7 +301,7 @@ std::string HDF5Options::compression_method = "gzip";
 int         HDF5Options::compression_level  = 5;
 
 std::string HDF5Options::libver             = "default";
-// quiet (default) suppresses hdf5 diag warnings in out relay API layers
+// quiet (default) suppresses hdf5 diag warnings in outer relay API layers
 std::string HDF5Options::messages           = "quiet";
 
 //-----------------------------------------------------------------------------
@@ -326,7 +326,7 @@ hdf5_options(Node &opts)
 // properties of the HDF5 tree. When the instance is destroyed, the prevsous
 // error state is restored.
 //
-// Suppression is enabled when HDF5Options::messages == "quiet"
+// Suppression is only enabled when HDF5Options::messages == "quiet"
 //-----------------------------------------------------------------------------
 class HDF5ErrorStackSupressor
 {

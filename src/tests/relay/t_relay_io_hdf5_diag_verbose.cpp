@@ -21,6 +21,7 @@ using namespace conduit::relay;
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5_diag, diag_verbose_and_quiet)
 {
+    // allow hdf5 diag info to be printed to stdout
     Node opts;
     opts["messages"] = "verbose";
     io::hdf5_set_options(opts);
@@ -32,6 +33,7 @@ TEST(conduit_relay_io_hdf5_diag, diag_verbose_and_quiet)
 
     EXPECT_THROW(io::hdf5_write(n,"/garbage/path/wont/work"),conduit::Error);
 
+    // suppress hdf5 diag info printing
     opts["messages"] = "quiet"; // default mode
     io::hdf5_set_options(opts);
 
