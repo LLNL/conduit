@@ -46,7 +46,6 @@ about(Node &n)
 
     Node conduit_about;
     conduit::about(conduit_about);
-    
 
 #ifdef CONDUIT_RELAY_WEBSERVER_ENABLED
     n["web"] = "enabled";
