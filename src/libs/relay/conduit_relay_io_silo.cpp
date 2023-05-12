@@ -895,120 +895,6 @@ read_variable_domain_helper(const T *var_ptr,
     }
 }
 
-//-----------------------------------------------------------------------------
-void
-read_variable_domain(const Node &n_var,
-                     const int domain_id,
-                     const std::string &relative_dir,
-                     const std::string &root_file_path,
-                     const std::string &mesh_domain_filename,
-                     const std::string &multivar_name,
-                     const std::string &multimesh_name,
-                     DBfile *mesh_domain_file,
-                     Node &mesh_out)
-{
-    bool var_nameschemes = false;
-    if (n_var.has_child("nameschemes") &&
-        n_var["nameschemes"].as_string() == "yes")
-    {
-        var_nameschemes = true;
-        CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
-    }
-    detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
-
-    std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
-    int_accessor vartypes = n_var["var_types"].value();
-    int vartype = vartypes[domain_id];
-
-    std::string var_name, var_domain_filename;
-    var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
-
-    if (var_name == "EMPTY")
-    {
-        // we choose not to write anything to blueprint
-        return;
-    }
-
-    if (var_domain_filename.empty())
-    {
-        var_domain_filename = root_file_path;
-    }
-
-    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
-        nullptr, 
-        &DBClose,
-        "Error closing Silo file: " + var_domain_filename};
-    DBfile *domain_file_to_use = nullptr;
-
-    // if the var domain is stored in the same file as the mesh domain then we
-    // can reuse the open file ptr
-    if (var_domain_filename == mesh_domain_filename)
-    {
-        domain_file_to_use = mesh_domain_file;
-    }
-    // otherwise we need to open our own file
-    else
-    {
-        var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-        if (! (domain_file_to_use = var_domain_file.getSiloObject()))
-        {
-            CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
-        }
-    }
-
-    Node &field_out = mesh_out["fields"][multivar_name];
-
-    if (vartype == DB_UCDVAR)
-    {
-        detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-            DBGetUcdvar(domain_file_to_use, var_name.c_str()),
-            &DBFreeUcdvar};
-        if (!ucdvar.getSiloObject())
-        {
-            CONDUIT_ERROR("Unable to fetch DB_UCDVAR " + var_name + ".");
-        }
-        field_out["association"] = ucdvar.getSiloObject()->centering == DB_ZONECENT ? "element" : "vertex";
-        read_variable_domain_helper<DBucdvar>(ucdvar.getSiloObject(), 
-                                              var_name, 
-                                              multimesh_name, 
-                                              field_out);
-    }
-    else if (vartype == DB_QUADVAR)
-    {
-        detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-            DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
-            &DBFreeQuadvar};
-        if (!quadvar.getSiloObject())
-        {
-            CONDUIT_ERROR("Unable to fetch DB_QUADVAR " + var_name + ".");
-        }
-        field_out["association"] = quadvar.getSiloObject()->centering == DB_NODECENT ? "vertex" : "element";
-        read_variable_domain_helper<DBquadvar>(quadvar.getSiloObject(), 
-                                               var_name, 
-                                               multimesh_name, 
-                                               field_out);
-    }
-    else if (vartype == DB_POINTVAR)
-    {
-        detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-            DBGetPointvar(domain_file_to_use, var_name.c_str()), 
-            &DBFreeMeshvar};
-        if (!meshvar.getSiloObject())
-        {
-            CONDUIT_ERROR("Unable to fetch DB_POINTVAR " + var_name + ".");
-        }
-        field_out["association"] = "vertex";
-        read_variable_domain_helper<DBmeshvar>(meshvar.getSiloObject(), 
-                                               var_name, 
-                                               multimesh_name, 
-                                               field_out);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported variable type " << vartype);
-    }
-}
-
 // TODO_LATER support material read
 // //-----------------------------------------------------------------------------
 // // Read a material domain from a Silo file.
@@ -1594,15 +1480,15 @@ read_mesh(const std::string &root_file_path,
     std::string silo_name, relative_dir;
     utils::rsplit_file_path(root_file_path, silo_name, relative_dir);
 
-    for (int i = domain_start; i < domain_end; i ++)
+    for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
     {
         //
         // Read Mesh
         //
 
-        std::string silo_mesh_path = mesh_index["mesh_paths"][i].as_string();
+        std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
         int_accessor meshtypes = mesh_index["mesh_types"].value();
-        int meshtype = meshtypes[i];
+        int meshtype = meshtypes[domain_id];
 
         std::string mesh_name, mesh_domain_filename;
         mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
@@ -1626,7 +1512,7 @@ read_mesh(const std::string &root_file_path,
         }
 
         // this is for the blueprint mesh output
-        std::string domain_path = conduit_fmt::format("domain_{:06d}", i);
+        std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
         Node &mesh_out = mesh[domain_path];
 
         if (meshtype == DB_UCDMESH)
@@ -1657,7 +1543,7 @@ read_mesh(const std::string &root_file_path,
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
         }
 
-        mesh_out["state"]["domain_id"] = i;
+        mesh_out["state"]["domain_id"] = domain_id;
         if (mesh_index.has_path("state/time"))
         {
             mesh_out["state"]["time"] = mesh_index["state"]["time"].as_double();
@@ -1681,15 +1567,107 @@ read_mesh(const std::string &root_file_path,
             {
                 const Node &n_var = var_itr.next();
                 std::string multivar_name = var_itr.name();
-                read_variable_domain(n_var,
-                                     i,
-                                     relative_dir,
-                                     root_file_path,
-                                     mesh_domain_filename,
-                                     multivar_name,
-                                     multimesh_name,
-                                     mesh_domain_file.getSiloObject(),
-                                     mesh_out);
+
+                bool var_nameschemes = false;
+                if (n_var.has_child("nameschemes") &&
+                    n_var["nameschemes"].as_string() == "yes")
+                {
+                    var_nameschemes = true;
+                    CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
+                }
+                detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
+
+                std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
+                int_accessor vartypes = n_var["var_types"].value();
+                int vartype = vartypes[domain_id];
+
+                std::string var_name, var_domain_filename;
+                var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
+
+                if (var_name == "EMPTY")
+                {
+                    // we choose not to write anything to blueprint
+                    continue;
+                }
+
+                if (var_domain_filename.empty())
+                {
+                    var_domain_filename = root_file_path;
+                }
+
+                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
+                    nullptr, 
+                    &DBClose,
+                    "Error closing Silo file: " + var_domain_filename};
+                DBfile *domain_file_to_use = nullptr;
+
+                // if the var domain is stored in the same file as the mesh domain then we
+                // can reuse the open file ptr
+                if (var_domain_filename == mesh_domain_filename)
+                {
+                    domain_file_to_use = mesh_domain_file.getSiloObject();
+                }
+                // otherwise we need to open our own file
+                else
+                {
+                    var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                    if (! (domain_file_to_use = var_domain_file.getSiloObject()))
+                    {
+                        CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
+                    }
+                }
+
+                Node &field_out = mesh_out["fields"][multivar_name];
+
+                if (vartype == DB_UCDVAR)
+                {
+                    detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
+                        DBGetUcdvar(domain_file_to_use, var_name.c_str()),
+                        &DBFreeUcdvar};
+                    if (!ucdvar.getSiloObject())
+                    {
+                        CONDUIT_ERROR("Unable to fetch DB_UCDVAR " + var_name + ".");
+                    }
+                    field_out["association"] = ucdvar.getSiloObject()->centering == DB_ZONECENT ? "element" : "vertex";
+                    read_variable_domain_helper<DBucdvar>(ucdvar.getSiloObject(), 
+                                                          var_name, 
+                                                          multimesh_name, 
+                                                          field_out);
+                }
+                else if (vartype == DB_QUADVAR)
+                {
+                    detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
+                        DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
+                        &DBFreeQuadvar};
+                    if (!quadvar.getSiloObject())
+                    {
+                        CONDUIT_ERROR("Unable to fetch DB_QUADVAR " + var_name + ".");
+                    }
+                    field_out["association"] = quadvar.getSiloObject()->centering == DB_NODECENT ? "vertex" : "element";
+                    read_variable_domain_helper<DBquadvar>(quadvar.getSiloObject(), 
+                                                           var_name, 
+                                                           multimesh_name, 
+                                                           field_out);
+                }
+                else if (vartype == DB_POINTVAR)
+                {
+                    detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
+                        DBGetPointvar(domain_file_to_use, var_name.c_str()), 
+                        &DBFreeMeshvar};
+                    if (!meshvar.getSiloObject())
+                    {
+                        CONDUIT_ERROR("Unable to fetch DB_POINTVAR " + var_name + ".");
+                    }
+                    field_out["association"] = "vertex";
+                    read_variable_domain_helper<DBmeshvar>(meshvar.getSiloObject(), 
+                                                           var_name, 
+                                                           multimesh_name, 
+                                                           field_out);
+                }
+                else
+                {
+                    CONDUIT_ERROR("Unsupported variable type " << vartype);
+                }
             }
         }
         // TODO_LATER read multimaterials
