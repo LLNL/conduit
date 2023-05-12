@@ -501,7 +501,7 @@ Schema::to_string_stream(const std::string &stream_path,
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
     {
-        CONDUIT_ERROR("<Node::to_string_stream> failed to open file: "
+        CONDUIT_ERROR("<Schema::to_string_stream> failed to open file: "
                       << "\"" << stream_path << "\"");
     }
     to_string_stream(ofs,protocol,indent,depth,pad,eoe);
@@ -591,7 +591,7 @@ Schema::to_json_stream(const std::string &stream_path,
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
     {
-        CONDUIT_ERROR("<Node::to_json_stream> failed to open file: "
+        CONDUIT_ERROR("<Schema::to_json_stream> failed to open file: "
                       << "\"" << stream_path << "\"");
     }
     to_json_stream(ofs,indent,depth,pad,eoe);
@@ -681,7 +681,7 @@ Schema::to_yaml_stream(const std::string &stream_path,
     ofs.open(stream_path.c_str());
     if(!ofs.is_open())
     {
-        CONDUIT_ERROR("<Node::to_yaml_stream> failed to open file: "
+        CONDUIT_ERROR("<Schema::to_yaml_stream> failed to open file: "
                       << "\"" << stream_path << "\"");
     }
     to_yaml_stream(ofs,indent,depth,pad,eoe);
@@ -718,7 +718,7 @@ Schema::save(const std::string &ofname,
     ofile.open(ofname.c_str());
     if(!ofile.is_open())
     {
-        CONDUIT_ERROR("<Node::save> failed to open file: "
+        CONDUIT_ERROR("<Schema::save> failed to open file: "
                       << "\"" << ofname << "\"");
     }
     ofile << oss.str();
@@ -734,7 +734,7 @@ Schema::load(const std::string &ifname)
     ifile.open(ifname.c_str());
     if(!ifile.is_open())
     {
-        CONDUIT_ERROR("<Node::load> failed to open file: "
+        CONDUIT_ERROR("<Schema::load> failed to open file: "
                       << "\"" << ifname << "\"");
     }
     std::string res((std::istreambuf_iterator<char>(ifile)),

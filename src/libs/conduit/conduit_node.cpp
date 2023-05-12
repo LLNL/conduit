@@ -342,7 +342,20 @@ Node::load(const std::string &ibase,
     {
         Schema s;
         std::string ifschema = ibase + "_json";
-        s.load(ifschema);
+        try
+        {
+            s.load(ifschema);
+        }
+        catch(conduit::Error &e)
+        {
+            CONDUIT_ERROR("<Node::load> (using protocol = "
+                          << proto << ") "
+                          << "failed to load file: \"" << ibase << "\""
+                          << " due to failure to load Schema file: "
+                          << '\"' << ifschema << "\"" << std::endl
+                          << "Schema load failure details:"
+                          << e.message());
+        }
         load(ibase,s);
     }
     // single file json and yaml cases
@@ -352,7 +365,9 @@ Node::load(const std::string &ibase,
         ifile.open(ibase.c_str());
         if(!ifile.is_open())
         {
-            CONDUIT_ERROR("<Node::load> failed to open: " << ibase);
+            CONDUIT_ERROR("<Node::load> (using protocol = "
+                          << proto << ") "
+                          << "failed to open: \"`" << ibase << "\"");
         }
         std::string data((std::istreambuf_iterator<char>(ifile)),
                           std::istreambuf_iterator<char>());

@@ -290,6 +290,14 @@ TEST(conduit_relay_io_basic, save_merged_load_merged_subpath)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_basic, bad_path_and_subpath)
+{
+    Node n;
+    n = 42;
+    conduit::relay::io::load("different.file.extension:subpath",n);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_basic, save_empty)
 {
     Node n;

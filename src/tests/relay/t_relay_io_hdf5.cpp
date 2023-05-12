@@ -1403,7 +1403,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_generic_options)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_save_libver)
 {
-        
+
     Node n, opts;
 
     n["data"] = 3.1415;
@@ -1413,7 +1413,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_save_libver)
     std::string tout = "tout_hdf5_save_libver_test.hdf5";
 
     conduit::relay::io::hdf5_set_options(opts);
-    
+
     utils::remove_path_if_exists(tout);
     // bad libver
     EXPECT_THROW(io::save(n,tout, "hdf5"),Error);
@@ -2106,4 +2106,27 @@ TEST(conduit_relay_io_hdf5, test_ref_path_error_msg)
    // // TODO AUDIT!
    // //make sure we aren't leaking
    // EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, wrong_proto_message)
+{
+    // this test is used to show the error message
+    // seen when folks try to open an ambiguous file with
+    // default protocol
+
+    Node n;
+    n["subpath"]= 42;
+    std::string test_file_name = "tout_ambig.file.extension";
+    utils::remove_path_if_exists(test_file_name);
+    conduit::relay::io::save(n,test_file_name,"hdf5");
+
+    try
+    {
+        conduit::relay::io::load(test_file_name + ":subpath",n);
+    }
+    catch(conduit::Error &e)
+    {
+        std::cout << e.message() << std::endl;
+    }
 }
