@@ -604,21 +604,46 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
 
 TEST(conduit_relay_io_silo, read_silo)
 {
-    const std::vector<std::string> basenames = {"multi_curv3d", "tire", "galaxy0000", "emptydomains"};
-    for (int i = 0; i < basenames.size(); ++i) 
-    {
-        Node load_mesh, info;
-        std::string input_file = relay_test_silo_data_path(basenames[i] + ".silo");
+    const std::vector<std::pair<std::string, std::string>> basenames_and_meshnames = {
+        std::make_pair("multi_curv3d", ""), // test default case
+        /*std::make_pair("multi_curv3d", "mesh1"),
+        std::make_pair("multi_curv3d", "mesh1_back"),
+        std::make_pair("multi_curv3d", "mesh1_dup"),
+        std::make_pair("multi_curv3d", "mesh1_front"),
+        std::make_pair("multi_curv3d", "mesh1_hidden"),
+        std::make_pair("tire", ""), // test default case
+        std::make_pair("tire", "tire"),
+        std::make_pair("galaxy0000", ""), // test default case
+        std::make_pair("galaxy0000", "StarMesh"),
+        std::make_pair("emptydomains", ""), // test default case
+        std::make_pair("emptydomains", "mesh"),*/
+    };
 
-        io::silo::load_mesh(input_file, load_mesh);
+    for (int i = 0; i < basenames_and_meshnames.size(); i ++) 
+    {
+        const std::string basename = basenames_and_meshnames[i].first;
+        const std::string meshname = basenames_and_meshnames[i].second;
+
+        Node load_mesh, info, opts;
+        std::string input_file = relay_test_silo_data_path(basename + ".silo");
+
+        opts["mesh_name"] = meshname;
+
+        io::silo::load_mesh(input_file, load_mesh, opts);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-        // load_mesh.print();
+        load_mesh.print();
+
+        std::string out_name = basename;
+        if (!meshname.empty())
+        {
+            out_name += "_" + meshname;
+        }
 
         // save for blueprint vs silo diff
-        io::blueprint::save_mesh(load_mesh, basenames[i] + "_blueprint", "hdf5");
+        io::blueprint::save_mesh(load_mesh, out_name + "_blueprint", "hdf5");
 
         // save for silo vs silo diff
-        io::silo::save_mesh(load_mesh, basenames[i] + "_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_silo");
     }
 }
 

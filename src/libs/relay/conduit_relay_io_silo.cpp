@@ -1165,6 +1165,7 @@ read_root_silo_index(const std::string &root_file_path,
     if (multimesh_name.empty())
     {
         multimesh_name = toc->multimesh_names[0];
+        CONDUIT_INFO("No multimesh selected, defaulting to the first multimesh found: " + multimesh_name);
     }
     else
     {
@@ -1343,6 +1344,8 @@ read_root_silo_index(const std::string &root_file_path,
     //               ...
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
     //       ...
+
+    root_node.print();
 
     return true;
 }
@@ -1631,7 +1634,7 @@ read_mesh(const std::string &root_file_path,
                     if (ucdvar.getSiloObject()->meshname != bottom_level_mesh_name)
                     {
                         CONDUIT_INFO("DB_UCDVAR " + var_name + " is not "
-                                     "associated with mesh " + bottom_level_mesh_name +
+                                     "associated with mesh " + mesh_name +
                                      ". Skipping.");
                         continue;
                     }
@@ -1655,7 +1658,7 @@ read_mesh(const std::string &root_file_path,
                     if (quadvar.getSiloObject()->meshname != bottom_level_mesh_name)
                     {
                         CONDUIT_INFO("DB_QUADVAR " + var_name + " is not "
-                                     "associated with mesh " + bottom_level_mesh_name +
+                                     "associated with mesh " + mesh_name +
                                      ". Skipping.");
                         continue;
                     }
@@ -1679,7 +1682,7 @@ read_mesh(const std::string &root_file_path,
                     if (meshvar.getSiloObject()->meshname != bottom_level_mesh_name)
                     {
                         CONDUIT_INFO("DB_POINTVAR " + var_name + " is not "
-                                     "associated with mesh " + bottom_level_mesh_name +
+                                     "associated with mesh " + mesh_name +
                                      ". Skipping.");
                         continue;
                     }
