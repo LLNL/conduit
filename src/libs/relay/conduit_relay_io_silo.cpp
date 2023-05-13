@@ -654,20 +654,11 @@ add_shape_info(DBzonelist *zones,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_ucdmesh_domain(DBfile *dbfile,
+read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
                     const std::string &mesh_name,
                     const std::string &multimesh_name,
                     conduit::Node &mesh_domain)
 {
-    detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
-        DBGetUcdmesh(dbfile, mesh_name.c_str()), 
-        &DBFreeUcdmesh};
-    DBucdmesh *ucdmesh_ptr;
-    if (!(ucdmesh_ptr = ucdmesh.getSiloObject()))
-    {
-        CONDUIT_ERROR("Error fetching ucd mesh " << mesh_name);
-    }
-
     if (ucdmesh_ptr->zones)
     {
         CONDUIT_ASSERT(!ucdmesh_ptr->phzones,
@@ -709,20 +700,10 @@ read_ucdmesh_domain(DBfile *dbfile,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_quadmesh_domain(DBfile *dbfile,
-                     const std::string &mesh_name,
+read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                      const std::string &multimesh_name,
                      conduit::Node &mesh_domain)
 {
-    detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
-        DBGetQuadmesh(dbfile, mesh_name.c_str()), 
-        &DBFreeQuadmesh};
-    DBquadmesh *quadmesh_ptr;
-    if (! (quadmesh_ptr = quadmesh.getSiloObject()))
-    {
-        CONDUIT_ERROR("Error fetching quad mesh " << mesh_name);
-    }
-    
     int coordtype{quadmesh_ptr->coordtype};
     int ndims{quadmesh_ptr->ndims};
     int dims[] = {quadmesh_ptr->nnodes,
@@ -776,20 +757,10 @@ read_quadmesh_domain(DBfile *dbfile,
 //-----------------------------------------------------------------------------
 // add complete topology and coordset entries to a mesh domain
 void
-read_pointmesh_domain(DBfile *dbfile,
-                      const std::string &mesh_name,
+read_pointmesh_domain(DBpointmesh *pointmesh_ptr,
                       const std::string &multimesh_name,
                       conduit::Node &mesh_domain)
 {
-    detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
-        DBGetPointmesh(dbfile, mesh_name.c_str()), 
-        &DBFreePointmesh};
-    DBpointmesh *pointmesh_ptr;
-    if (! (pointmesh_ptr = pointmesh.getSiloObject()))
-    {
-        CONDUIT_ERROR("Error fetching point mesh " << mesh_name);
-    }
-
     mesh_domain["topologies"][multimesh_name]["type"] = "points";
     mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
     mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
@@ -1272,9 +1243,10 @@ read_root_silo_index(const std::string &root_file_path,
         {
             if (multivar.getSiloObject()->nvars != nblocks)
             {
-                error_oss << "Domain count mismatch between multivar " 
-                          << multivar_name << "and multimesh";
-                return false;
+                CONDUIT_INFO("Domain count mismatch between multivar " +
+                             multivar_name + " and multimesh " + 
+                             multimesh_name + ". Skipping.");
+                continue;
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
             // TODO_LATER var_nameschemes
@@ -1344,8 +1316,6 @@ read_root_silo_index(const std::string &root_file_path,
     //               ...
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
     //       ...
-
-    root_node.print();
 
     return true;
 }
@@ -1517,35 +1487,60 @@ read_mesh(const std::string &root_file_path,
 
         // this is for the blueprint mesh output
         std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
-        Node &mesh_out = mesh[domain_path];
 
         if (meshtype == DB_UCDMESH)
         {
-            read_ucdmesh_domain(mesh_domain_file.getSiloObject(), 
+            detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
+                DBGetUcdmesh(mesh_domain_file.getSiloObject(), mesh_name.c_str()), 
+                &DBFreeUcdmesh};
+            if (!ucdmesh.getSiloObject())
+            {
+                CONDUIT_INFO("Unable to fetch DB_UCDMESH " + mesh_name + ". Skipping.");
+                continue;
+            }
+            read_ucdmesh_domain(ucdmesh.getSiloObject(), 
                                 mesh_name, 
                                 multimesh_name, 
-                                mesh_out);
+                                mesh[domain_path]);
         }
         else if (meshtype == DB_QUADMESH ||
                  meshtype == DB_QUADCURV ||
                  meshtype == DB_QUADRECT)
         {
-            read_quadmesh_domain(mesh_domain_file.getSiloObject(), 
-                                 mesh_name, 
+            detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
+                DBGetQuadmesh(mesh_domain_file.getSiloObject(), mesh_name.c_str()), 
+                &DBFreeQuadmesh};
+            if (!quadmesh.getSiloObject())
+            {
+                CONDUIT_INFO("Unable to fetch DB_QUADMESH " + mesh_name + ". Skipping.");
+                continue;
+            }
+            read_quadmesh_domain(quadmesh.getSiloObject(), 
                                  multimesh_name, 
-                                 mesh_out);
+                                 mesh[domain_path]);
         }
         else if (meshtype == DB_POINTMESH)
         {
-            read_pointmesh_domain(mesh_domain_file.getSiloObject(), 
-                                  mesh_name, 
+            detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
+                DBGetPointmesh(mesh_domain_file.getSiloObject(), mesh_name.c_str()), 
+                &DBFreePointmesh};
+            if (!pointmesh.getSiloObject())
+            {
+                CONDUIT_INFO("Unable to fetch DB_POINTMESH " + mesh_name + ". Skipping.");
+                continue;
+            }
+            read_pointmesh_domain(pointmesh.getSiloObject(), 
                                   multimesh_name, 
-                                  mesh_out);
+                                  mesh[domain_path]);
         }
         else
         {
             CONDUIT_ERROR("Unsupported mesh type " << meshtype);
         }
+
+        // we know we were for sure successful (we didn't skip ahead to the next domain)
+        // so we create the mesh_out now for good
+        Node &mesh_out = mesh[domain_path];
 
         mesh_out["state"]["domain_id"] = domain_id;
         if (mesh_index.has_path("state/time"))

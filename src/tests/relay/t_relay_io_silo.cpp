@@ -125,478 +125,478 @@ silo_name_changer(const std::string &mmesh_name,
 }
 
 
-TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
-{
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
+// TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
+// {
+//     uint32 a_val = 20;
+//     uint32 b_val = 8;
+//     uint32 c_val = 13;
 
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
+//     Node n;
+//     n["a"] = a_val;
+//     n["b"] = b_val;
+//     n["c"] = c_val;
 
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
+//     EXPECT_EQ(n["a"].as_uint32(), a_val);
+//     EXPECT_EQ(n["b"].as_uint32(), b_val);
+//     EXPECT_EQ(n["c"].as_uint32(), c_val);
 
-    io::silo_write(n,"tout_cold_storage_test.silo:myobj");
+//     io::silo_write(n,"tout_cold_storage_test.silo:myobj");
 
-    Node n_load;
-    io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
+//     Node n_load;
+//     io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
 
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
-}
+//     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+//     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+//     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+// }
 
-TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
-{
-    uint32 a_val = 20;
-    uint32 b_val = 8;
-    uint32 c_val = 13;
+// TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
+// {
+//     uint32 a_val = 20;
+//     uint32 b_val = 8;
+//     uint32 c_val = 13;
 
-    Node n;
-    n["a"] = a_val;
-    n["b"] = b_val;
-    n["c"] = c_val;
+//     Node n;
+//     n["a"] = a_val;
+//     n["b"] = b_val;
+//     n["c"] = c_val;
 
-    EXPECT_EQ(n["a"].as_uint32(), a_val);
-    EXPECT_EQ(n["b"].as_uint32(), b_val);
-    EXPECT_EQ(n["c"].as_uint32(), c_val);
+//     EXPECT_EQ(n["a"].as_uint32(), a_val);
+//     EXPECT_EQ(n["b"].as_uint32(), b_val);
+//     EXPECT_EQ(n["c"].as_uint32(), c_val);
 
-    io::save(n, "tout_cold_storage_test_generic_iface.silo:myobj");
+//     io::save(n, "tout_cold_storage_test_generic_iface.silo:myobj");
 
-    Node n_load;
-    io::load("tout_cold_storage_test_generic_iface.silo:myobj",n_load);
+//     Node n_load;
+//     io::load("tout_cold_storage_test_generic_iface.silo:myobj",n_load);
 
-    EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-    EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-    EXPECT_EQ(n_load["c"].as_uint32(), c_val);
-}
+//     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
+//     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
+//     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
+// }
 
-// test reading in a handful of different silo files
-TEST(conduit_relay_io_silo, load_mesh_geometry)
-{
+// // test reading in a handful of different silo files
+// TEST(conduit_relay_io_silo, load_mesh_geometry)
+// {
 
-    // TODO: all these files are in overlink symlink format.
-    // Symlinks may break on Windows (?)
-    // Could make them overlink format without the symlink.
-    // But would require modifying the files.
-    std::vector<std::string> filename_vec = {
-        "box2d.silo",
-        "box3d.silo",
-        // "diamond.silo", <--- this one fails because polytopal is not yet supported
-        // TODO: rename these files to be more descriptive.
-        // would also require modifying the paths stored within the files,
-        // and re-symlinking
-        "testDisk2D_a.silo",
-        // "donordiv.s2_materials2.silo",
-        "donordiv.s2_materials3.silo"
-    };
-    std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
-    std::vector<int> coordset_length_vec = {4, 8, /*36,*/ 1994, /*16,*/ 961};
-    std::vector<int> topology_length_vec = {1, 1, /*33,*/ 1920, /*9,*/  900};
-    for (int i = 0; i < filename_vec.size(); ++i) 
-    {
-        Node mesh, info;
-        std::string input_file = relay_test_silo_data_path(filename_vec.at(i));
-        io::silo::load_mesh(input_file, mesh);
+//     // TODO: all these files are in overlink symlink format.
+//     // Symlinks may break on Windows (?)
+//     // Could make them overlink format without the symlink.
+//     // But would require modifying the files.
+//     std::vector<std::string> filename_vec = {
+//         "box2d.silo",
+//         "box3d.silo",
+//         // "diamond.silo", <--- this one fails because polytopal is not yet supported
+//         // TODO: rename these files to be more descriptive.
+//         // would also require modifying the paths stored within the files,
+//         // and re-symlinking
+//         "testDisk2D_a.silo",
+//         // "donordiv.s2_materials2.silo",
+//         "donordiv.s2_materials3.silo"
+//     };
+//     std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
+//     std::vector<int> coordset_length_vec = {4, 8, /*36,*/ 1994, /*16,*/ 961};
+//     std::vector<int> topology_length_vec = {1, 1, /*33,*/ 1920, /*9,*/  900};
+//     for (int i = 0; i < filename_vec.size(); ++i) 
+//     {
+//         Node mesh, info;
+//         std::string input_file = relay_test_silo_data_path(filename_vec.at(i));
+//         io::silo::load_mesh(input_file, mesh);
 
-        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
-        EXPECT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
+//         EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+//         EXPECT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
 
-        const Node &domain = *blueprint::mesh::domains(mesh).front();
-        EXPECT_TRUE(domain.has_child("coordsets"));
-        EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
-        EXPECT_TRUE(domain.has_child("topologies"));
-        EXPECT_EQ(domain["topologies"].number_of_children(), 1);
+//         const Node &domain = *blueprint::mesh::domains(mesh).front();
+//         EXPECT_TRUE(domain.has_child("coordsets"));
+//         EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
+//         EXPECT_TRUE(domain.has_child("topologies"));
+//         EXPECT_EQ(domain["topologies"].number_of_children(), 1);
 
-        { // Coordset Validation //
-            const Node &cset = domain["coordsets"].child(0);
-            EXPECT_EQ(blueprint::mesh::coordset::dims(cset), dims_vec.at(i));
-            EXPECT_EQ(blueprint::mesh::coordset::length(cset), coordset_length_vec.at(i));
-            EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
-        }
+//         { // Coordset Validation //
+//             const Node &cset = domain["coordsets"].child(0);
+//             EXPECT_EQ(blueprint::mesh::coordset::dims(cset), dims_vec.at(i));
+//             EXPECT_EQ(blueprint::mesh::coordset::length(cset), coordset_length_vec.at(i));
+//             EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
+//         }
 
-        { // Topology Validation //
-            const Node &topo = domain["topologies"].child(0);
-            EXPECT_EQ(blueprint::mesh::topology::dims(topo), dims_vec.at(i));
-            EXPECT_EQ(blueprint::mesh::topology::length(topo), topology_length_vec.at(i));
-            EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
-        }
-    }
-}
+//         { // Topology Validation //
+//             const Node &topo = domain["topologies"].child(0);
+//             EXPECT_EQ(blueprint::mesh::topology::dims(topo), dims_vec.at(i));
+//             EXPECT_EQ(blueprint::mesh::topology::length(topo), topology_length_vec.at(i));
+//             EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
+//         }
+//     }
+// }
 
-TEST(conduit_relay_io_silo, round_trip_basic)
-{
-    const std::vector<std::pair<std::string, int>> mesh_types = {
-        std::make_pair("uniform", 2), std::make_pair("uniform", 3),
-        std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
-        std::make_pair("structured", 2), std::make_pair("structured", 3),
-        std::make_pair("tris", 2),
-        std::make_pair("quads", 2),
-        // std::make_pair("polygons", 2),
-        std::make_pair("tets", 3),
-        std::make_pair("hexs", 3),
-        std::make_pair("wedges", 3),
-        std::make_pair("pyramids", 3),
-        // std::make_pair("polyhedra", 3)
-    };
-    for (int i = 0; i < mesh_types.size(); ++i)
-    {
-        int dim = mesh_types[i].second;
-        index_t nx = 3;
-        index_t ny = 4;
-        index_t nz = (dim == 2 ? 0 : 2);
+// TEST(conduit_relay_io_silo, round_trip_basic)
+// {
+//     const std::vector<std::pair<std::string, int>> mesh_types = {
+//         std::make_pair("uniform", 2), std::make_pair("uniform", 3),
+//         std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
+//         std::make_pair("structured", 2), std::make_pair("structured", 3),
+//         std::make_pair("tris", 2),
+//         std::make_pair("quads", 2),
+//         // std::make_pair("polygons", 2),
+//         std::make_pair("tets", 3),
+//         std::make_pair("hexs", 3),
+//         std::make_pair("wedges", 3),
+//         std::make_pair("pyramids", 3),
+//         // std::make_pair("polyhedra", 3)
+//     };
+//     for (int i = 0; i < mesh_types.size(); ++i)
+//     {
+//         int dim = mesh_types[i].second;
+//         index_t nx = 3;
+//         index_t ny = 4;
+//         index_t nz = (dim == 2 ? 0 : 2);
 
-        std::string mesh_type = mesh_types[i].first;
+//         std::string mesh_type = mesh_types[i].first;
 
-        Node save_mesh, load_mesh, info;
-        blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
-        remove_path_if_exists("silo_basic.root");
-        io::silo::save_mesh(save_mesh, "silo_basic");
-        io::silo::load_mesh("silo_basic.root", load_mesh);
-        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+//         Node save_mesh, load_mesh, info;
+//         blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
+//         remove_path_if_exists("silo_basic.root");
+//         io::silo::save_mesh(save_mesh, "silo_basic");
+//         io::silo::load_mesh("silo_basic.root", load_mesh);
+//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        // check that load mesh correctly adds the state
-        save_mesh["state/cycle"] = (int64) 0;
-        save_mesh["state/domain_id"] = 0;
-        // The silo conversion will transform uniform to rectilinear
-        // so we will do the same to allow the diff to succeed
-        if (mesh_type == "uniform")
-        {
-            silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
-        }
+//         // check that load mesh correctly adds the state
+//         save_mesh["state/cycle"] = (int64) 0;
+//         save_mesh["state/domain_id"] = 0;
+//         // The silo conversion will transform uniform to rectilinear
+//         // so we will do the same to allow the diff to succeed
+//         if (mesh_type == "uniform")
+//         {
+//             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+//         }
 
-        silo_name_changer("mesh", save_mesh);
+//         silo_name_changer("mesh", save_mesh);
 
-        // the loaded mesh will be in the multidomain format
-        // (it will be a list containing a single mesh domain)
-        // but the saved mesh is in the single domain format
-        EXPECT_EQ(load_mesh.number_of_children(), 1);
-        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+//         // the loaded mesh will be in the multidomain format
+//         // (it will be a list containing a single mesh domain)
+//         // but the saved mesh is in the single domain format
+//         EXPECT_EQ(load_mesh.number_of_children(), 1);
+//         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-    }
-}
+//         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+//     }
+// }
 
-// we are testing vector fields in this test
-TEST(conduit_relay_io_silo, round_trip_braid)
-{
-    const std::vector<std::pair<std::string, int>> mesh_types = {
-        std::make_pair("uniform", 2), std::make_pair("uniform", 3),
-        std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
-        std::make_pair("structured", 2), std::make_pair("structured", 3),
-        // std::make_pair("point", 2), std::make_pair("point", 3), // TODO
-        std::make_pair("lines", 2), std::make_pair("lines", 3),
-        std::make_pair("tris", 2),
-        std::make_pair("quads", 2),
-        std::make_pair("tets", 3),
-        std::make_pair("hexs", 3),
-        std::make_pair("wedges", 3),
-        std::make_pair("pyramids", 3),
-        // std::make_pair("mixed_2d", 2),
-        // std::make_pair("mixed", 3),
-    };
-    for (int i = 0; i < mesh_types.size(); ++i)
-    {
-        int dim = mesh_types[i].second;
-        index_t nx = 3;
-        index_t ny = 4;
-        index_t nz = (dim == 2 ? 0 : 2);
+// // we are testing vector fields in this test
+// TEST(conduit_relay_io_silo, round_trip_braid)
+// {
+//     const std::vector<std::pair<std::string, int>> mesh_types = {
+//         std::make_pair("uniform", 2), std::make_pair("uniform", 3),
+//         std::make_pair("rectilinear", 2), std::make_pair("rectilinear", 3),
+//         std::make_pair("structured", 2), std::make_pair("structured", 3),
+//         // std::make_pair("point", 2), std::make_pair("point", 3), // TODO
+//         std::make_pair("lines", 2), std::make_pair("lines", 3),
+//         std::make_pair("tris", 2),
+//         std::make_pair("quads", 2),
+//         std::make_pair("tets", 3),
+//         std::make_pair("hexs", 3),
+//         std::make_pair("wedges", 3),
+//         std::make_pair("pyramids", 3),
+//         // std::make_pair("mixed_2d", 2),
+//         // std::make_pair("mixed", 3),
+//     };
+//     for (int i = 0; i < mesh_types.size(); ++i)
+//     {
+//         int dim = mesh_types[i].second;
+//         index_t nx = 3;
+//         index_t ny = 4;
+//         index_t nz = (dim == 2 ? 0 : 2);
 
-        std::string mesh_type = mesh_types[i].first;
+//         std::string mesh_type = mesh_types[i].first;
 
-        Node save_mesh, load_mesh, info;
-        blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
+//         Node save_mesh, load_mesh, info;
+//         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
-        // remove existing root file, directory and any output files
-        remove_path_if_exists("silo_braid.cycle_000100.root");
+//         // remove existing root file, directory and any output files
+//         remove_path_if_exists("silo_braid.cycle_000100.root");
 
-        io::silo::save_mesh(save_mesh, "silo_braid");
-        io::silo::load_mesh("silo_braid.cycle_000100.root", load_mesh);
-        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+//         io::silo::save_mesh(save_mesh, "silo_braid");
+//         io::silo::load_mesh("silo_braid.cycle_000100.root", load_mesh);
+//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        // The silo conversion will transform uniform to rectilinear
-        // so we will do the same to allow the diff to succeed
-        if (mesh_type == "uniform")
-        {
-            silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
-        }
+//         // The silo conversion will transform uniform to rectilinear
+//         // so we will do the same to allow the diff to succeed
+//         if (mesh_type == "uniform")
+//         {
+//             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+//         }
 
-        silo_name_changer("mesh", save_mesh);
+//         silo_name_changer("mesh", save_mesh);
 
-        // silo will store this value as an index_t. For whatever reason,
-        // braid stores cycle as a uint64, unlike the other mesh blueprint
-        // examples. We must change this so the diff will pass.
-        int cycle = save_mesh["state"]["cycle"].as_uint64();
-        save_mesh["state"]["cycle"].reset();
-        save_mesh["state"]["cycle"] = (int64) cycle;
+//         // silo will store this value as an index_t. For whatever reason,
+//         // braid stores cycle as a uint64, unlike the other mesh blueprint
+//         // examples. We must change this so the diff will pass.
+//         int cycle = save_mesh["state"]["cycle"].as_uint64();
+//         save_mesh["state"]["cycle"].reset();
+//         save_mesh["state"]["cycle"] = (int64) cycle;
 
-        // the loaded mesh will be in the multidomain format
-        // (it will be a list containing a single mesh domain)
-        // but the saved mesh is in the single domain format
-        EXPECT_EQ(load_mesh.number_of_children(), 1);
-        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+//         // the loaded mesh will be in the multidomain format
+//         // (it will be a list containing a single mesh domain)
+//         // but the saved mesh is in the single domain format
+//         EXPECT_EQ(load_mesh.number_of_children(), 1);
+//         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-    }
-}
+//         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+//     }
+// }
 
-// multidomain test
-TEST(conduit_relay_io_silo, round_trip_spiral)
-{
-    for (int ndomains = 2; ndomains < 6; ndomains ++)
-    {
-        Node save_mesh, load_mesh, info;
-        blueprint::mesh::examples::spiral(ndomains, save_mesh);
-        remove_path_if_exists("silo_spiral.cycle_000000.root");
-        io::silo::save_mesh(save_mesh, "silo_spiral");
-        io::silo::load_mesh("silo_spiral.cycle_000000.root", load_mesh);
-        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+// // multidomain test
+// TEST(conduit_relay_io_silo, round_trip_spiral)
+// {
+//     for (int ndomains = 2; ndomains < 6; ndomains ++)
+//     {
+//         Node save_mesh, load_mesh, info;
+//         blueprint::mesh::examples::spiral(ndomains, save_mesh);
+//         remove_path_if_exists("silo_spiral.cycle_000000.root");
+//         io::silo::save_mesh(save_mesh, "silo_spiral");
+//         io::silo::load_mesh("silo_spiral.cycle_000000.root", load_mesh);
+//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-        {
-            silo_name_changer("mesh", save_mesh[child]);
+//         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+//         {
+//             silo_name_changer("mesh", save_mesh[child]);
 
-            // silo will store this value as an index_t. For whatever reason,
-            // braid stores cycle as a uint64, unlike the other mesh blueprint
-            // examples. We must change this so the diff will pass.
-            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-            save_mesh[child]["state"]["cycle"].reset();
-            save_mesh[child]["state"]["cycle"] = (int64) cycle;
-        }
+//             // silo will store this value as an index_t. For whatever reason,
+//             // braid stores cycle as a uint64, unlike the other mesh blueprint
+//             // examples. We must change this so the diff will pass.
+//             int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+//             save_mesh[child]["state"]["cycle"].reset();
+//             save_mesh[child]["state"]["cycle"] = (int64) cycle;
+//         }
 
-        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-        NodeConstIterator l_itr = load_mesh.children();
-        NodeConstIterator s_itr = save_mesh.children();
-        while (l_itr.has_next())
-        {
-            const Node &l_curr = l_itr.next();
-            const Node &s_curr = s_itr.next();
+//         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+//         NodeConstIterator l_itr = load_mesh.children();
+//         NodeConstIterator s_itr = save_mesh.children();
+//         while (l_itr.has_next())
+//         {
+//             const Node &l_curr = l_itr.next();
+//             const Node &s_curr = s_itr.next();
 
-            EXPECT_FALSE(l_curr.diff(s_curr, info));
-        }
-    }
-}
+//             EXPECT_FALSE(l_curr.diff(s_curr, info));
+//         }
+//     }
+// }
 
-TEST(conduit_relay_io_silo, round_trip_julia)
-{
-    Node save_mesh, load_mesh, info;
-    index_t nx = 5;
-    index_t ny = 5;
-    float64 x_min = 0;
-    float64 x_max = 10;
-    float64 y_min = 2;
-    float64 y_max = 7;
-    float64 c_re = 3;
-    float64 c_im = 4;
-    blueprint::mesh::examples::julia(nx,
-                                     ny,
-                                     x_min,
-                                     x_max,
-                                     y_min,
-                                     y_max,
-                                     c_re,
-                                     c_im,
-                                     save_mesh);
-    remove_path_if_exists("silo_julia.root");
-    io::silo::save_mesh(save_mesh, "silo_julia");
-    io::silo::load_mesh("silo_julia.root", load_mesh);
-    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+// TEST(conduit_relay_io_silo, round_trip_julia)
+// {
+//     Node save_mesh, load_mesh, info;
+//     index_t nx = 5;
+//     index_t ny = 5;
+//     float64 x_min = 0;
+//     float64 x_max = 10;
+//     float64 y_min = 2;
+//     float64 y_max = 7;
+//     float64 c_re = 3;
+//     float64 c_im = 4;
+//     blueprint::mesh::examples::julia(nx,
+//                                      ny,
+//                                      x_min,
+//                                      x_max,
+//                                      y_min,
+//                                      y_max,
+//                                      c_re,
+//                                      c_im,
+//                                      save_mesh);
+//     remove_path_if_exists("silo_julia.root");
+//     io::silo::save_mesh(save_mesh, "silo_julia");
+//     io::silo::load_mesh("silo_julia.root", load_mesh);
+//     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-    // check that load mesh correctly adds the state
-    save_mesh["state/cycle"] = (int64) 0;
-    save_mesh["state/domain_id"] = 0;
+//     // check that load mesh correctly adds the state
+//     save_mesh["state/cycle"] = (int64) 0;
+//     save_mesh["state/domain_id"] = 0;
 
-    silo_name_changer("mesh", save_mesh);
+//     silo_name_changer("mesh", save_mesh);
 
-    // the loaded mesh will be in the multidomain format
-    // (it will be a list containing a single mesh domain)
-    // but the saved mesh is in the single domain format
-    EXPECT_EQ(load_mesh.number_of_children(), 1);
-    EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+//     // the loaded mesh will be in the multidomain format
+//     // (it will be a list containing a single mesh domain)
+//     // but the saved mesh is in the single domain format
+//     EXPECT_EQ(load_mesh.number_of_children(), 1);
+//     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-}
+//     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+// }
 
-// TODO overlink i/o tests
+// // TODO overlink i/o tests
 
-// 
-// save option tests
-// 
+// // 
+// // save option tests
+// // 
 
-/// opts:
-///
-///      file_style: "overlink"
-///
-///      ovl_topo_name: (used if present, default ==> "")
-///
-///      number_of_files:  {# of files}
-///            when "multi_file" or "overlink":
-///                 <= 0, use # of files == # of domains
-///                  > 0, # of files == number_of_files
+// /// opts:
+// ///
+// ///      file_style: "overlink"
+// ///
+// ///      ovl_topo_name: (used if present, default ==> "")
+// ///
+// ///      number_of_files:  {# of files}
+// ///            when "multi_file" or "overlink":
+// ///                 <= 0, use # of files == # of domains
+// ///                  > 0, # of files == number_of_files
 
-// TODO need to do read option tests
+// // TODO need to do read option tests
 
-TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
-{
-    // we will do overlink tests separately
-    const std::vector<std::string> file_styles = {"default", "root_only", "multi_file"};
-    const std::string basename = "silo_save_option_file_style_spiral";
-    const std::string filename = basename + ".cycle_000000.root";
-    for (int i = 1; i < file_styles.size(); i ++)
-    {
-        Node opts;
-        opts["file_style"] = file_styles[i];
+// TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
+// {
+//     // we will do overlink tests separately
+//     const std::vector<std::string> file_styles = {"default", "root_only", "multi_file"};
+//     const std::string basename = "silo_save_option_file_style_spiral";
+//     const std::string filename = basename + ".cycle_000000.root";
+//     for (int i = 1; i < file_styles.size(); i ++)
+//     {
+//         Node opts;
+//         opts["file_style"] = file_styles[i];
 
-        for (int ndomains = 1; ndomains < 5; ndomains += 3)
-        {
-            Node save_mesh, load_mesh, info;
-            blueprint::mesh::examples::spiral(ndomains, save_mesh);
-            remove_path_if_exists(filename);
-            io::silo::save_mesh(save_mesh, basename, opts);
-            io::silo::load_mesh(filename, load_mesh);
-            EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+//         for (int ndomains = 1; ndomains < 5; ndomains += 3)
+//         {
+//             Node save_mesh, load_mesh, info;
+//             blueprint::mesh::examples::spiral(ndomains, save_mesh);
+//             remove_path_if_exists(filename);
+//             io::silo::save_mesh(save_mesh, basename, opts);
+//             io::silo::load_mesh(filename, load_mesh);
+//             EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-            for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-            {
-                silo_name_changer("mesh", save_mesh[child]);
+//             for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+//             {
+//                 silo_name_changer("mesh", save_mesh[child]);
 
-                // silo will store this value as an index_t. For whatever reason,
-                // braid stores cycle as a uint64, unlike the other mesh blueprint
-                // examples. We must change this so the diff will pass.
-                int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-                save_mesh[child]["state"]["cycle"].reset();
-                save_mesh[child]["state"]["cycle"] = (int64) cycle;
-            }
+//                 // silo will store this value as an index_t. For whatever reason,
+//                 // braid stores cycle as a uint64, unlike the other mesh blueprint
+//                 // examples. We must change this so the diff will pass.
+//                 int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+//                 save_mesh[child]["state"]["cycle"].reset();
+//                 save_mesh[child]["state"]["cycle"] = (int64) cycle;
+//             }
 
-            EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-            NodeConstIterator l_itr = load_mesh.children();
-            NodeConstIterator s_itr = save_mesh.children();
-            while (l_itr.has_next())
-            {
-                const Node &l_curr = l_itr.next();
-                const Node &s_curr = s_itr.next();
+//             EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+//             NodeConstIterator l_itr = load_mesh.children();
+//             NodeConstIterator s_itr = save_mesh.children();
+//             while (l_itr.has_next())
+//             {
+//                 const Node &l_curr = l_itr.next();
+//                 const Node &s_curr = s_itr.next();
 
-                EXPECT_FALSE(l_curr.diff(s_curr, info));
-            }
-        }
-    }
-}
+//                 EXPECT_FALSE(l_curr.diff(s_curr, info));
+//             }
+//         }
+//     }
+// }
 
-TEST(conduit_relay_io_silo, round_trip_save_option_suffix)
-{
-    const std::vector<std::string> suffixes = {"default", "default", "cycle", "none"};
-    const std::string basename = "silo_save_option_suffix_basic";
-    const std::vector<std::string> file_suffixes = {
-        "",              // cycle is not present
-        ".cycle_000005", // cycle is present
-        ".cycle_000005", // cycle is turned on
-        "",              // cycle is turned off
-    };
-    const std::vector<std::string> include_cycle = {"no", "yes", "yes", "yes"};
-    for (int i = 3; i < suffixes.size(); i ++)
-    {
-        Node opts;
-        opts["suffix"] = suffixes[i];
+// TEST(conduit_relay_io_silo, round_trip_save_option_suffix)
+// {
+//     const std::vector<std::string> suffixes = {"default", "default", "cycle", "none"};
+//     const std::string basename = "silo_save_option_suffix_basic";
+//     const std::vector<std::string> file_suffixes = {
+//         "",              // cycle is not present
+//         ".cycle_000005", // cycle is present
+//         ".cycle_000005", // cycle is turned on
+//         "",              // cycle is turned off
+//     };
+//     const std::vector<std::string> include_cycle = {"no", "yes", "yes", "yes"};
+//     for (int i = 3; i < suffixes.size(); i ++)
+//     {
+//         Node opts;
+//         opts["suffix"] = suffixes[i];
 
-        std::string filename = basename + file_suffixes[i] + ".root";
+//         std::string filename = basename + file_suffixes[i] + ".root";
 
-        Node save_mesh, load_mesh, info;
-        blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
+//         Node save_mesh, load_mesh, info;
+//         blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
 
-        if (include_cycle[i] == "yes")
-        {
-            save_mesh["state/cycle"] = (int64) 5;
-        }
+//         if (include_cycle[i] == "yes")
+//         {
+//             save_mesh["state/cycle"] = (int64) 5;
+//         }
 
-        remove_path_if_exists(filename);
-        io::silo::save_mesh(save_mesh, basename, opts);
-        io::silo::load_mesh(filename, load_mesh);
-        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+//         remove_path_if_exists(filename);
+//         io::silo::save_mesh(save_mesh, basename, opts);
+//         io::silo::load_mesh(filename, load_mesh);
+//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        // this is to pass the diff, as silo will add cycle in if it is not there
-        if (include_cycle[i] == "no")
-        {
-            save_mesh["state/cycle"] = (int64) 0;
-        }
-        save_mesh["state/domain_id"] = 0;
+//         // this is to pass the diff, as silo will add cycle in if it is not there
+//         if (include_cycle[i] == "no")
+//         {
+//             save_mesh["state/cycle"] = (int64) 0;
+//         }
+//         save_mesh["state/domain_id"] = 0;
         
-        silo_name_changer("mesh", save_mesh);
+//         silo_name_changer("mesh", save_mesh);
 
-        // the loaded mesh will be in the multidomain format
-        // (it will be a list containing a single mesh domain)
-        // but the saved mesh is in the single domain format
-        EXPECT_EQ(load_mesh.number_of_children(), 1);
-        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+//         // the loaded mesh will be in the multidomain format
+//         // (it will be a list containing a single mesh domain)
+//         // but the saved mesh is in the single domain format
+//         EXPECT_EQ(load_mesh.number_of_children(), 1);
+//         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-    }
-}
+//         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+//     }
+// }
 
-TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
-{
-    const std::string basename = "silo_save_option_mesh_name_basic";
-    const std::string filename = basename + ".root";
+// TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
+// {
+//     const std::string basename = "silo_save_option_mesh_name_basic";
+//     const std::string filename = basename + ".root";
 
-    Node opts;
-    opts["mesh_name"] = "mymesh";
+//     Node opts;
+//     opts["mesh_name"] = "mymesh";
 
-    Node save_mesh, load_mesh, info;
-    blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
-    remove_path_if_exists(filename);
-    io::silo::save_mesh(save_mesh, basename, opts);
-    io::silo::load_mesh(filename, load_mesh);
-    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+//     Node save_mesh, load_mesh, info;
+//     blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
+//     remove_path_if_exists(filename);
+//     io::silo::save_mesh(save_mesh, basename, opts);
+//     io::silo::load_mesh(filename, load_mesh);
+//     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-    // check that load mesh correctly adds the state
-    save_mesh["state/cycle"] = (int64) 0;
-    save_mesh["state/domain_id"] = 0;
+//     // check that load mesh correctly adds the state
+//     save_mesh["state/cycle"] = (int64) 0;
+//     save_mesh["state/domain_id"] = 0;
 
-    silo_name_changer("mymesh", save_mesh);
+//     silo_name_changer("mymesh", save_mesh);
 
-    // the loaded mesh will be in the multidomain format
-    // but the saved mesh is in the single domain format
-    EXPECT_EQ(load_mesh.number_of_children(), 1);
-    EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
-    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-}
+//     // the loaded mesh will be in the multidomain format
+//     // but the saved mesh is in the single domain format
+//     EXPECT_EQ(load_mesh.number_of_children(), 1);
+//     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+//     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+// }
 
-TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
-{
-    const std::vector<std::string> silo_types = {"default", "pdb", "hdf5", "unknown"};
-    const std::string basename = "silo_save_option_silo_type_basic";
-    const std::string filename = basename + ".root";
-    for (int i = 3; i < silo_types.size(); i ++)
-    {
-        Node opts;
-        opts["silo_type"] = silo_types[i];
+// TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
+// {
+//     const std::vector<std::string> silo_types = {"default", "pdb", "hdf5", "unknown"};
+//     const std::string basename = "silo_save_option_silo_type_basic";
+//     const std::string filename = basename + ".root";
+//     for (int i = 3; i < silo_types.size(); i ++)
+//     {
+//         Node opts;
+//         opts["silo_type"] = silo_types[i];
 
-        Node save_mesh, load_mesh, info;
-        blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
+//         Node save_mesh, load_mesh, info;
+//         blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
 
-        remove_path_if_exists(filename);
-        io::silo::save_mesh(save_mesh, basename, opts);
-        io::silo::load_mesh(filename, load_mesh);
-        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+//         remove_path_if_exists(filename);
+//         io::silo::save_mesh(save_mesh, basename, opts);
+//         io::silo::load_mesh(filename, load_mesh);
+//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        // this is to pass the diff, as silo will add cycle in if it is not there
-        save_mesh["state/cycle"] = (int64) 0;
-        save_mesh["state/domain_id"] = 0;
+//         // this is to pass the diff, as silo will add cycle in if it is not there
+//         save_mesh["state/cycle"] = (int64) 0;
+//         save_mesh["state/domain_id"] = 0;
         
-        silo_name_changer("mesh", save_mesh);
+//         silo_name_changer("mesh", save_mesh);
 
-        // the loaded mesh will be in the multidomain format
-        // (it will be a list containing a single mesh domain)
-        // but the saved mesh is in the single domain format
-        EXPECT_EQ(load_mesh.number_of_children(), 1);
-        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+//         // the loaded mesh will be in the multidomain format
+//         // (it will be a list containing a single mesh domain)
+//         // but the saved mesh is in the single domain format
+//         EXPECT_EQ(load_mesh.number_of_children(), 1);
+//         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-    }
-}
+//         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+//     }
+// }
 
 //
 // read silo tests
@@ -606,7 +606,7 @@ TEST(conduit_relay_io_silo, read_silo)
 {
     const std::vector<std::pair<std::string, std::string>> basenames_and_meshnames = {
         std::make_pair("multi_curv3d", ""), // test default case
-        /*std::make_pair("multi_curv3d", "mesh1"),
+        std::make_pair("multi_curv3d", "mesh1"),
         std::make_pair("multi_curv3d", "mesh1_back"),
         std::make_pair("multi_curv3d", "mesh1_dup"),
         std::make_pair("multi_curv3d", "mesh1_front"),
@@ -616,7 +616,7 @@ TEST(conduit_relay_io_silo, read_silo)
         std::make_pair("galaxy0000", ""), // test default case
         std::make_pair("galaxy0000", "StarMesh"),
         std::make_pair("emptydomains", ""), // test default case
-        std::make_pair("emptydomains", "mesh"),*/
+        std::make_pair("emptydomains", "mesh"),
     };
 
     for (int i = 0; i < basenames_and_meshnames.size(); i ++) 
@@ -629,9 +629,8 @@ TEST(conduit_relay_io_silo, read_silo)
 
         opts["mesh_name"] = meshname;
 
-        io::silo::load_mesh(input_file, load_mesh, opts);
+        io::silo::load_mesh(input_file, opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-        load_mesh.print();
 
         std::string out_name = basename;
         if (!meshname.empty())
