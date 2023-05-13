@@ -184,8 +184,8 @@ operate on the specified topology only.
 |                  |                                         |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
 | topology         | The topology to which the selection     | .. code:: yaml                           |
-|                  | will apply.                             |                                          |
-|                  |                                         |    selections:                           |
+|                  | will apply. This is important if the    |                                          |
+|                  | data contain multiple topologies.       |    selections:                           |
 |                  |                                         |      -                                   |
 |                  |                                         |       type: logical                      |
 |                  |                                         |       domain_id: 10                      |
@@ -248,6 +248,28 @@ can be set to "any" if it is desired that the field selection will be applied to
 all domains in the input mesh. The domain_id value can still be set to specific
 integer values to limit the set of domains over which the selection will be applied.
 
++------------------+-----------------------------------------+------------------------------------------+
+| **Option**       | **Description**                         | **Example**                              |
++------------------+-----------------------------------------+------------------------------------------+
+| field            | The name of the element field that will | .. code:: yaml                           |
+|                  | be used for partitioning. The field     |                                          |
+|                  | shall contain non-negative domain       |    selections:                           |
+|                  | numbers.                                |      -                                   |
+|                  |                                         |       type: field                        |
+|                  |                                         |       domain_id: any                     |
+|                  |                                         |                                          |
++------------------+-----------------------------------------+------------------------------------------+
+| destination_ranks| An optional list of integers            | .. code:: yaml                           |
+|                  | representing the MPI rank where the     |                                          |
+|                  | domain will be sent after partitioning. |    selections:                           |
+|                  | This option can help ensure domains for |      -                                   |
+|                  | topologies partitioned via multiple     |       type: field                        |
+|                  | calls to partition() end up together on |       field: partField                   |
+|                  | a target MPI rank. The example shows    |       destination_ranks: [0,1,2,3]       |
+|                  | domain 0 going to MPI rank 0 and so on. |       domain_id: any                     |
+|                  |                                         |                                          |
++------------------+-----------------------------------------+------------------------------------------+
+
 .. code:: yaml
 
   selections:
@@ -255,3 +277,4 @@ integer values to limit the set of domains over which the selection will be appl
      type: field
      domain_id: any
      field: fieldname
+     topology: main

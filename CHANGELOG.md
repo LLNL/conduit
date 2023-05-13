@@ -19,6 +19,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `topology::search` function that allows one topology to be searched for in another topology. The topologies must have the same shape type and their respective coordsets can have points in different orders. The shapes are matched using coordinate matching.
 - Added `adjset::validate` function which tests adjacency sets for correctness and flags any errors in a Conduit node. There are serial and parallel versions of the function. The functions apply PointQuery for vertex association adjsets and MatchQuery for element association adjsets. Each domain's adjset will make queries to its neighboring domains as to whether the vertex or element of interest exists in the neighbor's topology.
 - Added `utils::kdtree` class that can be used to accelerate point lookups for coordsets.
+- Field selections for the `conduit::blueprint::mesh::partition()` function support a new `destination_ranks` property that contains a list of integers that map domain numbers to MPI ranks. This property tells the partitioner the ranks where it should place each domain. If the property is not supplied, the partitioner is free to place domains as before.
 
 ### Fixed
 
