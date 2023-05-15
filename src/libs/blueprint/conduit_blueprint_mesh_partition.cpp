@@ -1276,12 +1276,27 @@ public:
         selected_value_set = true;
     }
 
+    void set_destination_ranks(const conduit::Node &value)
+    {
+        destination_ranks.set_external(value);
+    }
+
     /**
      @brief Returns the destination rank for this selection. The default
             version returns -1, indicating that we'll number the domain.
      @return The destination domain for this selection.
      */
     virtual int get_destination_domain() const override;
+
+    /**
+     @brief Returns the destination rank for this selection. The default
+            version returns -1, indicating that we don't care where the
+            domain is placed.
+     @note  We override this method to allow the field selection to
+            indicate a preference for the MPI rank where the data end up.
+     @return The destination rank for this selection.
+     */
+    virtual int get_destination_rank() const override;
 
     virtual void get_element_ids(const conduit::Node &n_mesh,
                                  std::vector<index_t> &element_ids) const override;
@@ -1295,20 +1310,24 @@ protected:
     bool const_applicable(const conduit::Node &n_mesh) const;
 
     static const std::string FIELD_KEY;
+    static const std::string DESTINATION_RANKS_KEY;
 
-    std::string field;
-    index_t     selected_value;
-    bool        selected_value_set;
+    std::string   field;
+    index_t       selected_value;
+    bool          selected_value_set;
+    conduit::Node destination_ranks;
 };
 
 const std::string SelectionField::FIELD_KEY("field");
+const std::string SelectionField::DESTINATION_RANKS_KEY("destination_ranks");
 
 //---------------------------------------------------------------------------
 SelectionField::SelectionField()
 : Selection(),
   field(),
   selected_value(0),
-  selected_value_set(false)
+  selected_value_set(false),
+  destination_ranks()
 {
 }
 
@@ -1317,7 +1336,8 @@ SelectionField::SelectionField(const SelectionField &obj)
 : Selection(obj),
   field(obj.field),
   selected_value(obj.selected_value),
-  selected_value_set(obj.selected_value_set)
+  selected_value_set(obj.selected_value_set),
+  destination_ranks(obj.destination_ranks)
 {
 }
 
@@ -1344,6 +1364,27 @@ SelectionField::init(const conduit::Node &n_options)
         {
             field = n_options[FIELD_KEY].as_string();
             retval = true;
+        }
+        if(n_options.has_child(DESTINATION_RANKS_KEY))
+        {
+            const conduit::Node &dr = n_options[DESTINATION_RANKS_KEY];
+
+            if(dr.dtype().is_integer())
+            {
+                auto acc = dr.as_index_t_accessor();
+                for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
+                {
+                    if(acc[i] < 0)
+                    {
+                        CONDUIT_ERROR(DESTINATION_RANKS_KEY << " may only contain non-negative values.");
+                        retval = false;
+                    }
+                }
+                if(retval)
+                {
+                    set_destination_ranks(dr);
+                }
+            }
         }
     }
     return retval;
@@ -1477,6 +1518,7 @@ SelectionField::partition(const conduit::Node &n_mesh) const
                 p0->set_topology(topology);
                 p0->set_field(field);
                 p0->set_selected_value(*it);
+                p0->set_destination_ranks(destination_ranks);
                 parts.push_back(p0);
             }
         }
@@ -1526,6 +1568,28 @@ SelectionField::get_destination_domain() const
 }
 
 //---------------------------------------------------------------------------
+int
+SelectionField::get_destination_rank() const
+{
+    // If destination_ranks was not provided, return FREE_RANK_ID so the
+    // partitioner can place the data as needed.
+    int dr = FREE_RANK_ID;
+
+    // If destination_ranks was provided, consult it to see which rank
+    // should get the selected domain value.
+    if(selected_value_set &&
+       destination_ranks.dtype().is_number() &&
+       destination_ranks.dtype().number_of_elements() > 0)
+    {
+        auto acc = destination_ranks.as_int32_accessor();
+        auto idx = selected_value % destination_ranks.dtype().number_of_elements();
+        dr = static_cast<int>(acc[idx]);
+    }
+
+    return dr;
+}
+
+//---------------------------------------------------------------------------
 void
 SelectionField::get_element_ids(const conduit::Node &n_mesh,
     std::vector<index_t> &element_ids) const
@@ -1557,9 +1621,23 @@ SelectionField::print(std::ostream &os) const
        << "\"domain\":" << get_domain() << ", "
        << "\"topology\":\"" << get_topology() << "\", "
        << "\"field\": " << field << ","
-       << "\"selected_value\": " << selected_value << ","
-       << "\"selected_value_set\": " << selected_value_set
-       << "}";
+       << "\"selected_value\": " << selected_value << ", "
+       << "\"selected_value_set\": " << selected_value_set;
+
+    if(destination_ranks.dtype().is_number())
+    {
+        os << ", "
+           << "\"destination_ranks\": [";
+        auto acc = destination_ranks.as_int32_accessor();
+        for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
+        {
+            if(i > 0) os << ", ";
+            os << acc[i];
+        }
+        os << "]";
+    }
+
+    os << "}";
 }
 
 //---------------------------------------------------------------------------

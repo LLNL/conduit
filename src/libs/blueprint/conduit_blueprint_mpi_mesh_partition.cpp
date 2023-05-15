@@ -329,6 +329,9 @@ ParallelPartitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
                                 std::vector<int> &dest_domain,
                                 std::vector<int> &_offsets)
 {
+    int size;
+    MPI_Comm_size(comm, &size);
+
     // Gather number of chunks on each rank.
     auto nlocal_chunks = static_cast<int>(chunks.size());
     std::vector<int> nglobal_chunks(size, 0);
@@ -369,6 +372,13 @@ ParallelPartitioner::map_chunks(const std::vector<Partitioner::Chunk> &chunks,
             len += conduit::blueprint::mesh::topology::length(n_topos[j]);
         local_chunk_info[i].num_elements = len;
         local_chunk_info[i].destination_rank   = chunks[i].destination_rank;
+        // If the destination rank is not Selection::FREE_RANK_ID then we
+        // should make sure that the rank is not out of bounds (in case the
+        // user set it to an out of bounds value).
+        if(local_chunk_info[i].destination_rank != Selection::FREE_RANK_ID)
+        {
+            local_chunk_info[i].destination_rank = local_chunk_info[i].destination_rank % size;
+        }
         local_chunk_info[i].destination_domain = chunks[i].destination_domain;
     }
     std::vector<chunk_info> global_chunk_info(ntotal_chunks);
