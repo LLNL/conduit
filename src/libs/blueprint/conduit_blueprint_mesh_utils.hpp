@@ -796,6 +796,10 @@ namespace adjset
      @param[out] info A node that contains any errors.
      @param PQ The PointQuery that will handle vertex association queries.
      @param MQ The MatchQuery that will handle element association queries.
+     @param checkMultiDomain Whether we want to check that an input blueprint
+                             contains multiple domains or not. For parallel,
+                             we do not want to check this since each rank may
+                             have a single domain locally.
 
      @note The association, topologyName, and coordsetName are passed in so
            the routine does not have to figure them out. In parallel, the
@@ -812,7 +816,8 @@ namespace adjset
                                         const std::string &coordsetName,
                                         conduit::Node &info,
                                         query::PointQuery &PQ,
-                                        query::MatchQuery &MQ);
+                                        query::MatchQuery &MQ,
+                                        bool checkMultiDomain);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
