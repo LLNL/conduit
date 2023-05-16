@@ -724,53 +724,53 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
 // read silo tests
 //
 
-// TEST(conduit_relay_io_silo, read_silo)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//         {"./",                  "multi_curv3d", ".silo", ""}, // test default case
-//         {"./",                  "multi_curv3d", ".silo", "mesh1"},
-//         {"./",                  "multi_curv3d", ".silo", "mesh1_back"},
-//         {"./",                  "multi_curv3d", ".silo", "mesh1_dup"},
-//         {"./",                  "multi_curv3d", ".silo", "mesh1_front"},
-//         {"./",                  "multi_curv3d", ".silo", "mesh1_hidden"},
-//         {"./",                  "tire",         ".silo", ""}, // test default case
-//         {"./",                  "tire",         ".silo", "tire"},
-//         {"./",                  "galaxy0000",   ".silo", ""}, // test default case
-//         {"./",                  "galaxy0000",   ".silo", "StarMesh"},
-//         {"./",                  "emptydomains", ".silo", ""}, // test default case
-//         {"./",                  "emptydomains", ".silo", "mesh"},
-//         {"multidir_test_data/", "multidir0000", ".root", ""}, // test default case
-//         {"multidir_test_data/", "multidir0000", ".root", "Mesh"},
-//     };
+TEST(conduit_relay_io_silo, read_silo)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+        {"./",                  "multi_curv3d", ".silo", ""}, // test default case
+        {"./",                  "multi_curv3d", ".silo", "mesh1"},
+        {"./",                  "multi_curv3d", ".silo", "mesh1_back"},
+        {"./",                  "multi_curv3d", ".silo", "mesh1_dup"},
+        {"./",                  "multi_curv3d", ".silo", "mesh1_front"},
+        {"./",                  "multi_curv3d", ".silo", "mesh1_hidden"},
+        {"./",                  "tire",         ".silo", ""}, // test default case
+        {"./",                  "tire",         ".silo", "tire"},
+        {"./",                  "galaxy0000",   ".silo", ""}, // test default case
+        {"./",                  "galaxy0000",   ".silo", "StarMesh"},
+        {"./",                  "emptydomains", ".silo", ""}, // test default case
+        {"./",                  "emptydomains", ".silo", "mesh"},
+        {"multidir_test_data/", "multidir0000", ".root", ""}, // test default case
+        {"multidir_test_data/", "multidir0000", ".root", "Mesh"},
+    };
 
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string dirname  = file_info[i][0];
-//         const std::string basename = file_info[i][1];
-//         const std::string fileext  = file_info[i][2];
-//         const std::string meshname = file_info[i][3];
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string dirname  = file_info[i][0];
+        const std::string basename = file_info[i][1];
+        const std::string fileext  = file_info[i][2];
+        const std::string meshname = file_info[i][3];
 
-//         Node load_mesh, info, opts;
-//         std::string input_file = relay_test_silo_data_path(dirname + basename + fileext);
+        Node load_mesh, info, opts;
+        std::string input_file = relay_test_silo_data_path(dirname + basename + fileext);
 
-//         opts["mesh_name"] = meshname;
+        opts["mesh_name"] = meshname;
 
-//         io::silo::load_mesh(input_file, opts, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        io::silo::load_mesh(input_file, opts, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//         std::string out_name = basename;
-//         if (!meshname.empty())
-//         {
-//             out_name += "_" + meshname;
-//         }
+        std::string out_name = basename;
+        if (!meshname.empty())
+        {
+            out_name += "_" + meshname;
+        }
 
-//         // save for blueprint vs silo diff
-//         io::blueprint::save_mesh(load_mesh, out_name + "_blueprint", "hdf5");
+        // save for blueprint vs silo diff
+        io::blueprint::save_mesh(load_mesh, out_name + "_blueprint", "hdf5");
 
-//         // save for silo vs silo diff
-//         io::silo::save_mesh(load_mesh, out_name + "_silo");
-//     }
-// }
+        // save for silo vs silo diff
+        io::silo::save_mesh(load_mesh, out_name + "_silo");
+    }
+}
 
 // TODO add the read overlink tests (that also write to blueprint and overlink)
 
