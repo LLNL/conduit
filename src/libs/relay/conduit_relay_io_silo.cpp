@@ -2235,6 +2235,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                DBoptlist *state_optlist,
                                const int ndims,
                                char const * const coordnames[],
+                               bool overlink,
                                Node &n_mesh_info) 
 {
     Node n_coords_compact;
@@ -2279,9 +2280,19 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                   "Error adding option");
     }
 
+    std::string safe_meshname;
+    if (overlink)
+    {
+        safe_meshname = "MESH";
+    }
+    else
+    {
+        safe_meshname = detail::sanitize_silo_varname(topo_name);
+    }
+
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
-                      detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                      safe_meshname.c_str(), // mesh name
                       coordnames, // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
@@ -2302,6 +2313,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                          char const * const coordnames[],
                          const void *coords_ptrs,
                          const int coords_dtype,
+                         bool overlink,
                          Node &n_mesh_info)
 {
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
@@ -2309,8 +2321,18 @@ void silo_write_ucd_mesh(DBfile *dbfile,
     // TODO_LATER there is a different approach for polyhedral zone lists
     std::string zlist_name = topo_name + "_connectivity";
 
+    std::string safe_meshname;
+    if (overlink)
+    {
+        safe_meshname = "MESH";
+    }
+    else
+    {
+        safe_meshname = detail::sanitize_silo_varname(topo_name);
+    }
+
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
-                                  detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                  safe_meshname.c_str(), // mesh name
                                   ndims,                       // number of dims
                                   coordnames, // coord names
                                   coords_ptrs,                 // coords values
@@ -2333,6 +2355,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 char const * const coordnames[],
                                 const void *coords_ptrs,
                                 const int coords_dtype,
+                                bool overlink,
                                 Node &n_mesh_info) 
 {
     int ele_dims[3];
@@ -2381,9 +2404,19 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                   "Error adding option");
     }
 
+    std::string safe_meshname;
+    if (overlink)
+    {
+        safe_meshname = "MESH";
+    }
+    else
+    {
+        safe_meshname = detail::sanitize_silo_varname(topo_name);
+    }
+
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
-                      detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                      safe_meshname.c_str(), // mesh name
                       coordnames, // coord names
                       coords_ptrs,                 // coords values
                       pts_dims,                    // dims vals
@@ -2403,12 +2436,23 @@ void silo_write_pointmesh(DBfile *dbfile,
                           const int num_pts,
                           const void *coords_ptrs,
                           const int coords_dtype,
+                          bool overlink,
                           Node &n_mesh_info)
 {
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
 
+    std::string safe_meshname;
+    if (overlink)
+    {
+        safe_meshname = "MESH";
+    }
+    else
+    {
+        safe_meshname = detail::sanitize_silo_varname(topo_name);
+    }
+
     int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
-                                    detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                    safe_meshname.c_str(), // mesh name
                                     ndims,             // num_dims
                                     coords_ptrs,       // coords values
                                     num_pts,           // num eles = num pts
@@ -2422,6 +2466,7 @@ void silo_write_pointmesh(DBfile *dbfile,
 void silo_write_topo(const Node &n,
                      const std::string &topo_name,
                      Node &n_mesh_info,
+                     bool overlink,
                      DBfile *dbfile)
 {
     const Node &n_topo = n["topologies"][topo_name];
@@ -2523,7 +2568,7 @@ void silo_write_topo(const Node &n,
                                 optlist.getSiloObject(), 
                                 ndims, num_pts, silo_coordset_axis_labels.data(),
                                 coords_ptrs, coords_dtype,
-                                n_mesh_info);
+                                overlink, n_mesh_info);
         }
         else if (topo_type == "structured")
         {
@@ -2531,7 +2576,7 @@ void silo_write_topo(const Node &n,
                                        optlist.getSiloObject(), 
                                        ndims, silo_coordset_axis_labels.data(),
                                        coords_ptrs, coords_dtype,
-                                       n_mesh_info);
+                                       overlink, n_mesh_info);
         }
         else if (topo_type == "points")
         {
@@ -2539,7 +2584,7 @@ void silo_write_topo(const Node &n,
                                  optlist.getSiloObject(), 
                                  ndims, num_pts,
                                  coords_ptrs, coords_dtype,
-                                 n_mesh_info);
+                                 overlink, n_mesh_info);
         }
     }
     else if (topo_type == "rectilinear")
@@ -2548,7 +2593,7 @@ void silo_write_topo(const Node &n,
                                   n_topo, n_coords,
                                   optlist.getSiloObject(), 
                                   ndims, silo_coordset_axis_labels.data(),
-                                  n_mesh_info);
+                                  overlink, n_mesh_info);
     }
     else if (topo_type == "uniform")
     {
@@ -2566,7 +2611,7 @@ void silo_write_topo(const Node &n,
                                   n_rect_topo, n_rect_coords,
                                   optlist.getSiloObject(), 
                                   ndims, silo_coordset_axis_labels.data(),
-                                  n_mesh_info);
+                                  overlink, n_mesh_info);
     }
     else
     {
@@ -2607,6 +2652,7 @@ void silo_mesh_write(const Node &n,
         silo_write_topo(n,
                         ovl_topo_name,
                         n_mesh_info,
+                        overlink,
                         dbfile);
     }
     else
@@ -2620,6 +2666,7 @@ void silo_mesh_write(const Node &n,
             silo_write_topo(n,
                             topo_name,
                             n_mesh_info,
+                            overlink,
                             dbfile);
         }
     }
@@ -2730,6 +2777,7 @@ void write_multimesh(const Node &n_mesh,
                      const conduit::Node &root,
                      const int global_num_domains,
                      const std::string &multimesh_name,
+                     bool overlink,
                      DBfile *dbfile)
 {
     const int num_files = root["number_of_files"].as_int32();
@@ -2738,7 +2786,15 @@ void write_multimesh(const Node &n_mesh,
     const Node &n_topo = n_mesh["topologies"][topo_name];
     std::string topo_type = n_topo["type"].as_string();
 
-    std::string safe_meshname = detail::sanitize_silo_varname(topo_name);
+    std::string safe_meshname;
+    if (overlink)
+    {
+        safe_meshname = "MESH";
+    }
+    else
+    {
+        safe_meshname = detail::sanitize_silo_varname(topo_name);
+    }
 
     int mesh_type;
     if (topo_type == "points")
@@ -2853,6 +2909,7 @@ void write_multimeshes(DBfile *dbfile,
                         root,
                         global_num_domains,
                         opts_out_mesh_name, // "MMESH"
+                        overlink,
                         dbfile);
     }
     // write all meshes for nonoverlink case
@@ -2869,6 +2926,7 @@ void write_multimeshes(DBfile *dbfile,
                             root,
                             global_num_domains,
                             multimesh_name,
+                            overlink,
                             dbfile);
         }
     }
@@ -3362,7 +3420,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     }
 
     std::string output_dir = "";
-    std::string overlink_top_level_output_dir = "";
 
     // resolve file_style == default
     // 
@@ -3441,35 +3498,23 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         opts_file_style == "overlink")
     {
         // setup the directory
-        if (opts_file_style == "overlink")
-        {
-            // overlink_top_level_output_dir = "/path/to/directory"
-            // output_dir = "/path/to/directory/directory"
-            overlink_top_level_output_dir = path;
-            std::string dirname, tmp;
-            utils::rsplit_file_path(overlink_top_level_output_dir, dirname, tmp);
-            output_dir = utils::join_file_path(overlink_top_level_output_dir, dirname);
-        }
-        else
-        {
-            output_dir = path;
+        output_dir = path;
 
-            // at this point for suffix, we should only see
-            // cycle or none -- default has been resolved
-            if (opts_suffix == "cycle")
-            {
-                output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
-            }
+        // at this point for suffix, we should only see
+        // cycle or none -- default has been resolved
+        if (opts_suffix == "cycle")
+        {
+            output_dir += conduit_fmt::format(".cycle_{:06d}",cycle);
         }
 
         bool dir_ok = false;
 
         // let rank zero handle dir creation
-        if(par_rank == 0)
+        if (par_rank == 0)
         {
             // check if the dir exists
             dir_ok = utils::is_directory(output_dir);
-            if(!dir_ok)
+            if (!dir_ok)
             {
                 // if not try to let rank zero create it
                 dir_ok = utils::create_directory(output_dir);
@@ -3501,8 +3546,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     std::string root_filename;
     if (opts_file_style == "overlink")
     {
-        root_filename = utils::join_file_path(
-            overlink_top_level_output_dir, "OvlTop.silo");
+        root_filename = utils::join_file_path(output_dir, "OvlTop.silo");
     }
     else
     {
@@ -3696,10 +3740,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 CONDUIT_ERROR("Error opening Silo file for writing: " << output_file );
             }
 
+            std::string mesh_path = opts_file_style == "overlink" ? "" : opts_out_mesh_name;
+
             // write to mesh name subpath
             silo_mesh_write(dom, 
                             dbfile.getSiloObject(), 
-                            opts_out_mesh_name, 
+                            mesh_path, 
                             opts_ovl_topo_name, 
                             opts_file_style == "overlink");
         }
@@ -4085,13 +4131,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     part_map_domain_vals[i] = i;
                 }
 
-                output_silo_path = utils::join_file_path(output_dir_base, "domain_{:06d}.silo") + ":"
-                                 + opts_out_mesh_name + "/{}";
-
                 if (opts_file_style == "overlink")
                 {
-                    output_silo_path = utils::join_file_path(output_dir_base, "domain{:d}.silo") + ":"
-                                     + opts_out_mesh_name + "/{}";
+                    output_silo_path = "domain{:d}.silo:{}";
                 }
                 else
                 {
@@ -4106,9 +4148,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 if (opts_file_style == "overlink")
                 {
-                    output_silo_path = utils::join_file_path(output_dir_base, "domfile{:d}.silo") + ":"
-                                     + "domain{:d}" + "/" 
-                                     + opts_out_mesh_name + "/{}";
+                    output_silo_path = "domfile{:d}.silo:domain{:d}/{}";
                 }
                 else
                 {
@@ -4116,9 +4156,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                      + "domain_{:06d}" + "/" 
                                      + opts_out_mesh_name + "/{}";
                 }
-                
-
-                
             }
         }
 
