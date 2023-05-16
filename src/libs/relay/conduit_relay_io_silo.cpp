@@ -1136,7 +1136,7 @@ read_root_silo_index(const std::string &root_file_path,
     if (multimesh_name.empty())
     {
         multimesh_name = toc->multimesh_names[0];
-        CONDUIT_INFO("No multimesh selected, defaulting to the first multimesh found: " + multimesh_name);
+        CONDUIT_INFO("Silo read: No multimesh selected, defaulting to the first multimesh found: " + multimesh_name);
     }
     else
     {
@@ -1787,6 +1787,7 @@ int dtype_to_silo_type(DataType dtype)
 void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
+                      const bool overlink,
                       Node &n_mesh_info)
 {
     if (!n_var.has_path("topology"))
@@ -1902,12 +1903,22 @@ void silo_write_field(DBfile *dbfile,
         comp_vals_ptrs.push_back(n_values.element_ptr(0));
     }
 
+    std::string safe_meshname;
+    if (overlink)
+    {
+        safe_meshname = "MESH";
+    }
+    else
+    {
+        safe_meshname = detail::sanitize_silo_varname(topo_name);
+    }
+
     int silo_error = 0;
     if (mesh_type == "unstructured")
     {
         silo_error = DBPutUcdvar(dbfile, // Database file pointer
                                  detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                 detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                 safe_meshname.c_str(), // mesh name
                                  nvars, // number of variable components
                                  comp_name_ptrs.data(), // variable component names
                                  comp_vals_ptrs.data(), // the data values
@@ -1942,7 +1953,7 @@ void silo_write_field(DBfile *dbfile,
         }
         silo_error = DBPutQuadvar(dbfile, // Database file pointer
                                   detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                  detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                  safe_meshname.c_str(), // mesh name
                                   nvars, // number of variable components
                                   comp_name_ptrs.data(), // variable component names
                                   comp_vals_ptrs.data(), // the data values
@@ -1958,7 +1969,7 @@ void silo_write_field(DBfile *dbfile,
     {
         silo_error = DBPutPointvar(dbfile, // Database file pointer.
                                    detail::sanitize_silo_varname(var_name).c_str(),  // variable name
-                                   detail::sanitize_silo_varname(topo_name).c_str(), // mesh name
+                                   safe_meshname.c_str(), // mesh name
                                    nvars, // number of variable components
                                    comp_vals_ptrs.data(), // data values
                                    num_pts, // Number of elements (points)
@@ -2235,7 +2246,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                DBoptlist *state_optlist,
                                const int ndims,
                                char const * const coordnames[],
-                               bool overlink,
+                               const bool overlink,
                                Node &n_mesh_info) 
 {
     Node n_coords_compact;
@@ -2313,7 +2324,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                          char const * const coordnames[],
                          const void *coords_ptrs,
                          const int coords_dtype,
-                         bool overlink,
+                         const bool overlink,
                          Node &n_mesh_info)
 {
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
@@ -2355,7 +2366,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 char const * const coordnames[],
                                 const void *coords_ptrs,
                                 const int coords_dtype,
-                                bool overlink,
+                                const bool overlink,
                                 Node &n_mesh_info) 
 {
     int ele_dims[3];
@@ -2436,7 +2447,7 @@ void silo_write_pointmesh(DBfile *dbfile,
                           const int num_pts,
                           const void *coords_ptrs,
                           const int coords_dtype,
-                          bool overlink,
+                          const bool overlink,
                           Node &n_mesh_info)
 {
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
@@ -2466,7 +2477,7 @@ void silo_write_pointmesh(DBfile *dbfile,
 void silo_write_topo(const Node &n,
                      const std::string &topo_name,
                      Node &n_mesh_info,
-                     bool overlink,
+                     const bool overlink,
                      DBfile *dbfile)
 {
     const Node &n_topo = n["topologies"][topo_name];
@@ -2680,7 +2691,7 @@ void silo_mesh_write(const Node &n,
             std::string var_name = itr.name();
             if (! overlink || n_var["topology"].as_string() == ovl_topo_name)
             {
-                silo_write_field(dbfile, var_name, n_var, n_mesh_info);
+                silo_write_field(dbfile, var_name, n_var, overlink, n_mesh_info);
             }
         }
     }

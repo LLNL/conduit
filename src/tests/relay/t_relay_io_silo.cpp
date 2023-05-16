@@ -124,6 +124,73 @@ silo_name_changer(const std::string &mmesh_name,
     }
 }
 
+// The Blueprint to Overlink transformation changes several names 
+// and some information is lost. We manually make changes so 
+// that the diff will pass.
+void
+overlink_name_changer(conduit::Node &save_mesh)
+{
+    // we assume 1 coordset, 1 topo, and fields
+
+    Node &coordsets = save_mesh["coordsets"];
+    Node &topologies = save_mesh["topologies"];
+    Node &fields = save_mesh["fields"];
+
+    // we assume only 1 child for each
+    std::string coordset_name = coordsets.children().next().name();
+    std::string topo_name = topologies.children().next().name();
+
+    // rename the coordset and references to it
+    coordsets.rename_child(coordset_name, "MMESH");
+    topologies[topo_name]["coordset"].reset();
+    topologies[topo_name]["coordset"] = "MMESH";
+
+    // rename the topo
+    topologies.rename_child(topo_name, "MMESH");
+
+    auto field_itr = fields.children();
+    while (field_itr.has_next())
+    {
+        Node &n_field = field_itr.next();
+        std::string field_name = field_itr.name();
+
+        // use new topo name
+        n_field["topology"].reset();
+        n_field["topology"] = "MMESH";
+
+        // remove vol dep
+        if (n_field.has_child("volume_dependent"))
+        {
+            n_field.remove_child("volume_dependent");
+        }
+
+        // we need to rename vector components
+        if (n_field["values"].dtype().is_object())
+        {
+            if (n_field["values"].number_of_children() > 0)
+            {
+                int child_index = 0;
+                auto val_itr = n_field["values"].children();
+                while (val_itr.has_next())
+                {
+                    val_itr.next();
+                    std::string comp_name = val_itr.name();
+
+                    // rename vector components
+                    n_field["values"].rename_child(comp_name, std::to_string(child_index));
+
+                    child_index ++;
+                }
+            }
+        }
+    }
+
+    if (!save_mesh.has_path("state/domain_id"))
+    {
+        save_mesh["state"]["domain_id"] = 0;
+    }
+}
+
 
 TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
 {
@@ -600,11 +667,20 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
 
 TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
 {
-    const std::vector<std::string> ovl_topo_names = {"", "my_overlink_mesh"};
-    const std::string basename = "silo_save_option_overlink_spiral";
-    // const std::string filename = basename + ".cycle_000000.root";
-    for (int i = 0; i < ovl_topo_names.size() - 1; i ++)
+    const std::vector<std::string> ovl_topo_names = {"", "topo"};
+    for (int i = 0; i < ovl_topo_names.size(); i ++)
     {
+        std::string basename;
+        if (ovl_topo_names[i].empty())
+        {
+            basename = "silo_save_option_overlink_spiral";
+        }
+        else
+        {
+            basename = "silo_save_option_overlink_spiral_" + ovl_topo_names[i];
+        }
+        const std::string filename = basename + "/OvlTop.silo";
+
         Node opts;
         opts["file_style"] = "overlink";
         opts["ovl_topo_name"] = ovl_topo_names[i];
@@ -613,44 +689,40 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
-        // remove_path_if_exists(filename);
+        remove_path_if_exists(basename);
         io::silo::save_mesh(save_mesh, basename, opts);
-        // io::silo::load_mesh(filename, load_mesh);
-        // EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-        // save_mesh.print();
-        // load_mesh.print();
+        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+        {
+            overlink_name_changer(save_mesh[child]);
 
+            // TODO change these silly comments
+            // silo will store this value as an index_t. For whatever reason,
+            // braid stores cycle as a uint64, unlike the other mesh blueprint
+            // examples. We must change this so the diff will pass.
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
+        }
 
+        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        NodeConstIterator l_itr = load_mesh.children();
+        NodeConstIterator s_itr = save_mesh.children();
+        while (l_itr.has_next())
+        {
+            const Node &l_curr = l_itr.next();
+            const Node &s_curr = s_itr.next();
 
-        // for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-        // {
-        //     silo_name_changer("MMESH", save_mesh[child]);
-
-        //     // silo will store this value as an index_t. For whatever reason,
-        //     // braid stores cycle as a uint64, unlike the other mesh blueprint
-        //     // examples. We must change this so the diff will pass.
-        //     int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-        //     save_mesh[child]["state"]["cycle"].reset();
-        //     save_mesh[child]["state"]["cycle"] = (int64) cycle;
-        // }
-
-        // EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-        // NodeConstIterator l_itr = load_mesh.children();
-        // NodeConstIterator s_itr = save_mesh.children();
-        // while (l_itr.has_next())
-        // {
-        //     const Node &l_curr = l_itr.next();
-        //     const Node &s_curr = s_itr.next();
-
-        //     EXPECT_FALSE(l_curr.diff(s_curr, info));
-        // }
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
+        }
     }
 }
 
-// //
-// // read silo tests
-// //
+//
+// read silo tests
+//
 
 // TEST(conduit_relay_io_silo, read_silo)
 // {
