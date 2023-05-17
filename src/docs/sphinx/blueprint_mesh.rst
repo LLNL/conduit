@@ -51,7 +51,7 @@ To define a computational mesh, the first required entry is a set of spatial coo
 The mesh blueprint protocol supports sets of spatial coordinates from three coordinate systems:
 
 * Cartesian: {x,y,z}
-* Cylindrical: {r,z}
+* Cylindrical: {z,r}
 * Spherical: {r,theta,phi}
 
 The mesh blueprint protocol supports three types of Coordinate Sets: ``uniform``, ``rectilinear``, and ``explicit``.  To conform to the protocol, each entry under ``coordsets`` must be an *Object* with entries from one of the cases outlined below:
