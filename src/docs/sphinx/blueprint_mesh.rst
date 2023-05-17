@@ -1261,48 +1261,52 @@ a vertex-centered vector field ``vel``.
 
 Here is a list of valid strings for the ``mesh_type`` argument:
 
-+---------------+-----------------------------------------------+
-| **Mesh Type** | **Description**                               |
-+---------------+-----------------------------------------------+
-| uniform       | 2d or 3d uniform grid                         |
-|               | (implicit coords, implicit topology)          |
-+---------------+-----------------------------------------------+
-| rectilinear   | 2d or 3d rectilinear grid                     |
-|               | (implicit coords, implicit topology)          |
-+---------------+-----------------------------------------------+
-| structured    | 2d or 3d structured grid                      |
-|               | (explicit coords, implicit topology)          |
-+---------------+-----------------------------------------------+
-| point         | 2d or 3d unstructured mesh of point elements  |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| lines         | 2d or 3d unstructured mesh of line elements   |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| tris          | 2d unstructured mesh of triangle elements     |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| quads         | 2d unstructured mesh of quadrilateral elements|
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| tets          | 3d unstructured mesh of tetrahedral elements  |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| hexs          | 3d unstructured mesh of hexahedral elements   |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| wedges        | 3d unstructured mesh of wedge elements        |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| pyramids      | 3d unstructured mesh of pyramid elements      |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| mixed_2d      | 2d unstructured mesh of mixed elements        |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
-| mixed         | 3d unstructured mesh of mixed elements        |
-|               | (explicit coords, explicit topology)          |
-+---------------+-----------------------------------------------+
+
++-----------------+-----------------------------------------------+
+| **Mesh Type**   | **Description**                               |
++-----------------+-----------------------------------------------+
+| uniform         | 2d or 3d uniform grid                         |
+|                 | (implicit coords, implicit topology)          |
++-----------------+-----------------------------------------------+
+| rectilinear     | 2d or 3d rectilinear grid                     |
+|                 | (implicit coords, implicit topology)          |
++-----------------+-----------------------------------------------+
+| structured      | 2d or 3d structured grid                      |
+|                 | (explicit coords, implicit topology)          |
++-----------------+-----------------------------------------------+
+| points          | 2d or 3d unstructured mesh of point elements  |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| points_implicit | 2d or 3d unstructured mesh of point elements  |
+|                 | (explicit coords, implicit topology)          |
++-----------------+-----------------------------------------------+
+| lines           | 2d or 3d unstructured mesh of line elements   |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| tris            | 2d unstructured mesh of triangle elements     |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| quads           | 2d unstructured mesh of quadrilateral elements|
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| tets            | 3d unstructured mesh of tetrahedral elements  |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| hexs            | 3d unstructured mesh of hexahedral elements   |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| wedges          | 3d unstructured mesh of wedge elements        |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| pyramids        | 3d unstructured mesh of pyramid elements      |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| mixed_2d        | 2d unstructured mesh of mixed elements        |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
+| mixed           | 3d unstructured mesh of mixed elements        |
+|                 | (explicit coords, explicit topology)          |
++-----------------+-----------------------------------------------+
 
 ``nx``, ``ny``, ``nz`` specify the number of elements in the x, y, and z directions.
 
