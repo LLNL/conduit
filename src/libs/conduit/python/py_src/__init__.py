@@ -21,7 +21,6 @@ if "CONDUIT_DLL_DIR" in os.environ:
     # os.add_dll_directory should exist in Python >= 3.8 on windows
     if platform.system() == 'Windows':
         if sys.version_info.major >= 3 and sys.version_info.minor >= 8:
-            if "CONDUIT_DLL_DIR" in os.environ:
                 for dll_path in os.environ["CONDUIT_DLL_DIR"].split(";"):
                     os.add_dll_directory(dll_path)
 ###############################################################################
