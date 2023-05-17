@@ -351,7 +351,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
 // we are testing vector fields in this test
 TEST(conduit_relay_io_silo, round_trip_braid)
 {
-    const std::vector<std::pair<std::string, int>> mesh_types = {
+    const std::vector<std::pair<std::string, std::string>> mesh_types = {
         // std::make_pair("uniform", "2"), std::make_pair("uniform", "3"),
         // std::make_pair("rectilinear", "2"), std::make_pair("rectilinear", "3"),
         // std::make_pair("structured", "2"), std::make_pair("structured", "3"),
