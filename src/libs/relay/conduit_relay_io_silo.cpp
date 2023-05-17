@@ -288,8 +288,8 @@ void silo_mesh_write(const Node &node,
 
     if(dbfile)
     {
-        Node type_index;
-        silo::silo_mesh_write(node, dbfile, silo_obj_path, "", 1, 0, type_index, false);
+        Node local_type_info;
+        silo::silo_mesh_write(node, dbfile, silo_obj_path, "", 1, 0, 0, local_type_info, false);
     }
     else
     {
@@ -1137,7 +1137,6 @@ read_root_silo_index(const std::string &root_file_path,
     if (multimesh_name.empty())
     {
         multimesh_name = toc->multimesh_names[0];
-        CONDUIT_INFO("Silo read: No multimesh selected, defaulting to the first multimesh found: " + multimesh_name);
     }
     else
     {
@@ -1229,10 +1228,10 @@ read_root_silo_index(const std::string &root_file_path,
         // we begin with the second case:
         if (!multivar.getSiloObject()->mmesh_name)
         {
-            CONDUIT_INFO("Multivar " + multivar_name + " has no associated multimesh. "
-                         "We will assume it is associated with multimesh " + multimesh_name + ".")
+            // This multivar has no associated multimesh. 
+            // We will assume it is associated with the multimesh
+            // And then check later when we are actually reading vars
             multimesh_assoc = true;
-            
         }
         // and then the first case
         else if (multivar.getSiloObject()->mmesh_name == multimesh_name)
@@ -1496,7 +1495,7 @@ read_mesh(const std::string &root_file_path,
                 &DBFreeUcdmesh};
             if (!ucdmesh.getSiloObject())
             {
-                CONDUIT_INFO("Unable to fetch DB_UCDMESH " + mesh_name + ". Skipping.");
+                // If we cannot fetch this mesh so we will skip
                 continue;
             }
             read_ucdmesh_domain(ucdmesh.getSiloObject(), 
@@ -1513,7 +1512,7 @@ read_mesh(const std::string &root_file_path,
                 &DBFreeQuadmesh};
             if (!quadmesh.getSiloObject())
             {
-                CONDUIT_INFO("Unable to fetch DB_QUADMESH " + mesh_name + ". Skipping.");
+                // If we cannot fetch this mesh so we will skip
                 continue;
             }
             read_quadmesh_domain(quadmesh.getSiloObject(), 
@@ -1527,7 +1526,7 @@ read_mesh(const std::string &root_file_path,
                 &DBFreePointmesh};
             if (!pointmesh.getSiloObject())
             {
-                CONDUIT_INFO("Unable to fetch DB_POINTMESH " + mesh_name + ". Skipping.");
+                // If we cannot fetch this mesh so we will skip
                 continue;
             }
             read_pointmesh_domain(pointmesh.getSiloObject(), 
@@ -1624,7 +1623,7 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeUcdvar};
                     if (!ucdvar.getSiloObject())
                     {
-                        CONDUIT_INFO("Unable to fetch DB_UCDVAR " + var_name + ". Skipping.");
+                        // If we cannot fetch this mesh so we will skip
                         continue;
                     }
                     if (ucdvar.getSiloObject()->meshname != bottom_level_mesh_name)
@@ -1648,7 +1647,7 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeQuadvar};
                     if (!quadvar.getSiloObject())
                     {
-                        CONDUIT_INFO("Unable to fetch DB_QUADVAR " + var_name + ". Skipping.");
+                        // If we cannot fetch this mesh so we will skip
                         continue;
                     }
                     if (quadvar.getSiloObject()->meshname != bottom_level_mesh_name)
@@ -1672,7 +1671,7 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeMeshvar};
                     if (!meshvar.getSiloObject())
                     {
-                        CONDUIT_INFO("Unable to fetch DB_POINTVAR " + var_name + ". Skipping.");
+                        // If we cannot fetch this mesh so we will skip
                         continue;
                     }
                     if (meshvar.getSiloObject()->meshname != bottom_level_mesh_name)
@@ -1789,9 +1788,10 @@ void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
                       const bool overlink,
-                      const int global_num_domains,
-                      const int domain_id,
-                      Node &type_index,
+                      const int local_num_domains,
+                      const int local_domain_index,
+                      const int global_domain_id,
+                      Node &local_type_info,
                       Node &n_mesh_info)
 {
     if (!n_var.has_path("topology"))
@@ -2000,13 +2000,16 @@ void silo_write_field(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error,
                              " after creating field " << var_name);
 
-    if (! type_index["vars"].has_child(var_name))
+    // bookkeeping
+    if (! local_type_info["vars"].has_child(var_name))
     {
-        type_index["vars"][var_name].set(DataType::index_t(global_num_domains));
+        local_type_info["vars"][var_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        local_type_info["vars"][var_name]["types"].set(DataType::index_t(local_num_domains));
     }
-
-    index_t_array var_types = type_index["vars"][var_name].value();
-    var_types[domain_id] = var_type;
+    index_t_array domain_ids = local_type_info["vars"][var_name]["domain_ids"].value();
+    domain_ids[local_domain_index] = global_domain_id;
+    index_t_array topo_types = local_type_info["vars"][var_name]["types"].value();
+    topo_types[local_domain_index] = var_type;
 }
 
 //---------------------------------------------------------------------------//
@@ -2502,9 +2505,10 @@ void silo_write_topo(const Node &n,
                      const std::string &topo_name,
                      Node &n_mesh_info,
                      const bool overlink,
-                     const int global_num_domains,
-                     const int domain_id,
-                     Node &type_index,
+                     const int local_num_domains,
+                     const int local_domain_index,
+                     const int global_domain_id,
+                     Node &local_type_info,
                      DBfile *dbfile)
 {
     const Node &n_topo = n["topologies"][topo_name];
@@ -2664,12 +2668,15 @@ void silo_write_topo(const Node &n,
     }
 
     // bookkeeping
-    if (! type_index["meshes"].has_child(topo_name))
+    if (! local_type_info["meshes"].has_child(topo_name))
     {
-        type_index["meshes"][topo_name].set(DataType::index_t(global_num_domains));
+        local_type_info["meshes"][topo_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        local_type_info["meshes"][topo_name]["types"].set(DataType::index_t(local_num_domains));
     }
-    index_t_array topo_types = type_index["meshes"][topo_name].value();
-    topo_types[domain_id] = mesh_type;
+    index_t_array domain_ids = local_type_info["meshes"][topo_name]["domain_ids"].value();
+    domain_ids[local_domain_index] = global_domain_id;
+    index_t_array topo_types = local_type_info["meshes"][topo_name]["types"].value();
+    topo_types[local_domain_index] = mesh_type;
 }
 
 //---------------------------------------------------------------------------//
@@ -2677,9 +2684,10 @@ void silo_mesh_write(const Node &n,
                      DBfile *dbfile,
                      const std::string &silo_obj_path,
                      const std::string &ovl_topo_name,
-                     const int global_num_domains,
-                     const int domain_id,
-                     Node &type_index,
+                     const int local_num_domains,
+                     const int local_domain_index,
+                     const int global_domain_id,
+                     Node &local_type_info,
                      const bool overlink)
 {
     int silo_error = 0;
@@ -2709,9 +2717,10 @@ void silo_mesh_write(const Node &n,
                         ovl_topo_name,
                         n_mesh_info,
                         overlink,
-                        global_num_domains,
-                        domain_id,
-                        type_index,
+                        local_num_domains,
+                        local_domain_index,
+                        global_domain_id,
+                        local_type_info,
                         dbfile);
     }
     else
@@ -2726,9 +2735,10 @@ void silo_mesh_write(const Node &n,
                             topo_name,
                             n_mesh_info,
                             overlink,
-                            global_num_domains,
-                            domain_id,
-                            type_index,
+                            local_num_domains,
+                            local_domain_index,
+                            global_domain_id,
+                            local_type_info,
                             dbfile);
         }
     }
@@ -2746,9 +2756,10 @@ void silo_mesh_write(const Node &n,
                                  var_name,
                                  n_var,
                                  overlink,
-                                 global_num_domains,
-                                 domain_id,
-                                 type_index,
+                                 local_num_domains,
+                                 local_domain_index,
+                                 global_domain_id,
+                                 local_type_info,
                                  n_mesh_info);
             }
         }
@@ -2770,12 +2781,12 @@ generate_silo_names(const Node &n_mesh_state,
                     const int num_files,
                     const int global_num_domains,
                     const bool root_only,
-                    const Node &type_index,
+                    const Node &local_type_info,
                     std::vector<std::string> &name_strings,
                     std::vector<const char *> &name_ptrs,
                     std::vector<int> &types)
 {
-    int_accessor stored_types = type_index.value();
+    int_accessor stored_types = local_type_info.value();
     for (index_t i = 0; i < global_num_domains; i ++)
     {
         std::string silo_name;
@@ -2845,7 +2856,7 @@ void write_multimesh(DBfile *dbfile,
                      const conduit::Node &root,
                      const int global_num_domains,
                      const std::string &multimesh_name,
-                     const Node &type_index,
+                     const Node &local_type_info,
                      const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
@@ -2875,7 +2886,7 @@ void write_multimesh(DBfile *dbfile,
                         num_files,
                         global_num_domains,
                         root_only,
-                        type_index[topo_name],
+                        local_type_info[topo_name],
                         domain_name_strings,
                         domain_name_ptrs,
                         mesh_types);
@@ -2937,7 +2948,7 @@ void write_multimeshes(DBfile *dbfile,
                        const std::string &opts_out_mesh_name,
                        const std::string &ovl_topo_name,
                        const Node &root,
-                       const Node &type_index,
+                       const Node &local_type_info,
                        const bool overlink)
 {
     const int global_num_domains = root["number_of_domains"].as_int32();
@@ -2959,7 +2970,7 @@ void write_multimeshes(DBfile *dbfile,
                         root,
                         global_num_domains,
                         opts_out_mesh_name, // "MMESH"
-                        type_index,
+                        local_type_info,
                         overlink);
     }
     // write all meshes for nonoverlink case
@@ -2977,7 +2988,7 @@ void write_multimeshes(DBfile *dbfile,
                             root,
                             global_num_domains,
                             multimesh_name,
-                            type_index,
+                            local_type_info,
                             overlink);
         }
     }
@@ -3026,7 +3037,7 @@ write_multivars(DBfile *dbfile,
                 const std::string &opts_mesh_name,
                 const std::string &ovl_topo_name,
                 const Node &root,
-                const Node &type_index,
+                const Node &local_type_info,
                 const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
@@ -3066,7 +3077,7 @@ write_multivars(DBfile *dbfile,
                                 num_files,
                                 global_num_domains,
                                 root_only,
-                                type_index[var_name],
+                                local_type_info[var_name],
                                 var_name_strings,
                                 var_name_ptrs,
                                 var_types);
@@ -3637,8 +3648,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // Other cases are simpler and are created when root file is written
     Node output_partition_map;
 
-    Node type_index;
-    // we want to make a type_index that looks like this:
+    Node local_type_info;
+    // we want to make a local_type_info that looks like this:
     // (one entry in each list for each domain)
     // 
     // meshes:
@@ -3723,9 +3734,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                     dbfile.getSiloObject(),
                                     mesh_path,
                                     opts_ovl_topo_name,
-                                    global_num_domains,
-                                    domain,
-                                    type_index,
+                                    local_num_domains,
+                                    i, // local domain index
+                                    domain, // global domain id
+                                    local_type_info,
                                     opts_file_style == "overlink");
                 }
             }
@@ -3790,9 +3802,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                             dbfile.getSiloObject(), 
                             mesh_path, 
                             opts_ovl_topo_name,
-                            global_num_domains,
-                            domain,
-                            type_index,
+                            local_num_domains,
+                            i, // local domain index
+                            domain, // global domain id
+                            local_type_info,
                             opts_file_style == "overlink");
         }
     }
@@ -3998,9 +4011,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                 dbfile.getSiloObject(), 
                                                 curr_path, 
                                                 opts_ovl_topo_name,
-                                                global_num_domains,
-                                                domain_id,
-                                                type_index,
+                                                local_num_domains,
+                                                d, // local domain index
+                                                domain_id, // global domain id
+                                                local_type_info,
                                                 opts_file_style == "overlink");
                                 
                                 // update status, we are done with this doman
@@ -4132,16 +4146,70 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     bp_idx[opts_out_mesh_name] = local_bp_idx;
 #endif
 
+    Node global_type_info;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    // we need to sync the type_index
-    // TODO
+    relay::mpi::gather_using_schema(local_type_info,
+                                    global_type_info,
+                                    root_file_writer,
+                                    mpi_comm);
+#else
+    global_type_info.append().set_external(local_type_info);
 #endif
-
-
 
     // root_file_writer will now write out the root file
     if(par_rank == root_file_writer)
     {
+        Node root_type_info;
+        Node &root_type_info_meshes = root_type_info["meshes"];
+        Node &root_type_info_vars = root_type_info["vars"];
+
+        auto itr = global_type_info.children();
+        while (itr.has_next())
+        {
+            const Node &child = itr.next();
+            auto meshes_itr = child["meshes"].children();
+            while (meshes_itr.has_next())
+            {
+                const Node &mesh = meshes_itr.next();
+                const std::string mesh_name = meshes_itr.name();
+
+                if (!root_type_info_meshes.has_child(mesh_name)) 
+                {
+                    root_type_info_meshes[mesh_name].set(DataType::index_t(global_num_domains));
+                }
+                index_t_accessor domain_ids = mesh["domain_ids"].value();
+                index_t_accessor mesh_types = mesh["types"].value();
+
+                index_t_array root_mesh_types = root_type_info_meshes[mesh_name].value();
+
+                for (index_t index = 0; index < domain_ids.number_of_elements(); index ++)
+                {
+                    root_mesh_types[domain_ids[index]] = mesh_types[index];
+                }
+            }
+
+            auto vars_itr = child["vars"].children();
+            while (vars_itr.has_next())
+            {
+                const Node &var = vars_itr.next();
+                const std::string var_name = vars_itr.name();
+
+                if (!root_type_info_vars.has_child(var_name)) 
+                {
+                    root_type_info_vars[var_name].set(DataType::index_t(global_num_domains));
+                }
+                index_t_accessor domain_ids = var["domain_ids"].value();
+                index_t_accessor var_types = var["types"].value();
+
+                index_t_array root_var_types = root_type_info_vars[var_name].value();
+
+                for (index_t index = 0; index < domain_ids.number_of_elements(); index ++)
+                {
+                    root_var_types[domain_ids[index]] = var_types[index];
+                }
+            }
+        }
+
         std::string output_silo_path;
 
         // single file case
@@ -4290,7 +4358,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
-        // we should have a type_index that looks like this:
+        // we should have a local_type_info that looks like this:
         // (one entry in each list for each domain)
         // 
         // meshes:
@@ -4308,13 +4376,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                           opts_out_mesh_name, 
                           opts_ovl_topo_name, 
                           root, 
-                          type_index["meshes"],
+                          root_type_info["meshes"],
                           opts_file_style == "overlink");
         write_multivars(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
                         opts_ovl_topo_name, 
                         root, 
-                        type_index["vars"],
+                        root_type_info["vars"],
                         opts_file_style == "overlink");
         // write_multimaterials(); // TODO_LATER
 
