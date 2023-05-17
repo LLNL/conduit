@@ -58,6 +58,9 @@ void CONDUIT_RELAY_API silo_mesh_write(const Node &n,
                                        DBfile *dbfile,
                                        const std::string &silo_obj_path,
                                        const std::string &ovl_topo_name,
+                                       const int global_num_domains,
+                                       const int domain_id,
+                                       Node &type_index,
                                        bool overlink);
 
 //-----------------------------------------------------------------------------

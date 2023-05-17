@@ -288,7 +288,8 @@ void silo_mesh_write(const Node &node,
 
     if(dbfile)
     {
-        silo::silo_mesh_write(node, dbfile, silo_obj_path, "", false);
+        Node type_index;
+        silo::silo_mesh_write(node, dbfile, silo_obj_path, "", 1, 0, type_index, false);
     }
     else
     {
@@ -1788,6 +1789,9 @@ void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
                       const bool overlink,
+                      const int global_num_domains,
+                      const int domain_id,
+                      Node &type_index,
                       Node &n_mesh_info)
 {
     if (!n_var.has_path("topology"))
@@ -1913,9 +1917,14 @@ void silo_write_field(DBfile *dbfile,
         safe_meshname = detail::sanitize_silo_varname(topo_name);
     }
 
+    int var_type;
+
     int silo_error = 0;
     if (mesh_type == "unstructured")
     {
+        // save the var type
+        var_type = DB_UCDVAR;
+
         silo_error = DBPutUcdvar(dbfile, // Database file pointer
                                  detail::sanitize_silo_varname(var_name).c_str(), // variable name
                                  safe_meshname.c_str(), // mesh name
@@ -1951,6 +1960,10 @@ void silo_write_field(DBfile *dbfile,
             dims[1] += 1;
             dims[2] += 1;
         }
+
+        // save the var type
+        var_type = DB_QUADVAR;
+
         silo_error = DBPutQuadvar(dbfile, // Database file pointer
                                   detail::sanitize_silo_varname(var_name).c_str(), // variable name
                                   safe_meshname.c_str(), // mesh name
@@ -1967,6 +1980,9 @@ void silo_write_field(DBfile *dbfile,
     }
     else if (mesh_type == "points") 
     {
+        // save the var type
+        var_type = DB_POINTVAR;
+
         silo_error = DBPutPointvar(dbfile, // Database file pointer.
                                    detail::sanitize_silo_varname(var_name).c_str(),  // variable name
                                    safe_meshname.c_str(), // mesh name
@@ -1978,11 +1994,19 @@ void silo_write_field(DBfile *dbfile,
     }
     else
     {
-        CONDUIT_ERROR("only DBPutQuadvar1 + DBPutUcdvar1 + DBPutPointvar1 var are supported");
+        CONDUIT_ERROR("only DBPutQuadvar + DBPutUcdvar + DBPutPointvar var are supported");
     }
 
     CONDUIT_CHECK_SILO_ERROR(silo_error,
                              " after creating field " << var_name);
+
+    if (! type_index["vars"].has_child(var_name))
+    {
+        type_index["vars"][var_name].set(DataType::index_t(global_num_domains));
+    }
+
+    index_t_array var_types = type_index["vars"][var_name].value();
+    var_types[domain_id] = var_type;
 }
 
 //---------------------------------------------------------------------------//
@@ -2478,6 +2502,9 @@ void silo_write_topo(const Node &n,
                      const std::string &topo_name,
                      Node &n_mesh_info,
                      const bool overlink,
+                     const int global_num_domains,
+                     const int domain_id,
+                     Node &type_index,
                      DBfile *dbfile)
 {
     const Node &n_topo = n["topologies"][topo_name];
@@ -2547,6 +2574,8 @@ void silo_write_topo(const Node &n,
                                           &silo_coordsys_type),
                              "error adding coordsys option");
 
+    int mesh_type;
+
     if (topo_type == "unstructured" ||
         topo_type == "structured" ||
         topo_type == "points")
@@ -2575,6 +2604,7 @@ void silo_write_topo(const Node &n,
 
         if (topo_type == "unstructured")
         {
+            mesh_type = DB_UCDMESH;
             silo_write_ucd_mesh(dbfile, topo_name,
                                 optlist.getSiloObject(), 
                                 ndims, num_pts, silo_coordset_axis_labels.data(),
@@ -2583,6 +2613,7 @@ void silo_write_topo(const Node &n,
         }
         else if (topo_type == "structured")
         {
+            mesh_type = DB_QUADMESH;
             silo_write_structured_mesh(dbfile, topo_name, n_topo,
                                        optlist.getSiloObject(), 
                                        ndims, silo_coordset_axis_labels.data(),
@@ -2591,6 +2622,7 @@ void silo_write_topo(const Node &n,
         }
         else if (topo_type == "points")
         {
+            mesh_type = DB_POINTMESH;
             silo_write_pointmesh(dbfile, topo_name,
                                  optlist.getSiloObject(), 
                                  ndims, num_pts,
@@ -2600,6 +2632,7 @@ void silo_write_topo(const Node &n,
     }
     else if (topo_type == "rectilinear")
     {
+        mesh_type = DB_QUADMESH;
         silo_write_quad_rect_mesh(dbfile, topo_name,
                                   n_topo, n_coords,
                                   optlist.getSiloObject(), 
@@ -2608,6 +2641,7 @@ void silo_write_topo(const Node &n,
     }
     else if (topo_type == "uniform")
     {
+        mesh_type = DB_QUADMESH;
         // silo doesn't have a direct path for a uniform mesh
         // we need to convert its implicit uniform coords to
         // implicit rectilinear coords
@@ -2628,6 +2662,14 @@ void silo_write_topo(const Node &n,
     {
         CONDUIT_ERROR("Unknown topo type in " << topo_type);
     }
+
+    // bookkeeping
+    if (! type_index["meshes"].has_child(topo_name))
+    {
+        type_index["meshes"][topo_name].set(DataType::index_t(global_num_domains));
+    }
+    index_t_array topo_types = type_index["meshes"][topo_name].value();
+    topo_types[domain_id] = mesh_type;
 }
 
 //---------------------------------------------------------------------------//
@@ -2635,6 +2677,9 @@ void silo_mesh_write(const Node &n,
                      DBfile *dbfile,
                      const std::string &silo_obj_path,
                      const std::string &ovl_topo_name,
+                     const int global_num_domains,
+                     const int domain_id,
+                     Node &type_index,
                      const bool overlink)
 {
     int silo_error = 0;
@@ -2664,6 +2709,9 @@ void silo_mesh_write(const Node &n,
                         ovl_topo_name,
                         n_mesh_info,
                         overlink,
+                        global_num_domains,
+                        domain_id,
+                        type_index,
                         dbfile);
     }
     else
@@ -2678,6 +2726,9 @@ void silo_mesh_write(const Node &n,
                             topo_name,
                             n_mesh_info,
                             overlink,
+                            global_num_domains,
+                            domain_id,
+                            type_index,
                             dbfile);
         }
     }
@@ -2691,7 +2742,14 @@ void silo_mesh_write(const Node &n,
             std::string var_name = itr.name();
             if (! overlink || n_var["topology"].as_string() == ovl_topo_name)
             {
-                silo_write_field(dbfile, var_name, n_var, overlink, n_mesh_info);
+                silo_write_field(dbfile,
+                                 var_name,
+                                 n_var,
+                                 overlink,
+                                 global_num_domains,
+                                 domain_id,
+                                 type_index,
+                                 n_mesh_info);
             }
         }
     }
@@ -2706,17 +2764,19 @@ void silo_mesh_write(const Node &n,
 
 //-----------------------------------------------------------------------------
 void
-generate_silo_names(const conduit::Node &n_mesh_state,
+generate_silo_names(const Node &n_mesh_state,
                     const std::string &silo_path,
                     const std::string &safe_name,
                     const int num_files,
                     const int global_num_domains,
                     const int type,
                     const bool root_only,
+                    const Node &type_index,
                     std::vector<std::string> &name_strings,
                     std::vector<const char *> &name_ptrs,
                     std::vector<int> &types)
 {
+    int_accessor stored_types = type_index.value();
     for (index_t i = 0; i < global_num_domains; i ++)
     {
         std::string silo_name;
@@ -2775,21 +2835,19 @@ generate_silo_names(const conduit::Node &n_mesh_state,
         // we create the silo names
         name_strings.push_back(silo_name);
         name_ptrs.push_back(name_strings.back().c_str());
-        
-        // we assume all mesh/var types for a given mesh/var to be the same, 
-        // so we push back the same mesh/var type for each domain
-        types.push_back(type);
+        types.push_back(stored_types[i]);
     }
 }
 
 //-----------------------------------------------------------------------------
-void write_multimesh(const Node &n_mesh,
+void write_multimesh(DBfile *dbfile,
+                     const Node &n_mesh,
                      const std::string &topo_name,
                      const conduit::Node &root,
                      const int global_num_domains,
                      const std::string &multimesh_name,
-                     bool overlink,
-                     DBfile *dbfile)
+                     const Node &type_index,
+                     const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
     const bool root_only = root["file_style"].as_string() == "root_only";
@@ -2807,26 +2865,6 @@ void write_multimesh(const Node &n_mesh,
         safe_meshname = detail::sanitize_silo_varname(topo_name);
     }
 
-    int mesh_type;
-    if (topo_type == "points")
-    {
-        mesh_type = DB_POINTMESH;
-    }
-    else if (topo_type == "uniform" || 
-             topo_type == "rectilinear" || 
-             topo_type == "structured")
-    {
-        mesh_type = DB_QUADMESH;
-    }
-    else if (topo_type == "unstructured")
-    {
-        mesh_type = DB_UCDMESH;
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported topo type in " << topo_type);
-    }
-
     std::string silo_path = root["silo_path"].as_string();
 
     std::vector<std::string> domain_name_strings;
@@ -2839,6 +2877,7 @@ void write_multimesh(const Node &n_mesh,
                         global_num_domains,
                         mesh_type,
                         root_only,
+                        type_index[topo_name],
                         domain_name_strings,
                         domain_name_ptrs,
                         mesh_types);
@@ -2899,8 +2938,9 @@ void write_multimesh(const Node &n_mesh,
 void write_multimeshes(DBfile *dbfile,
                        const std::string &opts_out_mesh_name,
                        const std::string &ovl_topo_name,
-                       const conduit::Node &root,
-                       bool overlink)
+                       const Node &root,
+                       const Node &type_index,
+                       const bool overlink)
 {
     const int global_num_domains = root["number_of_domains"].as_int32();
     const Node &n_mesh = root["blueprint_index"][opts_out_mesh_name];
@@ -2915,13 +2955,14 @@ void write_multimeshes(DBfile *dbfile,
     // write only the chosen mesh for overlink case
     if (overlink)
     {
-        write_multimesh(n_mesh,
+        write_multimesh(dbfile,
+                        n_mesh,
                         ovl_topo_name,
                         root,
                         global_num_domains,
                         opts_out_mesh_name, // "MMESH"
-                        overlink,
-                        dbfile);
+                        type_index,
+                        overlink);
     }
     // write all meshes for nonoverlink case
     else
@@ -2932,13 +2973,14 @@ void write_multimeshes(DBfile *dbfile,
             topo_itr.next();
             std::string topo_name = topo_itr.name();
             std::string multimesh_name = opts_out_mesh_name + "_" + topo_name;
-            write_multimesh(n_mesh,
+            write_multimesh(dbfile
+                            n_mesh,
                             topo_name,
                             root,
                             global_num_domains,
                             multimesh_name,
-                            overlink,
-                            dbfile);
+                            type_index,
+                            overlink);
         }
     }
 }
@@ -2985,8 +3027,9 @@ void
 write_multivars(DBfile *dbfile,
                 const std::string &opts_mesh_name,
                 const std::string &ovl_topo_name,
-                const conduit::Node &root,
-                bool overlink)
+                const Node &root,
+                const Node &type_index,
+                const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
     const int global_num_domains = root["number_of_domains"].as_int32();
@@ -3013,28 +3056,7 @@ write_multivars(DBfile *dbfile,
             std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
 
             std::string safe_varname = detail::sanitize_silo_varname(var_name); 
-            std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name); 
-
-            int var_type;
-            if (linked_topo_type == "unstructured")
-            {
-                var_type = DB_UCDVAR;
-            }
-            else if (linked_topo_type == "rectilinear" || 
-                     linked_topo_type == "uniform" || 
-                     linked_topo_type == "structured")
-            {
-                var_type = DB_QUADVAR;
-            }
-            else if (linked_topo_type == "points")
-            {
-                var_type = DB_POINTVAR;
-            }
-            else
-            {
-                CONDUIT_ERROR("Unsupported topo type in " << linked_topo_type);
-            }
-
+            std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
             std::string silo_path = root["silo_path"].as_string();
 
             std::vector<std::string> var_name_strings;
@@ -3047,6 +3069,7 @@ write_multivars(DBfile *dbfile,
                                 global_num_domains,
                                 var_type,
                                 root_only,
+                                type_index[var_name],
                                 var_name_strings,
                                 var_name_ptrs,
                                 var_types);
@@ -3497,9 +3520,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         }
 
         opts_out_mesh_name = "MMESH";
-        CONDUIT_INFO("Silo save: overlink: out_mesh_name set to " + opts_out_mesh_name);
-        
-        // TODO way more stuff needs to happen for overlink
     }
 
     // ----------------------------------------------------
@@ -3618,16 +3638,28 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // NOTE: the part_map is inited during write process for N domains
     // to M files case.
     // Other cases are simpler and are created when root file is written
-    conduit::Node output_partition_map;
+    Node output_partition_map;
+
+    Node type_index;
+    // we want to make a type_index that looks like this:
+    // (one entry in each list for each domain)
+    // 
+    // meshes:
+    //   mesh1: ucdmesh, ucdmesh, ...
+    //   mesh2: ucdmesh, pointmesh, ...
+    //   mesh3: quadmesh, quadmesh, ...
+    //   ...
+    // vars:
+    //   var1: ucdvar, ucdvar, ...
+    //   var2: ucdvar, pointvar, ...
+    //   var3: quadvar, quadvar, ...
+    // ...
 
     // at this point for file_style,
     // default has been resolved, we need to just handle:
     //   root_only, multi_file
     if(opts_file_style == "root_only")
     {
-        // if truncate, first touch needs to open the file with
-        //          open_opts["mode"] = "wt";
-
         // write out local domains, since all tasks will
         // write to single file in this case, we need baton.
         // the outer loop + par_rank == current_writer implements
@@ -3676,6 +3708,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     // figure out the proper mesh path the file
                     std::string mesh_path;
 
+                    uint64 domain = dom["state/domain_id"].to_uint64();
                     if (global_num_domains == 1)
                     {
                         // no domain prefix, write to mesh name
@@ -3684,7 +3717,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     else
                     {
                         // multiple domains, we need to use a domain prefix
-                        uint64 domain = dom["state/domain_id"].to_uint64();
                         mesh_path = conduit_fmt::format("domain_{:06d}/{}",
                                                         domain,
                                                         opts_out_mesh_name);
@@ -3694,6 +3726,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                     dbfile.getSiloObject(),
                                     mesh_path,
                                     opts_ovl_topo_name,
+                                    global_num_domains,
+                                    domain,
+                                    type_index,
                                     opts_file_style == "overlink");
                 }
             }
@@ -3757,7 +3792,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             silo_mesh_write(dom, 
                             dbfile.getSiloObject(), 
                             mesh_path, 
-                            opts_ovl_topo_name, 
+                            opts_ovl_topo_name,
+                            global_num_domains,
+                            domain,
+                            type_index,
                             opts_file_style == "overlink");
         }
     }
@@ -3962,7 +4000,10 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 silo_mesh_write(dom, 
                                                 dbfile.getSiloObject(), 
                                                 curr_path, 
-                                                opts_ovl_topo_name, 
+                                                opts_ovl_topo_name,
+                                                global_num_domains,
+                                                domain_id,
+                                                type_index,
                                                 opts_file_style == "overlink");
                                 
                                 // update status, we are done with this doman
@@ -4093,6 +4134,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // single mesh only
     bp_idx[opts_out_mesh_name] = local_bp_idx;
 #endif
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    // we need to sync the type_index
+    // TODO
+#endif
+
+
 
     // root_file_writer will now write out the root file
     if(par_rank == root_file_writer)
@@ -4245,16 +4293,32 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
+        // we should have a type_index that looks like this:
+        // (one entry in each list for each domain)
+        // 
+        // meshes:
+        //   mesh1: ucdmesh, ucdmesh, ...
+        //   mesh2: ucdmesh, pointmesh, ...
+        //   mesh3: quadmesh, quadmesh, ...
+        //   ...
+        // vars:
+        //   var1: ucdvar, ucdvar, ...
+        //   var2: ucdvar, pointvar, ...
+        //   var3: quadvar, quadvar, ...
+        // ...
+
         write_multimeshes(dbfile.getSiloObject(), 
                           opts_out_mesh_name, 
                           opts_ovl_topo_name, 
                           root, 
+                          type_index["meshes"],
                           opts_file_style == "overlink");
         write_multivars(dbfile.getSiloObject(), 
-                          opts_out_mesh_name, 
-                          opts_ovl_topo_name, 
-                          root, 
-                          opts_file_style == "overlink");
+                        opts_out_mesh_name, 
+                        opts_ovl_topo_name, 
+                        root, 
+                        type_index["vars"],
+                        opts_file_style == "overlink");
         // write_multimaterials(); // TODO_LATER
 
     }
