@@ -355,8 +355,8 @@ TEST(conduit_relay_io_silo, round_trip_braid)
         std::make_pair("uniform", "2"), std::make_pair("uniform", "3"),
         std::make_pair("rectilinear", "2"), std::make_pair("rectilinear", "3"),
         std::make_pair("structured", "2"), std::make_pair("structured", "3"),
-        // std::make_pair("points", "2"), /*std::make_pair("points", "3"), // TODO*/
-        // TODO points_implicit
+        std::make_pair("points", "2"), std::make_pair("points", "3"),
+        std::make_pair("points_implicit", "2"), std::make_pair("points_implicit", "3"),
         std::make_pair("lines", "2"), std::make_pair("lines", "3"),
         std::make_pair("tris", "2"),
         std::make_pair("quads", "2"),
@@ -393,6 +393,24 @@ TEST(conduit_relay_io_silo, round_trip_braid)
             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
         }
 
+        // this is custom code for braid
+        // We know it is correct because the unstructured points version of braid
+        // uses every point in the coordset
+        if (mesh_type == "points")
+        {
+            save_mesh["topologies"].remove_child("mesh");
+            save_mesh["topologies"]["mesh"]["type"] = "points";
+            save_mesh["topologies"]["mesh"]["coordset"] = "coords";
+        }
+
+        if (mesh_type == "points_implicit" || mesh_type == "points")
+        {
+            // the association doesn't matter for point meshes
+            // we choose vertex by convention
+            save_mesh["fields"]["radial"]["association"].reset();
+            save_mesh["fields"]["radial"]["association"] = "vertex";
+        }
+
         silo_name_changer("mesh", save_mesh);
 
         // silo will store this value as an index_t. For whatever reason,
@@ -411,6 +429,8 @@ TEST(conduit_relay_io_silo, round_trip_braid)
         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
     }
 }
+
+// TODO a test where the explicit number of points does not use every coord
 
 // multidomain test
 TEST(conduit_relay_io_silo, round_trip_spiral)
@@ -655,6 +675,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
     }
 }
 
+// TODO
 /// opts:
 ///
 ///      number_of_files:  {# of files}
