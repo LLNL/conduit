@@ -1495,7 +1495,7 @@ read_mesh(const std::string &root_file_path,
                 &DBFreeUcdmesh};
             if (!ucdmesh.getSiloObject())
             {
-                // If we cannot fetch this mesh so we will skip
+                // If we cannot fetch this mesh we will skip
                 continue;
             }
             read_ucdmesh_domain(ucdmesh.getSiloObject(), 
@@ -1512,7 +1512,7 @@ read_mesh(const std::string &root_file_path,
                 &DBFreeQuadmesh};
             if (!quadmesh.getSiloObject())
             {
-                // If we cannot fetch this mesh so we will skip
+                // If we cannot fetch this mesh we will skip
                 continue;
             }
             read_quadmesh_domain(quadmesh.getSiloObject(), 
@@ -1526,7 +1526,7 @@ read_mesh(const std::string &root_file_path,
                 &DBFreePointmesh};
             if (!pointmesh.getSiloObject())
             {
-                // If we cannot fetch this mesh so we will skip
+                // If we cannot fetch this mesh we will skip
                 continue;
             }
             read_pointmesh_domain(pointmesh.getSiloObject(), 
@@ -1623,7 +1623,7 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeUcdvar};
                     if (!ucdvar.getSiloObject())
                     {
-                        // If we cannot fetch this mesh so we will skip
+                        // If we cannot fetch this var we will skip
                         continue;
                     }
                     if (ucdvar.getSiloObject()->meshname != bottom_level_mesh_name)
@@ -1647,7 +1647,7 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeQuadvar};
                     if (!quadvar.getSiloObject())
                     {
-                        // If we cannot fetch this mesh so we will skip
+                        // If we cannot fetch this var we will skip
                         continue;
                     }
                     if (quadvar.getSiloObject()->meshname != bottom_level_mesh_name)
@@ -1671,7 +1671,7 @@ read_mesh(const std::string &root_file_path,
                         &DBFreeMeshvar};
                     if (!meshvar.getSiloObject())
                     {
-                        // If we cannot fetch this mesh so we will skip
+                        // If we cannot fetch this var we will skip
                         continue;
                     }
                     if (meshvar.getSiloObject()->meshname != bottom_level_mesh_name)
@@ -2008,8 +2008,8 @@ void silo_write_field(DBfile *dbfile,
     }
     index_t_array domain_ids = local_type_info["vars"][var_name]["domain_ids"].value();
     domain_ids[local_domain_index] = global_domain_id;
-    index_t_array topo_types = local_type_info["vars"][var_name]["types"].value();
-    topo_types[local_domain_index] = var_type;
+    index_t_array var_types = local_type_info["vars"][var_name]["types"].value();
+    var_types[local_domain_index] = var_type;
 }
 
 //---------------------------------------------------------------------------//
@@ -2781,12 +2781,12 @@ generate_silo_names(const Node &n_mesh_state,
                     const int num_files,
                     const int global_num_domains,
                     const bool root_only,
-                    const Node &local_type_info,
+                    const Node &types_for_mesh_or_var,
                     std::vector<std::string> &name_strings,
                     std::vector<const char *> &name_ptrs,
                     std::vector<int> &types)
 {
-    int_accessor stored_types = local_type_info.value();
+    int_accessor stored_types = types_for_mesh_or_var.value();
     for (index_t i = 0; i < global_num_domains; i ++)
     {
         std::string silo_name;
@@ -2856,7 +2856,7 @@ void write_multimesh(DBfile *dbfile,
                      const conduit::Node &root,
                      const int global_num_domains,
                      const std::string &multimesh_name,
-                     const Node &local_type_info,
+                     const Node &root_type_info_meshes,
                      const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
@@ -2886,7 +2886,7 @@ void write_multimesh(DBfile *dbfile,
                         num_files,
                         global_num_domains,
                         root_only,
-                        local_type_info[topo_name],
+                        root_type_info_meshes[topo_name],
                         domain_name_strings,
                         domain_name_ptrs,
                         mesh_types);
@@ -2948,7 +2948,7 @@ void write_multimeshes(DBfile *dbfile,
                        const std::string &opts_out_mesh_name,
                        const std::string &ovl_topo_name,
                        const Node &root,
-                       const Node &local_type_info,
+                       const Node &root_type_info_meshes,
                        const bool overlink)
 {
     const int global_num_domains = root["number_of_domains"].as_int32();
@@ -2970,7 +2970,7 @@ void write_multimeshes(DBfile *dbfile,
                         root,
                         global_num_domains,
                         opts_out_mesh_name, // "MMESH"
-                        local_type_info,
+                        root_type_info_meshes,
                         overlink);
     }
     // write all meshes for nonoverlink case
@@ -2988,7 +2988,7 @@ void write_multimeshes(DBfile *dbfile,
                             root,
                             global_num_domains,
                             multimesh_name,
-                            local_type_info,
+                            root_type_info_meshes,
                             overlink);
         }
     }
@@ -3037,7 +3037,7 @@ write_multivars(DBfile *dbfile,
                 const std::string &opts_mesh_name,
                 const std::string &ovl_topo_name,
                 const Node &root,
-                const Node &local_type_info,
+                const Node &root_type_info_vars,
                 const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
@@ -3077,7 +3077,7 @@ write_multivars(DBfile *dbfile,
                                 num_files,
                                 global_num_domains,
                                 root_only,
-                                local_type_info[var_name],
+                                root_type_info_vars[var_name],
                                 var_name_strings,
                                 var_name_ptrs,
                                 var_types);
@@ -3649,19 +3649,22 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     Node output_partition_map;
 
     Node local_type_info;
-    // we want to make a local_type_info that looks like this:
-    // (one entry in each list for each domain)
-    // 
+    // our local type info is going to look like this:
     // meshes:
-    //   mesh1: ucdmesh, ucdmesh, ...
-    //   mesh2: ucdmesh, pointmesh, ...
-    //   mesh3: quadmesh, quadmesh, ...
-    //   ...
+    //   mesh1:
+    //     domain_ids: [5, 53, 74, ...]
+    //     types: [quadmesh, ucdmesh, quadmesh, ...]
+    //   mesh2:
+    //     domain_ids: [5, 53, 74, ...]
+    //     types: [pointmesh, pointmesh, pointmesh, ...]
     // vars:
-    //   var1: ucdvar, ucdvar, ...
-    //   var2: ucdvar, pointvar, ...
-    //   var3: quadvar, quadvar, ...
-    // ...
+    //   var1:
+    //     domain_ids: [5, 53, 74, ...]
+    //     types: [quadvar, ucdvar, quadvar, ...]
+    //   var2:
+    //     domain_ids: [5, 53, 74, ...]
+    //     types: [pointvar, pointvar, pointvar, ...]
+    // each array is local_num_domains long
 
     // at this point for file_style,
     // default has been resolved, we need to just handle:
@@ -4159,53 +4162,75 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // root_file_writer will now write out the root file
     if(par_rank == root_file_writer)
     {
+        // we will gather type info into one place and organize it
+        // by the end we should have a root_type_info that looks like this:
+        // (one entry in each list for each domain)
+        // 
+        // meshes:
+        //   mesh1: ucdmesh, ucdmesh, ...
+        //   mesh2: ucdmesh, pointmesh, ...
+        //   mesh3: quadmesh, quadmesh, ...
+        //   ...
+        // vars:
+        //   var1: ucdvar, ucdvar, ...
+        //   var2: ucdvar, pointvar, ...
+        //   var3: quadvar, quadvar, ...
+        //   ...
+
         Node root_type_info;
         Node &root_type_info_meshes = root_type_info["meshes"];
         Node &root_type_info_vars = root_type_info["vars"];
 
-        auto itr = global_type_info.children();
-        while (itr.has_next())
+        auto type_info_itr = global_type_info.children();
+        while (type_info_itr.has_next())
         {
-            const Node &child = itr.next();
-            auto meshes_itr = child["meshes"].children();
-            while (meshes_itr.has_next())
+            // type info from a particular MPI rank
+            const Node &type_info_from_rank = type_info_itr.next();
+            auto read_meshes_itr = type_info_from_rank["meshes"].children();
+            while (read_meshes_itr.has_next())
             {
-                const Node &mesh = meshes_itr.next();
-                const std::string mesh_name = meshes_itr.name();
+                const Node &read_mesh_type_info = read_meshes_itr.next();
+                const std::string read_mesh_name = read_meshes_itr.name();
 
-                if (!root_type_info_meshes.has_child(mesh_name)) 
+                if (!root_type_info_meshes.has_child(read_mesh_name)) 
                 {
-                    root_type_info_meshes[mesh_name].set(DataType::index_t(global_num_domains));
+                    root_type_info_meshes[read_mesh_name].set(DataType::index_t(global_num_domains));
                 }
-                index_t_accessor domain_ids = mesh["domain_ids"].value();
-                index_t_accessor mesh_types = mesh["types"].value();
+                // the global domain ids array is of length local domain ids
+                // local domain ids index into it to read global domain ids out
+                index_t_accessor global_domain_ids = read_mesh_type_info["domain_ids"].value();
+                index_t_accessor read_mesh_types = read_mesh_type_info["types"].value();
 
-                index_t_array root_mesh_types = root_type_info_meshes[mesh_name].value();
+                // this is where we are writing the data to
+                index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
 
-                for (index_t index = 0; index < domain_ids.number_of_elements(); index ++)
+                for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                 {
-                    root_mesh_types[domain_ids[index]] = mesh_types[index];
+                    root_mesh_types[global_domain_ids[local_domain_id]] = read_mesh_types[local_domain_id];
                 }
             }
 
-            auto vars_itr = child["vars"].children();
-            while (vars_itr.has_next())
+            auto read_vars_itr = type_info_from_rank["vars"].children();
+            while (read_vars_itr.has_next())
             {
-                const Node &var = vars_itr.next();
-                const std::string var_name = vars_itr.name();
+                const Node &read_var_type_info = read_vars_itr.next();
+                const std::string read_var_name = read_vars_itr.name();
 
-                if (!root_type_info_vars.has_child(var_name)) 
+                if (!root_type_info_vars.has_child(read_var_name)) 
                 {
-                    root_type_info_vars[var_name].set(DataType::index_t(global_num_domains));
+                    root_type_info_vars[read_var_name].set(DataType::index_t(global_num_domains));
                 }
-                index_t_accessor domain_ids = var["domain_ids"].value();
-                index_t_accessor var_types = var["types"].value();
+                // the global domain ids array is of length local domain ids
+                // local domain ids index into it to read global domain ids out
+                index_t_accessor global_domain_ids = read_var_type_info["domain_ids"].value();
+                index_t_accessor read_var_types = read_var_type_info["types"].value();
 
-                index_t_array root_var_types = root_type_info_vars[var_name].value();
+                // this is where we are writing the data to
+                index_t_array root_var_types = root_type_info_vars[read_var_name].value();
 
-                for (index_t index = 0; index < domain_ids.number_of_elements(); index ++)
+                for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                 {
-                    root_var_types[domain_ids[index]] = var_types[index];
+                    root_var_types[global_domain_ids[local_domain_id]] = read_var_types[local_domain_id];
                 }
             }
         }
@@ -4357,20 +4382,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
             }
         }
-
-        // we should have a local_type_info that looks like this:
-        // (one entry in each list for each domain)
-        // 
-        // meshes:
-        //   mesh1: ucdmesh, ucdmesh, ...
-        //   mesh2: ucdmesh, pointmesh, ...
-        //   mesh3: quadmesh, quadmesh, ...
-        //   ...
-        // vars:
-        //   var1: ucdvar, ucdvar, ...
-        //   var2: ucdvar, pointvar, ...
-        //   var3: quadvar, quadvar, ...
-        // ...
 
         write_multimeshes(dbfile.getSiloObject(), 
                           opts_out_mesh_name, 
