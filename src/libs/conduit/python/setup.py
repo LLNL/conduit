@@ -7,7 +7,9 @@
 #
 ###############################################################################
 
+import os
 import sys
+import platform
 from distutils.core import setup
 from distutils.command.install_egg_info import install_egg_info
 
@@ -15,6 +17,19 @@ from distutils.command.install_egg_info import install_egg_info
 class SkipEggInfo(install_egg_info):
     def run(self):
         pass
+
+# path args fix helper for windows
+def adjust_windows_args_paths():
+    print("[windows detected: normalzing paths]")
+    nargs =[]
+    for v in sys.argv:
+        nargs.append(v.replace("/","\\"))
+    sys.argv = nargs
+
+# if windows,  defend against path issue:
+#  https://github.com/LLNL/conduit/issues/1017
+if platform.system() == 'Windows':
+    adjust_windows_paths()
 
 setup (name = 'conduit',
        description = 'conduit',
