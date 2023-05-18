@@ -56,9 +56,11 @@ set(conduit_headers
     conduit_generator.hpp
     conduit_error.hpp
     conduit_node_iterator.hpp
+    conduit_range_vector.hpp
     conduit_schema.hpp
     conduit_log.hpp
     conduit_utils.hpp
+    conduit_vector_view.hpp
     conduit_annotations.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_exports.h
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
