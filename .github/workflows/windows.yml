@@ -53,6 +53,7 @@ jobs:
               -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
+        cmake --install build --config Release
 
   build_windows_clang:
     name: Clang Base Debug
@@ -75,3 +76,4 @@ jobs:
                 -DCMAKE_BUILD_TYPE=Debug
         cmake --build build --config Debug --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test --parallel 1
+        cmake --install build --config Release
