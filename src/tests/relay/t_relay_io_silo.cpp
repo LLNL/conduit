@@ -568,7 +568,6 @@ TEST(conduit_relay_io_silo, round_trip_julia)
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 
-// TODO need to do read option tests
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
 {
@@ -689,6 +688,20 @@ TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
     EXPECT_EQ(load_mesh.number_of_children(), 1);
     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
+{
+    Node load_mesh, info, opts;
+    std::string input_file = relay_test_silo_data_path("multi_curv3d.silo");
+
+    opts["mesh_name"] = "mesh1_dup";
+
+    io::silo::load_mesh(input_file, opts, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
 }
 
 //-----------------------------------------------------------------------------
