@@ -7,6 +7,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## [0.8.8] - Released 2023-05-18
 
+### Added
+
 #### General
 - Added Python 3 Stable ABI compatibility (Py_LIMITED_API) build support. Enabled by default when building against Python 3.11 or newer.
 - Added `conduit_adjset_validate` tool which can read root files for a multiple domain dataset and check whether the adjsets (vertex or element associations) in it are correct. Any errors are printed to the console.
