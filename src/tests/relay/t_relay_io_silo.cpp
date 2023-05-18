@@ -58,69 +58,92 @@ void
 silo_name_changer(const std::string &mmesh_name,
                   conduit::Node &save_mesh)
 {
-    // we assume 1 coordset, 1 topo, and fields
+    std::map<std::string, std::string> old_to_new_names;
 
-    Node &coordsets = save_mesh["coordsets"];
-    Node &topologies = save_mesh["topologies"];
-    Node &fields = save_mesh["fields"];
-
-    // we assume only 1 child for each
-    std::string coordset_name = coordsets.children().next().name();
-    std::string topo_name = topologies.children().next().name();
-
-    // come up with new names for coordset and topo
-    std::string new_coordset_name = mmesh_name + "_" + topo_name;
-    std::string new_topo_name = mmesh_name + "_" + topo_name;
-
-    // rename the coordset and references to it
-    coordsets.rename_child(coordset_name, new_coordset_name);
-    topologies[topo_name]["coordset"].reset();
-    topologies[topo_name]["coordset"] = new_coordset_name;
-
-    // rename the topo
-    topologies.rename_child(topo_name, new_topo_name);
-
-    auto field_itr = fields.children();
-    while (field_itr.has_next())
+    if (save_mesh.has_child("topologies"))
     {
-        Node &n_field = field_itr.next();
-        std::string field_name = field_itr.name();
-
-        // use new topo name
-        n_field["topology"].reset();
-        n_field["topology"] = new_topo_name;
-
-        // remove vol dep
-        if (n_field.has_child("volume_dependent"))
+        auto topo_itr = save_mesh["topologies"].children();
+        while(topo_itr.has_next())
         {
-            n_field.remove_child("volume_dependent");
-        }
+            Node &n_topo = topo_itr.next();
+            std::string topo_name = topo_itr.name();
+            std::string new_topo_name = mmesh_name + "_" + topo_name;
 
-        // we need to rename vector components
-        if (n_field["values"].dtype().is_object())
-        {
-            if (n_field["values"].number_of_children() > 0)
+            old_to_new_names[topo_name] = new_topo_name;
+
+            std::string coordset_name = n_topo["coordset"].as_string();
+            std::string new_coordset_name = mmesh_name + "_" + topo_name;
+
+            // change the coordset this topo refers to
+            save_mesh["topologies"][topo_name]["coordset"].reset();
+            save_mesh["topologies"][topo_name]["coordset"] = new_coordset_name;
+
+            // change the name of the topo
+            save_mesh["topologies"].rename_child(topo_name, new_topo_name);
+
+            // change the name of the coordset
+            if (save_mesh.has_path("coordsets/" + coordset_name))
             {
-                int child_index = 0;
-                auto val_itr = n_field["values"].children();
-                while (val_itr.has_next())
-                {
-                    val_itr.next();
-                    std::string comp_name = val_itr.name();
-
-                    // rename vector components
-                    n_field["values"].rename_child(comp_name, std::to_string(child_index));
-
-                    child_index ++;
-                }
+                save_mesh["coordsets"].rename_child(coordset_name, new_coordset_name);
             }
         }
+    }
 
-        // come up with new field name
-        std::string new_field_name = mmesh_name + "_" + field_name;
+    if (save_mesh.has_child("fields"))
+    {
+        auto field_itr = save_mesh["fields"].children();
+        while (field_itr.has_next())
+        {
+            Node &n_field = field_itr.next();
+            std::string field_name = field_itr.name();
 
-        // rename the field
-        fields.rename_child(field_name, new_field_name);
+            std::string old_topo_name = n_field["topology"].as_string();
+
+            if (old_to_new_names.find(old_topo_name) == old_to_new_names.end())
+            {
+                continue;
+                // If this is the case, we probably need to delete this field.
+                // But our job in this function is just to rename things, so we 
+                // will just skip.
+            }
+            std::string new_topo_name = old_to_new_names[old_topo_name];
+
+            // use new topo name
+            n_field["topology"].reset();
+            n_field["topology"] = new_topo_name;
+
+            // remove vol dep
+            if (n_field.has_child("volume_dependent"))
+            {
+                n_field.remove_child("volume_dependent");
+            }
+
+            // we need to rename vector components
+            if (n_field["values"].dtype().is_object())
+            {
+                if (n_field["values"].number_of_children() > 0)
+                {
+                    int child_index = 0;
+                    auto val_itr = n_field["values"].children();
+                    while (val_itr.has_next())
+                    {
+                        val_itr.next();
+                        std::string comp_name = val_itr.name();
+
+                        // rename vector components
+                        n_field["values"].rename_child(comp_name, std::to_string(child_index));
+
+                        child_index ++;
+                    }
+                }
+            }
+
+            // come up with new field name
+            std::string new_field_name = mmesh_name + "_" + field_name;
+
+            // rename the field
+            save_mesh["fields"].rename_child(field_name, new_field_name);
+        }
     }
 
     if (!save_mesh.has_path("state/domain_id"))
@@ -567,7 +590,7 @@ TEST(conduit_relay_io_silo, missing_domain_var)
 // deletes domains that are missing topos.
 // They simply are not part of the mesh and so silo 
 // doesn't have to deal with it.
-TEST(conduit_relay_io_silo, missing_domain_mesh)
+TEST(conduit_relay_io_silo, missing_domain_mesh_trivial)
 {
     Node save_mesh, load_mesh, info;
     const int ndomains = 4;
@@ -576,7 +599,7 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
     // remove information for a particular domain
     save_mesh[2]["topologies"].remove_child("topo");
 
-    const std::string basename = "silo_missing_domain_mesh_spiral";
+    const std::string basename = "silo_missing_domain_mesh_trivial_spiral";
     const std::string filename = basename + ".cycle_000000.root";
 
     remove_path_if_exists(filename);
@@ -597,6 +620,82 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
         save_mesh[child]["state"]["cycle"].reset();
         save_mesh[child]["state"]["cycle"] = (int64) cycle;
     }
+
+    EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+    NodeConstIterator l_itr = load_mesh.children();
+    NodeConstIterator s_itr = save_mesh.children();
+    while (l_itr.has_next())
+    {
+        const Node &l_curr = l_itr.next();
+        const Node &s_curr = s_itr.next();
+
+        EXPECT_FALSE(l_curr.diff(s_curr, info));
+    }
+}
+
+//-----------------------------------------------------------------------------
+// mesh is not defined on a domain but there are multiple meshes
+TEST(conduit_relay_io_silo, missing_domain_mesh)
+{
+    Node save_mesh, save_mesh2, load_mesh, load_mesh2, info, opts;
+    const int ndomains = 4;
+    blueprint::mesh::examples::spiral(ndomains, save_mesh);
+    blueprint::mesh::examples::spiral(ndomains, save_mesh2);
+
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        save_mesh[child]["coordsets"].rename_child("coords", "coords2");
+        save_mesh[child]["topologies"]["topo"]["coordset"].reset();
+        save_mesh[child]["topologies"]["topo"]["coordset"] = "coords2";
+        save_mesh[child]["topologies"].rename_child("topo", "topo2");
+        save_mesh[child]["fields"]["dist"]["topology"].reset();
+        save_mesh[child]["fields"]["dist"]["topology"] = "topo2";
+        save_mesh[child]["fields"].rename_child("dist", "dist2");
+
+        save_mesh[child]["coordsets"]["coords"].set_external(save_mesh2[child]["coordsets"]["coords"]);
+        save_mesh[child]["topologies"]["topo"].set_external(save_mesh2[child]["topologies"]["topo"]);
+        save_mesh[child]["fields"]["dist"].set_external(save_mesh2[child]["fields"]["dist"]);
+    }
+
+    // remove information for a particular domain
+    save_mesh[2]["topologies"].remove_child("topo");
+
+    const std::string basename = "silo_missing_domain_mesh_spiral";
+    const std::string filename = basename + ".cycle_000000.root";
+
+    remove_path_if_exists(filename);
+    io::silo::save_mesh(save_mesh, basename);
+    
+    opts["mesh_name"] = "mesh_topo2";
+    io::silo::load_mesh(filename, opts, load_mesh);
+    opts["mesh_name"] = "mesh_topo";
+    io::silo::load_mesh(filename, opts, load_mesh2);
+
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh2, info));
+
+    // make changes to save mesh so the diff will pass
+    save_mesh[2]["coordsets"].remove_child("coords");
+    save_mesh[2]["fields"].remove_child("dist");
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        silo_name_changer("mesh", save_mesh[child]);
+        int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+        save_mesh[child]["state"]["cycle"].reset();
+        save_mesh[child]["state"]["cycle"] = (int64) cycle;
+    }
+
+    // we must merge the two meshes in load mesh
+    // this is tricky because one is missing a domain
+    load_mesh[0]["coordsets"]["mesh_topo"].set_external(load_mesh2[0]["coordsets"]["mesh_topo"]);
+    load_mesh[0]["topologies"]["mesh_topo"].set_external(load_mesh2[0]["topologies"]["mesh_topo"]);
+    load_mesh[0]["fields"]["mesh_dist"].set_external(load_mesh2[0]["fields"]["mesh_dist"]);
+    load_mesh[1]["coordsets"]["mesh_topo"].set_external(load_mesh2[1]["coordsets"]["mesh_topo"]);
+    load_mesh[1]["topologies"]["mesh_topo"].set_external(load_mesh2[1]["topologies"]["mesh_topo"]);
+    load_mesh[1]["fields"]["mesh_dist"].set_external(load_mesh2[1]["fields"]["mesh_dist"]);
+    load_mesh[3]["coordsets"]["mesh_topo"].set_external(load_mesh2[2]["coordsets"]["mesh_topo"]);
+    load_mesh[3]["topologies"]["mesh_topo"].set_external(load_mesh2[2]["topologies"]["mesh_topo"]);
+    load_mesh[3]["fields"]["mesh_dist"].set_external(load_mesh2[2]["fields"]["mesh_dist"]);
 
     EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
     NodeConstIterator l_itr = load_mesh.children();

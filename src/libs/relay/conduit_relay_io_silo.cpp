@@ -1796,17 +1796,21 @@ void silo_write_field(DBfile *dbfile,
 {
     if (!n_var.has_path("topology"))
     {
-        CONDUIT_ERROR("Missing linked topology! "
+        CONDUIT_INFO("Skipping this variable because we are "
+                     "missing a linked topology: "
                       << "fields/" << var_name << "/topology");
+        return;
     }
 
     const std::string topo_name = n_var["topology"].as_string();
 
     if (!n_mesh_info.has_path(topo_name))
     {
-        CONDUIT_ERROR("Invalid linked topology! "
+        CONDUIT_INFO("Skipping this variable because the linked "
+                     " topology is invalid: "
                       << "fields/" << var_name
                       << "/topology: " << topo_name);
+        return;
     }
 
     std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
@@ -2791,6 +2795,7 @@ generate_silo_names(const Node &n_mesh_state,
                     const int global_num_domains,
                     const bool root_only,
                     const Node &types_for_mesh_or_var,
+                    const int default_type,
                     std::vector<std::string> &name_strings,
                     std::vector<const char *> &name_ptrs,
                     std::vector<int> &types)
@@ -2816,6 +2821,8 @@ generate_silo_names(const Node &n_mesh_state,
         if (stored_types[d] == -1)
         {
             silo_name = "EMPTY";
+
+            types.push_back(default_type);
         }
         else
         {
@@ -2857,12 +2864,13 @@ generate_silo_names(const Node &n_mesh_state,
 
                 silo_name = conduit_fmt::format(silo_path, f, d, safe_name);
             }
+
+            types.push_back(stored_types[d]);
         }
 
         // we create the silo names
         name_strings.push_back(silo_name);
         name_ptrs.push_back(name_strings.back().c_str());
-        types.push_back(stored_types[d]);
     }
 }
 
@@ -2904,6 +2912,7 @@ void write_multimesh(DBfile *dbfile,
                         global_num_domains,
                         root_only,
                         root_type_info_meshes[topo_name],
+                        DB_QUADMESH, // the default if we have an empty domain
                         domain_name_strings,
                         domain_name_ptrs,
                         mesh_types);
@@ -3095,6 +3104,7 @@ write_multivars(DBfile *dbfile,
                                 global_num_domains,
                                 root_only,
                                 root_type_info_vars[var_name],
+                                DB_QUADVAR, // the default if we have an empty domain
                                 var_name_strings,
                                 var_name_ptrs,
                                 var_types);
