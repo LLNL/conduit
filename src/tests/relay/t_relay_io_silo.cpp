@@ -515,10 +515,56 @@ TEST(conduit_relay_io_silo, round_trip_julia)
 // special case tests
 // 
 
-// missing domains
+// var is not defined on a domain
 
-// unstructured points that do not use all coords
-// TODO a test where the explicit number of points does not use every coord
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, missing_domain_var)
+{
+    Node save_mesh, load_mesh, info;
+    const int ndomains = 4;
+    blueprint::mesh::examples::spiral(ndomains, save_mesh);
+
+    // remove information for a particular domain
+    save_mesh[2]["fields"].remove_child("dist");
+
+    io::blueprint::save_mesh(save_mesh, "weewoo", "hdf5");
+
+    const std::string basename = "silo_missing_domain_spiral";
+    const std::string filename = basename + ".cycle_000000.root";
+
+    remove_path_if_exists(filename);
+    io::silo::save_mesh(save_mesh, basename);
+    io::silo::load_mesh(filename, load_mesh);
+
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+    // make changes to save mesh so the diff will pass
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        silo_name_changer("mesh", save_mesh[child]);
+        int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+        save_mesh[child]["state"]["cycle"].reset();
+        save_mesh[child]["state"]["cycle"] = (int64) cycle;
+    }
+    save_mesh[2].remove_child("fields");
+
+    EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+    NodeConstIterator l_itr = load_mesh.children();
+    NodeConstIterator s_itr = save_mesh.children();
+    while (l_itr.has_next())
+    {
+        const Node &l_curr = l_itr.next();
+        const Node &s_curr = s_itr.next();
+
+        EXPECT_FALSE(l_curr.diff(s_curr, info));
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+// TODO a test where the mesh is missing on a domain too
+
+// TODO a test where the explicit points (unstructured mesh) do not use every coord
 
 //-----------------------------------------------------------------------------
 

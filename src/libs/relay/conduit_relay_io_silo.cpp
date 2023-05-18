@@ -2803,49 +2803,57 @@ generate_silo_names(const Node &n_mesh_state,
             d = i;
         }
 
-        // we have three cases, just as we had in write_mesh
-        // we don't want to be making any choices here, just using 
-        // what was already decided in write_mesh
-
-        // single file case
-        if (root_only)
+        // we are missing a domain
+        if (stored_types[d] == 0)
         {
-            if (global_num_domains == 1)
+            silo_name = "EMPTY";
+        }
+        else
+        {
+            // we have three cases, just as we had in write_mesh
+            // we don't want to be making any choices here, just using 
+            // what was already decided in write_mesh
+
+            // single file case
+            if (root_only)
             {
-                silo_name = conduit_fmt::format(silo_path, safe_name);
+                if (global_num_domains == 1)
+                {
+                    silo_name = conduit_fmt::format(silo_path, safe_name);
+                }
+                else
+                {
+                    silo_name = conduit_fmt::format(silo_path, d, safe_name);
+                }
             }
-            else
+            // num domains == num files case
+            else if (global_num_domains == num_files)
             {
                 silo_name = conduit_fmt::format(silo_path, d, safe_name);
             }
-        }
-        // num domains == num files case
-        else if (global_num_domains == num_files)
-        {
-            silo_name = conduit_fmt::format(silo_path, d, safe_name);
-        }
-        // m to n case
-        else
-        {
-            // determine which file
-            index_t f;
-            if (n_mesh_state.has_path("partition_map/file"))
-            {
-                index_t_array part_map_file_vals = n_mesh_state["partition_map"]["file"].value();
-                f = part_map_file_vals[i];
-            }
+            // m to n case
             else
             {
-                f = i;
-            }
+                // determine which file
+                index_t f;
+                if (n_mesh_state.has_path("partition_map/file"))
+                {
+                    index_t_array part_map_file_vals = n_mesh_state["partition_map"]["file"].value();
+                    f = part_map_file_vals[i];
+                }
+                else
+                {
+                    f = i;
+                }
 
-            silo_name = conduit_fmt::format(silo_path, f, d, safe_name);
+                silo_name = conduit_fmt::format(silo_path, f, d, safe_name);
+            }
         }
 
         // we create the silo names
         name_strings.push_back(silo_name);
         name_ptrs.push_back(name_strings.back().c_str());
-        types.push_back(stored_types[i]);
+        types.push_back(stored_types[d]);
     }
 }
 
@@ -4206,7 +4214,13 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                 {
-                    root_mesh_types[global_domain_ids[local_domain_id]] = read_mesh_types[local_domain_id];
+                    index_t global_domain_index = global_domain_ids[local_domain_id];
+                    // TODO this is a stopgap for now
+                    // we know that if both are 0, we are dealing with a missing domain
+                    if (global_domain_index != 0 || read_mesh_types[local_domain_id] != 0)
+                    {
+                        root_mesh_types[global_domain_index] = read_mesh_types[local_domain_id];
+                    }
                 }
             }
 
@@ -4230,7 +4244,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                 {
-                    root_var_types[global_domain_ids[local_domain_id]] = read_var_types[local_domain_id];
+                    index_t global_domain_index = global_domain_ids[local_domain_id];
+                    // TODO here too
+                    if (global_domain_index != 0 || read_var_types[local_domain_id] != 0)
+                    {
+                        root_var_types[global_domain_index] = read_var_types[local_domain_id];
+                    }
                 }
             }
         }
