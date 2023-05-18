@@ -2004,6 +2004,8 @@ void silo_write_field(DBfile *dbfile,
     if (! local_type_info["vars"].has_child(var_name))
     {
         local_type_info["vars"][var_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        index_t_array domain_ids = local_type_info["vars"][var_name]["domain_ids"].value();
+        domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
         local_type_info["vars"][var_name]["types"].set(DataType::index_t(local_num_domains));
     }
     index_t_array domain_ids = local_type_info["vars"][var_name]["domain_ids"].value();
@@ -2671,6 +2673,8 @@ void silo_write_topo(const Node &n,
     if (! local_type_info["meshes"].has_child(topo_name))
     {
         local_type_info["meshes"][topo_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        index_t_array domain_ids = local_type_info["meshes"][topo_name]["domain_ids"].value();
+        domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
         local_type_info["meshes"][topo_name]["types"].set(DataType::index_t(local_num_domains));
     }
     index_t_array domain_ids = local_type_info["meshes"][topo_name]["domain_ids"].value();
@@ -2809,7 +2813,7 @@ generate_silo_names(const Node &n_mesh_state,
         }
 
         // we are missing a domain
-        if (stored_types[d] == 0)
+        if (stored_types[d] == -1)
         {
             silo_name = "EMPTY";
         }
@@ -4216,13 +4220,15 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 // this is where we are writing the data to
                 index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
+                root_mesh_types.fill(-1); // empty domains get -1
 
                 for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                 {
                     index_t global_domain_index = global_domain_ids[local_domain_id];
-                    // TODO this is a stopgap for now
-                    // we know that if both are 0, we are dealing with a missing domain
-                    if (global_domain_index != 0 || read_mesh_types[local_domain_id] != 0)
+                    // we initialized the array to be all -1, so if we are missing a domain
+                    // we will have -1. Thus we should write -1 so I know later that we are
+                    // missing a domain.
+                    if (global_domain_index != -1)
                     {
                         root_mesh_types[global_domain_index] = read_mesh_types[local_domain_id];
                     }
@@ -4246,12 +4252,15 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 // this is where we are writing the data to
                 index_t_array root_var_types = root_type_info_vars[read_var_name].value();
+                root_var_types.fill(-1); // empty domains get -1
 
                 for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                 {
                     index_t global_domain_index = global_domain_ids[local_domain_id];
-                    // TODO here too
-                    if (global_domain_index != 0 || read_var_types[local_domain_id] != 0)
+                    // we initialized the array to be all -1, so if we are missing a domain
+                    // we will have -1. Thus we should write -1 so I know later that we are
+                    // missing a domain.
+                    if (global_domain_index != -1)
                     {
                         root_var_types[global_domain_index] = read_var_types[local_domain_id];
                     }

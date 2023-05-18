@@ -517,6 +517,8 @@ TEST(conduit_relay_io_silo, round_trip_julia)
 
 //-----------------------------------------------------------------------------
 // var is not defined on a domain
+// 
+// tests the silo "EMPTY" capability
 TEST(conduit_relay_io_silo, missing_domain_var)
 {
     Node save_mesh, load_mesh, info;
