@@ -38,17 +38,6 @@ void CONDUIT_RELAY_API silo_read(DBfile *dbfile,
                                  const std::string &silo_obj_path,
                                  Node &node);
 
-
-//-----------------------------------------------------------------------------
-// TODO remove these
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       const std::string &path);
-
-//-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API silo_mesh_write(const Node &mesh,
-                                       const std::string &file_path,
-                                       const std::string &silo_obj_path);
-
 //-----------------------------------------------------------------------------
 // -- begin <>::silo --
 //-----------------------------------------------------------------------------

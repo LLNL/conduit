@@ -258,52 +258,6 @@ void silo_read(DBfile *dbfile,
 }
 
 
-//---------------------------------------------------------------------------//
-void
-silo_mesh_write(const Node &node,
-                const std::string &path)
-{
-    // check for ":" split
-    std::string file_path;
-    std::string silo_obj_base;
-    conduit::utils::split_file_path(path,
-                                    std::string(":"),
-                                    file_path,
-                                    silo_obj_base);
-
-    silo_mesh_write(node,file_path,silo_obj_base);
-}
-
-
-//---------------------------------------------------------------------------//
-void silo_mesh_write(const Node &node,
-                     const std::string &file_path,
-                     const std::string &silo_obj_path)
-{
-    DBfile *dbfile = DBCreate(file_path.c_str(),
-                              DB_CLOBBER,
-                              DB_LOCAL,
-                              NULL,
-                              DB_HDF5);
-
-    if(dbfile)
-    {
-        Node local_type_info;
-        silo::silo_mesh_write(node, dbfile, silo_obj_path, "", 1, 0, 0, local_type_info, false);
-    }
-    else
-    {
-        CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
-        return;
-    }
-
-    if(DBClose(dbfile) != 0)
-    {
-        CONDUIT_ERROR("Error closing Silo file: " << file_path);
-    }
-}
-
-
 //-----------------------------------------------------------------------------
 // -- begin conduit::relay::<mpi>::io::silo --
 //-----------------------------------------------------------------------------
