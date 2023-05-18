@@ -29,7 +29,7 @@ def adjust_windows_args_paths():
 # if windows,  defend against path issue:
 #  https://github.com/LLNL/conduit/issues/1017
 if platform.system() == 'Windows':
-    adjust_windows_paths()
+    adjust_windows_args_paths()
 
 setup (name = 'conduit',
        description = 'conduit',
