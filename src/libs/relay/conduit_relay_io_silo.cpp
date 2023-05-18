@@ -2710,18 +2710,23 @@ void silo_mesh_write(const Node &n,
 
     Node n_mesh_info;
 
+    // TODO check do i need to sync the ovl topo name mpi?
+
     if (overlink)
     {
-        // we choose one topo to write out: ovl_topo_name
-        silo_write_topo(n,
-                        ovl_topo_name,
-                        n_mesh_info,
-                        overlink,
-                        local_num_domains,
-                        local_domain_index,
-                        global_domain_id,
-                        local_type_info,
-                        dbfile);
+        if (n["topologies"].has_child(ovl_topo_name))
+        {
+            // we choose one topo to write out: ovl_topo_name
+            silo_write_topo(n,
+                            ovl_topo_name,
+                            n_mesh_info,
+                            overlink,
+                            local_num_domains,
+                            local_domain_index,
+                            global_domain_id,
+                            local_type_info,
+                            dbfile);
+        }
     }
     else
     {

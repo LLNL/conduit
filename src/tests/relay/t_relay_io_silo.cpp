@@ -515,9 +515,8 @@ TEST(conduit_relay_io_silo, round_trip_julia)
 // special case tests
 // 
 
-// var is not defined on a domain
-
 //-----------------------------------------------------------------------------
+// var is not defined on a domain
 TEST(conduit_relay_io_silo, missing_domain_var)
 {
     Node save_mesh, load_mesh, info;
@@ -527,9 +526,7 @@ TEST(conduit_relay_io_silo, missing_domain_var)
     // remove information for a particular domain
     save_mesh[2]["fields"].remove_child("dist");
 
-    io::blueprint::save_mesh(save_mesh, "weewoo", "hdf5");
-
-    const std::string basename = "silo_missing_domain_spiral";
+    const std::string basename = "silo_missing_domain_var_spiral";
     const std::string filename = basename + ".cycle_000000.root";
 
     remove_path_if_exists(filename);
@@ -561,8 +558,55 @@ TEST(conduit_relay_io_silo, missing_domain_var)
 }
 
 //-----------------------------------------------------------------------------
+// mesh is not defined on a domain
+// 
+// This case is much less interesting.
+// data passes through the clean mesh filter which
+// deletes domains that are missing topos.
+// They simply are not part of the mesh and so silo 
+// doesn't have to deal with it.
+TEST(conduit_relay_io_silo, missing_domain_mesh)
+{
+    Node save_mesh, load_mesh, info;
+    const int ndomains = 4;
+    blueprint::mesh::examples::spiral(ndomains, save_mesh);
 
-// TODO a test where the mesh is missing on a domain too
+    // remove information for a particular domain
+    save_mesh[2]["topologies"].remove_child("topo");
+
+    const std::string basename = "silo_missing_domain_mesh_spiral";
+    const std::string filename = basename + ".cycle_000000.root";
+
+    remove_path_if_exists(filename);
+    io::silo::save_mesh(save_mesh, basename);
+    io::silo::load_mesh(filename, load_mesh);
+
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+    // make changes to save mesh so the diff will pass
+    save_mesh.remove(2);
+    save_mesh.rename_child("domain_000003", "domain_000002");
+    save_mesh[2]["state"]["domain_id"].reset();
+    save_mesh[2]["state"]["domain_id"] = 2;
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        silo_name_changer("mesh", save_mesh[child]);
+        int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+        save_mesh[child]["state"]["cycle"].reset();
+        save_mesh[child]["state"]["cycle"] = (int64) cycle;
+    }
+
+    EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+    NodeConstIterator l_itr = load_mesh.children();
+    NodeConstIterator s_itr = save_mesh.children();
+    while (l_itr.has_next())
+    {
+        const Node &l_curr = l_itr.next();
+        const Node &s_curr = s_itr.next();
+
+        EXPECT_FALSE(l_curr.diff(s_curr, info));
+    }
+}
 
 // TODO a test where the explicit points (unstructured mesh) do not use every coord
 
