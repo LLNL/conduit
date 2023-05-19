@@ -1052,9 +1052,6 @@ TEST(conduit_relay_io_silo, read_silo)
     }
 }
 
-// TODO add the read overlink tests (that also write to blueprint and overlink)
-// TODO overlink i/o tests
-
 // TODO add tests for...
 //  - materials once they are supported
 //  - polytopal meshes once they are supported

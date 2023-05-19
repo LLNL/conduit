@@ -2672,8 +2672,6 @@ void silo_mesh_write(const Node &n,
 
     Node n_mesh_info;
 
-    // TODO check do i need to sync the ovl topo name mpi?
-
     if (overlink)
     {
         if (n["topologies"].has_child(ovl_topo_name))
