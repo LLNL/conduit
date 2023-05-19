@@ -289,7 +289,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
         // would also require modifying the paths stored within the files,
         // and re-symlinking
         "testDisk2D_a.silo",
-        // "donordiv.s2_materials2.silo",
+        // "donordiv.s2_materials2.silo", <--- this one fails because polytopal is not yet supported
         "donordiv.s2_materials3.silo"
     };
     std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
@@ -991,20 +991,32 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
 TEST(conduit_relay_io_silo, read_silo)
 {
     const std::vector<std::vector<std::string>> file_info = {
-        {"./",                  "multi_curv3d", ".silo", ""}, // test default case
-        {"./",                  "multi_curv3d", ".silo", "mesh1"},
-        {"./",                  "multi_curv3d", ".silo", "mesh1_back"},
-        {"./",                  "multi_curv3d", ".silo", "mesh1_dup"},
-        {"./",                  "multi_curv3d", ".silo", "mesh1_front"},
-        {"./",                  "multi_curv3d", ".silo", "mesh1_hidden"},
-        {"./",                  "tire",         ".silo", ""}, // test default case
-        {"./",                  "tire",         ".silo", "tire"},
-        {"./",                  "galaxy0000",   ".silo", ""}, // test default case
-        {"./",                  "galaxy0000",   ".silo", "StarMesh"},
-        {"./",                  "emptydomains", ".silo", ""}, // test default case
-        {"./",                  "emptydomains", ".silo", "mesh"},
-        {"multidir_test_data/", "multidir0000", ".root", ""}, // test default case
-        {"multidir_test_data/", "multidir0000", ".root", "Mesh"},
+        {"./",                  "multi_curv3d",           ".silo", ""}, // test default case
+        {"./",                  "multi_curv3d",           ".silo", "mesh1"},
+        {"./",                  "multi_curv3d",           ".silo", "mesh1_back"},
+        {"./",                  "multi_curv3d",           ".silo", "mesh1_dup"},
+        {"./",                  "multi_curv3d",           ".silo", "mesh1_front"},
+        {"./",                  "multi_curv3d",           ".silo", "mesh1_hidden"},
+        {"./",                  "tire",                   ".silo", ""}, // test default case
+        {"./",                  "tire",                   ".silo", "tire"},
+        {"./",                  "galaxy0000",             ".silo", ""}, // test default case
+        {"./",                  "galaxy0000",             ".silo", "StarMesh"},
+        {"./",                  "emptydomains",           ".silo", ""}, // test default case
+        {"./",                  "emptydomains",           ".silo", "mesh"},
+        {"multidir_test_data/", "multidir0000",           ".root", ""}, // test default case
+        {"multidir_test_data/", "multidir0000",           ".root", "Mesh"},
+        {"./",                  "box2d",                  ".silo", ""}, // test default case
+        {"./",                  "box2d",                  ".silo", "MMESH"},
+        {"./",                  "box3d",                  ".silo", ""}, // test default case
+        {"./",                  "box3d",                  ".silo", "MMESH"},
+     // {"./",                  "diamond",                ".silo", ""}, // test default case
+     // {"./",                  "diamond",                ".silo", "MMESH"},
+        {"./",                  "testDisk2D_a",           ".silo", ""}, // test default case
+        {"./",                  "testDisk2D_a",           ".silo", "MMESH"},
+     // {"./",                  "donordiv.s2_materials2", ".silo", ""}, // test default case
+     // {"./",                  "donordiv.s2_materials2", ".silo", "MMESH"},
+        {"./",                  "donordiv.s2_materials3", ".silo", ""}, // test default case
+        {"./",                  "donordiv.s2_materials3", ".silo", "MMESH"},
     };
 
     for (int i = 0; i < file_info.size(); i ++) 
