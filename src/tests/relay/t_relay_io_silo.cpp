@@ -1026,12 +1026,12 @@ TEST(conduit_relay_io_silo, read_silo)
         const std::string fileext  = file_info[i][2];
         const std::string meshname = file_info[i][3];
 
-        Node load_mesh, info, opts;
+        Node load_mesh, info, read_opts, write_opts;
         std::string input_file = relay_test_silo_data_path(dirname + basename + fileext);
 
-        opts["mesh_name"] = meshname;
+        read_opts["mesh_name"] = meshname;
 
-        io::silo::load_mesh(input_file, opts, load_mesh);
+        io::silo::load_mesh(input_file, read_opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
         std::string out_name = basename;
@@ -1040,11 +1040,15 @@ TEST(conduit_relay_io_silo, read_silo)
             out_name += "_" + meshname;
         }
 
-        // save for blueprint vs silo diff
+        remove_path_if_exists(out_name + "_blueprint");
         io::blueprint::save_mesh(load_mesh, out_name + "_blueprint", "hdf5");
 
-        // save for silo vs silo diff
+        remove_path_if_exists(out_name + "_silo");
         io::silo::save_mesh(load_mesh, out_name + "_silo");
+
+        remove_path_if_exists(out_name + "_overlink");
+        write_opts["file_style"] = "overlink";
+        io::silo::save_mesh(load_mesh, out_name + "_overlink", write_opts);
     }
 }
 
