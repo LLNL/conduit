@@ -3982,12 +3982,23 @@ Partitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets,
         // loop over all adjsets in the current domain
         for (const Node& adjset : domain["adjsets"].children())
         {
-            const std::string adjset_topo = adjset["topology"].as_string();
-            const std::string adjset_assoc = adjset["association"].as_string();
-            // TODO: check adjset for vertex associativity, correct topology
-            // also pairwise only
-            Node& out_adjset_map = dom_out[adjset.name()];
-            for (const Node& group : adjset["groups"].children())
+            // Make sure the input adjset is pairwise.
+            std::string adjset_name(adjset.name());
+            conduit::Node pwadjset;
+            if(conduit::blueprint::mesh::adjset::is_pairwise(adjset))
+            {
+                pwadjset.set_external(adjset);
+            }
+            else
+            {
+                conduit::blueprint::mesh::adjset::to_pairwise(adjset, pwadjset);
+            }
+
+            const std::string adjset_topo = pwadjset["topology"].as_string();
+            const std::string adjset_assoc = pwadjset["association"].as_string();
+            // TODO: check adjset for vertex associativity.
+            Node& out_adjset_map = dom_out[adjset_name];
+            for (const Node& group : pwadjset["groups"].children())
             {
                 index_t_accessor neighbor_vals = group["neighbors"].as_index_t_accessor();
                 if (neighbor_vals.number_of_elements() != 1)
@@ -4056,15 +4067,26 @@ Partitioner::build_interdomain_adjsets(const std::vector<int>& chunk_offsets,
         {
             continue;
         }
-        for (const Node& adjset_node : domain["adjsets"].children())
+        for (const Node& adjset : domain["adjsets"].children())
         {
-            const std::string adjset_name = adjset_node.name();
-            const std::string adjset_topo = adjset_node["topology"].as_string();
-            const std::string adjset_assoc = adjset_node["association"].as_string();
+            // Make sure the input adjset is pairwise.
+            std::string adjset_name(adjset.name());
+            conduit::Node pwadjset;
+            if(conduit::blueprint::mesh::adjset::is_pairwise(adjset))
+            {
+                pwadjset.set_external(adjset);
+            }
+            else
+            {
+                conduit::blueprint::mesh::adjset::to_pairwise(adjset, pwadjset);
+            }
+
+            const std::string adjset_topo = pwadjset["topology"].as_string();
+            const std::string adjset_assoc = pwadjset["association"].as_string();
             const Node& adjset_maps = dom_adjset_maps[dom_idx][adjset_name];
             // Maps (local_chunk, remote_chunk) -> shared vtx on local chunk
             std::map<std::pair<index_t, index_t>, std::vector<index_t>> new_adjsets;
-            for (const Node& adj_group : adjset_node["groups"].children())
+            for (const Node& adj_group : pwadjset["groups"].children())
             {
                 index_t_accessor neighbor_vals = adj_group["neighbors"].as_index_t_accessor();
                 if (neighbor_vals.number_of_elements() != 1)
