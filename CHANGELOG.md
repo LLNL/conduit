@@ -4,6 +4,12 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Fixed
+
+#### Blueprint
+- The `conduit::blueprint::mesh::partition()` function no longer issues an error when it receives a "maxshare" adjset.
 
 ## [0.8.8] - Released 2023-05-18
 
