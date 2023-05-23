@@ -1465,6 +1465,7 @@ read_mesh(const std::string &root_file_path,
             mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
             if (! mesh_domain_file.getSiloObject())
             {
+                CONDUIT_INFO("Provided file is not valid Overlink; defaulting to absolute path rather than assumed path.")
                 // this is not valid overlink so we default to what is in the path
                 mesh_domain_filename = old_mesh_domain_filename;
                 mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
@@ -1630,6 +1631,7 @@ read_mesh(const std::string &root_file_path,
                         var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
                         if (! (domain_file_to_use = var_domain_file.getSiloObject()))
                         {
+                            CONDUIT_INFO("Provided file is not valid Overlink; defaulting to absolute path rather than assumed path.")
                             // this is not valid overlink so we default to what is in the path
                             var_domain_filename = old_var_domain_filename;
 
@@ -3277,7 +3279,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                           " expected: \"default\", \"root_only\", "
                           "\"multi_file\", or \"overlink\"");
         }
-
     }
 
     // check for + validate suffix option
@@ -4381,7 +4382,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 if (opts_file_style == "overlink")
                 {
-                    output_silo_path = "domain{:d}.silo:{}";
+                    output_silo_path = utils::join_file_path(output_dir_base, "domain{:d}.silo:{}");
                 }
                 else
                 {
@@ -4396,7 +4397,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 if (opts_file_style == "overlink")
                 {
-                    output_silo_path = "domfile{:d}.silo:domain{:d}/{}";
+                    output_silo_path = utils::join_file_path(output_dir_base, "domfile{:d}.silo:domain{:d}/{}");
                 }
                 else
                 {

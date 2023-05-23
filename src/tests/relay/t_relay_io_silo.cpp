@@ -930,56 +930,56 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
     }
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
-// {
-//     const std::vector<std::string> ovl_topo_names = {"", "topo"};
-//     for (int i = 0; i < ovl_topo_names.size(); i ++)
-//     {
-//         std::string basename;
-//         if (ovl_topo_names[i].empty())
-//         {
-//             basename = "silo_save_option_overlink_spiral";
-//         }
-//         else
-//         {
-//             basename = "silo_save_option_overlink_spiral_" + ovl_topo_names[i];
-//         }
-//         const std::string filename = basename + "/OvlTop.silo";
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
+{
+    const std::vector<std::string> ovl_topo_names = {"", "topo"};
+    for (int i = 0; i < ovl_topo_names.size(); i ++)
+    {
+        std::string basename;
+        if (ovl_topo_names[i].empty())
+        {
+            basename = "silo_save_option_overlink_spiral";
+        }
+        else
+        {
+            basename = "silo_save_option_overlink_spiral_" + ovl_topo_names[i];
+        }
+        const std::string filename = basename + "/OvlTop.silo";
 
-//         Node opts;
-//         opts["file_style"] = "overlink";
-//         opts["ovl_topo_name"] = ovl_topo_names[i];
+        Node opts;
+        opts["file_style"] = "overlink";
+        opts["ovl_topo_name"] = ovl_topo_names[i];
 
-//         int ndomains = 2;
+        int ndomains = 2;
 
-//         Node save_mesh, load_mesh, info;
-//         blueprint::mesh::examples::spiral(ndomains, save_mesh);
-//         remove_path_if_exists(basename);
-//         io::silo::save_mesh(save_mesh, basename, opts);
-//         io::silo::load_mesh(filename, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        remove_path_if_exists(basename);
+        io::silo::save_mesh(save_mesh, basename, opts);
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-//         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-//         {
-//             overlink_name_changer(save_mesh[child]);
-//             int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-//             save_mesh[child]["state"]["cycle"].reset();
-//             save_mesh[child]["state"]["cycle"] = (int64) cycle;
-//         }
+        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+        {
+            overlink_name_changer(save_mesh[child]);
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
+        }
 
-//         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-//         NodeConstIterator l_itr = load_mesh.children();
-//         NodeConstIterator s_itr = save_mesh.children();
-//         while (l_itr.has_next())
-//         {
-//             const Node &l_curr = l_itr.next();
-//             const Node &s_curr = s_itr.next();
+        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        NodeConstIterator l_itr = load_mesh.children();
+        NodeConstIterator s_itr = save_mesh.children();
+        while (l_itr.has_next())
+        {
+            const Node &l_curr = l_itr.next();
+            const Node &s_curr = s_itr.next();
 
-//             EXPECT_FALSE(l_curr.diff(s_curr, info));
-//         }
-//     }
-// }
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 
@@ -1018,6 +1018,8 @@ TEST(conduit_relay_io_silo, read_silo)
         {"./",                  "donordiv.s2_materials3", ".silo", ""}, // test default case
         {"./",                  "donordiv.s2_materials3", ".silo", "MMESH"},
         {"box2d/",              "OvlTop",                 ".silo", "MMESH"},
+        // TODO add tests for reading each of the overlink files from ovltop.silo
+        // TODO add tests with the bad overlink visit test data
     };
 
     for (int i = 0; i < file_info.size(); i ++) 
