@@ -311,7 +311,7 @@ public:
     {
         if (obj)
         {
-            if (del(obj) != 0)
+            if (del(obj) != 0 && !errmsg.empty())
             {
                 CONDUIT_ERROR(errmsg);
             }
@@ -1402,8 +1402,17 @@ read_mesh(const std::string &root_file_path,
     }
     detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
 
-    std::string silo_name, relative_dir;
-    utils::rsplit_file_path(root_file_path, silo_name, relative_dir);
+    std::string root_file_name, relative_dir;
+    utils::rsplit_file_path(root_file_path, root_file_name, relative_dir);
+
+    // If the root file is named OvlTop.silo, then there is a very good chance that
+    // this file is valid overlink. Therefore, we must modify the paths we get from
+    // the root node to reflect this.
+    bool ovltop_case = false;
+    if (root_file_name == "OvlTop.silo")
+    {
+        ovltop_case = true;
+    }
 
     for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
     {
@@ -1426,17 +1435,54 @@ read_mesh(const std::string &root_file_path,
         std::string bottom_level_mesh_name, tmp;
         conduit::utils::rsplit_file_path(mesh_name, "/", bottom_level_mesh_name, tmp);
 
+        // root only case
         if (mesh_domain_filename.empty())
         {
             mesh_domain_filename = root_file_path;
+            // we are in the root file only case so overlink is not possible
+            ovltop_case = false;
         }
+
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
-            DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ), 
-            &DBClose,
-            "Error closing Silo file: " + mesh_domain_filename};
-        if (! mesh_domain_file.getSiloObject())
+            nullptr, 
+            &DBClose};
+
+        if (ovltop_case)
         {
-            CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
+            // first, we will assume valid overlink, so
+            // we need to move the mesh path to ../
+            std::string old_mesh_domain_filename = mesh_domain_filename;
+            std::string actual_filename, directory;
+            conduit::utils::rsplit_file_path(mesh_domain_filename, actual_filename, directory);
+            if (!directory.empty())
+            {
+                std::string dir_lvl_up, bottom_lvl_dir;
+                conduit::utils::rsplit_file_path(directory, bottom_lvl_dir, dir_lvl_up);
+
+                mesh_domain_filename = conduit::utils::join_file_path(dir_lvl_up, actual_filename);
+            }
+            mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+            mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
+            if (! mesh_domain_file.getSiloObject())
+            {
+                // this is not valid overlink so we default to what is in the path
+                mesh_domain_filename = old_mesh_domain_filename;
+                mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
+                if (! mesh_domain_file.getSiloObject())
+                {
+                    CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
+                }
+            }
+        }
+        else
+        {
+            mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+            mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
+            if (! mesh_domain_file.getSiloObject())
+            {
+                CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
+            }
         }
 
         // this is for the blueprint mesh output
@@ -1543,30 +1589,86 @@ read_mesh(const std::string &root_file_path,
                     continue;
                 }
 
+                // root only case
                 if (var_domain_filename.empty())
                 {
                     var_domain_filename = root_file_path;
+                    // we are in the root file only case so overlink is not possible
+                    ovltop_case = false;
                 }
 
                 detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
                     nullptr, 
-                    &DBClose,
-                    "Error closing Silo file: " + var_domain_filename};
+                    &DBClose};
                 DBfile *domain_file_to_use = nullptr;
 
-                // if the var domain is stored in the same file as the mesh domain then we
-                // can reuse the open file ptr
-                if (var_domain_filename == mesh_domain_filename)
+                if (ovltop_case)
                 {
-                    domain_file_to_use = mesh_domain_file.getSiloObject();
+                    // first, we will assume valid overlink, so
+                    // we need to move the var path to ../
+                    std::string old_var_domain_filename = var_domain_filename;
+                    std::string actual_filename, directory;
+                    conduit::utils::rsplit_file_path(var_domain_filename, actual_filename, directory);
+                    if (!directory.empty())
+                    {
+                        std::string dir_lvl_up, bottom_lvl_dir;
+                        conduit::utils::rsplit_file_path(directory, bottom_lvl_dir, dir_lvl_up);
+
+                        var_domain_filename = conduit::utils::join_file_path(dir_lvl_up, actual_filename);
+                    }
+
+                    // if the var domain is stored in the same file as the mesh domain then we
+                    // can reuse the open file ptr
+                    if (var_domain_filename == mesh_domain_filename)
+                    {
+                        domain_file_to_use = mesh_domain_file.getSiloObject();
+                    }
+                    // otherwise we need to open our own file
+                    else
+                    {
+                        var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                        var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
+                        if (! (domain_file_to_use = var_domain_file.getSiloObject()))
+                        {
+                            // this is not valid overlink so we default to what is in the path
+                            var_domain_filename = old_var_domain_filename;
+
+                            // if the var domain is stored in the same file as the mesh domain then we
+                            // can reuse the open file ptr
+                            if (var_domain_filename == mesh_domain_filename)
+                            {
+                                domain_file_to_use = mesh_domain_file.getSiloObject();
+                            }
+                            // otherwise we need to open our own file
+                            else
+                            {
+                                var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                                var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
+                                if (! (domain_file_to_use = var_domain_file.getSiloObject()))
+                                {
+                                    CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
+                                }
+                            }
+                        }
+                    }
                 }
-                // otherwise we need to open our own file
                 else
                 {
-                    var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-                    if (! (domain_file_to_use = var_domain_file.getSiloObject()))
+                    // if the var domain is stored in the same file as the mesh domain then we
+                    // can reuse the open file ptr
+                    if (var_domain_filename == mesh_domain_filename)
                     {
-                        CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
+                        domain_file_to_use = mesh_domain_file.getSiloObject();
+                    }
+                    // otherwise we need to open our own file
+                    else
+                    {
+                        var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                        var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
+                        if (! (domain_file_to_use = var_domain_file.getSiloObject()))
+                        {
+                            CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
+                        }
                     }
                 }
 
@@ -3131,9 +3233,11 @@ write_multivars(DBfile *dbfile,
 /// Note: 
 ///  In the non-overlink case...
 ///   1) We have made the choice to output ALL topologies as multimeshes. 
-///   2) We prepend the provided mesh_name to each of these topo names. We 
-///      also use the mesh_name as the name of the silo directory within each
-///      silo file where data is stored.
+///   2) We prepend the provided mesh_name to each of these topo names. We do 
+///      this to avoid a name collision in the root only + single domain case.
+///      We do this across all cases for the sake of consistency. We also use 
+///      the mesh_name as the name of the silo directory within each silo file
+///      where data is stored.
 ///   3) ovl_topo_name is ignored if provided.
 ///  In the overlink case...
 ///   1) We have made the choice to output only ONE topology as a multimesh.
@@ -4482,9 +4586,11 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 /// Note: 
 ///  In the non-overlink case...
 ///   1) We have made the choice to output ALL topologies as multimeshes. 
-///   2) We prepend the provided mesh_name to each of these topo names. We 
-///      also use the mesh_name as the name of the silo directory within each
-///      silo file where data is stored.
+///   2) We prepend the provided mesh_name to each of these topo names. We do 
+///      this to avoid a name collision in the root only + single domain case.
+///      We do this across all cases for the sake of consistency. We also use 
+///      the mesh_name as the name of the silo directory within each silo file
+///      where data is stored.
 ///   3) ovl_topo_name is ignored if provided.
 ///  In the overlink case...
 ///   1) We have made ther choice to output only one topology as a multimesh.
