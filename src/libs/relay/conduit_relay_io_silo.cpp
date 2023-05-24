@@ -1603,6 +1603,7 @@ read_mesh(const std::string &root_file_path,
                     &DBClose};
                 DBfile *domain_file_to_use = nullptr;
 
+                // handle ovltop.silo case
                 if (ovltop_case)
                 {
                     // first, we will assume valid overlink, so
@@ -1673,26 +1674,42 @@ read_mesh(const std::string &root_file_path,
                         }
                     }
                 }
+                // end handling of ovltop.silo case
 
                 if (vartype == DB_UCDVAR)
                 {
+                    // create ucd var
                     detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
                         DBGetUcdvar(domain_file_to_use, var_name.c_str()),
                         &DBFreeUcdvar};
+
+                    // If we cannot fetch this var we will skip
                     if (!ucdvar.getSiloObject())
                     {
-                        // If we cannot fetch this var we will skip
                         continue;
                     }
-                    if (ucdvar.getSiloObject()->meshname != bottom_level_mesh_name)
+
+                    // check that this var is associated with the mesh
+                    std::string var_meshname = ucdvar.getSiloObject()->meshname;
+                    if (var_meshname.length() > 1 && var_meshname[0] == '/')
+                    {
+                        var_meshname = var_meshname.substr(1);
+                    }
+                    if (var_meshname != bottom_level_mesh_name)
                     {
                         CONDUIT_INFO("DB_UCDVAR " + var_name + " is not "
-                                     "associated with mesh " + mesh_name +
+                                     "associated with mesh " + var_meshname +
                                      ". Skipping.");
                         continue;
                     }
+
+                    // create an entry for this field in the output
                     Node &field_out = mesh_out["fields"][multivar_name];
+
+                    // handle association
                     field_out["association"] = ucdvar.getSiloObject()->centering == DB_ZONECENT ? "element" : "vertex";
+                    
+                    // call subroutine for handling the rest
                     read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), 
                                                    var_name, 
                                                    multimesh_name, 
@@ -1700,23 +1717,38 @@ read_mesh(const std::string &root_file_path,
                 }
                 else if (vartype == DB_QUADVAR)
                 {
+                    // create quad var
                     detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
                         DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeQuadvar};
+
+                    // If we cannot fetch this var we will skip
                     if (!quadvar.getSiloObject())
                     {
-                        // If we cannot fetch this var we will skip
                         continue;
                     }
-                    if (quadvar.getSiloObject()->meshname != bottom_level_mesh_name)
+
+                    // check that this var is associated with the mesh
+                    std::string var_meshname = quadvar.getSiloObject()->meshname;
+                    if (var_meshname.length() > 1 && var_meshname[0] == '/')
+                    {
+                        var_meshname = var_meshname.substr(1);
+                    }
+                    if (var_meshname != bottom_level_mesh_name)
                     {
                         CONDUIT_INFO("DB_QUADVAR " + var_name + " is not "
-                                     "associated with mesh " + mesh_name +
+                                     "associated with mesh " + var_meshname +
                                      ". Skipping.");
                         continue;
                     }
+
+                    // create an entry for this field in the output
                     Node &field_out = mesh_out["fields"][multivar_name];
+
+                    // handle association
                     field_out["association"] = quadvar.getSiloObject()->centering == DB_NODECENT ? "vertex" : "element";
+
+                    // call subroutine for handling the rest
                     read_variable_domain<DBquadvar>(quadvar.getSiloObject(), 
                                                     var_name, 
                                                     multimesh_name, 
@@ -1724,23 +1756,38 @@ read_mesh(const std::string &root_file_path,
                 }
                 else if (vartype == DB_POINTVAR)
                 {
+                    // create point var
                     detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
                         DBGetPointvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeMeshvar};
+
+                    // If we cannot fetch this var we will skip
                     if (!meshvar.getSiloObject())
                     {
-                        // If we cannot fetch this var we will skip
                         continue;
                     }
-                    if (meshvar.getSiloObject()->meshname != bottom_level_mesh_name)
+
+                    // check that this var is associated with the mesh
+                    std::string var_meshname = meshvar.getSiloObject()->meshname;
+                    if (var_meshname.length() > 1 && var_meshname[0] == '/')
+                    {
+                        var_meshname = var_meshname.substr(1);
+                    }
+                    if (var_meshname != bottom_level_mesh_name)
                     {
                         CONDUIT_INFO("DB_POINTVAR " + var_name + " is not "
-                                     "associated with mesh " + mesh_name +
+                                     "associated with mesh " + var_meshname +
                                      ". Skipping.");
                         continue;
                     }
+
+                    // create an entry for this field in the output
                     Node &field_out = mesh_out["fields"][multivar_name];
+
+                    // handle association
                     field_out["association"] = "vertex";
+
+                    // call subroutine for handling the rest
                     read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), 
                                                     var_name, 
                                                     multimesh_name, 
@@ -3134,72 +3181,75 @@ write_multivars(DBfile *dbfile,
         CONDUIT_ERROR("Domain count mismatch");
     }
 
-    auto field_itr = n_mesh["fields"].children();
-    while (field_itr.has_next())
+    if (n_mesh.has_child("fields"))
     {
-        const Node &n_var = field_itr.next();
-        std::string var_name = field_itr.name();
-
-        std::string linked_topo_name = n_var["topology"].as_string();
-
-        if (! overlink || linked_topo_name == ovl_topo_name)
+        auto field_itr = n_mesh["fields"].children();
+        while (field_itr.has_next())
         {
-            std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
+            const Node &n_var = field_itr.next();
+            std::string var_name = field_itr.name();
 
-            std::string safe_varname = detail::sanitize_silo_varname(var_name); 
-            std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
-            std::string silo_path = root["silo_path"].as_string();
+            std::string linked_topo_name = n_var["topology"].as_string();
 
-            std::vector<std::string> var_name_strings;
-            std::vector<const char *> var_name_ptrs;
-            std::vector<int> var_types;
-            generate_silo_names(n_mesh["state"],
-                                silo_path,
-                                safe_varname,
-                                num_files,
-                                global_num_domains,
-                                root_only,
-                                root_type_info_vars[var_name],
-                                DB_QUADVAR, // the default if we have an empty domain
-                                var_name_strings,
-                                var_name_ptrs,
-                                var_types);
-
-            detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-                DBMakeOptlist(1),
-                &DBFreeOptlist,
-                "Error freeing optlist."};
-            if (!optlist.getSiloObject())
-                CONDUIT_ERROR("Error creating options");
-
-            std::string multimesh_name, multivar_name;
-            if (overlink)
+            if (! overlink || linked_topo_name == ovl_topo_name)
             {
-                multimesh_name = opts_mesh_name;
-                multivar_name = safe_varname;
-            }
-            else
-            {
-                multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
-                multivar_name = opts_mesh_name + "_" + safe_varname;
-            }
+                std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
 
-            // have to const_cast because converting to void *
-            CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-                                                  DBOPT_MMESH_NAME,
-                                                  const_cast<char *>(multimesh_name.c_str())),
-                                      "Error creating options for putting multivar");
+                std::string safe_varname = detail::sanitize_silo_varname(var_name); 
+                std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
+                std::string silo_path = root["silo_path"].as_string();
 
-            CONDUIT_CHECK_SILO_ERROR(
-                DBPutMultivar(
-                    dbfile,
-                    multivar_name.c_str(),
-                    global_num_domains,
-                    var_name_ptrs.data(),
-                    var_types.data(),
-                    optlist.getSiloObject()),
-                "Error putting multivar corresponding to field: " << var_name);
-        }        
+                std::vector<std::string> var_name_strings;
+                std::vector<const char *> var_name_ptrs;
+                std::vector<int> var_types;
+                generate_silo_names(n_mesh["state"],
+                                    silo_path,
+                                    safe_varname,
+                                    num_files,
+                                    global_num_domains,
+                                    root_only,
+                                    root_type_info_vars[var_name],
+                                    DB_QUADVAR, // the default if we have an empty domain
+                                    var_name_strings,
+                                    var_name_ptrs,
+                                    var_types);
+
+                detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+                    DBMakeOptlist(1),
+                    &DBFreeOptlist,
+                    "Error freeing optlist."};
+                if (!optlist.getSiloObject())
+                    CONDUIT_ERROR("Error creating options");
+
+                std::string multimesh_name, multivar_name;
+                if (overlink)
+                {
+                    multimesh_name = opts_mesh_name;
+                    multivar_name = safe_varname;
+                }
+                else
+                {
+                    multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
+                    multivar_name = opts_mesh_name + "_" + safe_varname;
+                }
+
+                // have to const_cast because converting to void *
+                CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
+                                                      DBOPT_MMESH_NAME,
+                                                      const_cast<char *>(multimesh_name.c_str())),
+                                          "Error creating options for putting multivar");
+
+                CONDUIT_CHECK_SILO_ERROR(
+                    DBPutMultivar(
+                        dbfile,
+                        multivar_name.c_str(),
+                        global_num_domains,
+                        var_name_ptrs.data(),
+                        var_types.data(),
+                        optlist.getSiloObject()),
+                    "Error putting multivar corresponding to field: " << var_name);
+            }        
+        }
     }
 }
 
@@ -3385,6 +3435,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // more will happen for this case later
     if (opts_file_style == "overlink")
     {
+        CONDUIT_INFO("Overlink is not yet fully supported. Outputted files "
+                     "with this option will be missing several components "
+                     "that Overlink requires.")
         opts_suffix = "none"; // force no suffix for overlink case
     }
 
@@ -4302,34 +4355,37 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 }
             }
 
-            auto read_vars_itr = type_info_from_rank["vars"].children();
-            while (read_vars_itr.has_next())
+            if (type_info_from_rank.has_child("vars"))
             {
-                const Node &read_var_type_info = read_vars_itr.next();
-                const std::string read_var_name = read_vars_itr.name();
-
-                if (!root_type_info_vars.has_child(read_var_name)) 
+                auto read_vars_itr = type_info_from_rank["vars"].children();
+                while (read_vars_itr.has_next())
                 {
-                    root_type_info_vars[read_var_name].set(DataType::index_t(global_num_domains));
-                }
-                // the global domain ids array is of length local domain ids
-                // local domain ids index into it to read global domain ids out
-                index_t_accessor global_domain_ids = read_var_type_info["domain_ids"].value();
-                index_t_accessor read_var_types = read_var_type_info["types"].value();
+                    const Node &read_var_type_info = read_vars_itr.next();
+                    const std::string read_var_name = read_vars_itr.name();
 
-                // this is where we are writing the data to
-                index_t_array root_var_types = root_type_info_vars[read_var_name].value();
-                root_var_types.fill(-1); // empty domains get -1
-
-                for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
-                {
-                    index_t global_domain_index = global_domain_ids[local_domain_id];
-                    // we initialized the array to be all -1, so if we are missing a domain
-                    // we will have -1. Thus we should write -1 so I know later that we are
-                    // missing a domain.
-                    if (global_domain_index != -1)
+                    if (!root_type_info_vars.has_child(read_var_name)) 
                     {
-                        root_var_types[global_domain_index] = read_var_types[local_domain_id];
+                        root_type_info_vars[read_var_name].set(DataType::index_t(global_num_domains));
+                    }
+                    // the global domain ids array is of length local domain ids
+                    // local domain ids index into it to read global domain ids out
+                    index_t_accessor global_domain_ids = read_var_type_info["domain_ids"].value();
+                    index_t_accessor read_var_types = read_var_type_info["types"].value();
+
+                    // this is where we are writing the data to
+                    index_t_array root_var_types = root_type_info_vars[read_var_name].value();
+                    root_var_types.fill(-1); // empty domains get -1
+
+                    for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
+                    {
+                        index_t global_domain_index = global_domain_ids[local_domain_id];
+                        // we initialized the array to be all -1, so if we are missing a domain
+                        // we will have -1. Thus we should write -1 so I know later that we are
+                        // missing a domain.
+                        if (global_domain_index != -1)
+                        {
+                            root_var_types[global_domain_index] = read_var_types[local_domain_id];
+                        }
                     }
                 }
             }
