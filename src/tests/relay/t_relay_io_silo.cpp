@@ -276,7 +276,6 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
 // test reading in a handful of different overlink files
 TEST(conduit_relay_io_silo, load_mesh_geometry)
 {
-
     // TODO: all these files are in overlink symlink format.
     // Symlinks may break on Windows (?)
     // Could make them overlink format without the symlink.
@@ -751,15 +750,6 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
 
-
-// TODO
-/// opts:
-///
-///      number_of_files:  {# of files}
-///            when "multi_file" or "overlink":
-///                 <= 0, use # of files == # of domains
-///                  > 0, # of files == number_of_files
-
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
 {
@@ -801,6 +791,52 @@ TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
 
                 EXPECT_FALSE(l_curr.diff(s_curr, info));
             }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_save_option_number_of_files)
+{
+    const std::vector<int> number_of_files = {-1, 2};
+    for (int i = 0; i < number_of_files.size(); i ++)
+    {
+        Node opts;
+        opts["file_style"] = "multi_file";
+        opts["number_of_files"] = number_of_files[i];
+
+        const std::string basename = "silo_save_option_number_of_files_" + 
+                                     std::to_string(number_of_files[i]) + 
+                                     "_spiral";
+        const std::string filename = basename + ".cycle_000000.root";
+
+        int ndomains = 5;
+
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        remove_path_if_exists(filename);
+        io::silo::save_mesh(save_mesh, basename, opts);
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+        // make changes to save mesh so the diff will pass
+        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+        {
+            silo_name_changer("mesh", save_mesh[child]);
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
+        }
+
+        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        NodeConstIterator l_itr = load_mesh.children();
+        NodeConstIterator s_itr = save_mesh.children();
+        while (l_itr.has_next())
+        {
+            const Node &l_curr = l_itr.next();
+            const Node &s_curr = s_itr.next();
+
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
         }
     }
 }
@@ -1041,6 +1077,7 @@ TEST(conduit_relay_io_silo, read_silo)
 
         remove_path_if_exists(out_name + "_write_overlink");
         write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = meshname;
         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
@@ -1093,6 +1130,7 @@ TEST(conduit_relay_io_silo, read_fake_overlink)
 
         remove_path_if_exists(out_name + "_write_overlink");
         write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
@@ -1150,6 +1188,7 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
 
         remove_path_if_exists(out_name + "_write_overlink");
         write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
@@ -1206,6 +1245,7 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
 
         remove_path_if_exists(out_name + "_write_overlink");
         write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
