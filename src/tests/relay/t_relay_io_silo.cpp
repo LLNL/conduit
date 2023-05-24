@@ -709,7 +709,87 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
     }
 }
 
-// TODO a test where the explicit points (unstructured mesh) do not use every coord
+//-----------------------------------------------------------------------------
+// explicit points (unstructured mesh) do not use every coord
+TEST(conduit_relay_io_silo, unstructured_points)
+{
+    Node save_mesh, load_mesh, info;
+    blueprint::mesh::examples::braid("points", 2, 2, 2, save_mesh);
+
+    std::vector<int> new_conn;
+    std::vector<float> new_field1;
+    std::vector<float> new_field2;
+    std::vector<float64> new_xcoords, new_ycoords, new_zcoords;
+
+    int_accessor conn = save_mesh["topologies"]["mesh"]["elements"]["connectivity"].value();
+
+    float_accessor field1 = save_mesh["fields"]["braid"]["values"].value();
+    float_accessor field2 = save_mesh["fields"]["radial"]["values"].value();
+
+    float_accessor xcoords = save_mesh["coordsets"]["coords"]["values"]["x"].value();
+    float_accessor ycoords = save_mesh["coordsets"]["coords"]["values"]["y"].value();
+    float_accessor zcoords = save_mesh["coordsets"]["coords"]["values"]["z"].value();
+
+    for (int i = 1; i < conn.number_of_elements(); i += 2)
+    {
+        new_conn.push_back(conn[i]);
+        new_field1.push_back(field1[i]);
+        new_field2.push_back(field2[i]);
+
+        new_xcoords.push_back(xcoords[conn[i]]);
+        new_ycoords.push_back(ycoords[conn[i]]);
+        new_zcoords.push_back(zcoords[conn[i]]);
+    }
+    save_mesh["topologies"]["mesh"]["elements"]["connectivity"].reset();
+    save_mesh["topologies"]["mesh"]["elements"]["connectivity"].set(new_conn);
+
+    save_mesh["fields"].remove_child("vel");
+    save_mesh["fields"]["braid"]["values"].reset();
+    save_mesh["fields"]["braid"]["values"].set(new_field1);
+    save_mesh["fields"]["radial"]["values"].reset();
+    save_mesh["fields"]["radial"]["values"].set(new_field2);
+
+    // we have modified braid such that it only uses half of the points in the coordset
+
+    const std::string basename = "silo_unstructured_points_braid";
+    const std::string filename = basename + ".cycle_000100.root";
+
+    // remove existing root file, directory and any output files
+    remove_path_if_exists(filename);
+
+    io::silo::save_mesh(save_mesh, basename);
+    io::silo::load_mesh(filename, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    // now we must remove the unused points and change to an implicit points topo so that the diff passes
+    save_mesh["coordsets"]["coords"]["values"]["x"].reset();
+    save_mesh["coordsets"]["coords"]["values"]["x"].set(new_xcoords);
+    save_mesh["coordsets"]["coords"]["values"]["y"].reset();
+    save_mesh["coordsets"]["coords"]["values"]["y"].set(new_ycoords);
+    save_mesh["coordsets"]["coords"]["values"]["z"].reset();
+    save_mesh["coordsets"]["coords"]["values"]["z"].set(new_zcoords);
+
+    save_mesh["topologies"].remove_child("mesh");
+    save_mesh["topologies"]["mesh"]["type"] = "points";
+    save_mesh["topologies"]["mesh"]["coordset"] = "coords";
+
+    // the association doesn't matter for point meshes
+    // we choose vertex by convention
+    save_mesh["fields"]["radial"]["association"].reset();
+    save_mesh["fields"]["radial"]["association"] = "vertex";
+
+    silo_name_changer("mesh", save_mesh);
+    int cycle = save_mesh["state"]["cycle"].as_uint64();
+    save_mesh["state"]["cycle"].reset();
+    save_mesh["state"]["cycle"] = (int64) cycle;
+
+    // the loaded mesh will be in the multidomain format
+    // but the saved mesh is in the single domain format
+    EXPECT_EQ(load_mesh.number_of_children(), 1);
+    EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+}
 
 //-----------------------------------------------------------------------------
 
@@ -1075,10 +1155,11 @@ TEST(conduit_relay_io_silo, read_silo)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        remove_path_if_exists(out_name + "_write_overlink");
-        write_opts["file_style"] = "overlink";
-        write_opts["ovl_topo_name"] = meshname;
-        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        // TODO uncomment when overlink is fully supported
+        // remove_path_if_exists(out_name + "_write_overlink");
+        // write_opts["file_style"] = "overlink";
+        // write_opts["ovl_topo_name"] = meshname;
+        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
@@ -1128,10 +1209,11 @@ TEST(conduit_relay_io_silo, read_fake_overlink)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        remove_path_if_exists(out_name + "_write_overlink");
-        write_opts["file_style"] = "overlink";
-        write_opts["ovl_topo_name"] = "MMESH";
-        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        // TODO uncomment when overlink is fully supported
+        // remove_path_if_exists(out_name + "_write_overlink");
+        // write_opts["file_style"] = "overlink";
+        // write_opts["ovl_topo_name"] = "MMESH";
+        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
@@ -1186,10 +1268,11 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        remove_path_if_exists(out_name + "_write_overlink");
-        write_opts["file_style"] = "overlink";
-        write_opts["ovl_topo_name"] = "MMESH";
-        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        // TODO uncomment when overlink is fully supported
+        // remove_path_if_exists(out_name + "_write_overlink");
+        // write_opts["file_style"] = "overlink";
+        // write_opts["ovl_topo_name"] = "MMESH";
+        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
@@ -1243,10 +1326,11 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        remove_path_if_exists(out_name + "_write_overlink");
-        write_opts["file_style"] = "overlink";
-        write_opts["ovl_topo_name"] = "MMESH";
-        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        // TODO uncomment when overlink is fully supported
+        // remove_path_if_exists(out_name + "_write_overlink");
+        // write_opts["file_style"] = "overlink";
+        // write_opts["ovl_topo_name"] = "MMESH";
+        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 

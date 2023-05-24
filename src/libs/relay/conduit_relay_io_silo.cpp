@@ -1912,7 +1912,7 @@ void silo_write_field(DBfile *dbfile,
     if (!n_mesh_info.has_path(topo_name))
     {
         CONDUIT_INFO("Skipping this variable because the linked "
-                     " topology is invalid: "
+                     "topology is invalid: "
                       << "fields/" << var_name
                       << "/topology: " << topo_name);
         return;
@@ -2564,15 +2564,15 @@ void silo_write_structured_mesh(DBfile *dbfile,
     }
 
     int silo_error =
-        DBPutQuadmesh(dbfile,                      // silo file ptr
+        DBPutQuadmesh(dbfile,                // silo file ptr
                       safe_meshname.c_str(), // mesh name
-                      coordnames, // coord names
-                      coords_ptrs,                 // coords values
-                      pts_dims,                    // dims vals
-                      ndims,                       // number of dims
-                      coords_dtype,                // type of data array
-                      DB_NONCOLLINEAR, // DB_COLLINEAR or DB_NONCOLLINEAR
-                      optlist);  // opt list
+                      coordnames,            // coord names
+                      coords_ptrs,           // coords values
+                      pts_dims,              // dims vals
+                      ndims,                 // number of dims
+                      coords_dtype,          // type of data array
+                      DB_NONCOLLINEAR,       // DB_COLLINEAR (rectilinear grid) or DB_NONCOLLINEAR (structured grid)
+                      optlist);              // opt list
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutQuadmesh");
 }
@@ -2600,13 +2600,13 @@ void silo_write_pointmesh(DBfile *dbfile,
         safe_meshname = detail::sanitize_silo_varname(topo_name);
     }
 
-    int silo_error = DBPutPointmesh(dbfile,            // silo file ptr
+    int silo_error = DBPutPointmesh(dbfile,                // silo file ptr
                                     safe_meshname.c_str(), // mesh name
-                                    ndims,             // num_dims
-                                    coords_ptrs,       // coords values
-                                    num_pts,           // num eles = num pts
-                                    coords_dtype,      // type of data array
-                                    optlist);    // opt list
+                                    ndims,                 // num_dims
+                                    coords_ptrs,           // coords values
+                                    num_pts,               // num eles = num pts
+                                    coords_dtype,          // type of data array
+                                    optlist);              // opt list
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after saving DBPutPointmesh");
 }
@@ -2627,6 +2627,7 @@ void silo_write_topo(const Node &n,
 
     n_mesh_info[topo_name]["type"].set(topo_type);
 
+    bool unstructured_points = false;
     if (topo_type == "unstructured")
     {
         std::string ele_shape = n_topo["elements/shape"].as_string();
@@ -2640,6 +2641,7 @@ void silo_write_topo(const Node &n,
         }
         else
         {
+            unstructured_points = true;
             topo_type = "points";
             n_mesh_info[topo_name]["type"].set(topo_type);
         }
@@ -2703,8 +2705,48 @@ void silo_write_topo(const Node &n,
         }
 
         // compact arrays
-        Node n_coords_compact;
-        compact_coords(n_coords, n_coords_compact);
+        Node n_coords_compact, new_coords;
+        
+        // here we handle the unstructured points case:
+        if (unstructured_points)
+        {
+            // we need to change the coords to only have the ones that are used
+            int_accessor conn = n_topo["elements"]["connectivity"].value();
+            const int num_elem = conn.number_of_elements();
+            
+            new_coords["values"][silo_coordset_axis_labels[0]].set(DataType::float64(num_elem));
+            new_coords["values"][silo_coordset_axis_labels[1]].set(DataType::float64(num_elem));
+            if (ndims == 3)
+            {
+                new_coords["values"][silo_coordset_axis_labels[2]].set(DataType::float64(num_elem));
+            }
+
+            for (int conn_index = 0; conn_index < num_elem; conn_index ++)
+            {
+                int old_coord_index = conn[conn_index];
+
+                double_array new_x_coords = new_coords["values"][silo_coordset_axis_labels[0]].value();
+                double_accessor old_x_coords = n_coords["values"][silo_coordset_axis_labels[0]].value();
+                new_x_coords[conn_index] = old_x_coords[old_coord_index];
+                
+                double_array new_y_coords = new_coords["values"][silo_coordset_axis_labels[1]].value();
+                double_accessor old_y_coords = n_coords["values"][silo_coordset_axis_labels[1]].value();
+                new_y_coords[conn_index] = old_y_coords[old_coord_index];
+
+                if (ndims == 3)
+                {
+                    double_array new_z_coords = new_coords["values"][silo_coordset_axis_labels[2]].value();
+                    double_accessor old_z_coords = n_coords["values"][silo_coordset_axis_labels[2]].value();
+                    new_z_coords[conn_index] = old_z_coords[old_coord_index];
+                }
+            }
+
+            compact_coords(new_coords, n_coords_compact);
+        }
+        else
+        {
+            compact_coords(n_coords, n_coords_compact);
+        }
 
         // get num pts
         const int num_pts = get_explicit_num_pts(n_coords_compact);
