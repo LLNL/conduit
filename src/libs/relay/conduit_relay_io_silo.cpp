@@ -323,7 +323,7 @@ class SiloTreePathGenerator
 {
 private:
     bool nameschemes;
-    // TODO_LATER more work is required to support nameschemes
+    // TODO more work is required to support nameschemes
 
 public:
     SiloTreePathGenerator(bool nameschemes_on) : nameschemes(nameschemes_on) {}
@@ -588,19 +588,19 @@ add_shape_info(DBzonelist *zones,
         }
     }
 
-    // TODO_LATER polytopal support
+    // TODO polytopal support
     if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
         CONDUIT_ERROR("Polyhedra not yet supported");
         elements["sizes"].set(zones->shapesize, zones->nzones);
-        // TODO_LATER double check this approach
+        // TODO double check this approach
         add_offsets(zones, elements["subelements"]); 
     }
     if (zones->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
         CONDUIT_ERROR("Polygons not yet supported");
-        // TODO_LATER zones->shapesize is NOT zones->nzones elements long; see docs
-        // TODO_LATER need to loop over the shapes array and expand it out to resemble the blueprint approach
+        // TODO zones->shapesize is NOT zones->nzones elements long; see docs
+        // TODO need to loop over the shapes array and expand it out to resemble the blueprint approach
         elements["sizes"].set(zones->shapesize, zones->nzones);
         add_offsets(zones, elements);
     }
@@ -624,7 +624,7 @@ read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
     }
     else if (ucdmesh_ptr->phzones)
     {
-        // TODO_LATER implement support for phzones
+        // TODO implement support for phzones
         CONDUIT_ERROR("Silo ucdmesh phzones not yet supported");
         mesh_domain["topologies"][multimesh_name]["elements"]["shape"] =
             shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
@@ -821,7 +821,7 @@ read_variable_domain(const T *var_ptr,
     }
 }
 
-// TODO_LATER support material read
+// TODO support material read
 // //-----------------------------------------------------------------------------
 // // Read a material domain from a Silo file.
 // // 'file' must be a pointer into the file containing the material domain
@@ -857,7 +857,7 @@ read_variable_domain(const T *var_ptr,
 //         }
 //         curr_matset["material_map"][material_name] = material_ptr->matnos[i];
 //     }
-//     // TODO_LATER: support multi-dimensional materials
+//     // TODO: support multi-dimensional materials
 //     CONDUIT_ASSERT(material_ptr->ndims == 1,
 //                    "Only single-dimension materials supported, got "
 //                        << material_ptr->ndims);
@@ -919,7 +919,7 @@ read_variable_domain(const T *var_ptr,
 //     }
 //     else
 //     {
-//         // TODO_LATER: remove, since this is just a special case of the above logic, I think?
+//         // TODO: remove, since this is just a special case of the above logic, I think?
 //         // no volume fractions. All zones are single-material.
 //         int arr_len = material_ptr->dims[0];
 //         copy_and_assign(material_ptr->matlist,
@@ -1128,7 +1128,7 @@ read_root_silo_index(const std::string &root_file_path,
     {
         nameschemes = true;
     }
-    // TODO_LATER nameschemes
+    // TODO nameschemes
     if (nameschemes)
     {
         root_node[multimesh_name]["nameschemes"] = "yes";
@@ -1203,7 +1203,7 @@ read_root_silo_index(const std::string &root_file_path,
                 continue;
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
-            // TODO_LATER var_nameschemes
+            // TODO var_nameschemes
             if (var_nameschemes)
             {
                 var["nameschemes"] = "yes";
@@ -1398,7 +1398,7 @@ read_mesh(const std::string &root_file_path,
         mesh_index["nameschemes"].as_string() == "yes")
     {
         mesh_nameschemes = true;
-        CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
+        CONDUIT_ERROR("TODO no support for nameschemes yet");
     }
     detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
 
@@ -1573,7 +1573,7 @@ read_mesh(const std::string &root_file_path,
                     n_var["nameschemes"].as_string() == "yes")
                 {
                     var_nameschemes = true;
-                    CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
+                    CONDUIT_ERROR("TODO no support for nameschemes yet");
                 }
                 detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
 
@@ -1799,7 +1799,7 @@ read_mesh(const std::string &root_file_path,
                 }
             }
         }
-        // TODO_LATER read multimaterials
+        // TODO read multimaterials
     }
 }
 
@@ -2342,7 +2342,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
     else
     {
-        // TODO_LATER add polygons and polyhedra and mixed
+        // TODO add polygons and polyhedra and mixed
         CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
     }
 
@@ -2467,7 +2467,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 {
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
-    // TODO_LATER there is a different approach for polyhedral zone lists
+    // TODO there is a different approach for polyhedral zone lists
     std::string zlist_name = topo_name + "_connectivity";
 
     std::string safe_meshname;
@@ -3101,7 +3101,7 @@ void write_multimesh(DBfile *dbfile,
                                  " creating state optlist (time, cycle) ");
     }
 
-    // TODO_LATER add dboptions for nameschemes
+    // TODO add dboptions for nameschemes
 
     CONDUIT_CHECK_SILO_ERROR(
         DBPutMultimesh(
@@ -3166,7 +3166,7 @@ void write_multimeshes(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
-// TODO_LATER support multimaterial write
+// TODO support multimaterial write
 // void
 // write_multimaterial(DBfile *root,
 //                     const std::string &mmat_name,
@@ -3420,7 +3420,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     {
         opts_silo_type = opts["silo_type"].as_string();
 
-        // TODO_LATER if we were to add additional silo_type options in the future,
+        // TODO if we were to add additional silo_type options in the future,
         // they would need to be added here.
         if(opts_silo_type != "default" && 
            opts_silo_type != "pdb" &&
@@ -3451,7 +3451,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     {
         silo_type = DB_UNKNOWN;
     }
-    // TODO_LATER these are the additional silo_type options we could add support 
+    // TODO these are the additional silo_type options we could add support 
     // for in the future.
     // else if (opts_silo_type == "hdf5_sec2")
     // {
@@ -4593,7 +4593,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         root, 
                         root_type_info["vars"],
                         opts_file_style == "overlink");
-        // write_multimaterials(); // TODO_LATER
+        // write_multimaterials(); // TODO
 
     }
 
@@ -4741,5 +4741,3 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 //-----------------------------------------------------------------------------
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
-
-// TODO change TODO_LATER back everywhere
