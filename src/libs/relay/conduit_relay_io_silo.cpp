@@ -4374,6 +4374,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 if (!root_type_info_meshes.has_child(read_mesh_name)) 
                 {
                     root_type_info_meshes[read_mesh_name].set(DataType::index_t(global_num_domains));
+                    index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
+                    root_mesh_types.fill(-1); // empty domains get -1
                 }
                 // the global domain ids array is of length local domain ids
                 // local domain ids index into it to read global domain ids out
@@ -4382,7 +4384,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                 // this is where we are writing the data to
                 index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
-                root_mesh_types.fill(-1); // empty domains get -1
 
                 for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                 {
@@ -4408,6 +4409,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                     if (!root_type_info_vars.has_child(read_var_name)) 
                     {
                         root_type_info_vars[read_var_name].set(DataType::index_t(global_num_domains));
+                        index_t_array root_var_types = root_type_info_vars[read_var_name].value();
+                        root_var_types.fill(-1); // empty domains get -1
                     }
                     // the global domain ids array is of length local domain ids
                     // local domain ids index into it to read global domain ids out
@@ -4416,7 +4419,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
                     // this is where we are writing the data to
                     index_t_array root_var_types = root_type_info_vars[read_var_name].value();
-                    root_var_types.fill(-1); // empty domains get -1
 
                     for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                     {
