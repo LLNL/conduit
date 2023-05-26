@@ -16,6 +16,7 @@
 #include "conduit_relay_mpi.hpp"
 #include "conduit_relay_mpi_io.hpp"
 #include "conduit_relay_mpi_io_silo.hpp"
+#include "conduit_fmt/conduit_fmt.h"
 
 #include <iostream>
 #include "gtest/gtest.h"
@@ -26,112 +27,6 @@
 using namespace conduit;
 using namespace conduit::utils;
 using namespace conduit::relay;
-
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
-// {
-//     uint32 a_val = 20;
-//     uint32 b_val = 8;
-//     uint32 c_val = 13;
-
-//     Node n;
-//     n["a"] = a_val;
-//     n["b"] = b_val;
-//     n["c"] = c_val;
-
-//     EXPECT_EQ(n["a"].as_uint32(), a_val);
-//     EXPECT_EQ(n["b"].as_uint32(), b_val);
-//     EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-//     io::silo_write(n,"tout_cold_storage_test.silo:myobj");
-
-//     Node n_load;
-//     io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
-
-//     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-//     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-//     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
-// }
-
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, conduit_silo_cold_storage_generic_iface)
-// {
-//     uint32 a_val = 20;
-//     uint32 b_val = 8;
-//     uint32 c_val = 13;
-
-//     Node n;
-//     n["a"] = a_val;
-//     n["b"] = b_val;
-//     n["c"] = c_val;
-
-//     EXPECT_EQ(n["a"].as_uint32(), a_val);
-//     EXPECT_EQ(n["b"].as_uint32(), b_val);
-//     EXPECT_EQ(n["c"].as_uint32(), c_val);
-
-//     io::save(n, "tout_cold_storage_test_generic_iface.silo:myobj");
-
-//     Node n_load;
-//     io::load("tout_cold_storage_test_generic_iface.silo:myobj",n_load);
-
-//     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
-//     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
-//     EXPECT_EQ(n_load["c"].as_uint32(), c_val);
-// }
-
-// //-----------------------------------------------------------------------------
-// // test reading in a handful of different overlink files
-// TEST(conduit_relay_io_silo, load_mesh_geometry)
-// {
-//     // TODO: all these files are in overlink symlink format.
-//     // Symlinks may break on Windows (?)
-//     // Could make them overlink format without the symlink.
-//     // But would require modifying the files.
-//     std::vector<std::string> filename_vec = {
-//         "box2d.silo",
-//         "box3d.silo",
-//         // "diamond.silo", <--- this one fails because polytopal is not yet supported
-//         // TODO: rename these files to be more descriptive.
-//         // would also require modifying the paths stored within the files,
-//         // and re-symlinking
-//         "testDisk2D_a.silo",
-//         // "donordiv.s2_materials2.silo", <--- this one fails because polytopal is not yet supported
-//         "donordiv.s2_materials3.silo"
-//     };
-//     std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
-//     std::vector<int> coordset_length_vec = {4, 8, /*36,*/ 1994, /*16,*/ 961};
-//     std::vector<int> topology_length_vec = {1, 1, /*33,*/ 1920, /*9,*/  900};
-//     for (int i = 0; i < filename_vec.size(); ++i) 
-//     {
-//         Node mesh, info;
-//         std::string path = utils::join_file_path("overlink", filename_vec.at(i));
-//         std::string input_file = relay_test_silo_data_path(path);
-//         io::silo::load_mesh(input_file, mesh);
-
-//         EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
-//         EXPECT_EQ(blueprint::mesh::number_of_domains(mesh), 1);
-
-//         const Node &domain = *blueprint::mesh::domains(mesh).front();
-//         EXPECT_TRUE(domain.has_child("coordsets"));
-//         EXPECT_EQ(domain["coordsets"].number_of_children(), 1);
-//         EXPECT_TRUE(domain.has_child("topologies"));
-//         EXPECT_EQ(domain["topologies"].number_of_children(), 1);
-
-//         { // Coordset Validation //
-//             const Node &cset = domain["coordsets"].child(0);
-//             EXPECT_EQ(blueprint::mesh::coordset::dims(cset), dims_vec.at(i));
-//             EXPECT_EQ(blueprint::mesh::coordset::length(cset), coordset_length_vec.at(i));
-//             EXPECT_TRUE(blueprint::mesh::coordset::_explicit::verify(cset, info));
-//         }
-
-//         { // Topology Validation //
-//             const Node &topo = domain["topologies"].child(0);
-//             EXPECT_EQ(blueprint::mesh::topology::dims(topo), dims_vec.at(i));
-//             EXPECT_EQ(blueprint::mesh::topology::length(topo), topology_length_vec.at(i));
-//             EXPECT_TRUE(blueprint::mesh::topology::unstructured::verify(topo, info));
-//         }
-//     }
-// }
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_mpi_io_silo, round_trip_basic)
@@ -414,6 +309,182 @@ TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_spiral_1dom)
 
     // globally, expect par_size domains
     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(load_mesh,comm),1);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_silo, spiral_multi_file)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    CONDUIT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    //
+    // Create an example mesh.
+    //
+    Node save_mesh, verify_info;
+
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,save_mesh);
+
+    // rank 0 gets first 4 domains, rank 1 gets the rest
+    if(par_rank == 0)
+    {
+        save_mesh.remove(4);
+        save_mesh.remove(4);
+        save_mesh.remove(4);
+    }
+    else if(par_rank == 1)
+    {
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+    }
+    else
+    {
+        // cyrus was wrong about 2 mpi ranks.
+        EXPECT_TRUE(false);
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(save_mesh,verify_info));
+
+    std::ostringstream oss;
+
+    // lets try with -1 to 8 files.
+
+    // nfiles less than 1 should trigger default case
+    // (n output files = n domains)
+    for(int nfiles=-1; nfiles < 9; nfiles++)
+    {
+        CONDUIT_INFO("[" << par_rank <<  "] test nfiles = " << nfiles);
+        MPI_Barrier(comm);
+        oss.str("");
+        oss << "silo_mpi_spiral_nfiles_" << nfiles;
+
+        std::string output_base = oss.str();
+
+        std::string output_dir  = output_base + ".cycle_000000";
+        std::string output_root = output_base + ".cycle_000000.root";
+
+        int nfiles_to_check = nfiles;
+        if(nfiles <=0 || nfiles == 8) // expect 7 files (one per domain)
+        {
+            nfiles_to_check = 7;
+        }
+
+        if(par_rank == 0)
+        {
+            // remove existing root, output files and directory
+            remove_path_if_exists(output_root);
+            for(int i=0;i<nfiles_to_check;i++)
+            {
+
+                std::string fprefix = "file_";
+                if(nfiles_to_check == 7)
+                {
+                    // in the n domains == n files case, the file prefix is
+                    // domain_
+                    fprefix = "domain_";
+                }
+
+                std::string output_file = conduit_fmt::format("{}{:06d}.silo",
+                                join_file_path(output_base + ".cycle_000000",
+                                               fprefix),
+                                i);
+                remove_path_if_exists(output_file);
+            }
+
+            remove_path_if_exists(output_dir);
+        }
+
+        MPI_Barrier(comm);
+
+        Node opts;
+        opts["number_of_files"] = nfiles;
+        conduit::relay::mpi::io::silo::save_mesh(save_mesh,
+                                                 output_base,
+                                                 opts,
+                                                 comm);
+
+        MPI_Barrier(comm);
+
+        // count the files
+        //  file_%06llu.{protocol}:/domain_%06llu/...
+
+
+        EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+        EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+        for(int i=0;i<nfiles_to_check;i++)
+        {
+
+            std::string fprefix = "file_";
+            if(nfiles_to_check == 7)
+            {
+                // in the n domains == n files case, the file prefix is
+                // domain_
+                fprefix = "domain_";
+            }
+
+            std::string fcheck = conduit_fmt::format("{}{:06d}.silo",
+                            join_file_path(output_base + ".cycle_000000",
+                                           fprefix),
+                            i);
+
+            std::cout << " checking: " << fcheck << std::endl;
+            EXPECT_TRUE(conduit::utils::is_file(fcheck));
+        }
+
+        // read the mesh back in diff to make sure we have the same save_mesh
+        Node load_mesh, info;
+        relay::mpi::io::silo::load_mesh(output_base + ".cycle_000000.root",
+                                             load_mesh,
+                                             comm);
+
+        // make changes to save mesh so the diff will pass
+        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+        {
+            silo_name_changer("mesh", save_mesh[child]);
+
+            if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
+            {
+                int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+                save_mesh[child]["state"]["cycle"].reset();
+                save_mesh[child]["state"]["cycle"] = (int64) cycle;
+            }
+        }
+
+        // rank 0 will have 4, rank 1 wil have 3
+        int num_local_domains = 4;
+        if(par_rank != 0)
+        {
+            num_local_domains = 3;
+        }
+
+        // total doms should be 7
+        EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(load_mesh, comm), 7);
+
+        std::cout << "par_rank " << par_rank << "  read # of children " << load_mesh.number_of_children();
+        // in all cases we expect 7 domains to match
+        for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+        {
+            EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),info));
+        }
+
+    }
+
+    // read this back using read_mesh
 }
 
 // //-----------------------------------------------------------------------------
