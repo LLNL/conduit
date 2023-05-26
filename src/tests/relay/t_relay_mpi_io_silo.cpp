@@ -10,6 +10,9 @@
 
 #include "silo_test_utils.hpp"
 
+#include "conduit.hpp"
+#include "conduit_blueprint.hpp"
+#include "conduit_blueprint_mpi.hpp"
 #include "conduit_relay_mpi.hpp"
 #include "conduit_relay_mpi_io.hpp"
 #include "conduit_relay_mpi_io_silo.hpp"
@@ -184,81 +187,141 @@ TEST(conduit_relay_mpi_io_silo, round_trip_basic)
     EXPECT_FALSE(load_mesh.child(0).diff(save_mesh, info));
 }
 
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_relay, mpi_mesh_examples_braid)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    Node save_mesh, v_info;
+    blueprint::mpi::mesh::examples::braid_uniform_multi_domain(save_mesh,
+                                                               comm);
+    save_mesh["state/cycle"] = (int64) 0;
+
+    // check verify
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(save_mesh,v_info,comm));
+
+    // locally, expect 1 domain
+    EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),1);
+    // globally, expect par_size domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(save_mesh,comm),par_size);
+
+    std::string output_base = "silo_mpi_braid_uniform_multi_dom";
+    conduit::relay::mpi::io::silo::save_mesh(save_mesh,
+                                             output_base,
+                                             comm);
+
+    // read this back using read_mesh, should diff clean
+    std::string output_root = output_base + ".cycle_000000.root";
+    Node load_mesh, info;
+    conduit::relay::mpi::io::silo::load_mesh(output_root,
+                                                  load_mesh,
+                                                  comm);
+
+    silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+
+    // make changes to save mesh so the diff will pass
+    silo_name_changer("mesh", save_mesh);
+
+    // diff == false, no diff == diff clean
+    EXPECT_FALSE(save_mesh.diff(load_mesh.child(0),info));
+}
+
 // //-----------------------------------------------------------------------------
-// // we are testing vector fields in this test
-// TEST(conduit_relay_io_silo, round_trip_braid)
+// TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
 // {
-//     const std::vector<std::pair<std::string, std::string>> mesh_types = {
-//         std::make_pair("uniform", "2"), std::make_pair("uniform", "3"),
-//         std::make_pair("rectilinear", "2"), std::make_pair("rectilinear", "3"),
-//         std::make_pair("structured", "2"), std::make_pair("structured", "3"),
-//         std::make_pair("points", "2"), std::make_pair("points", "3"),
-//         std::make_pair("points_implicit", "2"), std::make_pair("points_implicit", "3"),
-//         std::make_pair("lines", "2"), std::make_pair("lines", "3"),
-//         std::make_pair("tris", "2"),
-//         std::make_pair("quads", "2"),
-//         std::make_pair("tets", "3"),
-//         std::make_pair("hexs", "3"),
-//         std::make_pair("wedges", "3"),
-//         std::make_pair("pyramids", "3"),
-//         // std::make_pair("mixed_2d", "2"),
-//         // std::make_pair("mixed", "3"),
-//     };
-//     for (int i = 0; i < mesh_types.size(); ++i)
+//     MPI_Comm comm = MPI_COMM_WORLD;
+//     int par_rank = mpi::rank(comm);
+//     int par_size = mpi::size(comm);
+
+//     Node save_mesh, info;
+//     blueprint::mpi::mesh::examples::spiral_round_robin(5,
+//                                                        save_mesh,
+//                                                        comm);
+
+//     // check verify
+//     EXPECT_TRUE(blueprint::mpi::mesh::verify(save_mesh,info,comm));
+
+//     // locally, expect:
+//     //  rank 0: 3 domain
+//     //  rank 1: 2 domains
+//     if(par_rank == 0)
 //     {
-//         std::string dim = mesh_types[i].second;
-//         index_t nx = 3;
-//         index_t ny = 4;
-//         index_t nz = (dim == "2" ? 0 : 2);
-
-//         std::string mesh_type = mesh_types[i].first;
-
-//         Node save_mesh, load_mesh, info;
-//         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
-
-//         const std::string basename = "silo_braid_" + mesh_type + "_" + dim + "D";
-//         const std::string filename = basename + ".cycle_000100.root";
-
-//         // remove existing root file, directory and any output files
-//         remove_path_if_exists(filename);
-
-//         io::silo::save_mesh(save_mesh, basename);
-//         io::silo::load_mesh(filename, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-//         // make changes to save mesh so the diff will pass
-//         if (mesh_type == "uniform")
-//         {
-//             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
-//         }
-//         if (mesh_type == "points")
-//         {
-//             // this is custom code for braid
-//             // We know it is correct because the unstructured points version of braid
-//             // uses every point in the coordset
-//             save_mesh["topologies"].remove_child("mesh");
-//             save_mesh["topologies"]["mesh"]["type"] = "points";
-//             save_mesh["topologies"]["mesh"]["coordset"] = "coords";
-//         }
-//         if (mesh_type == "points_implicit" || mesh_type == "points")
-//         {
-//             // the association doesn't matter for point meshes
-//             // we choose vertex by convention
-//             save_mesh["fields"]["radial"]["association"].reset();
-//             save_mesh["fields"]["radial"]["association"] = "vertex";
-//         }
-//         silo_name_changer("mesh", save_mesh);
-//         int cycle = save_mesh["state"]["cycle"].as_uint64();
-//         save_mesh["state"]["cycle"].reset();
-//         save_mesh["state"]["cycle"] = (int64) cycle;
-
-//         // the loaded mesh will be in the multidomain format
-//         // but the saved mesh is in the single domain format
-//         EXPECT_EQ(load_mesh.number_of_children(), 1);
-//         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
-
-//         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+//         EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),3);
+//         std::cout << "[rank 0] input domain ids: " << std::endl;
+//         save_mesh.child(0)["state/domain_id"].print();
+//         save_mesh.child(1)["state/domain_id"].print();
+//         save_mesh.child(2)["state/domain_id"].print();
 //     }
+//     MPI_Barrier(comm);
+//     if(par_rank == 1)
+//     {
+//         EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),2);
+//         std::cout << "[rank 1] input domain ids: " << std::endl;
+//         save_mesh.child(0)["state/domain_id"].print();
+//         save_mesh.child(1)["state/domain_id"].print();
+//     }
+//     MPI_Barrier(comm);
+
+//     // globally, expect 5 domains
+//     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(save_mesh,comm),5);
+
+//     std::string output_base = "silo_mpi_spiral_3doms";
+
+//     // make sure the files don't exist
+//     if(par_rank == 0)
+//     {
+//         std::string output_dir  = output_base + ".cycle_000000";
+//         std::string output_root = output_base + ".cycle_000000.root";
+
+//         // remove existing output
+//         remove_path_if_exists(output_dir);
+//         remove_path_if_exists(output_root);
+//     }
+//     MPI_Barrier(comm);
+
+//     conduit::relay::mpi::io::silo::save_mesh(save_mesh,
+//                                              output_base,
+//                                              comm);
+
+//     // read this back using read_mesh.
+//     // note the domain ids will change, so we don't expect
+//     // this to diff clean
+    
+//     std::string output_root = output_base + ".cycle_000000.root";
+//     Node n_read, n_diff_info;
+//     conduit::relay::mpi::io::silo::load_mesh(output_root,
+//                                              n_read,
+//                                              comm);
+
+//     // globally, expect 5 domains
+//     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),5);
+
+//     if(par_rank == 0)
+//     {
+//         EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),3);
+//         std::cout << "[rank 0] read domain ids: " << std::endl;
+//         n_read.child(0)["state/domain_id"].print();
+//         n_read.child(1)["state/domain_id"].print();
+//         n_read.child(2)["state/domain_id"].print();
+//         // expect we bring back domains 0 - 2
+//         EXPECT_EQ(n_read.child(0)["state/domain_id"].to_index_t(),0);
+//         EXPECT_EQ(n_read.child(1)["state/domain_id"].to_index_t(),1);
+//         EXPECT_EQ(n_read.child(2)["state/domain_id"].to_index_t(),2);
+//     }
+//     MPI_Barrier(comm);
+//     if(par_rank == 1)
+//     {
+//         EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),2);
+//         std::cout << "[rank 1] read domain ids: " << std::endl;
+//         n_read.child(0)["state/domain_id"].print();
+//         n_read.child(1)["state/domain_id"].print();
+//         // expect we bring back domains 3 - 4
+//         EXPECT_EQ(n_read.child(0)["state/domain_id"].to_index_t(),3);
+//         EXPECT_EQ(n_read.child(1)["state/domain_id"].to_index_t(),4);
+//     }
+//     MPI_Barrier(comm);
 // }
 
 // //-----------------------------------------------------------------------------
