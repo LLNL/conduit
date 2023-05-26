@@ -157,6 +157,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
         const std::string basename = "silo_basic_" + mesh_type + "_" + dim + "D";
         const std::string filename = basename + ".root";
 
+        // TODO remove paths for directories too
         remove_path_if_exists(filename);
         io::silo::save_mesh(save_mesh, basename);
         io::silo::load_mesh(filename, load_mesh);

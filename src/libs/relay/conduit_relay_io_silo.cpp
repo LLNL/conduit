@@ -4365,35 +4365,39 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         {
             // type info from a particular MPI rank
             const Node &type_info_from_rank = type_info_itr.next();
-            auto read_meshes_itr = type_info_from_rank["meshes"].children();
-            while (read_meshes_itr.has_next())
+            
+            if (type_info_from_rank.has_child("meshes"))
             {
-                const Node &read_mesh_type_info = read_meshes_itr.next();
-                const std::string read_mesh_name = read_meshes_itr.name();
-
-                if (!root_type_info_meshes.has_child(read_mesh_name)) 
+                auto read_meshes_itr = type_info_from_rank["meshes"].children();
+                while (read_meshes_itr.has_next())
                 {
-                    root_type_info_meshes[read_mesh_name].set(DataType::index_t(global_num_domains));
-                    index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
-                    root_mesh_types.fill(-1); // empty domains get -1
-                }
-                // the global domain ids array is of length local domain ids
-                // local domain ids index into it to read global domain ids out
-                index_t_accessor global_domain_ids = read_mesh_type_info["domain_ids"].value();
-                index_t_accessor read_mesh_types = read_mesh_type_info["types"].value();
+                    const Node &read_mesh_type_info = read_meshes_itr.next();
+                    const std::string read_mesh_name = read_meshes_itr.name();
 
-                // this is where we are writing the data to
-                index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
-
-                for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
-                {
-                    index_t global_domain_index = global_domain_ids[local_domain_id];
-                    // we initialized the array to be all -1, so if we are missing a domain
-                    // we will have -1. Thus we should write -1 so I know later that we are
-                    // missing a domain.
-                    if (global_domain_index != -1)
+                    if (!root_type_info_meshes.has_child(read_mesh_name)) 
                     {
-                        root_mesh_types[global_domain_index] = read_mesh_types[local_domain_id];
+                        root_type_info_meshes[read_mesh_name].set(DataType::index_t(global_num_domains));
+                        index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
+                        root_mesh_types.fill(-1); // empty domains get -1
+                    }
+                    // the global domain ids array is of length local domain ids
+                    // local domain ids index into it to read global domain ids out
+                    index_t_accessor global_domain_ids = read_mesh_type_info["domain_ids"].value();
+                    index_t_accessor read_mesh_types = read_mesh_type_info["types"].value();
+
+                    // this is where we are writing the data to
+                    index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
+
+                    for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
+                    {
+                        index_t global_domain_index = global_domain_ids[local_domain_id];
+                        // we initialized the array to be all -1, so if we are missing a domain
+                        // we will have -1. Thus we should write -1 so I know later that we are
+                        // missing a domain.
+                        if (global_domain_index != -1)
+                        {
+                            root_mesh_types[global_domain_index] = read_mesh_types[local_domain_id];
+                        }
                     }
                 }
             }

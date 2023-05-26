@@ -188,7 +188,7 @@ TEST(conduit_relay_mpi_io_silo, round_trip_basic)
 }
 
 //-----------------------------------------------------------------------------
-TEST(blueprint_mpi_relay, mpi_mesh_examples_braid)
+TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_braid)
 {
     MPI_Comm comm = MPI_COMM_WORLD;
     int par_rank = mpi::rank(comm);
@@ -228,176 +228,193 @@ TEST(blueprint_mpi_relay, mpi_mesh_examples_braid)
     EXPECT_FALSE(save_mesh.diff(load_mesh.child(0),info));
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(blueprint_mpi_relay, mpi_mesh_examples_spiral_5doms)
-// {
-//     MPI_Comm comm = MPI_COMM_WORLD;
-//     int par_rank = mpi::rank(comm);
-//     int par_size = mpi::size(comm);
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_spiral_5doms)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
 
-//     Node save_mesh, info;
-//     blueprint::mpi::mesh::examples::spiral_round_robin(5,
-//                                                        save_mesh,
-//                                                        comm);
+    Node save_mesh, info;
+    blueprint::mpi::mesh::examples::spiral_round_robin(5,
+                                                       save_mesh,
+                                                       comm);
 
-//     // check verify
-//     EXPECT_TRUE(blueprint::mpi::mesh::verify(save_mesh,info,comm));
+    // check verify
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(save_mesh,info,comm));
 
-//     // locally, expect:
-//     //  rank 0: 3 domain
-//     //  rank 1: 2 domains
-//     if(par_rank == 0)
-//     {
-//         EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),3);
-//         std::cout << "[rank 0] input domain ids: " << std::endl;
-//         save_mesh.child(0)["state/domain_id"].print();
-//         save_mesh.child(1)["state/domain_id"].print();
-//         save_mesh.child(2)["state/domain_id"].print();
-//     }
-//     MPI_Barrier(comm);
-//     if(par_rank == 1)
-//     {
-//         EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),2);
-//         std::cout << "[rank 1] input domain ids: " << std::endl;
-//         save_mesh.child(0)["state/domain_id"].print();
-//         save_mesh.child(1)["state/domain_id"].print();
-//     }
-//     MPI_Barrier(comm);
+    // locally, expect:
+    //  rank 0: 3 domain
+    //  rank 1: 2 domains
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),3);
+        std::cout << "[rank 0] input domain ids: " << std::endl;
+        save_mesh.child(0)["state/domain_id"].print();
+        save_mesh.child(1)["state/domain_id"].print();
+        save_mesh.child(2)["state/domain_id"].print();
+    }
+    MPI_Barrier(comm);
+    if(par_rank == 1)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),2);
+        std::cout << "[rank 1] input domain ids: " << std::endl;
+        save_mesh.child(0)["state/domain_id"].print();
+        save_mesh.child(1)["state/domain_id"].print();
+    }
+    MPI_Barrier(comm);
 
-//     // globally, expect 5 domains
-//     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(save_mesh,comm),5);
+    // globally, expect 5 domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(save_mesh,comm),5);
 
-//     std::string output_base = "silo_mpi_spiral_3doms";
+    std::string output_base = "silo_mpi_spiral_3doms";
 
-//     // make sure the files don't exist
-//     if(par_rank == 0)
-//     {
-//         std::string output_dir  = output_base + ".cycle_000000";
-//         std::string output_root = output_base + ".cycle_000000.root";
+    // make sure the files don't exist
+    if(par_rank == 0)
+    {
+        std::string output_dir  = output_base + ".cycle_000000";
+        std::string output_root = output_base + ".cycle_000000.root";
 
-//         // remove existing output
-//         remove_path_if_exists(output_dir);
-//         remove_path_if_exists(output_root);
-//     }
-//     MPI_Barrier(comm);
+        // remove existing output
+        remove_path_if_exists(output_dir);
+        remove_path_if_exists(output_root);
+    }
+    MPI_Barrier(comm);
 
-//     conduit::relay::mpi::io::silo::save_mesh(save_mesh,
-//                                              output_base,
-//                                              comm);
+    conduit::relay::mpi::io::silo::save_mesh(save_mesh,
+                                             output_base,
+                                             comm);
 
-//     // read this back using read_mesh.
-//     // note the domain ids will change, so we don't expect
-//     // this to diff clean
+    // read this back using read_mesh.
+    // note the domain ids will change, so we don't expect
+    // this to diff clean
     
-//     std::string output_root = output_base + ".cycle_000000.root";
-//     Node n_read, n_diff_info;
-//     conduit::relay::mpi::io::silo::load_mesh(output_root,
-//                                              n_read,
-//                                              comm);
+    std::string output_root = output_base + ".cycle_000000.root";
+    Node load_mesh;
+    conduit::relay::mpi::io::silo::load_mesh(output_root,
+                                             load_mesh,
+                                             comm);
 
-//     // globally, expect 5 domains
-//     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(n_read,comm),5);
+    // globally, expect 5 domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(load_mesh,comm),5);
 
-//     if(par_rank == 0)
-//     {
-//         EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),3);
-//         std::cout << "[rank 0] read domain ids: " << std::endl;
-//         n_read.child(0)["state/domain_id"].print();
-//         n_read.child(1)["state/domain_id"].print();
-//         n_read.child(2)["state/domain_id"].print();
-//         // expect we bring back domains 0 - 2
-//         EXPECT_EQ(n_read.child(0)["state/domain_id"].to_index_t(),0);
-//         EXPECT_EQ(n_read.child(1)["state/domain_id"].to_index_t(),1);
-//         EXPECT_EQ(n_read.child(2)["state/domain_id"].to_index_t(),2);
-//     }
-//     MPI_Barrier(comm);
-//     if(par_rank == 1)
-//     {
-//         EXPECT_EQ(blueprint::mesh::number_of_domains(n_read),2);
-//         std::cout << "[rank 1] read domain ids: " << std::endl;
-//         n_read.child(0)["state/domain_id"].print();
-//         n_read.child(1)["state/domain_id"].print();
-//         // expect we bring back domains 3 - 4
-//         EXPECT_EQ(n_read.child(0)["state/domain_id"].to_index_t(),3);
-//         EXPECT_EQ(n_read.child(1)["state/domain_id"].to_index_t(),4);
-//     }
-//     MPI_Barrier(comm);
-// }
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(load_mesh),3);
+        std::cout << "[rank 0] read domain ids: " << std::endl;
+        load_mesh.child(0)["state/domain_id"].print();
+        load_mesh.child(1)["state/domain_id"].print();
+        load_mesh.child(2)["state/domain_id"].print();
+        // expect we bring back domains 0 - 2
+        EXPECT_EQ(load_mesh.child(0)["state/domain_id"].to_index_t(),0);
+        EXPECT_EQ(load_mesh.child(1)["state/domain_id"].to_index_t(),1);
+        EXPECT_EQ(load_mesh.child(2)["state/domain_id"].to_index_t(),2);
+    }
+    MPI_Barrier(comm);
+    if(par_rank == 1)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(load_mesh),2);
+        std::cout << "[rank 1] read domain ids: " << std::endl;
+        load_mesh.child(0)["state/domain_id"].print();
+        load_mesh.child(1)["state/domain_id"].print();
+        // expect we bring back domains 3 - 4
+        EXPECT_EQ(load_mesh.child(0)["state/domain_id"].to_index_t(),3);
+        EXPECT_EQ(load_mesh.child(1)["state/domain_id"].to_index_t(),4);
+    }
+    MPI_Barrier(comm);
+}
 
-// //-----------------------------------------------------------------------------
-// // multidomain test
-// TEST(conduit_relay_io_silo, round_trip_spiral)
-// {
-//     for (int ndomains = 2; ndomains < 6; ndomains ++)
-//     {
-//         Node save_mesh, load_mesh, info;
-//         blueprint::mesh::examples::spiral(ndomains, save_mesh);
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_spiral_1dom)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
 
-//         const std::string basename = "silo_spiral_" + std::to_string(ndomains) + "_domains";
-//         const std::string filename = basename + ".cycle_000000.root";
+    Node save_mesh, info;
+    blueprint::mpi::mesh::examples::spiral_round_robin(1,
+                                                       save_mesh,
+                                                       comm);
 
-//         remove_path_if_exists(filename);
-//         io::silo::save_mesh(save_mesh, basename);
-//         io::silo::load_mesh(filename, load_mesh);
+    // check verify
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(save_mesh,info,comm));
 
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+    // locally, expect:
+    //  rank 0: 1 domain
+    //  rank 1: 0 domains
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),1);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),0);
+    }
 
-//         // make changes to save mesh so the diff will pass
-//         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-//         {
-//             silo_name_changer("mesh", save_mesh[child]);
-//             int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-//             save_mesh[child]["state"]["cycle"].reset();
-//             save_mesh[child]["state"]["cycle"] = (int64) cycle;
-//         }
+    // globally, expect par_size domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(save_mesh,comm),1);
 
-//         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-//         NodeConstIterator l_itr = load_mesh.children();
-//         NodeConstIterator s_itr = save_mesh.children();
-//         while (l_itr.has_next())
-//         {
-//             const Node &l_curr = l_itr.next();
-//             const Node &s_curr = s_itr.next();
+    std::string output_base = "silo_mpi_spiral_1dom";
+    Node opts;
+    opts["file_style"] = "multi_file";
 
-//             EXPECT_FALSE(l_curr.diff(s_curr, info));
-//         }
-//     }
-// }
+    // make sure the files don't exist
+    if(par_rank == 0)
+    {
+        std::string output_dir  = output_base + ".cycle_000000";
+        std::string output_root = output_base + ".cycle_000000.root";
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, round_trip_julia)
-// {
-//     Node save_mesh, load_mesh, info;
-//     blueprint::mesh::examples::julia(5,  // nx
-//                                      5,  // ny
-//                                      0,  // x_min
-//                                      10, // x_max
-//                                      2,  // y_min
-//                                      7,  // y_max
-//                                      3,  // c_re
-//                                      4,  // c_im
-//                                      save_mesh);
+        // remove existing output
+        remove_path_if_exists(output_dir);
+        remove_path_if_exists(output_root);
+    }
+    MPI_Barrier(comm);
 
-//     const std::string basename = "silo_julia";
-//     const std::string filename = basename + ".root";
+    conduit::relay::mpi::io::silo::save_mesh(save_mesh,
+                                              output_base,
+                                              opts,
+                                              comm);
 
-//     remove_path_if_exists(filename);
-//     io::silo::save_mesh(save_mesh, basename);
-//     io::silo::load_mesh(filename, load_mesh);
-//     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    // make changes to save mesh so the diff will pass
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        silo_name_changer("mesh", save_mesh[child]);
+        int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+        save_mesh[child]["state"]["cycle"].reset();
+        save_mesh[child]["state"]["cycle"] = (int64) cycle;
+    }
 
-//     // make changes to save mesh so the diff will pass
-//     save_mesh["state/cycle"] = (int64) 0;
-//     save_mesh["state/domain_id"] = 0;
-//     silo_name_changer("mesh", save_mesh);
+    // read this back using read_mesh, should diff clean
+    std::string output_root = output_base + ".cycle_000000.root";
+    Node load_mesh, n_diff_info;
+    conduit::relay::mpi::io::silo::load_mesh(output_root,
+                                             load_mesh,
+                                             comm);
 
-//     // the loaded mesh will be in the multidomain format
-//     // but the saved mesh is in the single domain format
-//     EXPECT_EQ(load_mesh.number_of_children(), 1);
-//     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+    // globally, expect 1 domain
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(load_mesh,comm),1);
 
-//     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-// }
+    if(par_rank == 0)
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(load_mesh),1);
+    }
+    else
+    {
+        EXPECT_EQ(blueprint::mesh::number_of_domains(load_mesh),0);
+    }
+
+    EXPECT_EQ(save_mesh.number_of_children(),load_mesh.number_of_children());
+    for(conduit::index_t i=0;i < save_mesh.number_of_children();i++)
+    {
+        save_mesh.print();
+        load_mesh.print();
+        // diff == false, no diff == diff clean
+        EXPECT_FALSE(save_mesh.child(i).diff(load_mesh.child(i),n_diff_info));
+    }
+
+    // globally, expect par_size domains
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(load_mesh,comm),1);
+}
 
 // //-----------------------------------------------------------------------------
 // // 
