@@ -487,6 +487,105 @@ TEST(conduit_relay_mpi_io_silo, spiral_multi_file)
     // read this back using read_mesh
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_mpi_io_silo, spiral_root_only)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
+
+    CONDUIT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
+
+    //
+    // Create an example mesh, spiral , with 7 domains
+    //
+    Node save_mesh, verify_info;
+
+    conduit::blueprint::mesh::examples::spiral(7,save_mesh);
+
+    // rank 0 gets first 4 domains, rank 1 gets the rest
+    if(par_rank == 0)
+    {
+        save_mesh.remove(4);
+        save_mesh.remove(4);
+        save_mesh.remove(4);
+    }
+    else if(par_rank == 1)
+    {
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+    }
+    else
+    {
+        // cyrus was wrong about 2 mpi ranks.
+        EXPECT_TRUE(false);
+    }
+
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(save_mesh,verify_info));
+
+    // try root only mode
+    
+    Node opts;
+    opts["suffix"] = "none";
+    opts["file_style"] = "root_only";
+    std::string tout_base = "silo_mpi_spiral_root_only";
+
+    remove_path_if_exists(tout_base + ".root");
+    conduit::relay::mpi::io::silo::save_mesh(save_mesh,
+                                             tout_base,
+                                             opts,
+                                             comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".root"));
+
+    // read the mesh back in diff to make sure we have the same data
+    Node n_read, info;
+    relay::mpi::io::silo::read_mesh(tout_base + ".root",
+                                    n_read,
+                                    comm);
+
+    // rank 0 will have 4, rank 1 wil have 3
+    int num_local_domains = 4;
+    if(par_rank != 0)
+    {
+        num_local_domains = 3;
+    }
+
+    // total doms should be 7
+    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(n_read, comm), 7);
+
+    // make changes to save mesh so the diff will pass
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        silo_name_changer("mesh", save_mesh[child]);
+
+        if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
+        {
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
+        }
+    }
+
+    std::cout << "par_rank " << par_rank << "  read # of children " << n_read.number_of_children();
+    // in all cases we expect 7 domains to match
+    for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+    {
+        EXPECT_FALSE(save_mesh.child(dom_idx).diff(n_read.child(dom_idx),info));
+    }
+
+}
+
 // //-----------------------------------------------------------------------------
 // // 
 // // special case tests
