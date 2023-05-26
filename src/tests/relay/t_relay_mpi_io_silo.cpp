@@ -583,7 +583,241 @@ TEST(conduit_relay_mpi_io_silo, spiral_root_only)
     {
         EXPECT_FALSE(save_mesh.child(dom_idx).diff(n_read.child(dom_idx),info));
     }
+}
 
+//-----------------------------------------------------------------------------
+// note: sparse topo tests are from ascent usecases
+TEST(conduit_relay_mpi_io_silo, test_sparse_domains_case_1)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    Node data;
+    std::ostringstream oss;
+
+    // create mesh where each rank has three domains with different topos
+    for(index_t d =0; d<3; d++)
+    {
+        Node &mesh = data.append();
+
+        mesh["state/cycle"] = 0;
+
+        oss.str("");
+        oss << "my_coords_rank_" <<  par_rank << "_" << d;
+        std::string c_name = oss.str();
+
+        oss.str("");
+        oss << "my_topo_rank_" <<  par_rank << "_" << d;
+        std::string t_name = oss.str();
+
+        oss.str("");
+        oss << "my_field_rank_" <<  par_rank << "_" << d;
+        std::string f_name = oss.str();
+
+        // create the coordinate set
+        mesh["coordsets"][c_name]["type"] = "uniform";
+        mesh["coordsets"][c_name]["dims/i"] = 3;
+        mesh["coordsets"][c_name]["dims/j"] = 3;
+        mesh["coordsets"][c_name]["origin/x"] = -10.0;
+        mesh["coordsets"][c_name]["origin/y"] = -10.0;
+        mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+        mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+        mesh["topologies"][t_name]["type"] = "uniform";
+        mesh["topologies"][t_name]["coordset"] = c_name;
+
+        mesh["fields"][f_name]["association"] =  "element";
+        mesh["fields"][f_name]["topology"] =  t_name;
+        mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+        float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+        for(int i=0;i<4;i++)
+        {
+            ele_vals_ptr[i] = float64(d);
+        }
+    }
+
+    Node verify_info;
+    EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    
+    Node opts; // empty for now
+    std::string tout_base = "silo_mpi_sparse_case_1";
+
+    remove_path_if_exists(tout_base + ".cycle_000000.root");
+    conduit::relay::mpi::io::silo::save_mesh(data,
+                                             tout_base,
+                                             opts,
+                                             comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".cycle_000000.root"));
+}
+
+//-----------------------------------------------------------------------------
+// note: sparse topo tests are from ascent usecases
+TEST(conduit_relay_mpi_io_silo, test_sparse_domains_case_2)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+    std::ostringstream oss;
+
+    // rank 1 have 3 domains, rank zero none
+    if(par_rank > 0)
+    {
+        // three domains with different topos
+        for(index_t d =0; d<3; d++)
+        {
+            Node &mesh = data.append();
+
+            mesh["state/cycle"] = 0;
+
+            oss.str("");
+            oss << "my_coords_rank_" <<  par_rank << "_" << d;
+            std::string c_name = oss.str();
+
+            oss.str("");
+            oss << "my_topo_rank_" <<  par_rank << "_" << d;
+            std::string t_name = oss.str();
+
+            oss.str("");
+            oss << "my_field_rank_" <<  par_rank << "_" << d;
+            std::string f_name = oss.str();
+
+            // create the coordinate set
+            mesh["coordsets"][c_name]["type"] = "uniform";
+            mesh["coordsets"][c_name]["dims/i"] = 3;
+            mesh["coordsets"][c_name]["dims/j"] = 3;
+            // add origin and spacing to the coordset (optional)
+            mesh["coordsets"][c_name]["origin/x"] = -10.0;
+            mesh["coordsets"][c_name]["origin/y"] = -10.0;
+            mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+            mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+            // add the topology
+            // this case is simple b/c it's implicitly derived from the coordinate set
+            mesh["topologies"][t_name]["type"] = "uniform";
+            // reference the coordinate set by name
+            mesh["topologies"][t_name]["coordset"] = c_name;
+
+            // add a simple element-associated field
+            mesh["fields"][f_name]["association"] =  "element";
+            // reference the topology this field is defined on by name
+            mesh["fields"][f_name]["topology"] =  t_name;
+            // set the field values, for this case we have 4 elements
+            mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+            float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+            for(int i=0;i<4;i++)
+            {
+                ele_vals_ptr[i] = float64(d);
+            }
+        }
+
+        Node verify_info;
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    }
+
+    Node opts; // empty for now
+    std::string tout_base = "silo_mpi_sparse_case_2";
+
+    remove_path_if_exists(tout_base + ".cycle_000000.root");
+    conduit::relay::mpi::io::silo::save_mesh(data,
+                                             tout_base,
+                                             opts,
+                                             comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".cycle_000000.root"));
+}
+
+//-----------------------------------------------------------------------------
+// note: sparse topo tests are from ascent usecases
+TEST(conduit_relay_mpi_io_silo, test_sparse_domains_case_3)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+
+    //
+    // Create an example mesh.
+    //
+
+    Node data;
+    std::ostringstream oss;
+
+    // rank 1 have 3 domains, rank zero none
+    if(par_rank > 0)
+    {
+        // three domains with different topos
+        for(index_t d =0; d<3; d++)
+        {
+            Node &mesh = data.append();
+
+            mesh["state/cycle"] = 0;
+
+            oss.str("");
+            oss << "my_coords_rank_" <<  par_rank << "_" << d;
+            std::string c_name = oss.str();
+
+            oss.str("");
+            oss << "my_topo_rank_" <<  par_rank << "_" << d;
+            std::string t_name = oss.str();
+
+            oss.str("");
+            oss << "my_field_rank_" <<  par_rank << "_" << d;
+            std::string f_name = oss.str();
+
+            // create the coordinate set
+            mesh["coordsets"][c_name]["type"] = "uniform";
+            mesh["coordsets"][c_name]["dims/i"] = 3;
+            mesh["coordsets"][c_name]["dims/j"] = 3;
+            // add origin and spacing to the coordset (optional)
+            mesh["coordsets"][c_name]["origin/x"] = -10.0;
+            mesh["coordsets"][c_name]["origin/y"] = -10.0;
+            mesh["coordsets"][c_name]["spacing/dx"] = 10.0;
+            mesh["coordsets"][c_name]["spacing/dy"] = 10.0;
+
+            // add the topology
+            // this case is simple b/c it's implicitly derived from the coordinate set
+            mesh["topologies"][t_name]["type"] = "uniform";
+            // reference the coordinate set by name
+            mesh["topologies"][t_name]["coordset"] = c_name;
+
+            // add a simple element-associated field
+            mesh["fields"][f_name]["association"] =  "element";
+            // reference the topology this field is defined on by name
+            mesh["fields"][f_name]["topology"] =  t_name;
+            // set the field values, for this case we have 4 elements
+            mesh["fields"][f_name]["values"].set(DataType::float64(4));
+
+            float64 *ele_vals_ptr = mesh["fields"][f_name]["values"].value();
+
+            for(int i=0;i<4;i++)
+            {
+                ele_vals_ptr[i] = float64(d);
+            }
+        }
+
+        Node verify_info;
+        EXPECT_TRUE(conduit::blueprint::mesh::verify(data,verify_info));
+    }
+
+    Node opts;
+    opts["suffix"] = "cycle";
+    std::string tout_base = "silo_mpi_sparse_case_3";
+
+    remove_path_if_exists(tout_base + ".cycle_000000.root");
+    conduit::relay::mpi::io::silo::save_mesh(data,
+                                             tout_base,
+                                             opts,
+                                             comm);
+    EXPECT_TRUE(conduit::utils::is_file(tout_base + ".cycle_000000.root"));
 }
 
 // //-----------------------------------------------------------------------------
