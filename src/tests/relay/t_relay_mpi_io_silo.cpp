@@ -64,8 +64,8 @@ TEST(conduit_relay_mpi_io_silo, round_trip_basic)
     const std::string filename = basename + ".cycle_000000.root";
 
     remove_path_if_exists(filename);
-    relay::mpi::io::silo::save_mesh(save_mesh, basename, comm);
-    relay::mpi::io::silo::load_mesh(filename, load_mesh, comm);
+    relay::mpi::io::silo::write_mesh(save_mesh, basename, comm);
+    relay::mpi::io::silo::read_mesh(filename, load_mesh, comm);
 
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
