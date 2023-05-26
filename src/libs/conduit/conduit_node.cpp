@@ -10924,6 +10924,84 @@ Node::to_long_array(Node &res) const
     }
 }
 
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+void
+Node::to_signed_long_long_array(Node &res) const
+{
+    res.set(DataType::c_signed_long_long(dtype().number_of_elements()));
+
+    signed_long_long_array res_array = res.as_signed_long_long_array();
+
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:
+        {
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_ID:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_ID:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
+                        << " type to unsigned_long_array.");
+        }
+    }
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
+
 
 //---------------------------------------------------------------------------//
 /// convert array to c unsigned integer arrays
@@ -11218,6 +11296,84 @@ Node::to_unsigned_long_array(Node &res) const
         }
     }
 }
+
+//---------------------------------------------------------------------------//
+#ifdef CONDUIT_HAS_LONG_LONG
+//---------------------------------------------------------------------------//
+void
+Node::to_unsigned_long_long_array(Node &res) const
+{
+    res.set(DataType::c_unsigned_long_long(dtype().number_of_elements()));
+
+    unsigned_long_long_array res_array = res.as_unsigned_long_long_array();
+
+    switch(dtype().id())
+    {
+        /* ints */
+        case DataType::INT8_ID:
+        {
+            res_array.set(this->as_int8_array());
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            res_array.set(this->as_int16_array());
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            res_array.set(this->as_int32_array());
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            res_array.set(this->as_int64_array());
+            break;
+        }
+        /* uints */
+        case DataType::UINT8_ID:
+        {
+            res_array.set(this->as_uint8_array());
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            res_array.set(this->as_uint16_array());
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            res_array.set(this->as_uint32_array());
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            res_array.set(this->as_uint64_array());
+            break;
+        }
+        /* floats */
+        case DataType::FLOAT32_ID:
+        {
+            res_array.set(this->as_float32_array());
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            res_array.set(this->as_float64_array());
+            break;
+        }
+        default:
+        {
+            // error
+            CONDUIT_ERROR("Cannot convert non numeric "
+                        << dtype().name()
+                        << " type to unsigned_long_array.");
+        }
+    }
+}
+//---------------------------------------------------------------------------//
+#endif
+//---------------------------------------------------------------------------//
 
 /// convert array to c floating point arrays
 //---------------------------------------------------------------------------//

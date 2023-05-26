@@ -3243,11 +3243,19 @@ public:
     void    to_signed_int_array(Node &res)   const;
     void    to_signed_long_array(Node &res)  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    void    to_signed_long_long_array(Node &res)  const;
+#endif
+
     /// convert to c unsigned integer types
     void    to_unsigned_char_array(Node &res)  const;
     void    to_unsigned_short_array(Node &res) const;
     void    to_unsigned_int_array(Node &res)   const;
     void    to_unsigned_long_array(Node &res)  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    void    to_unsigned_long_long_array(Node &res)  const;
+#endif
 
     /// convert to c floating point types
     void    to_float_array(Node &res) const;
