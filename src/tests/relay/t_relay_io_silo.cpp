@@ -336,6 +336,49 @@ TEST(conduit_relay_io_silo, round_trip_julia)
 
 //-----------------------------------------------------------------------------
 // 
+// test read and write semantics
+// 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, read_and_write_semantics)
+{
+    for (int ndomains = 2; ndomains < 6; ndomains ++)
+    {
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::spiral(ndomains, save_mesh);
+
+        const std::string basename = "silo_spiral_" + std::to_string(ndomains) + "_domains";
+        const std::string filename = basename + ".cycle_000000.root";
+
+        remove_path_if_exists(filename);
+        io::silo::write_mesh(save_mesh, basename);
+        io::silo::read_mesh(filename, load_mesh);
+
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+        // make changes to save mesh so the diff will pass
+        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+        {
+            silo_name_changer("mesh", save_mesh[child]);
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
+        }
+
+        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        NodeConstIterator l_itr = load_mesh.children();
+        NodeConstIterator s_itr = save_mesh.children();
+        while (l_itr.has_next())
+        {
+            const Node &l_curr = l_itr.next();
+            const Node &s_curr = s_itr.next();
+
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
+        }
+    }
+}
+//-----------------------------------------------------------------------------
+// 
 // special case tests
 // 
 

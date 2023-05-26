@@ -2855,7 +2855,7 @@ void silo_mesh_write(const Node &n,
         std::stringstream ss(silo_obj_path);
         while (getline(ss, dir, '/'))
         {
-            silo_error += DBMkDir(dbfile, dir.c_str());
+            DBMkDir(dbfile, dir.c_str()); // if this fails we want to keep going
             silo_error += DBSetDir(dbfile, dir.c_str());
         }
         CONDUIT_CHECK_SILO_ERROR(silo_error,
@@ -3884,10 +3884,18 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                         }
                         local_root_file_created.set((int)1);
                     }
-                    
+
                     if (!dbfile.getSiloObject())
                     {
-                        dbfile.setSiloObject(DBOpen(root_filename.c_str(), silo_type, DB_APPEND));
+                        if (utils::is_file(root_filename))
+                        {
+                            dbfile.setSiloObject(DBOpen(root_filename.c_str(), silo_type, DB_APPEND));
+                        }
+                        else
+                        {
+                            dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
+                        }
+                        
                         if (!dbfile.getSiloObject())
                         {
                             CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
@@ -3964,7 +3972,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 &DBClose,
                 "Error closing Silo file: " + output_file};
 
-            if (opts_truncate)
+            if (opts_truncate || !utils::is_file(output_file))
             {
                 dbfile.setSiloObject(DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
             }
@@ -4181,9 +4189,18 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                 
                                 if(!dbfile.getSiloObject())
                                 {
-                                    dbfile.setSiloObject(DBOpen(output_file.c_str(), silo_type, DB_APPEND));
+                                    if (utils::is_file(output_file))
+                                    {
+                                        dbfile.setSiloObject(DBOpen(output_file.c_str(), silo_type, DB_APPEND));
+                                    }
+                                    else
+                                    {
+                                        dbfile.setSiloObject(DBCreate(output_file.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
+                                    }
                                     if (!dbfile.getSiloObject())
+                                    {
                                         CONDUIT_ERROR("Error opening Silo file for writing: " << output_file);
+                                    }
                                 }
 
                                 // CONDUIT_INFO("rank " << par_rank << " output_file"
@@ -4580,7 +4597,15 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 
         if(!dbfile.getSiloObject())
         {
-            dbfile.setSiloObject(DBOpen(root_filename.c_str(), silo_type, DB_APPEND));
+            if (utils::is_file(root_filename))
+            {
+                dbfile.setSiloObject(DBOpen(root_filename.c_str(), silo_type, DB_APPEND));
+            }
+            else
+            {
+                dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
+            }
+            
             if (!dbfile.getSiloObject())
             {
                 CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
