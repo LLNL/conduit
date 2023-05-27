@@ -466,7 +466,7 @@ TEST(conduit_relay_mpi_io_silo, spiral_multi_file)
             }
         }
 
-        // rank 0 will have 4, rank 1 wil have 3
+        // rank 0 will have 4, rank 1 will have 3
         int num_local_domains = 4;
         if(par_rank != 0)
         {
@@ -555,7 +555,7 @@ TEST(conduit_relay_mpi_io_silo, spiral_root_only)
                                     n_read,
                                     comm);
 
-    // rank 0 will have 4, rank 1 wil have 3
+    // rank 0 will have 4, rank 1 will have 3
     int num_local_domains = 4;
     if(par_rank != 0)
     {
@@ -919,7 +919,7 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_var)
         }
     }
 
-    // rank 0 will have 4, rank 1 wil have 3
+    // rank 0 will have 4, rank 1 will have 3
     int num_local_domains = 4;
     if(par_rank != 0)
     {
@@ -965,7 +965,7 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_mesh_trivial)
     //
     // Create an example mesh.
     //
-    Node save_mesh, verify_info;
+    Node save_mesh;
 
     // use spiral , with 7 domains
     conduit::blueprint::mesh::examples::spiral(7,save_mesh);
@@ -1052,7 +1052,7 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_mesh_trivial)
         }
     }
 
-    // rank 0 will have 3, rank 1 wil have 3
+    // rank 0 will have 3, rank 1 will have 3
     int num_local_domains = 3;
 
     // total doms should be 6
@@ -1066,81 +1066,180 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_mesh_trivial)
     }
 }
 
-// //-----------------------------------------------------------------------------
-// // mesh is not defined on a domain but there are multiple meshes
-// TEST(conduit_relay_mpi_io_silo, missing_domain_mesh)
-// {
-//     Node save_mesh, save_mesh2, load_mesh, load_mesh2, info, opts;
-//     const int ndomains = 4;
-//     blueprint::mesh::examples::spiral(ndomains, save_mesh);
-//     blueprint::mesh::examples::spiral(ndomains, save_mesh2);
+//-----------------------------------------------------------------------------
+// mesh is not defined on a domain but there are multiple meshes
+TEST(conduit_relay_mpi_io_silo, missing_domain_mesh)
+{
+    //
+    // Set Up MPI
+    //
+    int par_rank;
+    int par_size;
+    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm_rank(comm, &par_rank);
+    MPI_Comm_size(comm, &par_size);
 
-//     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-//     {
-//         save_mesh[child]["coordsets"].rename_child("coords", "coords2");
-//         save_mesh[child]["topologies"]["topo"]["coordset"].reset();
-//         save_mesh[child]["topologies"]["topo"]["coordset"] = "coords2";
-//         save_mesh[child]["topologies"].rename_child("topo", "topo2");
-//         save_mesh[child]["fields"]["dist"]["topology"].reset();
-//         save_mesh[child]["fields"]["dist"]["topology"] = "topo2";
-//         save_mesh[child]["fields"].rename_child("dist", "dist2");
+    CONDUIT_INFO("Rank "
+                  << par_rank
+                  << " of "
+                  << par_size
+                  << " reporting");
 
-//         save_mesh[child]["coordsets"]["coords"].set_external(save_mesh2[child]["coordsets"]["coords"]);
-//         save_mesh[child]["topologies"]["topo"].set_external(save_mesh2[child]["topologies"]["topo"]);
-//         save_mesh[child]["fields"]["dist"].set_external(save_mesh2[child]["fields"]["dist"]);
-//     }
+    //
+    // Create an example mesh.
+    //
+    Node save_mesh, save_mesh2;
 
-//     // remove information for a particular domain
-//     save_mesh[2]["topologies"].remove_child("topo");
+    // use spiral , with 7 domains
+    conduit::blueprint::mesh::examples::spiral(7,save_mesh);
+    conduit::blueprint::mesh::examples::spiral(7,save_mesh2);
 
-//     const std::string basename = "silo_missing_domain_mesh_spiral";
-//     const std::string filename = basename + ".cycle_000000.root";
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        save_mesh[child]["coordsets"].rename_child("coords", "coords2");
+        save_mesh[child]["topologies"]["topo"]["coordset"].reset();
+        save_mesh[child]["topologies"]["topo"]["coordset"] = "coords2";
+        save_mesh[child]["topologies"].rename_child("topo", "topo2");
+        save_mesh[child]["fields"]["dist"]["topology"].reset();
+        save_mesh[child]["fields"]["dist"]["topology"] = "topo2";
+        save_mesh[child]["fields"].rename_child("dist", "dist2");
 
-//     remove_path_if_exists(filename);
-//     io::silo::save_mesh(save_mesh, basename);
+        save_mesh[child]["coordsets"]["coords"].set_external(save_mesh2[child]["coordsets"]["coords"]);
+        save_mesh[child]["topologies"]["topo"].set_external(save_mesh2[child]["topologies"]["topo"]);
+        save_mesh[child]["fields"]["dist"].set_external(save_mesh2[child]["fields"]["dist"]);
+    }
+
+    // remove information for a particular domain
+    save_mesh[2]["topologies"].remove_child("topo");
+
+    // rank 0 gets first 4 domains, rank 1 gets the rest
+    if(par_rank == 0)
+    {
+        save_mesh.remove(4);
+        save_mesh.remove(4);
+        save_mesh.remove(4);
+
+        save_mesh2.remove(4);
+        save_mesh2.remove(4);
+        save_mesh2.remove(4);
+    }
+    else if(par_rank == 1)
+    {
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+        save_mesh.remove(0);
+
+        save_mesh2.remove(0);
+        save_mesh2.remove(0);
+        save_mesh2.remove(0);
+        save_mesh2.remove(0);
+    }
+    else
+    {
+        // cyrus was wrong about 2 mpi ranks.
+        EXPECT_TRUE(false);
+    }
+
+    MPI_Barrier(comm);
+
+    std::string output_base = "silo_mpi_missing_mesh_nontrivial";
+
+    std::string output_dir  = output_base + ".cycle_000000";
+    std::string output_root = output_base + ".cycle_000000.root";
+
+    MPI_Barrier(comm);
+
+    conduit::relay::mpi::io::silo::save_mesh(save_mesh,
+                                             output_base,
+                                             comm);
+
+    MPI_Barrier(comm);
+
+    EXPECT_TRUE(conduit::utils::is_directory(output_dir));
+    EXPECT_TRUE(conduit::utils::is_file(output_root));
+
+    // read the mesh back in diff to make sure we have the same save_mesh
+    Node load_mesh, load_mesh2, info, opts;
+
+    opts["mesh_name"] = "mesh_topo2";
+    relay::mpi::io::silo::load_mesh(output_root, opts, load_mesh, comm);
+    opts["mesh_name"] = "mesh_topo";
+    relay::mpi::io::silo::load_mesh(output_root, opts, load_mesh2, comm);
+
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh2, info));
+
+    // make changes to save mesh so the diff will pass
+    if (par_rank == 0)
+    {
+        save_mesh[2]["coordsets"].remove_child("coords");
+        save_mesh[2]["fields"].remove_child("dist");
+    }
     
-//     opts["mesh_name"] = "mesh_topo2";
-//     io::silo::load_mesh(filename, opts, load_mesh);
-//     opts["mesh_name"] = "mesh_topo";
-//     io::silo::load_mesh(filename, opts, load_mesh2);
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        silo_name_changer("mesh", save_mesh[child]);
 
-//     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-//     EXPECT_TRUE(blueprint::mesh::verify(load_mesh2, info));
+        if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
+        {
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
+        }
+    }
 
-//     // make changes to save mesh so the diff will pass
-//     save_mesh[2]["coordsets"].remove_child("coords");
-//     save_mesh[2]["fields"].remove_child("dist");
-//     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-//     {
-//         silo_name_changer("mesh", save_mesh[child]);
-//         int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-//         save_mesh[child]["state"]["cycle"].reset();
-//         save_mesh[child]["state"]["cycle"] = (int64) cycle;
-//     }
+    // we must merge the two meshes in load mesh
+    // this is tricky because one is missing a domain
+    if (par_rank == 0)
+    {
+        for (index_t dom_id = 0; dom_id < 4; dom_id ++)
+        {
+            index_t load_mesh_dom_id = dom_id;
+            index_t load_mesh2_dom_id = dom_id;
 
-//     // we must merge the two meshes in load mesh
-//     // this is tricky because one is missing a domain
-//     load_mesh[0]["coordsets"]["mesh_topo"].set_external(load_mesh2[0]["coordsets"]["mesh_topo"]);
-//     load_mesh[0]["topologies"]["mesh_topo"].set_external(load_mesh2[0]["topologies"]["mesh_topo"]);
-//     load_mesh[0]["fields"]["mesh_dist"].set_external(load_mesh2[0]["fields"]["mesh_dist"]);
-//     load_mesh[1]["coordsets"]["mesh_topo"].set_external(load_mesh2[1]["coordsets"]["mesh_topo"]);
-//     load_mesh[1]["topologies"]["mesh_topo"].set_external(load_mesh2[1]["topologies"]["mesh_topo"]);
-//     load_mesh[1]["fields"]["mesh_dist"].set_external(load_mesh2[1]["fields"]["mesh_dist"]);
-//     load_mesh[3]["coordsets"]["mesh_topo"].set_external(load_mesh2[2]["coordsets"]["mesh_topo"]);
-//     load_mesh[3]["topologies"]["mesh_topo"].set_external(load_mesh2[2]["topologies"]["mesh_topo"]);
-//     load_mesh[3]["fields"]["mesh_dist"].set_external(load_mesh2[2]["fields"]["mesh_dist"]);
+            if (dom_id > 2) // load mesh 2 has one less domain
+            {
+                load_mesh2_dom_id = dom_id - 1;
+            }
 
-//     EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-//     NodeConstIterator l_itr = load_mesh.children();
-//     NodeConstIterator s_itr = save_mesh.children();
-//     while (l_itr.has_next())
-//     {
-//         const Node &l_curr = l_itr.next();
-//         const Node &s_curr = s_itr.next();
+            std::cout << load_mesh_dom_id << ", " << load_mesh2_dom_id << std::endl;
 
-//         EXPECT_FALSE(l_curr.diff(s_curr, info));
-//     }
-// }
+            if (dom_id != 2) // nothing to do for domain 2
+            {
+                load_mesh[load_mesh_dom_id]["coordsets"]["mesh_topo"].set_external(load_mesh2[load_mesh2_dom_id]["coordsets"]["mesh_topo"]);
+                load_mesh[load_mesh_dom_id]["topologies"]["mesh_topo"].set_external(load_mesh2[load_mesh2_dom_id]["topologies"]["mesh_topo"]);
+                load_mesh[load_mesh_dom_id]["fields"]["mesh_dist"].set_external(load_mesh2[load_mesh2_dom_id]["fields"]["mesh_dist"]);
+            }
+        }
+    }
+    if (par_rank == 1)
+    {
+        for (index_t dom_id = 0; dom_id < 3; dom_id ++)
+        {
+            load_mesh[dom_id]["coordsets"]["mesh_topo"].set_external(load_mesh2[dom_id]["coordsets"]["mesh_topo"]);
+            load_mesh[dom_id]["topologies"]["mesh_topo"].set_external(load_mesh2[dom_id]["topologies"]["mesh_topo"]);
+            load_mesh[dom_id]["fields"]["mesh_dist"].set_external(load_mesh2[dom_id]["fields"]["mesh_dist"]);
+        }
+    }
+
+    // rank 0 will have 4, rank 1 will have 3
+    int num_local_domains = 4;
+    if(par_rank != 0)
+    {
+        num_local_domains = 3;
+    }
+
+    // total doms should be 7
+    EXPECT_EQ( conduit::blueprint::mpi::mesh::number_of_domains(load_mesh, comm), 7);
+
+    std::cout << "par_rank " << par_rank << "  read # of children " << load_mesh.number_of_children();
+    // in all cases we expect 7 domains to match
+    for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+    {
+        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),info));
+    }
+}
 
 // //-----------------------------------------------------------------------------
 // // explicit points (unstructured mesh) do not use every coord
