@@ -3585,7 +3585,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                            n_reduced,
                            mpi_comm);
 
-
     index_t_accessor counts = n_reduced.value();
     index_t idx = -1;
     index_t i =0;
