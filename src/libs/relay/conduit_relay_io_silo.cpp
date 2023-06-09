@@ -3015,7 +3015,13 @@ generate_silo_names(const Node &n_mesh_state,
 
         // we create the silo names
         name_strings.push_back(silo_name);
-        name_ptrs.push_back(name_strings.back().c_str());
+    }
+
+    // had to take the name ptrs creation out of the main loop
+    // to solve a strange c++ vector issue on ubuntu
+    for (index_t i = 0; i < name_strings.size(); i ++)
+    {
+        name_ptrs.push_back(name_strings[i].c_str());
     }
 }
 
