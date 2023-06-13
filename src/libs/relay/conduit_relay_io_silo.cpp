@@ -2942,7 +2942,6 @@ generate_silo_names(const Node &n_mesh_state,
                     const Node &types_for_mesh_or_var,
                     const int default_type,
                     std::vector<std::string> &name_strings,
-                    std::vector<const char *> &name_ptrs,
                     std::vector<int> &types)
 {
     int_accessor stored_types = types_for_mesh_or_var.value();
@@ -3016,13 +3015,6 @@ generate_silo_names(const Node &n_mesh_state,
         // we create the silo names
         name_strings.push_back(silo_name);
     }
-
-    // had to take the name ptrs creation out of the main loop
-    // to solve a strange c++ vector issue on ubuntu
-    for (index_t i = 0; i < name_strings.size(); i ++)
-    {
-        name_ptrs.push_back(name_strings[i].c_str());
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -3054,7 +3046,7 @@ void write_multimesh(DBfile *dbfile,
     std::string silo_path = root["silo_path"].as_string();
 
     std::vector<std::string> domain_name_strings;
-    std::vector<const char *> domain_name_ptrs;
+    
     std::vector<int> mesh_types;
     generate_silo_names(n_mesh["state"],
                         silo_path,
@@ -3065,8 +3057,14 @@ void write_multimesh(DBfile *dbfile,
                         root_type_info_meshes[topo_name],
                         DB_QUADMESH, // the default if we have an empty domain
                         domain_name_strings,
-                        domain_name_ptrs,
                         mesh_types);
+
+    // package up char ptrs for silo
+    std::vector<const char *> domain_name_ptrs;
+    for (index_t i = 0; i < domain_name_strings.size(); i ++)
+    {
+        domain_name_ptrs.push_back(domain_name_strings[i].c_str());
+    }
 
     // create state optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
@@ -3248,7 +3246,6 @@ write_multivars(DBfile *dbfile,
                 std::string silo_path = root["silo_path"].as_string();
 
                 std::vector<std::string> var_name_strings;
-                std::vector<const char *> var_name_ptrs;
                 std::vector<int> var_types;
                 generate_silo_names(n_mesh["state"],
                                     silo_path,
@@ -3259,8 +3256,14 @@ write_multivars(DBfile *dbfile,
                                     root_type_info_vars[var_name],
                                     DB_QUADVAR, // the default if we have an empty domain
                                     var_name_strings,
-                                    var_name_ptrs,
                                     var_types);
+
+                // package up char ptrs for silo
+                std::vector<const char *> var_name_ptrs;
+                for (index_t i = 0; i < var_name_strings.size(); i ++)
+                {
+                    var_name_ptrs.push_back(var_name_strings[i].c_str());
+                }
 
                 detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
                     DBMakeOptlist(1),
