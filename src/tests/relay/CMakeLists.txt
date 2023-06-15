@@ -26,6 +26,7 @@ set(RELAY_WEBSERVER_TESTS  t_relay_node_viewer
 set(RELAY_MPI_TESTS      t_relay_mpi_smoke
                          t_relay_mpi_test)
 set(RELAY_SILO_TESTS     t_relay_io_silo)
+set(RELAY_MPI_SILO_TESTS t_relay_mpi_io_silo)
 
 set(RELAY_HDF5_TESTS t_relay_io_hdf5
                      t_relay_io_hdf5_read_and_print
@@ -88,6 +89,15 @@ if(SILO_FOUND)
                      DEPENDS_ON conduit conduit_relay
                      FOLDER tests/relay)
     endforeach()
+    if(MPI_FOUND)
+        message(STATUS "SILO + MPI enabled: Adding conduit_relay_mpi_silo unit tests")
+        foreach(TEST ${RELAY_MPI_SILO_TESTS})
+            add_cpp_mpi_test(TEST ${TEST}
+                             NUM_MPI_TASKS 2
+                             DEPENDS_ON conduit conduit_relay_mpi_io
+                             FOLDER tests/relay)
+        endforeach()
+    endif()
 else()
     message(STATUS "Silo disabled: Skipping conduit_relay silo tests")
 endif()

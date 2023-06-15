@@ -247,6 +247,9 @@ void CONDUIT_BLUEPRINT_API flatten(const conduit::Node &mesh,
                                    conduit::Node &output,
                                    MPI_Comm comm);
 
+void CONDUIT_BLUEPRINT_API generate_domain_ids(conduit::Node &domains,
+                                               MPI_Comm mpi_comm);
+
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------

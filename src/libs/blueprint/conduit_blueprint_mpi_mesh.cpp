@@ -2706,6 +2706,40 @@ flatten(const conduit::Node &mesh, const conduit::Node &options,
     do_flatten.execute(mesh, output);
 }
 
+//-------------------------------------------------------------------------
+//
+// recalculate domain ids so that we are consistant.
+// Assumes that domains are valid
+//
+void generate_domain_ids(conduit::Node &domains,
+                         MPI_Comm mpi_comm)
+{
+  int num_domains = (int)domains.number_of_children();
+
+  int domain_offset = 0;
+
+  int comm_size = 1;
+  int rank = 0;
+
+  MPI_Comm_rank(mpi_comm,&rank);
+  MPI_Comm_size(mpi_comm, &comm_size);
+  int *domains_per_rank = new int[comm_size];
+
+  MPI_Allgather(&num_domains, 1, MPI_INT, domains_per_rank, 1, MPI_INT, mpi_comm);
+
+  for(int i = 0; i < rank; ++i)
+  {
+    domain_offset += domains_per_rank[i];
+  }
+  delete[] domains_per_rank;
+
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = domains.child(i);
+    dom["state/domain_id"] = domain_offset + i;
+  }
+}
+
 //-----------------------------------------------------------------------------
 }
 //-----------------------------------------------------------------------------
