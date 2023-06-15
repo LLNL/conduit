@@ -34,6 +34,41 @@ check_h5_open_ids()
 
 
 //-----------------------------------------------------------------------------
+// helper to create an HDF5 dataset
+void
+create_hdf5_dataset(std::string fname, std::string path, int rank, int const * dims, 
+    hid_t mem_type, hid_t file_type, void * to_write)
+{
+    hid_t file;
+    herr_t status = 0;
+
+    // initialize count and dimensions
+    std::vector<hsize_t> hdims(rank);
+    for (int d = 0; d < rank; ++d)
+    {
+        hdims[d] = dims[d];
+    }
+
+    // create the file
+    file = H5Fcreate(fname.c_str(), H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+    // Create, init a dataspace for the dataset
+    hid_t    dataset, dataspace;
+    dataspace = H5Screate_simple(rank, hdims.data(), NULL);
+
+    // Create, init the dataset.  Element type is double.
+    dataset = H5Dcreate(file, path.c_str(), file_type, dataspace, H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    status = H5Dwrite(dataset, mem_type, H5S_ALL, H5S_ALL, H5P_DEFAULT, to_write);
+    status = H5Dclose(dataset);
+
+    // close the dataspace and file
+    status = H5Sclose(dataspace);
+    status = H5Fclose(file);
+}
+
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_by_file_name)
 {
     // get objects in flight already
@@ -211,6 +246,88 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_write_read_array)
     for(index_t i=0;i<10;i++)
     {
         EXPECT_EQ(val_in[i],val_out[i]);
+    }
+
+    // make sure we aren't leaking
+    EXPECT_EQ(check_h5_open_ids(),DO_NO_HARM);
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_read_2D_array)
+{
+    // get objects in flight already
+    int DO_NO_HARM = check_h5_open_ids();
+
+    int constexpr rank = 2;
+    int constexpr ncols = 5;
+    int constexpr nrows = 3;
+    int constexpr dset_size[rank] = { nrows, ncols };
+    int constexpr nelts = ncols * nrows;
+
+    Node n_in(DataType::float64(nelts));
+
+    float64_array val_in = n_in.value();
+
+    for(index_t i=0;i<nelts;i++)
+    {
+        val_in[i] = i;
+    }
+
+    // Create an HDF5 data set in an HDF5 file
+    hid_t mem_type = H5T_NATIVE_DOUBLE;
+    hid_t file_type = H5T_NATIVE_DOUBLE;
+    create_hdf5_dataset("tout_hdf5_r_2D_array.hdf5", "myobj", rank, dset_size, 
+        mem_type, file_type, val_in.data_ptr());
+
+    // read in the whole thing
+    Node n_whole_out;
+
+    io::hdf5_read("tout_hdf5_r_2D_array.hdf5:myobj",n_whole_out);
+
+    std::cout << "Read the whole thing:" << std::endl;
+    n_whole_out.print();
+
+    // should contain ncols x nrows elements
+    EXPECT_EQ(nelts, n_whole_out.dtype().number_of_elements());
+
+    float64_array val_whole_out = n_whole_out.value();
+
+    for(index_t i=0;i<nelts;i++)
+    {
+        EXPECT_EQ(val_in[i],val_whole_out[i]);
+    }
+
+    // now read in part of the array
+    Node read_opts;
+    int constexpr rncols = 3;
+    int constexpr rnrows = 2;
+    int constexpr rnelts = rncols * rnrows;
+    std::vector<int> size_ary;
+    size_ary.push_back(rnrows);
+    size_ary.push_back(rncols);
+    read_opts["size"].set_external(size_ary);
+    int constexpr rcoloff = 1;
+    int constexpr rrowoff = 1;
+    std::vector<int> offset_ary;
+    offset_ary.push_back(rrowoff);
+    offset_ary.push_back(rcoloff);
+    read_opts["offset"].set(offset_ary);
+
+    Node n_out;
+
+    io::hdf5_read("tout_hdf5_r_2D_array.hdf5:myobj",read_opts,n_out);
+
+    // should contain ncols x nrows elements
+    EXPECT_EQ(rnelts, n_out.dtype().number_of_elements());
+
+    float64_array val_out = n_out.value();
+
+
+    for(index_t i=0;i<rncols;i++)
+    {
+        EXPECT_EQ(val_in[i+rcoloff],val_out[i]);
+        EXPECT_EQ(val_in[i+rcoloff+rrowoff],val_out[i+rncols]);
     }
 
     // make sure we aren't leaking
