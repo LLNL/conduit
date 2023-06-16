@@ -565,18 +565,9 @@ adjset::validate(const Node &doms,
         return globalval == size;
     };
 
-    // Make sure that there are multiple domains.
     bool retval = false;
-    bool md = conduit::blueprint::mesh::is_multi_domain(doms);
-    // Make sure all ranks agree on the answer.
-    md = agree(md, comm);
-    if(!md)
-    {
-        info["errors"].append().set("The dataset is not multidomain.");
-        return retval;
-    }
 
-    // Decide whether all ranks have data.
+    // Get the domains.
     auto domains = conduit::blueprint::mesh::domains(doms);
 
     // We need to figure out the association, topologyName, and coordsetName.
@@ -634,9 +625,10 @@ adjset::validate(const Node &doms,
     conduit::blueprint::mpi::mesh::utils::query::MatchQuery MQ(doms, comm);
 
     // Do the validation.
+    const bool checkMultiDomain = false;
     retval = conduit::blueprint::mesh::utils::adjset::validate(doms,
                  adjsetName, association, topologyName, coordsetName,
-                 info, PQ, MQ);
+                 info, PQ, MQ, checkMultiDomain);
 
     // Make sure all ranks agree on the answer.
     retval = agree(retval, comm);

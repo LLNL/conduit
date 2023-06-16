@@ -12,6 +12,45 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.8.8
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.8/conduit-v0.8.8-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+* **General**
+
+ * Added Python 3 Stable ABI compatibility (Py_LIMITED_API) build support. Enabled by default when building against Python 3.11 or newer.
+ * Added ``conduit_adjset_validate`` tool which can read root files for a multiple domain dataset and check whether the adjsets (vertex or element associations) in it are correct. Any errors are printed to the console.
+
+* **Blueprint**
+
+ * Added ``PointQuery`` class that can query points in a topology and return whether the query points hit a point in that topology's coordset. There are serial and parallel versions of this class. In parallel, the query domain may exist on a different MPI rank and the result will be communicated to the calling rank.
+ * Added ``MatchQuery`` class that can be used to ask remote domains whether they contain an entity given using a set of point ids in the current rank's topology. The query builds up a query topology that it sends to the neighboring rank (if the query domain is not owned by the current MPI rank) and the topology is matched against the remote topology by matching points in the remote coordset. The results are returned to the calling MPI rank and can be retrieved using the query.
+ * Added ``TopologyBuilder`` class that can be used to build up a new topology subset from a source topology. The new topology shape does not have to match the original topology shape. A new coordset is created based on the points that are referenced from the original topology.
+ * Added ``topology::search`` function that allows one topology to be searched for in another topology. The topologies must have the same shape type and their respective coordsets can have points in different orders. The shapes are matched using coordinate matching.
+ * Added ``adjset::validate`` function which tests adjacency sets for correctness and flags any errors in a Conduit node. There are serial and parallel versions of the function. The functions apply PointQuery for vertex association adjsets and MatchQuery for element association adjsets. Each domain's adjset will make queries to its neighboring domains as to whether the vertex or element of interest exists in the neighbor's topology.
+ * Added ``utils::kdtree`` class that can be used to accelerate point lookups for coordsets.
+ * Field selections for the ``conduit::blueprint::mesh::partition()`` function support a new ``destination_ranks`` property that contains a list of integers that map domain numbers to MPI ranks. This property tells the partitioner the ranks where it should place each domain. If the property is not supplied, the partitioner is free to place domains as before.
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * Added explicit control for OpenMP Features with CMake ``ENABLE_OPENMP`` option (default = OFF). Adds ``CONDUIT_USE_OPENMP`` define to ``conduit_config.h``. Guards all use of OpenMP with ``CONDUIT_USE_OPENMP``. Prior to these guards, downstream users could enable OpenMP and macros could evaluate inconsistently with how Conduit was built causing OpenMP related linking errors.
+
+* **Blueprint**
+
+ * Functions such as ``generate_corners`` or ``generate_faces`` that accept adjsets now include a filtering stage to improve adjset quality. This filtering stage uses ``PointQuery`` and ``MatchQuery`` to ensure that entities referenced in a remote domain actually exist in the neighboring domain.
+
+
 v0.8.7
 ---------------------------------
 

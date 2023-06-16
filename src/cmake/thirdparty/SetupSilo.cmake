@@ -59,6 +59,13 @@ if(${SILO_JSON_LIBS})
 endif()
 set(SILO_INCLUDE_DIRS ${SILO_INCLUDE_DIR} )
 
+#
+# Add ZLIB to the SILO_LIBRARIES
+#
+if(ZLIB_FOUND)
+    list(APPEND SILO_LIBRARIES ${ZLIB_LIBRARIES})
+endif()
+
 
 include(FindPackageHandleStandardArgs)
 # handle the QUIETLY and REQUIRED arguments and set SILO_FOUND to TRUE

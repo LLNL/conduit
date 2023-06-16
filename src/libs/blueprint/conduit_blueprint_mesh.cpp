@@ -7813,6 +7813,21 @@ mesh::flatten(const conduit::Node &mesh,
     do_flatten.execute(mesh, output);
 }
 
+//-----------------------------------------------------------------------------
+void mesh::generate_domain_ids(conduit::Node &domains)
+{
+  int num_domains = (int)domains.number_of_children();
+
+  int domain_offset = 0;
+
+  for(int i = 0; i < num_domains; ++i)
+  {
+    conduit::Node &dom = domains.child(i);
+    dom["state/domain_id"] = domain_offset + i;
+  }
+}
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint --

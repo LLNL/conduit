@@ -47,6 +47,13 @@ namespace io
 namespace blueprint
 {
 
+bool CONDUIT_RELAY_API clean_mesh(const conduit::Node &data,
+                                  conduit::Node &output);
+
+void CONDUIT_RELAY_API gen_domain_to_file_map(index_t num_domains,
+                                              index_t num_files,
+                                              Node &out);
+
 //-----------------------------------------------------------------------------
 // Save a blueprint mesh to root + file set
 //-----------------------------------------------------------------------------
@@ -74,8 +81,8 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      suffix: "default", "cycle", "none" 
-///            when # of domains == 1,  "default"   ==> "none"
-///            else,                    "default"   ==> "cycle"
+///            when cycle is present,  "default"   ==> "cycle"
+///            else,                   "default"   ==> "none"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
@@ -117,8 +124,8 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///            else,                    "default"   ==> "multi_file"
 ///
 ///      suffix: "default", "cycle", "none" 
-///            when # of domains == 1,  "default"   ==> "none"
-///            else,                    "default"   ==> "cycle"
+///            when cycle is present,  "default"   ==> "cycle"
+///            else,                   "default"   ==> "none"
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///

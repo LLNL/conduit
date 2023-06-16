@@ -2028,9 +2028,10 @@ adjset::validate(const conduit::Node &doms,
         coordsetName = to_string(topo["coordset"]);
     }
 
+    const bool checkMultiDomain = true;
     return adjset::validate(doms,
                             adjsetName, association, topologyName, coordsetName,
-                            info, PQ, MQ);
+                            info, PQ, MQ, checkMultiDomain);
 }
 
 //---------------------------------------------------------------------------
@@ -2042,12 +2043,14 @@ adjset::validate(const conduit::Node &doms,
                  const std::string &coordsetName,
                  conduit::Node &info,
                  query::PointQuery &PQ,
-                 query::MatchQuery &MQ)
+                 query::MatchQuery &MQ,
+                 bool checkMultiDomain)
 {
     bool retval = false;
 
-    // Make sure that there are multiple domains.
-    if(!conduit::blueprint::mesh::is_multi_domain(doms))
+    // Make sure that there are multiple domains. Note that we do this
+    // test in serial but not parallel.
+    if(checkMultiDomain && !conduit::blueprint::mesh::is_multi_domain(doms))
     {
         info["errors"].append().set("The dataset is not multidomain.");
         return retval;
