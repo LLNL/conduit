@@ -35,7 +35,7 @@ check_h5_open_ids()
 
 //-----------------------------------------------------------------------------
 // helper to create an HDF5 dataset
-void
+herr_t
 create_hdf5_dataset(std::string fname, std::string path, int rank, int const * dims, 
     hid_t mem_type, hid_t file_type, void * to_write)
 {
@@ -64,6 +64,8 @@ create_hdf5_dataset(std::string fname, std::string path, int rank, int const * d
     // close the dataspace and file
     status = H5Sclose(dataspace);
     status = H5Fclose(file);
+
+    return status;
 }
 
 
@@ -277,8 +279,11 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_read_2D_array)
     // Create an HDF5 data set in an HDF5 file
     hid_t mem_type = H5T_NATIVE_DOUBLE;
     hid_t file_type = H5T_NATIVE_DOUBLE;
-    create_hdf5_dataset("tout_hdf5_r_2D_array.hdf5", "myobj", rank, dset_size, 
-        mem_type, file_type, val_in.data_ptr());
+    herr_t status = create_hdf5_dataset("tout_hdf5_r_2D_array.hdf5", 
+        "myobj", rank, dset_size, mem_type, file_type, val_in.data_ptr());
+
+    // Asserting status >= 0, so that we kill the test if we fail
+    ASSERT_GE(status, 0) << "Error creating the HDF5 test dataset.";
 
     // read in the whole thing
     Node n_whole_out;
