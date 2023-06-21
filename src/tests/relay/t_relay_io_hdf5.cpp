@@ -282,7 +282,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_read_2D_array)
     herr_t status = create_hdf5_dataset("tout_hdf5_r_2D_array.hdf5", 
         "myobj", rank, dset_size, mem_type, file_type, val_in.data_ptr());
 
-    // Asserting status >= 0, so that we kill the test if we fail
+    // Assert (not expect) status >= 0, to crash if the test fails
     ASSERT_GE(status, 0) << "Error creating the HDF5 test dataset.";
 
     // read in the whole thing
@@ -323,16 +323,23 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_read_2D_array)
 
     io::hdf5_read("tout_hdf5_r_2D_array.hdf5:myobj",read_opts,n_out);
 
+    n_out.print_detailed();
+
     // should contain ncols x nrows elements
     EXPECT_EQ(rnelts, n_out.dtype().number_of_elements());
 
     float64_array val_out = n_out.value();
-
-
-    for(index_t i=0;i<rncols;i++)
+    
+    index_t offset = ncols * rrowoff;
+    index_t linear_idx = 0;
+    for (index_t j = 0; j < rnrows; j++)
     {
-        EXPECT_EQ(val_in[i+rcoloff],val_out[i]);
-        EXPECT_EQ(val_in[i+rcoloff+rrowoff],val_out[i+rncols]);
+        for (index_t i = 0; i < rncols; i++)
+        {
+            EXPECT_EQ(val_in[offset + rcoloff + i], val_out[linear_idx]);
+            linear_idx += 1;
+        }
+        offset += ncols;
     }
 
     // make sure we aren't leaking
