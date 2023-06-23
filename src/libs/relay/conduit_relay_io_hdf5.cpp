@@ -2886,12 +2886,10 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             hid_t dataspace = H5Dget_space(hdf5_dset_id);
 
             // select hyperslab
-            h5_status = H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset,
-                stride, readsize, NULL);
-            CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                                                            hdf5_dset_id,
-                                                            ref_path,
-                                        "Error selecting hyperslab to read");
+            H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, stride,
+                readsize, NULL);
+            // Don't check for errors here, because H5Sselect_hyperslab
+            // returns -1 (error) if dataspace refers to a scalar.
 
             // check for string special case, H5T_VARIABLE string
             if( H5Tis_variable_str(h5_dtype_id) )
