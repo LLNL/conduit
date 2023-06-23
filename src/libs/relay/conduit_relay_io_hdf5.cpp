@@ -2749,6 +2749,16 @@ fill_dataset_opts(const Node & inopts, hid_t dataspace_id, Node & filled_opts)
     //                       "`stride` must be greater than zero.");
     //}
 
+    // If dataspace_id is a scalar, then H5Sget_simple_extent_ndims will
+    // return zero.  Setting rank to 0 makes the following code create 
+    // zero-length arrays for offset, stride, and size, which is unhealthy.
+    bool is_scalar = false;
+    if (rank < 1)
+    {
+        is_scalar = true;
+        rank = 1;
+    }
+
     Node& nsizes = filled_opts["slabparams/sizes"];
     nsizes.set(DataType::c_unsigned_long_long(rank));
     hsize_t* psizes = (hsize_t*)nsizes.data_ptr();
@@ -2756,7 +2766,7 @@ fill_dataset_opts(const Node & inopts, hid_t dataspace_id, Node & filled_opts)
 
     hsize_t * offset = conduit_node_to_argarray(filled_opts, "offset", rank, 0);
     hsize_t * stride = conduit_node_to_argarray(filled_opts, "stride", rank, 1);
-    hsize_t * readsize = conduit_node_to_argarray(filled_opts, "size", rank, 0);
+    hsize_t* readsize = conduit_node_to_argarray(filled_opts, "size", rank, (int)is_scalar);
 
     hsize_t readcount = calculate_readsize(readsize, rank, psizes, offset, stride);
     filled_opts["slabparams/readcount"] = readcount;
