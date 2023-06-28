@@ -2934,10 +2934,6 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                     dataspace,
                                     H5P_DEFAULT,
                                     dest.data_ptr());
-                //CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                //                                            hdf5_dset_id,
-                //                                            ref_path,
-                //                        "Error reading compactly");
             }
             else
             {
@@ -2953,10 +2949,6 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                     dataspace,
                                     H5P_DEFAULT,
                                     n_tmp.data_ptr());
-                //CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                //                                            hdf5_dset_id,
-                //                                            ref_path,
-                //                        "Error reading non-compactly");
 
                 // copy out to our dest
                 dest.set(n_tmp);
