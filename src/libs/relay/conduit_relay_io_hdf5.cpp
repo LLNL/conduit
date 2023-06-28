@@ -549,7 +549,8 @@ void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 /// 7. sets filled_opts["slabparams/readcount"] as a scalar, the number
 ///    of values to read, as specified by offset, stride, and size
 void 
-fill_dataset_opts(const Node& inopts, hid_t dataspace_id, Node& filled_opts);
+fill_dataset_opts(const std::string & ref_path, const Node& inopts,
+    hid_t dataspace_id, Node& filled_opts);
 
 hsize_t*
 get_dataset_opt(const Node& opts, const std::string opt_name);
@@ -2717,7 +2718,8 @@ calculate_readsize(hsize_t * readsize, index_t rank,
 
 //---------------------------------------------------------------------------//
 void
-fill_dataset_opts(const Node & inopts, hid_t dataspace_id, Node & filled_opts)
+fill_dataset_opts(const std::string & ref_path, const Node & inopts,
+    hid_t dataspace_id, Node & filled_opts)
 {
 
     // Intent here is to do a deep copy, since opts is a const ref
@@ -2739,15 +2741,6 @@ fill_dataset_opts(const Node & inopts, hid_t dataspace_id, Node & filled_opts)
     // Here we should do some error checking.  At least:
     // - Each element of stride >= 1
     // - Each element of offset >= 0
-    // 
-    // Here is what we used to do:
-    //if (stride == 0)
-    //{
-    //    CONDUIT_HDF5_ERROR(ref_path,
-    //                       "Error reading HDF5 Dataset with options:"
-    //                       << opts.to_yaml() <<
-    //                       "`stride` must be greater than zero.");
-    //}
 
     // If dataspace_id is a scalar, then H5Sget_simple_extent_ndims will
     // return zero.  Setting rank to 0 makes the following code create 
@@ -2767,6 +2760,17 @@ fill_dataset_opts(const Node & inopts, hid_t dataspace_id, Node & filled_opts)
     hsize_t * offset = conduit_node_to_argarray(filled_opts, "offset", rank, 0);
     hsize_t * stride = conduit_node_to_argarray(filled_opts, "stride", rank, 1);
     hsize_t* readsize = conduit_node_to_argarray(filled_opts, "size", rank, (int)is_scalar);
+
+    for (int d = 0; d < rank; ++d)
+    {
+        if (stride[d] == 0)
+        {
+            CONDUIT_HDF5_ERROR(ref_path,
+                "Error reading HDF5 Dataset with options:"
+                << inopts.to_yaml() <<
+                "`stride` must be greater than zero.");
+        }
+    }
 
     hsize_t readcount = calculate_readsize(readsize, rank, psizes, offset, stride);
     filled_opts["slabparams/readcount"] = readcount;
@@ -2814,11 +2818,11 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         hid_t h5_status    = 0;
 
         Node filled_opts;
-        fill_dataset_opts(opts, h5_dspace_id, filled_opts);
-        std::cout << "======= opts:\n";
-        opts.print();
-        std::cout << "======= filled_opts:\n";
-        filled_opts.print();
+        fill_dataset_opts(ref_path, opts, h5_dspace_id, filled_opts);
+        //std::cout << "======= opts:\n";
+        //opts.print();
+        //std::cout << "======= filled_opts:\n";
+        //filled_opts.print();
 
         Node& slab_params = filled_opts["slabparams"];
         //index_t rank = slab_params["rank"].value();
@@ -2930,10 +2934,10 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                     dataspace,
                                     H5P_DEFAULT,
                                     dest.data_ptr());
-                CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                                                            hdf5_dset_id,
-                                                            ref_path,
-                                        "Error reading compactly");
+                //CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
+                //                                            hdf5_dset_id,
+                //                                            ref_path,
+                //                        "Error reading compactly");
             }
             else
             {
@@ -2949,10 +2953,10 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                     dataspace,
                                     H5P_DEFAULT,
                                     n_tmp.data_ptr());
-                CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
-                                                            hdf5_dset_id,
-                                                            ref_path,
-                                        "Error reading non-compactly");
+                //CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
+                //                                            hdf5_dset_id,
+                //                                            ref_path,
+                //                        "Error reading non-compactly");
 
                 // copy out to our dest
                 dest.set(n_tmp);
