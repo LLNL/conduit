@@ -423,7 +423,7 @@ and ``subelements`` is identical and contains the following items:
   * shape_map/polyhedron : (numeric entry for polyhedron, e.g. 42 - VTK_POLYHEDRON)
   * shape_map/quad : (numeric entry for quadrilateral, e.g. 9 - VTK_QUAD)
   * shape_map/tri : (numeric entry for triangle, e.g. 5 - VTK_TRIANGLE)
-  * shape_map/polygon: (numeric entry for polygon, e.g. 7 - VTK_POLYGON)
+  * shape_map/polygonal: (numeric entry for polygon, e.g. 7 - VTK_POLYGON)
 
 ``shapes`` array contains the numeric element type for each element.
 
