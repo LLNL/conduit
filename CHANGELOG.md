@@ -6,6 +6,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ## [Unreleased]
 
+### Added
+
+#### Relay
+- Added ability to read N-D HDF5 arrays into linear memory arrays.
+
 ### Fixed
 
 #### Blueprint

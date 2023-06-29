@@ -2819,13 +2819,8 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
 
         Node filled_opts;
         fill_dataset_opts(ref_path, opts, h5_dspace_id, filled_opts);
-        //std::cout << "======= opts:\n";
-        //opts.print();
-        //std::cout << "======= filled_opts:\n";
-        //filled_opts.print();
 
         Node& slab_params = filled_opts["slabparams"];
-        //index_t rank = slab_params["rank"].value();
         index_t rank = slab_params["rank"].to_long_long();
         hsize_t readtotal = slab_params["readcount"].to_unsigned_long_long();
         index_t nelems = (index_t)readtotal;
