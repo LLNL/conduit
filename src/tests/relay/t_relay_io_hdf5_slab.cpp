@@ -114,9 +114,7 @@ hdf5_read_dset_slab(const std::string &file_path,
 
     // but hdf5 doens't support slab fetch across datatypes
     // so for now we make sure the datatype is consistent. 
-    index_t rank       = H5Sget_simple_extent_ndims(h5_dspace_id);
-    hsize_t size[1] = {1};
-    DataType h5_dt = conduit::relay::io::hdf5_dtype_to_conduit_dtype(h5_dtype_id,size,rank);
+    DataType h5_dt = conduit::relay::io::hdf5_dtype_to_conduit_dtype(h5_dtype_id,1);
 
     if( h5_dt.id() != dtype.id() )
     {

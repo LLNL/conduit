@@ -368,6 +368,11 @@ void  CONDUIT_RELAY_API    conduit_dtype_to_hdf5_dtype_cleanup(
 
 //-----------------------------------------------------------------------------
 DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
+                                                       index_t num_elems,
+                                                const std::string &ref_path="");
+
+//-----------------------------------------------------------------------------
+DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                                                        hsize_t * num_elems_array,
                                                        index_t rank,
                                                 const std::string &ref_path="");

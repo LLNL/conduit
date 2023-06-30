@@ -724,6 +724,17 @@ conduit_dtype_to_hdf5_dtype_cleanup(hid_t hdf5_dtype_id,
 //-----------------------------------------------------------------------------
 DataType
 hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
+                            index_t num_elems,
+                            const std::string& ref_path)
+{
+    hsize_t num_elems_array[1] = { num_elems };
+    return hdf5_dtype_to_conduit_dtype(hdf5_dtype_id, num_elems_array, 1, ref_path);
+}
+
+
+//-----------------------------------------------------------------------------
+DataType
+hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                             hsize_t * num_elems_array,
                             index_t rank,
                             const std::string &ref_path)
