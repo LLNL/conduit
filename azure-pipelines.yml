@@ -589,7 +589,7 @@ stages:
           which cmake
           cd install/examples/conduit/using-with-cmake-prefix-path
           cmake -DCMAKE_PREFIX_PATH=${ROOT_DIR}/install  -B build -S .
-          cmake --build -build
+          cmake --build build
           cd build
           ./conduit_example
         displayName: 'Test vs Install (using-with-cmake-prefix-path)'
