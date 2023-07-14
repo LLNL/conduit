@@ -553,7 +553,7 @@ fill_dataset_opts(const std::string & ref_path, const Node& inopts,
     hid_t dataspace_id, Node& filled_opts);
 
 hsize_t*
-get_dataset_opt(const Node& opts, const std::string opt_name);
+make_dataset_opt_copy(const Node& opts, const std::string opt_name);
 
 
 //-----------------------------------------------------------------------------
@@ -744,7 +744,7 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
     index_t num_elems = 1;
     for (int d = 0; d < rank; ++d)
     {
-        num_elems = num_elems * num_elems_array[d];
+        num_elems = num_elems * (index_t)num_elems_array[d];
     }
 
     DataType res;
@@ -2684,39 +2684,48 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 }
 
 //---------------------------------------------------------------------------//
-hsize_t *
+index_t_array
 conduit_node_to_argarray(Node& n,
                          const char* argname,
+                         const char* altname,
                          int rank,
-                         int dft)
+                         index_t dft)
 {
-    if (!n.has_child(argname))
+    Node& hdf5array = n["slabparams"][argname];
+    if (n.has_child(argname))
     {
-        n[argname].set(DataType::int32(rank));
-        int32_array p_arg = n[argname].value();
+        n[argname].to_index_t_array(hdf5array);
+    }
+    else if (n.has_child(altname))
+    {
+        n[altname].to_index_t_array(hdf5array);
+    }
+    else
+    {
+        hdf5array.set(DataType::index_t(rank));
+        index_t_array p_ary = hdf5array.value();
         for (int d = 0; d < rank; ++d)
         {
-            p_arg[d] = dft;
+            p_ary[d] = dft;
         }
     }
-    Node& hdf5array = n["slabparams"][argname];
-    n[argname].to_unsigned_long_long_array(hdf5array);
-    return (hsize_t*)hdf5array.data_ptr();
+    
+    return hdf5array.as_index_t_array();
 }
 
 
 //---------------------------------------------------------------------------//
-hsize_t
-calculate_readsize(hsize_t * readsize, index_t rank, 
-    const hsize_t * psizes, const hsize_t * offset, const hsize_t * stride)
+index_t
+calculate_readsize(index_t_array readsize, index_t rank, 
+    const index_t_array dataset_sizes, const index_t_array offsets, const index_t_array strides)
 {
-    hsize_t readtotal = 1;
+    index_t readtotal = 1;
     for (int d = 0; d < rank; ++d)
     {
         if (readsize[d] == 0)
         {
-            readsize[d] = (psizes[d] - offset[d]) / stride[d];
-            if ((psizes[d] - offset[d]) % stride[d] != 0)
+            readsize[d] = (dataset_sizes[d] - offsets[d]) / strides[d];
+            if ((dataset_sizes[d] - offsets[d]) % strides[d] != 0)
             {
                 readsize[d]++;
             }
@@ -2763,14 +2772,19 @@ fill_dataset_opts(const std::string & ref_path, const Node & inopts,
         rank = 1;
     }
 
-    Node& nsizes = filled_opts["slabparams/sizes"];
-    nsizes.set(DataType::c_unsigned_long_long(rank));
-    hsize_t* psizes = (hsize_t*)nsizes.data_ptr();
+    Node& nsizes = filled_opts["slabparams/dataset_sizes"];
+    nsizes.set(DataType::index_t(rank));
+    index_t_array nsizes_array = nsizes.value();
+    hsize_t* psizes = new hsize_t[rank];
     index_t rval = H5Sget_simple_extent_dims(dataspace_id, psizes, nullptr);
+    for (int d = 0; d < rank; ++d)
+    {
+        nsizes_array[d] = psizes[d];
+    }
 
-    hsize_t * offset = conduit_node_to_argarray(filled_opts, "offset", rank, 0);
-    hsize_t * stride = conduit_node_to_argarray(filled_opts, "stride", rank, 1);
-    hsize_t* readsize = conduit_node_to_argarray(filled_opts, "size", rank, (int)is_scalar);
+    index_t_array offset = conduit_node_to_argarray(filled_opts, "offsets", "offset", rank, 0);
+    index_t_array stride = conduit_node_to_argarray(filled_opts, "strides", "stride", rank, 1);
+    index_t_array readsz = conduit_node_to_argarray(filled_opts, "sizes", "size", rank, (int)is_scalar);
 
     for (int d = 0; d < rank; ++d)
     {
@@ -2783,16 +2797,24 @@ fill_dataset_opts(const std::string & ref_path, const Node & inopts,
         }
     }
 
-    hsize_t readcount = calculate_readsize(readsize, rank, psizes, offset, stride);
+    index_t readcount = calculate_readsize(readsz, rank, nsizes_array, offset, stride);
     filled_opts["slabparams/readcount"] = readcount;
+
+    delete[] psizes;
 }
 
 //---------------------------------------------------------------------------//
 hsize_t*
-get_dataset_opt(const Node& opts, const std::string opt_name)
+make_dataset_opt_copy(const Node& opts, const std::string opt_name)
 {
-    const Node& hdf5array = opts["slabparams"].fetch_existing(opt_name);
-    return (hsize_t*)hdf5array.data_ptr();
+    const index_t_accessor hdf5array = opts["slabparams"].fetch_existing(opt_name).as_index_t_accessor();
+    int rank = hdf5array.number_of_elements();
+    hsize_t* retval = new hsize_t[rank];
+    for (int d = 0; d < rank; ++d)
+    {
+        retval[d] = (hsize_t)hdf5array[d];
+    }
+    return retval;
 }
 
 //---------------------------------------------------------------------------//
@@ -2835,9 +2857,9 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         index_t rank = slab_params["rank"].to_long_long();
         hsize_t readtotal = slab_params["readcount"].to_unsigned_long_long();
         index_t nelems = (index_t)readtotal;
-        hsize_t* readsize = get_dataset_opt(filled_opts, "size");
-        hsize_t* offset = get_dataset_opt(filled_opts, "offset");
-        hsize_t* stride = get_dataset_opt(filled_opts, "stride");
+        hsize_t* readsize = make_dataset_opt_copy(filled_opts, "sizes");
+        hsize_t* offset = make_dataset_opt_copy(filled_opts, "offsets");
+        hsize_t* stride = make_dataset_opt_copy(filled_opts, "strides");
 
         // copy metadata to the node under hard-coded keys
         if (only_get_metadata)
@@ -2963,6 +2985,10 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             H5Dclose(nodespace);
             H5Dclose(dataspace);
         }
+
+        delete[] stride;
+        delete[] offset;
+        delete[] readsize;
 
         if(opts.dtype().is_empty())
         {
