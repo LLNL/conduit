@@ -5171,7 +5171,7 @@ namespace detail
                                  const Node &field_src,
                                  int new_num_shapes,
                                  int64_accessor tri_to_poly,
-                                 float64 *volume_ratio,
+                                 float64_accessor volume_ratio,
                                  bool vol_dep,
                                  bool vert_assoc,
                                  int orig_num_points,
@@ -5239,7 +5239,7 @@ namespace detail
         int num_orig_shapes = topo_src["elements/sizes"].dtype().number_of_elements(); // the number of original polygons or polyhedra
         Node volumes_info; // a container for the volumes of old shapes and the ratio between new and old volumes for each new shape
         bool volumes_calculated = false; // so we only calculate the volumes once as we go through the while loop
-        float64 *volume_ratio = NULL; // a pointer to the ratio between new and old volumes for each new shape
+        float64_accessor volume_ratio; // a float64 accessor to the ratio between new and old volumes for each new shape
 
         if (topo_dest["elements/shape"].as_string() == "tet")
         {
