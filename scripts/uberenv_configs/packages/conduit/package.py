@@ -95,7 +95,7 @@ class Conduit(CMakePackage):
         when="+hdf5",
         description="Build Conduit with HDF5 1.8.x (compatibility mode)",
     )
-    variant("silo", default=False, description="Build Conduit Silo support")
+    variant("silo", default=True, description="Build Conduit Silo support")
     variant("adios", default=False, description="Build Conduit ADIOS support")
     variant("parmetis", default=True, description="Build Conduit Parmetis support")
 
