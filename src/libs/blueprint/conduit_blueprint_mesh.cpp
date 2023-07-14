@@ -4999,7 +4999,7 @@ namespace detail
                      const int dimensions,
                      const int new_num_shapes, // number of new triangles or tetrahedrons
                      const int num_orig_shapes, // number of original polygons or polyhedra
-                     int_accessor tri_to_poly,
+                     int64_accessor tri_to_poly,
                      Node &volumes_info,
                      Node &volumes_field_values)
     {
@@ -5007,9 +5007,9 @@ namespace detail
         volumes_field_values.set(conduit::DataType::float64(new_num_shapes));
         float64_array tri_volumes = volumes_field_values.value();
 
-        int_accessor connec = topo_dest["elements/connectivity"].value();
-        float_accessor coords_x = coordset_dest["values/x"].value();
-        float_accessor coords_y = coordset_dest["values/y"].value();
+        int64_accessor connec = topo_dest["elements/connectivity"].value();
+        float64_accessor coords_x = coordset_dest["values/x"].value();
+        float64_accessor coords_y = coordset_dest["values/y"].value();
 
         if (dimensions == 2)
         {
@@ -5027,7 +5027,7 @@ namespace detail
         }
         else if (dimensions == 3)
         {
-            float_accessor coords_z = coordset_dest["values/z"].value();
+            float64_accessor coords_z = coordset_dest["values/z"].value();
 
             for (int i = 0; i < new_num_shapes; i ++)
             {
@@ -5078,7 +5078,7 @@ namespace detail
     template<typename T> // T is the type of the new field values
     void
     vertex_associated_field(const Node &topo_dest,
-                            float_accessor poly_field_data,
+                            float64_accessor poly_field_data,
                             int orig_num_points,
                             int new_num_points,
                             int dimensions,
@@ -5097,7 +5097,7 @@ namespace detail
         std::map<int, std::set<int>> info;
 
         int iter = dimensions == 2 ? 3 : 4;
-        int_accessor new_connec = topo_dest["elements/connectivity"].value();
+        int64_accessor new_connec = topo_dest["elements/connectivity"].value();
         int length_of_connec = topo_dest["elements/connectivity"].dtype().number_of_elements();
 
         // iterate thru the connectivity array, going in groups of 3 or 4,
@@ -5170,7 +5170,7 @@ namespace detail
     map_field_to_generated_sides(Node &field_out,
                                  const Node &field_src,
                                  int new_num_shapes,
-                                 int_accessor tri_to_poly,
+                                 int64_accessor tri_to_poly,
                                  float64 *volume_ratio,
                                  bool vol_dep,
                                  bool vert_assoc,
@@ -5183,7 +5183,7 @@ namespace detail
         T *values_array = field_out["values"].value();
 
         // a pointer to the original field values
-        float_accessor poly_field_data = field_src["values"].value();
+        float64_accessor poly_field_data = field_src["values"].value();
 
         // if our field is vertex associated
         if (vert_assoc)
@@ -5256,7 +5256,7 @@ namespace detail
             CONDUIT_ERROR(((std::string) "Bad shape in ").append(topo_dest["elements/shape"].as_string()));
         }
 
-        int_accessor tri_to_poly = d2smap["values"].value();
+        int64_accessor tri_to_poly = d2smap["values"].value();
 
         // set up original elements id field
         Node &original_elements = fields_dest[field_prefix + "original_element_ids"];
