@@ -155,6 +155,19 @@ DataAccessor<T>::count(T val) const
 
 //---------------------------------------------------------------------------//
 template <typename T> 
+DataAccessor<T> &
+DataAccessor<T>::operator=(const DataAccessor<T> &accessor)
+{
+    if(this != &accessor)
+    {
+        m_data  = accessor.m_data;
+        m_dtype = accessor.m_dtype;
+    }
+    return *this;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
 T
 DataAccessor<T>::element(index_t idx) const
 {
