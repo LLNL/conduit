@@ -172,6 +172,8 @@ tri         triangle          indices to 3 coordinate tuples
 quad        quadrilateral     indices to 4 coordinate tuples
 tet         tetrahedron       indices to 4 coordinate tuples
 hex         hexahedron        indices to 8 coordinate tuples
+pyramid     pyramid           indices to 5 coordinate tuples
+wedge       wedge             indices to 6 coordinate tuples
 polygonal   polygon           indices to N end-to-end coordinate tuples
 polyhedral  polyhedron        indices to M polygonal faces
 mixed       mixed             indices to coordinate tuples and/or polygonal faces
@@ -1277,7 +1279,7 @@ Here is a list of valid strings for the ``mesh_type`` argument:
 | points          | 2d or 3d unstructured mesh of point elements  |
 |                 | (explicit coords, explicit topology)          |
 +-----------------+-----------------------------------------------+
-| points_implicit | 2d or 3d unstructured mesh of point elements  |
+| points_implicit | 2d or 3d point mesh                           |
 |                 | (explicit coords, implicit topology)          |
 +-----------------+-----------------------------------------------+
 | lines           | 2d or 3d unstructured mesh of line elements   |
