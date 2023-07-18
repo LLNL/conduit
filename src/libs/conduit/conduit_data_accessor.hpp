@@ -78,7 +78,10 @@ public:
 //-----------------------------------------------------------------------------
     T              operator[](index_t idx) const
                     {return element(idx);}
+
     T              element(index_t idx) const;
+
+    void           set(index_t idx, T value);
 
     const void     *element_ptr(index_t idx) const
                     {

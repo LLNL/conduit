@@ -173,7 +173,7 @@ DataAccessor<T>::element(index_t idx) const
 {
     switch(m_dtype.id())
     {
-        // ints 
+        // ints
         case DataType::INT8_ID:
             return (T)(*(int8*)(element_ptr(idx)));
         case DataType::INT16_ID: 
@@ -192,9 +192,9 @@ DataAccessor<T>::element(index_t idx) const
         case DataType::UINT64_ID:
             return (T)(*(uint64*)(element_ptr(idx)));
         // floats 
-        case DataType::FLOAT32_ID: 
+        case DataType::FLOAT32_ID:
             return (T)(*(float32*)(element_ptr(idx)));
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
             return (T)(*(float64*)(element_ptr(idx)));
     }
 
@@ -202,6 +202,76 @@ DataAccessor<T>::element(index_t idx) const
     CONDUIT_ERROR("DataAccessor does not support dtype: "
                   << m_dtype.name());
     return (T)0;
+}
+
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::set(index_t idx, T value)
+{
+    switch(m_dtype.id())
+    {
+        // ints
+        case DataType::INT8_ID:
+        {
+            (*(int8*)(element_ptr(idx))) = static_cast<int8>(value);
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            (*(int16*)(element_ptr(idx))) = static_cast<int16>(value);
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            (*(int32*)(element_ptr(idx))) = static_cast<int32>(value);
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            (*(int64*)(element_ptr(idx))) = static_cast<int64>(value);
+            break;
+        }
+        // uints
+        case DataType::UINT8_ID:
+        {
+            (*(uint8*)(element_ptr(idx))) = static_cast<uint8>(value);
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            (*(uint16*)(element_ptr(idx))) = static_cast<uint16>(value);
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            (*(uint32*)(element_ptr(idx))) = static_cast<uint32>(value);
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            (*(uint64*)(element_ptr(idx))) = static_cast<uint64>(value);
+            break;
+        }
+        // floats
+        case DataType::FLOAT32_ID:
+        {
+            (*(float32*)(element_ptr(idx))) = static_cast<float32>(value);
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            (*(float64*)(element_ptr(idx))) = static_cast<float64>(value);
+            break;
+        }
+        default:
+            // error
+            CONDUIT_ERROR("DataAccessor does not support dtype: "
+                          << m_dtype.name());
+    }
+
 }
 
 
