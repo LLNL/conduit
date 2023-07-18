@@ -2094,7 +2094,10 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
             bottom++;
         }
 
-        if(nele > 1)
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
             os << "[";
 
         bool done  = (nele == 0);
@@ -2167,7 +2170,10 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
             }
         }
 
-        if(nele > 1)
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
             os << "]";
     }
 }

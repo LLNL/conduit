@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 #include <algorithm>
 #include <limits>
+#include <type_traits>
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -204,8 +205,6 @@ DataAccessor<T>::element(index_t idx) const
     return (T)0;
 }
 
-
-
 //---------------------------------------------------------------------------//
 template <typename T>
 void
@@ -272,6 +271,231 @@ DataAccessor<T>::set(index_t idx, T value)
                           << m_dtype.name());
     }
 
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_string(const std::string &protocol) const
+{
+    std::ostringstream oss;
+    to_string_stream(oss,protocol);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_string_stream(std::ostream &os,
+                                  const std::string &protocol) const
+{
+    if(protocol == "yaml")
+    {
+        to_yaml_stream(os);
+    }
+    else if(protocol == "json")
+    {
+        to_json_stream(os);
+    }
+    else
+    {
+        // unsupported
+        CONDUIT_ERROR("Unknown DataType::to_string protocol:" << protocol
+                     <<"\nSupported protocols:\n"
+                     <<" json, yaml");
+    }
+
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_string_default() const
+{
+    return to_string();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_json() const
+{
+    std::ostringstream oss;
+    to_json_stream(oss);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_json_stream(std::ostream &os) const
+{
+    index_t nele = number_of_elements();
+    // note: nele == 0 case:
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
+        os << "[";
+
+    bool first=true;
+    for(index_t idx = 0; idx < nele; idx++)
+    {
+        if(!first)
+            os << ", ";
+
+        // need to deal with nan and infs for fp cases
+        if(std::is_floating_point<T>::value)
+        {
+            std::string fs = utils::float64_to_string((float64)element(idx));
+            //check for inf and nan
+            // looking for 'n' covers inf and nan
+            bool inf_or_nan = fs.find('n') != std::string::npos;
+
+            if(inf_or_nan)
+                os << "\"";
+
+            os << fs;
+
+            if(inf_or_nan)
+                os << "\"";
+        }
+        else
+        {
+            os << element(idx);
+        }
+
+        first=false;
+    }
+    // note: nele == 0 case:
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
+        os << "]";
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_yaml() const
+{
+    std::ostringstream oss;
+    to_yaml_stream(oss);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_yaml_stream(std::ostream &os) const
+{
+    // yep, its the same as to_json_stream ...
+    to_json_stream(os);;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_summary_string_default() const
+{
+    return to_summary_string();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_summary_string(index_t threshold) const
+{
+    std::ostringstream oss;
+    to_summary_string_stream(oss, threshold);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_summary_string_stream(std::ostream &os,
+                                          index_t threshold) const
+{
+    // if we are less than or equal to threshold, we use to_yaml
+    index_t nele = number_of_elements();
+
+    if(nele <= threshold)
+    {
+        to_yaml_stream(os);
+    }
+    else
+    {
+        // if above threshold only show threshold # of values
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
+
+        //
+        // if odd, show 1/2 +1 first
+        //
+
+        if( (threshold % 2) > 0)
+        {
+            bottom++;
+        }
+
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
+            os << "[";
+
+        bool done  = (nele == 0);
+        index_t idx = 0;
+
+        while(!done)
+        {
+            // if not first, add a comma prefix
+            if(idx > 0 )
+                os << ", ";
+
+            // need to deal with nan and infs for fp cases
+            if(std::is_floating_point<T>::value)
+            {
+                std::string fs = utils::float64_to_string((float64)element(idx));
+                //check for inf and nan
+                // looking for 'n' covers inf and nan
+                bool inf_or_nan = fs.find('n') != std::string::npos;
+
+                if(inf_or_nan)
+                    os << "\"";
+
+                os << fs;
+
+                if(inf_or_nan)
+                    os << "\"";
+            }
+            else
+            {
+                os << element(idx);
+            }
+
+            idx++;
+
+            if(idx == bottom)
+            {
+                idx = nele - top;
+                os << ", ...";
+            }
+
+            if(idx == nele)
+            {
+                done = true;
+            }
+        }
+
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
+            os << "]";
+
+    }
 }
 
 

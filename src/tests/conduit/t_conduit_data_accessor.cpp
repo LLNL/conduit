@@ -251,6 +251,23 @@ TEST(conduit_data_accessor, set)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_data_accessor, to_string)
+{
+    Node n;
+    n.set(DataType::int32(6));
+
+    int32_accessor acc = n.value();
+
+    std::string res = acc.to_string();
+    std::cout << res << std::endl;
+    EXPECT_EQ(res,"[0, 0, 0, 0, 0, 0]");
+
+    res = acc.to_summary_string();
+    std::cout << res << std::endl;
+    EXPECT_EQ(res,"[0, 0, 0, ..., 0, 0]");
+}
+
 
 
 
