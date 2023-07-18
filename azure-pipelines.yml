@@ -573,6 +573,28 @@ stages:
         displayName: 'Test vs Install (using-with-cmake)'
 
       - script: |
+          #######################################
+          # using with cmake prefix path example
+          #######################################
+          export CC=${COMPILER_CC}
+          export CXX=${COMPILER_CXX}
+          export FC=${COMPILER_FC}
+          pwd
+          ls -l
+          # find spack installed cmake
+          export ROOT_DIR=`pwd`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export PATH=${CMAKE_BIN_DIR}:$PATH
+          echo $PATH
+          which cmake
+          cd install/examples/conduit/using-with-cmake-prefix-path
+          cmake -DCMAKE_PREFIX_PATH=${ROOT_DIR}/install  -B build -S .
+          cmake --build build
+          cd build
+          ./conduit_example
+        displayName: 'Test vs Install (using-with-cmake-prefix-path)'
+
+      - script: |
           ###########################
           # using with make example
           ###########################

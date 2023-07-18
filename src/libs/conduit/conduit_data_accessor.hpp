@@ -70,6 +70,9 @@ public:
     /// counts number of occurrences of given value
     index_t         count(T value) const;
 
+    /// Assignment operator
+    DataAccessor<T>   &operator=(const DataAccessor<T> &accessor);
+
 //-----------------------------------------------------------------------------
 // Data and Info Access
 //-----------------------------------------------------------------------------
