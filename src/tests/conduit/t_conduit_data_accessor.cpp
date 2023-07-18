@@ -252,6 +252,26 @@ TEST(conduit_data_accessor, set)
 
 
 //-----------------------------------------------------------------------------
+TEST(conduit_data_accessor, fill)
+{
+    Node n;
+    n.set(DataType::int32(10));
+
+    int32_array    arr = n.value();
+    int64_accessor acc = n.value();
+
+    acc.fill(-1);
+
+    for(int i=0;i<10;i++)
+    {
+        EXPECT_EQ(arr[0],-1);
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
 TEST(conduit_data_accessor, to_string)
 {
     Node n;

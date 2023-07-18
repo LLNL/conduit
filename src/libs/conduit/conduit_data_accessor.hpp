@@ -83,6 +83,8 @@ public:
 
     void           set(index_t idx, T value);
 
+    void            fill(T value);
+
     const void     *element_ptr(index_t idx) const
                     {
                          return static_cast<const char*>(m_data) +
@@ -94,6 +96,7 @@ public:
 
     const DataType &dtype()    const 
                         { return m_dtype;}
+
 
 
 //-----------------------------------------------------------------------------

@@ -270,8 +270,115 @@ DataAccessor<T>::set(index_t idx, T value)
             CONDUIT_ERROR("DataAccessor does not support dtype: "
                           << m_dtype.name());
     }
-
 }
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::fill(T value)
+{
+    switch(m_dtype.id())
+    {
+        // ints
+        case DataType::INT8_ID:
+        {
+            int8 v = static_cast<int8>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int8*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            int16 v = static_cast<int16>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int16*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            int32 v = static_cast<int32>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int32*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            int64 v = static_cast<int64>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int64*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        // uints
+        case DataType::UINT8_ID:
+        {
+            uint8 v = static_cast<uint8>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint8*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            uint16 v = static_cast<uint16>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint16*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            uint32 v = static_cast<uint32>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint32*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            uint64 v = static_cast<uint64>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint64*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        // floats
+        case DataType::FLOAT32_ID:
+        {
+            float32 v = static_cast<float32>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(float32*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            float64 v = static_cast<float64>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(float64*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        default:
+            // error
+            CONDUIT_ERROR("DataAccessor does not support dtype: "
+                          << m_dtype.name());
+    }
+}
+
 
 //---------------------------------------------------------------------------//
 template <typename T>
