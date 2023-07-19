@@ -1896,7 +1896,7 @@ void silo_write_field(DBfile *dbfile,
                       const int local_num_domains,
                       const int local_domain_index,
                       const int global_domain_id,
-                      Node &local_type_info,
+                      Node &local_type_domain_info,
                       Node &n_mesh_info)
 {
     if (!n_var.has_path("topology"))
@@ -2110,16 +2110,16 @@ void silo_write_field(DBfile *dbfile,
                              " after creating field " << var_name);
 
     // bookkeeping
-    if (! local_type_info["vars"].has_child(var_name))
+    if (! local_type_domain_info["vars"].has_child(var_name))
     {
-        local_type_info["vars"][var_name]["domain_ids"].set(DataType::index_t(local_num_domains));
-        index_t_array domain_ids = local_type_info["vars"][var_name]["domain_ids"].value();
+        local_type_domain_info["vars"][var_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        index_t_array domain_ids = local_type_domain_info["vars"][var_name]["domain_ids"].value();
         domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
-        local_type_info["vars"][var_name]["types"].set(DataType::index_t(local_num_domains));
+        local_type_domain_info["vars"][var_name]["types"].set(DataType::index_t(local_num_domains));
     }
-    index_t_array domain_ids = local_type_info["vars"][var_name]["domain_ids"].value();
+    index_t_array domain_ids = local_type_domain_info["vars"][var_name]["domain_ids"].value();
     domain_ids[local_domain_index] = global_domain_id;
-    index_t_array var_types = local_type_info["vars"][var_name]["types"].value();
+    index_t_array var_types = local_type_domain_info["vars"][var_name]["types"].value();
     var_types[local_domain_index] = var_type;
 }
 
@@ -2619,7 +2619,7 @@ void silo_write_topo(const Node &n,
                      const int local_num_domains,
                      const int local_domain_index,
                      const int global_domain_id,
-                     Node &local_type_info,
+                     Node &local_type_domain_info,
                      DBfile *dbfile)
 {
     const Node &n_topo = n["topologies"][topo_name];
@@ -2821,17 +2821,41 @@ void silo_write_topo(const Node &n,
     }
 
     // bookkeeping
-    if (! local_type_info["meshes"].has_child(topo_name))
+    if (! local_type_domain_info["meshes"].has_child(topo_name))
     {
-        local_type_info["meshes"][topo_name]["domain_ids"].set(DataType::index_t(local_num_domains));
-        index_t_array domain_ids = local_type_info["meshes"][topo_name]["domain_ids"].value();
+        local_type_domain_info["meshes"][topo_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        index_t_array domain_ids = local_type_domain_info["meshes"][topo_name]["domain_ids"].value();
         domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
-        local_type_info["meshes"][topo_name]["types"].set(DataType::index_t(local_num_domains));
+        local_type_domain_info["meshes"][topo_name]["types"].set(DataType::index_t(local_num_domains));
     }
-    index_t_array domain_ids = local_type_info["meshes"][topo_name]["domain_ids"].value();
+    index_t_array domain_ids = local_type_domain_info["meshes"][topo_name]["domain_ids"].value();
     domain_ids[local_domain_index] = global_domain_id;
-    index_t_array topo_types = local_type_info["meshes"][topo_name]["types"].value();
+    index_t_array topo_types = local_type_domain_info["meshes"][topo_name]["types"].value();
     topo_types[local_domain_index] = mesh_type;
+}
+
+//---------------------------------------------------------------------------//
+void silo_write_matset(DBfile *dbfile,
+                       const std::string &matset_name,
+                       const Node &n_matset,
+                       const bool overlink,
+                       const int local_num_domains,
+                       const int local_domain_index,
+                       const int global_domain_id,
+                       Node &local_type_domain_info,
+                       Node &n_mesh_info)
+{
+    // TODO
+
+    // bookkeeping
+    if (! local_type_domain_info["matsets"].has_child(matset_name))
+    {
+        local_type_domain_info["matsets"][matset_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        index_t_array domain_ids = local_type_domain_info["matsets"][matset_name]["domain_ids"].value();
+        domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
+    }
+    index_t_array domain_ids = local_type_domain_info["matsets"][matset_name]["domain_ids"].value();
+    domain_ids[local_domain_index] = global_domain_id;
 }
 
 //---------------------------------------------------------------------------//
@@ -2842,7 +2866,7 @@ void silo_mesh_write(const Node &n,
                      const int local_num_domains,
                      const int local_domain_index,
                      const int global_domain_id,
-                     Node &local_type_info,
+                     Node &local_type_domain_info,
                      const bool overlink)
 {
     int silo_error = 0;
@@ -2877,7 +2901,7 @@ void silo_mesh_write(const Node &n,
                             local_num_domains,
                             local_domain_index,
                             global_domain_id,
-                            local_type_info,
+                            local_type_domain_info,
                             dbfile);
         }
     }
@@ -2896,7 +2920,7 @@ void silo_mesh_write(const Node &n,
                             local_num_domains,
                             local_domain_index,
                             global_domain_id,
-                            local_type_info,
+                            local_type_domain_info,
                             dbfile);
         }
     }
@@ -2917,8 +2941,30 @@ void silo_mesh_write(const Node &n,
                                  local_num_domains,
                                  local_domain_index,
                                  global_domain_id,
-                                 local_type_info,
+                                 local_type_domain_info,
                                  n_mesh_info);
+            }
+        }
+    }
+
+    if (n.has_path("matsets")) 
+    {
+        auto itr = n["matsets"].children();
+        while (itr.has_next())
+        {
+            const Node &n_matset = itr.next();
+            std::string matset_name = itr.name();
+            if (! overlink || n_matset["topology"].as_string() == ovl_topo_name)
+            {
+                silo_write_matset(dbfile,
+                                  matset_name,
+                                  n_matset,
+                                  overlink,
+                                  local_num_domains,
+                                  local_domain_index,
+                                  global_domain_id,
+                                  local_type_domain_info,
+                                  n_mesh_info);
             }
         }
     }
@@ -2929,6 +2975,76 @@ void silo_mesh_write(const Node &n,
         CONDUIT_CHECK_SILO_ERROR(silo_error,
                                  " changing silo directory to previous path");
     }
+}
+
+//-----------------------------------------------------------------------------
+index_t
+generate_silo_names_determine_domain_or_file(const Node &n_mesh_state,
+                                             const std::string domain_or_file,
+                                             index_t global_domain_id)
+{
+    if (n_mesh_state.has_path("partition_map/" + domain_or_file))
+    {
+        index_t_accessor part_map_domain_or_file_vals = n_mesh_state["partition_map"][domain_or_file].value();
+        return part_map_domain_or_file_vals[global_domain_id];
+    }
+    else
+    {
+        return global_domain_id;
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool
+generate_silo_names_missing_domain(const Node &types_and_domains,
+                                   index_t domain_index)
+{
+    int_accessor stored_types = types_and_domains.value();
+    return stored_types[d] == -1;
+}
+
+//-----------------------------------------------------------------------------
+std::string
+generate_silo_names_cases(const Node &n_mesh_state,
+                          const std::string &silo_path,
+                          const std::string &safe_name,
+                          const bool root_only,
+                          const int global_num_domains,
+                          const int num_files,
+                          const index_t domain_index,
+                          const index_t global_domain_id)
+{
+    std::string silo_name;
+    // we have three cases, just as we had in write_mesh
+    // we don't want to be making any choices here, just using 
+    // what was already decided in write_mesh
+
+    // single file case
+    if (root_only)
+    {
+        if (global_num_domains == 1)
+        {
+            silo_name = conduit_fmt::format(silo_path, safe_name);
+        }
+        else
+        {
+            silo_name = conduit_fmt::format(silo_path, domain_index, safe_name);
+        }
+    }
+    // num domains == num files case
+    else if (global_num_domains == num_files)
+    {
+        silo_name = conduit_fmt::format(silo_path, domain_index, safe_name);
+    }
+    // m to n case
+    else
+    {
+        // determine which file
+        index_t f = generate_silo_names_determine_domain_or_file(n_mesh_state, "file", global_domain_id);;
+        silo_name = conduit_fmt::format(silo_path, f, domain_index, safe_name);
+    }
+
+    return silo_name;
 }
 
 //-----------------------------------------------------------------------------
@@ -2944,25 +3060,15 @@ generate_silo_names(const Node &n_mesh_state,
                     std::vector<std::string> &name_strings,
                     std::vector<int> &types)
 {
-    int_accessor stored_types = types_for_mesh_or_var.value();
     for (index_t i = 0; i < global_num_domains; i ++)
     {
         std::string silo_name;
 
         // determine which domain
-        index_t d;
-        if (n_mesh_state.has_path("partition_map/domain"))
-        {
-            index_t_array part_map_domain_vals = n_mesh_state["partition_map"]["domain"].value();
-            d = part_map_domain_vals[i];
-        }
-        else
-        {
-            d = i;
-        }
+        index_t d = generate_silo_names_determine_domain_or_file(n_mesh_state, "domain", i);
 
         // we are missing a domain
-        if (stored_types[d] == -1)
+        if (generate_silo_names_missing_domain(types_for_mesh_or_var, d))
         {
             silo_name = "EMPTY";
 
@@ -2970,46 +3076,55 @@ generate_silo_names(const Node &n_mesh_state,
         }
         else
         {
-            // we have three cases, just as we had in write_mesh
-            // we don't want to be making any choices here, just using 
-            // what was already decided in write_mesh
-
-            // single file case
-            if (root_only)
-            {
-                if (global_num_domains == 1)
-                {
-                    silo_name = conduit_fmt::format(silo_path, safe_name);
-                }
-                else
-                {
-                    silo_name = conduit_fmt::format(silo_path, d, safe_name);
-                }
-            }
-            // num domains == num files case
-            else if (global_num_domains == num_files)
-            {
-                silo_name = conduit_fmt::format(silo_path, d, safe_name);
-            }
-            // m to n case
-            else
-            {
-                // determine which file
-                index_t f;
-                if (n_mesh_state.has_path("partition_map/file"))
-                {
-                    index_t_array part_map_file_vals = n_mesh_state["partition_map"]["file"].value();
-                    f = part_map_file_vals[i];
-                }
-                else
-                {
-                    f = i;
-                }
-
-                silo_name = conduit_fmt::format(silo_path, f, d, safe_name);
-            }
-
+            silo_name = generate_silo_names_cases(n_mesh_state,
+                                                  silo_path,
+                                                  safe_name,
+                                                  root_only,
+                                                  global_num_domains,
+                                                  num_files,
+                                                  domain_index,
+                                                  global_domain_id);
             types.push_back(stored_types[d]);
+        }
+
+        // we create the silo names
+        name_strings.push_back(silo_name);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+generate_silo_material_names(const Node &n_mesh_state,
+                             const std::string &silo_path,
+                             const std::string &safe_name,
+                             const int num_files,
+                             const int global_num_domains,
+                             const bool root_only,
+                             const Node &matset_domain_flags,
+                             std::vector<std::string> &name_strings)
+{
+    for (index_t i = 0; i < global_num_domains; i ++)
+    {
+        std::string silo_name;
+
+        // determine which domain
+        index_t d = generate_silo_names_determine_domain_or_file(n_mesh_state, "domain", i);
+
+        // we are missing a domain
+        if (generate_silo_names_missing_domain(matset_domain_flags, d))
+        {
+            silo_name = "EMPTY";
+        }
+        else
+        {
+            silo_name = generate_silo_names_cases(n_mesh_state,
+                                                  silo_path,
+                                                  safe_name,
+                                                  root_only,
+                                                  global_num_domains,
+                                                  num_files,
+                                                  domain_index,
+                                                  global_domain_id);
         }
 
         // we create the silo names
@@ -3024,14 +3139,13 @@ void write_multimesh(DBfile *dbfile,
                      const conduit::Node &root,
                      const int global_num_domains,
                      const std::string &multimesh_name,
-                     const Node &root_type_info_meshes,
+                     const Node &root_type_domain_info_meshes,
                      const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
     const bool root_only = root["file_style"].as_string() == "root_only";
 
     const Node &n_topo = n_mesh["topologies"][topo_name];
-    std::string topo_type = n_topo["type"].as_string();
 
     std::string safe_meshname;
     if (overlink)
@@ -3054,14 +3168,14 @@ void write_multimesh(DBfile *dbfile,
                         num_files,
                         global_num_domains,
                         root_only,
-                        root_type_info_meshes[topo_name],
+                        root_type_domain_info_meshes[topo_name],
                         DB_QUADMESH, // the default if we have an empty domain
                         domain_name_strings,
                         mesh_types);
 
     // package up char ptrs for silo
     std::vector<const char *> domain_name_ptrs;
-    for (index_t i = 0; i < domain_name_strings.size(); i ++)
+    for (size_t i = 0; i < domain_name_strings.size(); i ++)
     {
         domain_name_ptrs.push_back(domain_name_strings[i].c_str());
     }
@@ -3123,7 +3237,7 @@ void write_multimeshes(DBfile *dbfile,
                        const std::string &opts_out_mesh_name,
                        const std::string &ovl_topo_name,
                        const Node &root,
-                       const Node &root_type_info_meshes,
+                       const Node &root_type_domain_info_meshes,
                        const bool overlink)
 {
     const int global_num_domains = root["number_of_domains"].as_int32();
@@ -3145,7 +3259,7 @@ void write_multimeshes(DBfile *dbfile,
                         root,
                         global_num_domains,
                         opts_out_mesh_name, // "MMESH"
-                        root_type_info_meshes,
+                        root_type_domain_info_meshes,
                         overlink);
     }
     // write all meshes for nonoverlink case
@@ -3163,48 +3277,11 @@ void write_multimeshes(DBfile *dbfile,
                             root,
                             global_num_domains,
                             multimesh_name,
-                            root_type_info_meshes,
+                            root_type_domain_info_meshes,
                             overlink);
         }
     }
 }
-
-//-----------------------------------------------------------------------------
-// TODO support multimaterial write
-// void
-// write_multimaterial(DBfile *root,
-//                     const std::string &mmat_name,
-//                     const std::string &mmesh_name,
-//                     std::vector<std::string> mat_domains) 
-// {
-//     std::vector<const char *> domain_name_ptrs;
-//     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-//             DBMakeOptlist(1),
-//             &DBFreeOptlist,
-//             "Error freeing optlist."};
-//     if (!optlist.getSiloObject())
-//     {
-//         CONDUIT_ERROR("Error creating options");
-//     }
-
-//     // have to const_cast because converting to void *
-//     CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-//                                           DBOPT_MMESH_NAME,
-//                                           const_cast<char *>(mmesh_name.c_str())),
-//                               "Error creating options for putting multimat");
-    
-//     for (auto domain : mat_domains) 
-//     {
-//         domain_name_ptrs.push_back(domain.c_str());
-//     }
-
-//     CONDUIT_CHECK_SILO_ERROR( DBPutMultimat(root,
-//                                             detail::sanitize_silo_varname(mmat_name).c_str(),
-//                                             mat_domains.size(),
-//                                             domain_name_ptrs.data(),
-//                                             optlist.getSiloObject()),
-//                               "Error putting multimaterial");
-// }
 
 //-----------------------------------------------------------------------------
 void
@@ -3212,7 +3289,7 @@ write_multivars(DBfile *dbfile,
                 const std::string &opts_mesh_name,
                 const std::string &ovl_topo_name,
                 const Node &root,
-                const Node &root_type_info_vars,
+                const Node &root_type_domain_info_vars,
                 const bool overlink)
 {
     const int num_files = root["number_of_files"].as_int32();
@@ -3239,8 +3316,6 @@ write_multivars(DBfile *dbfile,
 
             if (! overlink || linked_topo_name == ovl_topo_name)
             {
-                std::string linked_topo_type = n_mesh["topologies"][linked_topo_name]["type"].as_string();
-
                 std::string safe_varname = detail::sanitize_silo_varname(var_name); 
                 std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
                 std::string silo_path = root["silo_path"].as_string();
@@ -3253,14 +3328,14 @@ write_multivars(DBfile *dbfile,
                                     num_files,
                                     global_num_domains,
                                     root_only,
-                                    root_type_info_vars[var_name],
+                                    root_type_domain_info_vars[var_name],
                                     DB_QUADVAR, // the default if we have an empty domain
                                     var_name_strings,
                                     var_types);
 
                 // package up char ptrs for silo
                 std::vector<const char *> var_name_ptrs;
-                for (index_t i = 0; i < var_name_strings.size(); i ++)
+                for (size_t i = 0; i < var_name_strings.size(); i ++)
                 {
                     var_name_ptrs.push_back(var_name_strings[i].c_str());
                 }
@@ -3303,6 +3378,136 @@ write_multivars(DBfile *dbfile,
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+void
+write_multimats(DBfile *dbfile,
+                const std::string &opts_mesh_name,
+                const std::string &ovl_topo_name,
+                const Node &root,
+                const Node &root_type_domain_info_matsets,
+                const bool overlink)
+{
+    const int num_files = root["number_of_files"].as_int32();
+    const int global_num_domains = root["number_of_domains"].as_int32();
+    const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    const bool root_only = root["file_style"].as_string() == "root_only";
+
+    // these should be the same b/c the num domains the bp index was given
+    // was global_num_domains
+    if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
+    {
+        CONDUIT_ERROR("Domain count mismatch");
+    }
+
+    if (n_mesh.has_child("matsets"))
+    {
+        auto matset_itr = n_mesh["matsets"].children();
+        while (matset_itr.has_next())
+        {
+            const Node &n_matset = matset_itr.next();
+            std::string matset_name = matset_itr.name();
+
+            std::string linked_topo_name = n_matset["topology"].as_string();
+
+            if (! overlink || linked_topo_name == ovl_topo_name)
+            {
+                std::string safe_matset_name = detail::sanitize_silo_varname(matset_name); 
+                std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
+                std::string silo_path = root["silo_path"].as_string();
+
+                std::vector<std::string> matset_name_strings;
+                generate_silo_material_names(n_mesh["state"],
+                                             silo_path,
+                                             safe_matset_name,
+                                             num_files,
+                                             global_num_domains,
+                                             root_only,
+                                             root_type_domain_info_matsets[matset_name],
+                                             matset_name_strings);
+
+                // package up char ptrs for silo
+                std::vector<const char *> matset_name_ptrs;
+                for (size_t i = 0; i < matset_name_strings.size(); i ++)
+                {
+                    matset_name_ptrs.push_back(matset_name_strings[i].c_str());
+                }
+
+                detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+                    DBMakeOptlist(1),
+                    &DBFreeOptlist,
+                    "Error freeing optlist."};
+                if (!optlist.getSiloObject())
+                    CONDUIT_ERROR("Error creating options");
+
+                std::string multimesh_name, multimat_name;
+                if (overlink)
+                {
+                    // TODO is this the right choice for overlink?
+                    multimesh_name = opts_mesh_name;
+                    multimat_name = safe_matset_name;
+                }
+                else
+                {
+                    multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
+                    multimat_name = opts_mesh_name + "_" + safe_matset_name;
+                }
+
+                // have to const_cast because converting to void *
+                CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
+                                                      DBOPT_MMESH_NAME,
+                                                      const_cast<char *>(multimesh_name.c_str())),
+                                          "Error creating options for putting multimaterial");
+
+                CONDUIT_CHECK_SILO_ERROR(
+                    DBPutMultimat(
+                        dbfile,
+                        multimat_name.c_str(),
+                        global_num_domains,
+                        matset_name_ptrs.data(),
+                        optlist.getSiloObject()),
+                    "Error putting multimaterial corresponding to matset: " << matset_name);
+            }        
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// TODO support multimaterial write
+// void
+// write_multimaterial(DBfile *root,
+//                     const std::string &mmat_name,
+//                     const std::string &mmesh_name,
+//                     std::vector<std::string> mat_domains) 
+// {
+//     std::vector<const char *> domain_name_ptrs;
+//     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+//             DBMakeOptlist(1),
+//             &DBFreeOptlist,
+//             "Error freeing optlist."};
+//     if (!optlist.getSiloObject())
+//     {
+//         CONDUIT_ERROR("Error creating options");
+//     }
+
+//     // have to const_cast because converting to void *
+//     CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
+//                                           DBOPT_MMESH_NAME,
+//                                           const_cast<char *>(mmesh_name.c_str())),
+//                               "Error creating options for putting multimat");
+    
+//     for (auto domain : mat_domains) 
+//     {
+//         domain_name_ptrs.push_back(domain.c_str());
+//     }
+
+//     CONDUIT_CHECK_SILO_ERROR( DBPutMultimat(root,
+//                                             detail::sanitize_silo_varname(mmat_name).c_str(),
+//                                             mat_domains.size(),
+//                                             domain_name_ptrs.data(),
+//                                             optlist.getSiloObject()),
+//                               "Error putting multimaterial");
+// }
 
 //-----------------------------------------------------------------------------
 /// The following options can be passed via the opts Node:
@@ -3835,7 +4040,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     // Other cases are simpler and are created when root file is written
     Node output_partition_map;
 
-    Node local_type_info;
+    Node local_type_domain_info;
     // our local type info is going to look like this:
     // meshes:
     //   mesh1:
@@ -3851,6 +4056,9 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     //   var2:
     //     domain_ids: [5, 53, 74, ...]
     //     types: [pointvar, pointvar, pointvar, ...]
+    // matsets:
+    //   matset1:
+    //     domain_ids: [5, 53, 74, ...]
     // each array is local_num_domains long
 
     // at this point for file_style,
@@ -3935,7 +4143,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                     local_num_domains,
                                     i, // local domain index
                                     domain, // global domain id
-                                    local_type_info,
+                                    local_type_domain_info,
                                     opts_file_style == "overlink");
                 }
             }
@@ -4003,7 +4211,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                             local_num_domains,
                             i, // local domain index
                             domain, // global domain id
-                            local_type_info,
+                            local_type_domain_info,
                             opts_file_style == "overlink");
         }
     }
@@ -4221,7 +4429,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                                                 local_num_domains,
                                                 d, // local domain index
                                                 domain_id, // global domain id
-                                                local_type_info,
+                                                local_type_domain_info,
                                                 opts_file_style == "overlink");
                                 
                                 // update status, we are done with this doman
@@ -4353,21 +4561,21 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     bp_idx[opts_out_mesh_name] = local_bp_idx;
 #endif
 
-    Node global_type_info;
+    Node global_type_domain_info;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    relay::mpi::gather_using_schema(local_type_info,
-                                    global_type_info,
+    relay::mpi::gather_using_schema(local_type_domain_info,
+                                    global_type_domain_info,
                                     root_file_writer,
                                     mpi_comm);
 #else
-    global_type_info.append().set_external(local_type_info);
+    global_type_domain_info.append().set_external(local_type_domain_info);
 #endif
 
     // root_file_writer will now write out the root file
     if(par_rank == root_file_writer)
     {
         // we will gather type info into one place and organize it
-        // by the end we should have a root_type_info that looks like this:
+        // by the end we should have a root_type_domain_info that looks like this:
         // (one entry in each list for each domain)
         // 
         // meshes:
@@ -4380,45 +4588,46 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
         //   var2: ucdvar, pointvar, ...
         //   var3: quadvar, quadvar, ...
         //   ...
+        // matsets:
+        //   matset1: 1, 1, -1, ...
+        //   matset2: 1, -1, 1, ...
 
-        Node root_type_info;
-        Node &root_type_info_meshes = root_type_info["meshes"];
-        Node &root_type_info_vars = root_type_info["vars"];
+        Node root_type_domain_info;
+        Node &root_type_domain_info_meshes = root_type_domain_info["meshes"];
+        Node &root_type_domain_info_vars = root_type_domain_info["vars"];
+        Node &root_type_domain_info_matsets = root_type_domain_info["matsets"];
 
-        auto type_info_itr = global_type_info.children();
-        while (type_info_itr.has_next())
+        auto type_domain_info_itr = global_type_domain_info.children();
+        while (type_domain_info_itr.has_next())
         {
             // type info from a particular MPI rank
-            const Node &type_info_from_rank = type_info_itr.next();
+            const Node &type_domain_info_from_rank = type_domain_info_itr.next();
             
-            if (type_info_from_rank.has_child("meshes"))
+            if (type_domain_info_from_rank.has_child("meshes"))
             {
-                auto read_meshes_itr = type_info_from_rank["meshes"].children();
+                auto read_meshes_itr = type_domain_info_from_rank["meshes"].children();
                 while (read_meshes_itr.has_next())
                 {
-                    const Node &read_mesh_type_info = read_meshes_itr.next();
+                    const Node &read_mesh_type_domain_info = read_meshes_itr.next();
                     const std::string read_mesh_name = read_meshes_itr.name();
 
-                    if (!root_type_info_meshes.has_child(read_mesh_name)) 
+                    if (!root_type_domain_info_meshes.has_child(read_mesh_name)) 
                     {
-                        root_type_info_meshes[read_mesh_name].set(DataType::index_t(global_num_domains));
-                        index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
+                        root_type_domain_info_meshes[read_mesh_name].set(DataType::index_t(global_num_domains));
+                        index_t_array root_mesh_types = root_type_domain_info_meshes[read_mesh_name].value();
                         root_mesh_types.fill(-1); // empty domains get -1
                     }
                     // the global domain ids array is of length local domain ids
                     // local domain ids index into it to read global domain ids out
-                    index_t_accessor global_domain_ids = read_mesh_type_info["domain_ids"].value();
-                    index_t_accessor read_mesh_types = read_mesh_type_info["types"].value();
+                    index_t_accessor global_domain_ids = read_mesh_type_domain_info["domain_ids"].value();
+                    index_t_accessor read_mesh_types = read_mesh_type_domain_info["types"].value();
 
                     // this is where we are writing the data to
-                    index_t_array root_mesh_types = root_type_info_meshes[read_mesh_name].value();
+                    index_t_array root_mesh_types = root_type_domain_info_meshes[read_mesh_name].value();
 
                     for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                     {
                         index_t global_domain_index = global_domain_ids[local_domain_id];
-                        // we initialized the array to be all -1, so if we are missing a domain
-                        // we will have -1. Thus we should write -1 so I know later that we are
-                        // missing a domain.
                         if (global_domain_index != -1)
                         {
                             root_mesh_types[global_domain_index] = read_mesh_types[local_domain_id];
@@ -4427,37 +4636,66 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 }
             }
 
-            if (type_info_from_rank.has_child("vars"))
+            if (type_domain_info_from_rank.has_child("vars"))
             {
-                auto read_vars_itr = type_info_from_rank["vars"].children();
+                auto read_vars_itr = type_domain_info_from_rank["vars"].children();
                 while (read_vars_itr.has_next())
                 {
-                    const Node &read_var_type_info = read_vars_itr.next();
+                    const Node &read_var_type_domain_info = read_vars_itr.next();
                     const std::string read_var_name = read_vars_itr.name();
 
-                    if (!root_type_info_vars.has_child(read_var_name)) 
+                    if (!root_type_domain_info_vars.has_child(read_var_name)) 
                     {
-                        root_type_info_vars[read_var_name].set(DataType::index_t(global_num_domains));
-                        index_t_array root_var_types = root_type_info_vars[read_var_name].value();
+                        root_type_domain_info_vars[read_var_name].set(DataType::index_t(global_num_domains));
+                        index_t_array root_var_types = root_type_domain_info_vars[read_var_name].value();
                         root_var_types.fill(-1); // empty domains get -1
                     }
                     // the global domain ids array is of length local domain ids
                     // local domain ids index into it to read global domain ids out
-                    index_t_accessor global_domain_ids = read_var_type_info["domain_ids"].value();
-                    index_t_accessor read_var_types = read_var_type_info["types"].value();
+                    index_t_accessor global_domain_ids = read_var_type_domain_info["domain_ids"].value();
+                    index_t_accessor read_var_types = read_var_type_domain_info["types"].value();
 
                     // this is where we are writing the data to
-                    index_t_array root_var_types = root_type_info_vars[read_var_name].value();
+                    index_t_array root_var_types = root_type_domain_info_vars[read_var_name].value();
 
                     for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
                     {
                         index_t global_domain_index = global_domain_ids[local_domain_id];
-                        // we initialized the array to be all -1, so if we are missing a domain
-                        // we will have -1. Thus we should write -1 so I know later that we are
-                        // missing a domain.
                         if (global_domain_index != -1)
                         {
                             root_var_types[global_domain_index] = read_var_types[local_domain_id];
+                        }
+                    }
+                }
+            }
+
+            if (type_domain_info_from_rank.has_child("matsets"))
+            {
+                auto read_matsets_itr = type_domain_info_from_rank["matsets"].children();
+                while (read_matsets_itr.has_next())
+                {
+                    const Node &read_matset_type_domain_info = read_matsets_itr.next();
+                    const std::string read_matset_name = read_matsets_itr.name();
+
+                    if (!root_type_domain_info_matsets.has_child(read_matset_name)) 
+                    {
+                        root_type_domain_info_matsets[read_matset_name].set(DataType::index_t(global_num_domains));
+                        index_t_array root_matset_types = root_type_domain_info_matsets[read_matset_name].value();
+                        root_matset_types.fill(-1); // empty domains get -1
+                    }
+                    // the global domain ids array is of length local domain ids
+                    // local domain ids index into it to read global domain ids out
+                    index_t_accessor global_domain_ids = read_matset_type_domain_info["domain_ids"].value();
+
+                    // this is where we are writing the data to
+                    index_t_array root_matset_types = root_type_domain_info_matsets[read_matset_name].value();
+
+                    for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
+                    {
+                        index_t global_domain_index = global_domain_ids[local_domain_id];
+                        if (global_domain_index != -1)
+                        {
+                            root_matset_types[global_domain_index] = 1;
                         }
                     }
                 }
@@ -4620,18 +4858,28 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
             }
         }
 
+        root.print();
+        root_type_domain_info.print();
+
         write_multimeshes(dbfile.getSiloObject(), 
                           opts_out_mesh_name, 
                           opts_ovl_topo_name, 
                           root, 
-                          root_type_info["meshes"],
+                          root_type_domain_info["meshes"],
                           opts_file_style == "overlink");
         write_multivars(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
                         opts_ovl_topo_name, 
                         root, 
-                        root_type_info["vars"],
+                        root_type_domain_info["vars"],
                         opts_file_style == "overlink");
+        write_multimats(dbfile.getSiloObject(), 
+                        opts_out_mesh_name, 
+                        opts_ovl_topo_name, 
+                        root, 
+                        root_type_domain_info["matsets"],
+                        opts_file_style == "overlink");
+
         // write_multimaterials(); // TODO
 
     }
