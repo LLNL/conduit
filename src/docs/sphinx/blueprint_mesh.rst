@@ -891,6 +891,114 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
 .. _examples:
 
 
+Mesh Index Protocol
+~~~~~~~~~~~~~~~~~~~~
+
+It is common for Blueprint data files to represent meshes that have been partitioned and must later be treated as a whole. Blueprint root files contain an index that facilitates reading in many individual Blueprint files. Blueprint root files contain metadata about the overall contents of individual files as well as hints for constructing filenames that make up the whole Blueprint dataset. An analysis tool can load the root file and know which individual files comprise the dataset and information about the data contained therein. While Blueprint provides high level functions for saving and loading files, some of which automatically create the root file, it is sometimes necessary to know the structure.
+
+   * blueprint_index/<meshname>/coordsets
+   * blueprint_index/<meshname>/topologies
+   * blueprint_index/<meshname>/fields
+   * blueprint_index/<meshname>/state
+
+The root file is a hierarchical index dataset created with Conduit that has been saved to a file using Relay. The root file must contain a ``blueprint_index`` node under which multiple named mesh nodes can be created. There must be at least one mesh node. The contents under the mesh node consist of metadata that mirror the structure of a typical Blueprint dataset, with "coordsets", "topologies", "fields", and "state" nodes. Rather than providing actual data in these nodes, they include "path" nodes that specify the path to their corresponding structures in the individual Blueprint data files. Fields can supply an optional "display_name" string that can rename the field in VisIt, which can be used to group related fields. Mesh index metadata can be created using the ``conduit::blueprint::mpi::mesh::generate_index()`` function when passed a valid Blueprint dataset.
+
+   * blueprint_index/<meshname>/fields/<fieldname>/number_of_components: {number 1 or 3)
+   * blueprint_index/<meshname>/fields/<fieldname>/topology: (string)
+   * blueprint_index/<meshname>/fields/<fieldname>/association: vertex|element
+   * blueprint_index/<meshname>/fields/<fieldname>/path: (string)
+   * blueprint_index/<meshname>/fields/<fieldname>/display_name: (optional string)
+
+Finally, the Blueprint index contains several nodes that provide the information needed to generate filenames and locate data within other files. The "file_pattern" value provides a filename template with wildcards that is used to generate filenames. Wildcards follow  C-Language ``printf()`` format string conventions for integers (e.g. "%05d"). Wildcards are substituted with integers in the range of [0, number_of_files] where `number_of_files` is provided by the "number_of_files" node. In addition, metadata about the protocol used for  individual Blueprint data files is provided using "protocol/name" and "protocol/version".
+
+   * number_of_files: (number)
+   * file_pattern: (string)
+   * number_of_trees: (number)
+   * tree_pattern: (string, default = "/")
+   * protocol/name: (string)
+   * protocol/version: (string)
+
+**Example of a Basic Root File:**
+
+  .. code:: yaml
+
+    blueprint_index: 
+      mesh: # Most entries under here were generated using generate_index()
+        state: 
+          cycle: 100
+          time: 3.1415
+          path: "state"
+          number_of_domains: 4
+        coordsets: 
+          coords: 
+            type: "uniform"
+            coord_system: 
+              axes: 
+                x: 
+                y: 
+                z: 
+              type: "cartesian"
+            path: "coordsets/coords"
+        topologies: 
+          mesh: 
+            type: "uniform"
+            coordset: "coords"
+            path: "topologies/mesh"
+        fields: 
+          density_000: 
+            number_of_components: 1
+            topology: "mesh"
+            association: "vertex"
+            path: "fields/density_000"
+            display_name: "density/mat0" # NOTE: This renames the field in VisIt
+          density_001: 
+            number_of_components: 1
+            topology: "mesh"
+            association: "vertex"
+            path: "fields/density_001"
+            display_name: "density/mat1"
+    # These entries specify the number and names of the files that make up the dataset.
+    number_of_files: 4
+    file_pattern: "bp/bp_%05d.hdf5"
+    number_of_trees: 4
+    tree_pattern: "/"
+    protocol: 
+      name: "hdf5"
+      version: "0.4.0"
+
+
+**Example code:**
+
+  .. code:: cpp
+
+    // Call on each of 4 MPI ranks.
+    conduit::Node mesh, bp_index;
+    conduit::blueprint::mesh::examples::braid("uniform", 10, 10, 10, mesh);
+    char domainFile[1024];
+    sprintf(domainFile, "./bp/bp_%04d.hdf5", rank);
+    conduit::relay::io::save(mesh, domainFile, "hdf5");
+
+    conduit::blueprint::mpi::mesh::generate_index(mesh,
+                                                  "",
+                                                  bp_index["blueprint_index/mesh"],
+                                                  MPI_COMM_WORLD);
+    bp_index["file_pattern"] = "./bp/bp_%04d.hdf5";
+    bp_index["number_of_files"] = 4;
+    bp_index["number_of_trees"] = 4;
+    bp_index["protocol/name"] = "hdf5";
+    bp_index["protocol/version"] = "0.4.0";
+    bp_index["tree_pattern"] = "/";
+    if(rank == 0)
+        conduit::relay::io::save(bp_index, "bp.root", "hdf5");
+
+
+Root files are needed to read Blueprint data into tools such as VisIt. At present, VisIt imposes a few caveats when reading Blueprint data:
+
+ * A root file is always required.
+ * The root file must be saved to hdf5, json, or yaml protocols.
+ * Individual Blueprint files that contain actual data may use hdf5, json, or yaml protocols as long as the protocol matches the index's "protocol/name" value.
+ * If fields supply a ``display_name`` string then that name will be used instead of the field name. (e.g. display_name: "menu1/menu2/fieldname")
+
 Mesh Blueprint Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
