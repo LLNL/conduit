@@ -997,7 +997,7 @@ Root files are needed to read Blueprint data into tools such as VisIt. At presen
  * A root file is always required.
  * The root file must be saved to hdf5, json, or yaml protocols.
  * Individual Blueprint files that contain actual data must use the hdf5 protocol.
- * If fields supply a ``display_name`` string then that name will be used instead of the field name. (e.g. display_name: "menu1/menu2/fieldname")
+ * If fields supply a ``display_name`` string then that name will be used instead of the field name (e.g. display_name: "menu1/menu2/fieldname").
 
 Mesh Blueprint Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~
