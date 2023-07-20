@@ -3335,6 +3335,9 @@ public:
                 operator long double *() const;
             #endif
 
+            // void ptr
+            operator void*() const;
+
 
             // -- as array -- //
             operator char_array()  const;
@@ -3476,6 +3479,8 @@ public:
                 operator long double *() const;
             #endif
 
+            // void ptr
+            operator const void*() const;
 
             // -- as array -- //
             operator const char_array() const;
