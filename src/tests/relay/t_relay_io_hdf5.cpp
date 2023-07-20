@@ -290,7 +290,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_read_2D_array)
 
     io::hdf5_read("tout_hdf5_r_2D_array.hdf5:myobj",n_whole_out);
 
-    std::cout << "Read the whole thing:" << std::endl;
+    std::cout << "Read the whole data set (doubles from 0 through 14):\n";
     n_whole_out.print();
 
     // should contain ncols x nrows elements
@@ -323,6 +323,7 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_read_2D_array)
 
     io::hdf5_read("tout_hdf5_r_2D_array.hdf5:myobj",read_opts,n_out);
 
+    std::cout << "Read partial data set (2 rows, 3 cols, starting at (1, 1)):\n";
     n_out.print_detailed();
 
     // should contain ncols x nrows elements

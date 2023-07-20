@@ -171,16 +171,20 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_3)
     status = H5Sclose(dataspace);
     status = H5Fclose(file);
     
-    std::cout << "\nsaved array to '" << std::endl;
+    std::cout << "\nsaved array to '" << fname << ":" << dsname << "'" << std::endl;
 
     // ------------------------------------------------------------------
     // Now read a subset of that 2D array from the HDF5 file.
+    // Two rows, two columns; total of four elements.
     int constexpr rrowlen = 2;
     int constexpr rcollen = 2;
     int constexpr reltcount = rcollen * rrowlen;
     int p_sizes[rank]{ rcollen, rrowlen };
+    // offset to row 0, column 1
     int p_offsets[rank]{ 0, 1 };
+    // read every row, every other column
     int p_strides[rank]{ 1, 2 };
+    // Store pointers to these parameters in the read_opts Node
     Node read_opts;
     read_opts["sizes"].set_external(p_sizes, rank);
     read_opts["offsets"].set_external(p_offsets, rank);
@@ -189,7 +193,7 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_3)
     std::cout << "\nHDF5 Options for reading the array:" << std::endl;
     read_opts.print();
 
-    // Read some of our 2D array
+    // Read some of the 2D array in the HDF5 file into an array of doubles
     Node read_data;
     double p_data_out[reltcount];
     read_data.set_external(p_data_out, reltcount);
@@ -198,12 +202,12 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_3)
     conduit::relay::io::hdf5_read(in_path.c_str(), read_opts, read_data);
 
     // Show what we read
-    std::cout << "Subset of array, read from " << in_path << std::endl;
+    std::cout << "Subset of array, read from '" << in_path << "'" << std::endl;
     for (int j = 0; j < rcollen; ++j)
     {
         for (int i = 0; i < rrowlen; ++i)
         {
-            std::cout << std::right << std::setw(8) << data[j * rrowlen + i];
+            std::cout << std::right << std::setw(8) << p_data_out[j * rrowlen + i];
         }
         std::cout << std::endl;
     }
