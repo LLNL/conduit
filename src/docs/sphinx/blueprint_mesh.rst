@@ -909,7 +909,7 @@ The root file is a hierarchical index dataset created with Conduit that has been
    * blueprint_index/<meshname>/fields/<fieldname>/path: (string)
    * blueprint_index/<meshname>/fields/<fieldname>/display_name: (optional string)
 
-Finally, the Blueprint index contains several nodes that provide the information needed to generate filenames and locate data within other files. The "file_pattern" value provides a filename template with wildcards that is used to generate filenames. Wildcards follow  C-Language ``printf()`` format string conventions for integers (e.g. "%05d"). Wildcards are substituted with integers in the range of [0, number_of_files] where `number_of_files` is provided by the "number_of_files" node. In addition metadata about the protocol used for  individual Blueprint data files is provided using "protocol/name" and "protocol/version".
+Finally, the Blueprint index contains several nodes that provide the information needed to generate filenames and locate data within other files. The "file_pattern" value provides a filename template with wildcards that is used to generate filenames. Wildcards follow  C-Language ``printf()`` format string conventions for integers (e.g. "%05d"). Wildcards are substituted with integers in the range of [0, number_of_files] where `number_of_files` is provided by the "number_of_files" node. In addition, metadata about the protocol used for  individual Blueprint data files is provided using "protocol/name" and "protocol/version".
 
    * number_of_files: (number)
    * file_pattern: (string)
@@ -996,7 +996,7 @@ Root files are needed to read Blueprint data into tools such as VisIt. At presen
 
  * A root file is always required.
  * The root file must be saved to hdf5, json, or yaml protocols.
- * Individual Blueprint files that contain actual data must use the hdf5 protocol.
+ * Individual Blueprint files that contain actual data may use hdf5, json, or yaml protocols as long as the protocol matches the index's "protocol/name" value.
  * If fields supply a ``display_name`` string then that name will be used instead of the field name. (e.g. display_name: "menu1/menu2/fieldname")
 
 Mesh Blueprint Examples
