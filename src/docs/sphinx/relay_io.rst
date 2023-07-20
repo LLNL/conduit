@@ -348,4 +348,22 @@ HDF5 I/O Options
 You can verify using ``h5stat`` that the data set was written to the hdf5 file using chunking and
 compression.
 
+HDF5 Hyperslabs
+++++++++++++++++
+
+HDF5 can store N-dimensional arrays.  Conduit can read subsets of these arrays, called "hyperslabs" in HDF5 terminology.
+
+* **C++ Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_hdf5_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
 

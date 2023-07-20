@@ -311,13 +311,13 @@ TEST(conduit_relay_io_hdf5, conduit_hdf5_read_2D_array)
     std::vector<int> size_ary;
     size_ary.push_back(rnrows);
     size_ary.push_back(rncols);
-    read_opts["size"].set_external(size_ary);
+    read_opts["sizes"].set_external(size_ary);
     int constexpr rcoloff = 1;
     int constexpr rrowoff = 1;
     std::vector<int> offset_ary;
     offset_ary.push_back(rrowoff);
     offset_ary.push_back(rcoloff);
-    read_opts["offset"].set(offset_ary);
+    read_opts["offsets"].set(offset_ary);
 
     Node n_out;
 

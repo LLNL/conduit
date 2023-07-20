@@ -121,3 +121,91 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_2)
     conduit::relay::io::hdf5_save(n,"myoutput_chunked.hdf5");
     END_EXAMPLE("relay_io_example_hdf5_interface_opts");
 }
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, relay_io_example_hdf5_interface_3)
+{
+    BEGIN_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray");
+    // ------------------------------------------------------------------
+    // Create a 2D array and show it off.
+    int constexpr rank = 2;
+    int constexpr rowlen = 4;
+    int constexpr collen = 3;
+    int constexpr eltcount = collen * rowlen;
+    double data[eltcount];
+    for (int i = 0; i < eltcount; ++i)
+    {
+        data[i] = i;
+    }
+
+    std::cout << "Array, in memory:\n";
+    for (int j = 0; j < collen; ++j)
+    {
+        for (int i = 0; i < rowlen; ++i)
+        {
+            std::cout << std::right << std::setw(4) << data[j * rowlen + i];
+        }
+        std::cout << std::endl;
+    }
+
+    // Create an HDF5 file with a 2D array.
+    herr_t status = 0;
+    hsize_t hdims[rank]{ collen, rowlen };
+
+    const char* fname = "t_relay_io_hdf5_read_ndarray.hdf5";
+    hid_t file = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
+
+    // Create, initialize a dataspace for the dataset
+    hid_t    dataset, dataspace;
+    dataspace = H5Screate_simple(rank, hdims, NULL);
+
+    // Create, initialize the dataset.  Element type is double.
+    const char* dsname = "twoDarray";
+    dataset = H5Dcreate(file, dsname, H5T_NATIVE_DOUBLE, dataspace, 
+        H5P_DEFAULT, H5P_DEFAULT, H5P_DEFAULT);
+    status = H5Dwrite(dataset, H5T_NATIVE_DOUBLE, H5S_ALL, H5S_ALL, H5P_DEFAULT, data);
+    status = H5Dclose(dataset);
+
+    // close the dataspace and file
+    status = H5Sclose(dataspace);
+    status = H5Fclose(file);
+    
+    std::cout << "\nsaved array to '" << std::endl;
+
+    // ------------------------------------------------------------------
+    // Now read a subset of that 2D array from the HDF5 file.
+    int constexpr rrowlen = 2;
+    int constexpr rcollen = 2;
+    int constexpr reltcount = rcollen * rrowlen;
+    int p_sizes[rank]{ rcollen, rrowlen };
+    int p_offsets[rank]{ 0, 1 };
+    int p_strides[rank]{ 1, 2 };
+    Node read_opts;
+    read_opts["sizes"].set_external(p_sizes, rank);
+    read_opts["offsets"].set_external(p_offsets, rank);
+    read_opts["strides"].set_external(p_strides, rank);
+
+    std::cout << "\nHDF5 Options for reading the array:" << std::endl;
+    read_opts.print();
+
+    // Read some of our 2D array
+    Node read_data;
+    double p_data_out[reltcount];
+    read_data.set_external(p_data_out, reltcount);
+    std::string in_path;
+    in_path.append(fname).append(":").append(dsname);
+    conduit::relay::io::hdf5_read(in_path.c_str(), read_opts, read_data);
+
+    // Show what we read
+    std::cout << "Subset of array, read from " << in_path << std::endl;
+    for (int j = 0; j < rcollen; ++j)
+    {
+        for (int i = 0; i < rrowlen; ++i)
+        {
+            std::cout << std::right << std::setw(8) << data[j * rrowlen + i];
+        }
+        std::cout << std::endl;
+    }
+    END_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray");
+}
