@@ -2846,24 +2846,27 @@ void silo_write_matset(DBfile *dbfile,
                        Node &local_type_domain_info,
                        Node &n_mesh_info)
 {
-    // TODO
-
     Node silo_matset;
     conduit::blueprint::mesh::matset::to_silo(n_matset, silo_matset);
-    silo_matset.print();
 
-    // topology: "topo"
-    // material_map: 
-    //   background: 0
-    //   circle_a: 1
-    //   circle_b: 2
-    //   circle_c: 3
-    // matlist: [1, 1, 1, ..., -4, 3]
-    // mix_next: [2, 3, 0, 5, 0]
-    // mix_mat: [1, 2, 3, 1, 2]
-    // mix_vf: [0.333333333333333, 0.333333333333333, 0.333333333333333, 0.5, 0.5]
+    if (!n_matset.has_path("topology"))
+    {
+        CONDUIT_INFO("Skipping this matset because we are "
+                     "missing a linked topology: "
+                      << "matsets/" << matset_name << "/topology");
+        return;
+    }
 
     const std::string topo_name = silo_matset["topology"].as_string();
+
+    if (!n_mesh_info.has_path(topo_name))
+    {
+        CONDUIT_INFO("Skipping this matset because the linked "
+                     "topology is invalid: "
+                      << "matsets/" << matset_name
+                      << "/topology: " << topo_name);
+        return;
+    }
 
     std::string safe_meshname;
     if (overlink)
@@ -2883,6 +2886,13 @@ void silo_write_matset(DBfile *dbfile,
     {
         const Node &n_mat = matmap_itr.next();
         matnos.push_back(n_mat.to_int());
+    }
+
+    // test
+    int_array matlist_vals = silo_matset["matlist"].value();
+    for (int i = 0; i < silo_matset["matlist"].dtype().number_of_elements(); i ++)
+    {
+        matlist_vals[i] -= 1;
     }
     
     int dims[] = {0,0,0};
@@ -2923,13 +2933,12 @@ void silo_write_matset(DBfile *dbfile,
                       silo_matset["mix_next"].value(),
                       silo_matset["mix_mat"].value(),
                       NULL,
-                      silo_matset["mix_vf"].value(), // volume fractions
+                      silo_matset["mix_vf"].data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays
                       mat_type, // data type of volume fractions
                       NULL); // optlist
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMaterial");
-
 
     // bookkeeping
     if (! local_type_domain_info["matsets"].has_child(matset_name))
