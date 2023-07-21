@@ -525,9 +525,9 @@ void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 /// @param filled_opts[out] The options, filled out with defaults
 /// 
 /// This routine uses the following children of \a inopts:
-/// - size
-/// - offset
-/// - stride
+/// - sizes (or size)
+/// - offsets (or offset)
+/// - strides (or stride)
 /// .
 /// All are optional.  All should be numeric and of the same length
 /// (the dimensionality of the dataset \a dataspace_id).
@@ -538,13 +538,14 @@ void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 ///    throw an error.
 /// 3. sets filled_opts["slabparams/rank"] as a scalar, the rank (number
 ///    of dimensions) of the dataset
-/// 4. sets filled_opts["slabparams/sizes"] as the size of the dataset
-/// 5. sets children size, offset, stride of filled_opts["slabparams"]
+/// 4. sets filled_opts["slabparams/dataset_sizes"] as the size of the dataset
+/// 5. sets children sizes, offsets, strides of filled_opts["slabparams"]
 ///    based on metadata retrieved from the dataset
-///    - default size is the size of the data set, also stored as "sizes"
-///    - default stride is all 1s (read or write every element)
-///    - default offset is all 0s (start at the first element)
-/// 6. modifies slabparams/size, offset, stride based on what
+///    - default sizes is the size of the data set, also stored as
+///      "dataset_sizes"
+///    - default strides is all 1s (read or write every element)
+///    - default offsets is all 0s (start at the first element)
+/// 6. modifies slabparams/sizes, offsets, strides based on what
 ///    the user provided in inopts
 /// 7. sets filled_opts["slabparams/readcount"] as a scalar, the number
 ///    of values to read, as specified by offset, stride, and size
