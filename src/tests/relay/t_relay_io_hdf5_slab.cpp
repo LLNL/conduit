@@ -112,7 +112,7 @@ hdf5_read_dset_slab(const std::string &file_path,
     //  points to a buffer of another
     // (for example a view of doubles that is defined on a buffer of bytes)
 
-    // but hdf5 doens't support slab fetch across datatypes
+    // but hdf5 doesn't support slab fetch across datatypes
     // so for now we make sure the datatype is consistent. 
 
     DataType h5_dt = conduit::relay::io::hdf5_dtype_to_conduit_dtype(h5_dtype_id,1);

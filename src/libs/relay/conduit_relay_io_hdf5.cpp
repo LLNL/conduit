@@ -513,6 +513,49 @@ void read_hdf5_tree_into_conduit_node(hid_t hdf5_id,
 
 
 
+//-----------------------------------------------------------------------------
+// helper for HDF5 manipulation of ND arrays
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+/// Fill options relating to reading or writing an HDF5 dataset
+///
+/// @param inopts Input options
+/// @param dataspace_id ID of the dataspace of the dataset in question
+/// @param filled_opts[out] The options, filled out with defaults
+/// 
+/// This routine uses the following children of \a inopts:
+/// - sizes (or size)
+/// - offsets (or offset)
+/// - strides (or stride)
+/// .
+/// All are optional.  All should be numeric and of the same length
+/// (the dimensionality of the dataset \a dataspace_id).
+/// 
+/// This routine does the following:
+/// 1. makes a deep copy of \a inopts into \a filled_opts
+/// 2. retrieves metadata from \a dataspace_id.  If it's not a dataspace, 
+///    throw an error.
+/// 3. sets filled_opts["slabparams/rank"] as a scalar, the rank (number
+///    of dimensions) of the dataset
+/// 4. sets filled_opts["slabparams/dataset_sizes"] as the size of the dataset
+/// 5. sets children sizes, offsets, strides of filled_opts["slabparams"]
+///    based on metadata retrieved from the dataset
+///    - default sizes is the size of the data set, also stored as
+///      "dataset_sizes"
+///    - default strides is all 1s (read or write every element)
+///    - default offsets is all 0s (start at the first element)
+/// 6. modifies slabparams/sizes, offsets, strides based on what
+///    the user provided in inopts
+/// 7. sets filled_opts["slabparams/readcount"] as a scalar, the number
+///    of values to read, as specified by offset, stride, and size
+void 
+fill_dataset_opts(const std::string & ref_path, const Node& inopts,
+    hid_t dataspace_id, Node& filled_opts);
+
+hsize_t*
+make_dataset_opt_copy(const Node& opts, const std::string opt_name);
+
 
 //-----------------------------------------------------------------------------
 // helper used to properly create a new ref_path for a child
@@ -683,10 +726,27 @@ conduit_dtype_to_hdf5_dtype_cleanup(hid_t hdf5_dtype_id,
 DataType
 hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                             index_t num_elems,
+                            const std::string& ref_path)
+{
+    hsize_t num_elems_array[1] = { num_elems };
+    return hdf5_dtype_to_conduit_dtype(hdf5_dtype_id, num_elems_array, 1, ref_path);
+}
+
+
+//-----------------------------------------------------------------------------
+DataType
+hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
+                            hsize_t * num_elems_array,
+                            index_t rank,
                             const std::string &ref_path)
 {
     // TODO: there may be a more straight forward way to do this using
     // hdf5's data type introspection methods
+    index_t num_elems = 1;
+    for (int d = 0; d < rank; ++d)
+    {
+        num_elems = num_elems * (index_t)num_elems_array[d];
+    }
 
     DataType res;
     //-----------------------------------------------
@@ -2625,6 +2685,140 @@ read_hdf5_group_into_conduit_node(hid_t hdf5_group_id,
 }
 
 //---------------------------------------------------------------------------//
+index_t_array
+conduit_node_to_argarray(Node& n,
+                         const char* argname,
+                         const char* altname,
+                         int rank,
+                         index_t dft)
+{
+    Node& hdf5array = n["slabparams"][argname];
+    if (n.has_child(argname))
+    {
+        n[argname].to_index_t_array(hdf5array);
+    }
+    else if (n.has_child(altname))
+    {
+        n[altname].to_index_t_array(hdf5array);
+    }
+    else
+    {
+        hdf5array.set(DataType::index_t(rank));
+        index_t_array p_ary = hdf5array.value();
+        for (int d = 0; d < rank; ++d)
+        {
+            p_ary[d] = dft;
+        }
+    }
+    
+    return hdf5array.as_index_t_array();
+}
+
+
+//---------------------------------------------------------------------------//
+index_t
+calculate_readsize(index_t_array readsize, index_t rank, 
+    const index_t_array dataset_sizes, const index_t_array offsets, const index_t_array strides)
+{
+    index_t readtotal = 1;
+    for (int d = 0; d < rank; ++d)
+    {
+        if (readsize[d] == 0)
+        {
+            readsize[d] = (dataset_sizes[d] - offsets[d]) / strides[d];
+            if ((dataset_sizes[d] - offsets[d]) % strides[d] != 0)
+            {
+                readsize[d]++;
+            }
+        }
+        readtotal = readtotal * readsize[d];
+    }
+    return readtotal;
+}
+
+
+//---------------------------------------------------------------------------//
+void
+fill_dataset_opts(const std::string & ref_path, const Node & inopts,
+    hid_t dataspace_id, Node & filled_opts)
+{
+
+    // Intent here is to do a deep copy, since opts is a const ref
+    // and I want to modify it
+    filled_opts = inopts;
+
+    // If we've already filled in the options, don't re-fill them.
+    if (inopts.has_child("slabparams"))
+    {
+        return;
+    }
+
+    hid_t h5_status    = 0;
+
+    index_t nelems     = H5Sget_simple_extent_npoints(dataspace_id);
+    index_t rank       = H5Sget_simple_extent_ndims(dataspace_id);
+    filled_opts["slabparams/rank"] = rank;
+
+    // Here we should do some error checking.  At least:
+    // - Each element of stride >= 1
+    // - Each element of offset >= 0
+
+    // If dataspace_id is a scalar, then H5Sget_simple_extent_ndims will
+    // return zero.  Setting rank to 0 makes the following code create 
+    // zero-length arrays for offset, stride, and size, which is unhealthy.
+    bool is_scalar = false;
+    if (rank < 1)
+    {
+        is_scalar = true;
+        rank = 1;
+    }
+
+    Node& nsizes = filled_opts["slabparams/dataset_sizes"];
+    nsizes.set(DataType::index_t(rank));
+    index_t_array nsizes_array = nsizes.value();
+    hsize_t* psizes = new hsize_t[rank];
+    index_t rval = H5Sget_simple_extent_dims(dataspace_id, psizes, nullptr);
+    for (int d = 0; d < rank; ++d)
+    {
+        nsizes_array[d] = psizes[d];
+    }
+
+    index_t_array offset = conduit_node_to_argarray(filled_opts, "offsets", "offset", rank, 0);
+    index_t_array stride = conduit_node_to_argarray(filled_opts, "strides", "stride", rank, 1);
+    index_t_array readsz = conduit_node_to_argarray(filled_opts, "sizes", "size", rank, (int)is_scalar);
+
+    for (int d = 0; d < rank; ++d)
+    {
+        if (stride[d] == 0)
+        {
+            CONDUIT_HDF5_ERROR(ref_path,
+                "Error reading HDF5 Dataset with options:"
+                << inopts.to_yaml() <<
+                "`stride` must be greater than zero.");
+        }
+    }
+
+    index_t readcount = calculate_readsize(readsz, rank, nsizes_array, offset, stride);
+    filled_opts["slabparams/readcount"] = readcount;
+
+    delete[] psizes;
+}
+
+//---------------------------------------------------------------------------//
+hsize_t*
+make_dataset_opt_copy(const Node& opts, const std::string opt_name)
+{
+    const index_t_accessor hdf5array = opts["slabparams"].fetch_existing(opt_name).as_index_t_accessor();
+    int rank = hdf5array.number_of_elements();
+    hsize_t* retval = new hsize_t[rank];
+    for (int d = 0; d < rank; ++d)
+    {
+        retval[d] = (hsize_t)hdf5array[d];
+    }
+    return retval;
+}
+
+//---------------------------------------------------------------------------//
 void
 read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                     const std::string &ref_path,
@@ -2657,58 +2851,28 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
 
         hid_t h5_status    = 0;
 
-        index_t nelems     = H5Sget_simple_extent_npoints(h5_dspace_id);
+        Node filled_opts;
+        fill_dataset_opts(ref_path, opts, h5_dspace_id, filled_opts);
 
-        hsize_t offset = 0;
-        if(opts.has_child("offset"))
-        {
-            offset = opts["offset"].to_value();
-        }
-
-        hsize_t stride = 1;
-        if(opts.has_child("stride"))
-        {
-            stride = opts["stride"].to_value();
-        }
-
-        if (stride == 0)
-        {
-            CONDUIT_HDF5_ERROR(ref_path,
-                               "Error reading HDF5 Dataset with options:"
-                               << opts.to_yaml() <<
-                               "`stride` must be greater than zero.");
-        }
-
-        // get the number of elements in the dataset given the offset and stride
-        hsize_t nelems_from_offset = (nelems - offset) / stride;
-        if ((nelems - offset) % stride != 0)
-        {
-            nelems_from_offset++;
-        }
-
-        hsize_t nelems_to_read = nelems_from_offset;
-        if(opts.has_child("size"))
-        {
-            nelems_to_read = opts["size"].to_value();
-            if (nelems_to_read < 1)
-            {
-                CONDUIT_HDF5_ERROR(ref_path,
-                                   "Error reading HDF5 Dataset with options:"
-                                   << opts.to_yaml() <<
-                                   "`size` must be greater than zero.");
-            }
-        }
+        Node& slab_params = filled_opts["slabparams"];
+        index_t rank = slab_params["rank"].to_long_long();
+        hsize_t readtotal = slab_params["readcount"].to_unsigned_long_long();
+        index_t nelems = (index_t)readtotal;
+        hsize_t* readsize = make_dataset_opt_copy(filled_opts, "sizes");
+        hsize_t* offset = make_dataset_opt_copy(filled_opts, "offsets");
+        hsize_t* stride = make_dataset_opt_copy(filled_opts, "strides");
 
         // copy metadata to the node under hard-coded keys
         if (only_get_metadata)
         {
-            dest["num_elements"] = nelems_from_offset;
+            dest["num_elements"].set(readsize, rank);
         }
         else
         {
             // Note: string case is handed properly in hdf5_dtype_to_conduit_dtype
             DataType dt        = hdf5_dtype_to_conduit_dtype(h5_dtype_id,
-                                                             nelems_to_read,
+                                                             readsize,
+                                                             rank,
                                                              ref_path);
 
             // if the endianness of the dset in the file doesn't
@@ -2750,15 +2914,15 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                 conduit_dtype_to_hdf5_dtype_cleanup(h5_dtype_id);
             }
 
-            hsize_t node_size[1] = {nelems_to_read};
-            hsize_t offsets[1] = {offset};
-            hsize_t strides[1] = {stride};
+            hsize_t node_size[1] = {readtotal};
             hid_t nodespace = H5Screate_simple(1,node_size,NULL);
             hid_t dataspace = H5Dget_space(hdf5_dset_id);
 
             // select hyperslab
-            H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offsets,
-                strides, node_size, NULL);
+            H5Sselect_hyperslab(dataspace, H5S_SELECT_SET, offset, stride,
+                readsize, NULL);
+            // Don't check for errors here, because H5Sselect_hyperslab
+            // returns -1 (error) if dataspace refers to a scalar.
 
             // check for string special case, H5T_VARIABLE string
             if( H5Tis_variable_str(h5_dtype_id) )
@@ -2822,6 +2986,10 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             H5Dclose(nodespace);
             H5Dclose(dataspace);
         }
+
+        delete[] stride;
+        delete[] offset;
+        delete[] readsize;
 
         if(opts.dtype().is_empty())
         {
