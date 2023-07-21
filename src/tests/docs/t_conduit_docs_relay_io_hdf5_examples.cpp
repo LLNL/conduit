@@ -130,9 +130,9 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_3)
     // ------------------------------------------------------------------
     // Create a 2D array and show it off.
     int constexpr rank = 2;
-    int constexpr rowlen = 4;
-    int constexpr collen = 3;
-    int constexpr eltcount = collen * rowlen;
+    int constexpr nrows = 3;
+    int constexpr ncols = 4;
+    int constexpr eltcount = nrows * ncols;
     double data[eltcount];
     for (int i = 0; i < eltcount; ++i)
     {
@@ -140,18 +140,21 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_3)
     }
 
     std::cout << "Array, in memory:\n";
-    for (int j = 0; j < collen; ++j)
+    for (int j = 0; j < nrows; ++j)
     {
-        for (int i = 0; i < rowlen; ++i)
+        for (int i = 0; i < ncols; ++i)
         {
-            std::cout << std::right << std::setw(4) << data[j * rowlen + i];
+            std::cout << std::right << std::setw(4) << data[j * ncols + i];
         }
         std::cout << std::endl;
     }
 
     // Create an HDF5 file with a 2D array.
     herr_t status = 0;
-    hsize_t hdims[rank]{ collen, rowlen };
+    // HDF5 dimensions are ordered from slowest- to fastest-varying.
+    // This is the same as C and C++ nested arrays and opposite from
+    // many people's geometric intuition.
+    hsize_t hdims[rank]{ nrows, ncols };
 
     const char* fname = "t_relay_io_hdf5_read_ndarray.hdf5";
     hid_t file = H5Fcreate(fname, H5F_ACC_TRUNC, H5P_DEFAULT, H5P_DEFAULT);
@@ -176,10 +179,14 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_3)
     // ------------------------------------------------------------------
     // Now read a subset of that 2D array from the HDF5 file.
     // Two rows, two columns; total of four elements.
-    int constexpr rrowlen = 2;
-    int constexpr rcollen = 2;
-    int constexpr reltcount = rcollen * rrowlen;
-    int p_sizes[rank]{ rcollen, rrowlen };
+    int constexpr rnrows = 2;
+    int constexpr rncols = 2;
+    int constexpr reltcount = rnrows * rncols;
+    // As noted earlier, HDF5 orders all dimensions from slowest- to
+    // fastest-varying.  In this two-dimensional example, row (or y-index)
+    // always comes before column (or x-index).  If working with a 3D
+    // dataset, level (or z-index) would come before row.
+    int p_sizes[rank]{ rnrows, rncols };
     // offset to row 0, column 1
     int p_offsets[rank]{ 0, 1 };
     // read every row, every other column
@@ -203,11 +210,11 @@ TEST(conduit_docs, relay_io_example_hdf5_interface_3)
 
     // Show what we read
     std::cout << "Subset of array, read from '" << in_path << "'" << std::endl;
-    for (int j = 0; j < rcollen; ++j)
+    for (int j = 0; j < rnrows; ++j)
     {
-        for (int i = 0; i < rrowlen; ++i)
+        for (int i = 0; i < rncols; ++i)
         {
-            std::cout << std::right << std::setw(8) << p_data_out[j * rrowlen + i];
+            std::cout << std::right << std::setw(8) << p_data_out[j * rncols + i];
         }
         std::cout << std::endl;
     }

@@ -9,7 +9,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### Relay
-- Added ability to read N-D HDF5 arrays into linear memory arrays.
+- Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 
 ### Fixed
 
