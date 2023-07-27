@@ -728,7 +728,7 @@ hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                             index_t num_elems,
                             const std::string& ref_path)
 {
-    hsize_t num_elems_array[1] = { num_elems };
+    hsize_t num_elems_array[1] = { static_cast<hsize_t>(num_elems) };
     return hdf5_dtype_to_conduit_dtype(hdf5_dtype_id, num_elems_array, 1, ref_path);
 }
 
