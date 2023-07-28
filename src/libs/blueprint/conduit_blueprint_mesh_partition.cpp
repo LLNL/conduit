@@ -9337,6 +9337,16 @@ combine(const std::vector<Node> &inputs,
         out_matset["volume_fractions"][name].set(volume_fractions);
         out_matset["element_ids"][name].set(element_ids);
     }
+
+    // If the material_map does not exist, add it since it supplies the entire
+    // list of materials, which can be important when a domain does not have
+    // all materials.
+    if(!out_matset.has_child("material_map") && !material_map.empty())
+    {
+        Node &mm = out_matset["material_map"];
+        for(auto it = material_map.begin(); it != material_map.end(); it++)
+            mm[it->second] = it->first;
+    }
 }
 
 }

@@ -15,6 +15,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - The `conduit::blueprint::mesh::partition()` function no longer issues an error when it receives a "maxshare" adjset.
+- The partitioner is better about outputting a "material_map" node for matsets. The "material_map" node is optional for some varieties of matset but they can also help the `conduit::blueprint::mesh::matset::to_silo()` function generate the right material numbers when a domain does not contain all materials.
 
 ## [0.8.8] - Released 2023-05-18
 
