@@ -1,0 +1,11 @@
+# Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
+# Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
+# other details. No copyright assignment is required to contribute to Conduit.
+
+::TV::TTF::RTF::build_struct_transform {
+   name   {^(class|struct) (conduit::)?Node$}
+   members {
+      { size { m_elems } }
+      { data { m_active_pointer} }
+   }
+}

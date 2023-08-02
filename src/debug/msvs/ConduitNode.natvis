@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="conduit::Node">
+        <!-- Node can be empty, object, list, or leaf. -->
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_EMPTY_ID">empty</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_OBJECT_ID">object {{ size: { m_children.size() } }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_LIST_ID">list {{ size: { m_children.size() } }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT8_ID">int8: { (signed char *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT16_ID">int16: { (signed short *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT32_ID">int32: { (signed int *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT64_ID">int64: { (signed long *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT8_ID">uint8: { (unsigned char *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT16_ID">uint16: { (unsigned short *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT32_ID">int32: { (unsigned int *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT64_ID">int64: { (unsigned long *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_FLOAT32_ID">float: { (float *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_FLOAT64_ID">double: { (double *)m_data,(m_schema->m_dtype.m_num_ele) }</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_CHAR8_STR_ID">string: { (char *)m_data }</DisplayString>
+        <DisplayString>leaf value</DisplayString>
+        <Expand>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_LIST_ID">
+                <Size>m_children.size()</Size>
+                <ValuePointer>m_children._Mypair._Myval2._Myfirst</ValuePointer>
+            </ArrayItems>
+            <CustomListItems Condition="m_schema->m_dtype.m_id == CONDUIT_OBJECT_ID">
+                <Variable Name="i" InitialValue="0"/>
+                <Variable Name="hier" InitialValue="(conduit::Schema::Schema_Object_Hierarchy *)(m_schema->m_hierarchy_data)"/>
+                <Size>m_children.size()</Size>
+                <Loop Condition="i&lt;m_children.size()">
+                    <Item Name="{hier->object_order[i]}">m_children[i]</Item>
+                    <Exec>i++</Exec>
+                </Loop>
+            </CustomListItems>
+        </Expand>
+    </Type>
+</AutoVisualizer>
