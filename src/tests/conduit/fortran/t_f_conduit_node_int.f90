@@ -15,6 +15,7 @@ module f_conduit_node_int32
   use iso_c_binding
   use fruit
   use conduit
+  use conduit_endianness_enum
   implicit none
 
 !------------------------------------------------------------------------------
@@ -129,6 +130,63 @@ contains
         call conduit_node_destroy(cnode)
         
     end subroutine t_node_set_external_int32_ptr
+
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_external_int32_ptr_detailed
+        type(C_PTR) cnode
+        integer(4), dimension(5) :: data
+        integer res
+        integer i
+        integer(4), pointer :: f_arr(:)
+        integer(C_SIZE_T) endianness
+        endianness = int(conduit_endianness_default_id,8)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_external_int32_ptr_detailed")
+        !----------------------------------------------------------------------
+        
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_int32_ptr(data,5,0,4,4,Endianness::DEFAULT_ID);
+        call conduit_node_set_external_int32_ptr_detailed(cnode, data, 5_8, 0_8, 4_8, 4_8,endianness)
+
+        call assert_true( logical(conduit_node_is_data_external(cnode) .eqv. .true. ))
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 42
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int32 res = n.as_int32()
+        res = conduit_node_as_int32(cnode)
+        call assert_equals(res,42)
+        ! int32 *res_ptr = n.as_int32_ptr()
+        call conduit_node_as_int32_ptr(cnode,f_arr)
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+        call assert_equals(f_arr(1),42)
+        
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+            ! set_external(...) semantics passing a pointer -- mem addys should be the same 
+            if (loc(f_arr(i)) /= loc(data(i))) then
+              call add_fail("Same addresses expected")
+            endif
+        enddo
+
+        call conduit_node_destroy(cnode)
+
+
+    end subroutine t_node_set_external_int32_ptr_detailed
 
     !--------------------------------------------------------------------------
     subroutine t_node_as_int32
@@ -349,6 +407,59 @@ contains
         call conduit_node_destroy(cnode)
         
     end subroutine t_node_set_and_fetch_path_external_int32_ptr
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_external_int32_ptr_detailed
+        type(C_PTR) cnode
+        integer(4), dimension(5) :: data
+        integer res
+        integer i
+        integer(4), pointer :: f_arr(:)
+        integer(C_SIZE_T) endianness
+        endianness = int(conduit_endianness_default_id,8)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_external_int32_ptr_detailed")
+        !----------------------------------------------------------------------
+        
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+        
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_int32_ptr("my_sub",data,5,0,4,4,Endianness::DEFAULT_ID);
+        call conduit_node_set_path_external_int32_ptr_detailed(cnode, "my_sub",data, 5_8, 0_8, 4_8, 4_8,endianness)
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 42
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int32 res = n.as_int32()
+        res = conduit_node_fetch_path_as_int32(cnode,"my_sub")
+        call assert_equals(res,42)
+        ! int32 *res_ptr = n.as_int32_ptr()
+        call conduit_node_fetch_path_as_int32_ptr(cnode,"my_sub",f_arr)
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+        
+        call assert_equals(f_arr(1),42)
+        
+        ! check array value and address equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+            if (loc(f_arr(i)) /= loc(data(i))) then
+              call add_fail("Same addresses expected")
+            endif
+        enddo
+
+        call conduit_node_destroy(cnode)
+        
+    end subroutine t_node_set_and_fetch_path_external_int32_ptr_detailed
 
 
 !------------------------------------------------------------------------------    
@@ -466,6 +577,65 @@ contains
         call conduit_node_destroy(cnode)
     
     end subroutine t_node_set_external_int64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_external_int64_ptr_detailed
+        type(C_PTR) cnode
+        integer(8), dimension(5) :: data
+        integer(8) res
+        integer i
+        integer(8), pointer :: f_arr(:)
+        integer(C_SIZE_T) endianness
+        endianness = int(conduit_endianness_default_id,8)
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_external_int64_ptr_detailed")
+        !----------------------------------------------------------------------
+    
+        ! fill our 64-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_external_int64_ptr(data,5,0,4,4,Endianness::DEFAULT_ID);
+        call conduit_node_set_external_int64_ptr_detailed(cnode, data, 5_8, 0_8, 8_8, 8_8,endianness)
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 42_8
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int64 res = n.as_int64()
+        res = conduit_node_as_int64(cnode)
+        if (res /= 42_8) then
+          call add_fail("same value expected")
+        endif
+        !call assert_equals(res,42_8)
+        print *,res, "vs", 42_8
+        ! int64 *res_ptr = n.as_int64_ptr()
+        call conduit_node_as_int64_ptr(cnode,f_arr)
+    
+        call assert_equals(size(data),size(f_arr));
+        !call assert_equals(f_arr(1),42_8)
+    
+        ! check array value equiv
+        do i = 1,5
+            !call assert_equals(f_arr(i),data(i))
+            if (f_arr(i) /= data(i)) then
+              call add_fail("Same value expected")
+            endif
+            if (loc(f_arr(i)) /= loc(data(i))) then
+              call add_fail("Same addresses expected")
+            endif
+        enddo
+
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_external_int64_ptr_detailed
 
     !--------------------------------------------------------------------------
     subroutine t_node_as_int64
@@ -703,6 +873,68 @@ contains
         call conduit_node_destroy(cnode)
     
     end subroutine t_node_set_and_fetch_path_external_int64_ptr
+    
+    !--------------------------------------------------------------------------
+    subroutine t_node_set_and_fetch_path_external_int64_ptr_detailed
+        type(C_PTR) cnode
+        integer(8), dimension(5) :: data
+        integer(8) res
+        integer i
+        integer(8), pointer :: f_arr(:)
+        integer(C_SIZE_T) endianness
+        endianness = int(conduit_endianness_default_id,8)
+    
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_set_and_fetch_path_external_int64_ptr")
+        !----------------------------------------------------------------------
+    
+        ! fill our 32-bit x5 integer array
+        do i = 1,5
+            data(i) = i
+        enddo
+    
+        !--------------
+        ! c++ ~equiv:
+        !--------------
+        ! Node n; 
+        cnode = conduit_node_create()
+        ! n.set_path_external_int64_ptr("my_sub",data,5,0,8,8,Endianness::DEFAULT_ID);
+        call conduit_node_set_path_external_int64_ptr_detailed(cnode, "my_sub", data, 5_8, 0_8, 8_8, 8_8,endianness)
+        ! change the first element in the array
+        ! so we can check the external semantics
+        data(1) = 42_8
+        ! n.print_detailed();
+        call conduit_node_print_detailed(cnode)
+        ! int64 res = n.as_int64()
+        res = conduit_node_fetch_path_as_int64(cnode,"my_sub")
+        !call assert_equals(res,42)
+        if (res /= 42_8) then
+          call add_fail("Same value expected")
+        endif
+        print *, res, "vs", 42
+        ! int64 *res_ptr = n.as_int64_ptr()
+        call conduit_node_fetch_path_as_int64_ptr(cnode,"my_sub",f_arr)
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+    
+        if (f_arr(1) /= 42_8) then
+          call add_fail("Same value expected")
+        endif
+    
+        ! check array value equiv
+        do i = 1,5
+            !call assert_equals(f_arr(i),data(i))
+            if (f_arr(i) /= data(i)) then
+              call add_fail("Same value expected")
+            endif
+            if (loc(f_arr(i)) /= loc(data(i))) then
+              call add_fail("Same addresses expected")
+            endif
+        enddo
+
+        call conduit_node_destroy(cnode)
+    
+    end subroutine t_node_set_and_fetch_path_external_int64_ptr_detailed
 
 
 
@@ -726,6 +958,7 @@ program fortran_test
   call t_node_set_int32
   call t_node_set_int32_ptr
   call t_node_set_external_int32_ptr
+  call t_node_set_external_int32_ptr_detailed
 
   call t_node_as_int32
   call t_node_as_int32_ptr
@@ -734,14 +967,17 @@ program fortran_test
   call t_node_set_and_fetch_path_int32
   call t_node_set_and_fetch_path_int32_ptr
   call t_node_set_and_fetch_path_external_int32_ptr
+  call t_node_set_and_fetch_path_external_int32_ptr_detailed
 
   call t_node_set_int64
   call t_node_set_int64_ptr
   call t_node_set_external_int64_ptr
+  call t_node_set_external_int64_ptr_detailed
 
   call t_node_as_int64
   call t_node_as_int64_ptr
   call t_node_as_int64_ptr_read_scalar
+  call t_node_set_and_fetch_path_external_int64_ptr_detailed
  
   call t_node_set_and_fetch_path_int64
   call t_node_set_and_fetch_path_int64_ptr
