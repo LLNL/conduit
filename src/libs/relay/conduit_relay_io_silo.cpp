@@ -1107,10 +1107,10 @@ read_multivars(DBtoc *toc,
         }
 
         // does this variable use nameschemes?
-        bool var_nameschemes = false;
+        bool nameschemes = false;
         if (!multivar.getSiloObject()->varnames || !multivar.getSiloObject()->vartypes)
         {
-            var_nameschemes = true;
+            nameschemes = true;
             error_oss << "multivar " << multivar_name << " uses nameschemes which are not yet supported.";
             return false;
         }
@@ -1120,7 +1120,7 @@ read_multivars(DBtoc *toc,
 
         // there are two cases:
         // 1. the multivar is directly associated with a multimesh
-        // 2. the components of the multivar are associatd with components of a multimesh
+        // 2. the components of the multivar are associated with components of a multimesh
 
         // we begin with the second case:
         if (!multivar.getSiloObject()->mmesh_name)
@@ -1146,8 +1146,8 @@ read_multivars(DBtoc *toc,
                 continue;
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
-            // TODO var_nameschemes
-            if (var_nameschemes)
+            // TODO nameschemes
+            if (nameschemes)
             {
                 var["nameschemes"] = "yes";
             }
@@ -1158,7 +1158,7 @@ read_multivars(DBtoc *toc,
                 int64_array var_types = var["var_types"].value();
                 for (int block_id = 0; block_id < nblocks; block_id ++)
                 {
-                    // save the mesh name and mesh type
+                    // save the var name and var type
                     Node &var_path = var["var_paths"].append();
                     var_path.set(multivar.getSiloObject()->varnames[block_id]);
                     var_types[block_id] = multivar.getSiloObject()->vartypes[block_id];
@@ -1170,13 +1170,88 @@ read_multivars(DBtoc *toc,
     return true;
 }
 
-// //-----------------------------------------------------------------------------
-// void
-// read_multimats(DBfile *dbfile,
-//                )
-// {
+//-----------------------------------------------------------------------------
+bool
+read_multimats(DBtoc *toc,
+               DBfile *dbfile,
+               const std::string &multimesh_name,
+               const int nblocks,
+               Node &root_node,
+               std::ostringstream &error_oss)
+{
+    // iterate thru the multimats and find the ones that are associated with
+    // the chosen multimesh
+    for (int multimat_id = 0; multimat_id < toc->nmultimat; multimat_id ++)
+    {
+        const std::string multimat_name = toc->multimat_names[multimat_id];
+        detail::SiloObjectWrapper<DBmultimat, decltype(&DBFreeMultimat)> multimat{
+            DBGetMultimat(dbfile, multimat_name.c_str()), 
+            &DBFreeMultimat};
+        if (! multimat.getSiloObject())
+        {
+            error_oss << "Error opening multimat " << multimat_name;
+            return false;
+        }
 
-// }
+        // does this variable use nameschemes?
+        bool nameschemes = false;
+        if (!multimat.getSiloObject()->matnames)
+        {
+            nameschemes = true;
+            error_oss << "multimat " << multimat_name << " uses nameschemes which are not yet supported.";
+            return false;
+        }
+
+        // is this multimat associated with a multimesh?
+        bool multimesh_assoc = false;
+
+        // there are two cases:
+        // 1. the multimat is directly associated with a multimesh
+        // 2. the components of the multimat are associated with components of a multimesh
+
+        // we begin with the second case:
+        if (!multimat.getSiloObject()->mmesh_name)
+        {
+            // This multimat has no associated multimesh. 
+            // We will assume it is associated with the multimesh
+            // And then check later when we are actually reading materials
+            multimesh_assoc = true;
+        }
+        // and then the first case
+        else if (multimat.getSiloObject()->mmesh_name == multimesh_name)
+        {
+            multimesh_assoc = true;
+        }
+
+        if (multimesh_assoc)
+        {
+            if (multimat.getSiloObject()->nmats != nblocks)
+            {
+                CONDUIT_INFO("Domain count mismatch between multimat " +
+                             multimat_name + " and multimesh " + 
+                             multimesh_name + ". Skipping.");
+                continue;
+            }
+            Node &material = root_node[multimesh_name]["mats"][multimat_name];
+            // TODO nameschemes
+            if (nameschemes)
+            {
+                material["nameschemes"] = "yes";
+            }
+            else
+            {
+                material["nameschemes"] = "no";
+                for (int block_id = 0; block_id < nblocks; block_id ++)
+                {
+                    Node &mat_path = material["var_paths"].append();
+                    mat_path.set(multimat.getSiloObject()->matnames[block_id]);
+                }
+            }
+        }
+    }
+
+    return true;
+}
 
 //-----------------------------------------------------------------------------
 void
@@ -1292,7 +1367,10 @@ read_root_silo_index(const std::string &root_file_path,
     {
         return false;
     }
-    // read_multimats();
+    if (!read_multimats(toc, dbfile.getSiloObject(), multimesh_name, nblocks, root_node, error_oss))
+    {
+        return false;
+    }
     read_state(dbfile.getSiloObject(), root_node, multimesh_name);
 
     // our silo index should look like this:
@@ -1311,6 +1389,15 @@ read_root_silo_index(const std::string &root_file_path,
     //    mesh_types: [UCD_MESH, UCD_MESH, ...]
     //    vars:
     //       field:
+    //          nameschemes: "no"
+    //          var_paths:
+    //             - "domain_000000.silo:field"
+    //             - "domain_000001.silo:field"
+    //               ...
+    //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
+    //       ...
+    //    mats:
+    //       material:
     //          nameschemes: "no"
     //          var_paths:
     //             - "domain_000000.silo:field"
