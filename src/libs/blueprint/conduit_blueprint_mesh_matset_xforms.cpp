@@ -446,10 +446,8 @@ to_silo(const conduit::Node &field,
         const std::map<index_t, float64>& elem_mat_map = elem_mat_maps[elem_index];
         if(elem_mat_map.size() == 0)
         {
-            temp.reset();
-            temp.set(0);
-            data.set_external(int_dtype, dest["matlist"].element_ptr(elem_index));
-            temp.to_data_type(int_dtype.id(), data);
+            // TODO this makes tests fail
+            CONDUIT_ERROR("A zone has no materials.");
         }
         else if(elem_mat_map.size() == 1)
         {

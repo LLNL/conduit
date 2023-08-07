@@ -2847,27 +2847,7 @@ void silo_write_matset(DBfile *dbfile,
                        Node &n_mesh_info)
 {
     Node silo_matset;
-
-    // Node better_matset;
-    // better_matset.set_external(n_matset);
-
-    // if (!n_matset.has_child("material_map"))
-    // {
-    //     int matId = 1;
-    //     auto vf_itr = better_matset["volume_fractions"].children();
-    //     while (vf_itr.has_next())
-    //     {
-    //         vf_itr.next();
-    //         std::string mat_comp_name = vf_itr.name();
-    //         better_matset["material_map"][mat_comp_name].set(matId);
-    //         matId ++;
-    //     }
-    // }
-
     conduit::blueprint::mesh::matset::to_silo(n_matset, silo_matset);
-
-    std::cout << n_matset.to_yaml() << std::endl;
-    std::cout << silo_matset.to_yaml() << std::endl;
 
     if (!n_matset.has_path("topology"))
     {
@@ -2907,13 +2887,6 @@ void silo_write_matset(DBfile *dbfile,
         const Node &n_mat = matmap_itr.next();
         matnos.push_back(n_mat.to_int());
     }
-
-    // // test
-    // int_array mixmat_vals = silo_matset["mix_mat"].value();
-    // for (int i = 0; i < silo_matset["mix_mat"].dtype().number_of_elements(); i ++)
-    // {
-    //     mixmat_vals[i] += 1;
-    // }
     
     int dims[] = {0,0,0};
     int ndims = 1;
