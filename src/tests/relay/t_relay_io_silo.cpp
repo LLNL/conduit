@@ -373,7 +373,7 @@ TEST(conduit_relay_io_silo, round_trip_venn)
 
             remove_path_if_exists(filename);
             io::silo::save_mesh(save_mesh, basename);
-            io::blueprint::save_mesh(save_mesh, "bungus", "hdf5");
+            io::blueprint::save_mesh(save_mesh, "blueprint_venn", "hdf5");
             // io::silo::load_mesh(filename, load_mesh);
             // EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 

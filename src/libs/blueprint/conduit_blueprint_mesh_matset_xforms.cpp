@@ -454,7 +454,7 @@ to_silo(const conduit::Node &field,
         else if(elem_mat_map.size() == 1)
         {
             temp.reset();
-            temp.set(elem_mat_map.begin()->first + 1);
+            temp.set(elem_mat_map.begin()->first);
             data.set_external(int_dtype, dest["matlist"].element_ptr(elem_index));
             temp.to_data_type(int_dtype.id(), data);
         }

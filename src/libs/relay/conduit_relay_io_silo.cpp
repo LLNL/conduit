@@ -2847,7 +2847,27 @@ void silo_write_matset(DBfile *dbfile,
                        Node &n_mesh_info)
 {
     Node silo_matset;
+
+    // Node better_matset;
+    // better_matset.set_external(n_matset);
+
+    // if (!n_matset.has_child("material_map"))
+    // {
+    //     int matId = 1;
+    //     auto vf_itr = better_matset["volume_fractions"].children();
+    //     while (vf_itr.has_next())
+    //     {
+    //         vf_itr.next();
+    //         std::string mat_comp_name = vf_itr.name();
+    //         better_matset["material_map"][mat_comp_name].set(matId);
+    //         matId ++;
+    //     }
+    // }
+
     conduit::blueprint::mesh::matset::to_silo(n_matset, silo_matset);
+
+    std::cout << n_matset.to_yaml() << std::endl;
+    std::cout << silo_matset.to_yaml() << std::endl;
 
     if (!n_matset.has_path("topology"))
     {
@@ -2888,18 +2908,18 @@ void silo_write_matset(DBfile *dbfile,
         matnos.push_back(n_mat.to_int());
     }
 
-    // test
-    int_array matlist_vals = silo_matset["matlist"].value();
-    for (int i = 0; i < silo_matset["matlist"].dtype().number_of_elements(); i ++)
-    {
-        matlist_vals[i] -= 1;
-    }
+    // // test
+    // int_array mixmat_vals = silo_matset["mix_mat"].value();
+    // for (int i = 0; i < silo_matset["mix_mat"].dtype().number_of_elements(); i ++)
+    // {
+    //     mixmat_vals[i] += 1;
+    // }
     
     int dims[] = {0,0,0};
     int ndims = 1;
     const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
     const int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
-    if (mesh_type == "structured")
+    if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
     {
         ndims = n_mesh_info[topo_name]["ndims"].as_int();
         dims[0] = n_mesh_info[topo_name]["elements"]["i"].as_int();
