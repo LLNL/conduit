@@ -1232,7 +1232,7 @@ read_multimats(DBtoc *toc,
                              multimesh_name + ". Skipping.");
                 continue;
             }
-            Node &material = root_node[multimesh_name]["mats"][multimat_name];
+            Node &material = root_node[multimesh_name]["matsets"][multimat_name];
             // TODO nameschemes
             if (nameschemes)
             {
@@ -1243,7 +1243,7 @@ read_multimats(DBtoc *toc,
                 material["nameschemes"] = "no";
                 for (int block_id = 0; block_id < nblocks; block_id ++)
                 {
-                    Node &mat_path = material["var_paths"].append();
+                    Node &mat_path = material["mat_paths"].append();
                     mat_path.set(multimat.getSiloObject()->matnames[block_id]);
                 }
             }
@@ -1396,14 +1396,13 @@ read_root_silo_index(const std::string &root_file_path,
     //               ...
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
     //       ...
-    //    mats:
+    //    matsets:
     //       material:
     //          nameschemes: "no"
-    //          var_paths:
-    //             - "domain_000000.silo:field"
-    //             - "domain_000001.silo:field"
+    //          mat_paths:
+    //             - "domain_000000.silo:material"
+    //             - "domain_000001.silo:material"
     //               ...
-    //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
     //       ...
 
     return true;
