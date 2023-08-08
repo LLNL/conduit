@@ -755,70 +755,120 @@ assign_values(int nvals,
 
 //-----------------------------------------------------------------------------
 template <class T>
-void
+bool
 read_variable_domain(const T *var_ptr,
                      const std::string &var_name,
                      const std::string &multimesh_name,
-                     conduit::Node &field)
+                     const std::string &multivar_name,
+                     const int vartype,
+                     const std::string &bottom_level_mesh_name,
+                     conduit::Node &mesh_out)
 {
+    // If we cannot fetch this var we will skip
     if (!var_ptr)
     {
-        CONDUIT_ERROR("Error fetching variable " << var_name);
+        return false;
     }
 
-    field["topology"] = multimesh_name;
+    // check that this var is associated with the mesh
+    std::string var_meshname = var_ptr->meshname;
+    if (var_meshname.length() > 1 && var_meshname[0] == '/')
+    {
+        var_meshname = var_meshname.substr(1);
+    }
+    if (var_meshname != bottom_level_mesh_name)
+    {
+        std::string vartype_str;
+        if (vartype == DB_UCDVAR)
+        {
+            vartype_str = "DB_UCDVAR";
+        }
+        else if (vartype == DB_QUADVAR)
+        {
+            vartype_str = "DB_QUADVAR";
+        }
+        else // if (vartype == DB_POINTVAR)
+        {
+            vartype_str = "DB_POINTVAR";
+        }
+        CONDUIT_INFO(vartype_str + " " + var_name + " is not "
+                     "associated with mesh " + var_meshname +
+                     ". Skipping.");
+        return false;
+    }
+
+    // create an entry for this field in the output
+    Node &field_out = mesh_out["fields"][multivar_name];
+
+    field_out["topology"] = multimesh_name;
+
+    // handle association
+    if (vartype == DB_UCDVAR)
+    {
+        field_out["association"] = var_ptr->centering == DB_ZONECENT ? "element" : "vertex";
+    }
+    else if (vartype == DB_QUADVAR)
+    {
+        field_out["association"] = var_ptr->centering == DB_NODECENT ? "vertex" : "element";
+    }
+    else // if (vartype == DB_POINTVAR)
+    {
+        field_out["association"] = "vertex";
+    }
 
     int datatype = var_ptr->datatype;
     if (datatype == DB_INT)
     {
         assign_values<int>(var_ptr->nvals, var_ptr->nels, 
-                           var_ptr->vals, field["values"]);
+                           var_ptr->vals, field_out["values"]);
     }
     else if (datatype == DB_SHORT)
     {
         assign_values<short>(var_ptr->nvals, var_ptr->nels, 
-                             var_ptr->vals, field["values"]);
+                             var_ptr->vals, field_out["values"]);
     }
     else if (datatype == DB_LONG)
     {
         assign_values<long>(var_ptr->nvals, var_ptr->nels, 
-                            var_ptr->vals, field["values"]);
+                            var_ptr->vals, field_out["values"]);
     }
     else if (datatype == DB_FLOAT)
     {
         assign_values<float>(var_ptr->nvals, var_ptr->nels, 
-                             var_ptr->vals, field["values"]);
+                             var_ptr->vals, field_out["values"]);
     }
     else if (datatype == DB_DOUBLE)
     {
         assign_values<double>(var_ptr->nvals, var_ptr->nels,
-                              var_ptr->vals, field["values"]);
+                              var_ptr->vals, field_out["values"]);
     }
     else if (datatype == DB_CHAR)
     {
         // implementation taken from assign_values
         if (var_ptr->nvals == 1)
         {
-            field["values"].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
+            field_out["values"].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
         }
         else
         {
             for (int i = 0; i < var_ptr->nvals; i ++)
             {
                 // need to put the values under a vector component
-                field["values"][std::to_string(i)].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
+                field_out["values"][std::to_string(i)].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
             }
         }
     }
     else if (datatype == DB_LONG_LONG)
     {
         assign_values<long long>(var_ptr->nvals, var_ptr->nels,
-                                 var_ptr->vals, field["values"]);
+                                 var_ptr->vals, field_out["values"]);
     }
     else
     {
         CONDUIT_ERROR("Unsupported type in " << datatype);
     }
+
+    return true;
 }
 
 // TODO support material read
@@ -1817,37 +1867,12 @@ read_mesh(const std::string &root_file_path,
                         DBGetUcdvar(domain_file_to_use, var_name.c_str()),
                         &DBFreeUcdvar};
 
-                    // If we cannot fetch this var we will skip
-                    if (!ucdvar.getSiloObject())
+                    if (!read_variable_domain<DBucdvar>(
+                        ucdvar.getSiloObject(), var_name, multimesh_name,
+                        multivar_name, vartype, bottom_level_mesh_name, mesh_out))
                     {
-                        continue;
+                        continue; // we hit a case where we want to skip this var
                     }
-
-                    // check that this var is associated with the mesh
-                    std::string var_meshname = ucdvar.getSiloObject()->meshname;
-                    if (var_meshname.length() > 1 && var_meshname[0] == '/')
-                    {
-                        var_meshname = var_meshname.substr(1);
-                    }
-                    if (var_meshname != bottom_level_mesh_name)
-                    {
-                        CONDUIT_INFO("DB_UCDVAR " + var_name + " is not "
-                                     "associated with mesh " + var_meshname +
-                                     ". Skipping.");
-                        continue;
-                    }
-
-                    // create an entry for this field in the output
-                    Node &field_out = mesh_out["fields"][multivar_name];
-
-                    // handle association
-                    field_out["association"] = ucdvar.getSiloObject()->centering == DB_ZONECENT ? "element" : "vertex";
-                    
-                    // call subroutine for handling the rest
-                    read_variable_domain<DBucdvar>(ucdvar.getSiloObject(), 
-                                                   var_name, 
-                                                   multimesh_name, 
-                                                   field_out);
                 }
                 else if (vartype == DB_QUADVAR)
                 {
@@ -1856,38 +1881,13 @@ read_mesh(const std::string &root_file_path,
                         DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeQuadvar};
 
-                    // If we cannot fetch this var we will skip
-                    if (!quadvar.getSiloObject())
+                    if (!read_variable_domain<DBquadvar>(
+                        quadvar.getSiloObject(), var_name, multimesh_name,
+                        multivar_name, vartype, bottom_level_mesh_name, mesh_out))
                     {
-                        continue;
+                        continue; // we hit a case where we want to skip this var
                     }
-
-                    // check that this var is associated with the mesh
-                    std::string var_meshname = quadvar.getSiloObject()->meshname;
-                    if (var_meshname.length() > 1 && var_meshname[0] == '/')
-                    {
-                        var_meshname = var_meshname.substr(1);
-                    }
-                    if (var_meshname != bottom_level_mesh_name)
-                    {
-                        CONDUIT_INFO("DB_QUADVAR " + var_name + " is not "
-                                     "associated with mesh " + var_meshname +
-                                     ". Skipping.");
-                        continue;
-                    }
-
-                    // create an entry for this field in the output
-                    Node &field_out = mesh_out["fields"][multivar_name];
-
-                    // handle association
-                    field_out["association"] = quadvar.getSiloObject()->centering == DB_NODECENT ? "vertex" : "element";
-
-                    // call subroutine for handling the rest
-                    read_variable_domain<DBquadvar>(quadvar.getSiloObject(), 
-                                                    var_name, 
-                                                    multimesh_name, 
-                                                    field_out);
-                }
+                                    }
                 else if (vartype == DB_POINTVAR)
                 {
                     // create point var
@@ -1895,37 +1895,12 @@ read_mesh(const std::string &root_file_path,
                         DBGetPointvar(domain_file_to_use, var_name.c_str()), 
                         &DBFreeMeshvar};
 
-                    // If we cannot fetch this var we will skip
-                    if (!meshvar.getSiloObject())
+                    if (!read_variable_domain<DBmeshvar>(
+                        meshvar.getSiloObject(), var_name, multimesh_name,
+                        multivar_name, vartype, bottom_level_mesh_name, mesh_out))
                     {
-                        continue;
+                        continue; // we hit a case where we want to skip this var
                     }
-
-                    // check that this var is associated with the mesh
-                    std::string var_meshname = meshvar.getSiloObject()->meshname;
-                    if (var_meshname.length() > 1 && var_meshname[0] == '/')
-                    {
-                        var_meshname = var_meshname.substr(1);
-                    }
-                    if (var_meshname != bottom_level_mesh_name)
-                    {
-                        CONDUIT_INFO("DB_POINTVAR " + var_name + " is not "
-                                     "associated with mesh " + var_meshname +
-                                     ". Skipping.");
-                        continue;
-                    }
-
-                    // create an entry for this field in the output
-                    Node &field_out = mesh_out["fields"][multivar_name];
-
-                    // handle association
-                    field_out["association"] = "vertex";
-
-                    // call subroutine for handling the rest
-                    read_variable_domain<DBmeshvar>(meshvar.getSiloObject(), 
-                                                    var_name, 
-                                                    multimesh_name, 
-                                                    field_out);
                 }
                 else
                 {
