@@ -1084,6 +1084,88 @@ read_mesh(const std::string &root_file_path,
 }
 
 //-----------------------------------------------------------------------------
+DBfile*
+open_or_reuse_file(const bool ovltop_case,
+                   std::string &domain_filename,
+                   std::map<std::string, DBfile*> filemap,
+                   detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &domain_file)
+{
+    DBfile *domain_file_to_use = nullptr;
+    // handle ovltop.silo case
+    if (ovltop_case)
+    {
+        // first, we will assume valid overlink, so
+        // we need to move the mesh/var/mat path to ../
+        const std::string old_domain_filename = domain_filename;
+        std::string actual_filename, directory;
+        conduit::utils::rsplit_file_path(domain_filename, actual_filename, directory);
+        if (!directory.empty())
+        {
+            std::string dir_lvl_up, bottom_lvl_dir;
+            conduit::utils::rsplit_file_path(directory, bottom_lvl_dir, dir_lvl_up);
+
+            domain_filename = conduit::utils::join_file_path(dir_lvl_up, actual_filename);
+        }
+        
+        // if we have already opened this file
+        if (filemap.find(domain_filename) != filemap.end())
+        {
+            domain_file_to_use = filemap[domain_filename];
+        }
+        // otherwise we need to open our own file
+        else
+        {
+            domain_file.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+            domain_file.setErrMsg("Error closing Silo file: " + domain_filename);
+            if (! (domain_file_to_use = domain_file.getSiloObject()))
+            {
+                CONDUIT_INFO("Provided file is not valid Overlink; defaulting "
+                             " to absolute path rather than assumed path.")
+                // this is not valid overlink so we default to what is in the path
+                domain_filename = old_domain_filename;
+
+                // if we have already opened this file
+                if (filemap.find(domain_filename) != filemap.end())
+                {
+                    domain_file_to_use = filemap[domain_filename];
+                }
+                // otherwise we need to open our own file
+                else
+                {
+                    domain_file.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                    domain_file.setErrMsg("Error closing Silo file: " + domain_filename);
+                    if (! (domain_file_to_use = domain_file.getSiloObject()))
+                    {
+                        CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
+                    }
+                }
+            }
+        }
+    }
+    // standard case
+    else
+    {
+        // if we have already opened this file
+        if (filemap.find(domain_filename) != filemap.end())
+        {
+            domain_file_to_use = filemap[domain_filename];            
+        }
+        // otherwise we need to open our own file
+        else
+        {
+            domain_file.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+            domain_file.setErrMsg("Error closing Silo file: " + domain_filename);
+            if (! (domain_file_to_use = domain_file.getSiloObject()))
+            {
+                CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
+            }
+        }
+    }
+
+    return domain_file_to_use;
+}
+
+//-----------------------------------------------------------------------------
 bool
 read_multimesh(DBfile *dbfile,
                const std::string &multimesh_name,
@@ -1785,80 +1867,8 @@ read_mesh(const std::string &root_file_path,
                 detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
                     nullptr, 
                     &DBClose};
-                DBfile *domain_file_to_use = nullptr;
-
-                // handle ovltop.silo case
-                if (ovltop_case)
-                {
-                    // first, we will assume valid overlink, so
-                    // we need to move the var path to ../
-                    std::string old_var_domain_filename = var_domain_filename;
-                    std::string actual_filename, directory;
-                    conduit::utils::rsplit_file_path(var_domain_filename, actual_filename, directory);
-                    if (!directory.empty())
-                    {
-                        std::string dir_lvl_up, bottom_lvl_dir;
-                        conduit::utils::rsplit_file_path(directory, bottom_lvl_dir, dir_lvl_up);
-
-                        var_domain_filename = conduit::utils::join_file_path(dir_lvl_up, actual_filename);
-                    }
-
-                    // if the var domain is stored in the same file as the mesh domain then we
-                    // can reuse the open file ptr
-                    if (var_domain_filename == mesh_domain_filename)
-                    {
-                        domain_file_to_use = mesh_domain_file.getSiloObject();
-                    }
-                    // otherwise we need to open our own file
-                    else
-                    {
-                        var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-                        var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
-                        if (! (domain_file_to_use = var_domain_file.getSiloObject()))
-                        {
-                            CONDUIT_INFO("Provided file is not valid Overlink; defaulting to absolute path rather than assumed path.")
-                            // this is not valid overlink so we default to what is in the path
-                            var_domain_filename = old_var_domain_filename;
-
-                            // if the var domain is stored in the same file as the mesh domain then we
-                            // can reuse the open file ptr
-                            if (var_domain_filename == mesh_domain_filename)
-                            {
-                                domain_file_to_use = mesh_domain_file.getSiloObject();
-                            }
-                            // otherwise we need to open our own file
-                            else
-                            {
-                                var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-                                var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
-                                if (! (domain_file_to_use = var_domain_file.getSiloObject()))
-                                {
-                                    CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
-                                }
-                            }
-                        }
-                    }
-                }
-                else
-                {
-                    // if the var domain is stored in the same file as the mesh domain then we
-                    // can reuse the open file ptr
-                    if (var_domain_filename == mesh_domain_filename)
-                    {
-                        domain_file_to_use = mesh_domain_file.getSiloObject();
-                    }
-                    // otherwise we need to open our own file
-                    else
-                    {
-                        var_domain_file.setSiloObject(DBOpen(var_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-                        var_domain_file.setErrMsg("Error closing Silo file: " + var_domain_filename);
-                        if (! (domain_file_to_use = var_domain_file.getSiloObject()))
-                        {
-                            CONDUIT_ERROR("Error opening Silo file for reading: " << var_domain_filename);
-                        }
-                    }
-                }
-                // end handling of ovltop.silo case
+                std::map<std::string, DBfile*> filemap{{mesh_domain_filename, mesh_domain_file.getSiloObject()}};
+                DBfile *domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap, var_domain_file);
 
                 if (vartype == DB_UCDVAR)
                 {
@@ -5041,8 +5051,6 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
                 CONDUIT_ERROR("Error opening Silo file for writing: " << root_filename);
             }
         }
-
-        root.print();
 
         write_multimeshes(dbfile.getSiloObject(), 
                           opts_out_mesh_name, 
