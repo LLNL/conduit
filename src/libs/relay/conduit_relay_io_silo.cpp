@@ -1712,45 +1712,8 @@ read_mesh(const std::string &root_file_path,
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
             nullptr, 
             &DBClose};
-
-        if (ovltop_case)
-        {
-            // first, we will assume valid overlink, so
-            // we need to move the mesh path to ../
-            std::string old_mesh_domain_filename = mesh_domain_filename;
-            std::string actual_filename, directory;
-            conduit::utils::rsplit_file_path(mesh_domain_filename, actual_filename, directory);
-            if (!directory.empty())
-            {
-                std::string dir_lvl_up, bottom_lvl_dir;
-                conduit::utils::rsplit_file_path(directory, bottom_lvl_dir, dir_lvl_up);
-
-                mesh_domain_filename = conduit::utils::join_file_path(dir_lvl_up, actual_filename);
-            }
-            mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-            mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
-            if (! mesh_domain_file.getSiloObject())
-            {
-                CONDUIT_INFO("Provided file is not valid Overlink; defaulting to absolute path rather than assumed path.")
-                // this is not valid overlink so we default to what is in the path
-                mesh_domain_filename = old_mesh_domain_filename;
-                mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-                mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
-                if (! mesh_domain_file.getSiloObject())
-                {
-                    CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
-                }
-            }
-        }
-        else
-        {
-            mesh_domain_file.setSiloObject(DBOpen(mesh_domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-            mesh_domain_file.setErrMsg("Error closing Silo file: " + mesh_domain_filename);
-            if (! mesh_domain_file.getSiloObject())
-            {
-                CONDUIT_ERROR("Error opening Silo file for reading: " << mesh_domain_filename);
-            }
-        }
+        std::map<std::string, DBfile*> filemap{{}};
+        DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, mesh_domain_filename, filemap, mesh_domain_file);
 
         // this is for the blueprint mesh output
         std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
@@ -1758,7 +1721,7 @@ read_mesh(const std::string &root_file_path,
         if (meshtype == DB_UCDMESH)
         {
             detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
-                DBGetUcdmesh(mesh_domain_file.getSiloObject(), mesh_name.c_str()), 
+                DBGetUcdmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
                 &DBFreeUcdmesh};
             if (!ucdmesh.getSiloObject())
             {
@@ -1775,7 +1738,7 @@ read_mesh(const std::string &root_file_path,
                  meshtype == DB_QUADRECT)
         {
             detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
-                DBGetQuadmesh(mesh_domain_file.getSiloObject(), mesh_name.c_str()), 
+                DBGetQuadmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
                 &DBFreeQuadmesh};
             if (!quadmesh.getSiloObject())
             {
@@ -1789,7 +1752,7 @@ read_mesh(const std::string &root_file_path,
         else if (meshtype == DB_POINTMESH)
         {
             detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
-                DBGetPointmesh(mesh_domain_file.getSiloObject(), mesh_name.c_str()), 
+                DBGetPointmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
                 &DBFreePointmesh};
             if (!pointmesh.getSiloObject())
             {
@@ -1868,13 +1831,13 @@ read_mesh(const std::string &root_file_path,
                     nullptr, 
                     &DBClose};
                 std::map<std::string, DBfile*> filemap{{mesh_domain_filename, mesh_domain_file.getSiloObject()}};
-                DBfile *domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap, var_domain_file);
+                DBfile *var_domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap, var_domain_file);
 
                 if (vartype == DB_UCDVAR)
                 {
                     // create ucd var
                     detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                        DBGetUcdvar(domain_file_to_use, var_name.c_str()),
+                        DBGetUcdvar(var_domain_file_to_use, var_name.c_str()),
                         &DBFreeUcdvar};
 
                     if (!read_variable_domain<DBucdvar>(
@@ -1888,7 +1851,7 @@ read_mesh(const std::string &root_file_path,
                 {
                     // create quad var
                     detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                        DBGetQuadvar(domain_file_to_use, var_name.c_str()), 
+                        DBGetQuadvar(var_domain_file_to_use, var_name.c_str()), 
                         &DBFreeQuadvar};
 
                     if (!read_variable_domain<DBquadvar>(
@@ -1902,7 +1865,7 @@ read_mesh(const std::string &root_file_path,
                 {
                     // create point var
                     detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                        DBGetPointvar(domain_file_to_use, var_name.c_str()), 
+                        DBGetPointvar(var_domain_file_to_use, var_name.c_str()), 
                         &DBFreeMeshvar};
 
                     if (!read_variable_domain<DBmeshvar>(
