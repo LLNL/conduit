@@ -1830,7 +1830,7 @@ read_mesh(const std::string &root_file_path,
 
         if (mesh_name == "EMPTY")
         {
-            continue;
+            continue; // skip this domain
         }
 
         std::string bottom_level_mesh_name, tmp;
@@ -1848,7 +1848,8 @@ read_mesh(const std::string &root_file_path,
             nullptr, 
             &DBClose};
         std::map<std::string, DBfile*> filemap1{{}};
-        DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, mesh_domain_filename, filemap1, mesh_domain_file);
+        DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, 
+            mesh_domain_filename, filemap1, mesh_domain_file);
 
         // this is for the blueprint mesh output
         std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
@@ -1863,7 +1864,10 @@ read_mesh(const std::string &root_file_path,
         // so we create the mesh_out now for good
         Node &mesh_out = mesh[domain_path];
 
-        // next we set up the state branch
+        //
+        // Read State
+        //
+
         mesh_out["state"]["domain_id"] = domain_id;
         if (mesh_index.has_path("state/time"))
         {
@@ -1931,7 +1935,65 @@ read_mesh(const std::string &root_file_path,
                     multimesh_name, multivar_name, bottom_level_mesh_name, mesh_out);
             }
         }
-        // TODO read materials
+
+        // //
+        // // Read Materials
+        // //
+
+        // // for each mesh domain, we would like to iterate through all the materials
+        // // and extract the same domain from them.
+        // if (mesh_index.has_child("vars"))
+        // {
+        //     const Node &vars = mesh_index["vars"];
+        //     auto var_itr = vars.children();
+        //     while (var_itr.has_next())
+        //     {
+        //         const Node &n_var = var_itr.next();
+        //         std::string multivar_name = var_itr.name();
+
+        //         bool var_nameschemes = false;
+        //         if (n_var.has_child("nameschemes") &&
+        //             n_var["nameschemes"].as_string() == "yes")
+        //         {
+        //             var_nameschemes = true;
+        //             CONDUIT_ERROR("TODO no support for nameschemes yet");
+        //         }
+        //         detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
+
+        //         std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
+        //         int_accessor vartypes = n_var["var_types"].value();
+        //         int vartype = vartypes[domain_id];
+
+        //         std::string var_name, var_domain_filename;
+        //         var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
+
+        //         if (var_name == "EMPTY")
+        //         {
+        //             // we choose not to write anything to blueprint
+        //             continue;
+        //         }
+
+        //         // root only case
+        //         if (var_domain_filename.empty())
+        //         {
+        //             var_domain_filename = root_file_path;
+        //             // we are in the root file only case so overlink is not possible
+        //             ovltop_case = false;
+        //         }
+
+        //         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
+        //             nullptr, 
+        //             &DBClose};
+        //         std::map<std::string, DBfile*> filemap2{{mesh_domain_filename, mesh_domain_file.getSiloObject()}};
+        //         DBfile *var_domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap2, var_domain_file);
+
+        //         // we don't care if this skips the var or not since this is the
+        //         // last thing in the loop iteration
+        //         read_variable_domain(vartype, var_domain_file_to_use, var_name,
+        //             multimesh_name, multivar_name, bottom_level_mesh_name, mesh_out);
+        //     }
+        // }
+        // // TODO read materials
     }
 }
 
