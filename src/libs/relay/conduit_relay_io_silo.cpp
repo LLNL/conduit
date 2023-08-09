@@ -1219,10 +1219,16 @@ read_mesh(const std::string &root_file_path,
 
 //-----------------------------------------------------------------------------
 // this function can be used for meshes, vars, and materials
+// The mesh_domain_filename and mesh_domain_file arguments are only
+// to be provided when calling this function for materials and variables.
+// When calling for meshes, provide the former as an empty string and 
+// the latter as a nullptr.
+// This choice was made to ensure that in all three cases, the same logic can be used.
 DBfile*
 open_or_reuse_file(const bool ovltop_case,
                    std::string &domain_filename,
-                   std::map<std::string, DBfile*> filemap,
+                   const std::string &mesh_domain_filename,
+                   DBfile *mesh_domain_file,
                    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> &domain_file)
 {
     DBfile *domain_file_to_use = nullptr;
@@ -1243,9 +1249,9 @@ open_or_reuse_file(const bool ovltop_case,
         }
         
         // if we have already opened this file
-        if (filemap.find(domain_filename) != filemap.end())
+        if (domain_filename == mesh_domain_filename)
         {
-            domain_file_to_use = filemap[domain_filename];
+            domain_file_to_use = mesh_domain_file;
         }
         // otherwise we need to open our own file
         else
@@ -1260,9 +1266,9 @@ open_or_reuse_file(const bool ovltop_case,
                 domain_filename = old_domain_filename;
 
                 // if we have already opened this file
-                if (filemap.find(domain_filename) != filemap.end())
+                if (domain_filename == mesh_domain_filename)
                 {
-                    domain_file_to_use = filemap[domain_filename];
+                    domain_file_to_use = mesh_domain_file;
                 }
                 // otherwise we need to open our own file
                 else
@@ -1281,9 +1287,9 @@ open_or_reuse_file(const bool ovltop_case,
     else
     {
         // if we have already opened this file
-        if (filemap.find(domain_filename) != filemap.end())
+        if (domain_filename == mesh_domain_filename)
         {
-            domain_file_to_use = filemap[domain_filename];            
+            domain_file_to_use = mesh_domain_file;
         }
         // otherwise we need to open our own file
         else
@@ -1510,7 +1516,7 @@ read_multimats(DBtoc *toc,
                 material["nameschemes"] = "no";
                 for (int block_id = 0; block_id < nblocks; block_id ++)
                 {
-                    Node &mat_path = material["mat_paths"].append();
+                    Node &mat_path = material["matset_paths"].append();
                     mat_path.set(multimat.getSiloObject()->matnames[block_id]);
                 }
             }
@@ -1666,7 +1672,7 @@ read_root_silo_index(const std::string &root_file_path,
     //    matsets:
     //       material:
     //          nameschemes: "no"
-    //          mat_paths:
+    //          matset_paths:
     //             - "domain_000000.silo:material"
     //             - "domain_000001.silo:material"
     //               ...
@@ -1845,11 +1851,9 @@ read_mesh(const std::string &root_file_path,
         }
 
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
-            nullptr, 
-            &DBClose};
-        std::map<std::string, DBfile*> filemap1{{}};
+            nullptr, &DBClose};
         DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, 
-            mesh_domain_filename, filemap1, mesh_domain_file);
+            mesh_domain_filename, "", nullptr, mesh_domain_file);
 
         // this is for the blueprint mesh output
         std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
@@ -1886,8 +1890,7 @@ read_mesh(const std::string &root_file_path,
         // and extract the same domain from them.
         if (mesh_index.has_child("vars"))
         {
-            const Node &vars = mesh_index["vars"];
-            auto var_itr = vars.children();
+            auto var_itr = mesh_index["vars"].children();
             while (var_itr.has_next())
             {
                 const Node &n_var = var_itr.next();
@@ -1924,10 +1927,10 @@ read_mesh(const std::string &root_file_path,
                 }
 
                 detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
-                    nullptr, 
-                    &DBClose};
-                std::map<std::string, DBfile*> filemap2{{mesh_domain_filename, mesh_domain_file.getSiloObject()}};
-                DBfile *var_domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap2, var_domain_file);
+                    nullptr, &DBClose};
+                DBfile *var_domain_file_to_use = open_or_reuse_file(
+                    ovltop_case, var_domain_filename, mesh_domain_filename,
+                    mesh_domain_file.getSiloObject(), var_domain_file);
 
                 // we don't care if this skips the var or not since this is the
                 // last thing in the loop iteration
@@ -1936,64 +1939,65 @@ read_mesh(const std::string &root_file_path,
             }
         }
 
-        // //
-        // // Read Materials
-        // //
+#ifdef BUNGUS
 
-        // // for each mesh domain, we would like to iterate through all the materials
-        // // and extract the same domain from them.
-        // if (mesh_index.has_child("vars"))
-        // {
-        //     const Node &vars = mesh_index["vars"];
-        //     auto var_itr = vars.children();
-        //     while (var_itr.has_next())
-        //     {
-        //         const Node &n_var = var_itr.next();
-        //         std::string multivar_name = var_itr.name();
+        //
+        // Read Materials
+        //
 
-        //         bool var_nameschemes = false;
-        //         if (n_var.has_child("nameschemes") &&
-        //             n_var["nameschemes"].as_string() == "yes")
-        //         {
-        //             var_nameschemes = true;
-        //             CONDUIT_ERROR("TODO no support for nameschemes yet");
-        //         }
-        //         detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
+        // for each mesh domain, we would like to iterate through all the materials
+        // and extract the same domain from them.
+        if (mesh_index.has_child("matsets"))
+        {
+            auto matset_itr = mesh_index["matsets"].children();
+            while (matset_itr.has_next())
+            {
+                const Node &n_matset = matset_itr.next();
+                std::string multimat_name = matset_itr.name();
 
-        //         std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
-        //         int_accessor vartypes = n_var["var_types"].value();
-        //         int vartype = vartypes[domain_id];
+                bool matset_nameschemes = false;
+                if (n_matset.has_child("nameschemes") &&
+                    n_matset["nameschemes"].as_string() == "yes")
+                {
+                    matset_nameschemes = true;
+                    CONDUIT_ERROR("TODO no support for nameschemes yet");
+                }
+                detail::SiloTreePathGenerator matset_path_gen{matset_nameschemes};
 
-        //         std::string var_name, var_domain_filename;
-        //         var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
+                std::string silo_matset_path = n_matset["matset_paths"][domain_id].as_string();
 
-        //         if (var_name == "EMPTY")
-        //         {
-        //             // we choose not to write anything to blueprint
-        //             continue;
-        //         }
+                std::string matset_name, matset_domain_filename;
+                matset_path_gen.GeneratePaths(silo_matset_path, relative_dir, matset_domain_filename, matset_name);
 
-        //         // root only case
-        //         if (var_domain_filename.empty())
-        //         {
-        //             var_domain_filename = root_file_path;
-        //             // we are in the root file only case so overlink is not possible
-        //             ovltop_case = false;
-        //         }
+                if (matset_name == "EMPTY")
+                {
+                    // we choose not to write anything to blueprint
+                    continue;
+                }
 
-        //         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
-        //             nullptr, 
-        //             &DBClose};
-        //         std::map<std::string, DBfile*> filemap2{{mesh_domain_filename, mesh_domain_file.getSiloObject()}};
-        //         DBfile *var_domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap2, var_domain_file);
+                // root only case
+                if (matset_domain_filename.empty())
+                {
+                    matset_domain_filename = root_file_path;
+                    // we are in the root file only case so overlink is not possible
+                    ovltop_case = false;
+                }
 
-        //         // we don't care if this skips the var or not since this is the
-        //         // last thing in the loop iteration
-        //         read_variable_domain(vartype, var_domain_file_to_use, var_name,
-        //             multimesh_name, multivar_name, bottom_level_mesh_name, mesh_out);
-        //     }
-        // }
-        // // TODO read materials
+                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> matset_domain_file{
+                    nullptr, &DBClose};
+                DBfile *matset_domain_file_to_use = open_or_reuse_file(
+                    ovltop_case, matset_domain_filename, mesh_domain_filename,
+                    mesh_domain_file.getSiloObject(), matset_domain_file);
+
+
+                // we don't care if this skips the matset or not since this is the
+                // last thing in the loop iteration
+                read_matset_domain(matset_domain_file_to_use, matset_name,
+                    multimesh_name, multimat_name, bottom_level_mesh_name, mesh_out);
+            }
+        }
+
+#endif
     }
 }
 
