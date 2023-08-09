@@ -679,8 +679,14 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
 
         // We subtract 1 from each of these because in silo these dims are node dims, not element dims
         mesh_domain["topologies"][multimesh_name]["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
-        if (ndims > 1) mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
-        if (ndims > 2) mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
+        if (ndims > 1)
+        {
+            mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
+        }
+        if (ndims > 2)
+        {
+            mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
+        }
     }
     else
     {
@@ -696,8 +702,14 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
     {
         Node &origin = mesh_domain["topologies"][multimesh_name]["elements"]["origin"];
         origin["i"] = quadmesh_ptr->base_index[0];
-        if (ndims > 1) origin["i"] = quadmesh_ptr->base_index[1];
-        if (ndims > 2) origin["i"] = quadmesh_ptr->base_index[2];
+        if (ndims > 1)
+        {
+            origin["i"] = quadmesh_ptr->base_index[1];
+        }
+        if (ndims > 2)
+        {
+            origin["i"] = quadmesh_ptr->base_index[2];
+        }
     }
 
     copy_point_coords(quadmesh_ptr->datatype,
@@ -732,6 +744,68 @@ read_pointmesh_domain(DBpointmesh *pointmesh_ptr,
 }
 
 //-----------------------------------------------------------------------------
+bool
+read_mesh_domain(const int meshtype,
+                 DBfile *mesh_domain_file_to_use,
+                 const std::string &mesh_name,
+                 const std::string &multimesh_name,
+                 const std::string &domain_path,
+                 Node &mesh)
+{
+    if (meshtype == DB_UCDMESH)
+    {
+        detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
+            DBGetUcdmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
+            &DBFreeUcdmesh};
+        if (!ucdmesh.getSiloObject())
+        {
+            // If we cannot fetch this mesh we will skip
+            return false;
+        }
+        read_ucdmesh_domain(ucdmesh.getSiloObject(), 
+                            mesh_name, 
+                            multimesh_name, 
+                            mesh[domain_path]);
+    }
+    else if (meshtype == DB_QUADMESH ||
+             meshtype == DB_QUADCURV ||
+             meshtype == DB_QUADRECT)
+    {
+        detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
+            DBGetQuadmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
+            &DBFreeQuadmesh};
+        if (!quadmesh.getSiloObject())
+        {
+            // If we cannot fetch this mesh we will skip
+            return false;
+        }
+        read_quadmesh_domain(quadmesh.getSiloObject(), 
+                             multimesh_name, 
+                             mesh[domain_path]);
+    }
+    else if (meshtype == DB_POINTMESH)
+    {
+        detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
+            DBGetPointmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
+            &DBFreePointmesh};
+        if (!pointmesh.getSiloObject())
+        {
+            // If we cannot fetch this mesh we will skip
+            return false;
+        }
+        read_pointmesh_domain(pointmesh.getSiloObject(), 
+                              multimesh_name, 
+                              mesh[domain_path]);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported mesh type " << meshtype);
+    }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 template <class T>
 void
 assign_values(int nvals,
@@ -756,13 +830,13 @@ assign_values(int nvals,
 //-----------------------------------------------------------------------------
 template <class T>
 bool
-read_variable_domain(const T *var_ptr,
-                     const std::string &var_name,
-                     const std::string &multimesh_name,
-                     const std::string &multivar_name,
-                     const int vartype,
-                     const std::string &bottom_level_mesh_name,
-                     conduit::Node &mesh_out)
+read_variable_domain_helper(const T *var_ptr,
+                            const std::string &var_name,
+                            const std::string &multimesh_name,
+                            const std::string &multivar_name,
+                            const int vartype,
+                            const std::string &bottom_level_mesh_name,
+                            conduit::Node &mesh_out)
 {
     // If we cannot fetch this var we will skip
     if (!var_ptr)
@@ -866,6 +940,66 @@ read_variable_domain(const T *var_ptr,
     else
     {
         CONDUIT_ERROR("Unsupported type in " << datatype);
+    }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+bool
+read_variable_domain(const int vartype,
+                     DBfile* var_domain_file_to_use,
+                     const std::string &var_name,
+                     const std::string &multimesh_name,
+                     const std::string &multivar_name,
+                     const std::string &bottom_level_mesh_name,
+                     conduit::Node &mesh_out)
+{
+    if (vartype == DB_UCDVAR)
+    {
+        // create ucd var
+        detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
+            DBGetUcdvar(var_domain_file_to_use, var_name.c_str()),
+            &DBFreeUcdvar};
+
+        if (!read_variable_domain_helper<DBucdvar>(
+            ucdvar.getSiloObject(), var_name, multimesh_name,
+            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+        {
+            return false; // we hit a case where we want to skip this var
+        }
+    }
+    else if (vartype == DB_QUADVAR)
+    {
+        // create quad var
+        detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
+            DBGetQuadvar(var_domain_file_to_use, var_name.c_str()), 
+            &DBFreeQuadvar};
+
+        if (!read_variable_domain_helper<DBquadvar>(
+            quadvar.getSiloObject(), var_name, multimesh_name,
+            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+        {
+            return false; // we hit a case where we want to skip this var
+        }
+                        }
+    else if (vartype == DB_POINTVAR)
+    {
+        // create point var
+        detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
+            DBGetPointvar(var_domain_file_to_use, var_name.c_str()), 
+            &DBFreeMeshvar};
+
+        if (!read_variable_domain_helper<DBmeshvar>(
+            meshvar.getSiloObject(), var_name, multimesh_name,
+            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+        {
+            return false; // we hit a case where we want to skip this var
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported variable type " << vartype);
     }
 
     return true;
@@ -1084,6 +1218,7 @@ read_mesh(const std::string &root_file_path,
 }
 
 //-----------------------------------------------------------------------------
+// this function can be used for meshes, vars, and materials
 DBfile*
 open_or_reuse_file(const bool ovltop_case,
                    std::string &domain_filename,
@@ -1712,66 +1847,23 @@ read_mesh(const std::string &root_file_path,
         detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
             nullptr, 
             &DBClose};
-        std::map<std::string, DBfile*> filemap{{}};
-        DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, mesh_domain_filename, filemap, mesh_domain_file);
+        std::map<std::string, DBfile*> filemap1{{}};
+        DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, mesh_domain_filename, filemap1, mesh_domain_file);
 
         // this is for the blueprint mesh output
         std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
 
-        if (meshtype == DB_UCDMESH)
+        if (! read_mesh_domain(meshtype, mesh_domain_file_to_use, mesh_name, 
+            multimesh_name, domain_path, mesh))
         {
-            detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
-                DBGetUcdmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
-                &DBFreeUcdmesh};
-            if (!ucdmesh.getSiloObject())
-            {
-                // If we cannot fetch this mesh we will skip
-                continue;
-            }
-            read_ucdmesh_domain(ucdmesh.getSiloObject(), 
-                                mesh_name, 
-                                multimesh_name, 
-                                mesh[domain_path]);
-        }
-        else if (meshtype == DB_QUADMESH ||
-                 meshtype == DB_QUADCURV ||
-                 meshtype == DB_QUADRECT)
-        {
-            detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
-                DBGetQuadmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
-                &DBFreeQuadmesh};
-            if (!quadmesh.getSiloObject())
-            {
-                // If we cannot fetch this mesh we will skip
-                continue;
-            }
-            read_quadmesh_domain(quadmesh.getSiloObject(), 
-                                 multimesh_name, 
-                                 mesh[domain_path]);
-        }
-        else if (meshtype == DB_POINTMESH)
-        {
-            detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
-                DBGetPointmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
-                &DBFreePointmesh};
-            if (!pointmesh.getSiloObject())
-            {
-                // If we cannot fetch this mesh we will skip
-                continue;
-            }
-            read_pointmesh_domain(pointmesh.getSiloObject(), 
-                                  multimesh_name, 
-                                  mesh[domain_path]);
-        }
-        else
-        {
-            CONDUIT_ERROR("Unsupported mesh type " << meshtype);
+            continue; // we hit a case where we want to skip this mesh domain
         }
 
         // we know we were for sure successful (we didn't skip ahead to the next domain)
         // so we create the mesh_out now for good
         Node &mesh_out = mesh[domain_path];
 
+        // next we set up the state branch
         mesh_out["state"]["domain_id"] = domain_id;
         if (mesh_index.has_path("state/time"))
         {
@@ -1830,58 +1922,16 @@ read_mesh(const std::string &root_file_path,
                 detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
                     nullptr, 
                     &DBClose};
-                std::map<std::string, DBfile*> filemap{{mesh_domain_filename, mesh_domain_file.getSiloObject()}};
-                DBfile *var_domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap, var_domain_file);
+                std::map<std::string, DBfile*> filemap2{{mesh_domain_filename, mesh_domain_file.getSiloObject()}};
+                DBfile *var_domain_file_to_use = open_or_reuse_file(ovltop_case, var_domain_filename, filemap2, var_domain_file);
 
-                if (vartype == DB_UCDVAR)
-                {
-                    // create ucd var
-                    detail::SiloObjectWrapper<DBucdvar, decltype(&DBFreeUcdvar)> ucdvar{
-                        DBGetUcdvar(var_domain_file_to_use, var_name.c_str()),
-                        &DBFreeUcdvar};
-
-                    if (!read_variable_domain<DBucdvar>(
-                        ucdvar.getSiloObject(), var_name, multimesh_name,
-                        multivar_name, vartype, bottom_level_mesh_name, mesh_out))
-                    {
-                        continue; // we hit a case where we want to skip this var
-                    }
-                }
-                else if (vartype == DB_QUADVAR)
-                {
-                    // create quad var
-                    detail::SiloObjectWrapper<DBquadvar, decltype(&DBFreeQuadvar)> quadvar{
-                        DBGetQuadvar(var_domain_file_to_use, var_name.c_str()), 
-                        &DBFreeQuadvar};
-
-                    if (!read_variable_domain<DBquadvar>(
-                        quadvar.getSiloObject(), var_name, multimesh_name,
-                        multivar_name, vartype, bottom_level_mesh_name, mesh_out))
-                    {
-                        continue; // we hit a case where we want to skip this var
-                    }
-                                    }
-                else if (vartype == DB_POINTVAR)
-                {
-                    // create point var
-                    detail::SiloObjectWrapper<DBmeshvar, decltype(&DBFreeMeshvar)> meshvar{
-                        DBGetPointvar(var_domain_file_to_use, var_name.c_str()), 
-                        &DBFreeMeshvar};
-
-                    if (!read_variable_domain<DBmeshvar>(
-                        meshvar.getSiloObject(), var_name, multimesh_name,
-                        multivar_name, vartype, bottom_level_mesh_name, mesh_out))
-                    {
-                        continue; // we hit a case where we want to skip this var
-                    }
-                }
-                else
-                {
-                    CONDUIT_ERROR("Unsupported variable type " << vartype);
-                }
+                // we don't care if this skips the var or not since this is the
+                // last thing in the loop iteration
+                read_variable_domain(vartype, var_domain_file_to_use, var_name,
+                    multimesh_name, multivar_name, bottom_level_mesh_name, mesh_out);
             }
         }
-        // TODO read multimaterials
+        // TODO read materials
     }
 }
 
