@@ -11,6 +11,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 
+#### Blueprint
+- The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
+
 ### Fixed
 
 #### Blueprint

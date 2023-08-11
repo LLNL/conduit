@@ -9993,6 +9993,12 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         }
     }
 
+    // Get a field prefix. Some of the mapping fields used here may have
+    // used a field_prefix when they were generated.
+    std::string field_prefix;
+    if(options.has_child("field_prefix"))
+       field_prefix = options.fetch_existing("field_prefix").as_string();
+
     // map repart domid -> orig domids
     vector<vector<index_t>> map_tgt_domains(repart_doms.size());
     // map repart domid -> orig domid -> original elem/vertex ids
@@ -10034,16 +10040,19 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // first.
     if (has_vert_fields)
     {
+        std::string global_vertex_ids(field_prefix + "global_vertex_ids");
+
         // map of orig domid -> global vert ids
         map<index_t, vector<index_t>> orig_dom_gvids;
         for (const auto& dom_ent : gid_to_orig_dom)
         {
             index_t orig_idx = dom_ent.first;
             const Node& orig_dom = *dom_ent.second;
+            const Node& orig_dom_fields = orig_dom.fetch_existing("fields");
             vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
-            if (orig_dom["fields"].has_child("global_vertex_ids"))
+            if (orig_dom_fields.has_child(global_vertex_ids))
             {
-                const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
+                const index_t_accessor gvids = orig_dom_fields[global_vertex_ids + "/values"].value();
                 orig_gvids.resize(gvids.number_of_elements());
                 for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
                 {
@@ -10063,12 +10072,13 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
 
         for (index_t repart_idx = 0; repart_idx < static_cast<index_t>(repart_doms.size()); repart_idx++)
         {
-            const conduit::Node& dom = *repart_doms[repart_idx];
+            const Node& dom = *repart_doms[repart_idx];
+            const Node& dom_fields = dom.fetch_existing("fields");
 
             std::unordered_map<index_t, index_t> gvid_to_repart_vid;
-            if (dom["fields"].has_child("global_vertex_ids"))
+            if (dom_fields.has_child(global_vertex_ids))
             {
-                const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
+                const Node& global_vid_node = dom_fields[global_vertex_ids + "/values"];
                 const index_t_accessor gvids = global_vid_node.value();
                 for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
                 {
