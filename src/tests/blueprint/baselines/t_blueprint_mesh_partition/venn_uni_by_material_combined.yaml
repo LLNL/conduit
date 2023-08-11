@@ -24,6 +24,11 @@ matsets:
       circle_a: [9, 13, 10, 14]
       circle_b: [10, 11, 14, 15]
       circle_c: [5, 9, 6, 7, 10, 11]
+    material_map: 
+      background: 0
+      circle_a: 1
+      circle_b: 2
+      circle_c: 3
 fields: 
   original_vertex_ids: 
     topology: "topo"
