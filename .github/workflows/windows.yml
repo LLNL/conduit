@@ -26,7 +26,7 @@ jobs:
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
 
   build_windows_msvc_base_cpp14:
-    name: MSVC Base Release
+    name: MSVC Base Release C++ 14
     runs-on: windows-2019
     steps:
     - name: Setup MPI
@@ -47,7 +47,7 @@ jobs:
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
 
   build_windows_msvc_base_cpp17:
-    name: MSVC Base Release
+    name: MSVC Base Release C++ 17
     runs-on: windows-2019
     steps:
     - name: Setup MPI
