@@ -25,6 +25,48 @@ jobs:
         cmake --build build --config Release --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
 
+  build_windows_msvc_base_cpp14:
+    name: MSVC Base Release
+    runs-on: windows-2019
+    steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        cmake -S src -B build            `
+              -DBLT_CXX_STD=c++14        `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DENABLE_PYTHON=ON         `
+              -DENABLE_MPI=ON
+        cmake --build build --config Release --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
+
+  build_windows_msvc_base_cpp17:
+    name: MSVC Base Release
+    runs-on: windows-2019
+    steps:
+    - name: Setup MPI
+      uses: mpi4py/setup-mpi@v1
+    - name: Setup Python Env
+      run: python3 -m pip install --upgrade pip numpy mpi4py
+    - uses: actions/checkout@v2
+      with: 
+        submodules: 'recursive'
+    - name: Build & Test
+      run: |
+        cmake -S src -B build            `
+              -DBLT_CXX_STD=c++17        `
+              -DCMAKE_BUILD_TYPE=Release `
+              -DENABLE_PYTHON=ON         `
+              -DENABLE_MPI=ON
+        cmake --build build --config Release --parallel 2
+        cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
+
   build_windows_msvc_py_ver:
     name: MSVC Release Py Verison
     runs-on: windows-2019
