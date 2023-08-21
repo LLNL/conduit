@@ -6,7 +6,7 @@ on:
 
 jobs:
   build_windows_msvc_base:
-    name: MSVC Base Release
+    name: MSVC 2019 Default Release
     runs-on: windows-2019
     steps:
     - name: Setup MPI
@@ -26,7 +26,7 @@ jobs:
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
 
   build_windows_msvc_base_cpp14:
-    name: MSVC Base Release C++ 14
+    name: MSVC 2019 C++14 Release
     runs-on: windows-2019
     steps:
     - name: Setup MPI
@@ -47,8 +47,8 @@ jobs:
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
 
   build_windows_msvc_base_cpp17:
-    name: MSVC Base Release C++ 17
-    runs-on: windows-2019
+    name: MSVC 2022 C++17 Release
+    runs-on: windows-2022
     steps:
     - name: Setup MPI
       uses: mpi4py/setup-mpi@v1
