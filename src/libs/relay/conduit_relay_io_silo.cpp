@@ -866,7 +866,7 @@ read_variable_domain_helper(const T *var_ptr,
             vartype_str = "DB_POINTVAR";
         }
         CONDUIT_INFO(vartype_str + " " + var_name + " is not "
-                     "associated with mesh " + var_meshname +
+                     "associated with mesh " + bottom_level_mesh_name +
                      ". Skipping.");
         return false;
     }
@@ -1005,198 +1005,138 @@ read_variable_domain(const int vartype,
     return true;
 }
 
-// TODO support material read
-// //-----------------------------------------------------------------------------
-// // Read a material domain from a Silo file.
-// // 'file' must be a pointer into the file containing the material domain
-// // 'mat_name' must be the name of the material within the file.
-// //-----------------------------------------------------------------------------
-// void
-// read_material_domain(DBfile *file,
-//                      std::string &mat_name,
-//                      conduit::Node &matsets)
-// {
-//     DBmaterial *material_ptr;
-//     if (!(material_ptr = DBGetMaterial(file, mat_name.c_str())))
-//     {
-//         CONDUIT_ERROR("Error fetching variable " << mat_name);
-//     }
+#ifdef BUNGUS
 
-//     std::unique_ptr<DBmaterial, decltype(&DBFreeMaterial)> material{
-//         material_ptr, &DBFreeMaterial};
-//     conduit::Node &curr_matset = matsets[material_ptr->name];
-//     curr_matset["topology"] = material_ptr->meshname;
-//     for (int i = 0; i < material_ptr->nmat; ++i)
-//     {
-//         // material names may be NULL
-//         std::string material_name;
-//         if (material_ptr->matnames)
-//         {
-//             material_name = material_ptr->matnames[i];
-//         }
-//         else
-//         {
-//             // but matnos should always be
-//             material_name = std::to_string(material_ptr->matnos[i]);
-//         }
-//         curr_matset["material_map"][material_name] = material_ptr->matnos[i];
-//     }
-//     // TODO: support multi-dimensional materials
-//     CONDUIT_ASSERT(material_ptr->ndims == 1,
-//                    "Only single-dimension materials supported, got "
-//                        << material_ptr->ndims);
-//     if (material_ptr->mixlen > 0)
-//     {
-//         // The struct has volume fractions.
-//         // In this case, the struct is very confusing.
-//         // If an entry in the `matlist` is negative, it implies that the
-//         // associated zone has mixed materials, and `-(value) - 1` gives the
-//         // first index into mix_vf and mix_mat for that zone. mix_next is then
-//         // used to find the rest of the indices into mix_vf and mix_mat for
-//         // the zone.
-//         std::vector<double> volume_fractions;
-//         std::vector<int> material_ids;
-//         std::vector<int> sizes;
-//         std::vector<int> offsets;
-//         int curr_offset = 0;
-//         for (int i = 0; i < material_ptr->dims[0]; ++i)
-//         {
-//             int matlist_entry = material_ptr->matlist[i];
-//             if (matlist_entry >= 0)
-//             {
-//                 volume_fractions.push_back(1.0);
-//                 material_ids.push_back(matlist_entry);
-//                 sizes.push_back(1);
-//                 offsets.push_back(curr_offset);
-//                 curr_offset++;
-//             }
-//             else
-//             {
-//                 int mix_id = -(matlist_entry)-1;
-//                 int curr_size = 0;
-//                 while (mix_id >= 0)
-//                 {
-//                     material_ids.push_back(material_ptr->mix_mat[mix_id]);
-//                     if (material_ptr->datatype == DB_DOUBLE)
-//                     {
-//                         volume_fractions.push_back(static_cast<double *>(
-//                             material_ptr->mix_vf)[mix_id]);
-//                     }
-//                     else if (material_ptr->datatype == DB_FLOAT)
-//                     {
-//                         volume_fractions.push_back(
-//                             static_cast<float *>(material_ptr->mix_vf)[mix_id]);
-//                     }
-//                     curr_size++;
-//                     mix_id = material_ptr->mix_next[mix_id] - 1;
-//                 }
-//                 sizes.push_back(curr_size);
-//                 offsets.push_back(curr_offset);
-//                 curr_offset += curr_size;
-//             }
-//         }
-//         curr_matset["material_ids"].set(material_ids.data(), material_ids.size());
-//         curr_matset["volume_fractions"].set(volume_fractions.data(),
-//                                        volume_fractions.size());
-//         curr_matset["sizes"].set(sizes.data(), sizes.size());
-//         curr_matset["offsets"].set(offsets.data(), offsets.size());
-//     }
-//     else
-//     {
-//         // TODO: remove, since this is just a special case of the above logic, I think?
-//         // no volume fractions. All zones are single-material.
-//         int arr_len = material_ptr->dims[0];
-//         copy_and_assign(material_ptr->matlist,
-//                         arr_len,
-//                         curr_matset["material_ids"]);
+//-----------------------------------------------------------------------------
+bool
+read_matset_domain(DBfile* matset_domain_file_to_use,
+                   const std::string &matset_name,
+                   const std::string &multimesh_name,
+                   const std::string &multimat_name,
+                   const std::string &bottom_level_mesh_name,
+                   )
+{
+    // create silo matset
+    detail::SiloObjectWrapper<DBmaterial, decltype(&DBFreeMaterial)> material{
+        DBGetMaterial(matset_domain_file_to_use, matset_name.c_str()),
+        &DBFreeMaterial};
 
-//         double *volume_fractions = new double[arr_len];
-//         int *sizes = new int[arr_len];
-//         int *offsets = new int[arr_len];
-//         for (int i = 0; i < arr_len; ++i)
-//         {
-//             volume_fractions[i] = 1.0;
-//             offsets[i] = i;
-//             sizes[i] = 1;
-//         }
-//         curr_matset["volume_fractions"].set(volume_fractions, arr_len);
-//         curr_matset["sizes"].set(sizes, arr_len);
-//         curr_matset["offsets"].set(offsets, arr_len);
-//     }
-// }
+    const DBmaterial* matset_ptr = material.getSiloObject();
 
-// //-----------------------------------------------------------------------------
-// // Read a multimaterial from a Silo file.
-// // 'root_file' should be the file containing the multivar entry
-// // 'filemap' should be a mapping providing DBfile* for files which have
-// //  already been opened.
-// // 'dirname' should be the directory containing the root file, as if the
-// // `dirname` command were called on the root file path. This directory is used
-// // to concretize the paths given by the multimat.
-// //-----------------------------------------------------------------------------
-// void
-// read_multimaterial(DBfile *root_file,
-//                    std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-//                    const std::string &dirname,
-//                    DBmultimat *multimat,
-//                    conduit::Node &mesh)
-// {
+    // If we cannot fetch this matset we will skip
+    if (!matset_ptr)
+    {
+        return false;
+    }
 
-//     std::string file_path, silo_name;
-//     for (index_t i = 0; i < multimat->nmats; ++i)
-//     {
-//         Node &matsets = mesh[i]["matsets"];
-//         split_silo_path(multimat->matnames[i], dirname, file_path, silo_name);
-//         if (!file_path.empty())
-//         {
-//             read_material_domain(get_or_open(filemap, file_path),
-//                                  silo_name,
-//                                  matsets);
-//         }
-//         else
-//         {
-//             read_material_domain(root_file, silo_name, matsets);
-//         }
-//     }
-// }
+    // check that this matset is associated with the mesh
+    std::string matset_meshname = matset_ptr->meshname;
+    if (matset_meshname.length() > 1 && matset_meshname[0] == '/')
+    {
+        matset_meshname = matset_meshname.substr(1);
+    }
+    if (matset_meshname != bottom_level_mesh_name)
+    {
+        CONDUIT_INFO("DBmaterial " + matset_name + " is not "
+                     "associated with mesh " + bottom_level_mesh_name +
+                     ". Skipping.");
+        return false;
+    }
 
-// //---------------------------------------------------------------------------//
-// void
-// read_all_multimats(DBfile *root_file,
-//                   DBtoc *toc,
-//                   std::map<std::string, std::unique_ptr<DBfile, decltype(&DBClose)>> &filemap,
-//                   const std::string &dirname,
-//                   const std::string &mmesh_name,
-//                   int expected_domains,
-//                   conduit::Node &mesh)
-// {
+    // create an entry for this matset in the output
+    Node &matset_out = mesh_out["matsets"][multimat_name];
 
-//     for (int i = 0; i < toc->nmultimat; ++i)
-//     {
-//         std::unique_ptr<DBmultimat, decltype(&DBFreeMultimat)> multimat{
-//             DBGetMultimat(root_file, toc->multimat_names[i]), &DBFreeMultimat};
-//         if (!multimat.get()) {
-//             multimat.release();
-//             CONDUIT_ERROR("Error fetching multimaterial "
-//                           << multimat.get()->matnames[i]);
-//         }
+    matset_out["topology"] = multimesh_name;
 
-//         if (multimat.get()->mmesh_name != NULL &&
-//             multimat.get()->mmesh_name == mmesh_name)
-//         {
-//             CONDUIT_ASSERT(multimat.get()->nmats == expected_domains,
-//                            "Domain count mismatch between multimaterial "
-//                                << multimat.get()->matnames[i]
-//                                << "and multimesh");
-//             // read in the multimaterial and add it to the mesh Node
-//             read_multimaterial(root_file,
-//                                filemap,
-//                                dirname,
-//                                multimat.get(),
-//                                mesh);
-//         }
-//     }
-// }
+    // we are choosing to do sparse by element
+    // TODO later support sparse by material and full
+
+    Node &material_map = matset_out["material_map"];
+    for (int i = 0; i < matset_ptr->nmat; i ++)
+    {
+        const int matno = matset_ptr->matnos[i];
+        if (matset_ptr->matnames) // may be null
+        {
+            material_map[matset_ptr->matnames[i]] = matno;
+        }
+        else // matnos should always be there
+        {
+            material_map[std::to_string(matno)] = matno;
+        }
+    }
+
+    // TODO: support multi-dimensional materials
+    CONDUIT_ASSERT(matset_ptr->ndims == 1,
+                   "Only single-dimension materials supported, got "
+                   << matset_ptr->ndims);
+
+    std::vector<double> volume_fractions;
+    std::vector<int> material_ids;
+    std::vector<int> sizes;
+    std::vector<int> offsets;
+    int curr_offset = 0;
+    for (int i = 0, i < matset_ptr->dims[0]; i ++)
+    {
+        int matlist_entry = matset_ptr->matlist[i];
+        if (matlist_entry >= 0) // ? TODO is 0 allowed
+        {
+            volume_fractions.push_back(1.0);
+            material_ids.push_back(matlist_entry);
+            sizes.push_back(1);
+            offsets.push_back(curr_offset);
+            curr_offset ++;
+        }
+        else
+        {
+            // for mixed zones, the numbers in the matlist are negated 1-indices into
+            // the silo mixed data arrays. To turn them into zero-indices, we must add
+            // 1 and negate the result. Example:
+            // indices: -1 -2 -3 -4 ...
+            // become:   0  1  2  3 ...
+
+            int mix_id = -1 * (matlist_entry + 1);
+            int curr_size = 0;
+
+            // when mix_id is 0, we are on the last one
+            while (mix_id >= 0)
+            {
+                material_ids.push_back(matset_ptr->mix_mat[mix_id]);
+
+                // mix_vf is a void ptr so we must cast
+                if (matset_ptr->datatype == DB_DOUBLE)
+                {
+                    volume_fractions.push_back(static_cast<double *>(matset_ptr->mix_vf)[mix_id]);
+                }
+                else if (matset_ptr->datatype == DB_FLOAT)
+                {
+                    volume_fractions.push_back(static_cast<float *>(matset_ptr->mix_vf)[mix_id]);
+                }
+                else
+                {
+                    CONDUIT_ERROR("bad news");
+                }
+
+                curr_size ++;
+                // since mix_id is a 1-index, we must subtract one
+                // this makes sure that mix_id = 0 is the last case,
+                // since it will make our mix_id == -1, which ends
+                // the while loop.
+                mix_id = matset_ptr->mix_next[mix_id] - 1;
+            }
+
+            sizes.push_back(curr_size);
+            offsets.push_back(curr_offset);
+            curr_offset += curr_size;
+        }
+    }
+
+    matset_out["material_ids"].set(material_ids.data(), material_ids.size());
+    matset_out["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
+    matset_out["sizes"].set(sizes.data(), sizes.size());
+    matset_out["offsets"].set(offsets.data(), offsets.size());
+}
+
+#endif
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
@@ -3123,7 +3063,7 @@ void silo_write_matset(DBfile *dbfile,
                       ndims, // number of dimensions in dims
                       silo_matset["mix_next"].value(),
                       silo_matset["mix_mat"].value(),
-                      NULL,
+                      NULL, // TODO what is this?
                       silo_matset["mix_vf"].data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays
                       mat_type, // data type of volume fractions
@@ -3740,43 +3680,6 @@ write_multimats(DBfile *dbfile,
         }
     }
 }
-
-//-----------------------------------------------------------------------------
-// TODO support multimaterial write
-// void
-// write_multimaterial(DBfile *root,
-//                     const std::string &mmat_name,
-//                     const std::string &mmesh_name,
-//                     std::vector<std::string> mat_domains) 
-// {
-//     std::vector<const char *> domain_name_ptrs;
-//     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-//             DBMakeOptlist(1),
-//             &DBFreeOptlist,
-//             "Error freeing optlist."};
-//     if (!optlist.getSiloObject())
-//     {
-//         CONDUIT_ERROR("Error creating options");
-//     }
-
-//     // have to const_cast because converting to void *
-//     CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-//                                           DBOPT_MMESH_NAME,
-//                                           const_cast<char *>(mmesh_name.c_str())),
-//                               "Error creating options for putting multimat");
-    
-//     for (auto domain : mat_domains) 
-//     {
-//         domain_name_ptrs.push_back(domain.c_str());
-//     }
-
-//     CONDUIT_CHECK_SILO_ERROR( DBPutMultimat(root,
-//                                             detail::sanitize_silo_varname(mmat_name).c_str(),
-//                                             mat_domains.size(),
-//                                             domain_name_ptrs.data(),
-//                                             optlist.getSiloObject()),
-//                               "Error putting multimaterial");
-// }
 
 //-----------------------------------------------------------------------------
 /// The following options can be passed via the opts Node:
