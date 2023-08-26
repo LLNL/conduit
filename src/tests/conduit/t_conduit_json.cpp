@@ -896,3 +896,21 @@ TEST(conduit_json, to_json_opts)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_external)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["b"].as_uint32(),b_val);
+
+    std::cout << n.to_json("conduit_json_external") << std::endl;
+}
+
+

@@ -13206,6 +13206,10 @@ Node::to_json_stream(std::ostream &os,
     {
         return to_detailed_json(os,indent,depth,pad,eoe);
     }
+    else if(protocol == "conduit_json_external")
+    {
+        return to_detailed_json_external(os,indent,depth,pad,eoe);
+    }
     else if(protocol == "conduit_base64_json")
     {
         return to_base64_json(os,indent,depth,pad,eoe);
@@ -13455,13 +13459,14 @@ Node::to_yaml_default() const
 //---------------------------------------------------------------------------//
 std::string
 Node::to_json_generic(bool detailed,
+                      bool address,
                       index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
 {
     std::ostringstream oss;
-    to_json_generic(oss,detailed,indent,depth,pad,eoe);
+    to_json_generic(oss,detailed,address,indent,depth,pad,eoe);
     return oss.str();
 }
 
@@ -13470,6 +13475,7 @@ Node::to_json_generic(bool detailed,
 void
 Node::to_json_generic(const std::string &stream_path,
                       bool detailed,
+                      bool address,
                       index_t indent,
                       index_t depth,
                       const std::string &pad,
@@ -13482,7 +13488,7 @@ Node::to_json_generic(const std::string &stream_path,
         CONDUIT_ERROR("<Node::to_json> failed to open file: "
                       << "\"" << stream_path << "\"");
     }
-    to_json_generic(ofs,detailed,indent,depth,pad,eoe);
+    to_json_generic(ofs,detailed,address,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -13491,6 +13497,7 @@ Node::to_json_generic(const std::string &stream_path,
 void
 Node::to_json_generic(std::ostream &os,
                       bool detailed,
+                      bool address,
                       index_t indent,
                       index_t depth,
                       const std::string &pad,
@@ -13511,6 +13518,7 @@ Node::to_json_generic(std::ostream &os,
             os << "\""<< m_schema->object_order()[i] << "\": ";
             m_children[i]->to_json_generic(os,
                                            detailed,
+                                           address,
                                            indent,
                                            depth+1,
                                            pad,
@@ -13534,6 +13542,7 @@ Node::to_json_generic(std::ostream &os,
             utils::indent(os,indent,depth+1,pad);
             m_children[i]->to_json_generic(os,
                                            detailed,
+                                           address,
                                            indent,
                                            depth+1,
                                            pad,
@@ -13567,55 +13576,64 @@ Node::to_json_generic(std::ostream &os,
             os << dtype_content;
             os << "\"," << eoe;
             utils::indent(os,indent,depth+1,pad);
-            os << "\"value\": ";
+            if(!address)
+            {
+                os << "\"value\": ";
+            }
         }
 
-        switch(dtype().id())
+        if(address)
         {
-            // ints
-            case DataType::INT8_ID:
-                as_int8_array().to_json_stream(os);
-                break;
-            case DataType::INT16_ID:
-                as_int16_array().to_json_stream(os);
-                break;
-            case DataType::INT32_ID:
-                as_int32_array().to_json_stream(os);
-                break;
-            case DataType::INT64_ID:
-                as_int64_array().to_json_stream(os);
-                break;
-            // uints
-            case DataType::UINT8_ID:
-                as_uint8_array().to_json_stream(os);
-                break;
-            case DataType::UINT16_ID:
-                as_uint16_array().to_json_stream(os);
-                break;
-            case DataType::UINT32_ID:
-                as_uint32_array().to_json_stream(os);
-                break;
-            case DataType::UINT64_ID:
-                as_uint64_array().to_json_stream(os);
-                break;
-            // floats
-            case DataType::FLOAT32_ID:
-                as_float32_array().to_json_stream(os);
-                break;
-            case DataType::FLOAT64_ID:
-                as_float64_array().to_json_stream(os);
-                break;
-            // char8_str
-            case DataType::CHAR8_STR_ID:
-                os << "\""
-                   << utils::escape_special_chars(as_string())
-                   << "\"";
-                break;
-            // empty
-            case DataType::EMPTY_ID:
-                os << "null";
-                break;
-
+            os << "\"address\": \"" << utils::to_hex_string(m_data) << "\"";
+        }
+        else
+        {
+            switch(dtype().id())
+            {
+                // ints
+                case DataType::INT8_ID:
+                    as_int8_array().to_json_stream(os);
+                    break;
+                case DataType::INT16_ID:
+                    as_int16_array().to_json_stream(os);
+                    break;
+                case DataType::INT32_ID:
+                    as_int32_array().to_json_stream(os);
+                    break;
+                case DataType::INT64_ID:
+                    as_int64_array().to_json_stream(os);
+                    break;
+                // uints
+                case DataType::UINT8_ID:
+                    as_uint8_array().to_json_stream(os);
+                    break;
+                case DataType::UINT16_ID:
+                    as_uint16_array().to_json_stream(os);
+                    break;
+                case DataType::UINT32_ID:
+                    as_uint32_array().to_json_stream(os);
+                    break;
+                case DataType::UINT64_ID:
+                    as_uint64_array().to_json_stream(os);
+                    break;
+                // floats
+                case DataType::FLOAT32_ID:
+                    as_float32_array().to_json_stream(os);
+                    break;
+                case DataType::FLOAT64_ID:
+                    as_float64_array().to_json_stream(os);
+                    break;
+                // char8_str
+                case DataType::CHAR8_STR_ID:
+                    os << "\""
+                    << utils::escape_special_chars(as_string())
+                    << "\"";
+                    break;
+                // empty
+                case DataType::EMPTY_ID:
+                    os << "null";
+                    break;
+            }
         }
 
         if(detailed)
@@ -13637,7 +13655,7 @@ Node::to_pure_json(index_t indent,
                    const std::string &pad,
                    const std::string &eoe) const
 {
-    return to_json_generic(false,indent,depth,pad,eoe);
+    return to_json_generic(false,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -13655,7 +13673,7 @@ Node::to_pure_json(const std::string &stream_path,
         CONDUIT_ERROR("<Node::to_pure_json> failed to open file: "
                      << "\"" << stream_path << "\"");
     }
-    to_json_generic(ofs,false,indent,depth,pad,eoe);
+    to_json_generic(ofs,false,false,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -13667,7 +13685,7 @@ Node::to_pure_json(std::ostream &os,
                    const std::string &pad,
                    const std::string &eoe) const
 {
-    to_json_generic(os,false,indent,depth,pad,eoe);
+    to_json_generic(os,false,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -13677,7 +13695,7 @@ Node::to_detailed_json(index_t indent,
                        const std::string &pad,
                        const std::string &eoe) const
 {
-    return to_json_generic(true,indent,depth,pad,eoe);
+    return to_json_generic(true,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -13695,7 +13713,7 @@ Node::to_detailed_json(const std::string &stream_path,
         CONDUIT_ERROR("<Node::to_detailed_json> failed to open file: "
                      << "\"" << stream_path << "\"");
     }
-    to_json_generic(ofs,true,indent,depth,pad,eoe);
+    to_json_generic(ofs,true,false,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -13708,8 +13726,52 @@ Node::to_detailed_json(std::ostream &os,
                        const std::string &pad,
                        const std::string &eoe) const
 {
-    to_json_generic(os,true,indent,depth,pad,eoe);
+    to_json_generic(os,true,false,indent,depth,pad,eoe);
 }
+
+
+//---------------------------------------------------------------------------//
+std::string
+Node::to_detailed_json_external(index_t indent,
+                                index_t depth,
+                                const std::string &pad,
+                                const std::string &eoe) const
+{
+    return to_json_generic(true,true,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_json_external(const std::string &stream_path,
+                                index_t indent,
+                                index_t depth,
+                                const std::string &pad,
+                                const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_detailed_json> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
+    to_json_generic(ofs,true,true,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_json_external(std::ostream &os,
+                                index_t indent,
+                                index_t depth,
+                                const std::string &pad,
+                                const std::string &eoe) const
+{
+    to_json_generic(os,true,true,indent,depth,pad,eoe);
+}
+
+
 
 //---------------------------------------------------------------------------//
 std::string
