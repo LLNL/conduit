@@ -466,3 +466,30 @@ TEST(conduit_generator, yaml_parsing_errors)
 }
 
 
+
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, json_external_gen)
+{
+    Node n;
+    n["a"] = 42;
+    n["b"] = 144;
+    n["c/d"] = 3.1415;
+    n.print();
+
+    std::string json_ext = n.to_json("conduit_json_external");
+
+    std::cout << json_ext << std::endl;
+
+    Node n2;
+    Generator g(json_ext,"conduit_json");
+    g.walk(n2);
+    n2.print();
+
+    // n2 should be full external, reflecting n
+
+    EXPECT_EQ(n["a"].data_ptr(),n2["a"].data_ptr());
+    EXPECT_EQ(n["b"].data_ptr(),n2["b"].data_ptr());
+    EXPECT_EQ(n["c"].data_ptr(),n2["c"].data_ptr());
+
+}
+

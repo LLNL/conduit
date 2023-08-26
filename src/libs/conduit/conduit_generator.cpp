@@ -167,7 +167,8 @@ public:
                                     
     static void    parse_inline_leaf(const conduit_rapidjson::Value &jvalue,
                                      Node &node);
-                                     
+    static void*   parse_inline_address(const conduit_rapidjson::Value& jvalue);
+
     static void    parse_inline_value(const conduit_rapidjson::Value &jvalue,
                                       Node &node);
                                       
@@ -989,6 +990,30 @@ Generator::Parser::JSON::parse_inline_leaf(const conduit_rapidjson::Value &jvalu
 }
 
 //---------------------------------------------------------------------------//
+void *
+Generator::Parser::JSON::parse_inline_address(const conduit_rapidjson::Value &jvalue)
+{
+    void * res = nullptr;
+    if(jvalue.IsString())
+    {   
+        char *str_end = nullptr;
+        std::string sval(jvalue.GetString());
+        unsigned long long ull_addy = strtoull(sval.c_str(),&str_end,0);
+        res = (void*)ull_addy;
+    }
+    // else if(jvalue.IsNumber())
+    // {
+    //     // TODO ...
+    // }
+    else
+    {
+         CONDUIT_ERROR("JSON Generator error:\n"
+                              << "inline address should be a string or integer");
+    }
+    return res;
+}
+
+//---------------------------------------------------------------------------//
 void
 Generator::Parser::JSON::parse_inline_value(const conduit_rapidjson::Value &jvalue,
                                             Node &node)
@@ -1346,25 +1371,34 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                 DataType dtype;
                 
                 parse_leaf_dtype(jvalue,curr_offset,dtype);
-   
-                if(data != NULL)
+
+                // check for explciit address
+                if(jvalue.HasMember("address"))
                 {
-                    // node is already linked to the schema pointer
-                    schema->set(dtype);
-                    node->set_data_ptr(data);
+                    void *data_ptr = parse_inline_address(jvalue["address"]);
+                    node->set_external(dtype,data_ptr);
                 }
                 else
                 {
-                    // node is already linked to the schema pointer
-                    // we need to dynamically alloc
-                    node->set(dtype);  // causes an init
-                }
-
-                // check for inline json values
-                if(jvalue.HasMember("value"))
-                {
     
-                    parse_inline_value(jvalue["value"],*node);
+                    if(data != NULL)
+                    {
+                        // node is already linked to the schema pointer
+                        schema->set(dtype);
+                        node->set_data_ptr(data);
+                    }
+                    else
+                    {
+                        // node is already linked to the schema pointer
+                        // we need to dynamically alloc
+                        node->set(dtype);  // causes an init
+                    }
+
+                    // check for inline json values
+                    if(jvalue.HasMember("value"))
+                    {
+                        parse_inline_value(jvalue["value"],*node);
+                    }
                 }
             }
         }
