@@ -26,7 +26,6 @@
 // -- conduit includes --
 //-----------------------------------------------------------------------------
 #include "conduit_core.hpp"
-#include "conduit_fmt/conduit_fmt.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -523,12 +522,12 @@ namespace utils
      template< typename T >
      std::string to_hex_string(T value)
      {
-        // note: 
+        // Note: 
         // std::stringstream w/ std::hex seems to not prepend 0x on windows,
-        // but does on linux and macOS
+        // but does on linux and macOS, so we have custom logic for windows.
         //
-        // Note: Also tried to use fmt with "#x"
-        // but this caused a compile disaster for windows CI cases
+        // I also tried to use fmt with "#x", but this caused a compile
+        // disaster for windows CI cases
         std::stringstream oss;
 #if defined(CONDUIT_PLATFORM_WINDOWS)
         oss << "0x" << std::hex << value;
