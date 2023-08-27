@@ -186,15 +186,14 @@ Node::Node(const Schema &schema,
            bool external)
 {
     init_defaults();
-    std::string json_schema =schema.to_json();
-    Generator g(json_schema,"conduit_json",data);
+
     if(external)
     {
-        g.walk_external(*this);
+        set_external(schema,data);
     }
     else
     {
-        g.walk(*this);
+        set(schema,data);
     }
 }
 

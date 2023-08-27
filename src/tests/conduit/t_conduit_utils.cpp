@@ -420,6 +420,9 @@ TEST(conduit_utils, base64_enc_dec)
     // apply schema
     Node n_res(n.schema(),b64_decode_ptr,false);
 
+    n.print();
+    n_res.print();
+
     // check we have the same values
     EXPECT_EQ(n_src["a"].as_int32(), n_res["a"].as_int32());
     EXPECT_EQ(n_src["b"].as_int32(), n_res["b"].as_int32());

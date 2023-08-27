@@ -179,13 +179,21 @@ public:
     static void    walk_pure_json_schema(Node  *node,
                                          Schema *schema,
                                          const conduit_rapidjson::Value &jvalue);
-
+    
+    // if data pointer is provided, data is copied into dest node
     static void    walk_json_schema(Node   *node,
                                     Schema *schema,
                                     void   *data,
                                     const conduit_rapidjson::Value &jvalue,
                                     index_t curr_offset);
-    
+
+    // if data pointer is provided, data is set_external into dest node
+    static void    walk_json_schema_external(Node   *node,
+                                             Schema *schema,
+                                             void   *data,
+                                             const conduit_rapidjson::Value &jvalue,
+                                             index_t curr_offset);
+
     static void    parse_base64(Node *node,
                                 const conduit_rapidjson::Value &jvalue);
 
@@ -1368,30 +1376,38 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
             else
             {
                 // handle leaf node with explicit props
-                DataType dtype;
-                
-                parse_leaf_dtype(jvalue,curr_offset,dtype);
+                DataType src_dtype;
+                parse_leaf_dtype(jvalue,curr_offset,src_dtype);
+
+                DataType des_dtype;
+                src_dtype.compact_to(des_dtype);
 
                 // check for explciit address
                 if(jvalue.HasMember("address"))
                 {
                     void *data_ptr = parse_inline_address(jvalue["address"]);
-                    node->set_external(dtype,data_ptr);
+                    node->set_external(src_dtype,data_ptr);
                 }
                 else
                 {
-    
                     if(data != NULL)
                     {
                         // node is already linked to the schema pointer
-                        schema->set(dtype);
-                        node->set_data_ptr(data);
+                        // we need to dynamically alloc, use compact dtype
+                        node->set(des_dtype); // causes an init
+                        // copy bytes from src data to node's memory
+                        utils::conduit_memcpy_strided_elements(node->data_ptr(),               // dest data
+                                                               des_dtype.number_of_elements(), // num ele
+                                                               des_dtype.element_bytes(),      // ele bytes
+                                                               des_dtype.stride(),             // dest stride
+                                                               data,                           // src data
+                                                               src_dtype.stride());            // src stride
                     }
                     else
                     {
                         // node is already linked to the schema pointer
-                        // we need to dynamically alloc
-                        node->set(dtype);  // causes an init
+                        // we need to dynamically alloc, use compact dtype
+                        node->set(des_dtype); // causes an init
                     }
 
                     // check for inline json values
@@ -1481,7 +1497,6 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
         {
              // node is already linked to the schema pointer
              node->set_data_ptr(data);
-             
         }
         else
         {
@@ -1497,6 +1512,201 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                       << " Expected: JSON Object, Array, or String");
     }
 }
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::JSON::walk_json_schema_external(Node   *node,
+                                                   Schema *schema,
+                                                   void   *data,
+                                                   const conduit_rapidjson::Value &jvalue,
+                                                   index_t curr_offset)
+{
+    // object cases
+    if(jvalue.IsObject())
+    {
+
+        if (jvalue.HasMember("dtype"))
+        {
+            // if dtype is an object, we have a "list_of" case
+            const conduit_rapidjson::Value &dt_value = jvalue["dtype"];
+            if(dt_value.IsObject())
+            {
+                index_t length =1;
+                if(jvalue.HasMember("length"))
+                {
+                    if(jvalue["length"].IsNumber())
+                    {
+                        length = jvalue["length"].GetInt();
+                    }
+                    else if(jvalue["length"].IsObject() && 
+                            jvalue["length"].HasMember("reference"))
+                    {
+                        std::string ref_path = 
+                          jvalue["length"]["reference"].GetString();
+                        length = node->fetch(ref_path).to_index_t();
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("JSON Parsing error:\n"
+                                      << "'length' must be a number "
+                                      << "or reference.");
+                    }
+                    
+                }
+                // we will create `length' # of objects of obj des by dt_value
+                 
+                // TODO: we only need to parse this once, not leng # of times
+                // but this is the easiest way to start.
+                for(index_t i=0;i< length;i++)
+                {
+                    schema->append();
+                    Schema *curr_schema = schema->child_ptr(i);
+                    Node *curr_node = new Node();
+                    curr_node->set_schema_ptr(curr_schema);
+                    curr_node->set_parent(node);
+                    node->append_node_ptr(curr_node);
+                    walk_json_schema_external(curr_node,
+                                              curr_schema,
+                                              data,
+                                              dt_value,
+                                              curr_offset);
+                    // auto offset only makes sense when we have data
+                    if(data != NULL)
+                        curr_offset += curr_schema->total_strided_bytes();
+                }
+            }
+            else
+            {
+                // handle leaf node with explicit props
+                DataType dtype;
+                
+                parse_leaf_dtype(jvalue,curr_offset,dtype);
+
+                // check for explciit address
+                if(jvalue.HasMember("address"))
+                {
+                    void *data_ptr = parse_inline_address(jvalue["address"]);
+                    node->set_external(dtype,data_ptr);
+                }
+                else
+                {
+    
+                    if(data != NULL)
+                    {
+                        // node is already linked to the schema pointer
+                        schema->set(dtype);
+                        node->set_data_ptr(data);
+                    }
+                    else
+                    {
+                        // node is already linked to the schema pointer
+                        // we need to dynamically alloc
+                        node->set(dtype);  // causes an init
+                    }
+
+                    // check for inline json values
+                    if(jvalue.HasMember("value"))
+                    {
+                        parse_inline_value(jvalue["value"],*node);
+                    }
+                }
+            }
+        }
+        else // object case
+        {
+            schema->set(DataType::object());
+            // standard object case - loop over all entries
+            for (conduit_rapidjson::Value::ConstMemberIterator itr = 
+                 jvalue.MemberBegin(); 
+                 itr != jvalue.MemberEnd(); ++itr)
+            {
+                std::string entry_name(itr->name.GetString());
+                
+                // json files may have duplicate object names
+                // we could provide some clear semantics, such as:
+                //   always use first instance, or always use last instance.
+                // however duplicate object names are most likely a
+                // typo, so it's best to throw an error
+                //
+                // also its highly unlikely that the auto offset case
+                // could safely deal with offsets for the
+                // duplicate key case
+                if(schema->has_child(entry_name))
+                {
+                    CONDUIT_ERROR("JSON Generator error:\n"
+                                  << "Duplicate JSON object name: " 
+                                  << utils::join_path(node->path(),entry_name));
+                }
+
+                Schema *curr_schema = &schema->add_child(entry_name);
+                
+                Node *curr_node = new Node();
+                curr_node->set_schema_ptr(curr_schema);
+                curr_node->set_parent(node);
+                node->append_node_ptr(curr_node);
+                walk_json_schema_external(curr_node,
+                                          curr_schema,
+                                          data,
+                                          itr->value,
+                                          curr_offset);
+                
+                // auto offset only makes sense when we have data
+                if(data != NULL)
+                    curr_offset += curr_schema->total_strided_bytes();
+            }
+            
+        }
+    }
+    // List case 
+    else if (jvalue.IsArray()) 
+    {
+        schema->set(DataType::list());
+
+        for (conduit_rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
+        {
+            schema->append();
+            Schema *curr_schema = schema->child_ptr(i);
+            Node *curr_node = new Node();
+            curr_node->set_schema_ptr(curr_schema);
+            curr_node->set_parent(node);
+            node->append_node_ptr(curr_node);
+            walk_json_schema_external(curr_node,
+                                      curr_schema,
+                                      data,
+                                      jvalue[i],
+                                      curr_offset);
+            // auto offset only makes sense when we have data
+            if(data != NULL)
+                curr_offset += curr_schema->total_strided_bytes();
+        }
+    }
+    // Simplest case, handles "uint32", "float64", with extended type info
+    else if(jvalue.IsString())
+    {
+        DataType dtype;
+        parse_leaf_dtype(jvalue,curr_offset,dtype);
+        schema->set(dtype);
+        
+        if(data != NULL)
+        {
+             // node is already linked to the schema pointer
+             node->set_data_ptr(data);
+        }
+        else
+        {
+             // node is already linked to the schema pointer
+             // we need to dynamically alloc
+             node->set(dtype);  // causes an init
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("JSON Generator error:\n"
+                      << "Invalid JSON type for parsing Node."
+                      << " Expected: JSON Object, Array, or String");
+    }
+}
+
 
 //---------------------------------------------------------------------------//
 void 
@@ -2233,72 +2443,149 @@ Generator::walk(Schema &schema) const
 void 
 Generator::walk(Node &node) const
 {
-    /// TODO: This is an inefficient code path, need better solution?
-    Node n;
-    walk_external(n);
-    n.compact_to(node);
+    // try catch b/c:
+    // if something goes wrong we will clear the node and re-throw
+    // if exception is caught downstream
+    // we want node to be empty instead of partially inited
+    try
+    {
+        node.reset();
+        // json, yaml, and conduit_base64_json don't leverage "data"
+        if(m_protocol == "json")
+        {
+            conduit_rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_schema);
+                    
+            if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+            {
+                CONDUIT_JSON_PARSE_ERROR(res, document);
+            }
+
+            Parser::JSON::walk_pure_json_schema(&node,
+                                                node.schema_ptr(),
+                                                document);
+        }
+        else if(m_protocol == "yaml")
+        {
+            // errors will flow up from this call 
+            Parser::YAML::walk_pure_yaml_schema(&node,
+                                                node.schema_ptr(),
+                                                m_schema.c_str());
+        }
+        else if( m_protocol == "conduit_base64_json")
+        {
+            conduit_rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_schema);
+            
+            if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+            {
+                CONDUIT_JSON_PARSE_ERROR(res, document);
+            }
+
+            Parser::JSON::parse_base64(&node,
+                                    document);
+        }
+        else if( m_protocol == "conduit_json")
+        {
+            conduit_rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_schema);
+            
+            if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+            {
+                CONDUIT_JSON_PARSE_ERROR(res, document);
+            }
+            index_t curr_offset = 0;
+
+            Parser::JSON::walk_json_schema(&node,
+                                           node.schema_ptr(),
+                                           m_data,
+                                           document,
+                                           curr_offset);
+        }
+        else
+        {
+            CONDUIT_ERROR("Generator unknown parsing protocol: " << m_protocol);
+        }
+    }
+    catch(const conduit::Error& e)
+    {
+        node.reset();
+        throw e;
+    }
 }
 
 //---------------------------------------------------------------------------//
 void 
 Generator::walk_external(Node &node) const
 {
-    node.reset();
-    // if data is null, we can parse the schema via the other 'walk' method
-    if(m_protocol == "json")
+    // try catch b/c:
+    // if something goes wrong we will clear the node and re-throw
+    // if exception is caught downstream
+    // we want node to be empty instead of partially inited
+    try
     {
-        conduit_rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_schema);
-                
-        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+        node.reset();
+        // if data is null, we can parse the schema via other 'walk' methods
+        if(m_protocol == "json")
         {
-            CONDUIT_JSON_PARSE_ERROR(res, document);
-        }
+            conduit_rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_schema);
+                    
+            if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+            {
+                CONDUIT_JSON_PARSE_ERROR(res, document);
+            }
 
-        Parser::JSON::walk_pure_json_schema(&node,
-                                            node.schema_ptr(),
-                                            document);
-    }
-    else if(m_protocol == "yaml")
-    {
-        // errors will flow up from this call 
-        Parser::YAML::walk_pure_yaml_schema(&node,
-                                            node.schema_ptr(),
-                                            m_schema.c_str());
-    }
-    else if( m_protocol == "conduit_base64_json")
-    {
-        conduit_rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_schema);
-        
-        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+            Parser::JSON::walk_pure_json_schema(&node,
+                                                node.schema_ptr(),
+                                                document);
+        }
+        else if(m_protocol == "yaml")
         {
-            CONDUIT_JSON_PARSE_ERROR(res, document);
+            // errors will flow up from this call 
+            Parser::YAML::walk_pure_yaml_schema(&node,
+                                                node.schema_ptr(),
+                                                m_schema.c_str());
         }
-
-        Parser::JSON::parse_base64(&node,
-                                   document);
-    }
-    else if( m_protocol == "conduit_json")
-    {
-        conduit_rapidjson::Document document;
-        std::string res = utils::json_sanitize(m_schema);
-        
-        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+        else if( m_protocol == "conduit_base64_json")
         {
-            CONDUIT_JSON_PARSE_ERROR(res, document);
-        }
-        index_t curr_offset = 0;
+            conduit_rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_schema);
+            
+            if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+            {
+                CONDUIT_JSON_PARSE_ERROR(res, document);
+            }
 
-        Parser::JSON::walk_json_schema(&node,
-                                       node.schema_ptr(),
-                                       m_data,
-                                       document,
-                                       curr_offset);
+            Parser::JSON::parse_base64(&node,
+                                    document);
+        }
+        else if( m_protocol == "conduit_json")
+        {
+            conduit_rapidjson::Document document;
+            std::string res = utils::json_sanitize(m_schema);
+            
+            if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+            {
+                CONDUIT_JSON_PARSE_ERROR(res, document);
+            }
+            index_t curr_offset = 0;
+
+            Parser::JSON::walk_json_schema_external(&node,
+                                                    node.schema_ptr(),
+                                                    m_data,
+                                                    document,
+                                                    curr_offset);
+        }
+        else
+        {
+            CONDUIT_ERROR("Generator unknown parsing protocol: " << m_protocol);
+        }
     }
-    else
+    catch(const conduit::Error& e)
     {
-        CONDUIT_ERROR("Generator unknown parsing protocol: " << m_protocol);
+        node.reset();
+        throw e;
     }
 }
 
