@@ -532,7 +532,7 @@ namespace utils
 #if defined(CONDUIT_PLATFORM_WINDOWS)
         oss << "0x" << std::hex << value;
 #else
-        oss << std::hex << value;
+        oss << "0x" << std::hex << value;
 #endif
         return oss.str();
      }
