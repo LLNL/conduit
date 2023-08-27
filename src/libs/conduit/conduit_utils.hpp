@@ -526,13 +526,16 @@ namespace utils
         // note: 
         // std::stringstream w/ std::hex seems to not prepend 0x on windows,
         // but does on linux and macOS
-        // so this does not work:
         //
-        // std::stringstream oss;
-        // oss << "0x" << std::hex << value;
-        //
-        // use fmt instead b/c we can explicilty ask for 0x with "#x"
-        return conduit_fmt::format("{:#x}",value);
+        // Note: Also tried to use fmt with "#x"
+        // but this caused a compile disaster for windows CI cases
+        std::stringstream oss;
+#if defined(CONDUIT_PLATFORM_WINDOWS)
+        oss << "0x" << std::hex << value;
+#else
+        oss << std::hex << value;
+#endif
+        return oss.str();
      }
 
 //-----------------------------------------------------------------------------
