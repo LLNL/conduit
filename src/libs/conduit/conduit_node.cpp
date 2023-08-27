@@ -13583,7 +13583,7 @@ Node::to_json_generic(std::ostream &os,
 
         if(address)
         {
-            os << "\"address\": \"0x" << utils::to_hex_string(m_data) << "\"";
+            os << "\"address\": \"" << utils::to_hex_string(m_data) << "\"";
         }
         else
         {
@@ -18209,7 +18209,7 @@ Node::info(Node &res, const std::string &curr_path) const
 
     if(m_data != NULL)
     {
-        std::string ptr_key = std::string("0x") + utils::to_hex_string(m_data);
+        std::string ptr_key = utils::to_hex_string(m_data);
 
         if(!res["mem_spaces"].has_path(ptr_key))
         {

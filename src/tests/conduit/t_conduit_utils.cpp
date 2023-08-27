@@ -898,6 +898,17 @@ TEST(conduit_utils, value_fits)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_utils, to_and_from_hex_string)
+{
+    int64 val = 1024;
+    std::string hstring = utils::to_hex_string(val);
+    std::cout << hstring << std::endl;
+    EXPECT_EQ(hstring,"0x400");
+    int64 val_check = conduit::utils::hex_string_to_value<int64>(hstring);
+    EXPECT_EQ(val,val_check);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_utils, timer)
 {
     conduit::utils::Timer t;

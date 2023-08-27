@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <sstream>
 #include <chrono>
+#include <cstdlib>
 
 //-----------------------------------------------------------------------------
 // -- conduit includes --
@@ -522,7 +523,7 @@ namespace utils
      std::string to_hex_string(T value)
      {
            std::stringstream oss;
-           oss << std::hex << value;
+           oss << "0x" << std::hex << value;
            return  oss.str();
      }
 
@@ -566,6 +567,18 @@ namespace utils
         std::istringstream iss(s);
         iss >> res;
         return  res;
+    }
+
+    // declare then define to avoid icc warnings
+    template< typename T >
+    T hex_string_to_value(const std::string &s);
+
+    template< typename T >
+    T hex_string_to_value(const std::string &s)
+    {
+        char *str_end = nullptr;
+        unsigned long long ull_value = strtoull(s.c_str(),&str_end,0);
+        return (T)(ull_value);
     }
 
 

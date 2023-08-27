@@ -1003,20 +1003,18 @@ Generator::Parser::JSON::parse_inline_address(const conduit_rapidjson::Value &jv
 {
     void * res = nullptr;
     if(jvalue.IsString())
-    {   
-        char *str_end = nullptr;
+    {
         std::string sval(jvalue.GetString());
-        unsigned long long ull_addy = strtoull(sval.c_str(),&str_end,0);
-        res = (void*)ull_addy;
+        res = utils::hex_string_to_value<void*>(sval);
     }
     // else if(jvalue.IsNumber())
     // {
-    //     // TODO ...
+    //     // TODO: FUTURE? ...
     // }
     else
     {
          CONDUIT_ERROR("JSON Generator error:\n"
-                              << "inline address should be a string or integer");
+                              << "inline address should be a string");
     }
     return res;
 }
