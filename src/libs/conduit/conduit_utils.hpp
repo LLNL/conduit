@@ -26,6 +26,7 @@
 // -- conduit includes --
 //-----------------------------------------------------------------------------
 #include "conduit_core.hpp"
+#include "conduit_fmt/conduit_fmt.h"
 
 //-----------------------------------------------------------------------------
 //
@@ -522,9 +523,16 @@ namespace utils
      template< typename T >
      std::string to_hex_string(T value)
      {
-           std::stringstream oss;
-           oss << "0x" << std::hex << value;
-           return  oss.str();
+        // note: 
+        // std::stringstream w/ std::hex seems to not prepend 0x on windows,
+        // but does on linux and macOS
+        // so this does not work:
+        //
+        // std::stringstream oss;
+        // oss << "0x" << std::hex << value;
+        //
+        // use fmt instead b/c we can explicilty ask for 0x with "#x"
+        return conduit_fmt::format("{:#x}",value);
      }
 
 //-----------------------------------------------------------------------------
