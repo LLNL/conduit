@@ -913,4 +913,39 @@ TEST(conduit_json, to_json_external)
     std::cout << n.to_json("conduit_json_external") << std::endl;
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_external_2)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["path/b"] = b_val;
+
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["path/b"].as_uint32(),b_val);
+
+    std::string json = n.to_json("conduit_json_external") ;
+
+    Node n2, n3;
+
+    n2.set_external(n);
+    n3.parse(json,"conduit_json");
+
+    Node info;
+    EXPECT_FALSE(n.diff(n2,info));
+    EXPECT_FALSE(n.diff(n3,info));
+
+    EXPECT_FALSE(n2.diff(n3,info));
+
+    EXPECT_EQ(n["a"].data_ptr(),n2["a"].data_ptr());
+    EXPECT_EQ(n["path/b"].data_ptr(),n2["path/b"].data_ptr());
+
+    EXPECT_EQ(n["a"].data_ptr(),n3["a"].data_ptr());
+    EXPECT_EQ(n["path/b"].data_ptr(),n3["path/b"].data_ptr());
+}
+
+
 
