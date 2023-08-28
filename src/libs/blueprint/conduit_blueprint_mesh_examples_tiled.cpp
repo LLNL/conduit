@@ -149,15 +149,18 @@ protected:
     }
 
     /// Emit the quad cells using this tile's point ids.
-    void addQuads(const std::vector<int> &ptids, std::vector<int> &conn, std::vector<int> &sizes) const
+    void addFaces(const std::vector<int> &ptids,
+                  std::vector<int> &conn, std::vector<int> &sizes,
+                  int offset = 0, bool reverse = false) const
     {
         const size_t nquads = m_quads.size() / 4;
+        int order[] = {reverse ? 3 : 0, reverse ? 2 : 1, reverse ? 1 : 2, reverse ? 0 : 3};
         for(size_t i = 0; i < nquads; i++)
         {
-            conn.push_back(ptids[m_quads[4*i + 0]]);
-            conn.push_back(ptids[m_quads[4*i + 1]]);
-            conn.push_back(ptids[m_quads[4*i + 2]]);
-            conn.push_back(ptids[m_quads[4*i + 3]]);
+            conn.push_back(offset + ptids[m_quads[4*i + order[0]]]);
+            conn.push_back(offset + ptids[m_quads[4*i + order[1]]]);
+            conn.push_back(offset + ptids[m_quads[4*i + order[2]]]);
+            conn.push_back(offset + ptids[m_quads[4*i + order[3]]]);
             sizes.push_back(4);
         }
     }
@@ -194,6 +197,7 @@ protected:
         return ext[1] - ext[0];
     }
 
+    /// Turn a node into a double vector.
     std::vector<double> toDoubleVector(const conduit::Node &n) const
     {
         auto acc = n.as_double_accessor();
@@ -204,6 +208,7 @@ protected:
         return vec;
     }
 
+    /// Turn a node into an int vector.
     std::vector<int> toIntVector(const conduit::Node &n) const
     {
         auto acc = n.as_int_accessor();
@@ -216,6 +221,12 @@ protected:
 
     /// Make 2D boundaries.
     void makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
+                          std::vector<int> &bconn, std::vector<int> &bsizes,
+                          std::vector<int> &btype, const conduit::Node &options) const;
+
+    /// Make 3D boundaries.
+    void makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
+                          size_t nPtsPerPlane,
                           std::vector<int> &bconn, std::vector<int> &bsizes,
                           std::vector<int> &btype, const conduit::Node &options) const;
 private:
@@ -382,7 +393,7 @@ Tiler::generate(int nx, int ny, int nz,
             for(int i = 0; i < nx; i++)
             {
                 Tile &current = tiles[(j*nx + i)];
-                addQuads(current.getPointIds(), conn, sizes);
+                addFaces(current.getPointIds(), conn, sizes);
             }
         }
         // NOTE: z coords in output will be empty.
@@ -442,7 +453,6 @@ Tiler::generate(int nx, int ny, int nz,
         }
 
         // Boundaries
-#if 0
         makeBoundaries3D(tiles, nx, ny, nz, ptsPerPlane, bconn, bsizes, btype, options);
         if(!bconn.empty())
         {
@@ -456,7 +466,6 @@ Tiler::generate(int nx, int ny, int nz,
             res["fields/boundary_type/association"] = "element";
             res["fields/boundary_type/values"].set(btype);
         }
-#endif
     }
 
     // TODO: We should output edges or faces for the tiles that are external so
@@ -539,6 +548,126 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
                 bsizes.push_back(2);
                 btype.push_back(3);
             }
+        }
+    }
+}
+
+void
+Tiler::makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
+    size_t nPtsPerPlane,
+    std::vector<int> &bconn, std::vector<int> &bsizes, std::vector<int> &btype,
+    const conduit::Node &options) const
+{
+    if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
+    {
+        for(int k = 0; k < nz; k++)
+        {
+            int offset1 = k * nPtsPerPlane;
+            int offset2 = (k + 1) * nPtsPerPlane;
+            for(int i = 0, j = ny-1; j >= 0; j--)
+            {
+                const Tile &current = tiles[(j*nx + i)];
+                const auto ids = current.getPointIds(left());
+                for(size_t bi = ids.size() - 1; bi > 0; bi--)
+                {
+                    bconn.push_back(offset1 + ids[bi]);
+                    bconn.push_back(offset1 + ids[bi - 1]);
+                    bconn.push_back(offset2 + ids[bi - 1]);
+                    bconn.push_back(offset2 + ids[bi]);
+                    bsizes.push_back(4);
+                    btype.push_back(0);
+                }
+            }
+        }
+    }
+    if(options.has_path("boundaries/right") && options.fetch_existing("boundaries/right").to_int() > 0)
+    {
+        for(int k = 0; k < nz; k++)
+        {
+            int offset1 = k * nPtsPerPlane;
+            int offset2 = (k + 1) * nPtsPerPlane;
+            for(int i = nx - 1, j = 0; j < ny; j++)
+            {
+                const Tile &current = tiles[(j*nx + i)];
+                const auto ids = current.getPointIds(right());
+                for(size_t bi = 0; bi < ids.size() - 1; bi++)
+                {
+                    bconn.push_back(offset1 + ids[bi]);
+                    bconn.push_back(offset1 + ids[bi + 1]);
+                    bconn.push_back(offset2 + ids[bi + 1]);
+                    bconn.push_back(offset2 + ids[bi]);
+                    bsizes.push_back(4);
+                    btype.push_back(1);
+                }
+            }
+        }
+    }
+    if(options.has_path("boundaries/bottom") && options.fetch_existing("boundaries/bottom").to_int() > 0)
+    {
+        for(int k = 0; k < nz; k++)
+        {
+            int offset1 = k * nPtsPerPlane;
+            int offset2 = (k + 1) * nPtsPerPlane;
+            for(int i = 0, j = 0; i < nx; i++)
+            {
+                const Tile &current = tiles[(j*nx + i)];
+                const auto ids = current.getPointIds(bottom());
+                for(size_t bi = 0; bi < ids.size() - 1; bi++)
+                {
+                    bconn.push_back(offset1 + ids[bi]);
+                    bconn.push_back(offset1 + ids[bi + 1]);
+                    bconn.push_back(offset2 + ids[bi + 1]);
+                    bconn.push_back(offset2 + ids[bi]);
+                    bsizes.push_back(4);
+                    btype.push_back(2);
+                }
+            }
+        }
+    }
+    if(options.has_path("boundaries/top") && options.fetch_existing("boundaries/top").to_int() > 0)
+    {
+        for(int k = 0; k < nz; k++)
+        {
+            int offset1 = k * nPtsPerPlane;
+            int offset2 = (k + 1) * nPtsPerPlane;
+            for(int i = nx - 1, j = ny - 1; i >= 0; i--)
+            {
+                const Tile &current = tiles[(j*nx + i)];
+                const auto ids = current.getPointIds(top());
+                for(size_t bi = ids.size() - 1; bi > 0; bi--)
+                {
+                    bconn.push_back(offset1 + ids[bi]);
+                    bconn.push_back(offset1 + ids[bi - 1]);
+                    bconn.push_back(offset2 + ids[bi - 1]);
+                    bconn.push_back(offset2 + ids[bi]);
+                    bsizes.push_back(4);
+                    btype.push_back(3);
+                }
+            }
+        }
+    }
+    if(options.has_path("boundaries/back") && options.fetch_existing("boundaries/back").to_int() > 0)
+    {
+        for(int j = 0; j < ny; j++)
+        for(int i = nx - 1; i >= 0; i--)
+        {
+           const Tile &current = tiles[(j*nx + i)];
+           size_t s0 = bsizes.size();
+           addFaces(current.getPointIds(), bconn, bsizes, 0, true);
+           for( ; s0 < bsizes.size(); s0++)
+               btype.push_back(4);
+        }
+    }
+    if(options.has_path("boundaries/front") && options.fetch_existing("boundaries/front").to_int() > 0)
+    {
+        for(int j = 0; j < ny; j++)
+        for(int i = 0; i < nx; i++)
+        {
+           const Tile &current = tiles[(j*nx + i)];
+           size_t s0 = bsizes.size();
+           addFaces(current.getPointIds(), bconn, bsizes, nz * nPtsPerPlane);
+           for( ; s0 < bsizes.size(); s0++)
+               btype.push_back(5);
         }
     }
 }
