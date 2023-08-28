@@ -487,7 +487,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(left());
-            for(size_t bi = ids.size() - 1; bi > 1; bi--)
+            for(size_t bi = ids.size() - 1; bi > 0; bi--)
             {
                 bconn.push_back(ids[bi]);
                 bconn.push_back(ids[bi - 1]);
@@ -513,7 +513,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
     }
     if(options.has_path("boundaries/right") && options.fetch_existing("boundaries/right").to_int() > 0)
     {
-        for(int i = 0, j = 0; j < ny; j++)
+        for(int i = nx - 1, j = 0; j < ny; j++)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(right());
@@ -528,11 +528,11 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
     }
     if(options.has_path("boundaries/top") && options.fetch_existing("boundaries/top").to_int() > 0)
     {
-        for(int i = nx - 1, j = 0; i >= 0; i--)
+        for(int i = nx - 1, j = ny - 1; i >= 0; i--)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(top());
-            for(size_t bi = ids.size() - 1; bi > 1; bi--)
+            for(size_t bi = ids.size() - 1; bi > 0; bi--)
             {
                 bconn.push_back(ids[bi]);
                 bconn.push_back(ids[bi - 1]);
