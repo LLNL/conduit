@@ -468,9 +468,6 @@ Tiler::generate(int nx, int ny, int nz,
         }
     }
 
-    // TODO: We should output edges or faces for the tiles that are external so
-    //       we can make a boundary topology.
-
     res["coordsets/coords/type"] = "explicit";
     res["coordsets/coords/values"] = "explicit";
     res["coordsets/coords/values/x"].set(x);
