@@ -214,6 +214,10 @@ protected:
         return vec;
     }
 
+    /// Make 2D boundaries.
+    void makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
+                          std::vector<int> &bconn, std::vector<int> &bsizes,
+                          std::vector<int> &btype, const conduit::Node &options) const;
 private:
     std::vector<double> m_xpts, m_ypts;
     double m_width, m_height;
@@ -326,7 +330,7 @@ Tiler::generate(int nx, int ny, int nz,
 {
     double origin[] = {0., 0., 0.};
     std::vector<double> x, y, z;
-    std::vector<int> conn, sizes;
+    std::vector<int> conn, sizes, bconn, bsizes, btype;
 
     // Process any options.
     if(options.has_path("origin/x"))
@@ -382,6 +386,21 @@ Tiler::generate(int nx, int ny, int nz,
             }
         }
         // NOTE: z coords in output will be empty.
+
+        // Boundaries
+        makeBoundaries2D(tiles, nx, ny, bconn, bsizes, btype, options);
+        if(!bconn.empty())
+        {
+            res["topologies/boundary/type"] = "unstructured";
+            res["topologies/boundary/coordset"] = "coords";
+            res["topologies/boundary/elements/shape"] = "line";
+            res["topologies/boundary/elements/connectivity"].set(bconn);
+            res["topologies/boundary/elements/sizes"].set(bsizes);
+
+            res["fields/boundary_type/topology"] = "boundary";
+            res["fields/boundary_type/association"] = "element";
+            res["fields/boundary_type/values"].set(btype);
+        }
     }
     else
     {
@@ -421,6 +440,23 @@ Tiler::generate(int nx, int ny, int nz,
                 }
             }
         }
+
+        // Boundaries
+#if 0
+        makeBoundaries3D(tiles, nx, ny, nz, ptsPerPlane, bconn, bsizes, btype, options);
+        if(!bconn.empty())
+        {
+            res["topologies/boundary/type"] = "unstructured";
+            res["topologies/boundary/coordset"] = "coords";
+            res["topologies/boundary/elements/shape"] = "quad";
+            res["topologies/boundary/elements/connectivity"].set(bconn);
+            res["topologies/boundary/elements/sizes"].set(bsizes);
+
+            res["fields/boundary_type/topology"] = "boundary";
+            res["fields/boundary_type/association"] = "element";
+            res["fields/boundary_type/values"].set(btype);
+        }
+#endif
     }
 
     // TODO: We should output edges or faces for the tiles that are external so
@@ -438,6 +474,73 @@ Tiler::generate(int nx, int ny, int nz,
     res["topologies/mesh/elements/shape"] = z.empty() ? "quad" : "hex";
     res["topologies/mesh/elements/connectivity"].set(conn);
     res["topologies/mesh/elements/sizes"].set(sizes);
+}
+
+void
+Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
+    std::vector<int> &bconn, std::vector<int> &bsizes, std::vector<int> &btype,
+    const conduit::Node &options) const
+{
+    if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
+    {
+        for(int i = 0, j = ny-1; j >= 0; j--)
+        {
+            const Tile &current = tiles[(j*nx + i)];
+            const auto ids = current.getPointIds(left());
+            for(size_t bi = ids.size() - 1; bi > 1; bi--)
+            {
+                bconn.push_back(ids[bi]);
+                bconn.push_back(ids[bi - 1]);
+                bsizes.push_back(2);
+                btype.push_back(0);
+            }
+        }
+    }
+    if(options.has_path("boundaries/bottom") && options.fetch_existing("boundaries/bottom").to_int() > 0)
+    {
+        for(int i = 0, j = 0; i < nx; i++)
+        {
+            const Tile &current = tiles[(j*nx + i)];
+            const auto ids = current.getPointIds(bottom());
+            for(size_t bi = 0; bi < ids.size() - 1; bi++)
+            {
+                bconn.push_back(ids[bi]);
+                bconn.push_back(ids[bi + 1]);
+                bsizes.push_back(2);
+                btype.push_back(2);
+            }
+        }
+    }
+    if(options.has_path("boundaries/right") && options.fetch_existing("boundaries/right").to_int() > 0)
+    {
+        for(int i = 0, j = 0; j < ny; j++)
+        {
+            const Tile &current = tiles[(j*nx + i)];
+            const auto ids = current.getPointIds(right());
+            for(size_t bi = 0; bi < ids.size() - 1; bi++)
+            {
+                bconn.push_back(ids[bi]);
+                bconn.push_back(ids[bi + 1]);
+                bsizes.push_back(2);
+                btype.push_back(1);
+            }
+        }
+    }
+    if(options.has_path("boundaries/top") && options.fetch_existing("boundaries/top").to_int() > 0)
+    {
+        for(int i = nx - 1, j = 0; i >= 0; i--)
+        {
+            const Tile &current = tiles[(j*nx + i)];
+            const auto ids = current.getPointIds(top());
+            for(size_t bi = ids.size() - 1; bi > 1; bi--)
+            {
+                bconn.push_back(ids[bi]);
+                bconn.push_back(ids[bi - 1]);
+                bsizes.push_back(2);
+                btype.push_back(3);
+            }
+        }
+    }
 }
 
 }
