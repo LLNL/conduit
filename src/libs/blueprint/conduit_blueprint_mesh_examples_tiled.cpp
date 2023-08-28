@@ -121,7 +121,7 @@ protected:
     const std::vector<int> &bottom() const { return m_bottom; }
 
     /// Return point indices of points along top edge.
-    const std::vector<int> &top() const { return m_right; }
+    const std::vector<int> &top() const { return m_top; }
 
     /// Return tile width
     double width() const { return m_width; }

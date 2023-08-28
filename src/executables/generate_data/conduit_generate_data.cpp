@@ -169,7 +169,7 @@ main(int argc, char *argv[])
             {
                 dims[0] = std::max(d[0], 1);
                 dims[1] = std::max(d[1], 1);
-                dims[2] = std::max(d[2], 1);
+                dims[2] = std::max(d[2], 0); // Allow 0 for 2D
             }
             i++;
         }
