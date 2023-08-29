@@ -1005,8 +1005,6 @@ read_variable_domain(const int vartype,
     return true;
 }
 
-#ifdef BUNGUS
-
 //-----------------------------------------------------------------------------
 bool
 read_matset_domain(DBfile* matset_domain_file_to_use,
@@ -1014,7 +1012,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                    const std::string &multimesh_name,
                    const std::string &multimat_name,
                    const std::string &bottom_level_mesh_name,
-                   )
+                   conduit::Node &mesh_out)
 {
     // create silo matset
     detail::SiloObjectWrapper<DBmaterial, decltype(&DBFreeMaterial)> material{
@@ -1075,7 +1073,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     std::vector<int> sizes;
     std::vector<int> offsets;
     int curr_offset = 0;
-    for (int i = 0, i < matset_ptr->dims[0]; i ++)
+    for (int i = 0; i < matset_ptr->dims[0]; i ++)
     {
         int matlist_entry = matset_ptr->matlist[i];
         if (matlist_entry >= 0) // ? TODO is 0 allowed
@@ -1134,9 +1132,9 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     matset_out["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
     matset_out["sizes"].set(sizes.data(), sizes.size());
     matset_out["offsets"].set(offsets.data(), offsets.size());
-}
 
-#endif
+    return true;
+}
 
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
@@ -1879,8 +1877,6 @@ read_mesh(const std::string &root_file_path,
             }
         }
 
-#ifdef BUNGUS
-
         //
         // Read Materials
         //
@@ -1936,8 +1932,6 @@ read_mesh(const std::string &root_file_path,
                     multimesh_name, multimat_name, bottom_level_mesh_name, mesh_out);
             }
         }
-
-#endif
     }
 }
 
