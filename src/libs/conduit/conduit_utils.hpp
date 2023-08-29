@@ -522,18 +522,8 @@ namespace utils
      template< typename T >
      std::string to_hex_string(T value)
      {
-        // Note: 
-        // std::stringstream w/ std::hex seems to not prepend 0x on windows,
-        // but does on linux and macOS, so we have custom logic for windows.
-        //
-        // I also tried to use fmt with "#x", but this caused a compile
-        // disaster for windows CI cases
         std::stringstream oss;
-#if defined(CONDUIT_PLATFORM_WINDOWS)
-        oss << "0x" << std::hex << value;
-#else
-        oss << "0x" << std::hex << value;
-#endif
+        oss << std::hex << value;
         return oss.str();
      }
 
@@ -576,7 +566,7 @@ namespace utils
         T res;
         std::istringstream iss(s);
         iss >> res;
-        return  res;
+        return res;
     }
 
     // declare then define to avoid icc warnings
@@ -586,9 +576,10 @@ namespace utils
     template< typename T >
     T hex_string_to_value(const std::string &s)
     {
-        char *str_end = nullptr;
-        unsigned long long ull_value = strtoull(s.c_str(),&str_end,0);
-        return (T)(ull_value);
+        T res;
+        std::istringstream iss(s);
+        iss >> std::hex >> res;
+        return res;
     }
 
 
