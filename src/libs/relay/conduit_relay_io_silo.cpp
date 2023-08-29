@@ -1063,19 +1063,15 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         }
     }
 
-    // TODO: support multi-dimensional materials
-    CONDUIT_ASSERT(matset_ptr->ndims == 1,
-                   "Only single-dimension materials supported, got "
-                   << matset_ptr->ndims);
-
     std::vector<double> volume_fractions;
     std::vector<int> material_ids;
     std::vector<int> sizes;
     std::vector<int> offsets;
     int curr_offset = 0;
-    for (int i = 0; i < matset_ptr->dims[0]; i ++)
+
+    auto read_matlist_entry = [&](const int matlist_index)
     {
-        int matlist_entry = matset_ptr->matlist[i];
+        int matlist_entry = matset_ptr->matlist[matlist_index];
         if (matlist_entry >= 0) // ? TODO is 0 allowed
         {
             volume_fractions.push_back(1.0);
@@ -1111,7 +1107,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                 }
                 else
                 {
-                    CONDUIT_ERROR("bad news");
+                    CONDUIT_ERROR("TODO bad news");
                 }
 
                 curr_size ++;
@@ -1125,6 +1121,46 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
             sizes.push_back(curr_size);
             offsets.push_back(curr_offset);
             curr_offset += curr_size;
+        }
+    };
+
+    int nx = matset_ptr->dims[0];
+    int ny = 1;
+    int nz = 1;
+
+    if (matset_ptr->ndims > 1)
+    {
+        ny = matset_ptr->dims[1];
+    }
+    if (matset_ptr->ndims > 2)
+    {
+        nz = matset_ptr->dims[2];
+    }
+
+    if (matset_ptr->major_order == DB_ROWMAJOR)
+    {
+        for (int z = 0; z < nz; z ++)
+        {
+            for (int y = 0; y < ny; y ++)
+            {
+                for (int x = 0; x < nx; x ++)
+                {
+                    read_matlist_entry(x + y * nx + z * nx * ny);
+                }
+            }
+        }
+    }
+    else // COLMAJOR
+    {
+        for (int x = 0; x < nx; x ++)
+        {
+            for (int y = 0; y < ny; y ++)
+            {
+                for (int z = 0; z < nz; z ++)
+                {
+                    read_matlist_entry(z + y * nz + x * nz * ny);
+                }
+            }
         }
     }
 
@@ -3013,11 +3049,20 @@ void silo_write_matset(DBfile *dbfile,
     int nmat = silo_matset["material_map"].number_of_children();
 
     std::vector<int> matnos;
+    std::vector<std::string> matnames;
     auto matmap_itr = silo_matset["material_map"].children();
     while (matmap_itr.has_next())
     {
         const Node &n_mat = matmap_itr.next();
+        matnames.push_back(n_mat.name());
         matnos.push_back(n_mat.to_int());
+    }
+
+    // package up char ptrs for silo
+    std::vector<const char *> matname_ptrs;
+    for (size_t i = 0; i < matnames.size(); i ++)
+    {
+        matname_ptrs.push_back(matnames[i].c_str());
     }
     
     int dims[] = {0,0,0};
@@ -3046,6 +3091,20 @@ void silo_write_matset(DBfile *dbfile,
         CONDUIT_ERROR("Invalid matset volume fraction type: " << silo_matset["mix_vf"].dtype().to_string());
     }
 
+    // create optlist
+    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+        DBMakeOptlist(1),
+        &DBFreeOptlist,
+        "Error freeing optlist."};
+    if (!optlist.getSiloObject())
+    {
+        CONDUIT_ERROR("Error creating optlist");
+    }
+    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
+                                          DBOPT_MATNAMES,
+                                          matname_ptrs.data()),
+                             "error adding matnames option");
+
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
                       detail::sanitize_silo_varname(matset_name).c_str(), // matset name
@@ -3061,7 +3120,7 @@ void silo_write_matset(DBfile *dbfile,
                       silo_matset["mix_vf"].data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays
                       mat_type, // data type of volume fractions
-                      NULL); // optlist
+                      optlist.getSiloObject()); // optlist
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMaterial");
 

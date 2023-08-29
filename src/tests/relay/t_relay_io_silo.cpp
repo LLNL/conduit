@@ -333,64 +333,79 @@ TEST(conduit_relay_io_silo, round_trip_julia)
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 }
 
-// //-----------------------------------------------------------------------------
-// // test material write and read
-// TEST(conduit_relay_io_silo, round_trip_venn)
-// {
-//     std::vector<std::string> matset_types = {
-//         "full",
-//         "sparse_by_material",
-//         "sparse_by_element",
-//     };
+//-----------------------------------------------------------------------------
+// test material write and read
+TEST(conduit_relay_io_silo, round_trip_venn)
+{
+    const std::vector<std::string> matset_types = {
+        // "full",
+        // "sparse_by_material",
+        "sparse_by_element",
+    };
 
-//     // for (int i = 0; i < matset_types.size(); i ++)
-//     for (int i = 0; i < 1; i ++)
-//     {
-//         std::string matset_type = matset_types[i];
-//         // for (int j = 0; j < 2; j ++)
-//         for (int j = 0; j < 1; j ++)
-//         {
-//             Node save_mesh, load_mesh, info;
-//             std::string size;
-//             if (j == 0)
-//             {
-//                 size = "small";
-//                 // small venn
-//                 const int nx = 4, ny = 4;
-//                 const double radius = 0.25;
-//                 blueprint::mesh::examples::venn(matset_type, nx, ny, radius, save_mesh);
-//             }
-//             else
-//             {
-//                 size = "large";
-//                 // large venn
-//                 const int nx = 100, ny = 100;
-//                 const double radius = 0.25;
-//                 blueprint::mesh::examples::venn(matset_type, nx, ny, radius, save_mesh);
-//             }
-//             const std::string basename = "silo_venn_" + matset_type + "_" + size;
-//             const std::string filename = basename + ".root";
+    for (int i = 0; i < matset_types.size(); i ++)
+    {
+        std::string matset_type = matset_types[i];
+        // for (int j = 0; j < 2; j ++)
+        for (int j = 0; j < 1; j ++)
+        {
+            Node save_mesh, load_mesh, info;
+            std::string size;
+            if (j == 0)
+            {
+                size = "small";
+                // small venn
+                const int nx = 4, ny = 4;
+                const double radius = 0.25;
+                blueprint::mesh::examples::venn(matset_type, nx, ny, radius, save_mesh);
+            }
+            else
+            {
+                size = "large";
+                // large venn
+                const int nx = 100, ny = 100;
+                const double radius = 0.25;
+                blueprint::mesh::examples::venn(matset_type, nx, ny, radius, save_mesh);
+            }
+            const std::string basename = "silo_venn_" + matset_type + "_" + size;
+            const std::string filename = basename + ".root";
 
-//             remove_path_if_exists(filename);
-//             io::silo::save_mesh(save_mesh, basename);
-//             io::blueprint::save_mesh(save_mesh, "blueprint_venn", "hdf5");
-//             // io::silo::load_mesh(filename, load_mesh);
-//             // EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+            remove_path_if_exists(filename);
+            io::silo::save_mesh(save_mesh, basename);
+            io::blueprint::save_mesh(save_mesh, "blueprint_venn", "hdf5");
+            io::silo::load_mesh(filename, load_mesh);
+            EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//             // // make changes to save mesh so the diff will pass
-//             // save_mesh["state/cycle"] = (int64) 0;
-//             // save_mesh["state/domain_id"] = 0;
-//             // silo_name_changer("mesh", save_mesh);
+            save_mesh["coordsets"]["coords"].remove_child("params");
 
-//             // // the loaded mesh will be in the multidomain format
-//             // // but the saved mesh is in the single domain format
-//             // EXPECT_EQ(load_mesh.number_of_children(), 1);
-//             // EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+            std::cout << "save_mesh" << std::endl;
+            save_mesh.print();
+            std::cout << "load_mesh" << std::endl;
+            load_mesh.print();
 
-//             // EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-//         }
-//     }
-// }
+
+            // std::cout << "save_mesh" << std::endl;
+            // std::cout << save_mesh["matsets"].to_yaml() << std::endl;
+
+            // std::cout << "load_mesh" << std::endl;
+            // std::cout << load_mesh["domain_000000/matsets"].to_yaml() << std::endl;
+
+            // make changes to save mesh so the diff will pass
+            save_mesh["state/cycle"] = (int64) 0;
+            save_mesh["state/domain_id"] = 0;
+            silo_name_changer("mesh", save_mesh);
+
+            // the loaded mesh will be in the multidomain format
+            // but the saved mesh is in the single domain format
+            EXPECT_EQ(load_mesh.number_of_children(), 1);
+            EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+            EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+
+            info.print();
+        }
+    }
+}
 
 // //-----------------------------------------------------------------------------
 // // 

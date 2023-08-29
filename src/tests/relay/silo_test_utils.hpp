@@ -145,6 +145,37 @@ silo_name_changer(const std::string &mmesh_name,
         }
     }
 
+    if (save_mesh.has_child("matsets"))
+    {
+        auto matset_itr = save_mesh["matsets"].children();
+        while (matset_itr.has_next())
+        {
+            Node &n_matset = matset_itr.next();
+            std::string matset_name = matset_itr.name();
+
+            std::string old_topo_name = n_matset["topology"].as_string();
+
+            if (old_to_new_names.find(old_topo_name) == old_to_new_names.end())
+            {
+                continue;
+                // If this is the case, we probably need to delete this matset.
+                // But our job in this function is just to rename things, so we 
+                // will just skip.
+            }
+            std::string new_topo_name = old_to_new_names[old_topo_name];
+
+            // use new topo name
+            n_matset["topology"].reset();
+            n_matset["topology"] = new_topo_name;
+
+            // come up with new matset name
+            std::string new_matset_name = mmesh_name + "_" + matset_name;
+
+            // rename the matset
+            save_mesh["matsets"].rename_child(matset_name, new_matset_name);
+        }
+    }
+
     if (!save_mesh.has_path("state/domain_id"))
     {
         save_mesh["state"]["domain_id"] = 0;
