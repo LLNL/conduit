@@ -384,11 +384,8 @@ TEST(conduit_relay_io_silo, round_trip_venn)
             load_mesh.print();
 
 
-            // std::cout << "save_mesh" << std::endl;
-            // std::cout << save_mesh["matsets"].to_yaml() << std::endl;
-
-            // std::cout << "load_mesh" << std::endl;
-            // std::cout << load_mesh["domain_000000/matsets"].to_yaml() << std::endl;
+            std::cout << "save_mesh" << std::endl;
+            std::cout << save_mesh.to_yaml() << std::endl;
 
             // make changes to save mesh so the diff will pass
             save_mesh["state/cycle"] = (int64) 0;
