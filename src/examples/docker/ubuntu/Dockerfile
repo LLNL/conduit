@@ -55,8 +55,9 @@ RUN tar -xf conduit.docker.src.tar
 #  will not run for the root user
 RUN cd conduit && python3 scripts/uberenv/uberenv.py \
     -k \
-    --spec "%gcc+mpi~doc" \
-    --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
+    --spec "%gcc+mpi~doc"
+#  Note: try new uber auto external find ...
+#    --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
 
 # configure a debug build with cmake
 RUN cd conduit && mkdir build-debug

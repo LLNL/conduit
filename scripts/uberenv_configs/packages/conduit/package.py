@@ -461,6 +461,11 @@ class Conduit(CMakePackage):
         if cxxflags:
             cfg.write(cmake_cache_entry("CMAKE_CXX_FLAGS", cxxflags))
         fflags = " ".join(spec.compiler_flags["fflags"])
+        ldflags = " ".join(spec.compiler_flags["ldflags"])
+
+        if ldflags:
+            cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", ldflags))
+            asdssdsw
         if self.spec.satisfies("%cce"):
             fflags += " -ef"
         if fflags:
@@ -472,6 +477,11 @@ class Conduit(CMakePackage):
             for _libpath in [libdir, libdir + "64"]:
                 if os.path.exists(_libpath):
                     flags += " -Wl,-rpath,{0}".format(_libpath)
+            # macOS needs this for widely used gfortran installer
+            # (ideally if in the spack.yaml,
+            #  we can inspect spack's extra_rpaths compiler setting for all cases)
+            if os.path.exists("/usr/local/gfortran/lib/"):
+                flags += " -Wl,-rpath,/usr/local/gfortran/lib/"
             description = "Adds a missing libstdc++ rpath"
             if flags:
                 cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", flags, description))
