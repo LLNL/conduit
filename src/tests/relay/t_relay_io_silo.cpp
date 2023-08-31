@@ -382,10 +382,10 @@ TEST(conduit_relay_io_silo, round_trip_venn)
                 save_mesh["coordsets"]["coords"].remove_child("params");
             }
 
-            // std::cout << "save_mesh" << std::endl;
-            // save_mesh.print();
-            // std::cout << "load_mesh" << std::endl;
-            // load_mesh.print();
+            std::cout << "save_mesh" << std::endl;
+            save_mesh.print();
+            std::cout << "load_mesh" << std::endl;
+            load_mesh.print();
 
 
             // std::cout << "save_mesh" << std::endl;
@@ -403,7 +403,7 @@ TEST(conduit_relay_io_silo, round_trip_venn)
 
             EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 
-            // info.print();
+            std::cout << info.to_yaml() << std::endl;
         }
     }
 }

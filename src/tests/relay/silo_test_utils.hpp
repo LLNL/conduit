@@ -88,6 +88,44 @@ silo_name_changer(const std::string &mmesh_name,
         }
     }
 
+    if (save_mesh.has_child("matsets"))
+    {
+        auto matset_itr = save_mesh["matsets"].children();
+        while (matset_itr.has_next())
+        {
+            Node &n_matset = matset_itr.next();
+            std::string matset_name = matset_itr.name();
+
+            std::string old_topo_name = n_matset["topology"].as_string();
+
+            if (old_to_new_names.find(old_topo_name) == old_to_new_names.end())
+            {
+                continue;
+                // If this is the case, we probably need to delete this matset.
+                // But our job in this function is just to rename things, so we 
+                // will just skip.
+            }
+            std::string new_topo_name = old_to_new_names[old_topo_name];
+
+            // use new topo name
+            n_matset["topology"].reset();
+            n_matset["topology"] = new_topo_name;
+
+            // come up with new matset name
+            std::string new_matset_name = mmesh_name + "_" + matset_name;
+
+            old_to_new_names[matset_name] = new_matset_name;
+
+            // rename the matset
+            save_mesh["matsets"].rename_child(matset_name, new_matset_name);
+        }
+    }
+
+    if (!save_mesh.has_path("state/domain_id"))
+    {
+        save_mesh["state"]["domain_id"] = 0;
+    }
+
     if (save_mesh.has_child("fields"))
     {
         auto field_itr = save_mesh["fields"].children();
@@ -97,7 +135,6 @@ silo_name_changer(const std::string &mmesh_name,
             std::string field_name = field_itr.name();
 
             std::string old_topo_name = n_field["topology"].as_string();
-
             if (old_to_new_names.find(old_topo_name) == old_to_new_names.end())
             {
                 continue;
@@ -106,10 +143,25 @@ silo_name_changer(const std::string &mmesh_name,
                 // will just skip.
             }
             std::string new_topo_name = old_to_new_names[old_topo_name];
-
             // use new topo name
             n_field["topology"].reset();
             n_field["topology"] = new_topo_name;
+
+            if (n_field.has_child("matset"))
+            {
+                std::string old_matset_name = n_field["matset"].as_string();
+                if (old_to_new_names.find(old_matset_name) == old_to_new_names.end())
+                {
+                    continue;
+                    // If this is the case, we probably need to delete this field.
+                    // But our job in this function is just to rename things, so we 
+                    // will just skip.
+                }
+                std::string new_matset_name = old_to_new_names[old_matset_name];
+                // use new topo name
+                n_field["matset"].reset();
+                n_field["matset"] = new_matset_name;
+            }
 
             // remove vol dep
             if (n_field.has_child("volume_dependent"))
@@ -143,42 +195,6 @@ silo_name_changer(const std::string &mmesh_name,
             // rename the field
             save_mesh["fields"].rename_child(field_name, new_field_name);
         }
-    }
-
-    if (save_mesh.has_child("matsets"))
-    {
-        auto matset_itr = save_mesh["matsets"].children();
-        while (matset_itr.has_next())
-        {
-            Node &n_matset = matset_itr.next();
-            std::string matset_name = matset_itr.name();
-
-            std::string old_topo_name = n_matset["topology"].as_string();
-
-            if (old_to_new_names.find(old_topo_name) == old_to_new_names.end())
-            {
-                continue;
-                // If this is the case, we probably need to delete this matset.
-                // But our job in this function is just to rename things, so we 
-                // will just skip.
-            }
-            std::string new_topo_name = old_to_new_names[old_topo_name];
-
-            // use new topo name
-            n_matset["topology"].reset();
-            n_matset["topology"] = new_topo_name;
-
-            // come up with new matset name
-            std::string new_matset_name = mmesh_name + "_" + matset_name;
-
-            // rename the matset
-            save_mesh["matsets"].rename_child(matset_name, new_matset_name);
-        }
-    }
-
-    if (!save_mesh.has_path("state/domain_id"))
-    {
-        save_mesh["state"]["domain_id"] = 0;
     }
 }
 

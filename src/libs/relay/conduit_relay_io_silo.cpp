@@ -808,10 +808,10 @@ read_mesh_domain(const int meshtype,
 //-----------------------------------------------------------------------------
 template <class T>
 void
-assign_values(int nvals,
-              int nels,
-              void **vals,
-              Node &field_values)
+assign_values_helper(int nvals,
+                     int nels,
+                     void **vals,
+                     Node &field_values)
 {
     if (nvals == 1)
     {
@@ -825,6 +825,110 @@ assign_values(int nvals,
             field_values[std::to_string(i)].set(static_cast<T *>(vals[i]), nels);
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+assign_values(int datatype,
+              int nvals,
+              int nels,
+              void **vals,
+              Node &field_out,
+              std::string where)
+{
+    if (datatype == DB_INT)
+    {
+        assign_values_helper<int>(nvals, nels, vals, field_out[where]);
+    }
+    else if (datatype == DB_SHORT)
+    {
+        assign_values_helper<short>(nvals, nels, vals, field_out[where]);
+    }
+    else if (datatype == DB_LONG)
+    {
+        assign_values_helper<long>(nvals, nels, vals, field_out[where]);
+    }
+    else if (datatype == DB_FLOAT)
+    {
+        assign_values_helper<float>(nvals, nels, vals, field_out[where]);
+    }
+    else if (datatype == DB_DOUBLE)
+    {
+        assign_values_helper<double>(nvals, nels, vals, field_out[where]);
+    }
+    else if (datatype == DB_CHAR)
+    {
+        // implementation taken from assign_values_helper
+        if (nvals == 1)
+        {
+            field_out[where].set_char_ptr(static_cast<char *>(vals[0]), nels);
+        }
+        else
+        {
+            for (int i = 0; i < nvals; i ++)
+            {
+                // need to put the values under a vector component
+                field_out[where][std::to_string(i)].set_char_ptr(static_cast<char *>(vals[0]), nels);
+            }
+        }
+    }
+    else if (datatype == DB_LONG_LONG)
+    {
+        assign_values_helper<long long>(nvals, nels, vals, field_out[where]);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported type in " << datatype);
+    }
+}
+
+//-----------------------------------------------------------------------------
+// only to be used for ucdvars and quadvars
+template <class T>
+void
+read_variable_domain_mixvals(const T *var_ptr,
+                             const std::string &var_name,
+                             Node &mesh_out,
+                             Node &field_out)
+{
+    if (var_ptr->mixlen <= 0)
+    {
+        return;
+    }
+
+    if (! var_ptr->mixvals)
+    {
+        CONDUIT_ERROR("mixlen is > 0 but no mixvals are provided for var " << var_name);
+    }
+
+    if (! var_ptr->mixvals[0])
+    {
+        CONDUIT_ERROR("mixvals are NULL for var " << var_name);
+    }
+
+    if (mesh_out.has_child("matsets"))
+    {
+        if (mesh_out["matsets"].number_of_children() == 1)
+        {
+            const std::string matset_name = mesh_out["matsets"].children().next().name();
+            field_out["matset"].set(matset_name);
+        }
+        else
+        {
+            CONDUIT_ERROR("This mesh has multiple matsets, which is ambiguous.");
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Missing matset despite field " << var_name << "requiring one.");
+    }
+
+    assign_values(var_ptr->datatype,
+                  var_ptr->nvals,
+                  var_ptr->mixlen,
+                  var_ptr->mixvals,
+                  field_out,
+                  "matset_values");
 }
 
 //-----------------------------------------------------------------------------
@@ -890,57 +994,12 @@ read_variable_domain_helper(const T *var_ptr,
         field_out["association"] = "vertex";
     }
 
-    int datatype = var_ptr->datatype;
-    if (datatype == DB_INT)
-    {
-        assign_values<int>(var_ptr->nvals, var_ptr->nels, 
-                           var_ptr->vals, field_out["values"]);
-    }
-    else if (datatype == DB_SHORT)
-    {
-        assign_values<short>(var_ptr->nvals, var_ptr->nels, 
-                             var_ptr->vals, field_out["values"]);
-    }
-    else if (datatype == DB_LONG)
-    {
-        assign_values<long>(var_ptr->nvals, var_ptr->nels, 
-                            var_ptr->vals, field_out["values"]);
-    }
-    else if (datatype == DB_FLOAT)
-    {
-        assign_values<float>(var_ptr->nvals, var_ptr->nels, 
-                             var_ptr->vals, field_out["values"]);
-    }
-    else if (datatype == DB_DOUBLE)
-    {
-        assign_values<double>(var_ptr->nvals, var_ptr->nels,
-                              var_ptr->vals, field_out["values"]);
-    }
-    else if (datatype == DB_CHAR)
-    {
-        // implementation taken from assign_values
-        if (var_ptr->nvals == 1)
-        {
-            field_out["values"].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
-        }
-        else
-        {
-            for (int i = 0; i < var_ptr->nvals; i ++)
-            {
-                // need to put the values under a vector component
-                field_out["values"][std::to_string(i)].set_char_ptr(static_cast<char *>(var_ptr->vals[0]), var_ptr->nels);
-            }
-        }
-    }
-    else if (datatype == DB_LONG_LONG)
-    {
-        assign_values<long long>(var_ptr->nvals, var_ptr->nels,
-                                 var_ptr->vals, field_out["values"]);
-    }
-    else
-    {
-        CONDUIT_ERROR("Unsupported type in " << datatype);
-    }
+    assign_values(var_ptr->datatype,
+                  var_ptr->nvals,
+                  var_ptr->nels,
+                  var_ptr->vals,
+                  field_out,
+                  "values");
 
     return true;
 }
@@ -968,6 +1027,9 @@ read_variable_domain(const int vartype,
         {
             return false; // we hit a case where we want to skip this var
         }
+        
+        read_variable_domain_mixvals<DBucdvar>(ucdvar.getSiloObject(), 
+            var_name, mesh_out, mesh_out["fields"][multivar_name]);
     }
     else if (vartype == DB_QUADVAR)
     {
@@ -982,7 +1044,10 @@ read_variable_domain(const int vartype,
         {
             return false; // we hit a case where we want to skip this var
         }
-                        }
+
+        read_variable_domain_mixvals<DBquadvar>(quadvar.getSiloObject(), 
+            var_name, mesh_out, mesh_out["fields"][multivar_name]);
+    }
     else if (vartype == DB_POINTVAR)
     {
         // create point var
@@ -2196,26 +2261,43 @@ void silo_write_field(DBfile *dbfile,
     }
 
     Node silo_matset;
-    void *mixvars_ptr = nullptr;
+    std::vector<void *> mixvars_ptr(nvars);
     int mixlen = 0;
-
     if (n_var.has_child("matset"))
     {
         const std::string matset_name = n_var["matset"].as_string();
-        if (n.has_path("matsets/" + matset_name))
+
+        CONDUIT_ASSERT(n.has_path("matsets/" + matset_name),
+            "Missing matset " << matset_name << " for field " << var_name);
+
+        const Node &n_matset = n["matsets"][matset_name];
+        Node silo_matset;
+        conduit::blueprint::mesh::field::to_silo(n_var, n_matset, silo_matset);
+
+        if (nvars == 1)
         {
-            const Node &n_matset = n["matsets"][matset_name];
-            Node silo_matset;
-            conduit::blueprint::mesh::field::to_silo(n_var, n_matset, silo_matset);
-            mixvars_ptr = silo_matset["field_mixvar_values"].data_ptr();
+            CONDUIT_ASSERT(! silo_matset["field_mixvar_values"].dtype().is_object(),
+                "Number of variable components is 1 but to_silo did not return a leaf node.");
+
+            mixvars_ptr[0] = silo_matset["field_mixvar_values"].data_ptr();
             mixlen = silo_matset["field_mixvar_values"].dtype().number_of_elements();
         }
         else
         {
-            CONDUIT_ERROR("Missing matset " << matset_name << 
-                          " for field " << var_name);
+            CONDUIT_ASSERT(silo_matset["field_mixvar_values"].dtype().is_object(),
+                "Number of variable components is > 1 but to_silo returned a leaf node.");
+            CONDUIT_ASSERT(silo_matset["field_mixvar_values"].number_of_children() == nvars,
+                "Number of variable components does not match what was returned from to_silo.");
+            
+            mixlen = silo_matset["field_mixvar_values"][0].dtype().number_of_elements();
+            for (int i = 0; i < nvars; i ++)
+            {
+                mixvars_ptr[i] = silo_matset["field_mixvar_values"][i].data_ptr();
+            }
         }
     }
+
+    // TODO any time you are sending arrays to silo make sure they are compact
 
     int var_type;
     int silo_error = 0;
@@ -2231,7 +2313,7 @@ void silo_write_field(DBfile *dbfile,
                                  comp_name_ptrs.data(), // variable component names
                                  comp_vals_ptrs.data(), // the data values
                                  num_values, // number of elements
-                                 mixvars_ptr, // mixed data arrays
+                                 mixvars_ptr.data(), // mixed data arrays
                                  mixlen, // length of mixed data arrays
                                  vals_type, // Datatype of the variable
                                  centering, // centering (nodal or zonal)
@@ -2271,7 +2353,7 @@ void silo_write_field(DBfile *dbfile,
                                   comp_vals_ptrs.data(), // the data values
                                   dims, // the dimensions of the data
                                   num_dims, // number of dimensions
-                                  mixvars_ptr, // mixed data arrays
+                                  mixvars_ptr.data(), // mixed data arrays
                                   mixlen, // length of mixed data arrays
                                   vals_type, // Datatype of the variable
                                   centering, // centering (nodal or zonal)
