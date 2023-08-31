@@ -8,5 +8,5 @@
 "spack_skip_externals": "true",
 "spack_externals_exclude": "python hdf5",
 "spack_url": "https://github.com/spack/spack",
-"spack_commit": "679d41ea669c1a435c65447dee2b764623d6c318"
+"spack_commit": "e8658d6493887ef702dd38f0e9ee5870a1651c1e"
 }

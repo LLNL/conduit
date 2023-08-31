@@ -79,40 +79,11 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: OFF
           ENABLE_PYTHON: OFF
-          ENABLE_PYTHON2: OFF
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py27_cmake_3_14:
-          containerImage: ${{ variables.ubuntu_18_tag }}
-          COMPILER_CC: gcc
-          COMPILER_CXX: g++
-          COMPILER_FC: gfortran
-          COMPILER_SPEC: gcc
-          FORCE_COMPILERS: OFF
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: ON
-          ENABLE_MPI: ON
-          ENABLE_DOCS: OFF
-          ENABLE_RELAY_WEBSERVER: ON
-          ENABLE_OPENMP: ON
-          ENABLE_HDF5: ON
-          ENABLE_HDF5_COMPAT: ON
-          HDF5_SPEC: "hdf5~mpi"
-          ENABLE_SILO: ON
-          ENABLE_ADIOS: OFF
-          ENABLE_PYTHON: ON
-          ENABLE_PARMETIS: ON
-          ENABLE_PYTHON2: ON
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
-          PYTHON_VERSION: 2.7.18
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
-          BLT_ENABLE_FIND_MPI: ON
-
-        ub_18_static_py27_cmake_3_14:
+        ub_18_static_py37_cmake_3_14:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -133,9 +104,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: ON
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
-          PYTHON_VERSION: 2.7.18
+          PYTHON_VERSION: 3.7.16
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -161,8 +130,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.7.6
+          PYTHON_VERSION: 3.7.16
           CMAKE_VERSION: 3.14.2
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -188,8 +156,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
+          PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -215,8 +182,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
+          PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -244,8 +210,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
+          PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.20.0
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -273,8 +238,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.10.6
+          PYTHON_VERSION: 3.10.10
           CMAKE_VERSION: 3.24.2
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -302,8 +266,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.10.6
+          PYTHON_VERSION: 3.10.10
           CMAKE_VERSION: 3.26.0
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -332,7 +295,6 @@ stages:
         #   ENABLE_ADIOS: OFF
         #   ENABLE_PARMETIS: ON
         #   ENABLE_PYTHON: ON
-        #   ENABLE_PYTHON2: OFF
         #   PYTHON_VERSION: 3.11.2
         #   CMAKE_VERSION: 3.26.0
         #   BLT_CXX_STD: c++11
@@ -383,8 +345,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
+          PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
@@ -443,7 +404,6 @@ stages:
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            # python constraints
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            # hdf5 constraints
            if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^${HDF5_SPEC}"; fi
            # silo constraints
