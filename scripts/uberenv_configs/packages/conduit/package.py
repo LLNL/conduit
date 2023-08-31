@@ -14,7 +14,7 @@ import llnl.util.tty as tty
 from spack.package import *
 
 
-def cmake_cache_entry(name, value, vtype=None):
+def cmake_cache_entry(name, value, vtype=None, description=""):
     """
     Helper that creates CMake cache entry strings used in
     'host-config' files.
@@ -24,7 +24,7 @@ def cmake_cache_entry(name, value, vtype=None):
             vtype = "BOOL"
         else:
             vtype = "PATH"
-    return 'set({0} "{1}" CACHE {2} "")\n\n'.format(name, value, vtype)
+    return 'set({0} "{1}" CACHE {2} "{3}")\n\n'.format(name, value, vtype,description)
 
 
 class Conduit(CMakePackage):
@@ -465,7 +465,6 @@ class Conduit(CMakePackage):
 
         if ldflags:
             cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", ldflags))
-            asdssdsw
         if self.spec.satisfies("%cce"):
             fflags += " -ef"
         if fflags:
@@ -484,7 +483,7 @@ class Conduit(CMakePackage):
                 flags += " -Wl,-rpath,/usr/local/gfortran/lib/"
             description = "Adds a missing libstdc++ rpath"
             if flags:
-                cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", flags, description))
+                cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", flags, "PATH", description))
 
         #######################
         # Unit Tests
