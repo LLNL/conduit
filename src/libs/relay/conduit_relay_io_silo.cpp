@@ -3202,28 +3202,6 @@ void silo_mesh_write(const Node &n,
         }
     }
 
-    if (n.has_path("fields")) 
-    {
-        auto itr = n["fields"].children();
-        while (itr.has_next())
-        {
-            const Node &n_var = itr.next();
-            std::string var_name = itr.name();
-            if (! overlink || n_var["topology"].as_string() == ovl_topo_name)
-            {
-                silo_write_field(dbfile,
-                                 var_name,
-                                 n_var,
-                                 overlink,
-                                 local_num_domains,
-                                 local_domain_index,
-                                 global_domain_id,
-                                 local_type_domain_info,
-                                 n_mesh_info);
-            }
-        }
-    }
-
     if (n.has_path("matsets")) 
     {
         auto itr = n["matsets"].children();
@@ -3242,6 +3220,28 @@ void silo_mesh_write(const Node &n,
                                   global_domain_id,
                                   local_type_domain_info,
                                   n_mesh_info);
+            }
+        }
+    }
+
+    if (n.has_path("fields")) 
+    {
+        auto itr = n["fields"].children();
+        while (itr.has_next())
+        {
+            const Node &n_var = itr.next();
+            std::string var_name = itr.name();
+            if (! overlink || n_var["topology"].as_string() == ovl_topo_name)
+            {
+                silo_write_field(dbfile,
+                                 var_name,
+                                 n_var,
+                                 overlink,
+                                 local_num_domains,
+                                 local_domain_index,
+                                 global_domain_id,
+                                 local_type_domain_info,
+                                 n_mesh_info);
             }
         }
     }
