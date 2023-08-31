@@ -7,5 +7,5 @@
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_externals_exclude": "python",
 "spack_url": "https://github.com/spack/spack",
-"spack_commit": "e8658d6493887ef702dd38f0e9ee5870a1651c1e"
+"spack_commit": "679d41ea669c1a435c65447dee2b764623d6c318"
 }
