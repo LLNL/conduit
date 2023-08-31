@@ -2484,8 +2484,11 @@ Generator::walk(Node &node) const
             Parser::JSON::parse_base64(&node,
                                     document);
         }
-        else if( m_protocol == "conduit_json")
+
+        else if( m_protocol == "conduit_json" || m_protocol == "conduit_json_external")
         {
+            // Note: conduit_json_external if case here for symmetry with gen / read options
+            // this case is fully handled by conduit_json logic
             conduit_rapidjson::Document document;
             std::string res = utils::json_sanitize(m_schema);
             
@@ -2559,8 +2562,10 @@ Generator::walk_external(Node &node) const
             Parser::JSON::parse_base64(&node,
                                     document);
         }
-        else if( m_protocol == "conduit_json")
+        else if( m_protocol == "conduit_json" || m_protocol == "conduit_json_external")
         {
+            // Note: conduit_json_external if case here for symmetry with gen / read options
+            // this case is fully handled by conduit_json logic
             conduit_rapidjson::Document document;
             std::string res = utils::json_sanitize(m_schema);
             
