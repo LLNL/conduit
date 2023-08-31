@@ -947,5 +947,46 @@ TEST(conduit_json, to_json_external_2)
     EXPECT_EQ(n["path/b"].data_ptr(),n3["path/b"].data_ptr());
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_walk_with_pointer)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    Node n_compact;
+    n.compact_to(n_compact);
+
+    n_compact.print();
+    
+    std::string schema_json = n_compact.schema().to_json();
+    std::cout << schema_json << std::endl;
+    Node n_res;
+
+    Generator node_gen(schema_json, "conduit_json", n_compact.data_ptr());
+    /// gen copy
+    node_gen.walk(n_res);
+        
+    std::cout << "round trip" << std::endl;
+    n_res.print();
+
+    std::cout << n_res.schema().to_json() << std::endl;
+
+    EXPECT_EQ(n_res["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_res["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_res["c"].as_uint32(), c_val);
+}
+
+
+
 
 

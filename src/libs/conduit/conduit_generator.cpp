@@ -1390,6 +1390,7 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                 {
                     if(data != NULL)
                     {
+                        uint8 *src_data_ptr = ((uint8*)data) + src_dtype.offset();
                         // node is already linked to the schema pointer
                         // we need to dynamically alloc, use compact dtype
                         node->set(des_dtype); // causes an init
@@ -1398,7 +1399,7 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                                                                des_dtype.number_of_elements(), // num ele
                                                                des_dtype.element_bytes(),      // ele bytes
                                                                des_dtype.stride(),             // dest stride
-                                                               data,                           // src data
+                                                               src_data_ptr,                   // src data
                                                                src_dtype.stride());            // src stride
                     }
                     else
