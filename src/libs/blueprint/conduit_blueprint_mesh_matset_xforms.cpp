@@ -546,7 +546,7 @@ to_silo(const conduit::Node &matset,
 
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::matset --
+// -- begin conduit::blueprint::mesh::field --
 //-----------------------------------------------------------------------------
 namespace field
 {

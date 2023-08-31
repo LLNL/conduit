@@ -2060,6 +2060,7 @@ int dtype_to_silo_type(DataType dtype)
 void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
+                      const Node &n,
                       const bool overlink,
                       const int local_num_domains,
                       const int local_domain_index,
@@ -2194,8 +2195,29 @@ void silo_write_field(DBfile *dbfile,
         safe_meshname = detail::sanitize_silo_varname(topo_name);
     }
 
-    int var_type;
+    Node silo_matset;
+    void *mixvars_ptr = nullptr;
+    int mixlen = 0;
 
+    if (n_var.has_child("matset"))
+    {
+        const std::string matset_name = n_var["matset"].as_string();
+        if (n.has_path("matsets/" + matset_name))
+        {
+            const Node &n_matset = n["matsets"][matset_name];
+            Node silo_matset;
+            conduit::blueprint::mesh::field::to_silo(n_var, n_matset, silo_matset);
+            mixvars_ptr = silo_matset["field_mixvar_values"].data_ptr();
+            mixlen = silo_matset["field_mixvar_values"].dtype().number_of_elements();
+        }
+        else
+        {
+            CONDUIT_ERROR("Missing matset " << matset_name << 
+                          " for field " << var_name);
+        }
+    }
+
+    int var_type;
     int silo_error = 0;
     if (mesh_type == "unstructured")
     {
@@ -2209,8 +2231,8 @@ void silo_write_field(DBfile *dbfile,
                                  comp_name_ptrs.data(), // variable component names
                                  comp_vals_ptrs.data(), // the data values
                                  num_values, // number of elements
-                                 NULL, // mixed data arrays
-                                 0, // lenght of mixed data arrays
+                                 mixvars_ptr, // mixed data arrays
+                                 mixlen, // length of mixed data arrays
                                  vals_type, // Datatype of the variable
                                  centering, // centering (nodal or zonal)
                                  NULL); // optlist
@@ -2249,8 +2271,8 @@ void silo_write_field(DBfile *dbfile,
                                   comp_vals_ptrs.data(), // the data values
                                   dims, // the dimensions of the data
                                   num_dims, // number of dimensions
-                                  NULL, // mixed data arrays
-                                  0, // length of mixed data arrays
+                                  mixvars_ptr, // mixed data arrays
+                                  mixlen, // length of mixed data arrays
                                   vals_type, // Datatype of the variable
                                   centering, // centering (nodal or zonal)
                                   NULL); // optlist
@@ -3236,6 +3258,7 @@ void silo_mesh_write(const Node &n,
                 silo_write_field(dbfile,
                                  var_name,
                                  n_var,
+                                 n,
                                  overlink,
                                  local_num_domains,
                                  local_domain_index,
