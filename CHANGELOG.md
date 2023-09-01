@@ -8,8 +8,17 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### General
+- Added `conduit_json_external` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to `set_external()`.
+
 #### Relay
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
+
+
+### Changed
+
+#### General
+- Improved the efficiency of json parsing logic.
 
 #### Blueprint
 - The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
