@@ -36,10 +36,15 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
     EXPECT_EQ(n["b"].as_uint32(), b_val);
     EXPECT_EQ(n["c"].as_uint32(), c_val);
 
+    n.print();
+
     io::silo_write(n,"tout_cold_storage_test.silo:myobj");
 
     Node n_load;
     io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
+
+    std::cout << "round trip" << std::endl;
+    n_load.print();
 
     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
@@ -94,7 +99,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
     std::vector<int> coordset_length_vec = {4, 8, /*36,*/ 1994, /*16,*/ 961};
     std::vector<int> topology_length_vec = {1, 1, /*33,*/ 1920, /*9,*/  900};
-    for (int i = 0; i < filename_vec.size(); ++i) 
+    for (int i = 0; i < filename_vec.size(); ++i)
     {
         Node mesh, info;
         std::string path = utils::join_file_path("overlink", filename_vec.at(i));
@@ -334,9 +339,9 @@ TEST(conduit_relay_io_silo, round_trip_julia)
 }
 
 //-----------------------------------------------------------------------------
-// 
+//
 // test read and write semantics
-// 
+//
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_silo, read_and_write_semantics)
@@ -377,13 +382,13 @@ TEST(conduit_relay_io_silo, read_and_write_semantics)
     }
 }
 //-----------------------------------------------------------------------------
-// 
+//
 // special case tests
-// 
+//
 
 //-----------------------------------------------------------------------------
 // var is not defined on a domain
-// 
+//
 // tests the silo "EMPTY" capability
 TEST(conduit_relay_io_silo, missing_domain_var)
 {
@@ -427,11 +432,11 @@ TEST(conduit_relay_io_silo, missing_domain_var)
 
 //-----------------------------------------------------------------------------
 // mesh is not defined on a domain
-// 
+//
 // This case is much less interesting.
 // data passes through the clean mesh filter which
 // deletes domains that are missing topos.
-// They simply are not part of the mesh and so silo 
+// They simply are not part of the mesh and so silo
 // doesn't have to deal with it.
 TEST(conduit_relay_io_silo, missing_domain_mesh_trivial)
 {
@@ -508,7 +513,7 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
 
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename);
-    
+
     opts["mesh_name"] = "mesh_topo2";
     io::silo::load_mesh(filename, opts, load_mesh);
     opts["mesh_name"] = "mesh_topo";
@@ -636,9 +641,9 @@ TEST(conduit_relay_io_silo, unstructured_points)
 
 //-----------------------------------------------------------------------------
 
-// 
+//
 // save and read option tests
-// 
+//
 
 // save options:
 /// opts:
@@ -650,7 +655,7 @@ TEST(conduit_relay_io_silo, unstructured_points)
 ///      silo_type: "default", "pdb", "hdf5", "unknown"
 ///            when the file we are writing to exists, "default" ==> "unknown"
 ///            else,                                   "default" ==> "hdf5"
-///         note: these are additional silo_type options that we could add 
+///         note: these are additional silo_type options that we could add
 ///         support for in the future:
 ///           "hdf5_sec2", "hdf5_stdio", "hdf5_mpio", "hdf5_mpiposix", "taurus"
 ///
@@ -728,8 +733,8 @@ TEST(conduit_relay_io_silo, round_trip_save_option_number_of_files)
         opts["file_style"] = "multi_file";
         opts["number_of_files"] = number_of_files[i];
 
-        const std::string basename = "silo_save_option_number_of_files_" + 
-                                     std::to_string(number_of_files[i]) + 
+        const std::string basename = "silo_save_option_number_of_files_" +
+                                     std::to_string(number_of_files[i]) +
                                      "_spiral";
         const std::string filename = basename + ".cycle_000000.root";
 
@@ -879,7 +884,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
         // this is to pass the diff, as silo will add cycle in if it is not there
         save_mesh["state/cycle"] = (int64) 0;
         save_mesh["state/domain_id"] = 0;
-        
+
         silo_name_changer("mesh", save_mesh);
 
         // the loaded mesh will be in the multidomain format
@@ -969,7 +974,7 @@ TEST(conduit_relay_io_silo, read_silo)
         {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
     };
 
-    for (int i = 0; i < file_info.size(); i ++) 
+    for (int i = 0; i < file_info.size(); i ++)
     {
         const std::string dirname  = file_info[i][0];
         const std::string basename = file_info[i][1];
@@ -1023,7 +1028,7 @@ TEST(conduit_relay_io_silo, read_fake_overlink)
         {"utpyr4",                  "OvlTop", ".silo", "MMESH"},
     };
 
-    for (int i = 0; i < file_info.size(); i ++) 
+    for (int i = 0; i < file_info.size(); i ++)
     {
         const std::string dirname  = file_info[i][0];
         const std::string basename = file_info[i][1];
@@ -1082,7 +1087,7 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         {".", "donordiv.s2_materials3", ".silo", "MMESH"},
     };
 
-    for (int i = 0; i < file_info.size(); i ++) 
+    for (int i = 0; i < file_info.size(); i ++)
     {
         const std::string dirname  = file_info[i][0];
         const std::string basename = file_info[i][1];
@@ -1139,7 +1144,7 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
         {"donordiv.s2_materials3", "OvlTop", ".silo", "MMESH"},
     };
 
-    for (int i = 0; i < file_info.size(); i ++) 
+    for (int i = 0; i < file_info.size(); i ++)
     {
         const std::string dirname  = file_info[i][0];
         const std::string basename = file_info[i][1];

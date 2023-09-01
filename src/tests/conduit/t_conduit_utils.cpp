@@ -420,6 +420,9 @@ TEST(conduit_utils, base64_enc_dec)
     // apply schema
     Node n_res(n.schema(),b64_decode_ptr,false);
 
+    n.print();
+    n_res.print();
+
     // check we have the same values
     EXPECT_EQ(n_src["a"].as_int32(), n_res["a"].as_int32());
     EXPECT_EQ(n_src["b"].as_int32(), n_res["b"].as_int32());
@@ -892,6 +895,16 @@ TEST(conduit_utils, value_fits)
     EXPECT_TRUE( (conduit::utils::value_fits<uint8,int64>(ui8_val_pos) ) );
     EXPECT_TRUE( (conduit::utils::value_fits<uint8,int64>(ui8_val_zero) ) );
 
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_utils, to_and_from_hex_string)
+{
+    int64 val = 1024;
+    std::string hstring = utils::to_hex_string(val);
+    std::cout << hstring << std::endl;
+    int64 val_check = conduit::utils::hex_string_to_value<int64>(hstring);
+    EXPECT_EQ(val,val_check);
 }
 
 //-----------------------------------------------------------------------------
