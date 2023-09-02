@@ -107,6 +107,18 @@ public:
     inline int dims() const { return NDIMS; }
 
     /**
+     @brief Return the sorted index order.
+     @return A vector sorted spatially. The elements contain the original indices.
+     */
+    std::vector<int> &getIndices() { return index; }
+
+    /**
+     @brief Return the sorted index order.
+     @return A vector sorted spatially. The elements contain the original indices.
+     */
+    const std::vector<int> &getIndices() const { return index; }
+
+    /**
      @brief Print the tree to a stream.
      @param os A stream to use for printing.
      */
