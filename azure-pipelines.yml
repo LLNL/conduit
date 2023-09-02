@@ -608,8 +608,8 @@ stages:
           export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
-          # find spack installed python
-          export PYTHON_EXE=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin/python`
+          # find spack installed python (use spack view dir)
+          export PYTHON_EXE=`ls -d ${ROOT_DIR}/uberenv_libs/spack_env/view/python*/bin/python3`
           # add conduit module to python path
           export PYTHONPATH=${ROOT_DIR}/install/python-modules/
           echo $PYTHONPATH
