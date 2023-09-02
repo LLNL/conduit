@@ -412,7 +412,7 @@ stages:
            echo "SPACK SPEC:"
            echo $SPACK_SPEC
            # run uber to build tpls
-           python3 scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC} --spack-env-file=scripts/uberenv_configs/spack_configs/envs/alpinedav-ubuntu_18.04_devel/spack.yaml
+           python3 scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-env-file=scripts/uberenv_configs/spack_configs/envs/alpinedav-ubuntu_18.04_devel/spack.yaml
         displayName: 'Spack Build Tpls'
 
       - script: |
