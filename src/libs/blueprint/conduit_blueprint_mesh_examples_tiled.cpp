@@ -17,6 +17,8 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_mesh_kdtree.hpp"
+#include "conduit_blueprint_mesh_utils.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
@@ -47,6 +49,283 @@ namespace examples
 //-----------------------------------------------------------------------------
 namespace detail
 {
+
+std::vector<int> spatial_reordering(const conduit::Node &topo)
+{
+    // Make a new centroid topo and coordset. The coordset will contain the
+    // element centers.
+    Node topo_dest, coords_dest, s2dmap, d2smap;
+    mesh::topology::unstructured::generate_centroids(topo,
+                                                     topo_dest,
+                                                     coords_dest,
+                                                     s2dmap,
+                                                     d2smap);
+    // Bundle the coordset components into a vector.
+    std::vector<conduit::double_accessor> coords;
+    const conduit::Node &values = coords_dest.fetch_existing("values");
+    for(conduit::index_t i = 0; i < values.number_of_children(); i++)
+    {
+        coords.push_back(values[i].as_double_accessor());
+    }
+
+    // Sort the coordinates spatially
+    std::vector<int> reorder;
+    if(coords.size() == 2)
+    {
+        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 2> spatial_sort;
+        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
+        reorder = std::move(spatial_sort.getIndices());
+    }
+    else if(coords.size() == 3)
+    {
+        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 3> spatial_sort;
+        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
+        reorder = std::move(spatial_sort.getIndices());
+    }
+    return reorder;
+}
+//---------------------------------------------------------------------------
+// @brief Slice the n_src array using the indices stored in ids. We use the
+//        array classes for their [] operators that deal with interleaved
+//        and non-interleaved arrays.
+template <typename T, typename IndexType>
+inline void
+typed_slice_array(const T &src, const std::vector<IndexType> &ids, T &dest)
+{
+    size_t n = ids.size();
+    for(size_t i = 0; i < n; i++)
+        dest[i] = src[ids[i]];
+}
+
+//---------------------------------------------------------------------------
+// @note Should this be part of conduit::Node or DataArray somehow. The number
+//       of times I've had to slice an array...
+template <typename IndexType>
+void
+slice_array(const conduit::Node &n_src_values,
+            const std::vector<IndexType> &ids,
+            Node &n_dest_values)
+{
+    // Copy the DataType of the input conduit::Node but override the number of elements
+    // before copying it in so assigning to n_dest_values triggers a memory
+    // allocation.
+    auto dt = n_src_values.dtype();
+    n_dest_values = DataType(n_src_values.dtype().id(), ids.size());
+
+    // Do the slice.
+    if(dt.is_int8())
+    {
+        auto dest(n_dest_values.as_int8_array());
+        typed_slice_array(n_src_values.as_int8_array(), ids, dest);
+    }
+    else if(dt.is_int16())
+    {
+        auto dest(n_dest_values.as_int16_array());
+        typed_slice_array(n_src_values.as_int16_array(), ids, dest);
+    }
+    else if(dt.is_int32())
+    {
+        auto dest(n_dest_values.as_int32_array());
+        typed_slice_array(n_src_values.as_int32_array(), ids, dest);
+    }
+    else if(dt.is_int64())
+    {
+        auto dest(n_dest_values.as_int64_array());
+        typed_slice_array(n_src_values.as_int64_array(), ids, dest);
+    }
+    else if(dt.is_uint8())
+    {
+        auto dest(n_dest_values.as_uint8_array());
+        typed_slice_array(n_src_values.as_uint8_array(), ids, dest);
+    }
+    else if(dt.is_uint16())
+    {
+        auto dest(n_dest_values.as_uint16_array());
+        typed_slice_array(n_src_values.as_uint16_array(), ids, dest);
+    }
+    else if(dt.is_uint32())
+    {
+        auto dest(n_dest_values.as_uint32_array());
+        typed_slice_array(n_src_values.as_uint32_array(), ids, dest);
+    }
+    else if(dt.is_uint64())
+    {
+        auto dest(n_dest_values.as_uint64_array());
+        typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
+    }
+    else if(dt.is_char())
+    {
+        auto dest(n_dest_values.as_char_array());
+        typed_slice_array(n_src_values.as_char_array(), ids, dest);
+    }
+    else if(dt.is_short())
+    {
+        auto dest(n_dest_values.as_short_array());
+        typed_slice_array(n_src_values.as_short_array(), ids, dest);
+    }
+    else if(dt.is_int())
+    {
+        auto dest(n_dest_values.as_int_array());
+        typed_slice_array(n_src_values.as_int_array(), ids, dest);
+    }
+    else if(dt.is_long())
+    {
+        auto dest(n_dest_values.as_long_array());
+        typed_slice_array(n_src_values.as_long_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_char())
+    {
+        auto dest(n_dest_values.as_unsigned_char_array());
+        typed_slice_array(n_src_values.as_unsigned_char_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_short())
+    {
+        auto dest(n_dest_values.as_unsigned_short_array());
+        typed_slice_array(n_src_values.as_unsigned_short_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_int())
+    {
+        auto dest(n_dest_values.as_unsigned_int_array());
+        typed_slice_array(n_src_values.as_unsigned_int_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_long())
+    {
+        auto dest(n_dest_values.as_unsigned_long_array());
+        typed_slice_array(n_src_values.as_unsigned_long_array(), ids, dest);
+    }
+    else if(dt.is_float())
+    {
+        auto dest(n_dest_values.as_float_array());
+        typed_slice_array(n_src_values.as_float_array(), ids, dest);
+    }
+    else if(dt.is_double())
+    {
+        auto dest(n_dest_values.as_double_array());
+        typed_slice_array(n_src_values.as_double_array(), ids, dest);
+    }
+}
+
+void
+slice_field(const conduit::Node &src,
+            conduit::Node &dest,
+            const std::vector<int> &indices)
+{
+    if(src.number_of_children() > 0)
+    {
+        // Reorder an mcarray
+        for(conduit::index_t ci = 0; ci < src.number_of_children(); ci++)
+        {
+            const conduit::Node &comp = src[ci];
+            slice_array(comp, indices, dest[comp.name()]);
+        }
+    }
+    else
+    {
+        slice_array(src, indices, dest);
+    }
+}
+
+void
+reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const conduit::Node &fields,
+             conduit::Node &dest_topo, conduit::Node &dest_coordset, conduit::Node &dest_fields,
+             const std::vector<int> &reorder)
+{
+    conduit::blueprint::mesh::utils::ShapeType shape(topo);
+
+    // Handle unstructured meshes (but not polyhedral meshes yet)
+    if(topo.fetch_existing("type").as_string() == "unstructured" && !shape.is_polyhedral())
+    {
+        // Input connectivity information.
+        const auto &n_conn = topo.fetch_existing("elements/connectivity");
+        const auto &n_sizes = topo.fetch_existing("elements/sizes");
+        const auto &n_offsets = topo.fetch_existing("elements/offsets");
+        const auto conn = n_conn.as_index_t_accessor();
+        const auto sizes = n_sizes.as_index_t_accessor();
+        const auto offsets = n_offsets.as_index_t_accessor();
+
+        // Temp vectors to store reordered connectivity.
+        std::vector<conduit::index_t> newconn, newoffsets, newsizes;
+        newconn.reserve(conn.number_of_elements());
+        newsizes.reserve(sizes.number_of_elements());
+        newoffsets.reserve(offsets.number_of_elements());
+
+        // Mapping information for the points.
+        auto npts = conduit::blueprint::mesh::coordset::length(coordset);
+        std::vector<int> old2NewPoints(npts, -1);
+        int newPointIndex = 0;
+
+        // We iterate over elements in the specified order. We iterate over the
+        // points in each element and renumber the points.
+        conduit::index_t newoffset = 0;
+        for(const int cellIndex : reorder)
+        {
+            for(conduit::index_t i = 0; i < sizes[cellIndex]; i++)
+            {
+                auto id = conn[offsets[cellIndex] + i];
+#ifdef REORDER_POINTS
+                if(old2NewPoints[id] == -1)
+                {
+                    old2NewPoints[id] = newPointIndex++;
+                }
+                newconn.push_back(old2NewPoints[id]);
+#else
+                newconn.push_back(id);
+#endif
+            }
+            newsizes.push_back(sizes[cellIndex]);
+            newoffsets.push_back(newoffset);
+            newoffset += sizes[cellIndex];
+        }
+
+        // Store the new connectivity.
+        dest_topo["type"] = topo["type"];
+        dest_topo["coordset"] = topo["coordset"];
+        dest_topo["elements/shape"] = topo["elements/shape"];
+        conduit::Node tmp;
+        tmp.set_external(newconn.data(), newconn.size());
+        tmp.to_data_type(n_conn.dtype().id(), dest_topo["elements/connectivity"]);
+        tmp.set_external(newsizes.data(), newsizes.size());
+        tmp.to_data_type(n_sizes.dtype().id(), dest_topo["elements/sizes"]);
+        tmp.set_external(newoffsets.data(), newoffsets.size());
+        tmp.to_data_type(n_offsets.dtype().id(), dest_topo["elements/offsets"]);
+
+#ifdef REORDER_POINTS
+        // Reorder the coordset now, making it explicit if needed.
+        dest_coordset["type"] = coordset["type"];
+        conduit::Node coordset_explicit;
+        if(coordset["type"].as_string() == "rectilinear")
+            conduit::blueprint::mesh::coordset::rectilinear::to_explicit(coordset, coordset_explicit);
+        else if(coordset["type"].as_string() == "uniform")
+            conduit::blueprint::mesh::coordset::uniform::to_explicit(coordset, coordset_explicit);
+        else
+            coordset_explicit.set_external(coordset);
+        slice_field(coordset_explicit["values"], dest_coordset["values"], old2NewPoints);
+#else
+        dest_coordset["type"] = coordset["type"];
+        dest_coordset["values"].set(coordset["values"]);
+#endif
+        // Reorder fields that match this topo
+        for(conduit::index_t fi = 0; fi < fields.number_of_children(); fi++)
+        {
+            const conduit::Node &src = fields[fi];
+            if(src["topology"].as_string() == topo.name())
+            {
+                auto &newfields = dest_topo["fields"];
+                conduit::Node &dest = newfields[src.name()];
+                dest["association"] = src["association"];
+                dest["topology"] = dest_topo.name(); //src["topology"];
+                if(dest["association"].as_string() == "element")
+                {
+                    slice_field(src["values"], dest["values"], reorder);
+                }
+                else
+                {
+                    slice_field(src["values"], dest["values"], old2NewPoints);
+                }
+            }
+        }
+    }
+}
 
 /**
  \brief Keep track of some tile information.
@@ -352,7 +631,63 @@ Tiler::generate(int nx, int ny, int nz,
         origin[2] = options.fetch_existing("origin/z").to_double();
     if(options.has_path("tile"))
         initialize(options.fetch_existing("tile"));
+#if 1
+    // Make cell centers for each tile and record that no tiles have been visited.
+    int ncells = nx * ny;
+    std::vector<int> visited(ncells, 0);
+    std::vector<double> cx(ncells), cy(ncells);
+    for(int j = 0, idx = 0; j < ny; j++)
+    {
+        for(int i = 0; i < nx; i++, idx++)
+        {
+            cx[idx] = origin[0] + (i + 0.5f) * width();
+            cy[idx] = origin[1] + (j + 0.5f) * height();
+        }
+    }
+    double *tileCenters[2] = {&cx[0], &cy[0]};
+    conduit::blueprint::mesh::utils::kdtree<double*, double, 2> spatial_sort;
+    spatial_sort.initialize(tileCenters, ncells);
 
+    // Traverse the cells in the desired spatial order.
+    std::vector<Tile> tiles(nx * ny);
+    for(const int idx : spatial_sort.getIndices())
+    {
+        // The first time we've used the tile, set its size.
+        Tile &current = tiles[idx];
+        current.reset(m_xpts.size());
+
+        // Copy neighbor points to the current tile if we can.
+        int i = idx % nx;
+        int j = idx / nx;
+        int left_idx = (i > 0) ? (idx - 1) : -1;
+        int right_idx = (i < nx-1) ? (idx + 1) : -1;
+        int bottom_idx = (j > 0) ? (idx - nx) : -1;
+        int top_idx = (j < ny-1) ? (idx + nx) : -1;
+        if(left_idx != -1 && visited[left_idx])
+        {
+            current.setPointIds(left(), tiles[left_idx].getPointIds(right()));
+        }
+        if(right_idx != -1 && visited[right_idx])
+        {
+            current.setPointIds(right(), tiles[right_idx].getPointIds(left()));
+        }
+        if(bottom_idx != -1 && visited[bottom_idx])
+        {
+            current.setPointIds(bottom(), tiles[bottom_idx].getPointIds(top()));
+        }
+        if(top_idx != -1 && visited[top_idx])
+        {
+            current.setPointIds(top(), tiles[top_idx].getPointIds(bottom()));
+        }
+
+        // Make this tile's points
+        double newOrigin[] = {origin[0] + i * width(), origin[1] + j * height(), origin[2]};
+        addPoints(newOrigin, current.getPointIds(), x, y);
+
+        visited[idx] = 1;
+    }
+    
+#else
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
     double newOrigin[] = {origin[0], origin[1], origin[2]};
@@ -383,11 +718,18 @@ Tiler::generate(int nx, int ny, int nz,
         }
         newOrigin[1] += height();
     }
-
+#endif
     if(nz < 1)
     {
         // Iterate over the tiles and add their quads.
         // TODO: reserve size for conn, sizes
+#if 1
+        // Add the cells in spatial sort order.
+        for(const int idx : spatial_sort.getIndices())
+        {
+            addFaces(tiles[idx].getPointIds(), conn, sizes);
+        }
+#else
         for(int j = 0; j < ny; j++)
         {
             for(int i = 0; i < nx; i++)
@@ -396,6 +738,7 @@ Tiler::generate(int nx, int ny, int nz,
                 addFaces(current.getPointIds(), conn, sizes);
             }
         }
+#endif
         // NOTE: z coords in output will be empty.
 
         // Boundaries
@@ -480,6 +823,26 @@ Tiler::generate(int nx, int ny, int nz,
     res["topologies/mesh/elements/shape"] = z.empty() ? "quad" : "hex";
     res["topologies/mesh/elements/connectivity"].set(conn);
     res["topologies/mesh/elements/sizes"].set(sizes);
+
+#if 1
+    if(nz > 0)
+    {
+        // We need offsets.
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(res["topologies/mesh"], res["topologies/mesh/elements/offsets"]);
+
+        // Reorder the mesh in 3D. NOTE: boundaries would have to be fixed because
+        // of the changes to node ordering, which we'd have to pass out the node ordering.
+        const auto reorder = spatial_reordering(res["topologies/mesh"]);
+        reorder_topo(res["topologies/mesh"], res["coordsets/coords"], res["fields"],
+                     res["topologies/rmesh"], res["coordsets/rcoords"], res["rfields"],
+                     reorder);
+
+conduit::Node opts;
+opts["num_children_threshold"] = 100000;
+opts["num_elements_threshold"] = 500;
+std::cout << res.to_summary_string(opts) << std::endl;
+    }
+#endif
 }
 
 void
