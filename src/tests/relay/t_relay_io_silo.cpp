@@ -372,7 +372,6 @@ TEST(conduit_relay_io_silo, round_trip_venn)
 
             remove_path_if_exists(filename);
             io::silo::save_mesh(save_mesh, basename);
-            io::blueprint::save_mesh(save_mesh, "blueprint_venn", "hdf5");
             io::silo::load_mesh(filename, load_mesh);
             EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
@@ -382,10 +381,17 @@ TEST(conduit_relay_io_silo, round_trip_venn)
                 save_mesh["coordsets"]["coords"].remove_child("params");
             }
 
-            std::cout << "save_mesh" << std::endl;
-            save_mesh.print();
-            std::cout << "load_mesh" << std::endl;
-            load_mesh.print();
+            // std::cout << "save_mesh" << std::endl;
+            // save_mesh.print();
+            // std::cout << "load_mesh" << std::endl;
+            // load_mesh.print();
+
+            std::cout << save_mesh["fields/importance"].to_yaml() << std::endl;
+            std::cout << save_mesh["matsets"].to_yaml() << std::endl;
+
+            Node silo_matset;
+            conduit::blueprint::mesh::field::to_silo(save_mesh["fields/importance"], save_mesh["matsets/matset"], silo_matset);
+            std::cout << silo_matset.to_yaml() << std::endl;
 
 
             // std::cout << "save_mesh" << std::endl;

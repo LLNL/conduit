@@ -896,32 +896,20 @@ read_variable_domain_mixvals(const T *var_ptr,
         return;
     }
 
-    if (! var_ptr->mixvals)
-    {
-        CONDUIT_ERROR("mixlen is > 0 but no mixvals are provided for var " << var_name);
-    }
+    CONDUIT_ASSERT(var_ptr->mixvals,
+        "mixlen is > 0 but no mixvals are provided for var " << var_name);
 
-    if (! var_ptr->mixvals[0])
-    {
-        CONDUIT_ERROR("mixvals are NULL for var " << var_name);
-    }
+    CONDUIT_ASSERT(var_ptr->mixvals[0], "mixvals are NULL for var " << var_name);
 
-    if (mesh_out.has_child("matsets"))
-    {
-        if (mesh_out["matsets"].number_of_children() == 1)
-        {
-            const std::string matset_name = mesh_out["matsets"].children().next().name();
-            field_out["matset"].set(matset_name);
-        }
-        else
-        {
-            CONDUIT_ERROR("This mesh has multiple matsets, which is ambiguous.");
-        }
-    }
-    else
-    {
-        CONDUIT_ERROR("Missing matset despite field " << var_name << "requiring one.");
-    }
+    CONDUIT_ASSERT(mesh_out.has_child("matsets"),
+        "Missing matset despite field " << var_name << "requiring one.");
+
+    // TODO put note about how we are only ever reading one topo
+    CONDUIT_ASSERT(mesh_out["matsets"].number_of_children() == 1,
+        "This mesh has multiple matsets, which is ambiguous.");
+
+    const std::string matset_name = mesh_out["matsets"].children().next().name();
+    field_out["matset"].set(matset_name);
 
     assign_values(var_ptr->datatype,
                   var_ptr->nvals,
@@ -1228,6 +1216,9 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
             }
         }
     }
+
+    // TODO find colmajor data
+    // TODO are there other places where I'm reading where things could be rowmajor or colmajor
 
     matset_out["material_ids"].set(material_ids.data(), material_ids.size());
     matset_out["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
@@ -2188,6 +2179,7 @@ void silo_write_field(DBfile *dbfile,
     }
 
     // we compact to support a strided array cases
+    // TODO will we have a case where there are no values??????? - YES
     Node n_values;
     n_var["values"].compact_to(n_values);
 
@@ -2228,6 +2220,7 @@ void silo_write_field(DBfile *dbfile,
             }
 
             comp_name_strings.push_back(comp_name);
+            // TODO this is a bug - create char * vector after all strings have been added to vector
             comp_name_ptrs.push_back(comp_name_strings.back().c_str());
             comp_vals_ptrs.push_back(n_comp.element_ptr(0));
         }
@@ -3152,14 +3145,29 @@ void silo_write_matset(DBfile *dbfile,
 
     int nmat = silo_matset["material_map"].number_of_children();
 
-    std::vector<int> matnos;
-    std::vector<std::string> matnames;
+    // we will sort the material map before saving out to silo
+    // this is to preserve parity with the behavior of the blueprint
+    // reader inside visit. It presents materials to visit in order
+    // of ascending material id, while the silo reader in visit does
+    // not. To keep things consistent with silo files created from
+    // blueprint, we sort the material map so that the order is the
+    // same as the order the blueprint reader would have presented to 
+    // visit.
+    std::map<int, std::string> mat_map;
     auto matmap_itr = silo_matset["material_map"].children();
     while (matmap_itr.has_next())
     {
         const Node &n_mat = matmap_itr.next();
-        matnames.push_back(n_mat.name());
-        matnos.push_back(n_mat.to_int());
+        mat_map[n_mat.to_int()] = n_mat.name();
+    }
+
+    // when we extract from the map, these will be sorted
+    std::vector<int> matnos;
+    std::vector<std::string> matnames;
+    for (auto & matmap_item : mat_map)
+    {
+        matnos.emplace_back(std::move(matmap_item.first));
+        matnames.emplace_back(std::move(matmap_item.second));
     }
 
     // package up char ptrs for silo
@@ -3220,7 +3228,7 @@ void silo_write_matset(DBfile *dbfile,
                       ndims, // number of dimensions in dims
                       silo_matset["mix_next"].value(),
                       silo_matset["mix_mat"].value(),
-                      NULL, // TODO what is this?
+                      NULL, // mix zone is optional
                       silo_matset["mix_vf"].data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays
                       mat_type, // data type of volume fractions
