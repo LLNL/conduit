@@ -62,7 +62,7 @@ RUN cd conduit && \
     uberenv_libs/spack/opt/spack/*/*/cmake*/bin/cmake \
     -DCMAKE_BUILD_TYPE=Debug \
     -DCMAKE_INSTALL_PREFIX=/conduit/install-debug \
-    -C ../uberenv_libs/*-patch.cmake \
+    -C /conduit/uberenv_libs/*-patch.cmake \
     -B build-debug -S src
 
 # build, test, and install conduit
