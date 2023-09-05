@@ -23,7 +23,7 @@ The quickest path to install conduit and its dependencies is via :ref:`uberenv <
 
 After this completes, ``build/conduit-install`` will contain a Conduit install.
 
-For more details about building and installing Conduit see :doc:`building`. This page provides detailed info about Conduit's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We also provide info about :ref:`building for known HPC clusters using uberenv <building_known_hpc>` and a :ref:`Docker example <building_with_docker>` that leverages Spack.
+For more details about building and installing Conduit see :doc:`building`. This page provides detailed info about Conduit's CMake options, :ref:`uberenv <building_with_uberenv>` and :ref:`Spack <building_with_spack>` support. We a :ref:`Docker example <building_with_docker>` that leverages Spack.
 
 
 Installing Conduit with pip 
