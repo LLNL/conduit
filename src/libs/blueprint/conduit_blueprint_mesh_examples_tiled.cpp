@@ -207,8 +207,8 @@ slice_array(const conduit::Node &n_src_values,
 
 void
 slice_field(const conduit::Node &src,
-            conduit::Node &dest,
-            const std::vector<int> &indices)
+            const std::vector<int> &ids,
+            conduit::Node &dest)
 {
     if(src.number_of_children() > 0)
     {
@@ -216,12 +216,12 @@ slice_field(const conduit::Node &src,
         for(conduit::index_t ci = 0; ci < src.number_of_children(); ci++)
         {
             const conduit::Node &comp = src[ci];
-            slice_array(comp, indices, dest[comp.name()]);
+            slice_array(comp, ids, dest[comp.name()]);
         }
     }
     else
     {
-        slice_array(src, indices, dest);
+        slice_array(src, ids, dest);
     }
 }
 
@@ -251,7 +251,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
 
         // Mapping information for the points.
         auto npts = conduit::blueprint::mesh::coordset::length(coordset);
-        std::vector<int> old2NewPoints(npts, -1);
+        std::vector<int> old2NewPoints(npts, -1), ptReorder(npts, -1);
         int newPointIndex = 0;
 
         // We iterate over elements in the specified order. We iterate over the
@@ -262,9 +262,11 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
             for(conduit::index_t i = 0; i < sizes[cellIndex]; i++)
             {
                 auto id = conn[offsets[cellIndex] + i];
+#define REORDER_POINTS
 #ifdef REORDER_POINTS
                 if(old2NewPoints[id] == -1)
                 {
+                    ptReorder[newPointIndex] = id;
                     old2NewPoints[id] = newPointIndex++;
                 }
                 newconn.push_back(old2NewPoints[id]);
@@ -279,7 +281,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
 
         // Store the new connectivity.
         dest_topo["type"] = topo["type"];
-        dest_topo["coordset"] = topo["coordset"];
+        dest_topo["coordset"] = dest_coordset.name(); //topo["coordset"];
         dest_topo["elements/shape"] = topo["elements/shape"];
         conduit::Node tmp;
         tmp.set_external(newconn.data(), newconn.size());
@@ -291,7 +293,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
 
 #ifdef REORDER_POINTS
         // Reorder the coordset now, making it explicit if needed.
-        dest_coordset["type"] = coordset["type"];
+        dest_coordset["type"] = "explicit";
         conduit::Node coordset_explicit;
         if(coordset["type"].as_string() == "rectilinear")
             conduit::blueprint::mesh::coordset::rectilinear::to_explicit(coordset, coordset_explicit);
@@ -299,7 +301,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
             conduit::blueprint::mesh::coordset::uniform::to_explicit(coordset, coordset_explicit);
         else
             coordset_explicit.set_external(coordset);
-        slice_field(coordset_explicit["values"], dest_coordset["values"], old2NewPoints);
+        slice_field(coordset_explicit["values"], ptReorder, dest_coordset["values"]);
 #else
         dest_coordset["type"] = coordset["type"];
         dest_coordset["values"].set(coordset["values"]);
@@ -316,11 +318,11 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
                 dest["topology"] = dest_topo.name(); //src["topology"];
                 if(dest["association"].as_string() == "element")
                 {
-                    slice_field(src["values"], dest["values"], reorder);
+                    slice_field(src["values"], reorder, dest["values"]);
                 }
                 else
                 {
-                    slice_field(src["values"], dest["values"], old2NewPoints);
+                    slice_field(src["values"], ptReorder, dest["values"]);
                 }
             }
         }
