@@ -51,147 +51,6 @@ namespace examples
 namespace detail
 {
 
-//---------------------------------------------------------------------------
-// @brief Slice the n_src array using the indices stored in ids. We use the
-//        array classes for their [] operators that deal with interleaved
-//        and non-interleaved arrays.
-template <typename T, typename IndexType>
-inline void
-typed_slice_array(const T &src, const std::vector<IndexType> &ids, T &dest)
-{
-    size_t n = ids.size();
-    for(size_t i = 0; i < n; i++)
-        dest[i] = src[ids[i]];
-}
-
-//---------------------------------------------------------------------------
-// @note Should this be part of conduit::Node or DataArray somehow. The number
-//       of times I've had to slice an array...
-template <typename IndexType>
-void
-slice_array(const conduit::Node &n_src_values,
-            const std::vector<IndexType> &ids,
-            Node &n_dest_values)
-{
-    // Copy the DataType of the input conduit::Node but override the number of elements
-    // before copying it in so assigning to n_dest_values triggers a memory
-    // allocation.
-    auto dt = n_src_values.dtype();
-    n_dest_values = DataType(n_src_values.dtype().id(), ids.size());
-
-    // Do the slice.
-    if(dt.is_int8())
-    {
-        auto dest(n_dest_values.as_int8_array());
-        typed_slice_array(n_src_values.as_int8_array(), ids, dest);
-    }
-    else if(dt.is_int16())
-    {
-        auto dest(n_dest_values.as_int16_array());
-        typed_slice_array(n_src_values.as_int16_array(), ids, dest);
-    }
-    else if(dt.is_int32())
-    {
-        auto dest(n_dest_values.as_int32_array());
-        typed_slice_array(n_src_values.as_int32_array(), ids, dest);
-    }
-    else if(dt.is_int64())
-    {
-        auto dest(n_dest_values.as_int64_array());
-        typed_slice_array(n_src_values.as_int64_array(), ids, dest);
-    }
-    else if(dt.is_uint8())
-    {
-        auto dest(n_dest_values.as_uint8_array());
-        typed_slice_array(n_src_values.as_uint8_array(), ids, dest);
-    }
-    else if(dt.is_uint16())
-    {
-        auto dest(n_dest_values.as_uint16_array());
-        typed_slice_array(n_src_values.as_uint16_array(), ids, dest);
-    }
-    else if(dt.is_uint32())
-    {
-        auto dest(n_dest_values.as_uint32_array());
-        typed_slice_array(n_src_values.as_uint32_array(), ids, dest);
-    }
-    else if(dt.is_uint64())
-    {
-        auto dest(n_dest_values.as_uint64_array());
-        typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
-    }
-    else if(dt.is_char())
-    {
-        auto dest(n_dest_values.as_char_array());
-        typed_slice_array(n_src_values.as_char_array(), ids, dest);
-    }
-    else if(dt.is_short())
-    {
-        auto dest(n_dest_values.as_short_array());
-        typed_slice_array(n_src_values.as_short_array(), ids, dest);
-    }
-    else if(dt.is_int())
-    {
-        auto dest(n_dest_values.as_int_array());
-        typed_slice_array(n_src_values.as_int_array(), ids, dest);
-    }
-    else if(dt.is_long())
-    {
-        auto dest(n_dest_values.as_long_array());
-        typed_slice_array(n_src_values.as_long_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_char())
-    {
-        auto dest(n_dest_values.as_unsigned_char_array());
-        typed_slice_array(n_src_values.as_unsigned_char_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_short())
-    {
-        auto dest(n_dest_values.as_unsigned_short_array());
-        typed_slice_array(n_src_values.as_unsigned_short_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_int())
-    {
-        auto dest(n_dest_values.as_unsigned_int_array());
-        typed_slice_array(n_src_values.as_unsigned_int_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_long())
-    {
-        auto dest(n_dest_values.as_unsigned_long_array());
-        typed_slice_array(n_src_values.as_unsigned_long_array(), ids, dest);
-    }
-    else if(dt.is_float())
-    {
-        auto dest(n_dest_values.as_float_array());
-        typed_slice_array(n_src_values.as_float_array(), ids, dest);
-    }
-    else if(dt.is_double())
-    {
-        auto dest(n_dest_values.as_double_array());
-        typed_slice_array(n_src_values.as_double_array(), ids, dest);
-    }
-}
-
-void
-slice_field(const conduit::Node &src,
-            const std::vector<conduit::index_t> &ids,
-            conduit::Node &dest)
-{
-    if(src.number_of_children() > 0)
-    {
-        // Reorder an mcarray
-        for(conduit::index_t ci = 0; ci < src.number_of_children(); ci++)
-        {
-            const conduit::Node &comp = src[ci];
-            slice_array(comp, ids, dest[comp.name()]);
-        }
-    }
-    else
-    {
-        slice_array(src, ids, dest);
-    }
-}
-
 void
 reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const conduit::Node &fields,
              conduit::Node &dest_topo, conduit::Node &dest_coordset, conduit::Node &dest_fields,
@@ -263,7 +122,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
             conduit::blueprint::mesh::coordset::uniform::to_explicit(coordset, coordset_explicit);
         else
             coordset_explicit.set_external(coordset);
-        slice_field(coordset_explicit["values"], ptReorder, dest_coordset["values"]);
+        conduit::blueprint::mesh::utils::slice_field(coordset_explicit["values"], ptReorder, dest_coordset["values"]);
 
         // Reorder fields that match this topo
         for(conduit::index_t fi = 0; fi < fields.number_of_children(); fi++)
@@ -277,11 +136,11 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
                 dest["topology"] = dest_topo.name(); //src["topology"];
                 if(dest["association"].as_string() == "element")
                 {
-                    slice_field(src["values"], reorder, dest["values"]);
+                    conduit::blueprint::mesh::utils::slice_field(src["values"], reorder, dest["values"]);
                 }
                 else
                 {
-                    slice_field(src["values"], ptReorder, dest["values"]);
+                    conduit::blueprint::mesh::utils::slice_field(src["values"], ptReorder, dest["values"]);
                 }
             }
         }

@@ -345,6 +345,187 @@ find_domain_id(const Node &node)
     return domain_id;
 }
 
+//---------------------------------------------------------------------------
+// @brief Slice the n_src array using the indices stored in ids. We use the
+//        array classes for their [] operators that deal with interleaved
+//        and non-interleaved arrays.
+template <typename T, typename IndexType>
+inline void
+typed_slice_array(const T &src, const std::vector<IndexType> &ids, T &dest)
+{
+    size_t n = ids.size();
+    for(size_t i = 0; i < n; i++)
+        dest[i] = src[ids[i]];
+}
+
+//---------------------------------------------------------------------------
+/**
+ @brief Slice a node as an array using its native data type.
+ */
+template <typename IndexType>
+void
+slice_array_internal(const conduit::Node &n_src_values,
+                     const std::vector<IndexType> &ids,
+                     Node &n_dest_values)
+{
+    // Copy the DataType of the input conduit::Node but override the number of elements
+    // before copying it in so assigning to n_dest_values triggers a memory
+    // allocation.
+    auto dt = n_src_values.dtype();
+    n_dest_values = DataType(n_src_values.dtype().id(), ids.size());
+
+    // Do the slice.
+    if(dt.is_int8())
+    {
+        auto dest(n_dest_values.as_int8_array());
+        typed_slice_array(n_src_values.as_int8_array(), ids, dest);
+    }
+    else if(dt.is_int16())
+    {
+        auto dest(n_dest_values.as_int16_array());
+        typed_slice_array(n_src_values.as_int16_array(), ids, dest);
+    }
+    else if(dt.is_int32())
+    {
+        auto dest(n_dest_values.as_int32_array());
+        typed_slice_array(n_src_values.as_int32_array(), ids, dest);
+    }
+    else if(dt.is_int64())
+    {
+        auto dest(n_dest_values.as_int64_array());
+        typed_slice_array(n_src_values.as_int64_array(), ids, dest);
+    }
+    else if(dt.is_uint8())
+    {
+        auto dest(n_dest_values.as_uint8_array());
+        typed_slice_array(n_src_values.as_uint8_array(), ids, dest);
+    }
+    else if(dt.is_uint16())
+    {
+        auto dest(n_dest_values.as_uint16_array());
+        typed_slice_array(n_src_values.as_uint16_array(), ids, dest);
+    }
+    else if(dt.is_uint32())
+    {
+        auto dest(n_dest_values.as_uint32_array());
+        typed_slice_array(n_src_values.as_uint32_array(), ids, dest);
+    }
+    else if(dt.is_uint64())
+    {
+        auto dest(n_dest_values.as_uint64_array());
+        typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
+    }
+    else if(dt.is_char())
+    {
+        auto dest(n_dest_values.as_char_array());
+        typed_slice_array(n_src_values.as_char_array(), ids, dest);
+    }
+    else if(dt.is_short())
+    {
+        auto dest(n_dest_values.as_short_array());
+        typed_slice_array(n_src_values.as_short_array(), ids, dest);
+    }
+    else if(dt.is_int())
+    {
+        auto dest(n_dest_values.as_int_array());
+        typed_slice_array(n_src_values.as_int_array(), ids, dest);
+    }
+    else if(dt.is_long())
+    {
+        auto dest(n_dest_values.as_long_array());
+        typed_slice_array(n_src_values.as_long_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_char())
+    {
+        auto dest(n_dest_values.as_unsigned_char_array());
+        typed_slice_array(n_src_values.as_unsigned_char_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_short())
+    {
+        auto dest(n_dest_values.as_unsigned_short_array());
+        typed_slice_array(n_src_values.as_unsigned_short_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_int())
+    {
+        auto dest(n_dest_values.as_unsigned_int_array());
+        typed_slice_array(n_src_values.as_unsigned_int_array(), ids, dest);
+    }
+    else if(dt.is_unsigned_long())
+    {
+        auto dest(n_dest_values.as_unsigned_long_array());
+        typed_slice_array(n_src_values.as_unsigned_long_array(), ids, dest);
+    }
+    else if(dt.is_float())
+    {
+        auto dest(n_dest_values.as_float_array());
+        typed_slice_array(n_src_values.as_float_array(), ids, dest);
+    }
+    else if(dt.is_double())
+    {
+        auto dest(n_dest_values.as_double_array());
+        typed_slice_array(n_src_values.as_double_array(), ids, dest);
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+slice_array(const conduit::Node &n_src_values,
+            const std::vector<int> &ids,
+            Node &n_dest_values)
+{
+    slice_array_internal(n_src_values, ids, n_dest_values);
+}
+
+//---------------------------------------------------------------------------
+void
+slice_array(const conduit::Node &n_src_values,
+            const std::vector<conduit::index_t> &ids,
+            Node &n_dest_values)
+{
+    slice_array_internal(n_src_values, ids, n_dest_values);
+}
+
+//---------------------------------------------------------------------------
+template <typename IndexType>
+void
+slice_field_internal(const conduit::Node &n_src_values,
+                     const std::vector<IndexType> &ids,
+                     conduit::Node &n_dest_values)
+{
+    if(n_src_values.number_of_children() > 0)
+    {
+        // Reorder an mcarray
+        for(conduit::index_t ci = 0; ci < n_src_values.number_of_children(); ci++)
+        {
+            const conduit::Node &comp = n_src_values[ci];
+            slice_array(comp, ids, n_dest_values[comp.name()]);
+        }
+    }
+    else
+    {
+        slice_array(n_src_values, ids, n_dest_values);
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+slice_field(const conduit::Node &n_src_values,
+            const std::vector<int> &ids,
+            conduit::Node &n_dest_values)
+{
+    slice_field_internal(n_src_values, ids, n_dest_values);
+}
+
+//---------------------------------------------------------------------------
+void
+slice_field(const conduit::Node &n_src_values,
+            const std::vector<conduit::index_t> &ids,
+            conduit::Node &n_dest_values)
+{
+    slice_field_internal(n_src_values, ids, n_dest_values);
+}
+
+
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
 //-----------------------------------------------------------------------------
@@ -2527,7 +2708,7 @@ PointQuery::acceleratedSearch(int ndims,
             float64 searchPt[3] = {static_cast<float64>(input_ptr[i * 3 + 0]),
                                    static_cast<float64>(input_ptr[i * 3 + 1]),
                                    static_cast<float64>(input_ptr[i * 3 + 2])};
-            int found = search.findPoint(searchPt);
+            auto found = static_cast<int>(search.findPoint(searchPt));
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
         handled = true;
@@ -2550,7 +2731,7 @@ PointQuery::acceleratedSearch(int ndims,
             float32 searchPt[3] = {static_cast<float32>(input_ptr[i * 3 + 0]),
                                    static_cast<float32>(input_ptr[i * 3 + 1]),
                                    static_cast<float32>(input_ptr[i * 3 + 2])};
-            int found = search.findPoint(searchPt);
+            auto found = static_cast<int>(search.findPoint(searchPt));
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
         handled = true;
@@ -2572,7 +2753,7 @@ PointQuery::acceleratedSearch(int ndims,
         {
             float64 searchPt[2] = {static_cast<float64>(input_ptr[i * 3 + 0]),
                                    static_cast<float64>(input_ptr[i * 3 + 1])};
-            int found = search.findPoint(searchPt);
+            auto found = static_cast<int>(search.findPoint(searchPt));
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
         handled = true;
@@ -2593,7 +2774,7 @@ PointQuery::acceleratedSearch(int ndims,
         {
             float32 searchPt[2] = {static_cast<float32>(input_ptr[i * 3 + 0]),
                                    static_cast<float32>(input_ptr[i * 3 + 1])};
-            int found = search.findPoint(searchPt);
+            auto found = static_cast<int>(search.findPoint(searchPt));
             result_ptr[i] = (found != search.NotFound) ? found : NotFound;
         });
         handled = true;

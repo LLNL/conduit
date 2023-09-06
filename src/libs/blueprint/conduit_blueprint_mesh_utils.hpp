@@ -216,6 +216,41 @@ CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const s
 //-----------------------------------------------------------------------------
 index_t CONDUIT_BLUEPRINT_API find_domain_id(const Node &node);
 
+//-----------------------------------------------------------------------------
+/**
+ @brief Slice a node containing array data and copy data for the supplied ids
+        to a new node.
+
+ @param n_src_values The node containing the source values.
+ @param ids The ids that will be extracted from the source values.
+ @param dest The new node that will contain the sliced data.
+ */
+void CONDUIT_BLUEPRINT_API slice_array(const conduit::Node &n_src_values,
+                                       const std::vector<int> &ids,
+                                       Node &n_dest_values);
+
+/// Same as above.
+void CONDUIT_BLUEPRINT_API slice_array(const conduit::Node &n_src_values,
+                                       const std::vector<conduit::index_t> &ids,
+                                       Node &n_dest_values);
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Slice a values node for a field where values may be an mcarray. The new
+        node will contain the data for the supplied indices.
+
+ @param n_src_values The node containing the source values.
+ @param ids The ids that will be extracted from the source values.
+ @param dest The new node that will contain the sliced data.
+ */
+void CONDUIT_BLUEPRINT_API slice_field(const conduit::Node &n_src_values,
+                                       const std::vector<int> &ids,
+                                       conduit::Node &dest);
+
+/// Same as above.
+void CONDUIT_BLUEPRINT_API slice_field(const conduit::Node &n_src_values,
+                                       const std::vector<conduit::index_t> &ids,
+                                       conduit::Node &n_dest_values);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
