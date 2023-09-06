@@ -468,21 +468,51 @@ slice_array_internal(const conduit::Node &n_src_values,
 }
 
 //---------------------------------------------------------------------------
+bool same_nodes(const conduit::Node &n1, const conduit::Node &n2)
+{
+   return (&n1 == &n2) ||
+          (n1.contiguous_data_ptr() != nullptr &&
+           n1.contiguous_data_ptr() == n2.contiguous_data_ptr());
+}
+
+//---------------------------------------------------------------------------
 void
 slice_array(const conduit::Node &n_src_values,
             const std::vector<int> &ids,
-            Node &n_dest_values)
+            conduit::Node &n_dest_values)
 {
-    slice_array_internal(n_src_values, ids, n_dest_values);
+    // Check whether the src and dest nodes are the same. If so, we slice into
+    // a tmp node and move its contents.
+    if(same_nodes(n_src_values, n_dest_values))
+    {
+        conduit::Node tmp;
+        slice_array_internal(n_src_values, ids, tmp);
+        n_dest_values.move(tmp);
+    }
+    else
+    {
+        slice_array_internal(n_src_values, ids, n_dest_values);
+    }
 }
 
 //---------------------------------------------------------------------------
 void
 slice_array(const conduit::Node &n_src_values,
             const std::vector<conduit::index_t> &ids,
-            Node &n_dest_values)
+            conduit::Node &n_dest_values)
 {
-    slice_array_internal(n_src_values, ids, n_dest_values);
+    // Check whether the src and dest nodes are the same. If so, we slice into
+    // a tmp node and move its contents.
+    if(same_nodes(n_src_values, n_dest_values))
+    {
+        conduit::Node tmp;
+        slice_array_internal(n_src_values, ids, tmp);
+        n_dest_values.move(tmp);
+    }
+    else
+    {
+        slice_array_internal(n_src_values, ids, n_dest_values);
+    }
 }
 
 //---------------------------------------------------------------------------

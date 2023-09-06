@@ -69,7 +69,8 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
         const auto sizes = n_sizes.as_index_t_accessor();
         const auto offsets = n_offsets.as_index_t_accessor();
 
-        // Temp vectors to store reordered connectivity.
+        // Temp vectors to store reordered connectivity. We use temp vectors so
+        // we can convert to a matching datatype after we've constructed the data.
         std::vector<conduit::index_t> newconn, newoffsets, newsizes;
         newconn.reserve(conn.number_of_elements());
         newsizes.reserve(sizes.number_of_elements());
@@ -103,7 +104,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
 
         // Store the new connectivity.
         dest_topo["type"] = topo["type"];
-        dest_topo["coordset"] = dest_coordset.name(); //topo["coordset"];
+        dest_topo["coordset"] = dest_coordset.name();
         dest_topo["elements/shape"] = topo["elements/shape"];
         conduit::Node tmp;
         tmp.set_external(newconn.data(), newconn.size());
@@ -133,7 +134,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
                 auto &newfields = dest_topo["fields"];
                 conduit::Node &dest = newfields[src.name()];
                 dest["association"] = src["association"];
-                dest["topology"] = dest_topo.name(); //src["topology"];
+                dest["topology"] = dest_topo.name();
                 if(dest["association"].as_string() == "element")
                 {
                     conduit::blueprint::mesh::utils::slice_field(src["values"], reorder, dest["values"]);
@@ -471,64 +472,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         origin[2] = options.fetch_existing("origin/z").to_double();
     if(options.has_path("tile"))
         initialize(options.fetch_existing("tile"));
-#if 1
-    // Make cell centers for each tile and record that no tiles have been visited.
-    conduit::index_t ncells = nx * ny;
-    std::vector<int> visited(ncells, 0);
-    std::vector<double> cx(ncells), cy(ncells);
-    for(int j = 0, idx = 0; j < ny; j++)
-    {
-        for(int i = 0; i < nx; i++, idx++)
-        {
-            cx[idx] = origin[0] + (i + 0.5f) * width();
-            cy[idx] = origin[1] + (j + 0.5f) * height();
-        }
-    }
-    double *tileCenters[2] = {&cx[0], &cy[0]};
-    conduit::blueprint::mesh::utils::kdtree<double*, double, 2> spatial_sort;
-    spatial_sort.initialize(tileCenters, ncells);
 
-    // Traverse the cells in the desired spatial order.
-    std::vector<Tile> tiles(nx * ny);
-    constexpr conduit::index_t invalidIndex = -1;
-    for(const auto idx : spatial_sort.getIndices())
-    {
-        // The first time we've used the tile, set its size.
-        Tile &current = tiles[idx];
-        current.reset(m_xpts.size());
-
-        // Copy neighbor points to the current tile if we can.
-        conduit::index_t i = idx % nx;
-        conduit::index_t j = idx / nx;
-        conduit::index_t left_idx = (i > 0) ? (idx - 1) : invalidIndex;
-        conduit::index_t right_idx = (i < nx - 1) ? (idx + 1) : invalidIndex;
-        conduit::index_t bottom_idx = (j > 0) ? (idx - nx) : invalidIndex;
-        conduit::index_t top_idx = (j < ny - 1) ? (idx + nx) : invalidIndex;
-        if(left_idx != invalidIndex && visited[left_idx])
-        {
-            current.setPointIds(left(), tiles[left_idx].getPointIds(right()));
-        }
-        if(right_idx != invalidIndex && visited[right_idx])
-        {
-            current.setPointIds(right(), tiles[right_idx].getPointIds(left()));
-        }
-        if(bottom_idx != invalidIndex && visited[bottom_idx])
-        {
-            current.setPointIds(bottom(), tiles[bottom_idx].getPointIds(top()));
-        }
-        if(top_idx != invalidIndex && visited[top_idx])
-        {
-            current.setPointIds(top(), tiles[top_idx].getPointIds(bottom()));
-        }
-
-        // Make this tile's points
-        double newOrigin[] = {origin[0] + i * width(), origin[1] + j * height(), origin[2]};
-        addPoints(newOrigin, current.getPointIds(), x, y);
-
-        visited[idx] = 1;
-    }
-    
-#else
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
     double newOrigin[] = {origin[0], origin[1], origin[2]};
@@ -559,18 +503,11 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         }
         newOrigin[1] += height();
     }
-#endif
+
     if(nz < 1)
     {
         // Iterate over the tiles and add their quads.
         // TODO: reserve size for conn, sizes
-#if 1
-        // Add the cells in spatial sort order.
-        for(const auto idx : spatial_sort.getIndices())
-        {
-            addFaces(tiles[idx].getPointIds(), conn, sizes);
-        }
-#else
         for(conduit::index_t j = 0; j < ny; j++)
         {
             for(conduit::index_t i = 0; i < nx; i++)
@@ -579,7 +516,6 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                 addFaces(current.getPointIds(), conn, sizes);
             }
         }
-#endif
         // NOTE: z coords in output will be empty.
 
         // Boundaries
@@ -666,7 +602,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     res["topologies/mesh/elements/sizes"].set(sizes);
 
 #if 1
-    if(nz > 0)
+    //if(nz > 0)
     {
         // We need offsets.
         conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(res["topologies/mesh"], res["topologies/mesh/elements/offsets"]);
@@ -675,7 +611,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         // of the changes to node ordering, which we'd have to pass out the node ordering.
         const auto reorder = conduit::blueprint::mesh::utils::topology::spatial_ordering(res["topologies/mesh"]);
         reorder_topo(res["topologies/mesh"], res["coordsets/coords"], res["fields"],
-                     res["topologies/rmesh"], res["coordsets/rcoords"], res["fields"],
+                     res["topologies/mesh"], res["coordsets/coords"], res["fields"],
                      reorder);
 
 conduit::Node opts;
