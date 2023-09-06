@@ -50,7 +50,7 @@ namespace examples
 namespace detail
 {
 
-std::vector<int> spatial_reordering(const conduit::Node &topo)
+std::vector<conduit::index_t> spatial_reordering(const conduit::Node &topo)
 {
     // Make a new centroid topo and coordset. The coordset will contain the
     // element centers.
@@ -69,7 +69,7 @@ std::vector<int> spatial_reordering(const conduit::Node &topo)
     }
 
     // Sort the coordinates spatially
-    std::vector<int> reorder;
+    std::vector<conduit::index_t> reorder;
     if(coords.size() == 2)
     {
         conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 2> spatial_sort;
@@ -207,7 +207,7 @@ slice_array(const conduit::Node &n_src_values,
 
 void
 slice_field(const conduit::Node &src,
-            const std::vector<int> &ids,
+            const std::vector<conduit::index_t> &ids,
             conduit::Node &dest)
 {
     if(src.number_of_children() > 0)
@@ -228,7 +228,7 @@ slice_field(const conduit::Node &src,
 void
 reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const conduit::Node &fields,
              conduit::Node &dest_topo, conduit::Node &dest_coordset, conduit::Node &dest_fields,
-             const std::vector<int> &reorder)
+             const std::vector<conduit::index_t> &reorder)
 {
     conduit::blueprint::mesh::utils::ShapeType shape(topo);
 
@@ -250,29 +250,25 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
         newoffsets.reserve(offsets.number_of_elements());
 
         // Mapping information for the points.
+        constexpr conduit::index_t invalidNode = -1;
         auto npts = conduit::blueprint::mesh::coordset::length(coordset);
-        std::vector<int> old2NewPoints(npts, -1), ptReorder(npts, -1);
-        int newPointIndex = 0;
+        std::vector<conduit::index_t> old2NewPoints(npts, invalidNode), ptReorder(npts, invalidNode);
+        conduit::index_t newPointIndex = 0;
 
         // We iterate over elements in the specified order. We iterate over the
         // points in each element and renumber the points.
         conduit::index_t newoffset = 0;
-        for(const int cellIndex : reorder)
+        for(const auto cellIndex : reorder)
         {
             for(conduit::index_t i = 0; i < sizes[cellIndex]; i++)
             {
                 auto id = conn[offsets[cellIndex] + i];
-#define REORDER_POINTS
-#ifdef REORDER_POINTS
-                if(old2NewPoints[id] == -1)
+                if(old2NewPoints[id] == invalidNode)
                 {
                     ptReorder[newPointIndex] = id;
                     old2NewPoints[id] = newPointIndex++;
                 }
                 newconn.push_back(old2NewPoints[id]);
-#else
-                newconn.push_back(id);
-#endif
             }
             newsizes.push_back(sizes[cellIndex]);
             newoffsets.push_back(newoffset);
@@ -291,7 +287,6 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
         tmp.set_external(newoffsets.data(), newoffsets.size());
         tmp.to_data_type(n_offsets.dtype().id(), dest_topo["elements/offsets"]);
 
-#ifdef REORDER_POINTS
         // Reorder the coordset now, making it explicit if needed.
         dest_coordset["type"] = "explicit";
         conduit::Node coordset_explicit;
@@ -302,10 +297,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
         else
             coordset_explicit.set_external(coordset);
         slice_field(coordset_explicit["values"], ptReorder, dest_coordset["values"]);
-#else
-        dest_coordset["type"] = coordset["type"];
-        dest_coordset["values"].set(coordset["values"]);
-#endif
+
         // Reorder fields that match this topo
         for(conduit::index_t fi = 0; fi < fields.number_of_children(); fi++)
         {
