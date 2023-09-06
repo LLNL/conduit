@@ -20,6 +20,10 @@
 #include "conduit_blueprint_exports.h"
 #include "conduit_blueprint_mesh_kdtree.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include <cmath>
+
+// Uncomment this to add some fields on the filed mesh prior to reordering.
+//#define CONDUIT_TILER_DEBUG_FIELDS
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
@@ -53,8 +57,9 @@ namespace detail
 
 void
 reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const conduit::Node &fields,
+             const std::vector<conduit::index_t> &reorder,
              conduit::Node &dest_topo, conduit::Node &dest_coordset, conduit::Node &dest_fields,
-             const std::vector<conduit::index_t> &reorder)
+             std::vector<conduit::index_t> &old2NewPoints)
 {
     conduit::blueprint::mesh::utils::ShapeType shape(topo);
 
@@ -79,7 +84,10 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
         // Mapping information for the points.
         constexpr conduit::index_t invalidNode = -1;
         auto npts = conduit::blueprint::mesh::coordset::length(coordset);
-        std::vector<conduit::index_t> old2NewPoints(npts, invalidNode), ptReorder(npts, invalidNode);
+        std::vector<conduit::index_t> ptReorder(npts, invalidNode);
+        old2NewPoints.resize(npts);
+        for(size_t i = 0; i < npts; i++)
+            old2NewPoints[i] = invalidNode;
         conduit::index_t newPointIndex = 0;
 
         // We iterate over elements in the specified order. We iterate over the
@@ -90,6 +98,7 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
             for(conduit::index_t i = 0; i < sizes[cellIndex]; i++)
             {
                 auto id = conn[offsets[cellIndex] + i];
+                // if the old point has not been seen, renumber it.
                 if(old2NewPoints[id] == invalidNode)
                 {
                     ptReorder[newPointIndex] = id;
@@ -125,24 +134,29 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
             coordset_explicit.set_external(coordset);
         conduit::blueprint::mesh::utils::slice_field(coordset_explicit["values"], ptReorder, dest_coordset["values"]);
 
-        // Reorder fields that match this topo
+        // Reorder fields that match this topo.
+        std::vector<std::string> fieldNames;
         for(conduit::index_t fi = 0; fi < fields.number_of_children(); fi++)
         {
             const conduit::Node &src = fields[fi];
             if(src["topology"].as_string() == topo.name())
             {
-                auto &newfields = dest_topo["fields"];
-                conduit::Node &dest = newfields[src.name()];
-                dest["association"] = src["association"];
-                dest["topology"] = dest_topo.name();
-                if(dest["association"].as_string() == "element")
-                {
-                    conduit::blueprint::mesh::utils::slice_field(src["values"], reorder, dest["values"]);
-                }
-                else
-                {
-                    conduit::blueprint::mesh::utils::slice_field(src["values"], ptReorder, dest["values"]);
-                }
+                fieldNames.push_back(src.name());
+            }
+        }
+        for(const auto &fieldName : fieldNames)
+        {
+            const conduit::Node &src = fields.fetch_existing(fieldName);
+            conduit::Node &dest = dest_fields[fieldName];
+            dest["association"] = src["association"];
+            dest["topology"] = dest_topo.name();
+            if(dest["association"].as_string() == "element")
+            {
+                conduit::blueprint::mesh::utils::slice_field(src["values"], reorder, dest["values"]);
+            }
+            else
+            {
+                conduit::blueprint::mesh::utils::slice_field(src["values"], ptReorder, dest["values"]);
             }
         }
     }
@@ -253,20 +267,22 @@ protected:
     }
 
     /// Emit the quad cells using this tile's point ids.
+    template <typename Transform>
     void addFaces(const std::vector<conduit::index_t> &ptids,
                   std::vector<conduit::index_t> &conn,
                   std::vector<conduit::index_t> &sizes,
-                  conduit::index_t offset = 0,
-                  bool reverse = false) const
+                  conduit::index_t offset,
+                  bool reverse,
+                  Transform &&transform) const
     {
         const size_t nquads = m_quads.size() / 4;
         int order[] = {reverse ? 3 : 0, reverse ? 2 : 1, reverse ? 1 : 2, reverse ? 0 : 3};
         for(size_t i = 0; i < nquads; i++)
         {
-            conn.push_back(offset + ptids[m_quads[4*i + order[0]]]);
-            conn.push_back(offset + ptids[m_quads[4*i + order[1]]]);
-            conn.push_back(offset + ptids[m_quads[4*i + order[2]]]);
-            conn.push_back(offset + ptids[m_quads[4*i + order[3]]]);
+            conn.push_back(transform(offset + ptids[m_quads[4*i + order[0]]]));
+            conn.push_back(transform(offset + ptids[m_quads[4*i + order[1]]]));
+            conn.push_back(transform(offset + ptids[m_quads[4*i + order[2]]]));
+            conn.push_back(transform(offset + ptids[m_quads[4*i + order[3]]]));
             sizes.push_back(4);
         }
     }
@@ -330,15 +346,18 @@ protected:
     }
 
     /// Make 2D boundaries.
+    template <typename Transform>
     void makeBoundaries2D(const std::vector<Tile> &tiles,
                           conduit::index_t nx,
                           conduit::index_t ny,
                           std::vector<conduit::index_t> &bconn,
                           std::vector<conduit::index_t> &bsizes,
                           std::vector<int> &btype,
-                          const conduit::Node &options) const;
+                          const conduit::Node &options,
+                          Transform &&transform) const;
 
     /// Make 3D boundaries.
+    template <typename Transform>
     void makeBoundaries3D(const std::vector<Tile> &tiles,
                           conduit::index_t nx,
                           conduit::index_t ny,
@@ -347,19 +366,22 @@ protected:
                           std::vector<conduit::index_t> &bconn,
                           std::vector<conduit::index_t> &bsizes,
                           std::vector<int> &btype,
-                          const conduit::Node &options) const;
+                          const conduit::Node &options,
+                          Transform &&transform) const;
 private:
     std::vector<double> m_xpts, m_ypts;
     double m_width, m_height;
     std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top, m_quads;
 };
 
+//---------------------------------------------------------------------------
 Tiler::Tiler() : m_xpts(), m_ypts(),  m_width(0.), m_height(0.),
                  m_left(), m_right(), m_bottom(), m_top(), m_quads()
 {
     initialize();
 }
 
+//---------------------------------------------------------------------------
 void
 Tiler::initialize()
 {
@@ -428,6 +450,7 @@ Tiler::initialize()
     m_height = computeExtents(m_ypts);
 }
 
+//---------------------------------------------------------------------------
 void
 Tiler::initialize(const conduit::Node &t)
 {
@@ -443,6 +466,7 @@ Tiler::initialize(const conduit::Node &t)
     m_height = computeExtents(m_ypts);
 }
 
+//---------------------------------------------------------------------------
 /**
  \brief Generate coordinate and connectivity arrays using a tiled mesh pattern,
         given by the Tile class.
@@ -472,6 +496,9 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         origin[2] = options.fetch_existing("origin/z").to_double();
     if(options.has_path("tile"))
         initialize(options.fetch_existing("tile"));
+    bool reorder = true;
+    if(options.has_path("reorder"))
+        reorder = options.fetch_existing("reorder").to_int() > 0;
 
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
@@ -504,6 +531,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         newOrigin[1] += height();
     }
 
+    conduit::index_t ptsPerPlane = 0;
     if(nz < 1)
     {
         // Iterate over the tiles and add their quads.
@@ -513,31 +541,20 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
             for(conduit::index_t i = 0; i < nx; i++)
             {
                 Tile &current = tiles[(j*nx + i)];
-                addFaces(current.getPointIds(), conn, sizes);
+                addFaces(current.getPointIds(), conn, sizes, 0, false,
+                    [](conduit::index_t id) {
+                        return id;
+                    });
             }
         }
         // NOTE: z coords in output will be empty.
-
-        // Boundaries
-        makeBoundaries2D(tiles, nx, ny, bconn, bsizes, btype, options);
-        if(!bconn.empty())
-        {
-            res["topologies/boundary/type"] = "unstructured";
-            res["topologies/boundary/coordset"] = "coords";
-            res["topologies/boundary/elements/shape"] = "line";
-            res["topologies/boundary/elements/connectivity"].set(bconn);
-            res["topologies/boundary/elements/sizes"].set(bsizes);
-
-            res["fields/boundary_type/topology"] = "boundary";
-            res["fields/boundary_type/association"] = "element";
-            res["fields/boundary_type/values"].set(btype);
-        }
     }
     else
     {
+        ptsPerPlane = static_cast<conduit::index_t>(x.size());
+
         // We have x,y points now. We need to replicate them to make multiple planes.
         // We make z coordinates too.
-        conduit::index_t ptsPerPlane = static_cast<conduit::index_t>(x.size());
         conduit::index_t nplanes = nz + 1;
         x.reserve(ptsPerPlane * nplanes);
         y.reserve(ptsPerPlane * nplanes);
@@ -571,25 +588,10 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                 }
             }
         }
-
-        // Boundaries
-        makeBoundaries3D(tiles, nx, ny, nz, ptsPerPlane, bconn, bsizes, btype, options);
-        if(!bconn.empty())
-        {
-            res["topologies/boundary/type"] = "unstructured";
-            res["topologies/boundary/coordset"] = "coords";
-            res["topologies/boundary/elements/shape"] = "quad";
-            res["topologies/boundary/elements/connectivity"].set(bconn);
-            res["topologies/boundary/elements/sizes"].set(bsizes);
-
-            res["fields/boundary_type/topology"] = "boundary";
-            res["fields/boundary_type/association"] = "element";
-            res["fields/boundary_type/values"].set(btype);
-        }
     }
 
+    // Make the Blueprint mesh.
     res["coordsets/coords/type"] = "explicit";
-    res["coordsets/coords/values"] = "explicit";
     res["coordsets/coords/values/x"].set(x);
     res["coordsets/coords/values/y"].set(y);
     if(!z.empty())
@@ -601,27 +603,123 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     res["topologies/mesh/elements/connectivity"].set(conn);
     res["topologies/mesh/elements/sizes"].set(sizes);
 
-#if 1
-    //if(nz > 0)
+#ifdef CONDUIT_TILER_DEBUG_FIELDS
+    // Add fields to test the reordering.
+    std::vector<conduit::index_t> nodeids, elemids;
+    auto npts = static_cast<conduit::index_t>(x.size());
+    nodeids.reserve(npts);
+    for(conduit::index_t i = 0; i < npts; i++)
+        nodeids.push_back(i);
+    res["fields/nodeids/topology"] = "mesh";
+    res["fields/nodeids/association"] = "vertex";
+    res["fields/nodeids/values"].set(nodeids);
+
+    auto nelem = static_cast<conduit::index_t>(sizes.size());
+    elemids.reserve(nelem);
+    for(conduit::index_t i = 0; i < nelem; i++)
+        elemids.push_back(i);
+    res["fields/elemids/topology"] = "mesh";
+    res["fields/elemids/association"] = "element";
+    res["fields/elemids/values"].set(elemids);
+
+    std::vector<double> dist;
+    dist.reserve(npts);
+    if(nz < 1)
+    {
+        for(conduit::index_t i = 0; i < npts; i++)
+            dist.push_back(sqrt(x[i]*x[i] + y[i]*y[i]));
+    }
+    else
+    {
+        for(conduit::index_t i = 0; i < npts; i++)
+            dist.push_back(sqrt(x[i]*x[i] + y[i]*y[i] + z[i]*z[i]));
+    }
+    res["fields/dist/topology"] = "mesh";
+    res["fields/dist/association"] = "vertex";
+    res["fields/dist/values"].set(dist);
+#endif
+
+    // Reorder the elements unless it was turned off.
+    std::vector<conduit::index_t> old2NewPoint;
+    if(reorder)
     {
         // We need offsets.
         conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(res["topologies/mesh"], res["topologies/mesh/elements/offsets"]);
 
-        // Reorder the mesh in 3D. NOTE: boundaries would have to be fixed because
-        // of the changes to node ordering, which we'd have to pass out the node ordering.
-        const auto reorder = conduit::blueprint::mesh::utils::topology::spatial_ordering(res["topologies/mesh"]);
+        // Reorder the mesh elements.
+        const auto elemOrder = conduit::blueprint::mesh::utils::topology::spatial_ordering(res["topologies/mesh"]);
         reorder_topo(res["topologies/mesh"], res["coordsets/coords"], res["fields"],
+                     elemOrder,
                      res["topologies/mesh"], res["coordsets/coords"], res["fields"],
-                     reorder);
-
-conduit::Node opts;
-opts["num_children_threshold"] = 100000;
-opts["num_elements_threshold"] = 500;
-std::cout << res.to_summary_string(opts) << std::endl;
+                     old2NewPoint);
     }
+
+    // Boundaries
+    std::string bshape;
+    if(nz < 1)
+    {
+        // 2D
+        bshape = "line";
+        if(reorder)
+        {
+            makeBoundaries2D(tiles, nx, ny, bconn, bsizes, btype, options,
+                [&](conduit::index_t id) {
+                    // Renumber the boundary connectivity
+                    return old2NewPoint[id];
+                });
+        }
+        else
+        {
+            makeBoundaries2D(tiles, nx, ny, bconn, bsizes, btype, options,
+                [](conduit::index_t id) {
+                    return id;
+                });
+        }
+    }
+    else
+    {
+        // 3D
+        bshape = "quad";
+        if(reorder)
+        {
+            makeBoundaries3D(tiles, nx, ny, nz, ptsPerPlane, bconn, bsizes, btype, options,
+                [&](conduit::index_t id) {
+                    // Renumber the boundary connectivity
+                    return old2NewPoint[id];
+                });
+        }
+        else
+        {
+            makeBoundaries3D(tiles, nx, ny, nz, ptsPerPlane, bconn, bsizes, btype, options,
+                [&](conduit::index_t id) {
+                    return id;
+                });
+        }
+    }
+    if(!bconn.empty())
+    {
+        res["topologies/boundary/type"] = "unstructured";
+        res["topologies/boundary/coordset"] = "coords";
+        res["topologies/boundary/elements/shape"] = bshape;
+        res["topologies/boundary/elements/connectivity"].set(bconn);
+        res["topologies/boundary/elements/sizes"].set(bsizes);
+
+        res["fields/boundary_type/topology"] = "boundary";
+        res["fields/boundary_type/association"] = "element";
+        res["fields/boundary_type/values"].set(btype);
+    }
+
+#if 0
+    // Print for debugging.
+    conduit::Node opts;
+    opts["num_children_threshold"] = 100000;
+    opts["num_elements_threshold"] = 500;
+    std::cout << res.to_summary_string(opts) << std::endl;
 #endif
 }
 
+//---------------------------------------------------------------------------
+template <typename Transform>
 void
 Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
     conduit::index_t nx,
@@ -629,7 +727,8 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
     std::vector<conduit::index_t> &bconn,
     std::vector<conduit::index_t> &bsizes,
     std::vector<int> &btype,
-    const conduit::Node &options) const
+    const conduit::Node &options,
+    Transform &&transform) const
 {
     if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
     {
@@ -639,8 +738,8 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(left());
             for(size_t bi = ids.size() - 1; bi > 0; bi--)
             {
-                bconn.push_back(ids[bi]);
-                bconn.push_back(ids[bi - 1]);
+                bconn.push_back(transform(ids[bi]));
+                bconn.push_back(transform(ids[bi - 1]));
                 bsizes.push_back(2);
                 btype.push_back(0);
             }
@@ -654,8 +753,8 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(bottom());
             for(size_t bi = 0; bi < ids.size() - 1; bi++)
             {
-                bconn.push_back(ids[bi]);
-                bconn.push_back(ids[bi + 1]);
+                bconn.push_back(transform(ids[bi]));
+                bconn.push_back(transform(ids[bi + 1]));
                 bsizes.push_back(2);
                 btype.push_back(2);
             }
@@ -669,8 +768,8 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(right());
             for(size_t bi = 0; bi < ids.size() - 1; bi++)
             {
-                bconn.push_back(ids[bi]);
-                bconn.push_back(ids[bi + 1]);
+                bconn.push_back(transform(ids[bi]));
+                bconn.push_back(transform(ids[bi + 1]));
                 bsizes.push_back(2);
                 btype.push_back(1);
             }
@@ -684,8 +783,8 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(top());
             for(size_t bi = ids.size() - 1; bi > 0; bi--)
             {
-                bconn.push_back(ids[bi]);
-                bconn.push_back(ids[bi - 1]);
+                bconn.push_back(transform(ids[bi]));
+                bconn.push_back(transform(ids[bi - 1]));
                 bsizes.push_back(2);
                 btype.push_back(3);
             }
@@ -693,6 +792,8 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
     }
 }
 
+//---------------------------------------------------------------------------
+template <typename Transform>
 void
 Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
     conduit::index_t nx,
@@ -702,7 +803,8 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
     std::vector<conduit::index_t> &bconn,
     std::vector<conduit::index_t> &bsizes,
     std::vector<int> &btype,
-    const conduit::Node &options) const
+    const conduit::Node &options,
+    Transform &&transform) const
 {
     if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
     {
@@ -716,10 +818,10 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(left());
                 for(size_t bi = ids.size() - 1; bi > 0; bi--)
                 {
-                    bconn.push_back(offset1 + ids[bi]);
-                    bconn.push_back(offset1 + ids[bi - 1]);
-                    bconn.push_back(offset2 + ids[bi - 1]);
-                    bconn.push_back(offset2 + ids[bi]);
+                    bconn.push_back(transform(offset1 + ids[bi]));
+                    bconn.push_back(transform(offset1 + ids[bi - 1]));
+                    bconn.push_back(transform(offset2 + ids[bi - 1]));
+                    bconn.push_back(transform(offset2 + ids[bi]));
                     bsizes.push_back(4);
                     btype.push_back(0);
                 }
@@ -738,10 +840,10 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(right());
                 for(size_t bi = 0; bi < ids.size() - 1; bi++)
                 {
-                    bconn.push_back(offset1 + ids[bi]);
-                    bconn.push_back(offset1 + ids[bi + 1]);
-                    bconn.push_back(offset2 + ids[bi + 1]);
-                    bconn.push_back(offset2 + ids[bi]);
+                    bconn.push_back(transform(offset1 + ids[bi]));
+                    bconn.push_back(transform(offset1 + ids[bi + 1]));
+                    bconn.push_back(transform(offset2 + ids[bi + 1]));
+                    bconn.push_back(transform(offset2 + ids[bi]));
                     bsizes.push_back(4);
                     btype.push_back(1);
                 }
@@ -760,10 +862,10 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(bottom());
                 for(size_t bi = 0; bi < ids.size() - 1; bi++)
                 {
-                    bconn.push_back(offset1 + ids[bi]);
-                    bconn.push_back(offset1 + ids[bi + 1]);
-                    bconn.push_back(offset2 + ids[bi + 1]);
-                    bconn.push_back(offset2 + ids[bi]);
+                    bconn.push_back(transform(offset1 + ids[bi]));
+                    bconn.push_back(transform(offset1 + ids[bi + 1]));
+                    bconn.push_back(transform(offset2 + ids[bi + 1]));
+                    bconn.push_back(transform(offset2 + ids[bi]));
                     bsizes.push_back(4);
                     btype.push_back(2);
                 }
@@ -782,10 +884,10 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(top());
                 for(size_t bi = ids.size() - 1; bi > 0; bi--)
                 {
-                    bconn.push_back(offset1 + ids[bi]);
-                    bconn.push_back(offset1 + ids[bi - 1]);
-                    bconn.push_back(offset2 + ids[bi - 1]);
-                    bconn.push_back(offset2 + ids[bi]);
+                    bconn.push_back(transform(offset1 + ids[bi]));
+                    bconn.push_back(transform(offset1 + ids[bi - 1]));
+                    bconn.push_back(transform(offset2 + ids[bi - 1]));
+                    bconn.push_back(transform(offset2 + ids[bi]));
                     bsizes.push_back(4);
                     btype.push_back(3);
                 }
@@ -799,7 +901,7 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
         {
            const Tile &current = tiles[(j*nx + i)];
            size_t s0 = bsizes.size();
-           addFaces(current.getPointIds(), bconn, bsizes, 0, true);
+           addFaces(current.getPointIds(), bconn, bsizes, 0, true, transform);
            for( ; s0 < bsizes.size(); s0++)
                btype.push_back(4);
         }
@@ -811,7 +913,7 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
         {
            const Tile &current = tiles[(j*nx + i)];
            size_t s0 = bsizes.size();
-           addFaces(current.getPointIds(), bconn, bsizes, nz * nPtsPerPlane);
+           addFaces(current.getPointIds(), bconn, bsizes, nz * nPtsPerPlane, false, transform);
            for( ; s0 < bsizes.size(); s0++)
                btype.push_back(5);
         }
