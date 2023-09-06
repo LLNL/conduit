@@ -98,7 +98,7 @@ public:
 
      @return The point id of the point or NotFound if the point was not found.
      */
-    int findPoint(const PointType &pt) const;
+    conduit::index_t findPoint(const PointType &pt) const;
 
     /**
      @brief Return the number of dimensions.
@@ -352,10 +352,10 @@ void kdtree<Indexable, CoordinateType, NDIMS>::cutRange(const RangeType &input, 
 
 //---------------------------------------------------------------------------
 template <typename Indexable, typename CoordinateType, int NDIMS>
-int
+conduit::index_t
 kdtree<Indexable, CoordinateType, NDIMS>::findPoint(const kdtree<Indexable, CoordinateType, NDIMS>::PointType &pt) const
 {
-    int foundIndex = NotFound;
+    conduit::index_t foundIndex = NotFound;
 #ifdef CONDUIT_DEBUG_KDTREE
     std::cout << "findPoint(";
     for(int i = 0; i < dims(); i++)
