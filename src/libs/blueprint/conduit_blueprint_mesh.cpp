@@ -150,7 +150,7 @@ std::vector<index_t> intersect_sets(const Container1 &v1,
         }
     }
 
-    return std::vector<index_t>(std::move(res));
+    return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -182,7 +182,7 @@ std::vector<index_t> subtract_sets(const std::vector<index_t> &v1,
             res.push_back(v1[i1]);
         }
     }
-    return std::vector<index_t>(std::move(res));
+    return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -2008,7 +2008,7 @@ mesh::domains(conduit::Node &n)
         }
     }
 
-    return std::vector<conduit::Node *>(std::move(doms));
+    return doms;
 }
 
 
@@ -2035,7 +2035,7 @@ mesh::domains(const conduit::Node &mesh)
         }
     }
 
-    return std::vector<const conduit::Node *>(std::move(doms));
+    return doms;
 }
 
 //-------------------------------------------------------------------------
@@ -2744,7 +2744,7 @@ group_domains_and_maps(conduit::Node &mesh, conduit::Node &s2dmap, conduit::Node
         }
     }
 
-    return std::vector<DomMapsTuple>(std::move(doms_and_maps));
+    return doms_and_maps;
 }
 
 //-----------------------------------------------------------------------------
@@ -3596,7 +3596,7 @@ mesh::generate_sides(conduit::Node& mesh,
             side_dims.push_back(2);
         }
 
-        return std::vector<index_t>(std::move(side_dims));
+        return side_dims;
     };
 
     verify_generate_mesh(mesh, src_adjset_name);
@@ -3644,7 +3644,7 @@ mesh::generate_corners(conduit::Node& mesh,
             corner_dims.push_back(di);
         }
 
-        return std::vector<index_t>(std::move(corner_dims));
+        return corner_dims;
     };
 
     verify_generate_mesh(mesh, src_adjset_name);
