@@ -369,6 +369,18 @@ namespace topology
                                               const conduit::Node& old_gvids,
                                               const conduit::Node& new_gvids,
                                               conduit::Node& out_topo);
+    //-------------------------------------------------------------------------
+    /**
+     * @brief Applies a spatial sorting algorithm (based on a kdtree) to the
+     *        topology's centroids and returns a vector containing the sorted
+     *        order.
+     *
+     * @param topo The topology whose elements are being sorted.
+     *
+     * @return A vector containing the new element order.
+     */
+    std::vector<conduit::index_t> spatial_ordering(const conduit::Node &topo);
+
 
     //-------------------------------------------------------------------------
     /**

@@ -42,9 +42,9 @@ namespace mesh
 namespace examples
 {
     /// Generates a tiled unstructured mesh of quads or hexs.
-    void CONDUIT_BLUEPRINT_API tiled(index_t nx,
-                                     index_t ny,
-                                     index_t nz,
+    void CONDUIT_BLUEPRINT_API tiled(conduit::index_t nx,
+                                     conduit::index_t ny,
+                                     conduit::index_t nz,
                                      conduit::Node &res,
                                      const conduit::Node &options);
 

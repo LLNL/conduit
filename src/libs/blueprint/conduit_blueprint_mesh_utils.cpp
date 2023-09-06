@@ -1388,6 +1388,264 @@ topology::reindex_coords(const Node& topo,
 }
 
 //-----------------------------------------------------------------------------
+std::vector<conduit::index_t>
+topology::spatial_ordering(const conduit::Node &topo)
+{
+    // Make a new centroid topo and coordset. The coordset will contain the
+    // element centers.
+    Node topo_dest, coords_dest, s2dmap, d2smap;
+    mesh::topology::unstructured::generate_centroids(topo,
+                                                     topo_dest,
+                                                     coords_dest,
+                                                     s2dmap,
+                                                     d2smap);
+    // Bundle the coordset components into a vector.
+    std::vector<conduit::double_accessor> coords;
+    const conduit::Node &values = coords_dest.fetch_existing("values");
+    for(conduit::index_t i = 0; i < values.number_of_children(); i++)
+    {
+        coords.push_back(values[i].as_double_accessor());
+    }
+
+    // Sort the coordinates spatially
+    std::vector<conduit::index_t> reorder;
+    if(coords.size() == 2)
+    {
+        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 2> spatial_sort;
+        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
+        reorder = std::move(spatial_sort.getIndices());
+    }
+    else if(coords.size() == 3)
+    {
+        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 3> spatial_sort;
+        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
+        reorder = std::move(spatial_sort.getIndices());
+    }
+    return reorder;
+}
+
+//---------------------------------------------------------------------------
+topology::TopologyBuilder::TopologyBuilder(const conduit::Node &_topo) : topo(_topo),
+    old_to_new(), topo_conn(), topo_sizes()
+{
+
+}
+
+//---------------------------------------------------------------------------
+topology::TopologyBuilder::TopologyBuilder(const conduit::Node *_topo) : topo(*_topo),
+    old_to_new(), topo_conn(), topo_sizes()
+{
+    
+}
+
+//---------------------------------------------------------------------------
+index_t
+topology::TopologyBuilder::newPointId(index_t oldPointId)
+{
+    auto it = old_to_new.find(oldPointId);
+    index_t newpt;
+    if(it == old_to_new.end())
+    {
+        newpt = old_to_new.size();
+        old_to_new[oldPointId] = newpt;
+    }
+    else
+    {
+        newpt = it->second;
+    }
+    return newpt;
+}
+
+//---------------------------------------------------------------------------
+size_t
+topology::TopologyBuilder::add(const index_t *ids, index_t nids)
+{
+    // Iterate over the ids and renumber them and add the renumbered points
+    // to the new connectivity.
+    size_t retval = topo_sizes.size();
+    for(index_t i = 0; i < nids; i++)
+    {
+        index_t newpid = newPointId(ids[i]);
+        topo_conn.push_back(newpid);
+    }
+    topo_sizes.push_back(nids);
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+size_t
+topology::TopologyBuilder::add(const std::vector<index_t> &ids)
+{
+    return add(&ids[0], ids.size());
+}
+
+//---------------------------------------------------------------------------
+void
+topology::TopologyBuilder::execute(conduit::Node &n_out, const std::string &shape)
+{
+    n_out.reset();
+
+    // Get the topo and coordset names for the input topo.
+    const conduit::Node &origcset = coordset(topo);
+    std::string topoName(topo.name());
+    std::string coordsetName(origcset.name());
+
+    // Build the new topology.
+    conduit::Node &newcset = n_out["coordsets/"+coordsetName];
+    conduit::Node &newtopo = n_out["topologies/"+topoName];
+
+    // Iterate over the selected original points and make a new coordset
+    newcset["type"] = "explicit";
+    auto axes = coordset::axes(origcset);
+    auto npts = static_cast<index_t>(old_to_new.size());
+    for(const auto &axis : axes)
+    {
+        std::string key("values/" + axis);
+        auto acc = origcset[key].as_double_accessor();
+
+        conduit::Node &coords = newcset[key];
+        coords.set(DataType::float64(npts));
+        auto coords_ptr = static_cast<double *>(coords.element_ptr(0));
+        for(auto it = old_to_new.begin(); it != old_to_new.end(); it++)
+        {
+            coords_ptr[it->second] = acc[it->first];
+        }
+    }
+
+    // Fill in the topo information.
+    newtopo["type"] = "unstructured";
+    newtopo["coordset"] = coordsetName;
+    conduit::Node &n_ele = newtopo["elements"];
+    n_ele["shape"] = shape;
+    n_ele["connectivity"].set(topo_conn);
+    n_ele["sizes"].set(topo_sizes);
+    unstructured::generate_offsets_inline(newtopo);
+
+    clear();
+}
+
+//---------------------------------------------------------------------------
+void
+topology::TopologyBuilder::clear()
+{
+    old_to_new.clear();
+    topo_conn.clear();
+    topo_sizes.clear();
+}
+
+
+//---------------------------------------------------------------------------
+std::vector<int>
+topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
+{
+    // The domain_id is not too important in this case.
+    int domain_id = 0;
+
+    // Get the mesh for topo1 (2 levels up)
+    const conduit::Node *mesh1 = nullptr;
+    if(topo1.parent() != nullptr &&
+       topo1.parent()->parent() != nullptr)
+    {
+        // Go from the topology up a couple levels to the mesh.
+        mesh1 = topo1.parent()->parent();
+    }
+    else
+    {
+        CONDUIT_ERROR("No parent for topo1.");
+    }
+
+    // Iterate over mesh2's points to see if its points exist in mesh1.
+    conduit::blueprint::mesh::utils::query::PointQuery P(*mesh1);
+    const conduit::Node &cset2 = topology::coordset(topo2);
+    index_t npts = conduit::blueprint::mesh::utils::coordset::length(cset2);
+    for(index_t i = 0; i < npts; i++)
+    {
+        const std::vector<float64> pc = coordset::_explicit::coords(cset2, i);
+        auto pclen = pc.size();
+        double pt3[3];
+        pt3[0] = pc[0];
+        pt3[1] = (pclen > 1) ? pc[1] : 0.;
+        pt3[2] = (pclen > 2) ? pc[2] : 0.;
+        P.add(domain_id, pt3);
+    }
+
+    // Do the query.
+    P.execute(cset2.name());
+
+    const conduit::Node &n_topo1_conn = topo1["elements/connectivity"];
+    const conduit::Node &n_topo1_size = topo1["elements/sizes"];
+    auto topo1_conn = n_topo1_conn.as_index_t_accessor();
+    auto topo1_size = n_topo1_size.as_index_t_accessor();
+
+    // Iterate over the entities in mesh1 and make hash ids for the entities
+    // by hashing their sorted points.
+    index_t nelem = topo1_size.dtype().number_of_elements();
+    std::map<uint64, index_t> topo1_entity_ids;
+    index_t idx = 0;
+    for(index_t i = 0; i < nelem; i++)
+    {
+        std::vector<index_t> ids;
+        index_t s = topo1_size[i];
+        for(index_t pi = 0; pi < s; pi++)
+            ids.push_back(topo1_conn[idx++]);
+        std::sort(ids.begin(), ids.end());
+        uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+        topo1_entity_ids[h] = i;
+    }
+
+    // Get the query results for each mesh2 point. This is a vector of point
+    // ids from mesh 1 or NotFound.
+    const auto &r = P.results(domain_id);
+
+    // Iterate over the entities in mesh2 and map their points to mesh 1 points
+    // if possible before computing hashids for them. If a mesh2 entity's points
+    // can all be defined in mesh1 then the entity exists in both meshes.
+    const conduit::Node &n_topo2_conn = topo2["elements/connectivity"];
+    const conduit::Node &n_topo2_size = topo2["elements/sizes"];
+    auto topo2_conn = n_topo2_conn.as_index_t_accessor();
+    auto topo2_size = n_topo2_size.as_index_t_accessor();
+
+    index_t nelem2 = topo2_size.dtype().number_of_elements();
+    std::map<uint64, index_t> topo2_entity_ids;
+    idx = 0;
+    std::vector<int> exists;
+    exists.reserve(nelem2);
+    std::vector<index_t> ids;
+    ids.reserve(10);
+    for(index_t i = 0; i < nelem2; i++)
+    {
+        index_t s = topo2_size[i];
+
+        // Try and map all of the topo2 entity's points to topo1's coordset.
+        // If we can do that then the entity may exist.
+        bool badEntity = false;
+        ids.clear();
+        for(index_t pi = 0; pi < s; pi++)
+        {
+            index_t pt = topo2_conn[idx++];
+            // See if the point exists in mesh1.
+            badEntity |= (r[pt] == P.NotFound);
+            ids.push_back(r[pt]);
+        }
+
+        if(badEntity)
+            exists.push_back(0);
+        else
+        {
+            // The entity can be defined in terms of topo1's coordset. Make a
+            // hash id for it and see if it matches any entities in topo1.
+            std::sort(ids.begin(), ids.end());
+            uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+
+            bool found = topo1_entity_ids.find(h) != topo1_entity_ids.end();
+            exists.push_back(found ? 1 : 0);
+        }
+    }
+
+    return exists;
+}
+
+//-----------------------------------------------------------------------------
 void
 topology::unstructured::generate_offsets_inline(Node &topo)
 {
@@ -1718,228 +1976,6 @@ topology::unstructured::points(const Node &n,
     }
 
     return std::vector<index_t>(pidxs.begin(), pidxs.end());
-}
-
-
-//---------------------------------------------------------------------------
-topology::TopologyBuilder::TopologyBuilder(const conduit::Node &_topo) : topo(_topo),
-    old_to_new(), topo_conn(), topo_sizes()
-{
-    
-}
-
-//---------------------------------------------------------------------------
-topology::TopologyBuilder::TopologyBuilder(const conduit::Node *_topo) : topo(*_topo),
-    old_to_new(), topo_conn(), topo_sizes()
-{
-    
-}
-
-//---------------------------------------------------------------------------
-index_t
-topology::TopologyBuilder::newPointId(index_t oldPointId)
-{
-    auto it = old_to_new.find(oldPointId);
-    index_t newpt;
-    if(it == old_to_new.end())
-    {
-        newpt = old_to_new.size();
-        old_to_new[oldPointId] = newpt;
-    }
-    else
-    {
-        newpt = it->second;
-    }
-    return newpt;
-}
-
-//---------------------------------------------------------------------------
-size_t
-topology::TopologyBuilder::add(const index_t *ids, index_t nids)
-{
-    // Iterate over the ids and renumber them and add the renumbered points
-    // to the new connectivity.
-    size_t retval = topo_sizes.size();
-    for(index_t i = 0; i < nids; i++)
-    {
-        index_t newpid = newPointId(ids[i]);
-        topo_conn.push_back(newpid);
-    }
-    topo_sizes.push_back(nids);
-    return retval;
-}
-
-//---------------------------------------------------------------------------
-size_t
-topology::TopologyBuilder::add(const std::vector<index_t> &ids)
-{
-    return add(&ids[0], ids.size());
-}
-
-//---------------------------------------------------------------------------
-void
-topology::TopologyBuilder::execute(conduit::Node &n_out, const std::string &shape)
-{
-    n_out.reset();
-
-    // Get the topo and coordset names for the input topo.
-    const conduit::Node &origcset = coordset(topo);
-    std::string topoName(topo.name());
-    std::string coordsetName(origcset.name());
-
-    // Build the new topology.
-    conduit::Node &newcset = n_out["coordsets/"+coordsetName];
-    conduit::Node &newtopo = n_out["topologies/"+topoName];
-
-    // Iterate over the selected original points and make a new coordset
-    newcset["type"] = "explicit";
-    auto axes = coordset::axes(origcset);
-    auto npts = static_cast<index_t>(old_to_new.size());
-    for(const auto &axis : axes)
-    {
-        std::string key("values/" + axis);
-        auto acc = origcset[key].as_double_accessor();
-
-        conduit::Node &coords = newcset[key];
-        coords.set(DataType::float64(npts));
-        auto coords_ptr = static_cast<double *>(coords.element_ptr(0));
-        for(auto it = old_to_new.begin(); it != old_to_new.end(); it++)
-        {
-            coords_ptr[it->second] = acc[it->first];
-        }
-    }
-
-    // Fill in the topo information.
-    newtopo["type"] = "unstructured";
-    newtopo["coordset"] = coordsetName;
-    conduit::Node &n_ele = newtopo["elements"];
-    n_ele["shape"] = shape;
-    n_ele["connectivity"].set(topo_conn);
-    n_ele["sizes"].set(topo_sizes);
-    unstructured::generate_offsets_inline(newtopo);
-
-    clear();
-}
-
-//---------------------------------------------------------------------------
-void
-topology::TopologyBuilder::clear()
-{
-    old_to_new.clear();
-    topo_conn.clear();
-    topo_sizes.clear();
-}
-
-
-//---------------------------------------------------------------------------
-std::vector<int>
-topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
-{
-    // The domain_id is not too important in this case.
-    int domain_id = 0;
-
-    // Get the mesh for topo1 (2 levels up)
-    const conduit::Node *mesh1 = nullptr;
-    if(topo1.parent() != nullptr &&
-       topo1.parent()->parent() != nullptr)
-    {
-        // Go from the topology up a couple levels to the mesh.
-        mesh1 = topo1.parent()->parent();
-    }
-    else
-    {
-        CONDUIT_ERROR("No parent for topo1.");
-    }
-
-    // Iterate over mesh2's points to see if its points exist in mesh1.
-    conduit::blueprint::mesh::utils::query::PointQuery P(*mesh1);
-    const conduit::Node &cset2 = topology::coordset(topo2);
-    index_t npts = conduit::blueprint::mesh::utils::coordset::length(cset2);
-    for(index_t i = 0; i < npts; i++)
-    {
-        const std::vector<float64> pc = coordset::_explicit::coords(cset2, i);
-        auto pclen = pc.size();
-        double pt3[3];
-        pt3[0] = pc[0];
-        pt3[1] = (pclen > 1) ? pc[1] : 0.;
-        pt3[2] = (pclen > 2) ? pc[2] : 0.;
-        P.add(domain_id, pt3);
-    }
-
-    // Do the query.
-    P.execute(cset2.name());
-
-    const conduit::Node &n_topo1_conn = topo1["elements/connectivity"];
-    const conduit::Node &n_topo1_size = topo1["elements/sizes"];
-    auto topo1_conn = n_topo1_conn.as_index_t_accessor();
-    auto topo1_size = n_topo1_size.as_index_t_accessor();
-
-    // Iterate over the entities in mesh1 and make hash ids for the entities
-    // by hashing their sorted points.
-    index_t nelem = topo1_size.dtype().number_of_elements();
-    std::map<uint64, index_t> topo1_entity_ids;
-    index_t idx = 0;
-    for(index_t i = 0; i < nelem; i++)
-    {
-        std::vector<index_t> ids;
-        index_t s = topo1_size[i];
-        for(index_t pi = 0; pi < s; pi++)
-            ids.push_back(topo1_conn[idx++]);
-        std::sort(ids.begin(), ids.end());
-        uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
-        topo1_entity_ids[h] = i;
-    }
-
-    // Get the query results for each mesh2 point. This is a vector of point
-    // ids from mesh 1 or NotFound.
-    const auto &r = P.results(domain_id);
-
-    // Iterate over the entities in mesh2 and map their points to mesh 1 points
-    // if possible before computing hashids for them. If a mesh2 entity's points
-    // can all be defined in mesh1 then the entity exists in both meshes.
-    const conduit::Node &n_topo2_conn = topo2["elements/connectivity"];
-    const conduit::Node &n_topo2_size = topo2["elements/sizes"];
-    auto topo2_conn = n_topo2_conn.as_index_t_accessor();
-    auto topo2_size = n_topo2_size.as_index_t_accessor();
-
-    index_t nelem2 = topo2_size.dtype().number_of_elements();
-    std::map<uint64, index_t> topo2_entity_ids;
-    idx = 0;
-    std::vector<int> exists;
-    exists.reserve(nelem2);
-    std::vector<index_t> ids;
-    ids.reserve(10);
-    for(index_t i = 0; i < nelem2; i++)
-    {
-        index_t s = topo2_size[i];
-
-        // Try and map all of the topo2 entity's points to topo1's coordset.
-        // If we can do that then the entity may exist.
-        bool badEntity = false;
-        ids.clear();
-        for(index_t pi = 0; pi < s; pi++)
-        {
-            index_t pt = topo2_conn[idx++];
-            // See if the point exists in mesh1.
-            badEntity |= (r[pt] == P.NotFound);
-            ids.push_back(r[pt]);
-        }
-
-        if(badEntity)
-            exists.push_back(0);
-        else
-        {
-            // The entity can be defined in terms of topo1's coordset. Make a
-            // hash id for it and see if it matches any entities in topo1.
-            std::sort(ids.begin(), ids.end());
-            uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
-
-            bool found = topo1_entity_ids.find(h) != topo1_entity_ids.end();
-            exists.push_back(found ? 1 : 0);
-        }
-    }
-
-    return exists;
 }
 
 //-----------------------------------------------------------------------------

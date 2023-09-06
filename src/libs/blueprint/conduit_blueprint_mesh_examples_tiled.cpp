@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
+#include "conduit_blueprint_mesh_examples_tiled.hpp"
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
@@ -50,40 +51,6 @@ namespace examples
 namespace detail
 {
 
-std::vector<conduit::index_t> spatial_reordering(const conduit::Node &topo)
-{
-    // Make a new centroid topo and coordset. The coordset will contain the
-    // element centers.
-    Node topo_dest, coords_dest, s2dmap, d2smap;
-    mesh::topology::unstructured::generate_centroids(topo,
-                                                     topo_dest,
-                                                     coords_dest,
-                                                     s2dmap,
-                                                     d2smap);
-    // Bundle the coordset components into a vector.
-    std::vector<conduit::double_accessor> coords;
-    const conduit::Node &values = coords_dest.fetch_existing("values");
-    for(conduit::index_t i = 0; i < values.number_of_children(); i++)
-    {
-        coords.push_back(values[i].as_double_accessor());
-    }
-
-    // Sort the coordinates spatially
-    std::vector<conduit::index_t> reorder;
-    if(coords.size() == 2)
-    {
-        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 2> spatial_sort;
-        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
-        reorder = std::move(spatial_sort.getIndices());
-    }
-    else if(coords.size() == 3)
-    {
-        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 3> spatial_sort;
-        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
-        reorder = std::move(spatial_sort.getIndices());
-    }
-    return reorder;
-}
 //---------------------------------------------------------------------------
 // @brief Slice the n_src array using the indices stored in ids. We use the
 //        array classes for their [] operators that deal with interleaved
@@ -327,6 +294,8 @@ reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const con
 class Tile
 {
 public:
+    static const conduit::index_t INVALID_POINT;
+
     Tile() : ptids()
     {
     }
@@ -334,17 +303,17 @@ public:
     /// Reset the tile. 
     void reset(size_t npts)
     {
-        ptids = std::vector<int>(npts, -1);
+        ptids = std::vector<conduit::index_t>(npts, -1);
     }
 
     /// Return the point ids.
-          std::vector<int> &getPointIds() { return ptids; }
-    const std::vector<int> &getPointIds() const { return ptids; }
+          std::vector<conduit::index_t> &getPointIds() { return ptids; }
+    const std::vector<conduit::index_t> &getPointIds() const { return ptids; }
 
     /// Get the specified point ids for this tile using the supplied indices.
-    std::vector<int> getPointIds(const std::vector<int> &indices) const
+    std::vector<conduit::index_t> getPointIds(const std::vector<conduit::index_t> &indices) const
     {
-        std::vector<int> ids;
+        std::vector<conduit::index_t> ids;
         ids.reserve(indices.size());
         for(const auto &idx : indices)
            ids.push_back(ptids[idx]);
@@ -352,7 +321,7 @@ public:
     }
 
     // Set the point ids
-    void setPointIds(const std::vector<int> &indices, const std::vector<int> &ids)
+    void setPointIds(const std::vector<conduit::index_t> &indices, const std::vector<conduit::index_t> &ids)
     {
         for(size_t i = 0; i < indices.size(); i++)
         {
@@ -361,8 +330,10 @@ public:
     }
 
 private:
-    std::vector<int> ptids;  //!< This tile's point ids.
+    std::vector<conduit::index_t> ptids;  //!< This tile's point ids.
 };
+
+const conduit::index_t Tile::INVALID_POINT = -1;
 
 /**
  \brief Build a mesh from tiles. There is a default tile pattern, although it can
@@ -374,7 +345,7 @@ public:
     Tiler();
 
     /// Generate the tiled mesh.
-    void generate(int nx, int ny, int nz,
+    void generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                   conduit::Node &res,
                   const conduit::Node &options);
 protected:
@@ -385,16 +356,16 @@ protected:
     void initialize(const conduit::Node &t);
 
     /// Return point indices of points along left edge.
-    const std::vector<int> &left() const { return m_left; }
+    const std::vector<conduit::index_t> &left() const { return m_left; }
 
     /// Return point indices of points along right edge.
-    const std::vector<int> &right() const { return m_right; }
+    const std::vector<conduit::index_t> &right() const { return m_right; }
 
     /// Return point indices of points along bottom edge.
-    const std::vector<int> &bottom() const { return m_bottom; }
+    const std::vector<conduit::index_t> &bottom() const { return m_bottom; }
 
     /// Return point indices of points along top edge.
-    const std::vector<int> &top() const { return m_top; }
+    const std::vector<conduit::index_t> &top() const { return m_top; }
 
     /// Return tile width
     double width() const { return m_width; }
@@ -404,7 +375,7 @@ protected:
 
     /// Creates the points for the tile (if they need to be created).
     void addPoints(double origin[2],
-                   std::vector<int> &ptids,
+                   std::vector<conduit::index_t> &ptids,
                    std::vector<double> &x,
                    std::vector<double> &y)
     {
@@ -412,7 +383,7 @@ protected:
         // not been created yet.
         for(size_t i = 0; i < m_xpts.size(); i++)
         {
-            if(ptids[i] == -1)
+            if(ptids[i] == Tile::INVALID_POINT)
             {
                 ptids[i] = static_cast<int>(x.size());
                 x.push_back(origin[0] + m_xpts[i]);
@@ -422,9 +393,11 @@ protected:
     }
 
     /// Emit the quad cells using this tile's point ids.
-    void addFaces(const std::vector<int> &ptids,
-                  std::vector<int> &conn, std::vector<int> &sizes,
-                  int offset = 0, bool reverse = false) const
+    void addFaces(const std::vector<conduit::index_t> &ptids,
+                  std::vector<conduit::index_t> &conn,
+                  std::vector<conduit::index_t> &sizes,
+                  conduit::index_t offset = 0,
+                  bool reverse = false) const
     {
         const size_t nquads = m_quads.size() / 4;
         int order[] = {reverse ? 3 : 0, reverse ? 2 : 1, reverse ? 1 : 2, reverse ? 0 : 3};
@@ -439,7 +412,11 @@ protected:
     }
 
     /// Emit the hex cells using this tile's point ids.
-    void addHexs(const std::vector<int> &ptids, int plane1Offset, int plane2Offset, std::vector<int> &conn, std::vector<int> &sizes) const
+    void addHexs(const std::vector<conduit::index_t> &ptids,
+                 conduit::index_t plane1Offset,
+                 conduit::index_t plane2Offset,
+                 std::vector<conduit::index_t> &conn,
+                 std::vector<conduit::index_t> &sizes) const
     {
         const size_t nquads = m_quads.size() / 4;
         for(size_t i = 0; i < nquads; i++)
@@ -482,10 +459,10 @@ protected:
     }
 
     /// Turn a node into an int vector.
-    std::vector<int> toIntVector(const conduit::Node &n) const
+    std::vector<conduit::index_t> toIndexVector(const conduit::Node &n) const
     {
-        auto acc = n.as_int_accessor();
-        std::vector<int> vec;
+        auto acc = n.as_index_t_accessor();
+        std::vector<index_t> vec;
         vec.reserve(acc.number_of_elements());
         for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
             vec.push_back(acc[i]);
@@ -493,19 +470,28 @@ protected:
     }
 
     /// Make 2D boundaries.
-    void makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
-                          std::vector<int> &bconn, std::vector<int> &bsizes,
-                          std::vector<int> &btype, const conduit::Node &options) const;
+    void makeBoundaries2D(const std::vector<Tile> &tiles,
+                          conduit::index_t nx,
+                          conduit::index_t ny,
+                          std::vector<conduit::index_t> &bconn,
+                          std::vector<conduit::index_t> &bsizes,
+                          std::vector<int> &btype,
+                          const conduit::Node &options) const;
 
     /// Make 3D boundaries.
-    void makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
-                          size_t nPtsPerPlane,
-                          std::vector<int> &bconn, std::vector<int> &bsizes,
-                          std::vector<int> &btype, const conduit::Node &options) const;
+    void makeBoundaries3D(const std::vector<Tile> &tiles,
+                          conduit::index_t nx,
+                          conduit::index_t ny,
+                          conduit::index_t nz,
+                          conduit::index_t nPtsPerPlane,
+                          std::vector<conduit::index_t> &bconn,
+                          std::vector<conduit::index_t> &bsizes,
+                          std::vector<int> &btype,
+                          const conduit::Node &options) const;
 private:
     std::vector<double> m_xpts, m_ypts;
     double m_width, m_height;
-    std::vector<int> m_left, m_right, m_bottom, m_top, m_quads;
+    std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top, m_quads;
 };
 
 Tiler::Tiler() : m_xpts(), m_ypts(),  m_width(0.), m_height(0.),
@@ -542,7 +528,7 @@ Tiler::initialize()
         20., 20., 20., 20., 20.,
     };
 
-    m_quads = std::vector<int>{
+    m_quads = std::vector<conduit::index_t>{
         // lower-left quadrant
         0,1,6,5,
         1,2,9,6,
@@ -573,10 +559,10 @@ Tiler::initialize()
         26,27,32,31
     };
 
-    m_left = std::vector<int>{0,5,14,24,28};
-    m_right = std::vector<int>{4,8,18,27,32};
-    m_bottom = std::vector<int>{0,1,2,3,4};
-    m_top = std::vector<int>{28,29,30,31,32};
+    m_left = std::vector<conduit::index_t>{0,5,14,24,28};
+    m_right = std::vector<conduit::index_t>{4,8,18,27,32};
+    m_bottom = std::vector<conduit::index_t>{0,1,2,3,4};
+    m_top = std::vector<conduit::index_t>{28,29,30,31,32};
 
     m_width = computeExtents(m_xpts);
     m_height = computeExtents(m_ypts);
@@ -587,11 +573,11 @@ Tiler::initialize(const conduit::Node &t)
 {
     m_xpts = toDoubleVector(t.fetch_existing("x"));
     m_ypts = toDoubleVector(t.fetch_existing("y"));
-    m_quads = toIntVector(t.fetch_existing("quads"));
-    m_left = toIntVector(t.fetch_existing("left"));
-    m_right = toIntVector(t.fetch_existing("right"));
-    m_bottom = toIntVector(t.fetch_existing("bottom"));
-    m_top = toIntVector(t.fetch_existing("top"));
+    m_quads = toIndexVector(t.fetch_existing("quads"));
+    m_left = toIndexVector(t.fetch_existing("left"));
+    m_right = toIndexVector(t.fetch_existing("right"));
+    m_bottom = toIndexVector(t.fetch_existing("bottom"));
+    m_top = toIndexVector(t.fetch_existing("top"));
 
     m_width = computeExtents(m_xpts);
     m_height = computeExtents(m_ypts);
@@ -608,13 +594,14 @@ Tiler::initialize(const conduit::Node &t)
  \param options A node that may contain additional control options.
  */
 void
-Tiler::generate(int nx, int ny, int nz,
+Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     conduit::Node &res,
     const conduit::Node &options)
 {
     double origin[] = {0., 0., 0.};
     std::vector<double> x, y, z;
-    std::vector<int> conn, sizes, bconn, bsizes, btype;
+    std::vector<conduit::index_t> conn, sizes, bconn, bsizes;
+    std::vector<int> btype;
 
     // Process any options.
     if(options.has_path("origin/x"))
@@ -627,7 +614,7 @@ Tiler::generate(int nx, int ny, int nz,
         initialize(options.fetch_existing("tile"));
 #if 1
     // Make cell centers for each tile and record that no tiles have been visited.
-    int ncells = nx * ny;
+    conduit::index_t ncells = nx * ny;
     std::vector<int> visited(ncells, 0);
     std::vector<double> cx(ncells), cy(ncells);
     for(int j = 0, idx = 0; j < ny; j++)
@@ -644,32 +631,33 @@ Tiler::generate(int nx, int ny, int nz,
 
     // Traverse the cells in the desired spatial order.
     std::vector<Tile> tiles(nx * ny);
-    for(const int idx : spatial_sort.getIndices())
+    constexpr conduit::index_t invalidIndex = -1;
+    for(const auto idx : spatial_sort.getIndices())
     {
         // The first time we've used the tile, set its size.
         Tile &current = tiles[idx];
         current.reset(m_xpts.size());
 
         // Copy neighbor points to the current tile if we can.
-        int i = idx % nx;
-        int j = idx / nx;
-        int left_idx = (i > 0) ? (idx - 1) : -1;
-        int right_idx = (i < nx-1) ? (idx + 1) : -1;
-        int bottom_idx = (j > 0) ? (idx - nx) : -1;
-        int top_idx = (j < ny-1) ? (idx + nx) : -1;
-        if(left_idx != -1 && visited[left_idx])
+        conduit::index_t i = idx % nx;
+        conduit::index_t j = idx / nx;
+        conduit::index_t left_idx = (i > 0) ? (idx - 1) : invalidIndex;
+        conduit::index_t right_idx = (i < nx - 1) ? (idx + 1) : invalidIndex;
+        conduit::index_t bottom_idx = (j > 0) ? (idx - nx) : invalidIndex;
+        conduit::index_t top_idx = (j < ny - 1) ? (idx + nx) : invalidIndex;
+        if(left_idx != invalidIndex && visited[left_idx])
         {
             current.setPointIds(left(), tiles[left_idx].getPointIds(right()));
         }
-        if(right_idx != -1 && visited[right_idx])
+        if(right_idx != invalidIndex && visited[right_idx])
         {
             current.setPointIds(right(), tiles[right_idx].getPointIds(left()));
         }
-        if(bottom_idx != -1 && visited[bottom_idx])
+        if(bottom_idx != invalidIndex && visited[bottom_idx])
         {
             current.setPointIds(bottom(), tiles[bottom_idx].getPointIds(top()));
         }
-        if(top_idx != -1 && visited[top_idx])
+        if(top_idx != invalidIndex && visited[top_idx])
         {
             current.setPointIds(top(), tiles[top_idx].getPointIds(bottom()));
         }
@@ -685,10 +673,10 @@ Tiler::generate(int nx, int ny, int nz,
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
     double newOrigin[] = {origin[0], origin[1], origin[2]};
-    for(int j = 0; j < ny; j++)
+    for(conduit::index_t j = 0; j < ny; j++)
     {
         newOrigin[0] = origin[0];
-        for(int i = 0; i < nx; i++)
+        for(conduit::index_t i = 0; i < nx; i++)
         {
             Tile &current = tiles[(j*nx + i)];
 
@@ -719,14 +707,14 @@ Tiler::generate(int nx, int ny, int nz,
         // TODO: reserve size for conn, sizes
 #if 1
         // Add the cells in spatial sort order.
-        for(const int idx : spatial_sort.getIndices())
+        for(const auto idx : spatial_sort.getIndices())
         {
             addFaces(tiles[idx].getPointIds(), conn, sizes);
         }
 #else
-        for(int j = 0; j < ny; j++)
+        for(conduit::index_t j = 0; j < ny; j++)
         {
-            for(int i = 0; i < nx; i++)
+            for(conduit::index_t i = 0; i < nx; i++)
             {
                 Tile &current = tiles[(j*nx + i)];
                 addFaces(current.getPointIds(), conn, sizes);
@@ -754,17 +742,17 @@ Tiler::generate(int nx, int ny, int nz,
     {
         // We have x,y points now. We need to replicate them to make multiple planes.
         // We make z coordinates too.
-        size_t ptsPerPlane = x.size();
-        int nplanes = nz + 1;
+        conduit::index_t ptsPerPlane = static_cast<conduit::index_t>(x.size());
+        conduit::index_t nplanes = nz + 1;
         x.reserve(ptsPerPlane * nplanes);
         y.reserve(ptsPerPlane * nplanes);
         z.reserve(ptsPerPlane * nplanes);
-        for(size_t i = 0; i < ptsPerPlane; i++)
+        for(conduit::index_t i = 0; i < ptsPerPlane; i++)
             z.push_back(origin[2]);
-        for(int p = 1; p < nplanes; p++)
+        for(conduit::index_t p = 1; p < nplanes; p++)
         {
             double zvalue = origin[2] + static_cast<double>(p) * std::max(width(), height());
-            for(size_t i = 0; i < ptsPerPlane; i++)
+            for(conduit::index_t i = 0; i < ptsPerPlane; i++)
             {
                 x.push_back(x[i]);
                 y.push_back(y[i]);
@@ -774,14 +762,14 @@ Tiler::generate(int nx, int ny, int nz,
 
         // Iterate over the tiles and add their hexs.
         // TODO: reserve size for conn, sizes
-        for(int k = 0; k < nz; k++)
+        for(conduit::index_t k = 0; k < nz; k++)
         {
-            int offset1 = k * ptsPerPlane;
-            int offset2 = offset1 + ptsPerPlane;
+            conduit::index_t offset1 = k * ptsPerPlane;
+            conduit::index_t offset2 = offset1 + ptsPerPlane;
 
-            for(int j = 0; j < ny; j++)
+            for(conduit::index_t j = 0; j < ny; j++)
             {
-                for(int i = 0; i < nx; i++)
+                for(conduit::index_t i = 0; i < nx; i++)
                 {
                     Tile &current = tiles[(j*nx + i)];
                     addHexs(current.getPointIds(), offset1, offset2, conn, sizes);
@@ -826,9 +814,9 @@ Tiler::generate(int nx, int ny, int nz,
 
         // Reorder the mesh in 3D. NOTE: boundaries would have to be fixed because
         // of the changes to node ordering, which we'd have to pass out the node ordering.
-        const auto reorder = spatial_reordering(res["topologies/mesh"]);
+        const auto reorder = conduit::blueprint::mesh::utils::topology::spatial_ordering(res["topologies/mesh"]);
         reorder_topo(res["topologies/mesh"], res["coordsets/coords"], res["fields"],
-                     res["topologies/rmesh"], res["coordsets/rcoords"], res["rfields"],
+                     res["topologies/rmesh"], res["coordsets/rcoords"], res["fields"],
                      reorder);
 
 conduit::Node opts;
@@ -840,13 +828,17 @@ std::cout << res.to_summary_string(opts) << std::endl;
 }
 
 void
-Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
-    std::vector<int> &bconn, std::vector<int> &bsizes, std::vector<int> &btype,
+Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
+    conduit::index_t nx,
+    conduit::index_t ny,
+    std::vector<conduit::index_t> &bconn,
+    std::vector<conduit::index_t> &bsizes,
+    std::vector<int> &btype,
     const conduit::Node &options) const
 {
     if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
     {
-        for(int i = 0, j = ny-1; j >= 0; j--)
+        for(conduit::index_t i = 0, j = ny-1; j >= 0; j--)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(left());
@@ -861,7 +853,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
     }
     if(options.has_path("boundaries/bottom") && options.fetch_existing("boundaries/bottom").to_int() > 0)
     {
-        for(int i = 0, j = 0; i < nx; i++)
+        for(conduit::index_t i = 0, j = 0; i < nx; i++)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(bottom());
@@ -876,7 +868,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
     }
     if(options.has_path("boundaries/right") && options.fetch_existing("boundaries/right").to_int() > 0)
     {
-        for(int i = nx - 1, j = 0; j < ny; j++)
+        for(conduit::index_t i = nx - 1, j = 0; j < ny; j++)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(right());
@@ -891,7 +883,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
     }
     if(options.has_path("boundaries/top") && options.fetch_existing("boundaries/top").to_int() > 0)
     {
-        for(int i = nx - 1, j = ny - 1; i >= 0; i--)
+        for(conduit::index_t i = nx - 1, j = ny - 1; i >= 0; i--)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(top());
@@ -907,18 +899,23 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles, int nx, int ny,
 }
 
 void
-Tiler::makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
-    size_t nPtsPerPlane,
-    std::vector<int> &bconn, std::vector<int> &bsizes, std::vector<int> &btype,
+Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
+    conduit::index_t nx,
+    conduit::index_t ny,
+    conduit::index_t nz,
+    conduit::index_t nPtsPerPlane,
+    std::vector<conduit::index_t> &bconn,
+    std::vector<conduit::index_t> &bsizes,
+    std::vector<int> &btype,
     const conduit::Node &options) const
 {
     if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
     {
-        for(int k = 0; k < nz; k++)
+        for(conduit::index_t k = 0; k < nz; k++)
         {
-            int offset1 = k * nPtsPerPlane;
-            int offset2 = (k + 1) * nPtsPerPlane;
-            for(int i = 0, j = ny-1; j >= 0; j--)
+            conduit::index_t offset1 = k * nPtsPerPlane;
+            conduit::index_t offset2 = (k + 1) * nPtsPerPlane;
+            for(conduit::index_t i = 0, j = ny-1; j >= 0; j--)
             {
                 const Tile &current = tiles[(j*nx + i)];
                 const auto ids = current.getPointIds(left());
@@ -936,11 +933,11 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
     }
     if(options.has_path("boundaries/right") && options.fetch_existing("boundaries/right").to_int() > 0)
     {
-        for(int k = 0; k < nz; k++)
+        for(conduit::index_t k = 0; k < nz; k++)
         {
-            int offset1 = k * nPtsPerPlane;
-            int offset2 = (k + 1) * nPtsPerPlane;
-            for(int i = nx - 1, j = 0; j < ny; j++)
+            conduit::index_t offset1 = k * nPtsPerPlane;
+            conduit::index_t offset2 = (k + 1) * nPtsPerPlane;
+            for(conduit::index_t i = nx - 1, j = 0; j < ny; j++)
             {
                 const Tile &current = tiles[(j*nx + i)];
                 const auto ids = current.getPointIds(right());
@@ -958,11 +955,11 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
     }
     if(options.has_path("boundaries/bottom") && options.fetch_existing("boundaries/bottom").to_int() > 0)
     {
-        for(int k = 0; k < nz; k++)
+        for(conduit::index_t k = 0; k < nz; k++)
         {
-            int offset1 = k * nPtsPerPlane;
-            int offset2 = (k + 1) * nPtsPerPlane;
-            for(int i = 0, j = 0; i < nx; i++)
+            conduit::index_t offset1 = k * nPtsPerPlane;
+            conduit::index_t offset2 = (k + 1) * nPtsPerPlane;
+            for(conduit::index_t i = 0, j = 0; i < nx; i++)
             {
                 const Tile &current = tiles[(j*nx + i)];
                 const auto ids = current.getPointIds(bottom());
@@ -980,11 +977,11 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
     }
     if(options.has_path("boundaries/top") && options.fetch_existing("boundaries/top").to_int() > 0)
     {
-        for(int k = 0; k < nz; k++)
+        for(conduit::index_t k = 0; k < nz; k++)
         {
-            int offset1 = k * nPtsPerPlane;
-            int offset2 = (k + 1) * nPtsPerPlane;
-            for(int i = nx - 1, j = ny - 1; i >= 0; i--)
+            conduit::index_t offset1 = k * nPtsPerPlane;
+            conduit::index_t offset2 = (k + 1) * nPtsPerPlane;
+            for(conduit::index_t i = nx - 1, j = ny - 1; i >= 0; i--)
             {
                 const Tile &current = tiles[(j*nx + i)];
                 const auto ids = current.getPointIds(top());
@@ -1002,8 +999,8 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
     }
     if(options.has_path("boundaries/back") && options.fetch_existing("boundaries/back").to_int() > 0)
     {
-        for(int j = 0; j < ny; j++)
-        for(int i = nx - 1; i >= 0; i--)
+        for(conduit::index_t j = 0; j < ny; j++)
+        for(conduit::index_t i = nx - 1; i >= 0; i--)
         {
            const Tile &current = tiles[(j*nx + i)];
            size_t s0 = bsizes.size();
@@ -1014,8 +1011,8 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles, int nx, int ny, int nz,
     }
     if(options.has_path("boundaries/front") && options.fetch_existing("boundaries/front").to_int() > 0)
     {
-        for(int j = 0; j < ny; j++)
-        for(int i = 0; i < nx; i++)
+        for(conduit::index_t j = 0; j < ny; j++)
+        for(conduit::index_t i = 0; i < nx; i++)
         {
            const Tile &current = tiles[(j*nx + i)];
            size_t s0 = bsizes.size();
