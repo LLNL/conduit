@@ -323,7 +323,7 @@ class SiloTreePathGenerator
 {
 private:
     bool nameschemes;
-    // TODO more work is required to support nameschemes
+    // TODO_LATER more work is required to support nameschemes
 
 public:
     SiloTreePathGenerator(bool nameschemes_on) : nameschemes(nameschemes_on) {}
@@ -588,19 +588,19 @@ add_shape_info(DBzonelist *zones,
         }
     }
 
-    // TODO polytopal support
+    // TODO_LATER polytopal support
     if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
         CONDUIT_ERROR("Polyhedra not yet supported");
         elements["sizes"].set(zones->shapesize, zones->nzones);
-        // TODO double check this approach
+        // TODO_LATER double check this approach
         add_offsets(zones, elements["subelements"]); 
     }
     if (zones->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
         CONDUIT_ERROR("Polygons not yet supported");
-        // TODO zones->shapesize is NOT zones->nzones elements long; see docs
-        // TODO need to loop over the shapes array and expand it out to resemble the blueprint approach
+        // TODO_LATER zones->shapesize is NOT zones->nzones elements long; see docs
+        // TODO_LATER need to loop over the shapes array and expand it out to resemble the blueprint approach
         elements["sizes"].set(zones->shapesize, zones->nzones);
         add_offsets(zones, elements);
     }
@@ -624,7 +624,7 @@ read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
     }
     else if (ucdmesh_ptr->phzones)
     {
-        // TODO implement support for phzones
+        // TODO_LATER implement support for phzones
         CONDUIT_ERROR("Silo ucdmesh phzones not yet supported");
         mesh_domain["topologies"][multimesh_name]["elements"]["shape"] =
             shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
@@ -904,7 +904,12 @@ read_variable_domain_mixvals(const T *var_ptr,
     CONDUIT_ASSERT(mesh_out.has_child("matsets"),
         "Missing matset despite field " << var_name << "requiring one.");
 
-    // TODO put note about how we are only ever reading one topo
+    // In silo, for each mesh, there can only be one matset, because otherwise
+    // it would be ambiguous. In Blueprint, we can allow multiple matsets per
+    // topo, because the fields explicitly link to the matset they use.
+    // Right now, we only ever read one mesh, meaning that there can only
+    // be one matset in our newly created blueprint mesh. Therefore, we must
+    // assert that there is only one matset.
     CONDUIT_ASSERT(mesh_out["matsets"].number_of_children() == 1,
         "This mesh has multiple matsets, which is ambiguous.");
 
@@ -1362,7 +1367,7 @@ read_multimesh(DBfile *dbfile,
     {
         nameschemes = true;
     }
-    // TODO nameschemes
+    // TODO_LATER nameschemes
     if (nameschemes)
     {
         root_node[multimesh_name]["nameschemes"] = "yes";
@@ -1449,7 +1454,7 @@ read_multivars(DBtoc *toc,
                 continue;
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
-            // TODO nameschemes
+            // TODO_LATER nameschemes
             if (nameschemes)
             {
                 var["nameschemes"] = "yes";
@@ -1536,7 +1541,7 @@ read_multimats(DBtoc *toc,
                 continue;
             }
             Node &material = root_node[multimesh_name]["matsets"][multimat_name];
-            // TODO nameschemes
+            // TODO_LATER nameschemes
             if (nameschemes)
             {
                 material["nameschemes"] = "yes";
@@ -1835,7 +1840,7 @@ read_mesh(const std::string &root_file_path,
         mesh_index["nameschemes"].as_string() == "yes")
     {
         mesh_nameschemes = true;
-        CONDUIT_ERROR("TODO no support for nameschemes yet");
+        CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
     }
     detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
 
@@ -1931,7 +1936,7 @@ read_mesh(const std::string &root_file_path,
                     n_matset["nameschemes"].as_string() == "yes")
                 {
                     matset_nameschemes = true;
-                    CONDUIT_ERROR("TODO no support for nameschemes yet");
+                    CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
                 }
                 detail::SiloTreePathGenerator matset_path_gen{matset_nameschemes};
 
@@ -1987,7 +1992,7 @@ read_mesh(const std::string &root_file_path,
                     n_var["nameschemes"].as_string() == "yes")
                 {
                     var_nameschemes = true;
-                    CONDUIT_ERROR("TODO no support for nameschemes yet");
+                    CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
                 }
                 detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
 
@@ -2172,14 +2177,14 @@ void silo_write_field(DBfile *dbfile,
         CONDUIT_ERROR("Unknown association in " << association);
     }
 
-    if (!n_var.has_path("values"))
-    {
-        CONDUIT_ERROR("Missing field data ! "
-                      << "fields/" << var_name << "/values");
-    }
+    // perhaps in the future we will support the material-dependent case. It 
+    // requires doing extra math to reconstruct the per-element values so we 
+    // can send them to silo.
+    CONDUIT_ASSERT(n_var.has_path("values"), 
+        "Missing values for field " << var_name << 
+        ". Material dependent fields are not supported.");
 
     // we compact to support a strided array cases
-    // TODO will we have a case where there are no values??????? - YES
     Node n_values;
     n_var["values"].compact_to(n_values);
 
@@ -2243,16 +2248,6 @@ void silo_write_field(DBfile *dbfile,
         comp_vals_ptrs.push_back(n_values.element_ptr(0));
     }
 
-    std::string safe_meshname;
-    if (overlink)
-    {
-        safe_meshname = "MESH";
-    }
-    else
-    {
-        safe_meshname = detail::sanitize_silo_varname(topo_name);
-    }
-
     Node silo_matset;
     std::vector<void *> mixvars_ptr(nvars);
     int mixlen = 0;
@@ -2291,6 +2286,8 @@ void silo_write_field(DBfile *dbfile,
     }
 
     // TODO any time you are sending arrays to silo make sure they are compact
+
+    std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int var_type;
     int silo_error = 0;
@@ -2607,7 +2604,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
     else
     {
-        // TODO add polygons and polyhedra and mixed
+        // TODO_LATER add polygons and polyhedra and mixed
         CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
     }
 
@@ -2732,7 +2729,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 {
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
-    // TODO there is a different approach for polyhedral zone lists
+    // TODO_LATER there is a different approach for polyhedral zone lists
     std::string zlist_name = topo_name + "_connectivity";
 
     std::string safe_meshname;
@@ -3316,12 +3313,27 @@ void silo_mesh_write(const Node &n,
 
     if (n.has_path("matsets")) 
     {
+        // We want to enforce that there is only one matset per topo
+        // that we save out to silo. Multiple matsets for a topo is 
+        // supported in blueprint, but in silo it is ambiguous, as
+        // silo provides no link from fields back to matsets. Therefore
+        // we enforce one matset per topo.
+
+        // the names of the topos the matsets are associated with
+        std::set<std::string> topo_names;
         auto itr = n["matsets"].children();
         while (itr.has_next())
         {
             const Node &n_matset = itr.next();
-            std::string matset_name = itr.name();
-            if (! overlink || n_matset["topology"].as_string() == ovl_topo_name)
+            const std::string matset_name = itr.name();
+            
+            const std::string topo_name = n_matset["topology"].as_string();
+            CONDUIT_ASSERT(topo_names.find(topo_name) == topo_names.end(),
+                "There are multiple matsets that belong to the same topology. "
+                << "For topo " << topo_name << ". This is ambiguous in silo.");
+            topo_names.insert(topo_name);
+            
+            if (! overlink || topo_name == ovl_topo_name)
             {
                 silo_write_matset(dbfile,
                                   matset_name,
@@ -3342,7 +3354,7 @@ void silo_mesh_write(const Node &n,
         while (itr.has_next())
         {
             const Node &n_var = itr.next();
-            std::string var_name = itr.name();
+            const std::string var_name = itr.name();
             if (! overlink || n_var["topology"].as_string() == ovl_topo_name)
             {
                 silo_write_field(dbfile,
@@ -3599,7 +3611,7 @@ void write_multimesh(DBfile *dbfile,
                                  " creating state optlist (time, cycle) ");
     }
 
-    // TODO add dboptions for nameschemes
+    // TODO_LATER add dboptions for nameschemes
 
     CONDUIT_CHECK_SILO_ERROR(
         DBPutMultimesh(
@@ -3818,7 +3830,7 @@ write_multimats(DBfile *dbfile,
                 std::string multimesh_name, multimat_name;
                 if (overlink)
                 {
-                    // TODO is this the right choice for overlink?
+                    // TODO_LATER is this the right choice for overlink?
                     multimesh_name = opts_mesh_name;
                     multimat_name = safe_matset_name;
                 }
@@ -3972,7 +3984,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     {
         opts_silo_type = opts["silo_type"].as_string();
 
-        // TODO if we were to add additional silo_type options in the future,
+        // TODO_LATER if we were to add additional silo_type options in the future,
         // they would need to be added here.
         if(opts_silo_type != "default" && 
            opts_silo_type != "pdb" &&
@@ -4003,7 +4015,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
     {
         silo_type = DB_UNKNOWN;
     }
-    // TODO these are the additional silo_type options we could add support 
+    // TODO_LATER these are the additional silo_type options we could add support 
     // for in the future.
     // else if (opts_silo_type == "hdf5_sec2")
     // {
