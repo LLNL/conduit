@@ -6,7 +6,11 @@
 "spack_configs_path": "scripts/uberenv_configs/spack_configs",
 "spack_packages_path": "scripts/uberenv_configs/packages",
 "spack_skip_externals": "true",
-"spack_externals_exclude": "python hdf5",
 "spack_url": "https://github.com/spack/spack",
-"spack_commit": "e8658d6493887ef702dd38f0e9ee5870a1651c1e"
+"spack_commit": "e8658d6493887ef702dd38f0e9ee5870a1651c1e",
+"spack_host_config_patches":
+ {
+   "PYTHON_EXECUTABLE": "view/python*/bin/python3",
+   "SPHINX_EXECUTABLE": "view/python*/bin/sphinx-build"
+ }
 }

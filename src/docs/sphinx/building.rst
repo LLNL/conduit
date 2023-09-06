@@ -347,34 +347,12 @@ To build and install Conduit's github develop branch run:
   spack install conduit@develop
 
 
-The Conduit Spack package provides several `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ that customize the options and dependencies used to build Conduit:
+The Conduit Spack package provides several `variants <http://spack.readthedocs.io/en/latest/basic_usage.html#specs-dependencies>`_ that customize the options and dependencies used to build Conduit.
+To see these variants, please rune
 
-    Name [Default]          When                              Allowed values          Description
-    ====================    ==============================    ====================    ==================================================
+.. code:: bash
 
-    blt_find_mpi [on]       --                                on, off                 Use BLT CMake Find MPI logic
-    build_system [cmake]    --                                cmake                   Build systems supported by the package
-    build_type [Release]    [build_system=cmake]              Debug, Release,         CMake build type
-                                                              RelWithDebInfo,         
-                                                              MinSizeRel              
-    caliper [off]           --                                on, off                 Build Conduit Caliper support
-    doc [off]               --                                on, off                 Build Conduit's documentation
-    doxygen [off]           --                                on, off                 Build Conduit's Doxygen documentation
-    examples [on]           --                                on, off                 Build Conduit examples
-    fortran [on]            --                                on, off                 Build Conduit Fortran support
-    generator [make]        [build_system=cmake]              ninja,make              the build system generator to use
-    hdf5 [on]               --                                on, off                 Build Conduit HDF5 support
-    hdf5_compat [on]        [+hdf5]                           on, off                 Build Conduit with HDF5 1.8.x (compatibility mode)
-    ipo [off]               [build_system=cmake               on, off                 CMake interprocedural optimization
-                            ^cmake@3.9:]                                              
-    mpi [on]                --                                on, off                 Build Conduit MPI Support
-    parmetis [on]           --                                on, off                 Build Conduit Parmetis support
-    python [off]            --                                on, off                 Build Conduit Python support
-    shared [on]             --                                on, off                 Build Conduit as shared libs
-    silo [off]              --                                on, off                 Build Conduit Silo support
-    test [on]               --                                on, off                 Enable Conduit unit tests
-    utilities [on]          --                                on, off                 Build Conduit utilities
-    zfp [off]               --                                on, off                 Build Conduit ZFP support
+  spack info conduit
 
 Variants are enabled using ``+`` and disabled using ``~``. For example, to build Conduit with the minimum set of options (and dependencies) run:
 
