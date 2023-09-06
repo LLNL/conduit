@@ -381,18 +381,22 @@ TEST(conduit_relay_io_silo, round_trip_venn)
                 save_mesh["coordsets"]["coords"].remove_child("params");
             }
 
-            // std::cout << "save_mesh" << std::endl;
-            // save_mesh.print();
-            // std::cout << "load_mesh" << std::endl;
-            // load_mesh.print();
+            // // std::cout << "save_mesh" << std::endl;
+            // // save_mesh.print();
+            // // std::cout << "load_mesh" << std::endl;
+            // // load_mesh.print();
 
+            // std::cout << save_mesh["fields/importance"].to_yaml() << std::endl;
+            // // std::cout << save_mesh["matsets"].to_yaml() << std::endl;
+
+            // Node silo_matset;
+            // conduit::blueprint::mesh::field::to_silo(save_mesh["fields/importance"], save_mesh["matsets/matset"], silo_matset);
+            // std::cout << silo_matset.to_yaml() << std::endl;
+
+            std::cout << "=========================================" << std::endl;
             std::cout << save_mesh["fields/importance"].to_yaml() << std::endl;
-            std::cout << save_mesh["matsets"].to_yaml() << std::endl;
-
-            Node silo_matset;
-            conduit::blueprint::mesh::field::to_silo(save_mesh["fields/importance"], save_mesh["matsets/matset"], silo_matset);
-            std::cout << silo_matset.to_yaml() << std::endl;
-
+            std::cout << load_mesh[0]["fields/mesh_importance"].to_yaml() << std::endl;
+            std::cout << "=========================================" << std::endl;
 
             // std::cout << "save_mesh" << std::endl;
             // std::cout << save_mesh.to_yaml() << std::endl;
@@ -409,7 +413,7 @@ TEST(conduit_relay_io_silo, round_trip_venn)
 
             EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 
-            std::cout << info.to_yaml() << std::endl;
+            // std::cout << info.to_yaml() << std::endl;
         }
     }
 }

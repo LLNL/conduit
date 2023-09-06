@@ -833,53 +833,111 @@ assign_values(int datatype,
               int nvals,
               int nels,
               void **vals,
-              Node &field_out,
-              std::string where)
+              Node &field_out)
 {
     if (datatype == DB_INT)
     {
-        assign_values_helper<int>(nvals, nels, vals, field_out[where]);
+        assign_values_helper<int>(nvals, nels, vals, field_out);
     }
     else if (datatype == DB_SHORT)
     {
-        assign_values_helper<short>(nvals, nels, vals, field_out[where]);
+        assign_values_helper<short>(nvals, nels, vals, field_out);
     }
     else if (datatype == DB_LONG)
     {
-        assign_values_helper<long>(nvals, nels, vals, field_out[where]);
+        assign_values_helper<long>(nvals, nels, vals, field_out);
     }
     else if (datatype == DB_FLOAT)
     {
-        assign_values_helper<float>(nvals, nels, vals, field_out[where]);
+        assign_values_helper<float>(nvals, nels, vals, field_out);
     }
     else if (datatype == DB_DOUBLE)
     {
-        assign_values_helper<double>(nvals, nels, vals, field_out[where]);
+        assign_values_helper<double>(nvals, nels, vals, field_out);
     }
     else if (datatype == DB_CHAR)
     {
         // implementation taken from assign_values_helper
         if (nvals == 1)
         {
-            field_out[where].set_char_ptr(static_cast<char *>(vals[0]), nels);
+            field_out.set_char_ptr(static_cast<char *>(vals[0]), nels);
         }
         else
         {
             for (int i = 0; i < nvals; i ++)
             {
                 // need to put the values under a vector component
-                field_out[where][std::to_string(i)].set_char_ptr(static_cast<char *>(vals[0]), nels);
+                field_out[std::to_string(i)].set_char_ptr(static_cast<char *>(vals[0]), nels);
             }
         }
     }
     else if (datatype == DB_LONG_LONG)
     {
-        assign_values_helper<long long>(nvals, nels, vals, field_out[where]);
+        assign_values_helper<long long>(nvals, nels, vals, field_out);
     }
     else
     {
         CONDUIT_ERROR("Unsupported type in " << datatype);
     }
+}
+
+//-----------------------------------------------------------------------------
+template <typename T>
+void
+read_matset_values(const Node &silo_mixvals,
+                   const Node &matset_field_reconstruction,
+                   Node &field_out)
+{
+    std::vector<T> matset_values;
+
+    silo_mixvals.print();
+
+    const T *silo_mixvals_ptr = silo_mixvals.value();
+    const T *bp_field_vals    = field_out["values"].value();
+
+    int_accessor recipe = matset_field_reconstruction["recipe"].value();
+    int_accessor sizes  = matset_field_reconstruction["sizes"].value();
+
+    int num_elems = matset_field_reconstruction["sizes"].dtype().number_of_elements();
+    int bp_vals_index = 0;
+    int recipe_index = 0;
+
+    // iterate thru the zones
+    for (int i = 0; i < num_elems; i ++)
+    {
+        // this is not a mixed zone
+        if (sizes[i] == 1) // and recipe[i] == -1
+        {
+            // we can simply copy from the field values
+            matset_values.push_back(bp_field_vals[bp_vals_index]);
+            // we have advanced thru one bp field value
+            bp_vals_index ++;
+            // we have advanced thru one recipe value
+            recipe_index ++;
+        }
+        // this zone is mixed
+        else
+        {
+            // fetch how many materials are in the zone
+            int size = sizes[i];
+            // we want to copy one value for every material
+            while (size > 0)
+            {
+                // the recipe contains the index of the silo mixval we want
+                int silo_mixval_index = recipe[recipe_index];
+                // we grab that mixval and save it
+                matset_values.push_back(silo_mixvals_ptr[silo_mixval_index]);
+                // we have advanced thru one recipe value
+                recipe_index ++;
+                // advanced thru one material
+                size --;
+            }
+            // we have only advanced thru one bp field value b/c the zone was mixed
+            bp_vals_index ++;
+        }
+    }
+
+    field_out["matset_values"].set(matset_values.data(), matset_values.size());
 }
 
 //-----------------------------------------------------------------------------
@@ -889,7 +947,8 @@ void
 read_variable_domain_mixvals(const T *var_ptr,
                              const std::string &var_name,
                              Node &mesh_out,
-                             Node &field_out)
+                             Node &field_out,
+                             const Node &matset_field_reconstruction)
 {
     if (var_ptr->mixlen <= 0)
     {
@@ -910,18 +969,69 @@ read_variable_domain_mixvals(const T *var_ptr,
     // Right now, we only ever read one mesh, meaning that there can only
     // be one matset in our newly created blueprint mesh. Therefore, we must
     // assert that there is only one matset.
+    // TODO I can check for this way sooner
     CONDUIT_ASSERT(mesh_out["matsets"].number_of_children() == 1,
         "This mesh has multiple matsets, which is ambiguous.");
 
     const std::string matset_name = mesh_out["matsets"].children().next().name();
     field_out["matset"].set(matset_name);
 
+    Node silo_mixvals;
     assign_values(var_ptr->datatype,
                   var_ptr->nvals,
                   var_ptr->mixlen,
                   var_ptr->mixvals,
-                  field_out,
-                  "matset_values");
+                  silo_mixvals);
+
+    // TODO make sure matset_field_reconstruction has just the one matset
+
+    if (var_ptr->datatype == DB_INT)
+    {
+        read_matset_values<int>(silo_mixvals,
+                                matset_field_reconstruction,
+                                field_out);
+    }
+    else if (var_ptr->datatype == DB_SHORT)
+    {
+        read_matset_values<short>(silo_mixvals,
+                                  matset_field_reconstruction,
+                                  field_out);
+    }
+    else if (var_ptr->datatype == DB_LONG)
+    {
+        read_matset_values<long>(silo_mixvals,
+                                 matset_field_reconstruction,
+                                 field_out);
+    }
+    else if (var_ptr->datatype == DB_FLOAT)
+    {
+        read_matset_values<float>(silo_mixvals,
+                                  matset_field_reconstruction,
+                                  field_out);
+    }
+    else if (var_ptr->datatype == DB_DOUBLE)
+    {
+        read_matset_values<double>(silo_mixvals,
+                                   matset_field_reconstruction,
+                                   field_out);
+    }
+    // TODO
+    // else if (var_ptr->datatype == DB_CHAR)
+    // {
+    //     read_matset_values<char>(silo_mixvals,
+    //                              matset_field_reconstruction,
+    //                              field_out);
+    // }
+    else if (var_ptr->datatype == DB_LONG_LONG)
+    {
+        read_matset_values<long long>(silo_mixvals,
+                                      matset_field_reconstruction,
+                                      field_out);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unsupported type in " << var_ptr->datatype);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -991,8 +1101,7 @@ read_variable_domain_helper(const T *var_ptr,
                   var_ptr->nvals,
                   var_ptr->nels,
                   var_ptr->vals,
-                  field_out,
-                  "values");
+                  field_out["values"]);
 
     return true;
 }
@@ -1005,7 +1114,8 @@ read_variable_domain(const int vartype,
                      const std::string &multimesh_name,
                      const std::string &multivar_name,
                      const std::string &bottom_level_mesh_name,
-                     conduit::Node &mesh_out)
+                     Node &mesh_out,
+                     const Node &matset_field_reconstruction)
 {
     if (vartype == DB_UCDVAR)
     {
@@ -1022,7 +1132,8 @@ read_variable_domain(const int vartype,
         }
         
         read_variable_domain_mixvals<DBucdvar>(ucdvar.getSiloObject(), 
-            var_name, mesh_out, mesh_out["fields"][multivar_name]);
+            var_name, mesh_out, mesh_out["fields"][multivar_name],
+            matset_field_reconstruction);
     }
     else if (vartype == DB_QUADVAR)
     {
@@ -1039,7 +1150,8 @@ read_variable_domain(const int vartype,
         }
 
         read_variable_domain_mixvals<DBquadvar>(quadvar.getSiloObject(), 
-            var_name, mesh_out, mesh_out["fields"][multivar_name]);
+            var_name, mesh_out, mesh_out["fields"][multivar_name],
+            matset_field_reconstruction);
     }
     else if (vartype == DB_POINTVAR)
     {
@@ -1070,8 +1182,11 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                    const std::string &multimesh_name,
                    const std::string &multimat_name,
                    const std::string &bottom_level_mesh_name,
-                   conduit::Node &mesh_out)
+                   Node &mesh_out,
+                   Node &matset_field_reconstruction)
 {
+    // TODO remove conduit::Node from everywhere
+
     // create silo matset
     detail::SiloObjectWrapper<DBmaterial, decltype(&DBFreeMaterial)> material{
         DBGetMaterial(matset_domain_file_to_use, matset_name.c_str()),
@@ -1127,11 +1242,19 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     std::vector<int> offsets;
     int curr_offset = 0;
 
+    // The field reconstruction recipe is an array that will help us to
+    // reconstruct the blueprint matset_values for any fields that use
+    // this matset. I put -1 into it whenever I am supposed to read from
+    // the regular values, and a positive index into it whenever I am 
+    // supposed to read from the mixvals from silo.
+    std::vector<int> field_reconstruction_recipe;
+
     auto read_matlist_entry = [&](const int matlist_index)
     {
         int matlist_entry = matset_ptr->matlist[matlist_index];
         if (matlist_entry >= 0) // ? TODO is 0 allowed
         {
+            field_reconstruction_recipe.push_back(-1);
             volume_fractions.push_back(1.0);
             material_ids.push_back(matlist_entry);
             sizes.push_back(1);
@@ -1167,6 +1290,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                 {
                     CONDUIT_ERROR("TODO bad news");
                 }
+                field_reconstruction_recipe.push_back(mix_id);
 
                 curr_size ++;
                 // since mix_id is a 1-index, we must subtract one
@@ -1229,6 +1353,10 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     matset_out["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
     matset_out["sizes"].set(sizes.data(), sizes.size());
     matset_out["offsets"].set(offsets.data(), offsets.size());
+
+    matset_field_reconstruction["recipe"].set(field_reconstruction_recipe.data(), 
+                                    field_reconstruction_recipe.size());
+    matset_field_reconstruction["sizes"].set(sizes.data(), sizes.size());
 
     return true;
 }
@@ -1921,6 +2049,10 @@ read_mesh(const std::string &root_file_path,
         // Read Materials
         //
 
+        // This node will house the recipe for reconstructing matset_values
+        // from silo mixvals.
+        Node matset_field_reconstruction;
+
         // for each mesh domain, we would like to iterate through all the materials
         // and extract the same domain from them.
         if (mesh_index.has_child("matsets"))
@@ -1969,7 +2101,13 @@ read_mesh(const std::string &root_file_path,
                 // we don't care if this skips the matset or not since this is the
                 // last thing in the loop iteration
                 read_matset_domain(matset_domain_file_to_use, matset_name,
-                    multimesh_name, multimat_name, bottom_level_mesh_name, mesh_out);
+                    multimesh_name, multimat_name, bottom_level_mesh_name, mesh_out,
+                    matset_field_reconstruction);
+
+                // TODO we want to break iteration if this completes successfully
+                // no more than one matset per mesh
+                // there can be multiple from the silo index b/c we don't know yet
+                // which ones are assoc with the mesh
             }
         }
 
@@ -2026,7 +2164,8 @@ read_mesh(const std::string &root_file_path,
                 // we don't care if this skips the var or not since this is the
                 // last thing in the loop iteration
                 read_variable_domain(vartype, var_domain_file_to_use, var_name,
-                    multimesh_name, multivar_name, bottom_level_mesh_name, mesh_out);
+                    multimesh_name, multivar_name, bottom_level_mesh_name, mesh_out,
+                    matset_field_reconstruction);
             }
         }
     }
@@ -2262,25 +2401,30 @@ void silo_write_field(DBfile *dbfile,
         Node silo_matset;
         conduit::blueprint::mesh::field::to_silo(n_var, n_matset, silo_matset);
 
+        Node silo_matset_compact;
+        silo_matset.compact_to(silo_matset_compact);
+
+        silo_matset_compact.print();
+
         if (nvars == 1)
         {
-            CONDUIT_ASSERT(! silo_matset["field_mixvar_values"].dtype().is_object(),
+            CONDUIT_ASSERT(! silo_matset_compact["field_mixvar_values"].dtype().is_object(),
                 "Number of variable components is 1 but to_silo did not return a leaf node.");
 
-            mixvars_ptr[0] = silo_matset["field_mixvar_values"].data_ptr();
-            mixlen = silo_matset["field_mixvar_values"].dtype().number_of_elements();
+            mixvars_ptr[0] = silo_matset_compact["field_mixvar_values"].data_ptr();
+            mixlen = silo_matset_compact["field_mixvar_values"].dtype().number_of_elements();
         }
         else
         {
-            CONDUIT_ASSERT(silo_matset["field_mixvar_values"].dtype().is_object(),
+            CONDUIT_ASSERT(silo_matset_compact["field_mixvar_values"].dtype().is_object(),
                 "Number of variable components is > 1 but to_silo returned a leaf node.");
-            CONDUIT_ASSERT(silo_matset["field_mixvar_values"].number_of_children() == nvars,
+            CONDUIT_ASSERT(silo_matset_compact["field_mixvar_values"].number_of_children() == nvars,
                 "Number of variable components does not match what was returned from to_silo.");
             
-            mixlen = silo_matset["field_mixvar_values"][0].dtype().number_of_elements();
+            mixlen = silo_matset_compact["field_mixvar_values"][0].dtype().number_of_elements();
             for (int i = 0; i < nvars; i ++)
             {
-                mixvars_ptr[i] = silo_matset["field_mixvar_values"][i].data_ptr();
+                mixvars_ptr[i] = silo_matset_compact["field_mixvar_values"][i].data_ptr();
             }
         }
     }
