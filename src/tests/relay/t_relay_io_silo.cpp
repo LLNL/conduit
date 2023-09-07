@@ -36,10 +36,15 @@ TEST(conduit_relay_io_silo, conduit_silo_cold_storage)
     EXPECT_EQ(n["b"].as_uint32(), b_val);
     EXPECT_EQ(n["c"].as_uint32(), c_val);
 
+    n.print();
+
     io::silo_write(n,"tout_cold_storage_test.silo:myobj");
 
     Node n_load;
     io::silo_read("tout_cold_storage_test.silo:myobj",n_load);
+
+    std::cout << "round trip" << std::endl;
+    n_load.print();
 
     EXPECT_EQ(n_load["a"].as_uint32(), a_val);
     EXPECT_EQ(n_load["b"].as_uint32(), b_val);
@@ -94,7 +99,7 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
     std::vector<int> coordset_length_vec = {4, 8, /*36,*/ 1994, /*16,*/ 961};
     std::vector<int> topology_length_vec = {1, 1, /*33,*/ 1920, /*9,*/  900};
-    for (int i = 0; i < filename_vec.size(); ++i) 
+    for (int i = 0; i < filename_vec.size(); ++i)
     {
         Node mesh, info;
         std::string path = utils::join_file_path("overlink", filename_vec.at(i));

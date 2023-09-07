@@ -348,4 +348,31 @@ HDF5 I/O Options
 You can verify using ``h5stat`` that the data set was written to the hdf5 file using chunking and
 compression.
 
+HDF5 Hyperslabs
+++++++++++++++++
 
+HDF5 can store N-dimensional arrays.  Conduit can read subsets of these arrays, called "hyperslabs" in HDF5 terminology (see the HDF5 `tutorial`_).  The following example uses the HDF5 API to create a file containing a 2D array.  Then it uses Conduit to read a subset of the 2D array into memory.  Users can specify array **size** (element count), **offset**, and **stride**; Conduit does not support element blocks.  To match naming conventions elsewhere in Conduit, users may equivalently use the names **sizes**, **offsets**, and **strides**, as shown in the example.
+
+.. _tutorial: https://portal.hdfgroup.org/display/HDF5/Reading+From+or+Writing+To+a+Subset+of+a+Dataset
+
+Conduit reads an array from the HDF5 file into a linear buffer in memory.  Conduit does not support HDF5's idea of an in-memory destination hyperslab.
+
+* **C++ Example:**
+
+.. literalinclude:: ../../tests/docs/t_conduit_docs_relay_io_hdf5_examples.cpp
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
+   :language: cpp
+   :dedent: 4
+
+* **Output:**
+
+.. literalinclude:: t_conduit_docs_relay_io_hdf5_examples_out.txt
+   :start-after: BEGIN_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
+   :end-before:  END_EXAMPLE("relay_io_example_hdf5_interface_read_ndarray")
+
+.. warning::
+   HDF5 parameter arrays are "fastest varying rightmost", like indexes to a C
+   or C++ nested array.  If a user takes paper and pencil and writes down
+   p = (4, 5, 2), that commonly specifies a point p at x=4, y=5, z=2.  To
+   specify an offset at point p, the user has to pass the array [2, 5, 4].

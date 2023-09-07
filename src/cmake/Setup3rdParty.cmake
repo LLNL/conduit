@@ -162,6 +162,9 @@ endif()
 # Setup Parmetis if available
 ################################
 if(PARMETIS_DIR)
+    if(NOT ENABLE_MPI)
+        message(FATAL_ERROR "PARMETIS_DIR is set while ENABLE_MPI is OFF. Parmetis support requires MPI.")
+    endif()
     include(cmake/thirdparty/SetupParmetis.cmake)
     include_directories(${PARMETIS_INCLUDE_DIR})
     # if we don't find it, throw a fatal error

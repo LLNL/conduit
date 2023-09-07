@@ -896,3 +896,97 @@ TEST(conduit_json, to_json_opts)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_external)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["b"].as_uint32(),b_val);
+
+    std::cout << n.to_json("conduit_json_external") << std::endl;
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, to_json_external_2)
+{
+
+    uint32   a_val  = 10;
+    uint32   b_val  = 20;
+
+    Node n;
+    n["a"] = a_val;
+    n["path/b"] = b_val;
+
+    EXPECT_EQ(n["a"].as_uint32(),a_val);
+    EXPECT_EQ(n["path/b"].as_uint32(),b_val);
+
+    std::string json = n.to_json("conduit_json_external") ;
+
+    Node n2, n3;
+
+    n2.set_external(n);
+    n3.parse(json,"conduit_json");
+
+    Node info;
+    EXPECT_FALSE(n.diff(n2,info));
+    EXPECT_FALSE(n.diff(n3,info));
+
+    EXPECT_FALSE(n2.diff(n3,info));
+
+    EXPECT_EQ(n["a"].data_ptr(),n2["a"].data_ptr());
+    EXPECT_EQ(n["path/b"].data_ptr(),n2["path/b"].data_ptr());
+
+    EXPECT_EQ(n["a"].data_ptr(),n3["a"].data_ptr());
+    EXPECT_EQ(n["path/b"].data_ptr(),n3["path/b"].data_ptr());
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_json, json_walk_with_pointer)
+{
+    uint32 a_val = 20;
+    uint32 b_val = 8;
+    uint32 c_val = 13;
+
+    Node n;
+    n["a"] = a_val;
+    n["b"] = b_val;
+    n["c"] = c_val;
+
+    EXPECT_EQ(n["a"].as_uint32(), a_val);
+    EXPECT_EQ(n["b"].as_uint32(), b_val);
+    EXPECT_EQ(n["c"].as_uint32(), c_val);
+
+    Node n_compact;
+    n.compact_to(n_compact);
+
+    n_compact.print();
+    
+    std::string schema_json = n_compact.schema().to_json();
+    std::cout << schema_json << std::endl;
+    Node n_res;
+
+    Generator node_gen(schema_json, "conduit_json", n_compact.data_ptr());
+    /// gen copy
+    node_gen.walk(n_res);
+        
+    std::cout << "round trip" << std::endl;
+    n_res.print();
+
+    std::cout << n_res.schema().to_json() << std::endl;
+
+    EXPECT_EQ(n_res["a"].as_uint32(), a_val);
+    EXPECT_EQ(n_res["b"].as_uint32(), b_val);
+    EXPECT_EQ(n_res["c"].as_uint32(), c_val);
+}
+
+
+
+
+

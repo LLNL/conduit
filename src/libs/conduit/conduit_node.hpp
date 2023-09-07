@@ -3243,11 +3243,19 @@ public:
     void    to_signed_int_array(Node &res)   const;
     void    to_signed_long_array(Node &res)  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    void    to_signed_long_long_array(Node &res)  const;
+#endif
+
     /// convert to c unsigned integer types
     void    to_unsigned_char_array(Node &res)  const;
     void    to_unsigned_short_array(Node &res) const;
     void    to_unsigned_int_array(Node &res)   const;
     void    to_unsigned_long_array(Node &res)  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    void    to_unsigned_long_long_array(Node &res)  const;
+#endif
 
     /// convert to c floating point types
     void    to_float_array(Node &res) const;
@@ -4568,12 +4576,14 @@ private:
     // the generic to_json methods are used by the specialized cases
     //-------------------------------------------------------------------------
     std::string         to_json_generic(bool detailed,
+                                        bool address,
                                         index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
                                         const std::string &eoe="\n") const;
 
     void                to_json_generic(const std::string &stream_path,
+                                        bool address,
                                         bool detailed,
                                         index_t indent=2,
                                         index_t depth=0,
@@ -4582,6 +4592,7 @@ private:
 
     void                to_json_generic(std::ostream &os,
                                         bool detailed,
+                                        bool address,
                                         index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
@@ -4626,6 +4637,26 @@ private:
                                       index_t depth=0,
                                       const std::string &pad=" ",
                                       const std::string &eoe="\n") const;
+
+    //-------------------------------------------------------------------------
+    // transforms the node to detailed json with address entry
+    //-------------------------------------------------------------------------
+    std::string      to_detailed_json_external(index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
+
+    void             to_detailed_json_external(const std::string &stream_path,
+                                               index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
+
+    void             to_detailed_json_external(std::ostream &os,
+                                               index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
 
     //-------------------------------------------------------------------------
     // transforms the node to json with data payload encoded using base64
