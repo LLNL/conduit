@@ -2324,76 +2324,37 @@ void silo_write_field(DBfile *dbfile,
         ". Material dependent fields are not supported.");
 
     DataType vals_dtype = n_var["values"].dtype();
-    int vals_type = DB_NOTYPE;
+    int silo_vals_type = DB_NOTYPE;
     int nvars = 0;
-    std::vector<std::string> comp_name_strings;
-    std::vector<const void *> comp_vals_ptrs;
 
-    // we compact to support a strided array cases
-    Node n_values;
-    n_var["values"].compact_to(n_values);
-
-    // if we have vector/tensor values instead
-    if (vals_dtype.is_object())
+    // determine the number of variable components
+    if (vals_dtype.is_object()) // we have vector/tensor values
     {
         nvars = n_values.number_of_children();
         CONDUIT_ASSERT(nvars > 0, "Expected object to have children.");
-        vals_type = dtype_to_silo_type(n_values[0].dtype());
-        if (vals_type == DB_NOTYPE)
-        {
-            // skip the field if we don't support its type
-            CONDUIT_INFO("skipping field "
-                         << var_name
-                         << ", since its type is not implemented, found "
-                         << vals_dtype.name());
-            return;
-        }
-
-        auto val_itr = n_var["values"].children();
-        while (val_itr.has_next())
-        {
-            const Node &n_comp = val_itr.next();
-            const std::string comp_name = val_itr.name();
-
-            CONDUIT_ASSERT(vals_type == dtype_to_silo_type(n_comp.dtype()),
-                "Inconsistent values types across vector components in field " << var_name);
-
-            comp_name_strings.push_back(comp_name);
-            comp_vals_ptrs.push_back(n_comp.element_ptr(0));
-        }
+        silo_vals_type = dtype_to_silo_type(n_var["values"][0].dtype());
     }
     else
     {
         nvars = 1;
-        vals_type = dtype_to_silo_type(vals_dtype);
-        if (vals_type == DB_NOTYPE)
-        {
-            // skip the field if we don't support its type
-            CONDUIT_INFO("skipping field "
-                         << var_name
-                         << ", since its type is not implemented, found "
-                         << vals_dtype.name());
-            return;
-        }
-        comp_name_strings.push_back("unused");
-        comp_vals_ptrs.push_back(n_values.element_ptr(0));
+        silo_vals_type = dtype_to_silo_type(vals_dtype);
     }
-
-    // package up char ptrs for silo
-    std::vector<const char *> comp_name_ptrs;
-    for (size_t i = 0; i < comp_name_strings.size(); i ++)
+    if (silo_vals_type == DB_NOTYPE)
     {
-        comp_name_ptrs.push_back(comp_name_strings[i].c_str());
+        // skip the field if we don't support its type
+        CONDUIT_INFO("skipping field "
+                     << var_name
+                     << ", since its type is not implemented, found "
+                     << vals_dtype.name());
+        return;
     }
-
-    // TODO I need nvars
 
     // if we are a mixed field and we do not share a type with our 
     // matset_values then we want to convert both to double arrays
     bool convert_to_double_array = false;
 
     // mixed field logic
-    void **mixvars_ptr = nullptr;
+    void **mixvars_ptr_ptr = nullptr;
     Node silo_matset;
     Node silo_mixvar_vals_compact;
     std::vector<void *> mixvars_ptrs(nvars);
@@ -2415,26 +2376,15 @@ void silo_write_field(DBfile *dbfile,
         // double arrays.
         convert_to_double_array = vals_dtype.id() != mixvar_vals_dtype.id();
         
-        // if (convert_to_double_array)
-        // {
-        //     if (nvars == 1)
-        //     {
-        //         silo_matset["field_mixvar_values"].to_double_array(silo_mixvar_vals_compact);
-        //     }
-        //     else
-        //     {
-        //         auto mixvar_val_itr = silo_matset["field_mixvar_values"].children();
-        //         while (mixvar_val_itr.has_next())
-        //         {
-        //             const Node &n_mixvar_val = mixvar_val_itr.next();
-        //             const std::string label = mixvar_val_itr.name();
-        //             n_mixvar_val.to_double_array(silo_mixvar_vals_compact[label]);
-        //         }
-        //     }
-        // }
-        // else
+        if (convert_to_double_array)
         {
-            silo_matset["field_mixvar_values"].compact_to(silo_mixvar_vals_compact);
+            detail::convert_to_double_array(silo_matset["field_mixvar_values"],
+                                            silo_mixvar_vals_compact);
+        }
+        else
+        {
+            detail::conditional_compact(silo_matset["field_mixvar_values"],
+                                        silo_mixvar_vals_compact);
         }
 
         silo_mixvar_vals_compact.print();
@@ -2460,7 +2410,51 @@ void silo_write_field(DBfile *dbfile,
                 mixvars_ptrs[i] = silo_mixvar_vals_compact[i].data_ptr();
             }
         }
-        mixvars_ptr = mixvars_ptrs.data();
+        mixvars_ptr_ptr = mixvars_ptrs.data();
+    }
+
+
+    // we compact to support a strided array case
+    Node n_values_compact;
+
+    if (convert_to_double_array)
+    {
+        detail::convert_to_double_array(n_var["values"], n_values_compact);
+    }
+    else
+    {
+        detail::conditional_compact(n_var["values"], n_values_compact);
+    }
+
+    // package up field data for silo
+    std::vector<std::string> comp_name_strings;
+    std::vector<const void *> comp_vals_ptrs;
+    if (nvars == 1)
+    {
+        comp_name_strings.push_back("unused");
+        comp_vals_ptrs.push_back(n_values_compact.element_ptr(0));
+    }
+    else // we have vector/tensor values
+    {
+        auto val_itr = n_values_compact.children();
+        while (val_itr.has_next())
+        {
+            const Node &n_comp = val_itr.next();
+            const std::string comp_name = val_itr.name();
+
+            CONDUIT_ASSERT(silo_vals_type == dtype_to_silo_type(n_comp.dtype()),
+                "Inconsistent values types across vector components in field " << var_name);
+
+            comp_name_strings.push_back(comp_name);
+            comp_vals_ptrs.push_back(n_comp.element_ptr(0));
+        }
+    }
+
+    // package up char ptrs for silo
+    std::vector<const char *> comp_name_ptrs;
+    for (size_t i = 0; i < comp_name_strings.size(); i ++)
+    {
+        comp_name_ptrs.push_back(comp_name_strings[i].c_str());
     }
 
     // TODO any time you are sending arrays to silo make sure they are compact
@@ -2481,9 +2475,9 @@ void silo_write_field(DBfile *dbfile,
                                  comp_name_ptrs.data(), // variable component names
                                  comp_vals_ptrs.data(), // the data values
                                  num_values, // number of elements
-                                 mixvars_ptr, // mixed data arrays
+                                 mixvars_ptr_ptr, // mixed data arrays
                                  mixlen, // length of mixed data arrays
-                                 vals_type, // Datatype of the variable
+                                 silo_vals_type, // Datatype of the variable
                                  centering, // centering (nodal or zonal)
                                  NULL); // optlist
     }
@@ -2521,9 +2515,9 @@ void silo_write_field(DBfile *dbfile,
                                   comp_vals_ptrs.data(), // the data values
                                   dims, // the dimensions of the data
                                   num_dims, // number of dimensions
-                                  mixvars_ptr, // mixed data arrays
+                                  mixvars_ptr_ptr, // mixed data arrays
                                   mixlen, // length of mixed data arrays
-                                  vals_type, // Datatype of the variable
+                                  silo_vals_type, // Datatype of the variable
                                   centering, // centering (nodal or zonal)
                                   NULL); // optlist
     }
@@ -2538,7 +2532,7 @@ void silo_write_field(DBfile *dbfile,
                                    nvars, // number of variable components
                                    comp_vals_ptrs.data(), // data values
                                    num_pts, // Number of elements (points)
-                                   vals_type, // Datatype of the variable
+                                   silo_vals_type, // Datatype of the variable
                                    NULL); // optlist
     }
     else
@@ -2601,34 +2595,64 @@ assign_coords_ptrs(void *coords_ptrs[3],
 }
 
 //---------------------------------------------------------------------------//
-// compaction is necessary to support ragged arrays
-void compact_coords(const Node &n_coords,
-                    Node &n_coords_compact)
+namespace detail
 {
-    // are we already compact?
-    if (n_coords["values"].dtype().is_compact())
+    // TODO check all compaction logic uses the same pattern
+    void conditional_compact(const Node &n_src,
+                             Node &n_dest)
     {
-        n_coords_compact.set_external(n_coords["values"]);
-    }
-    else
-    {
-        auto val_itr = n_coords["values"].children();
-        while (val_itr.has_next())
+        // are we already compact?
+        if (n_src.dtype().is_compact())
         {
-            const Node &n_val = val_itr.next();
-            const std::string label = val_itr.name();
-            // is this piece already compact?
-            if (n_coords["values"][label].dtype().is_compact())
+            n_dest.set_external(n_src);
+        }
+        else
+        {
+            if (n_src.is_object())
             {
-                n_coords_compact[label].set_external(n_val);
+                auto val_itr = n_src.children();
+                while (val_itr.has_next())
+                {
+                    const Node &n_val = val_itr.next();
+                    const std::string label = val_itr.name();
+                    // is this piece already compact?
+                    if (n_src[label].dtype().is_compact())
+                    {
+                        n_dest[label].set_external(n_val);
+                    }
+                    else
+                    {
+                        n_val.compact_to(n_dest[label]);
+                    }
+                }
             }
             else
             {
-                n_val.compact_to(n_coords_compact[label]);
+                n_src.compact_to(n_dest);
             }
         }
     }
-}
+
+    // assumes you pass either a leaf node or a node one step up from leaf nodes
+    void convert_to_double_array(const Node &n_src,
+                                 Node &n_dest)
+    {
+        if (n_src.is_object())
+        {
+            auto val_itr = n_src.children();
+            while (val_itr.has_next())
+            {
+                const Node &n_val = val_itr.next();
+                const std::string label = val_itr.name();
+                n_val.to_double_array(n_dest[label]);
+            }
+        }
+        else
+        {
+            n_src.to_double_array(n_dest);
+        }
+    }
+} // end namespace detail
 
 //---------------------------------------------------------------------------//
 // calculates and checks the number of points for an explicit coordset
@@ -2828,7 +2852,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                Node &n_mesh_info) 
 {
     Node n_coords_compact;
-    compact_coords(n_coords, n_coords_compact);
+    detail::conditional_compact(n_coords["values"], n_coords_compact);
 
     int pts_dims[3];
     pts_dims[0] = n_coords_compact[coordnames[0]].dtype().number_of_elements();
@@ -3182,11 +3206,11 @@ void silo_write_topo(const Node &n,
                 }
             }
 
-            compact_coords(new_coords, n_coords_compact);
+            detail::conditional_compact(new_coords["values"], n_coords_compact);
         }
         else
         {
-            compact_coords(n_coords, n_coords_compact);
+            detail::conditional_compact(n_coords["values"], n_coords_compact);
         }
 
         // get num pts
