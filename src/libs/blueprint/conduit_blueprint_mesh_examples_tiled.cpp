@@ -18,7 +18,6 @@
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
-#include "conduit_blueprint_mesh_kdtree.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
 #include <cmath>
 

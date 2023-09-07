@@ -1370,6 +1370,32 @@ coordset::extents(const Node &n)
 }
 
 //-----------------------------------------------------------------------------
+std::tuple<bool, conduit::DataType>
+coordset::supports_pointer_access(const conduit::Node &coordset)
+{
+    bool suitable = false;
+    conduit::DataType dt;
+    if(coordset.has_child("values"))
+    {
+        suitable = true;
+        const conduit::Node &values = coordset.fetch_existing("values");
+        for(conduit::index_t i = 0; i < values.number_of_children(); i++)
+        {
+            if(i == 0)
+            {
+                suitable &= values[i].dtype().is_compact();
+                dt = values[i].dtype();
+            }
+            else
+            {
+                suitable &= (values[i].dtype().is_compact() && dt.id() == values[i].dtype().id());
+            }
+        }
+    }
+    return std::make_tuple(suitable, dt);
+}
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::coordset::uniform --
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
@@ -1599,39 +1625,88 @@ topology::reindex_coords(const Node& topo,
 }
 
 //-----------------------------------------------------------------------------
+template <typename Indexable, typename ElementType>
+static std::vector<conduit::index_t>
+spatial_ordering_impl(std::vector<Indexable> &coords, ElementType /*notused*/, conduit::index_t npts)
+{
+    // Sort the coordinates spatially
+    std::vector<conduit::index_t> reorder;
+    if(coords.size() == 2)
+    {
+        conduit::blueprint::mesh::utils::kdtree<Indexable, ElementType, 2> spatial_sort;
+        spatial_sort.initialize(&coords[0], npts);
+        reorder = std::move(spatial_sort.getIndices());
+    }
+    else if(coords.size() == 3)
+    {
+        conduit::blueprint::mesh::utils::kdtree<Indexable, ElementType, 3> spatial_sort;
+        spatial_sort.initialize(&coords[0], npts);
+        reorder = std::move(spatial_sort.getIndices());
+    }
+    return reorder;
+}
+
+//-----------------------------------------------------------------------------
 std::vector<conduit::index_t>
 topology::spatial_ordering(const conduit::Node &topo)
 {
     // Make a new centroid topo and coordset. The coordset will contain the
-    // element centers.
+    // element centers. This ought to be an explicit coordset.
     Node topo_dest, coords_dest, s2dmap, d2smap;
     mesh::topology::unstructured::generate_centroids(topo,
                                                      topo_dest,
                                                      coords_dest,
                                                      s2dmap,
                                                      d2smap);
-    // Bundle the coordset components into a vector.
-    std::vector<conduit::double_accessor> coords;
-    const conduit::Node &values = coords_dest.fetch_existing("values");
-    for(conduit::index_t i = 0; i < values.number_of_children(); i++)
+
+    std::vector<conduit::index_t> reorder;
+    conduit::Node &values = coords_dest.fetch_existing("values");
+    const auto pa = coordset::supports_pointer_access(coords_dest);
+    const auto suitable = std::get<0>(pa);
+    conduit::index_t npts{};
+    if(suitable)
     {
-        coords.push_back(values[i].as_double_accessor());
+        // The coordinates will be accessed using pointers.
+        const auto &dt = std::get<1>(pa);
+
+std::cout << "spatial_ordering: dt=" << dt.name() << std::endl;
+        if(dt.is_double())
+        {
+            std::vector<double *> coords;
+            double elem{};
+            for(conduit::index_t i = 0; i < values.number_of_children(); i++)
+            {
+                npts = (i == 0) ? (values[i].as_double_array().number_of_elements()) : npts;
+                coords.push_back(values[i].as_double_ptr());
+            }
+            reorder = spatial_ordering_impl(coords, elem, npts);
+        }
+        else if(dt.is_float())
+        {
+            std::vector<float *> coords;
+            float elem{};
+            for(conduit::index_t i = 0; i < values.number_of_children(); i++)
+            {
+                npts = (i == 0) ? (values[i].as_float_array().number_of_elements()) : npts;
+                coords.push_back(values[i].as_float_ptr());
+            }
+            reorder = spatial_ordering_impl(coords, elem, npts);
+        }
+    }
+    if(reorder.empty())
+    {
+std::cout << "spatial_ordering: using double accessor" << std::endl;
+        // Use a double accessor to access coordinates.
+        std::vector<conduit::double_accessor> coords;
+        double elem{};
+        for(conduit::index_t i = 0; i < values.number_of_children(); i++)
+        {
+            npts = (i == 0) ? (values[i].as_double_accessor().number_of_elements()) : npts;
+            coords.push_back(values[i].as_double_accessor());
+        }
+        reorder = spatial_ordering_impl(coords, elem, npts);
     }
 
-    // Sort the coordinates spatially
-    std::vector<conduit::index_t> reorder;
-    if(coords.size() == 2)
-    {
-        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 2> spatial_sort;
-        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
-        reorder = std::move(spatial_sort.getIndices());
-    }
-    else if(coords.size() == 3)
-    {
-        conduit::blueprint::mesh::utils::kdtree<conduit::double_accessor, double, 3> spatial_sort;
-        spatial_sort.initialize(&coords[0], coords[0].number_of_elements());
-        reorder = std::move(spatial_sort.getIndices());
-    }
     return reorder;
 }
 
@@ -2270,12 +2345,7 @@ topology::unstructured::reorder(const conduit::Node &topo,
         // Reorder the coordset now, making it explicit if needed.
         dest_coordset["type"] = "explicit";
         conduit::Node coordset_explicit;
-        if(coordset["type"].as_string() == "rectilinear")
-            conduit::blueprint::mesh::coordset::rectilinear::to_explicit(coordset, coordset_explicit);
-        else if(coordset["type"].as_string() == "uniform")
-            conduit::blueprint::mesh::coordset::uniform::to_explicit(coordset, coordset_explicit);
-        else
-            coordset_explicit.set_external(coordset);
+        conduit::blueprint::mesh::coordset::to_explicit(coordset, coordset_explicit);
         conduit::blueprint::mesh::utils::slice_field(coordset_explicit["values"], ptReorder, dest_coordset["values"]);
 
         // Reorder fields that match this topo.

@@ -17,6 +17,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <memory>
 
@@ -346,6 +347,18 @@ namespace coordset
     @return A vector of float64 in the format {d0min, d0max, ... , dNmin, dNmax}
     */
     std::vector<float64> CONDUIT_BLUEPRINT_API extents(const Node &n);
+
+    //-----------------------------------------------------------------------------
+    /**
+     @brief Check whether all component types match and are compact, making it
+            suitable for pointer access.
+
+     @param cset The coordset we're checking.
+
+     @return A tuple containing 1) whether the components are suitable for pointer
+             access and 2) the data type.
+     */
+    std::tuple<bool, conduit::DataType> CONDUIT_BLUEPRINT_API supports_pointer_access(const conduit::Node &coordset);
 
     namespace uniform
     {
