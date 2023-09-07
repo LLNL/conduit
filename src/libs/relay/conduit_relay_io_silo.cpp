@@ -2323,72 +2323,80 @@ void silo_write_field(DBfile *dbfile,
         "Missing values for field " << var_name << 
         ". Material dependent fields are not supported.");
 
+    DataType vals_dtype = n_var["values"].dtype();
+    int vals_type = DB_NOTYPE;
+    int nvars = 0;
+    std::vector<std::string> comp_name_strings;
+    std::vector<const void *> comp_vals_ptrs;
+
     // we compact to support a strided array cases
     Node n_values;
     n_var["values"].compact_to(n_values);
 
-    DataType dtype = n_values.dtype();
-    int vals_type = DB_NOTYPE;
-    int nvars = 0;
-    std::vector<std::string> comp_name_strings;
-    std::vector<const char *> comp_name_ptrs;
-    std::vector<const void *> comp_vals_ptrs;
-
     // if we have vector/tensor values instead
-    if (dtype.is_object())
+    if (vals_dtype.is_object())
     {
         nvars = n_values.number_of_children();
-        if (nvars > 0)
-        {
-            vals_type = dtype_to_silo_type(n_values[0].dtype());
-            if (vals_type == DB_NOTYPE)
-            {
-                // skip the field if we don't support its type
-                CONDUIT_INFO("skipping field "
-                             << var_name
-                             << ", since its type is not implemented, found "
-                             << dtype.name());
-                return;
-            }
-        }
-
-        auto val_itr = n_var["values"].children();
-        while (val_itr.has_next())
-        {
-            const Node &n_comp = val_itr.next();
-            std::string comp_name = val_itr.name();
-
-            if (vals_type != dtype_to_silo_type(n_comp.dtype()))
-            {
-                CONDUIT_ERROR("Inconsistent values types across vector components in field " << var_name);
-            }
-
-            comp_name_strings.push_back(comp_name);
-            // TODO this is a bug - create char * vector after all strings have been added to vector
-            comp_name_ptrs.push_back(comp_name_strings.back().c_str());
-            comp_vals_ptrs.push_back(n_comp.element_ptr(0));
-        }
-    }
-    else
-    {
-        nvars = 1;
-        vals_type = dtype_to_silo_type(dtype);
+        CONDUIT_ASSERT(nvars > 0, "Expected object to have children.");
+        vals_type = dtype_to_silo_type(n_values[0].dtype());
         if (vals_type == DB_NOTYPE)
         {
             // skip the field if we don't support its type
             CONDUIT_INFO("skipping field "
                          << var_name
                          << ", since its type is not implemented, found "
-                         << dtype.name());
+                         << vals_dtype.name());
+            return;
+        }
+
+        auto val_itr = n_var["values"].children();
+        while (val_itr.has_next())
+        {
+            const Node &n_comp = val_itr.next();
+            const std::string comp_name = val_itr.name();
+
+            CONDUIT_ASSERT(vals_type == dtype_to_silo_type(n_comp.dtype()),
+                "Inconsistent values types across vector components in field " << var_name);
+
+            comp_name_strings.push_back(comp_name);
+            comp_vals_ptrs.push_back(n_comp.element_ptr(0));
+        }
+    }
+    else
+    {
+        nvars = 1;
+        vals_type = dtype_to_silo_type(vals_dtype);
+        if (vals_type == DB_NOTYPE)
+        {
+            // skip the field if we don't support its type
+            CONDUIT_INFO("skipping field "
+                         << var_name
+                         << ", since its type is not implemented, found "
+                         << vals_dtype.name());
             return;
         }
         comp_name_strings.push_back("unused");
-        comp_name_ptrs.push_back(comp_name_strings.back().c_str());
         comp_vals_ptrs.push_back(n_values.element_ptr(0));
     }
 
+    // package up char ptrs for silo
+    std::vector<const char *> comp_name_ptrs;
+    for (size_t i = 0; i < comp_name_strings.size(); i ++)
+    {
+        comp_name_ptrs.push_back(comp_name_strings[i].c_str());
+    }
+
+    // TODO I need nvars
+
+    // if we are a mixed field and we do not share a type with our 
+    // matset_values then we want to convert both to double arrays
+    bool convert_to_double_array = false;
+
+    // mixed field logic
+    void **mixvars_ptr = nullptr;
     Node silo_matset;
-    std::vector<void *> mixvars_ptr(nvars);
+    Node silo_mixvar_vals_compact;
+    std::vector<void *> mixvars_ptrs(nvars);
     int mixlen = 0;
     if (n_var.has_child("matset"))
     {
@@ -2398,35 +2406,61 @@ void silo_write_field(DBfile *dbfile,
             "Missing matset " << matset_name << " for field " << var_name);
 
         const Node &n_matset = n["matsets"][matset_name];
-        Node silo_matset;
         conduit::blueprint::mesh::field::to_silo(n_var, n_matset, silo_matset);
 
-        Node silo_matset_compact;
-        silo_matset.compact_to(silo_matset_compact);
+        DataType mixvar_vals_dtype = silo_matset["field_mixvar_values"].dtype();
+        
+        // if the field is mixed (has both vals and matset vals) and the types
+        // of vals and matset vals DO NOT match, we must convert both to 
+        // double arrays.
+        convert_to_double_array = vals_dtype.id() != mixvar_vals_dtype.id();
+        
+        // if (convert_to_double_array)
+        // {
+        //     if (nvars == 1)
+        //     {
+        //         silo_matset["field_mixvar_values"].to_double_array(silo_mixvar_vals_compact);
+        //     }
+        //     else
+        //     {
+        //         auto mixvar_val_itr = silo_matset["field_mixvar_values"].children();
+        //         while (mixvar_val_itr.has_next())
+        //         {
+        //             const Node &n_mixvar_val = mixvar_val_itr.next();
+        //             const std::string label = mixvar_val_itr.name();
+        //             n_mixvar_val.to_double_array(silo_mixvar_vals_compact[label]);
+        //         }
+        //     }
+        // }
+        // else
+        {
+            silo_matset["field_mixvar_values"].compact_to(silo_mixvar_vals_compact);
+        }
 
-        silo_matset_compact.print();
+        silo_mixvar_vals_compact.print();
 
         if (nvars == 1)
         {
-            CONDUIT_ASSERT(! silo_matset_compact["field_mixvar_values"].dtype().is_object(),
+            CONDUIT_ASSERT(! silo_mixvar_vals_compact.dtype().is_object(),
                 "Number of variable components is 1 but to_silo did not return a leaf node.");
 
-            mixvars_ptr[0] = silo_matset_compact["field_mixvar_values"].data_ptr();
-            mixlen = silo_matset_compact["field_mixvar_values"].dtype().number_of_elements();
+            mixvars_ptrs[0] = silo_mixvar_vals_compact.data_ptr();
+            mixlen = silo_mixvar_vals_compact.dtype().number_of_elements();
         }
         else
         {
-            CONDUIT_ASSERT(silo_matset_compact["field_mixvar_values"].dtype().is_object(),
+            CONDUIT_ASSERT(silo_mixvar_vals_compact.dtype().is_object(),
                 "Number of variable components is > 1 but to_silo returned a leaf node.");
-            CONDUIT_ASSERT(silo_matset_compact["field_mixvar_values"].number_of_children() == nvars,
+            CONDUIT_ASSERT(silo_mixvar_vals_compact.number_of_children() == nvars,
                 "Number of variable components does not match what was returned from to_silo.");
             
-            mixlen = silo_matset_compact["field_mixvar_values"][0].dtype().number_of_elements();
+            mixlen = silo_mixvar_vals_compact[0].dtype().number_of_elements();
             for (int i = 0; i < nvars; i ++)
             {
-                mixvars_ptr[i] = silo_matset_compact["field_mixvar_values"][i].data_ptr();
+                mixvars_ptrs[i] = silo_mixvar_vals_compact[i].data_ptr();
             }
         }
+        mixvars_ptr = mixvars_ptrs.data();
     }
 
     // TODO any time you are sending arrays to silo make sure they are compact
@@ -2447,7 +2481,7 @@ void silo_write_field(DBfile *dbfile,
                                  comp_name_ptrs.data(), // variable component names
                                  comp_vals_ptrs.data(), // the data values
                                  num_values, // number of elements
-                                 mixvars_ptr.data(), // mixed data arrays
+                                 mixvars_ptr, // mixed data arrays
                                  mixlen, // length of mixed data arrays
                                  vals_type, // Datatype of the variable
                                  centering, // centering (nodal or zonal)
@@ -2487,7 +2521,7 @@ void silo_write_field(DBfile *dbfile,
                                   comp_vals_ptrs.data(), // the data values
                                   dims, // the dimensions of the data
                                   num_dims, // number of dimensions
-                                  mixvars_ptr.data(), // mixed data arrays
+                                  mixvars_ptr, // mixed data arrays
                                   mixlen, // length of mixed data arrays
                                   vals_type, // Datatype of the variable
                                   centering, // centering (nodal or zonal)
@@ -2582,7 +2616,7 @@ void compact_coords(const Node &n_coords,
         while (val_itr.has_next())
         {
             const Node &n_val = val_itr.next();
-            std::string label = val_itr.name();
+            const std::string label = val_itr.name();
             // is this piece already compact?
             if (n_coords["values"][label].dtype().is_compact())
             {

@@ -413,7 +413,7 @@ TEST(conduit_relay_io_silo, round_trip_venn)
 
             EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 
-            // std::cout << info.to_yaml() << std::endl;
+            std::cout << info.to_yaml() << std::endl;
         }
     }
 }
