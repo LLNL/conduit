@@ -1668,8 +1668,6 @@ topology::spatial_ordering(const conduit::Node &topo)
     {
         // The coordinates will be accessed using pointers.
         const auto &dt = std::get<1>(pa);
-
-std::cout << "spatial_ordering: dt=" << dt.name() << std::endl;
         if(dt.is_double())
         {
             std::vector<double *> coords;
@@ -1695,7 +1693,6 @@ std::cout << "spatial_ordering: dt=" << dt.name() << std::endl;
     }
     if(reorder.empty())
     {
-std::cout << "spatial_ordering: using double accessor" << std::endl;
         // Use a double accessor to access coordinates.
         std::vector<conduit::double_accessor> coords;
         double elem{};
