@@ -2324,11 +2324,12 @@ void** prepare_mixed_field_for_write(const Node &n_var,
                                      const std::string &var_name,
                                      const DataType &vals_dtype,
                                      const int &nvars,
+                                     bool &convert_to_double_array,
+                                     int &silo_vals_type,
                                      Node &silo_matset,
                                      Node &silo_mixvar_vals_compact,
                                      std::vector<void *> &mixvars_ptrs,
-                                     int &mixlen,
-                                     bool &convert_to_double_array)
+                                     int &mixlen)
 {
     if (n_var.has_child("matset"))
     {
@@ -2349,6 +2350,7 @@ void** prepare_mixed_field_for_write(const Node &n_var,
         
         if (convert_to_double_array)
         {
+            silo_vals_type = DB_DOUBLE;
             detail::convert_to_double_array(silo_matset["field_mixvar_values"],
                                             silo_mixvar_vals_compact);
         }
@@ -2549,11 +2551,12 @@ void silo_write_field(DBfile *dbfile,
                                       var_name,
                                       vals_dtype,
                                       nvars,
+                                      convert_to_double_array,
+                                      silo_vals_type,
                                       silo_matset,
                                       silo_mixvar_vals_compact,
                                       mixvars_ptrs,
-                                      mixlen,
-                                      convert_to_double_array);
+                                      mixlen);
 
     //
     // Prepare Field Values

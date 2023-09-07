@@ -375,28 +375,14 @@ TEST(conduit_relay_io_silo, round_trip_venn)
             io::silo::load_mesh(filename, load_mesh);
             EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-            // TODO remove once https://github.com/LLNL/conduit/issues/1163 is closed
-            if (save_mesh.has_path("coordsets/coords/params"))
-            {
-                save_mesh["coordsets"]["coords"].remove_child("params");
-            }
-
             // // std::cout << "save_mesh" << std::endl;
             // // save_mesh.print();
             // // std::cout << "load_mesh" << std::endl;
             // // load_mesh.print();
 
-            // std::cout << save_mesh["fields/importance"].to_yaml() << std::endl;
-            // // std::cout << save_mesh["matsets"].to_yaml() << std::endl;
-
             // Node silo_matset;
             // conduit::blueprint::mesh::field::to_silo(save_mesh["fields/importance"], save_mesh["matsets/matset"], silo_matset);
             // std::cout << silo_matset.to_yaml() << std::endl;
-
-            std::cout << "=========================================" << std::endl;
-            std::cout << save_mesh["fields/importance"].to_yaml() << std::endl;
-            std::cout << load_mesh[0]["fields/mesh_importance"].to_yaml() << std::endl;
-            std::cout << "=========================================" << std::endl;
 
             // std::cout << "save_mesh" << std::endl;
             // std::cout << save_mesh.to_yaml() << std::endl;
@@ -404,6 +390,21 @@ TEST(conduit_relay_io_silo, round_trip_venn)
             // make changes to save mesh so the diff will pass
             save_mesh["state/cycle"] = (int64) 0;
             save_mesh["state/domain_id"] = 0;
+
+            // TODO remove once https://github.com/LLNL/conduit/issues/1163 is closed
+            save_mesh["coordsets"]["coords"].remove_child("params");
+
+            Node mat_check_new_values, mat_check_new_matset_values;
+            save_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
+            save_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
+            save_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
+            save_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
+
+            std::cout << "=========================================" << std::endl;
+            std::cout << save_mesh["fields/mat_check"].to_yaml() << std::endl;
+            std::cout << load_mesh[0]["fields/mesh_mat_check"].to_yaml() << std::endl;
+            std::cout << "=========================================" << std::endl;
+
             silo_name_changer("mesh", save_mesh);
 
             // the loaded mesh will be in the multidomain format
@@ -413,7 +414,7 @@ TEST(conduit_relay_io_silo, round_trip_venn)
 
             EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 
-            std::cout << info.to_yaml() << std::endl;
+            // std::cout << info.to_yaml() << std::endl;
         }
     }
 }
