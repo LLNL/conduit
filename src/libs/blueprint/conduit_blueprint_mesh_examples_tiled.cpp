@@ -144,7 +144,7 @@ protected:
     double height() const { return m_height; }
 
     /// Creates the points for the tile (if they need to be created).
-    void addPoints(double origin[2],
+    void addPoints(const double M[3][3],
                    std::vector<conduit::index_t> &ptids,
                    std::vector<double> &x,
                    std::vector<double> &y)
@@ -156,8 +156,15 @@ protected:
             if(ptids[i] == Tile::INVALID_POINT)
             {
                 ptids[i] = static_cast<int>(x.size());
-                x.push_back(origin[0] + m_xpts[i]);
-                y.push_back(origin[1] + m_ypts[i]);
+
+                // (x,y,1) * M
+                double xc = m_xpts[i] * M[0][0] + m_ypts[i] * M[1][0] + M[2][0];
+                double yc = m_xpts[i] * M[0][1] + m_ypts[i] * M[1][1] + M[2][1];
+                double h  = m_xpts[i] * M[0][2] + m_ypts[i] * M[1][2] + M[2][2];
+                xc /= h;
+                yc /= h;
+                x.push_back(xc);
+                y.push_back(yc);
             }
         }
     }
@@ -240,6 +247,12 @@ protected:
             vec.push_back(acc[i]);
         return vec;
     }
+
+    /// Determine which boundaries are needed.
+    void boundaryFlags(const conduit::Node &options,
+                       bool &left, bool &right,
+                       bool &bottom, bool &top,
+                       bool &back, bool &front) const;
 
     /// Make 2D boundaries.
     template <typename Transform>
@@ -378,18 +391,11 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     conduit::Node &res,
     const conduit::Node &options)
 {
-    double origin[] = {0., 0., 0.};
     std::vector<double> x, y, z;
     std::vector<conduit::index_t> conn, sizes, bconn, bsizes;
     std::vector<int> btype;
 
     // Process any options.
-    if(options.has_path("origin/x"))
-        origin[0] = options.fetch_existing("origin/x").to_double();
-    if(options.has_path("origin/y"))
-        origin[1] = options.fetch_existing("origin/y").to_double();
-    if(options.has_path("origin/z"))
-        origin[2] = options.fetch_existing("origin/z").to_double();
     if(options.has_path("tile"))
         initialize(options.fetch_existing("tile"));
 
@@ -407,12 +413,51 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         }
     }
 
+    // Make a transformation matrix for the tile points.
+    double origin[] = {0., 0., 0.};
+    double tx = width(), ty = height();
+    double z1 = std::max(width(), height()) * nz;
+    double M[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
+    if(options.has_path("extents"))
+    {
+        auto extents = options.fetch_existing("extents").as_double_accessor();
+        tx = (extents[1] - extents[0]) / nx;
+        ty = (extents[3] - extents[2]) / ny;
+        origin[0] = extents[0];
+        origin[1] = extents[2];
+        origin[2] = extents[4];
+        z1 = extents[5];
+    }
+    else
+    {
+        // There are no extents so figure out some based on the domains, if present.
+        if(options.has_path("domain") && options.has_path("domains"))
+        {
+            auto domain = options.fetch_existing("domain").as_int_accessor();
+            auto domains = options.fetch_existing("domains").as_int_accessor();
+            if(domain.number_of_elements() == 3 &&
+               domain.number_of_elements() == domains.number_of_elements())
+            {
+                origin[0] = domain[0] * nx * width();
+                origin[1] = domain[1] * ny * height();
+                origin[2] = domain[2] * z1;
+                z1 = origin[2] + z1;
+            }
+        }
+    }
+    // Scaling
+    M[0][0] = tx / width();
+    M[1][1] = ty / height();
+    // Translation
+    M[2][0] = origin[0];
+    M[2][1] = origin[1];
+
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
     double newOrigin[] = {origin[0], origin[1], origin[2]};
     for(conduit::index_t j = 0; j < ny; j++)
     {
-        newOrigin[0] = origin[0];
+        M[2][0] = origin[0];
         for(conduit::index_t i = 0; i < nx; i++)
         {
             Tile &current = tiles[(j*nx + i)];
@@ -432,10 +477,10 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                current.setPointIds(bottom(), prevY.getPointIds(top()));
             }
 
-            addPoints(newOrigin, current.getPointIds(), x, y);
-            newOrigin[0] += width();
+            addPoints(M, current.getPointIds(), x, y);
+            M[2][0] += tx;
         }
-        newOrigin[1] += height();
+        M[2][1] += ty;
     }
 
     conduit::index_t ptsPerPlane = 0;
@@ -470,7 +515,8 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
             z.push_back(origin[2]);
         for(conduit::index_t p = 1; p < nplanes; p++)
         {
-            double zvalue = origin[2] + static_cast<double>(p) * std::max(width(), height());
+            double t = static_cast<double>(p) / static_cast<double>(nplanes - 1);
+            double zvalue = (1. - t) * origin[2] + t * z1;
             for(conduit::index_t i = 0; i < ptsPerPlane; i++)
             {
                 x.push_back(x[i]);
@@ -663,6 +709,41 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
 }
 
 //---------------------------------------------------------------------------
+void
+Tiler::boundaryFlags(const conduit::Node &options, bool &_left, bool &_right,
+    bool &_bottom, bool &_top, bool &_back, bool &_front) const
+{
+    bool handled = false;
+    if(options.has_path("domain") && options.has_path("domains"))
+    {
+        auto domain = options.fetch_existing("domain").as_int_accessor();
+        auto domains = options.fetch_existing("domains").as_int_accessor();
+        if(domain.number_of_elements() == 3 &&
+           domain.number_of_elements() == domains.number_of_elements())
+        {
+            int ndoms = domains[0] * domains[1] * domains[2];
+            if(ndoms > 1)
+            {
+                _left = (domain[0] == 0);
+                _right = (domain[0] == domains[0]-1);
+                _bottom = (domain[1] == 0);
+                _top = (domain[1] == domains[1]-1);
+                _back = (domain[2] == 0);
+                _front = (domain[2] == domains[2]-1);
+
+                handled = true;
+            }
+        }
+    }
+    if(!handled)
+    {
+        _left = _right = true;
+        _bottom = _top = true;
+        _back = _front = true;
+    }
+}
+
+//---------------------------------------------------------------------------
 template <typename Transform>
 void
 Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
@@ -674,7 +755,10 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
     const conduit::Node &options,
     Transform &&transform) const
 {
-    if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
+    bool _left, _right, _bottom, _top, _back, _front;
+    boundaryFlags(options, _left, _right, _bottom, _top, _back, _front);
+
+    if(_left)
     {
         for(conduit::index_t i = 0, j = ny-1; j >= 0; j--)
         {
@@ -689,7 +773,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             }
         }
     }
-    if(options.has_path("boundaries/bottom") && options.fetch_existing("boundaries/bottom").to_int() > 0)
+    if(_bottom)
     {
         for(conduit::index_t i = 0, j = 0; i < nx; i++)
         {
@@ -704,7 +788,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             }
         }
     }
-    if(options.has_path("boundaries/right") && options.fetch_existing("boundaries/right").to_int() > 0)
+    if(_right)
     {
         for(conduit::index_t i = nx - 1, j = 0; j < ny; j++)
         {
@@ -719,7 +803,7 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             }
         }
     }
-    if(options.has_path("boundaries/top") && options.fetch_existing("boundaries/top").to_int() > 0)
+    if(_top)
     {
         for(conduit::index_t i = nx - 1, j = ny - 1; i >= 0; i--)
         {
@@ -750,7 +834,10 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
     const conduit::Node &options,
     Transform &&transform) const
 {
-    if(options.has_path("boundaries/left") && options.fetch_existing("boundaries/left").to_int() > 0)
+    bool _left, _right, _bottom, _top, _back, _front;
+    boundaryFlags(options, _left, _right, _bottom, _top, _back, _front);
+
+    if(_left)
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -772,7 +859,7 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
             }
         }
     }
-    if(options.has_path("boundaries/right") && options.fetch_existing("boundaries/right").to_int() > 0)
+    if(_right)
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -794,7 +881,7 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
             }
         }
     }
-    if(options.has_path("boundaries/bottom") && options.fetch_existing("boundaries/bottom").to_int() > 0)
+    if(_bottom)
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -816,7 +903,7 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
             }
         }
     }
-    if(options.has_path("boundaries/top") && options.fetch_existing("boundaries/top").to_int() > 0)
+    if(_top)
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -838,7 +925,7 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
             }
         }
     }
-    if(options.has_path("boundaries/back") && options.fetch_existing("boundaries/back").to_int() > 0)
+    if(_back)
     {
         for(conduit::index_t j = 0; j < ny; j++)
         for(conduit::index_t i = nx - 1; i >= 0; i--)
@@ -850,7 +937,7 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                btype.push_back(4);
         }
     }
-    if(options.has_path("boundaries/front") && options.fetch_existing("boundaries/front").to_int() > 0)
+    if(_front)
     {
         for(conduit::index_t j = 0; j < ny; j++)
         for(conduit::index_t i = 0; i < nx; i++)

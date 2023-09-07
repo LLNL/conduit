@@ -8,6 +8,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <algorithm>
@@ -44,6 +45,11 @@ public:
         for(int i = 0; i < 3; i++)
            domains[i] = d[i];
     }
+    void setExtents(const double d[3])
+    {
+        for(int i = 0; i < 6; i++)
+           extents[i] = d[i];
+    }
     void setMeshType(const std::string &m)
     {
         meshType = m;
@@ -51,6 +57,7 @@ public:
 protected:
     int dims[3]{0,0,0};
     int domains[3]{1,1,1};
+    double extents[6]{0., 1., 0., 1., 0., 1.};
     std::string meshType{};
 };
 
@@ -61,38 +68,19 @@ class TiledDomainGenerator : public DomainGenerator
 public:
     virtual void generate(int domain[3], conduit::Node &n, conduit::Node &opts) override
     {
-        constexpr double side = 20.;
-
-        opts["origin/x"] = domain[0] * dims[0] * side;
-        opts["origin/y"] = domain[1] * dims[1] * side;
-        opts["origin/z"] = domain[2] * dims[2] * side;
-
-        // Selectively create boundaries based on where the domain is the
-        // whole set of domains.
-        if(domains[0] * domains[1] * domains[2] == 1)
-        {
-            opts["boundaries/left"] = 1;
-            opts["boundaries/right"] = 1;
-            opts["boundaries/bottom"] = 1;
-            opts["boundaries/top"] = 1;
-            if(dims[0] > 0)
-            {
-                opts["boundaries/back"] = 1;
-                opts["boundaries/front"] = 1;
-            }
-        }
-        else
-        {
-            opts["boundaries/left"] = ((domain[0] == 0) ? 1 : 0);
-            opts["boundaries/right"] = ((domain[0] == domains[0]-1) ? 1 : 0);
-            opts["boundaries/bottom"] = ((domain[1] == 0) ? 1 : 0);
-            opts["boundaries/top"] = ((domain[1] == domains[1]-1) ? 1 : 0);
-            if(dims[0] > 0)
-            {
-                opts["boundaries/back"] = ((domain[2] == 0) ? 1 : 0);
-                opts["boundaries/front"] = ((domain[2] == domains[2]-1) ? 1 : 0);
-            }
-        }
+        // Determine the size and location of this domain in the whole.
+        double sideX = (extents[1] - extents[0]) / static_cast<double>(domains[0]);
+        double sideY = (extents[3] - extents[2]) / static_cast<double>(domains[1]);
+        double sideZ = (extents[5] - extents[4]) / static_cast<double>(domains[2]);
+        double domainExt[] = {extents[0] + domain[0]     * sideX,
+                              extents[0] + (domain[0]+1) * sideX,
+                              extents[2] + domain[1]     * sideY,
+                              extents[2] + (domain[1]+1) * sideY,
+                              extents[4] + domain[2]     * sideZ,
+                              extents[4] + (domain[2]+1) * sideZ};
+        opts["extents"].set(domainExt, 6);
+        opts["domain"].set(domain, 3);
+        opts["domains"].set(domains, 3);
 
         conduit::blueprint::mesh::examples::tiled(dims[0], dims[1], dims[2], n, opts);
     }
@@ -117,7 +105,7 @@ printUsage(const char *exeName)
 {
     std::cout << "Usage: " << exeName << "[-dims x,y,z] [-domains x,y,z] [-tile]\n"
               << "   [-braid] [-output fileroot] [-protocol name] [-meshtype type]\n"
-              << "   [-tiledef filename] [-help]\n";
+              << "   [-tiledef filename] [-extents x0,x1,y0,y1[,z0,z1]] [-help]\n";
     std::cout << "\n";
     std::cout << "Argument              Description\n";
     std::cout << "===================   ==========================================================\n";
@@ -139,6 +127,9 @@ printUsage(const char *exeName)
     std::cout << "\n";
     std::cout << "-tiledef filename     A file containing a tile definition.\n";
     std::cout << "\n";
+    std::cout << "-extents ext          A list of 4 or 6 comma-separated values indicating extents\n";
+    std::cout << "                      as pairs of min,max values for each dimension.\n";
+    std::cout << "\n";
     std::cout << "-help                 Print the usage and exit.\n";
 }
 
@@ -157,6 +148,7 @@ main(int argc, char *argv[])
     // Some basic arg parsing.
     int dims[3] = {10, 10, 10};
     int domains[3] = {1, 1, 1};
+    double extents[6] = {0., 1., 0., 1., 0., 1.};
     conduit::Node n, opts;
     std::unique_ptr<DomainGenerator> g = MAKE_UNIQUE(TiledDomainGenerator);
     std::string meshType("quad"), output("output"), protocol("hdf5");
@@ -213,6 +205,19 @@ main(int argc, char *argv[])
             conduit::relay::io::load(argv[i+1], opts["tile"]);
             i++;
         }
+        else if(strcmp(argv[i], "-extents") == 0 && (i+1) < argc)
+        {
+            double e[6] = {0., 1., 0., 1., 0., 1.};
+            if(sscanf(argv[i + 1], "%lg,%lg,%lg,%lg,%lg,%lg", &e[0], &e[1], &e[2], &e[3], &e[4], &e[5]) == 6)
+            {
+                memcpy(extents, e, 6 * sizeof(double));
+            }
+            else if(sscanf(argv[i + 1], "%lg,%lg,%lg,%lg", &e[0], &e[1], &e[2], &e[3]) == 4)
+            {
+                memcpy(extents, e, 4 * sizeof(double));
+            }
+            i++;
+        }
         else if(strcmp(argv[i], "-help") == 0 ||
                 strcmp(argv[i], "--help") == 0)
         {
@@ -228,6 +233,7 @@ main(int argc, char *argv[])
     g->setDims(dims);
     g->setDomains(domains);
     g->setMeshType(meshType);
+    g->setExtents(extents);
 
     int ndoms = domains[0] * domains[1] * domains[2];
     if(ndoms == 1 && rank == 0)
