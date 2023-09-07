@@ -3966,8 +3966,22 @@ mesh::coordset::generate_strip(const Node& coordset,
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+mesh::coordset::to_explicit(const conduit::Node& coordset,
+                            conduit::Node& coordset_dest)
+{
+    std::string type = coordset.fetch_existing("type").as_string();
 
-//-------------------------------------------------------------------------
+    if(type == "uniform")
+        mesh::coordset::uniform::to_explicit(coordset, coordset_dest);
+    else if(type == "rectilinear")
+        mesh::coordset::rectilinear::to_explicit(coordset, coordset_dest);
+    else if(type == "explicit")
+        coordset_dest.set_external(coordset);
+}
+
+//-----------------------------------------------------------------------------
 void
 mesh::coordset::uniform::to_rectilinear(const conduit::Node &coordset,
                                         conduit::Node &dest)
@@ -3976,7 +3990,7 @@ mesh::coordset::uniform::to_rectilinear(const conduit::Node &coordset,
 }
 
 
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void
 mesh::coordset::uniform::to_explicit(const conduit::Node &coordset,
                                      conduit::Node &dest)
@@ -3985,7 +3999,7 @@ mesh::coordset::uniform::to_explicit(const conduit::Node &coordset,
 }
 
 
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void
 mesh::coordset::rectilinear::to_explicit(const conduit::Node &coordset,
                                          conduit::Node &dest)
