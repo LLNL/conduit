@@ -2301,6 +2301,7 @@ namespace detail
     void convert_to_double_array(const Node &n_src,
                                  Node &n_dest)
     {
+        // TODO check that it is not already a double array
         if (n_src.dtype().is_object())
         {
             auto val_itr = n_src.children();
@@ -2579,8 +2580,7 @@ void silo_write_field(DBfile *dbfile,
 
     // TODO any time you are sending arrays to silo make sure they are compact
 
-    std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
-
+    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
     int var_type;
     int silo_error = 0;
     if (mesh_type == "unstructured")
@@ -2953,15 +2953,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                   "Error adding option");
     }
 
-    std::string safe_meshname;
-    if (overlink)
-    {
-        safe_meshname = "MESH";
-    }
-    else
-    {
-        safe_meshname = detail::sanitize_silo_varname(topo_name);
-    }
+    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
@@ -2992,17 +2984,8 @@ void silo_write_ucd_mesh(DBfile *dbfile,
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
     // TODO_LATER there is a different approach for polyhedral zone lists
-    std::string zlist_name = topo_name + "_connectivity";
-
-    std::string safe_meshname;
-    if (overlink)
-    {
-        safe_meshname = "MESH";
-    }
-    else
-    {
-        safe_meshname = detail::sanitize_silo_varname(topo_name);
-    }
+    const std::string zlist_name = topo_name + "_connectivity";
+    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
                                   safe_meshname.c_str(), // mesh name
@@ -3077,15 +3060,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                   "Error adding option");
     }
 
-    std::string safe_meshname;
-    if (overlink)
-    {
-        safe_meshname = "MESH";
-    }
-    else
-    {
-        safe_meshname = detail::sanitize_silo_varname(topo_name);
-    }
+    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error =
         DBPutQuadmesh(dbfile,                // silo file ptr
@@ -3113,16 +3088,7 @@ void silo_write_pointmesh(DBfile *dbfile,
                           Node &n_mesh_info)
 {
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
-
-    std::string safe_meshname;
-    if (overlink)
-    {
-        safe_meshname = "MESH";
-    }
-    else
-    {
-        safe_meshname = detail::sanitize_silo_varname(topo_name);
-    }
+    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error = DBPutPointmesh(dbfile,                // silo file ptr
                                     safe_meshname.c_str(), // mesh name
@@ -3380,9 +3346,7 @@ void silo_write_matset(DBfile *dbfile,
                       << "matsets/" << matset_name << "/topology");
         return;
     }
-
     const std::string topo_name = silo_matset["topology"].as_string();
-
     if (!n_mesh_info.has_path(topo_name))
     {
         CONDUIT_INFO("Skipping this matset because the linked "
@@ -3391,16 +3355,7 @@ void silo_write_matset(DBfile *dbfile,
                       << "/topology: " << topo_name);
         return;
     }
-
-    std::string safe_meshname;
-    if (overlink)
-    {
-        safe_meshname = "MESH";
-    }
-    else
-    {
-        safe_meshname = detail::sanitize_silo_varname(topo_name);
-    }
+    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int nmat = silo_matset["material_map"].number_of_children();
 
@@ -3800,21 +3755,9 @@ void write_multimesh(DBfile *dbfile,
 {
     const int num_files = root["number_of_files"].as_int32();
     const bool root_only = root["file_style"].as_string() == "root_only";
-
-    std::string safe_meshname;
-    if (overlink)
-    {
-        safe_meshname = "MESH";
-    }
-    else
-    {
-        safe_meshname = detail::sanitize_silo_varname(topo_name);
-    }
-
-    std::string silo_path = root["silo_path"].as_string();
-
+    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
+    const std::string silo_path = root["silo_path"].as_string();
     std::vector<std::string> domain_name_strings;
-    
     std::vector<int> mesh_types;
     generate_silo_names(n_mesh["state"],
                         silo_path,
