@@ -930,170 +930,171 @@ TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
-// {
-//     Node load_mesh, info, opts;
-//     std::string path = utils::join_file_path("silo", "multi_curv3d.silo");
-//     std::string input_file = relay_test_silo_data_path(path);
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
+{
+    Node load_mesh, info, opts;
+    const std::string path = utils::join_file_path("silo", "multi_curv3d.silo");
+    const std::string input_file = relay_test_silo_data_path(path);
 
-//     opts["mesh_name"] = "mesh1_dup";
+    opts["mesh_name"] = "mesh1_dup";
 
-//     io::silo::load_mesh(input_file, opts, load_mesh);
-//     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    io::silo::load_mesh(input_file, opts, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//     EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
-// }
+    EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
+}
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
-// {
-//     const std::vector<std::string> silo_types = {"default", "pdb", "hdf5", "unknown"};
-//     for (int i = 3; i < silo_types.size(); i ++)
-//     {
-//         Node opts;
-//         opts["silo_type"] = silo_types[i];
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
+{
+    const std::vector<std::string> silo_types = {"default", "pdb", "hdf5", "unknown"};
+    for (int i = 3; i < silo_types.size(); i ++)
+    {
+        Node opts;
+        opts["silo_type"] = silo_types[i];
 
-//         Node save_mesh, load_mesh, info;
-//         blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
 
-//         const std::string basename = "silo_save_option_silo_type_" + silo_types[i] + "_basic";
-//         const std::string filename = basename + ".root";
+        const std::string basename = "silo_save_option_silo_type_" + silo_types[i] + "_basic";
+        const std::string filename = basename + ".root";
 
-//         remove_path_if_exists(filename);
-//         io::silo::save_mesh(save_mesh, basename, opts);
-//         io::silo::load_mesh(filename, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        remove_path_if_exists(filename);
+        io::silo::save_mesh(save_mesh, basename, opts);
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//         // this is to pass the diff, as silo will add cycle in if it is not there
-//         save_mesh["state/cycle"] = (int64) 0;
-//         save_mesh["state/domain_id"] = 0;
+        // this is to pass the diff, as silo will add cycle in if it is not there
+        save_mesh["state/cycle"] = (int64) 0;
+        save_mesh["state/domain_id"] = 0;
         
-//         silo_name_changer("mesh", save_mesh);
+        silo_name_changer("mesh", save_mesh);
 
-//         // the loaded mesh will be in the multidomain format
-//         // but the saved mesh is in the single domain format
-//         EXPECT_EQ(load_mesh.number_of_children(), 1);
-//         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+        // the loaded mesh will be in the multidomain format
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), 1);
+        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-//         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
-//     }
-// }
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    }
+}
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
-// {
-//     const std::vector<std::string> ovl_topo_names = {"", "topo"};
-//     for (int i = 0; i < ovl_topo_names.size(); i ++)
-//     {
-//         std::string basename;
-//         if (ovl_topo_names[i].empty())
-//         {
-//             basename = "silo_save_option_overlink_spiral";
-//         }
-//         else
-//         {
-//             basename = "silo_save_option_overlink_spiral_" + ovl_topo_names[i];
-//         }
-//         const std::string filename = basename + "/OvlTop.silo";
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
+{
+    const std::vector<std::string> ovl_topo_names = {"", "topo"};
+    for (int i = 0; i < ovl_topo_names.size(); i ++)
+    {
+        std::string basename;
+        if (ovl_topo_names[i].empty())
+        {
+            basename = "silo_save_option_overlink_spiral";
+        }
+        else
+        {
+            basename = "silo_save_option_overlink_spiral_" + ovl_topo_names[i];
+        }
+        const std::string filename = basename + "/OvlTop.silo";
 
-//         Node opts;
-//         opts["file_style"] = "overlink";
-//         opts["ovl_topo_name"] = ovl_topo_names[i];
+        Node opts;
+        opts["file_style"] = "overlink";
+        opts["ovl_topo_name"] = ovl_topo_names[i];
 
-//         int ndomains = 2;
+        int ndomains = 2;
 
-//         Node save_mesh, load_mesh, info;
-//         blueprint::mesh::examples::spiral(ndomains, save_mesh);
-//         remove_path_if_exists(basename);
-//         io::silo::save_mesh(save_mesh, basename, opts);
-//         io::silo::load_mesh(filename, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        remove_path_if_exists(basename);
+        io::silo::save_mesh(save_mesh, basename, opts);
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-//         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
-//         {
-//             overlink_name_changer(save_mesh[child]);
-//             int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-//             save_mesh[child]["state"]["cycle"].reset();
-//             save_mesh[child]["state"]["cycle"] = (int64) cycle;
-//         }
+        for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+        {
+            overlink_name_changer(save_mesh[child]);
+            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
+            save_mesh[child]["state"]["cycle"].reset();
+            save_mesh[child]["state"]["cycle"] = (int64) cycle;
+        }
 
-//         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-//         NodeConstIterator l_itr = load_mesh.children();
-//         NodeConstIterator s_itr = save_mesh.children();
-//         while (l_itr.has_next())
-//         {
-//             const Node &l_curr = l_itr.next();
-//             const Node &s_curr = s_itr.next();
+        EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+        NodeConstIterator l_itr = load_mesh.children();
+        NodeConstIterator s_itr = save_mesh.children();
+        while (l_itr.has_next())
+        {
+            const Node &l_curr = l_itr.next();
+            const Node &s_curr = s_itr.next();
 
-//             EXPECT_FALSE(l_curr.diff(s_curr, info));
-//         }
-//     }
-// }
+            EXPECT_FALSE(l_curr.diff(s_curr, info));
+        }
+    }
+}
 
-// //-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 
-// //
-// // read and write Silo and Overlink tests
-// //
+//
+// read and write Silo and Overlink tests
+//
 
-// //-----------------------------------------------------------------------------
-// // read normal silo files containing multimeshes and multivars
-// TEST(conduit_relay_io_silo, read_silo)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//         {".",                  "multi_curv3d", ".silo", ""            }, // test default case
-//         {".",                  "multi_curv3d", ".silo", "mesh1"       },
-//         {".",                  "multi_curv3d", ".silo", "mesh1_back"  },
-//         {".",                  "multi_curv3d", ".silo", "mesh1_dup"   },
-//         {".",                  "multi_curv3d", ".silo", "mesh1_front" },
-//         {".",                  "multi_curv3d", ".silo", "mesh1_hidden"},
-//         {".",                  "tire",         ".silo", ""            }, // test default case
-//         {".",                  "tire",         ".silo", "tire"        },
-//         {".",                  "galaxy0000",   ".silo", ""            }, // test default case
-//         {".",                  "galaxy0000",   ".silo", "StarMesh"    },
-//         {".",                  "emptydomains", ".silo", ""            }, // test default case
-//         {".",                  "emptydomains", ".silo", "mesh"        },
-//         {"multidir_test_data", "multidir0000", ".root", ""            }, // test default case
-//         {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
-//     };
+//-----------------------------------------------------------------------------
+// read normal silo files containing multimeshes and multivars
+TEST(conduit_relay_io_silo, read_silo)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+        {".",                  "multi_curv3d", ".silo", ""            }, // test default case
+        {".",                  "multi_curv3d", ".silo", "mesh1"       },
+        {".",                  "multi_curv3d", ".silo", "mesh1_back"  },
+        {".",                  "multi_curv3d", ".silo", "mesh1_dup"   },
+        {".",                  "multi_curv3d", ".silo", "mesh1_front" },
+        {".",                  "multi_curv3d", ".silo", "mesh1_hidden"},
+        {".",                  "tire",         ".silo", ""            }, // test default case
+        {".",                  "tire",         ".silo", "tire"        },
+        {".",                  "galaxy0000",   ".silo", ""            }, // test default case
+        {".",                  "galaxy0000",   ".silo", "StarMesh"    },
+        {".",                  "emptydomains", ".silo", ""            }, // test default case
+        {".",                  "emptydomains", ".silo", "mesh"        },
+        {"multidir_test_data", "multidir0000", ".root", ""            }, // test default case
+        {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
+    };
 
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string dirname  = file_info[i][0];
-//         const std::string basename = file_info[i][1];
-//         const std::string fileext  = file_info[i][2];
-//         const std::string meshname = file_info[i][3];
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string dirname  = file_info[i][0];
+        const std::string basename = file_info[i][1];
+        const std::string fileext  = file_info[i][2];
+        const std::string meshname = file_info[i][3];
 
-//         Node load_mesh, info, read_opts, write_opts;
-//         std::string filepath = utils::join_file_path(dirname, basename) + fileext;
-//         filepath = utils::join_file_path("silo", filepath);
-//         std::string input_file = relay_test_silo_data_path(filepath);
+        Node load_mesh, info, read_opts, write_opts;
+        std::string filepath = utils::join_file_path(dirname, basename) + fileext;
+        filepath = utils::join_file_path("silo", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-//         read_opts["mesh_name"] = meshname;
+        read_opts["mesh_name"] = meshname;
 
-//         io::silo::load_mesh(input_file, read_opts, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        io::silo::load_mesh(input_file, read_opts, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//         std::string out_name = "read_silo_" + basename;
-//         if (!meshname.empty())
-//         {
-//             out_name += "_" + meshname;
-//         }
+        std::string out_name = "read_silo_" + basename;
+        if (!meshname.empty())
+        {
+            out_name += "_" + meshname;
+        }
 
-//         remove_path_if_exists(out_name + "_write_blueprint");
-//         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+        // TODO apparently the bp files can't even be opened by visit
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-//         remove_path_if_exists(out_name + "_write_silo");
-//         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+        remove_path_if_exists(out_name + "_write_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-//         // TODO uncomment when overlink is fully supported
-//         // remove_path_if_exists(out_name + "_write_overlink");
-//         // write_opts["file_style"] = "overlink";
-//         // write_opts["ovl_topo_name"] = meshname;
-//         // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-//     }
-// }
+        // TODO uncomment when overlink is fully supported
+        // remove_path_if_exists(out_name + "_write_overlink");
+        // write_opts["file_style"] = "overlink";
+        // write_opts["ovl_topo_name"] = meshname;
+        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+    }
+}
 
 // //-----------------------------------------------------------------------------
 // // test that we can read the fake overlink files from the visit test data

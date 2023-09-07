@@ -394,7 +394,6 @@ int dtype_to_silo_type(DataType dtype)
 }
 
 //-----------------------------------------------------------------------------
-// TODO check all compaction logic uses the same pattern
 // assumes you pass either a leaf node or a node one step up from leaf nodes
 void conditional_compact(const Node &n_src,
                          Node &n_dest)
@@ -433,6 +432,7 @@ void conditional_compact(const Node &n_src,
 
 //-----------------------------------------------------------------------------
 // assumes you pass either a leaf node or a node one step up from leaf nodes
+// will give you a result that is compact
 void convert_to_double_array(const Node &n_src,
                              Node &n_dest)
 {
@@ -444,12 +444,28 @@ void convert_to_double_array(const Node &n_src,
         {
             const Node &n_val = val_itr.next();
             const std::string label = val_itr.name();
-            n_val.to_double_array(n_dest[label]);
+            // if it's already a double array, we just need to compact it
+            if (n_val.dtype().is_double())
+            {
+                conditional_compact(n_val, n_dest[label]);
+            }
+            else
+            {
+                n_val.to_double_array(n_dest[label]);
+            }
         }
     }
     else
     {
-        n_src.to_double_array(n_dest);
+        // if it's already a double array, we just need to compact it
+        if (n_src.dtype().is_double())
+        {
+            conditional_compact(n_src, n_dest);
+        }
+        else
+        {
+            n_src.to_double_array(n_dest);
+        }
     }
 }
 
@@ -2812,7 +2828,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
 
     // convert to compact ints ...
-    n_mesh_conn.compact_to(n_conn);
+    detail::conditional_compact(n_mesh_conn, n_conn);
 
     if (topo_shape == "quad")
     {
@@ -2880,7 +2896,8 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 
     // Final Compaction
     Node n_conn_final;
-    n_conn.compact_to(n_conn_final);
+    // TODO why compact again at all?
+    detail::conditional_compact(n_conn, n_conn_final);
 
     int conn_len = n_conn_final.total_bytes_compact() / sizeof(int);
     int *conn_ptr = (int *)n_conn_final.data_ptr();
