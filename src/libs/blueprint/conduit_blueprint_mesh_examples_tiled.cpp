@@ -393,9 +393,20 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         origin[2] = options.fetch_existing("origin/z").to_double();
     if(options.has_path("tile"))
         initialize(options.fetch_existing("tile"));
+
     bool reorder = true;
     if(options.has_path("reorder"))
         reorder = options.fetch_existing("reorder").to_int() > 0;
+
+    conduit::DataType indexDT(conduit::DataType::index_t());
+    if(options.has_child("datatype"))
+    {
+        auto s = options.fetch_existing("datatype").as_string();
+        if((s == "int") || (s == "int32") || (s == "integer"))
+        {
+            indexDT = conduit::DataType::int32();
+        }
+    }
 
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
@@ -497,10 +508,13 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
     res["topologies/mesh/elements/shape"] = z.empty() ? "quad" : "hex";
-    res["topologies/mesh/elements/connectivity"].set(conn);
-    res["topologies/mesh/elements/sizes"].set(sizes);
+    conduit::Node tmp;
+    tmp.set_external(conn.data(), conn.size());
+    tmp.to_data_type(indexDT.id(), res["topologies/mesh/elements/connectivity"]);
+    tmp.set_external(sizes.data(), sizes.size());
+    tmp.to_data_type(indexDT.id(), res["topologies/mesh/elements/sizes"]);
 
-#if 1//def CONDUIT_TILER_DEBUG_FIELDS
+#ifdef CONDUIT_TILER_DEBUG_FIELDS
     // Add fields to test the reordering.
     std::vector<conduit::index_t> nodeids, elemids;
     auto npts = static_cast<conduit::index_t>(x.size());
@@ -628,8 +642,12 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         res["topologies/boundary/type"] = "unstructured";
         res["topologies/boundary/coordset"] = "coords";
         res["topologies/boundary/elements/shape"] = bshape;
-        res["topologies/boundary/elements/connectivity"].set(bconn);
-        res["topologies/boundary/elements/sizes"].set(bsizes);
+
+        tmp.set_external(bconn.data(), bconn.size());
+        tmp.to_data_type(indexDT.id(), res["topologies/boundary/elements/connectivity"]);
+
+        tmp.set_external(bsizes.data(), bsizes.size());
+        tmp.to_data_type(indexDT.id(), res["topologies/boundary/elements/sizes"]);
 
         res["fields/boundary_type/topology"] = "boundary";
         res["fields/boundary_type/association"] = "element";
