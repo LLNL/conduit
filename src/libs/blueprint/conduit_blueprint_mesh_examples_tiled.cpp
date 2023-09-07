@@ -23,7 +23,11 @@
 #include <cmath>
 
 // Uncomment this to add some fields on the filed mesh prior to reordering.
-//#define CONDUIT_TILER_DEBUG_FIELDS
+// #define CONDUIT_TILER_DEBUG_FIELDS
+
+// Uncomment this to try an experimental mode that uses the partitioner to
+// do reordering.
+// #define CONDUIT_USE_PARTITIONER_FOR_REORDER
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
@@ -54,113 +58,6 @@ namespace examples
 //-----------------------------------------------------------------------------
 namespace detail
 {
-
-void
-reorder_topo(const conduit::Node &topo, const conduit::Node &coordset, const conduit::Node &fields,
-             const std::vector<conduit::index_t> &reorder,
-             conduit::Node &dest_topo, conduit::Node &dest_coordset, conduit::Node &dest_fields,
-             std::vector<conduit::index_t> &old2NewPoints)
-{
-    conduit::blueprint::mesh::utils::ShapeType shape(topo);
-
-    // Handle unstructured meshes (but not polyhedral meshes yet)
-    if(topo.fetch_existing("type").as_string() == "unstructured" && !shape.is_polyhedral())
-    {
-        // Input connectivity information.
-        const auto &n_conn = topo.fetch_existing("elements/connectivity");
-        const auto &n_sizes = topo.fetch_existing("elements/sizes");
-        const auto &n_offsets = topo.fetch_existing("elements/offsets");
-        const auto conn = n_conn.as_index_t_accessor();
-        const auto sizes = n_sizes.as_index_t_accessor();
-        const auto offsets = n_offsets.as_index_t_accessor();
-
-        // Temp vectors to store reordered connectivity. We use temp vectors so
-        // we can convert to a matching datatype after we've constructed the data.
-        std::vector<conduit::index_t> newconn, newoffsets, newsizes;
-        newconn.reserve(conn.number_of_elements());
-        newsizes.reserve(sizes.number_of_elements());
-        newoffsets.reserve(offsets.number_of_elements());
-
-        // Mapping information for the points.
-        constexpr conduit::index_t invalidNode = -1;
-        auto npts = conduit::blueprint::mesh::coordset::length(coordset);
-        std::vector<conduit::index_t> ptReorder(npts, invalidNode);
-        old2NewPoints.resize(npts);
-        for(size_t i = 0; i < npts; i++)
-            old2NewPoints[i] = invalidNode;
-        conduit::index_t newPointIndex = 0;
-
-        // We iterate over elements in the specified order. We iterate over the
-        // points in each element and renumber the points.
-        conduit::index_t newoffset = 0;
-        for(const auto cellIndex : reorder)
-        {
-            for(conduit::index_t i = 0; i < sizes[cellIndex]; i++)
-            {
-                auto id = conn[offsets[cellIndex] + i];
-                // if the old point has not been seen, renumber it.
-                if(old2NewPoints[id] == invalidNode)
-                {
-                    ptReorder[newPointIndex] = id;
-                    old2NewPoints[id] = newPointIndex++;
-                }
-                newconn.push_back(old2NewPoints[id]);
-            }
-            newsizes.push_back(sizes[cellIndex]);
-            newoffsets.push_back(newoffset);
-            newoffset += sizes[cellIndex];
-        }
-
-        // Store the new connectivity.
-        dest_topo["type"] = topo["type"];
-        dest_topo["coordset"] = dest_coordset.name();
-        dest_topo["elements/shape"] = topo["elements/shape"];
-        conduit::Node tmp;
-        tmp.set_external(newconn.data(), newconn.size());
-        tmp.to_data_type(n_conn.dtype().id(), dest_topo["elements/connectivity"]);
-        tmp.set_external(newsizes.data(), newsizes.size());
-        tmp.to_data_type(n_sizes.dtype().id(), dest_topo["elements/sizes"]);
-        tmp.set_external(newoffsets.data(), newoffsets.size());
-        tmp.to_data_type(n_offsets.dtype().id(), dest_topo["elements/offsets"]);
-
-        // Reorder the coordset now, making it explicit if needed.
-        dest_coordset["type"] = "explicit";
-        conduit::Node coordset_explicit;
-        if(coordset["type"].as_string() == "rectilinear")
-            conduit::blueprint::mesh::coordset::rectilinear::to_explicit(coordset, coordset_explicit);
-        else if(coordset["type"].as_string() == "uniform")
-            conduit::blueprint::mesh::coordset::uniform::to_explicit(coordset, coordset_explicit);
-        else
-            coordset_explicit.set_external(coordset);
-        conduit::blueprint::mesh::utils::slice_field(coordset_explicit["values"], ptReorder, dest_coordset["values"]);
-
-        // Reorder fields that match this topo.
-        std::vector<std::string> fieldNames;
-        for(conduit::index_t fi = 0; fi < fields.number_of_children(); fi++)
-        {
-            const conduit::Node &src = fields[fi];
-            if(src["topology"].as_string() == topo.name())
-            {
-                fieldNames.push_back(src.name());
-            }
-        }
-        for(const auto &fieldName : fieldNames)
-        {
-            const conduit::Node &src = fields.fetch_existing(fieldName);
-            conduit::Node &dest = dest_fields[fieldName];
-            dest["association"] = src["association"];
-            dest["topology"] = dest_topo.name();
-            if(dest["association"].as_string() == "element")
-            {
-                conduit::blueprint::mesh::utils::slice_field(src["values"], reorder, dest["values"]);
-            }
-            else
-            {
-                conduit::blueprint::mesh::utils::slice_field(src["values"], ptReorder, dest["values"]);
-            }
-        }
-    }
-}
 
 /**
  \brief Keep track of some tile information.
@@ -603,7 +500,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     res["topologies/mesh/elements/connectivity"].set(conn);
     res["topologies/mesh/elements/sizes"].set(sizes);
 
-#ifdef CONDUIT_TILER_DEBUG_FIELDS
+#if 1//def CONDUIT_TILER_DEBUG_FIELDS
     // Add fields to test the reordering.
     std::vector<conduit::index_t> nodeids, elemids;
     auto npts = static_cast<conduit::index_t>(x.size());
@@ -646,12 +543,42 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         // We need offsets.
         conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(res["topologies/mesh"], res["topologies/mesh/elements/offsets"]);
 
-        // Reorder the mesh elements.
+        // Create a new order for the mesh elements.
         const auto elemOrder = conduit::blueprint::mesh::utils::topology::spatial_ordering(res["topologies/mesh"]);
-        reorder_topo(res["topologies/mesh"], res["coordsets/coords"], res["fields"],
-                     elemOrder,
-                     res["topologies/mesh"], res["coordsets/coords"], res["fields"],
-                     old2NewPoint);
+
+#ifdef CONDUIT_USE_PARTITIONER_FOR_REORDER
+        // NOTE: This was an idea I had after I made reorder. Reordering is like
+        //       making an explicit selection for the partitioner. Can we just use
+        //       the partitioner? Kind of, it turns out.
+        //
+        //       1. Elements are reordered like we want
+        //       2. Nodes are not reordered in their order of use by elements.
+        //       3. Passing the same node as input/output does bad things.
+
+        // Make an explicit selection for partition to do the reordering.
+        conduit::Node options;
+        conduit::Node &sel = options["selections"].append();
+        sel["type"] = "explicit";
+        sel["topology"] = "mesh";
+        sel["elements"].set_external(const_cast<conduit::index_t *>(elemOrder.data()), elemOrder.size());
+        conduit::Node output;
+        conduit::blueprint::mesh::partition(res, options, output);
+
+        // Extract the vertex mapping.
+        auto ids = output.fetch_existing("fields/original_vertex_ids/values/ids").as_index_t_accessor();
+        for(conduit::index_t i = 0; i < ids.number_of_elements(); i++)
+        {
+            old2NewPoint.push_back(ids[i]);
+        }
+        res.reset();
+        res.move(output);
+#else
+        conduit::blueprint::mesh::utils::topology::unstructured::reorder(
+            res["topologies/mesh"], res["coordsets/coords"], res["fields"],
+            elemOrder,
+            res["topologies/mesh"], res["coordsets/coords"], res["fields"],
+            old2NewPoint);
+#endif
     }
 
     // Boundaries

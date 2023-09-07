@@ -812,6 +812,17 @@ SelectionExplicit::determine_is_whole(const conduit::Node &n_mesh) const
             for(index_t i = 0; i < n; i++)
                 unique.insert(indices[i]);
             is_whole = static_cast<index_t>(unique.size()) == num_elem_in_mesh;
+
+            // If the mesh is whole, check that the indices are all in ascending
+            // order. If not, we're reordering and we should not consider the
+            // chunk available for passing through whole.
+            if(n > 1)
+            {
+                for(index_t i = 1; i < n && is_whole; i++)
+                {
+                    is_whole &= (indices[i - 1] < indices[i]);
+                }
+            }
         }
     }
     catch(conduit::Error &)

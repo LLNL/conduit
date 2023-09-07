@@ -414,8 +414,7 @@ namespace topology
      *
      * @return A vector containing the new element order.
      */
-    std::vector<conduit::index_t> spatial_ordering(const conduit::Node &topo);
-
+    std::vector<conduit::index_t> CONDUIT_BLUEPRINT_API spatial_ordering(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
     /**
@@ -508,6 +507,40 @@ namespace topology
         //-------------------------------------------------------------------------
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
                                                           const index_t i);
+
+        //-------------------------------------------------------------------------
+        /**
+         * @brief Reorder the topology's elements and nodes, according to the new
+         *        element \order vector.
+         *
+         * @param topo     A node containing the topo to be reordered.
+         * @param coordset A node containing the coordset to be reordered.
+         * @param fields   A node containing the fields to be reordered. Only fields
+         *                 that match the topology node name will be modified.
+         * @param order    A vector containing element indices in their new order.
+         * @param dest_topo A node that will contain reordered topo. It can
+         *                  be the same node as topo.
+         * @param dest_coordset A node that will contain reordered coordset. It can
+         *                  be the same node as coordset.
+         * @param dest_fields A node that will contain the reordered fields. It can
+         *                  be the same node as fields.
+         * @param[out] old2NewPoints A vector that contains new point indices for
+         *                           old point indices, which can be used for mapping
+         *                           data from the original order to the new order.
+         *
+         * @note This reorder function is similar to calling partition with an explicit
+         *       index selection if the indices are provided in a new order. This
+         *       function will also reorder the nodes in their order of use by elements
+         *       in the new order and partition does not currently do that.
+         */
+        void CONDUIT_BLUEPRINT_API reorder(const conduit::Node &topo,
+                                           const conduit::Node &coordset,
+                                           const conduit::Node &fields,
+                                           const std::vector<conduit::index_t> &order,
+                                           conduit::Node &dest_topo,
+                                           conduit::Node &dest_coordset,
+                                           conduit::Node &dest_fields,
+                                           std::vector<conduit::index_t> &old2NewPoints);
     }
     //-------------------------------------------------------------------------
     // -- end conduit::blueprint::mesh::utils::topology::unstructured --
