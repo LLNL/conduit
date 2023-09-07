@@ -2223,38 +2223,97 @@ void load_mesh(const std::string &root_file_path,
 }
 
 //---------------------------------------------------------------------------//
-int dtype_to_silo_type(DataType dtype)
+namespace detail
 {
-    if (dtype.is_float())
+    int dtype_to_silo_type(DataType dtype)
     {
-        return DB_FLOAT;
+        if (dtype.is_float())
+        {
+            return DB_FLOAT;
+        }
+        else if (dtype.is_double())
+        {
+            return DB_DOUBLE;
+        }
+        else if (dtype.is_int())
+        {
+            return DB_INT;
+        }
+        else if (dtype.is_long())
+        {
+            return DB_LONG;
+        }
+        else if (dtype.is_long_long())
+        {
+            return DB_LONG_LONG;
+        }
+        else if (dtype.is_char())
+        {
+            return DB_CHAR;
+        }
+        else if (dtype.is_short())
+        {
+            return DB_SHORT;
+        }
+        return DB_NOTYPE;
     }
-    else if (dtype.is_double())
+
+    // TODO check all compaction logic uses the same pattern
+    void conditional_compact(const Node &n_src,
+                             Node &n_dest)
     {
-        return DB_DOUBLE;
+        // are we already compact?
+        if (n_src.dtype().is_compact())
+        {
+            n_dest.set_external(n_src);
+        }
+        else
+        {
+            if (n_src.dtype().is_object())
+            {
+                auto val_itr = n_src.children();
+                while (val_itr.has_next())
+                {
+                    const Node &n_val = val_itr.next();
+                    const std::string label = val_itr.name();
+                    // is this piece already compact?
+                    if (n_src[label].dtype().is_compact())
+                    {
+                        n_dest[label].set_external(n_val);
+                    }
+                    else
+                    {
+                        n_val.compact_to(n_dest[label]);
+                    }
+                }
+            }
+            else
+            {
+                n_src.compact_to(n_dest);
+            }
+        }
     }
-    else if (dtype.is_int())
+
+    // assumes you pass either a leaf node or a node one step up from leaf nodes
+    void convert_to_double_array(const Node &n_src,
+                                 Node &n_dest)
     {
-        return DB_INT;
+        if (n_src.dtype().is_object())
+        {
+            auto val_itr = n_src.children();
+            while (val_itr.has_next())
+            {
+                const Node &n_val = val_itr.next();
+                const std::string label = val_itr.name();
+                n_val.to_double_array(n_dest[label]);
+            }
+        }
+        else
+        {
+            n_src.to_double_array(n_dest);
+        }
     }
-    else if (dtype.is_long())
-    {
-        return DB_LONG;
-    }
-    else if (dtype.is_long_long())
-    {
-        return DB_LONG_LONG;
-    }
-    else if (dtype.is_char())
-    {
-        return DB_CHAR;
-    }
-    else if (dtype.is_short())
-    {
-        return DB_SHORT;
-    }
-    return DB_NOTYPE;
-}
+} // end namespace detail
 
 //---------------------------------------------------------------------------//
 void silo_write_field(DBfile *dbfile,
@@ -2330,14 +2389,14 @@ void silo_write_field(DBfile *dbfile,
     // determine the number of variable components
     if (vals_dtype.is_object()) // we have vector/tensor values
     {
-        nvars = n_values.number_of_children();
+        nvars = n_var["values"].number_of_children();
         CONDUIT_ASSERT(nvars > 0, "Expected object to have children.");
-        silo_vals_type = dtype_to_silo_type(n_var["values"][0].dtype());
+        silo_vals_type = detail::dtype_to_silo_type(n_var["values"][0].dtype());
     }
     else
     {
         nvars = 1;
-        silo_vals_type = dtype_to_silo_type(vals_dtype);
+        silo_vals_type = detail::dtype_to_silo_type(vals_dtype);
     }
     if (silo_vals_type == DB_NOTYPE)
     {
@@ -2442,7 +2501,7 @@ void silo_write_field(DBfile *dbfile,
             const Node &n_comp = val_itr.next();
             const std::string comp_name = val_itr.name();
 
-            CONDUIT_ASSERT(silo_vals_type == dtype_to_silo_type(n_comp.dtype()),
+            CONDUIT_ASSERT(silo_vals_type == detail::dtype_to_silo_type(n_comp.dtype()),
                 "Inconsistent values types across vector components in field " << var_name);
 
             comp_name_strings.push_back(comp_name);
@@ -2593,66 +2652,6 @@ assign_coords_ptrs(void *coords_ptrs[3],
         return -1;
     }
 }
-
-//---------------------------------------------------------------------------//
-namespace detail
-{
-    // TODO check all compaction logic uses the same pattern
-    void conditional_compact(const Node &n_src,
-                             Node &n_dest)
-    {
-        // are we already compact?
-        if (n_src.dtype().is_compact())
-        {
-            n_dest.set_external(n_src);
-        }
-        else
-        {
-            if (n_src.is_object())
-            {
-                auto val_itr = n_src.children();
-                while (val_itr.has_next())
-                {
-                    const Node &n_val = val_itr.next();
-                    const std::string label = val_itr.name();
-                    // is this piece already compact?
-                    if (n_src[label].dtype().is_compact())
-                    {
-                        n_dest[label].set_external(n_val);
-                    }
-                    else
-                    {
-                        n_val.compact_to(n_dest[label]);
-                    }
-                }
-            }
-            else
-            {
-                n_src.compact_to(n_dest);
-            }
-        }
-    }
-
-    // assumes you pass either a leaf node or a node one step up from leaf nodes
-    void convert_to_double_array(const Node &n_src,
-                                 Node &n_dest)
-    {
-        if (n_src.is_object())
-        {
-            auto val_itr = n_src.children();
-            while (val_itr.has_next())
-            {
-                const Node &n_val = val_itr.next();
-                const std::string label = val_itr.name();
-                n_val.to_double_array(n_dest[label]);
-            }
-        }
-        else
-        {
-            n_src.to_double_array(n_dest);
-        }
-    }
-} // end namespace detail
 
 //---------------------------------------------------------------------------//
 // calculates and checks the number of points for an explicit coordset
@@ -3396,7 +3395,7 @@ void silo_write_matset(DBfile *dbfile,
     }
 
     const int mixlen = silo_matset["mix_mat"].dtype().number_of_elements();
-    const int mat_type = dtype_to_silo_type(silo_matset["mix_vf"].dtype());
+    const int mat_type = detail::dtype_to_silo_type(silo_matset["mix_vf"].dtype());
     if (mat_type != DB_FLOAT && mat_type != DB_DOUBLE)
     {
         CONDUIT_ERROR("Invalid matset volume fraction type: " << silo_matset["mix_vf"].dtype().to_string());
