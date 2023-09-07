@@ -357,6 +357,102 @@ std::string sanitize_silo_varname(const std::string &varname)
     return newvarname.str();
 }
 
+// TODO see what other random functions could live here
+
+//-----------------------------------------------------------------------------
+int dtype_to_silo_type(DataType dtype)
+{
+    if (dtype.is_float())
+    {
+        return DB_FLOAT;
+    }
+    else if (dtype.is_double())
+    {
+        return DB_DOUBLE;
+    }
+    else if (dtype.is_int())
+    {
+        return DB_INT;
+    }
+    else if (dtype.is_long())
+    {
+        return DB_LONG;
+    }
+    else if (dtype.is_long_long())
+    {
+        return DB_LONG_LONG;
+    }
+    else if (dtype.is_char())
+    {
+        return DB_CHAR;
+    }
+    else if (dtype.is_short())
+    {
+        return DB_SHORT;
+    }
+    return DB_NOTYPE;
+}
+
+//-----------------------------------------------------------------------------
+// TODO check all compaction logic uses the same pattern
+// assumes you pass either a leaf node or a node one step up from leaf nodes
+void conditional_compact(const Node &n_src,
+                         Node &n_dest)
+{
+    // are we already compact?
+    if (n_src.dtype().is_compact())
+    {
+        n_dest.set_external(n_src);
+    }
+    else
+    {
+        if (n_src.dtype().is_object())
+        {
+            auto val_itr = n_src.children();
+            while (val_itr.has_next())
+            {
+                const Node &n_val = val_itr.next();
+                const std::string label = val_itr.name();
+                // is this piece already compact?
+                if (n_src[label].dtype().is_compact())
+                {
+                    n_dest[label].set_external(n_val);
+                }
+                else
+                {
+                    n_val.compact_to(n_dest[label]);
+                }
+            }
+        }
+        else
+        {
+            n_src.compact_to(n_dest);
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+// assumes you pass either a leaf node or a node one step up from leaf nodes
+void convert_to_double_array(const Node &n_src,
+                             Node &n_dest)
+{
+    // TODO check that it is not already a double array
+    if (n_src.dtype().is_object())
+    {
+        auto val_itr = n_src.children();
+        while (val_itr.has_next())
+        {
+            const Node &n_val = val_itr.next();
+            const std::string label = val_itr.name();
+            n_val.to_double_array(n_dest[label]);
+        }
+    }
+    else
+    {
+        n_src.to_double_array(n_dest);
+    }
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::<mpi>::io::silo::detail --
@@ -2230,103 +2326,6 @@ void load_mesh(const std::string &root_file_path,
               mesh);
 #endif
 }
-
-//---------------------------------------------------------------------------//
-namespace detail
-{
-    // TODO see what other random functions could live here
-
-    int dtype_to_silo_type(DataType dtype)
-    {
-        if (dtype.is_float())
-        {
-            return DB_FLOAT;
-        }
-        else if (dtype.is_double())
-        {
-            return DB_DOUBLE;
-        }
-        else if (dtype.is_int())
-        {
-            return DB_INT;
-        }
-        else if (dtype.is_long())
-        {
-            return DB_LONG;
-        }
-        else if (dtype.is_long_long())
-        {
-            return DB_LONG_LONG;
-        }
-        else if (dtype.is_char())
-        {
-            return DB_CHAR;
-        }
-        else if (dtype.is_short())
-        {
-            return DB_SHORT;
-        }
-        return DB_NOTYPE;
-    }
-
-    // TODO check all compaction logic uses the same pattern
-    // assumes you pass either a leaf node or a node one step up from leaf nodes
-    void conditional_compact(const Node &n_src,
-                             Node &n_dest)
-    {
-        // are we already compact?
-        if (n_src.dtype().is_compact())
-        {
-            n_dest.set_external(n_src);
-        }
-        else
-        {
-            if (n_src.dtype().is_object())
-            {
-                auto val_itr = n_src.children();
-                while (val_itr.has_next())
-                {
-                    const Node &n_val = val_itr.next();
-                    const std::string label = val_itr.name();
-                    // is this piece already compact?
-                    if (n_src[label].dtype().is_compact())
-                    {
-                        n_dest[label].set_external(n_val);
-                    }
-                    else
-                    {
-                        n_val.compact_to(n_dest[label]);
-                    }
-                }
-            }
-            else
-            {
-                n_src.compact_to(n_dest);
-            }
-        }
-    }
-
-    // assumes you pass either a leaf node or a node one step up from leaf nodes
-    void convert_to_double_array(const Node &n_src,
-                                 Node &n_dest)
-    {
-        // TODO check that it is not already a double array
-        if (n_src.dtype().is_object())
-        {
-            auto val_itr = n_src.children();
-            while (val_itr.has_next())
-            {
-                const Node &n_val = val_itr.next();
-                const std::string label = val_itr.name();
-                n_val.to_double_array(n_dest[label]);
-            }
-        }
-        else
-        {
-            n_src.to_double_array(n_dest);
-        }
-    }
-} // end namespace detail
 
 //---------------------------------------------------------------------------//
 void** prepare_mixed_field_for_write(const Node &n_var,
