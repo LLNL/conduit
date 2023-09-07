@@ -882,14 +882,12 @@ assign_values(int datatype,
 
 //-----------------------------------------------------------------------------
 template <typename T>
-void
-read_matset_values(const Node &silo_mixvals,
-                   const Node &matset_field_reconstruction,
-                   Node &field_out)
+std::vector<T>
+read_matset_values_helper(const Node &silo_mixvals,
+                          const Node &matset_field_reconstruction,
+                          Node &field_out)
 {
     std::vector<T> matset_values;
-
-    silo_mixvals.print();
 
     const T *silo_mixvals_ptr = silo_mixvals.value();
     const T *bp_field_vals    = field_out["values"].value();
@@ -936,6 +934,20 @@ read_matset_values(const Node &silo_mixvals,
         }
     }
 
+    return matset_values;
+}
+
+//-----------------------------------------------------------------------------
+template <typename T>
+void
+read_matset_values(const Node &silo_mixvals,
+                   const Node &matset_field_reconstruction,
+                   Node &field_out)
+{
+    std::vector<T> matset_values = 
+        read_matset_values_helper<T>(silo_mixvals,
+                                     matset_field_reconstruction,
+                                     field_out);
     field_out["matset_values"].set(matset_values.data(), matset_values.size());
 }
 
@@ -1014,13 +1026,15 @@ read_variable_domain_mixvals(const T *var_ptr,
                                    matset_field_reconstruction,
                                    field_out);
     }
-    // TODO
-    // else if (var_ptr->datatype == DB_CHAR)
-    // {
-    //     read_matset_values<char>(silo_mixvals,
-    //                              matset_field_reconstruction,
-    //                              field_out);
-    // }
+    else if (var_ptr->datatype == DB_CHAR)
+    {
+        // char is special
+        std::vector<char> matset_values =
+            read_matset_values_helper<char>(silo_mixvals,
+                                            matset_field_reconstruction,
+                                            field_out);
+        field_out["matset_values"].set_char_ptr(matset_values.data(), matset_values.size());
+    }
     else if (var_ptr->datatype == DB_LONG_LONG)
     {
         read_matset_values<long long>(silo_mixvals,
@@ -1096,6 +1110,9 @@ read_variable_domain_helper(const T *var_ptr,
         field_out["association"] = "vertex";
     }
 
+    // TODO can we have multi-dimensional arrays for the field values in silo?
+    // if so I'll need to do some row major column major stuff
+
     assign_values(var_ptr->datatype,
                   var_ptr->nvals,
                   var_ptr->nels,
@@ -1113,8 +1130,8 @@ read_variable_domain(const int vartype,
                      const std::string &multimesh_name,
                      const std::string &multivar_name,
                      const std::string &bottom_level_mesh_name,
-                     Node &mesh_out,
-                     const Node &matset_field_reconstruction)
+                     const Node &matset_field_reconstruction,
+                     Node &mesh_out)
 {
     if (vartype == DB_UCDVAR)
     {
@@ -1181,8 +1198,8 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                    const std::string &multimesh_name,
                    const std::string &multimat_name,
                    const std::string &bottom_level_mesh_name,
-                   Node &mesh_out,
-                   Node &matset_field_reconstruction)
+                   Node &matset_field_reconstruction,
+                   Node &mesh_out)
 {
     // TODO remove conduit::Node from everywhere
 
@@ -2100,8 +2117,8 @@ read_mesh(const std::string &root_file_path,
                 // we don't care if this skips the matset or not since this is the
                 // last thing in the loop iteration
                 read_matset_domain(matset_domain_file_to_use, matset_name,
-                    multimesh_name, multimat_name, bottom_level_mesh_name, mesh_out,
-                    matset_field_reconstruction);
+                    multimesh_name, multimat_name, bottom_level_mesh_name,
+                    matset_field_reconstruction, mesh_out);
 
                 // TODO we want to break iteration if this completes successfully
                 // no more than one matset per mesh
@@ -2163,8 +2180,8 @@ read_mesh(const std::string &root_file_path,
                 // we don't care if this skips the var or not since this is the
                 // last thing in the loop iteration
                 read_variable_domain(vartype, var_domain_file_to_use, var_name,
-                    multimesh_name, multivar_name, bottom_level_mesh_name, mesh_out,
-                    matset_field_reconstruction);
+                    multimesh_name, multivar_name, bottom_level_mesh_name,
+                    matset_field_reconstruction, mesh_out);
             }
         }
     }
