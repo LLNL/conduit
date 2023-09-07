@@ -496,7 +496,7 @@ copy_point_coords(const int datatype,
                   int ndims,
                   int *dims,
                   const int coord_sys,
-                  conduit::Node &node)
+                  Node &node)
 {
     ndims = ndims < 3 ? ndims : 3;
     std::vector<const char *> labels = get_coordset_axis_labels(coord_sys);
@@ -531,7 +531,7 @@ copy_point_coords(const int datatype,
 //-----------------------------------------------------------------------------
 void
 add_offsets(DBzonelist *zones,
-            conduit::Node &elements)
+            Node &elements)
 {
     int offset = 0;
     int *offset_arr = new int[zones->nzones];
@@ -546,7 +546,7 @@ add_offsets(DBzonelist *zones,
 //-----------------------------------------------------------------------------
 void
 add_shape_info(DBzonelist *zones,
-              conduit::Node &elements)
+              Node &elements)
 {
     for (int i = 0; i < zones->nshapes; ++i)
     {
@@ -611,7 +611,7 @@ void
 read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
                     const std::string &mesh_name,
                     const std::string &multimesh_name,
-                    conduit::Node &mesh_domain)
+                    Node &mesh_domain)
 {
     if (ucdmesh_ptr->zones)
     {
@@ -656,7 +656,7 @@ read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
 void
 read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                      const std::string &multimesh_name,
-                     conduit::Node &mesh_domain)
+                     Node &mesh_domain)
 {
     int coordtype{quadmesh_ptr->coordtype};
     int ndims{quadmesh_ptr->ndims};
@@ -725,7 +725,7 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
 void
 read_pointmesh_domain(DBpointmesh *pointmesh_ptr,
                       const std::string &multimesh_name,
-                      conduit::Node &mesh_domain)
+                      Node &mesh_domain)
 {
     mesh_domain["topologies"][multimesh_name]["type"] = "points";
     mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
@@ -968,19 +968,10 @@ read_variable_domain_mixvals(const T *var_ptr,
 
     CONDUIT_ASSERT(var_ptr->mixvals,
         "mixlen is > 0 but no mixvals are provided for var " << var_name);
-
     CONDUIT_ASSERT(var_ptr->mixvals[0], "mixvals are NULL for var " << var_name);
-
     CONDUIT_ASSERT(mesh_out.has_child("matsets"),
         "Missing matset despite field " << var_name << "requiring one.");
-
-    // In silo, for each mesh, there can only be one matset, because otherwise
-    // it would be ambiguous. In Blueprint, we can allow multiple matsets per
-    // topo, because the fields explicitly link to the matset they use.
-    // Right now, we only ever read one mesh, meaning that there can only
-    // be one matset in our newly created blueprint mesh. Therefore, we must
-    // assert that there is only one matset.
-    // TODO I can check for this way sooner
+    // should be enforced earlier, but doesn't hurt to check again
     CONDUIT_ASSERT(mesh_out["matsets"].number_of_children() == 1,
         "This mesh has multiple matsets, which is ambiguous.");
 
@@ -993,8 +984,6 @@ read_variable_domain_mixvals(const T *var_ptr,
                   var_ptr->mixlen,
                   var_ptr->mixvals,
                   silo_mixvals);
-
-    // TODO make sure matset_field_reconstruction has just the one matset
 
     if (var_ptr->datatype == DB_INT)
     {
@@ -1056,7 +1045,7 @@ read_variable_domain_helper(const T *var_ptr,
                             const std::string &multivar_name,
                             const int vartype,
                             const std::string &bottom_level_mesh_name,
-                            conduit::Node &mesh_out)
+                            Node &mesh_out)
 {
     // If we cannot fetch this var we will skip
     if (!var_ptr)
@@ -1201,8 +1190,6 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                    Node &matset_field_reconstruction,
                    Node &mesh_out)
 {
-    // TODO remove conduit::Node from everywhere
-
     // create silo matset
     detail::SiloObjectWrapper<DBmaterial, decltype(&DBFreeMaterial)> material{
         DBGetMaterial(matset_domain_file_to_use, matset_name.c_str()),
@@ -1959,8 +1946,8 @@ read_mesh(const std::string &root_file_path,
         read_size++;
     }
 
-    conduit::Node n_read_size;
-    conduit::Node n_doms_per_rank;
+    Node n_read_size;
+    Node n_doms_per_rank;
 
     n_read_size.set_int32(read_size);
 
@@ -2038,7 +2025,7 @@ read_mesh(const std::string &root_file_path,
         std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
 
         if (! read_mesh_domain(meshtype, mesh_domain_file_to_use, mesh_name, 
-            multimesh_name, domain_path, mesh))
+                               multimesh_name, domain_path, mesh))
         {
             continue; // we hit a case where we want to skip this mesh domain
         }
@@ -2113,17 +2100,23 @@ read_mesh(const std::string &root_file_path,
                     ovltop_case, matset_domain_filename, mesh_domain_filename,
                     mesh_domain_file.getSiloObject(), matset_domain_file);
 
-
-                // we don't care if this skips the matset or not since this is the
-                // last thing in the loop iteration
-                read_matset_domain(matset_domain_file_to_use, matset_name,
-                    multimesh_name, multimat_name, bottom_level_mesh_name,
-                    matset_field_reconstruction, mesh_out);
-
-                // TODO we want to break iteration if this completes successfully
-                // no more than one matset per mesh
-                // there can be multiple from the silo index b/c we don't know yet
-                // which ones are assoc with the mesh
+                // If this completes successfully, it means we have found a matset
+                // associated with this mesh. Thus we can break iteration here,
+                // since there can only be one matset. This is the earliest we can 
+                // break iteration because the silo index may have multiple matsets,
+                // and we have no way of knowing until now which one is associated
+                // with our mesh.
+                // In silo, for each mesh, there can only be one matset, because otherwise
+                // it would be ambiguous. In Blueprint, we can allow multiple matsets per
+                // topo, because the fields explicitly link to the matset they use.
+                // Right now, we only ever read one mesh, meaning that there can only
+                // be one matset in our newly created blueprint mesh.
+                if (read_matset_domain(matset_domain_file_to_use, matset_name,
+                                       multimesh_name, multimat_name, bottom_level_mesh_name,
+                                       matset_field_reconstruction, mesh_out))
+                {
+                    break;
+                }
             }
         }
 
@@ -2193,7 +2186,7 @@ read_mesh(const std::string &root_file_path,
 
 //-----------------------------------------------------------------------------
 void load_mesh(const std::string &root_file_path,
-               conduit::Node &mesh
+               Node &mesh
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     mesh.reset();
@@ -2220,8 +2213,8 @@ void load_mesh(const std::string &root_file_path,
 /// chosen multimesh.
 //-----------------------------------------------------------------------------
 void load_mesh(const std::string &root_file_path,
-               const conduit::Node &opts,
-               conduit::Node &mesh
+               const Node &opts,
+               Node &mesh
                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     mesh.reset();
@@ -2697,7 +2690,7 @@ void silo_write_field(DBfile *dbfile,
 int
 assign_coords_ptrs(void *coords_ptrs[3],
                    int ndims,
-                   conduit::Node &n_coords_compact,
+                   Node &n_coords_compact,
                    char const * const coordnames[])
 {
     DataType dtype = n_coords_compact[coordnames[0]].dtype();
@@ -3764,7 +3757,7 @@ generate_silo_material_names(const Node &n_mesh_state,
 void write_multimesh(DBfile *dbfile,
                      const Node &n_mesh,
                      const std::string &topo_name,
-                     const conduit::Node &root,
+                     const Node &root,
                      const int global_num_domains,
                      const std::string &multimesh_name,
                      const bool overlink)
@@ -4124,9 +4117,9 @@ write_multimats(DBfile *dbfile,
 ///   3) ovl_topo_name is the name of the topo we are outputting. If it is not
 ///      provided, we choose the first topology in the blueprint.
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                                   const std::string &path,
-                                  const conduit::Node &opts
+                                  const Node &opts
                                   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     // The assumption here is that everything is multi domain
@@ -5470,7 +5463,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///
 ///
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
+void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                                   const std::string &path
                                   CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
@@ -5493,7 +5486,7 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///
 ///
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+void CONDUIT_RELAY_API save_mesh(const Node &mesh,
                                  const std::string &path
                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
@@ -5550,9 +5543,9 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///   3) ovl_topo_name is the name of the topo we are outputting. If it is not
 ///      provided, we choose the first topology in the blueprint.
 //-----------------------------------------------------------------------------
-void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
+void CONDUIT_RELAY_API save_mesh(const Node &mesh,
                                  const std::string &path,
-                                 const conduit::Node &opts
+                                 const Node &opts
                                  CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm)) 
 {
     // we force overwrite to true, so we need a copy of the const opts passed.
