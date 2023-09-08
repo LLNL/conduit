@@ -93,7 +93,7 @@ class BraidDomainGenerator : public DomainGenerator
 public:
     virtual void generate(int /*domain*/[3], conduit::Node &n, conduit::Node &) override
     {
-        conduit::blueprint::mesh::examples::braid(meshType, dims[0], dims[1], dims[2], n);
+        conduit::blueprint::mesh::examples::braid(meshType, dims[0] + 1, dims[1] + 1, dims[2] + 1, n);
 
         // TODO: Use domain,domains to adjust coordinates to get them to line up nicely.
     }
@@ -151,7 +151,7 @@ main(int argc, char *argv[])
     double extents[6] = {0., 1., 0., 1., 0., 1.};
     conduit::Node n, opts;
     std::unique_ptr<DomainGenerator> g = MAKE_UNIQUE(TiledDomainGenerator);
-    std::string meshType("quad"), output("output"), protocol("hdf5");
+    std::string meshType("hexs"),meshTypeDefault("hexs"), output("output"), protocol("hdf5");
     for(int i = 1; i < argc; i++)
     {
         if(strcmp(argv[i], "-dims") == 0 && (i+1) < argc)
@@ -162,6 +162,12 @@ main(int argc, char *argv[])
                 dims[0] = std::max(d[0], 1);
                 dims[1] = std::max(d[1], 1);
                 dims[2] = std::max(d[2], 0); // Allow 0 for 2D
+
+                // If we have not set the mesh type, set it according to dimension.
+                if(meshType == meshTypeDefault)
+                {
+                    meshType = (dims[2] > 0) ? "hexs" : "quads";
+                }
             }
             i++;
         }
