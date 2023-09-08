@@ -112,6 +112,13 @@ const conduit::index_t Tile::INVALID_POINT = -1;
 class Tiler
 {
 public:
+    static constexpr int BoundaryLeft = 0;
+    static constexpr int BoundaryRight = 1;
+    static constexpr int BoundaryBottom = 2;
+    static constexpr int BoundaryTop = 3;
+    static constexpr int BoundaryBack = 4;
+    static constexpr int BoundaryFront = 5;
+
     Tiler();
 
     /// Generate the tiled mesh.
@@ -169,24 +176,21 @@ protected:
         }
     }
 
-    /// Emit the quad cells using this tile's point ids.
-    template <typename Transform>
-    void addFaces(const std::vector<conduit::index_t> &ptids,
-                  std::vector<conduit::index_t> &conn,
-                  std::vector<conduit::index_t> &sizes,
-                  conduit::index_t offset,
-                  bool reverse,
-                  Transform &&transform) const
+    /// Iterate over the tile's quad cells and apply a lambda.
+    template <typename Body>
+    void iterateFaces(const std::vector<conduit::index_t> &ptids, conduit::index_t offset,
+                      bool reverse, int stype, Body &&body) const
     {
         const size_t nquads = m_quads.size() / 4;
         int order[] = {reverse ? 3 : 0, reverse ? 2 : 1, reverse ? 1 : 2, reverse ? 0 : 3};
         for(size_t i = 0; i < nquads; i++)
         {
-            conn.push_back(transform(offset + ptids[m_quads[4*i + order[0]]]));
-            conn.push_back(transform(offset + ptids[m_quads[4*i + order[1]]]));
-            conn.push_back(transform(offset + ptids[m_quads[4*i + order[2]]]));
-            conn.push_back(transform(offset + ptids[m_quads[4*i + order[3]]]));
-            sizes.push_back(4);
+            conduit::index_t idlist[4];
+            idlist[0] = offset + ptids[m_quads[4*i + order[0]]];
+            idlist[1] = offset + ptids[m_quads[4*i + order[1]]];
+            idlist[2] = offset + ptids[m_quads[4*i + order[2]]];
+            idlist[3] = offset + ptids[m_quads[4*i + order[3]]];
+            body(idlist, 4, stype);
         }
     }
 
@@ -249,11 +253,8 @@ protected:
     }
 
     /// Determine which boundaries are needed.
-    void boundaryFlags(const conduit::Node &options,
-                       bool &left, bool &right,
-                       bool &bottom, bool &top,
-                       bool &back, bool &front) const;
-
+    void boundaryFlags(const conduit::Node &options, bool flags[6]) const;
+#if 0
     /// Make 2D boundaries.
     template <typename Transform>
     void makeBoundaries2D(const std::vector<Tile> &tiles,
@@ -264,19 +265,24 @@ protected:
                           std::vector<int> &btype,
                           const conduit::Node &options,
                           Transform &&transform) const;
+#endif
+    // Iterate over 2D boundaries
+    template <typename Body>
+    void iterateBoundary2D(const std::vector<Tile> &tiles,
+                           conduit::index_t nx,
+                           conduit::index_t ny,
+                           const bool flags[6],
+                           Body &&body) const;
 
-    /// Make 3D boundaries.
-    template <typename Transform>
-    void makeBoundaries3D(const std::vector<Tile> &tiles,
-                          conduit::index_t nx,
-                          conduit::index_t ny,
-                          conduit::index_t nz,
-                          conduit::index_t nPtsPerPlane,
-                          std::vector<conduit::index_t> &bconn,
-                          std::vector<conduit::index_t> &bsizes,
-                          std::vector<int> &btype,
-                          const conduit::Node &options,
-                          Transform &&transform) const;
+    /// Iterate over 3D boundaries.
+    template <typename Body>
+    void iterateBoundary3D(const std::vector<Tile> &tiles,
+                           conduit::index_t nx,
+                           conduit::index_t ny,
+                           conduit::index_t nz,
+                           conduit::index_t nPtsPerPlane,
+                           const bool flags[6],
+                           Body &&body) const;
 private:
     std::vector<double> m_xpts, m_ypts;
     double m_width, m_height;
@@ -493,9 +499,12 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
             for(conduit::index_t i = 0; i < nx; i++)
             {
                 Tile &current = tiles[(j*nx + i)];
-                addFaces(current.getPointIds(), conn, sizes, 0, false,
-                    [](conduit::index_t id) {
-                        return id;
+                iterateFaces(current.getPointIds(), 0, false, BoundaryBack,
+                    [&](const conduit::index_t *ids, conduit::index_t npts, int)
+                    {
+                        for(conduit::index_t pi = 0; pi < npts; pi++)
+                            conn.push_back(ids[pi]);
+                        sizes.push_back(npts);
                     });
             }
         }
@@ -642,23 +651,32 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
 
     // Boundaries
     std::string bshape;
+    bool flags[6];
+    boundaryFlags(options, flags);
     if(nz < 1)
     {
         // 2D
         bshape = "line";
         if(reorder)
         {
-            makeBoundaries2D(tiles, nx, ny, bconn, bsizes, btype, options,
-                [&](conduit::index_t id) {
-                    // Renumber the boundary connectivity
-                    return old2NewPoint[id];
+            iterateBoundary2D(tiles, nx, ny, flags,
+                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                {
+                    for(conduit::index_t i = 0; i < npts; i++)
+                        bconn.push_back(old2NewPoint[ids[i]]); // Renumber
+                    bsizes.push_back(npts);
+                    btype.push_back(bnd);
                 });
         }
         else
         {
-            makeBoundaries2D(tiles, nx, ny, bconn, bsizes, btype, options,
-                [](conduit::index_t id) {
-                    return id;
+            iterateBoundary2D(tiles, nx, ny, flags,
+                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                {
+                    for(conduit::index_t i = 0; i < npts; i++)
+                        bconn.push_back(ids[i]);
+                    bsizes.push_back(npts);
+                    btype.push_back(bnd);
                 });
         }
     }
@@ -668,17 +686,24 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         bshape = "quad";
         if(reorder)
         {
-            makeBoundaries3D(tiles, nx, ny, nz, ptsPerPlane, bconn, bsizes, btype, options,
-                [&](conduit::index_t id) {
-                    // Renumber the boundary connectivity
-                    return old2NewPoint[id];
+            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
+                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                {
+                    for(conduit::index_t i = 0; i < npts; i++)
+                        bconn.push_back(old2NewPoint[ids[i]]); // Renumber
+                    bsizes.push_back(npts);
+                    btype.push_back(bnd);
                 });
         }
         else
         {
-            makeBoundaries3D(tiles, nx, ny, nz, ptsPerPlane, bconn, bsizes, btype, options,
-                [&](conduit::index_t id) {
-                    return id;
+            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
+                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                {
+                    for(conduit::index_t i = 0; i < npts; i++)
+                        bconn.push_back(ids[i]);
+                    bsizes.push_back(npts);
+                    btype.push_back(bnd);
                 });
         }
     }
@@ -710,8 +735,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
 
 //---------------------------------------------------------------------------
 void
-Tiler::boundaryFlags(const conduit::Node &options, bool &_left, bool &_right,
-    bool &_bottom, bool &_top, bool &_back, bool &_front) const
+Tiler::boundaryFlags(const conduit::Node &options, bool flags[6]) const
 {
     bool handled = false;
     if(options.has_path("domain") && options.has_path("domains"))
@@ -724,12 +748,12 @@ Tiler::boundaryFlags(const conduit::Node &options, bool &_left, bool &_right,
             int ndoms = domains[0] * domains[1] * domains[2];
             if(ndoms > 1)
             {
-                _left = (domain[0] == 0);
-                _right = (domain[0] == domains[0]-1);
-                _bottom = (domain[1] == 0);
-                _top = (domain[1] == domains[1]-1);
-                _back = (domain[2] == 0);
-                _front = (domain[2] == domains[2]-1);
+                flags[BoundaryLeft]   = (domain[0] == 0);
+                flags[BoundaryRight]  = (domain[0] == domains[0]-1);
+                flags[BoundaryBottom] = (domain[1] == 0);
+                flags[BoundaryTop]    = (domain[1] == domains[1]-1);
+                flags[BoundaryBack]   = (domain[2] == 0);
+                flags[BoundaryFront]  = (domain[2] == domains[2]-1);
 
                 handled = true;
             }
@@ -737,28 +761,23 @@ Tiler::boundaryFlags(const conduit::Node &options, bool &_left, bool &_right,
     }
     if(!handled)
     {
-        _left = _right = true;
-        _bottom = _top = true;
-        _back = _front = true;
+        for(int i = 0; i < 6; i++)
+            flags[i] = true;
     }
 }
 
 //---------------------------------------------------------------------------
-template <typename Transform>
+template <typename Body>
 void
-Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
+Tiler::iterateBoundary2D(const std::vector<Tile> &tiles,
     conduit::index_t nx,
     conduit::index_t ny,
-    std::vector<conduit::index_t> &bconn,
-    std::vector<conduit::index_t> &bsizes,
-    std::vector<int> &btype,
-    const conduit::Node &options,
-    Transform &&transform) const
+    const bool flags[6],
+    Body &&body) const
 {
-    bool _left, _right, _bottom, _top, _back, _front;
-    boundaryFlags(options, _left, _right, _bottom, _top, _back, _front);
+    conduit::index_t idlist[2];
 
-    if(_left)
+    if(flags[BoundaryLeft])
     {
         for(conduit::index_t i = 0, j = ny-1; j >= 0; j--)
         {
@@ -766,14 +785,13 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(left());
             for(size_t bi = ids.size() - 1; bi > 0; bi--)
             {
-                bconn.push_back(transform(ids[bi]));
-                bconn.push_back(transform(ids[bi - 1]));
-                bsizes.push_back(2);
-                btype.push_back(0);
+                idlist[0] = ids[bi];
+                idlist[1] = ids[bi - 1];
+                body(idlist, 2, BoundaryLeft);
             }
         }
     }
-    if(_bottom)
+    if(flags[BoundaryBottom])
     {
         for(conduit::index_t i = 0, j = 0; i < nx; i++)
         {
@@ -781,14 +799,13 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(bottom());
             for(size_t bi = 0; bi < ids.size() - 1; bi++)
             {
-                bconn.push_back(transform(ids[bi]));
-                bconn.push_back(transform(ids[bi + 1]));
-                bsizes.push_back(2);
-                btype.push_back(2);
+                idlist[0] = ids[bi];
+                idlist[1] = ids[bi + 1];
+                body(idlist, 2, BoundaryBottom);
             }
         }
     }
-    if(_right)
+    if(flags[BoundaryRight])
     {
         for(conduit::index_t i = nx - 1, j = 0; j < ny; j++)
         {
@@ -796,14 +813,13 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(right());
             for(size_t bi = 0; bi < ids.size() - 1; bi++)
             {
-                bconn.push_back(transform(ids[bi]));
-                bconn.push_back(transform(ids[bi + 1]));
-                bsizes.push_back(2);
-                btype.push_back(1);
+                idlist[0] = ids[bi];
+                idlist[1] = ids[bi + 1];
+                body(idlist, 2, BoundaryRight);
             }
         }
     }
-    if(_top)
+    if(flags[BoundaryTop])
     {
         for(conduit::index_t i = nx - 1, j = ny - 1; i >= 0; i--)
         {
@@ -811,33 +827,28 @@ Tiler::makeBoundaries2D(const std::vector<Tile> &tiles,
             const auto ids = current.getPointIds(top());
             for(size_t bi = ids.size() - 1; bi > 0; bi--)
             {
-                bconn.push_back(transform(ids[bi]));
-                bconn.push_back(transform(ids[bi - 1]));
-                bsizes.push_back(2);
-                btype.push_back(3);
+                idlist[0] = ids[bi];
+                idlist[1] = ids[bi - 1];
+                body(idlist, 2, BoundaryTop);
             }
         }
     }
 }
 
 //---------------------------------------------------------------------------
-template <typename Transform>
+template <typename Body>
 void
-Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
+Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
     conduit::index_t nx,
     conduit::index_t ny,
     conduit::index_t nz,
     conduit::index_t nPtsPerPlane,
-    std::vector<conduit::index_t> &bconn,
-    std::vector<conduit::index_t> &bsizes,
-    std::vector<int> &btype,
-    const conduit::Node &options,
-    Transform &&transform) const
+    const bool flags[6],
+    Body &&body) const
 {
-    bool _left, _right, _bottom, _top, _back, _front;
-    boundaryFlags(options, _left, _right, _bottom, _top, _back, _front);
+    conduit::index_t idlist[4];
 
-    if(_left)
+    if(flags[BoundaryLeft])
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -849,17 +860,16 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(left());
                 for(size_t bi = ids.size() - 1; bi > 0; bi--)
                 {
-                    bconn.push_back(transform(offset1 + ids[bi]));
-                    bconn.push_back(transform(offset1 + ids[bi - 1]));
-                    bconn.push_back(transform(offset2 + ids[bi - 1]));
-                    bconn.push_back(transform(offset2 + ids[bi]));
-                    bsizes.push_back(4);
-                    btype.push_back(0);
+                    idlist[0] = offset1 + ids[bi];
+                    idlist[1] = offset1 + ids[bi - 1];
+                    idlist[2] = offset2 + ids[bi - 1];
+                    idlist[3] = offset2 + ids[bi];
+                    body(idlist, 4, BoundaryLeft);
                 }
             }
         }
     }
-    if(_right)
+    if(flags[BoundaryRight])
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -871,17 +881,16 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(right());
                 for(size_t bi = 0; bi < ids.size() - 1; bi++)
                 {
-                    bconn.push_back(transform(offset1 + ids[bi]));
-                    bconn.push_back(transform(offset1 + ids[bi + 1]));
-                    bconn.push_back(transform(offset2 + ids[bi + 1]));
-                    bconn.push_back(transform(offset2 + ids[bi]));
-                    bsizes.push_back(4);
-                    btype.push_back(1);
+                    idlist[0] = offset1 + ids[bi];
+                    idlist[1] = offset1 + ids[bi + 1];
+                    idlist[2] = offset2 + ids[bi + 1];
+                    idlist[3] = offset2 + ids[bi];
+                    body(idlist, 4, BoundaryRight);
                 }
             }
         }
     }
-    if(_bottom)
+    if(flags[BoundaryBottom])
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -893,17 +902,16 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(bottom());
                 for(size_t bi = 0; bi < ids.size() - 1; bi++)
                 {
-                    bconn.push_back(transform(offset1 + ids[bi]));
-                    bconn.push_back(transform(offset1 + ids[bi + 1]));
-                    bconn.push_back(transform(offset2 + ids[bi + 1]));
-                    bconn.push_back(transform(offset2 + ids[bi]));
-                    bsizes.push_back(4);
-                    btype.push_back(2);
+                    idlist[0] = offset1 + ids[bi];
+                    idlist[1] = offset1 + ids[bi + 1];
+                    idlist[2] = offset2 + ids[bi + 1];
+                    idlist[3] = offset2 + ids[bi];
+                    body(idlist, 4, BoundaryBottom);
                 }
             }
         }
     }
-    if(_top)
+    if(flags[BoundaryTop])
     {
         for(conduit::index_t k = 0; k < nz; k++)
         {
@@ -915,41 +923,128 @@ Tiler::makeBoundaries3D(const std::vector<Tile> &tiles,
                 const auto ids = current.getPointIds(top());
                 for(size_t bi = ids.size() - 1; bi > 0; bi--)
                 {
-                    bconn.push_back(transform(offset1 + ids[bi]));
-                    bconn.push_back(transform(offset1 + ids[bi - 1]));
-                    bconn.push_back(transform(offset2 + ids[bi - 1]));
-                    bconn.push_back(transform(offset2 + ids[bi]));
-                    bsizes.push_back(4);
-                    btype.push_back(3);
+                    idlist[0] = offset1 + ids[bi];
+                    idlist[1] = offset1 + ids[bi - 1];
+                    idlist[2] = offset2 + ids[bi - 1];
+                    idlist[3] = offset2 + ids[bi];
+                    body(idlist, 4, BoundaryTop);
                 }
             }
         }
     }
-    if(_back)
+    if(flags[BoundaryBack])
     {
         for(conduit::index_t j = 0; j < ny; j++)
         for(conduit::index_t i = nx - 1; i >= 0; i--)
         {
            const Tile &current = tiles[(j*nx + i)];
-           size_t s0 = bsizes.size();
-           addFaces(current.getPointIds(), bconn, bsizes, 0, true, transform);
-           for( ; s0 < bsizes.size(); s0++)
-               btype.push_back(4);
+           iterateFaces(current.getPointIds(), 0, true, BoundaryBack, body);
         }
     }
-    if(_front)
+    if(flags[BoundaryFront])
     {
         for(conduit::index_t j = 0; j < ny; j++)
         for(conduit::index_t i = 0; i < nx; i++)
         {
            const Tile &current = tiles[(j*nx + i)];
-           size_t s0 = bsizes.size();
-           addFaces(current.getPointIds(), bconn, bsizes, nz * nPtsPerPlane, false, transform);
-           for( ; s0 < bsizes.size(); s0++)
-               btype.push_back(5);
+           iterateFaces(current.getPointIds(), nz * nPtsPerPlane, false, BoundaryFront, body);
         }
     }
 }
+
+#if 0
+void
+Tiler::boundary_to_adjset(const std::vector<conduit::index_t> &bconn,
+                          const std::vector<conduit::index_t> &bsize,
+                          const std::vector<int> &btype,
+                          int selected_type,
+                          conduit::Node &out) const
+{
+    // Skim through the boundary data and get the unique point ids for
+    // selected boundary type.
+    std::set<conduit::index_t> unique;
+    conduit::index_t offset = 0;
+    for(size_t i = 0; i < btype.size(); i++)
+    {
+        if(btype[i] == selected_type)
+        {
+            for(conduit::index_t b = 0; b < bsize[i]; b++)
+                unique.insert(bconn[offset + b]);
+        }
+        offset += bsize[i];
+    }
+
+    // Store the results into a node.
+    out.set(conduit::DataType::index_t(unique.size()));
+    conduit::index_t *out_ptr = out.as_index_t_ptr();
+    for(const auto &ptid : unique)
+        *out_ptr++ = ptid;
+}
+
+void
+Tiler::add_adjset(const std::vector<conduit::index_t> &bconn,
+                  const std::vector<conduit::index_t> &bsize,
+                  const std::vector<int> &btype,
+                  const conduit::Node &options,
+                  conduit::Node &out) const
+{
+    // Make the adjset name for 2 domains.
+    auto adjset_name = [](conduit::index_t d0, conduit::index_t d1) {
+        if(d0 > d1)
+            std::swap(d0, d1);
+        std::stringstream ss;
+        ss << "domain_" << d0 << "_" << d1;
+        return ss.str();
+    };
+
+    if(options.has_child("domain") && options.has_child("domains"))
+    {
+        auto domain = options.fetch_existing("domain").as_index_t_accessor();
+        auto domains = options.fetch_existing("domains").as_index_t_accessor();
+        if(domain.number_of_elements() == 3 &&
+           domain.number_of_elements() == domains.number_of_elements())
+        {
+            auto dnxny = domains[0] * domains[1];
+            auto dnx = domains[0];
+            auto thisDom = domain[2] * dnxny + domains[1] * dnx + domain[0];
+
+            conduit::Node &adjset = out["adjsets/adjset"];
+            adjset["association"] = "vertex";
+            adjset["topology"] = "mesh";
+            conduit::Node &groups = adjset["groups"];
+
+// I can't just scan through the boundary connectivity because we probably did
+// not make boundary info for all edges/faces of the domain.
+adjset:
+      association: vertex
+      topology: topology
+      groups:
+        domain_0_1:
+          neighbors: [1]
+          values: [v00, v01]
+
+            // Left side.
+            if(domain[0] - 1 >= 0)
+            {
+                auto neighborDom = domain[2] * dnxny + domains[1] * dnx + (domain[0] - 1);
+                auto name = adjset_name(thisDom, neighborDom);
+                conduit::Node &group = groups[name];
+                group["neighbors"] = neighborDom;
+                boundary_to_adjset(bconn, bsize, btype, BoundaryLeft, group["values"]);
+            }
+            // Right side.
+            if(domain[0] + 1 < domains[0])
+            {
+                auto neighborDom = domain[2] * dnxny + domains[1] * dnx + (domain[0] + 1);
+                auto name = adjset_name(thisDom, neighborDom);
+                conduit::Node &group = groups[name];
+                group["neighbors"] = neighborDom;
+                boundary_to_adjset(bconn, bsize, btype, BoundaryRight, group["values"]);
+            }
+        }
+    }
+}
+#endif
 
 }
 //-----------------------------------------------------------------------------
