@@ -287,11 +287,13 @@ private:
     std::vector<double> m_xpts, m_ypts;
     double m_width, m_height;
     std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top, m_quads;
+    std::string meshName, boundaryMeshName;
 };
 
 //---------------------------------------------------------------------------
 Tiler::Tiler() : m_xpts(), m_ypts(),  m_width(0.), m_height(0.),
-                 m_left(), m_right(), m_bottom(), m_top(), m_quads()
+                 m_left(), m_right(), m_bottom(), m_top(), m_quads(),
+                 meshName("mesh"), boundaryMeshName("boundary")
 {
     initialize();
 }
@@ -408,6 +410,11 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     bool reorder = true;
     if(options.has_path("reorder"))
         reorder = options.fetch_existing("reorder").to_int() > 0;
+
+    if(options.has_path("meshname"))
+        meshName = options.fetch_existing("meshname").as_string();
+    if(options.has_path("boundarymeshname"))
+        boundaryMeshName = options.fetch_existing("boundarymeshname").as_string();
 
     conduit::DataType indexDT(conduit::DataType::index_t());
     if(options.has_child("datatype"))
@@ -559,14 +566,15 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     if(!z.empty())
         res["coordsets/coords/values/z"].set(z);
 
-    res["topologies/mesh/type"] = "unstructured";
-    res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = z.empty() ? "quad" : "hex";
+    conduit::Node &topo = res["topologies/" + meshName];
+    topo["type"] = "unstructured";
+    topo["coordset"] = "coords";
+    topo["elements/shape"] = z.empty() ? "quad" : "hex";
     conduit::Node tmp;
     tmp.set_external(conn.data(), conn.size());
-    tmp.to_data_type(indexDT.id(), res["topologies/mesh/elements/connectivity"]);
+    tmp.to_data_type(indexDT.id(), topo["elements/connectivity"]);
     tmp.set_external(sizes.data(), sizes.size());
-    tmp.to_data_type(indexDT.id(), res["topologies/mesh/elements/sizes"]);
+    tmp.to_data_type(indexDT.id(), topo["elements/sizes"]);
 
 #ifdef CONDUIT_TILER_DEBUG_FIELDS
     // Add fields to test the reordering.
@@ -575,7 +583,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     nodeids.reserve(npts);
     for(conduit::index_t i = 0; i < npts; i++)
         nodeids.push_back(i);
-    res["fields/nodeids/topology"] = "mesh";
+    res["fields/nodeids/topology"] = meshName;
     res["fields/nodeids/association"] = "vertex";
     res["fields/nodeids/values"].set(nodeids);
 
@@ -583,7 +591,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     elemids.reserve(nelem);
     for(conduit::index_t i = 0; i < nelem; i++)
         elemids.push_back(i);
-    res["fields/elemids/topology"] = "mesh";
+    res["fields/elemids/topology"] = meshName;
     res["fields/elemids/association"] = "element";
     res["fields/elemids/values"].set(elemids);
 
@@ -599,7 +607,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         for(conduit::index_t i = 0; i < npts; i++)
             dist.push_back(sqrt(x[i]*x[i] + y[i]*y[i] + z[i]*z[i]));
     }
-    res["fields/dist/topology"] = "mesh";
+    res["fields/dist/topology"] = meshName;
     res["fields/dist/association"] = "vertex";
     res["fields/dist/values"].set(dist);
 #endif
@@ -609,10 +617,10 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     if(reorder)
     {
         // We need offsets.
-        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(res["topologies/mesh"], res["topologies/mesh/elements/offsets"]);
+        conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, topo["elements/offsets"]);
 
         // Create a new order for the mesh elements.
-        const auto elemOrder = conduit::blueprint::mesh::utils::topology::spatial_ordering(res["topologies/mesh"]);
+        const auto elemOrder = conduit::blueprint::mesh::utils::topology::spatial_ordering(topo);
 
 #ifdef CONDUIT_USE_PARTITIONER_FOR_REORDER
         // NOTE: This was an idea I had after I made reorder. Reordering is like
@@ -627,7 +635,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         conduit::Node options;
         conduit::Node &sel = options["selections"].append();
         sel["type"] = "explicit";
-        sel["topology"] = "mesh";
+        sel["topology"] = meshName;
         sel["elements"].set_external(const_cast<conduit::index_t *>(elemOrder.data()), elemOrder.size());
         conduit::Node output;
         conduit::blueprint::mesh::partition(res, options, output);
@@ -642,9 +650,9 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         res.move(output);
 #else
         conduit::blueprint::mesh::utils::topology::unstructured::reorder(
-            res["topologies/mesh"], res["coordsets/coords"], res["fields"],
+            topo, res["coordsets/coords"], res["fields"],
             elemOrder,
-            res["topologies/mesh"], res["coordsets/coords"], res["fields"],
+            topo, res["coordsets/coords"], res["fields"],
             old2NewPoint);
 #endif
     }
@@ -709,17 +717,18 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     }
     if(!bconn.empty())
     {
-        res["topologies/boundary/type"] = "unstructured";
-        res["topologies/boundary/coordset"] = "coords";
-        res["topologies/boundary/elements/shape"] = bshape;
+        conduit::Node &btopo = res["topologies/" + boundaryMeshName];
+        btopo["type"] = "unstructured";
+        btopo["coordset"] = "coords";
+        btopo["elements/shape"] = bshape;
 
         tmp.set_external(bconn.data(), bconn.size());
-        tmp.to_data_type(indexDT.id(), res["topologies/boundary/elements/connectivity"]);
+        tmp.to_data_type(indexDT.id(), btopo["elements/connectivity"]);
 
         tmp.set_external(bsizes.data(), bsizes.size());
-        tmp.to_data_type(indexDT.id(), res["topologies/boundary/elements/sizes"]);
+        tmp.to_data_type(indexDT.id(), btopo["elements/sizes"]);
 
-        res["fields/boundary_type/topology"] = "boundary";
+        res["fields/boundary_type/topology"] = boundaryMeshName;
         res["fields/boundary_type/association"] = "element";
         res["fields/boundary_type/values"].set(btype);
     }
@@ -991,9 +1000,9 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
 #define DOMAIN_INDEX(I,J,K) ((domain[2] + (K)) * dnxny + (domain[1] + (J)) * dnx + (domain[0] + (I)))
                 auto thisDom = DOMAIN_INDEX(0, 0, 0);
 
-                conduit::Node &adjset = out["adjsets/adjset"];
+                conduit::Node &adjset = out["adjsets/" + meshName + "_adjset"];
                 adjset["association"] = "vertex";
-                adjset["topology"] = "mesh";
+                adjset["topology"] = meshName;
                 conduit::Node &groups = adjset["groups"];
 
                 // Neighbor domain indices.
