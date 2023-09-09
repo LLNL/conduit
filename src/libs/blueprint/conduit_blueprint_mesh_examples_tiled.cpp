@@ -728,9 +728,9 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         tmp.set_external(bsizes.data(), bsizes.size());
         tmp.to_data_type(indexDT.id(), btopo["elements/sizes"]);
 
-        res["fields/boundary_type/topology"] = boundaryMeshName;
-        res["fields/boundary_type/association"] = "element";
-        res["fields/boundary_type/values"].set(btype);
+        res["fields/boundary_attribute/topology"] = boundaryMeshName;
+        res["fields/boundary_attribute/association"] = "element";
+        res["fields/boundary_attribute/values"].set(btype);
     }
 
     // Build an adjacency set.
