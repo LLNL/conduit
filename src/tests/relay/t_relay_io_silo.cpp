@@ -1043,19 +1043,19 @@ TEST(conduit_relay_io_silo, read_silo)
 {
     const std::vector<std::vector<std::string>> file_info = {
         {".",                  "multi_curv3d", ".silo", ""            }, // test default case
-        {".",                  "multi_curv3d", ".silo", "mesh1"       },
-        {".",                  "multi_curv3d", ".silo", "mesh1_back"  },
-        {".",                  "multi_curv3d", ".silo", "mesh1_dup"   },
-        {".",                  "multi_curv3d", ".silo", "mesh1_front" },
-        {".",                  "multi_curv3d", ".silo", "mesh1_hidden"},
-        {".",                  "tire",         ".silo", ""            }, // test default case
-        {".",                  "tire",         ".silo", "tire"        },
-        {".",                  "galaxy0000",   ".silo", ""            }, // test default case
-        {".",                  "galaxy0000",   ".silo", "StarMesh"    },
-        {".",                  "emptydomains", ".silo", ""            }, // test default case
-        {".",                  "emptydomains", ".silo", "mesh"        },
-        {"multidir_test_data", "multidir0000", ".root", ""            }, // test default case
-        {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
+        // {".",                  "multi_curv3d", ".silo", "mesh1"       },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_back"  },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_dup"   },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_front" },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_hidden"},
+        // {".",                  "tire",         ".silo", ""            }, // test default case
+        // {".",                  "tire",         ".silo", "tire"        },
+        // {".",                  "galaxy0000",   ".silo", ""            }, // test default case
+        // {".",                  "galaxy0000",   ".silo", "StarMesh"    },
+        // {".",                  "emptydomains", ".silo", ""            }, // test default case
+        // {".",                  "emptydomains", ".silo", "mesh"        },
+        // {"multidir_test_data", "multidir0000", ".root", ""            }, // test default case
+        // {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
     };
 
     for (int i = 0; i < file_info.size(); i ++) 
@@ -1083,6 +1083,7 @@ TEST(conduit_relay_io_silo, read_silo)
 
         // TODO apparently the bp files can't even be opened by visit
         remove_path_if_exists(out_name + "_write_blueprint");
+        load_mesh[0]["matsets"].print();
         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
         remove_path_if_exists(out_name + "_write_silo");

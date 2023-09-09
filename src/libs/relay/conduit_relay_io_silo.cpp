@@ -436,7 +436,6 @@ void conditional_compact(const Node &n_src,
 void convert_to_double_array(const Node &n_src,
                              Node &n_dest)
 {
-    // TODO check that it is not already a double array
     if (n_src.dtype().is_object())
     {
         auto val_itr = n_src.children();
@@ -1335,7 +1334,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     matset_out["topology"] = multimesh_name;
 
     // we are choosing to do sparse by element
-    // TODO later support sparse by material and full
+    // TODO_LATER later support sparse by material and full
 
     Node &material_map = matset_out["material_map"];
     for (int i = 0; i < matset_ptr->nmat; i ++)
@@ -1461,7 +1460,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         }
     }
 
-    // TODO find colmajor data
+    // TODO find colmajor data to test this
     // TODO are there other places where I'm reading where things could be rowmajor or colmajor
 
     matset_out["material_ids"].set(material_ids.data(), material_ids.size());
