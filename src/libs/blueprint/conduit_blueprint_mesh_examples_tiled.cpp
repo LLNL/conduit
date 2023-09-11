@@ -673,7 +673,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                     for(conduit::index_t i = 0; i < npts; i++)
                         bconn.push_back(old2NewPoint[ids[i]]); // Renumber
                     bsizes.push_back(npts);
-                    btype.push_back(bnd);
+                    btype.push_back(bnd + 1); // Make 1-origin
                 });
         }
         else
@@ -684,7 +684,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                     for(conduit::index_t i = 0; i < npts; i++)
                         bconn.push_back(ids[i]);
                     bsizes.push_back(npts);
-                    btype.push_back(bnd);
+                    btype.push_back(bnd + 1); // Make 1-origin
                 });
         }
     }
@@ -700,7 +700,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                     for(conduit::index_t i = 0; i < npts; i++)
                         bconn.push_back(old2NewPoint[ids[i]]); // Renumber
                     bsizes.push_back(npts);
-                    btype.push_back(bnd);
+                    btype.push_back(bnd + 1); // Make 1-origin
                 });
         }
         else
@@ -711,7 +711,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                     for(conduit::index_t i = 0; i < npts; i++)
                         bconn.push_back(ids[i]);
                     bsizes.push_back(npts);
-                    btype.push_back(bnd);
+                    btype.push_back(bnd + 1); // Make 1-origin
                 });
         }
     }
