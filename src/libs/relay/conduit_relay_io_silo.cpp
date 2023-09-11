@@ -2344,7 +2344,7 @@ void load_mesh(const std::string &root_file_path,
 
 //---------------------------------------------------------------------------//
 void** prepare_mixed_field_for_write(const Node &n_var,
-                                     const Node &n, // TODO rename
+                                     const Node &mesh_domain,
                                      const std::string &var_name,
                                      const DataType &vals_dtype,
                                      const int &nvars,
@@ -2359,10 +2359,10 @@ void** prepare_mixed_field_for_write(const Node &n_var,
     {
         const std::string matset_name = n_var["matset"].as_string();
 
-        CONDUIT_ASSERT(n.has_path("matsets/" + matset_name),
+        CONDUIT_ASSERT(mesh_domain.has_path("matsets/" + matset_name),
             "Missing matset " << matset_name << " for field " << var_name);
 
-        const Node &n_matset = n["matsets"][matset_name];
+        const Node &n_matset = mesh_domain["matsets"][matset_name];
         conduit::blueprint::mesh::field::to_silo(n_var, n_matset, silo_matset);
 
         DataType mixvar_vals_dtype = silo_matset["field_mixvar_values"].dtype();
@@ -2464,7 +2464,7 @@ void prepare_field_for_write(const bool &convert_to_double_array,
 void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
-                      const Node &n, // TODO rename
+                      const Node &mesh_domain,
                       const bool overlink,
                       const int local_num_domains,
                       const int local_domain_index,
@@ -2571,7 +2571,7 @@ void silo_write_field(DBfile *dbfile,
     int mixlen = 0;
     void **mixvars_ptr_ptr = 
         prepare_mixed_field_for_write(n_var,
-                                      n,
+                                      mesh_domain,
                                       var_name,
                                       vals_dtype,
                                       nvars,
@@ -3126,7 +3126,7 @@ void silo_write_pointmesh(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
-void silo_write_topo(const Node &n,
+void silo_write_topo(const Node &mesh_domain,
                      const std::string &topo_name,
                      Node &n_mesh_info,
                      const bool overlink,
@@ -3136,7 +3136,7 @@ void silo_write_topo(const Node &n,
                      Node &local_type_domain_info,
                      DBfile *dbfile)
 {
-    const Node &n_topo = n["topologies"][topo_name];
+    const Node &n_topo = mesh_domain["topologies"][topo_name];
     std::string topo_type = n_topo["type"].as_string();
 
     n_mesh_info[topo_name]["type"].set(topo_type);
@@ -3163,7 +3163,7 @@ void silo_write_topo(const Node &n,
 
     // make sure we have coordsets
 
-    if (!n.has_path("coordsets"))
+    if (!mesh_domain.has_path("coordsets"))
     {
         CONDUIT_ERROR("mesh missing: coordsets");
     }
@@ -3174,14 +3174,14 @@ void silo_write_topo(const Node &n,
     n_mesh_info[topo_name]["coordset"].set(coordset_name);
 
     // obtain the coordset with the name
-    if (!n["coordsets"].has_path(coordset_name))
+    if (!mesh_domain["coordsets"].has_path(coordset_name))
     {
         CONDUIT_ERROR("mesh is missing coordset named "
                       << coordset_name << " for topology named "
                       << topo_name);
     }
 
-    const Node &n_coords = n["coordsets"][coordset_name];
+    const Node &n_coords = mesh_domain["coordsets"][coordset_name];
 
     // check dims
     int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
@@ -3486,7 +3486,7 @@ void silo_write_matset(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
-void silo_mesh_write(const Node &n, 
+void silo_mesh_write(const Node &mesh_domain, 
                      DBfile *dbfile,
                      const std::string &silo_obj_path,
                      const std::string &ovl_topo_name,
@@ -3518,10 +3518,10 @@ void silo_mesh_write(const Node &n,
 
     if (overlink)
     {
-        if (n["topologies"].has_child(ovl_topo_name))
+        if (mesh_domain["topologies"].has_child(ovl_topo_name))
         {
             // we choose one topo to write out: ovl_topo_name
-            silo_write_topo(n,
+            silo_write_topo(mesh_domain,
                             ovl_topo_name,
                             n_mesh_info,
                             overlink,
@@ -3535,12 +3535,12 @@ void silo_mesh_write(const Node &n,
     else
     {
         // we write out all topos
-        auto topo_itr = n["topologies"].children();
+        auto topo_itr = mesh_domain["topologies"].children();
         while (topo_itr.has_next())
         {
             topo_itr.next();
             std::string topo_name = topo_itr.name();
-            silo_write_topo(n,
+            silo_write_topo(mesh_domain,
                             topo_name,
                             n_mesh_info,
                             overlink,
@@ -3552,7 +3552,7 @@ void silo_mesh_write(const Node &n,
         }
     }
 
-    if (n.has_path("matsets")) 
+    if (mesh_domain.has_path("matsets")) 
     {
         // We want to enforce that there is only one matset per topo
         // that we save out to silo. Multiple matsets for a topo is 
@@ -3562,7 +3562,7 @@ void silo_mesh_write(const Node &n,
 
         // the names of the topos the matsets are associated with
         std::set<std::string> topo_names;
-        auto itr = n["matsets"].children();
+        auto itr = mesh_domain["matsets"].children();
         while (itr.has_next())
         {
             const Node &n_matset = itr.next();
@@ -3589,9 +3589,9 @@ void silo_mesh_write(const Node &n,
         }
     }
 
-    if (n.has_path("fields")) 
+    if (mesh_domain.has_path("fields")) 
     {
-        auto itr = n["fields"].children();
+        auto itr = mesh_domain["fields"].children();
         while (itr.has_next())
         {
             const Node &n_var = itr.next();
@@ -3601,7 +3601,7 @@ void silo_mesh_write(const Node &n,
                 silo_write_field(dbfile,
                                  var_name,
                                  n_var,
-                                 n,
+                                 mesh_domain,
                                  overlink,
                                  local_num_domains,
                                  local_domain_index,
