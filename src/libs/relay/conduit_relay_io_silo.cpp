@@ -1328,6 +1328,12 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         return false;
     }
 
+    CONDUIT_ASSERT(matset_ptr->allowmat0 == 0,
+        "Material " << matset_name << " for multimesh " << multimesh_name << 
+        " may contain zones with no materials defined on them." << 
+        "We currently do not support this case. Either contact a Conduit developer" <<
+        " or disable DBOPT_ALLOWMAT0 in calls to DBPutMaterial().");
+
     // create an entry for this matset in the output
     Node &matset_out = mesh_out["matsets"][multimat_name];
 
@@ -1366,7 +1372,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     auto read_matlist_entry = [&](const int matlist_index)
     {
         int matlist_entry = matset_ptr->matlist[matlist_index];
-        if (matlist_entry >= 0) // ? TODO is 0 allowed
+        if (matlist_entry >= 0) // this relies on matset_ptr->allowmat0 == 0
         {
             field_reconstruction_recipe.push_back(-1);
             volume_fractions.push_back(1.0);
