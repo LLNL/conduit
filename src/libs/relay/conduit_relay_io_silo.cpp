@@ -1408,7 +1408,8 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                 }
                 else
                 {
-                    CONDUIT_ERROR("TODO bad news");
+                    CONDUIT_ERROR("Volume fractions must be doubles or floats." <<
+                        "Unknown type for volume fractions for " << matset_name);
                 }
                 field_reconstruction_recipe.push_back(mix_id);
 
