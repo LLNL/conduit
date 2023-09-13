@@ -791,29 +791,15 @@ Tiler::iterateBoundary2D(const std::vector<Tile> &tiles,
 
     if(flags[BoundaryLeft])
     {
-        for(conduit::index_t i = 0, j = ny-1; j >= 0; j--)
+        for(conduit::index_t i = 0, j = 0; j < ny; j++)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(left());
-            for(size_t bi = ids.size() - 1; bi > 0; bi--)
-            {
-                idlist[0] = ids[bi];
-                idlist[1] = ids[bi - 1];
-                body(idlist, 2, BoundaryLeft);
-            }
-        }
-    }
-    if(flags[BoundaryBottom])
-    {
-        for(conduit::index_t i = 0, j = 0; i < nx; i++)
-        {
-            const Tile &current = tiles[(j*nx + i)];
-            const auto ids = current.getPointIds(bottom());
             for(size_t bi = 0; bi < ids.size() - 1; bi++)
             {
                 idlist[0] = ids[bi];
                 idlist[1] = ids[bi + 1];
-                body(idlist, 2, BoundaryBottom);
+                body(idlist, 2, BoundaryLeft);
             }
         }
     }
@@ -831,16 +817,30 @@ Tiler::iterateBoundary2D(const std::vector<Tile> &tiles,
             }
         }
     }
+    if(flags[BoundaryBottom])
+    {
+        for(conduit::index_t i = 0, j = 0; i < nx; i++)
+        {
+            const Tile &current = tiles[(j*nx + i)];
+            const auto ids = current.getPointIds(bottom());
+            for(size_t bi = 0; bi < ids.size() - 1; bi++)
+            {
+                idlist[0] = ids[bi];
+                idlist[1] = ids[bi + 1];
+                body(idlist, 2, BoundaryBottom);
+            }
+        }
+    }
     if(flags[BoundaryTop])
     {
-        for(conduit::index_t i = nx - 1, j = ny - 1; i >= 0; i--)
+        for(conduit::index_t i = 0, j = ny - 1; i < nx; i++)
         {
             const Tile &current = tiles[(j*nx + i)];
             const auto ids = current.getPointIds(top());
-            for(size_t bi = ids.size() - 1; bi > 0; bi--)
+            for(size_t bi = 0; bi < ids.size() - 1; bi++)
             {
                 idlist[0] = ids[bi];
-                idlist[1] = ids[bi - 1];
+                idlist[1] = ids[bi + 1];
                 body(idlist, 2, BoundaryTop);
             }
         }
@@ -866,16 +866,16 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
         {
             conduit::index_t offset1 = k * nPtsPerPlane;
             conduit::index_t offset2 = (k + 1) * nPtsPerPlane;
-            for(conduit::index_t i = 0, j = ny-1; j >= 0; j--)
+            for(conduit::index_t i = 0, j = 0; j < ny; j++)
             {
                 const Tile &current = tiles[(j*nx + i)];
                 const auto ids = current.getPointIds(left());
-                for(size_t bi = ids.size() - 1; bi > 0; bi--)
+                for(size_t bi = 0; bi < ids.size() - 1; bi++)
                 {
                     idlist[0] = offset1 + ids[bi];
-                    idlist[1] = offset1 + ids[bi - 1];
-                    idlist[2] = offset2 + ids[bi - 1];
-                    idlist[3] = offset2 + ids[bi];
+                    idlist[1] = offset2 + ids[bi];
+                    idlist[2] = offset2 + ids[bi + 1];
+                    idlist[3] = offset1 + ids[bi + 1];
                     body(idlist, 4, BoundaryLeft);
                 }
             }
@@ -929,16 +929,16 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
         {
             conduit::index_t offset1 = k * nPtsPerPlane;
             conduit::index_t offset2 = (k + 1) * nPtsPerPlane;
-            for(conduit::index_t i = nx - 1, j = ny - 1; i >= 0; i--)
+            for(conduit::index_t i = 0, j = ny - 1; i < nx; i++)
             {
                 const Tile &current = tiles[(j*nx + i)];
                 const auto ids = current.getPointIds(top());
-                for(size_t bi = ids.size() - 1; bi > 0; bi--)
+                for(size_t bi = 0; bi < ids.size() - 1; bi++)
                 {
                     idlist[0] = offset1 + ids[bi];
-                    idlist[1] = offset1 + ids[bi - 1];
-                    idlist[2] = offset2 + ids[bi - 1];
-                    idlist[3] = offset2 + ids[bi];
+                    idlist[1] = offset2 + ids[bi];
+                    idlist[2] = offset2 + ids[bi + 1];
+                    idlist[3] = offset1 + ids[bi + 1];
                     body(idlist, 4, BoundaryTop);
                 }
             }
@@ -947,7 +947,7 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
     if(flags[BoundaryBack])
     {
         for(conduit::index_t j = 0; j < ny; j++)
-        for(conduit::index_t i = nx - 1; i >= 0; i--)
+        for(conduit::index_t i = 0; i < nx; i++)
         {
            const Tile &current = tiles[(j*nx + i)];
            iterateFaces(current.getPointIds(), 0, true, BoundaryBack, body);
@@ -978,8 +978,6 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
 {
     // Make the adjset name for 2 domains.
     auto adjset_name = [](conduit::index_t d0, conduit::index_t d1) {
-        if(d0 > d1)
-            std::swap(d0, d1);
         std::stringstream ss;
         ss << "domain_" << d0 << "_" << d1;
         return ss.str();
@@ -1018,16 +1016,16 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                 // Make a state node.
                 out["state/domain_id"] = thisDom;
 
-                int maxfaces = (nz < 1) ? 4 : 6;
-                for(int di = 0; di < maxfaces; di++)
+                int maxNeighbors = (nz < 1) ? 4 : 6;
+                for(int ni = 0; ni < maxNeighbors; ni++)
                 {
                     // If this domain has no neighbor in the current direction, skip.
-                    if(neighbor[di] == -1)
+                    if(neighbor[ni] == -1)
                          continue;
 
                     // Iterate over faces and come up with unique points.
                     bool flags[6] = {false, false, false, false, false, false};
-                    flags[di] = true;                
+                    flags[ni] = true;
                     std::set<conduit::index_t> unique;
                     if(nz < 1)
                     {
@@ -1075,9 +1073,9 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
 
                     if(!unique.empty())
                     {
-                        auto name = adjset_name(thisDom, neighbor[di]);
+                        auto name = adjset_name(thisDom, neighbor[ni]);
                         conduit::Node &group = groups[name];
-                        group["neighbors"] = neighbor[di];
+                        group["neighbors"] = neighbor[ni];
 
                         // Store the results into a node.
                         conduit::Node &values = group["values"];
