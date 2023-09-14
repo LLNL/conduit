@@ -836,32 +836,13 @@ iterate_adjset(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_blueprint_mesh_examples, generate_corners_wonky)
+void
+test_adjset_points(conduit::Node &mesh, const std::string &adjsetName)
 {
-    // There is a 3x3x3 zone mesh that was giving generate_corners a problem
-    // due to adjacency sets. Adjacency sets are produced from the original one
-    // and when making corners. It was giving rise to adjacency sets that
-    // contained points that do not exist in neighbor domains. We can use the
-    // PointQuery to test this.
-
-    conduit::Node mesh, s2dmap, d2smap;
-    generate_wonky_mesh(mesh);
-
-    // Make the corner mesh.
-    conduit::blueprint::mpi::mesh::generate_corners(mesh,
-                                                    "main_adjset",
-                                                    "corner_adjset",
-                                                    "corner_mesh",
-                                                    "corner_coords",
-                                                    s2dmap,
-                                                    d2smap,
-                                                    MPI_COMM_WORLD);
-
-
     conduit::blueprint::mpi::mesh::utils::query::PointQuery Q(mesh, MPI_COMM_WORLD);
 
     // Iterate over the points in the adjset and add them to the 
-    iterate_adjset(mesh, "corner_adjset",
+    iterate_adjset(mesh, adjsetName,
         [&](int /*dom*/, int nbr, int val, const conduit::Node *cset, const conduit::Node */*topo*/)
         {
             // Get the point (it might not be 3D)
@@ -884,8 +865,71 @@ TEST(conduit_blueprint_mesh_examples, generate_corners_wonky)
         const auto &r = Q.results(domainId);
         auto it = std::find(r.begin(), r.end(), Q.NotFound);
         bool found = it != r.end();
+
+        // If NotFound was in the results, print the occurrances for debugging.
+        if(found)
+        {
+            const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
+            const auto &p = Q.inputs(domainId);
+            std::stringstream ss;
+            ss << "rank" << par_rank << ":\n";
+            ss << "  domain: " << domainId << "\n";
+            ss << "  search:\n";
+            for(size_t i = 0; i < r.size(); i++)
+            {
+                if(r[i] == Q.NotFound)
+                {
+                    ss << "    -\n";
+                    ss << "      point: [" << p[3*i+0] << ", " << p[3*i+1] << ", " << p[3*i+2] << "]\n";
+                    ss << "      found: " << r[i] << "\n";
+                }
+            }
+            std::cout << ss.str() << std::endl;
+        }
+
         EXPECT_FALSE(found);
     }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, generate_corners_wonky)
+{
+    // There is a 3x3x3 zone mesh that was giving generate_corners a problem
+    // due to adjacency sets. Adjacency sets are produced from the original one
+    // and when making corners. It was giving rise to adjacency sets that
+    // contained points that do not exist in neighbor domains. We can use the
+    // PointQuery to test this.
+
+    conduit::Node mesh, s2dmap, d2smap;
+    generate_wonky_mesh(mesh);
+
+    // Make the corner mesh.
+    conduit::blueprint::mpi::mesh::generate_corners(mesh,
+                                                    "main_adjset",
+                                                    "corner_adjset",
+                                                    "corner_mesh",
+                                                    "corner_coords",
+                                                    s2dmap,
+                                                    d2smap,
+                                                    MPI_COMM_WORLD);
+
+    std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
+
+    // Test the adjset points.
+    test_adjset_points(mesh, "corner_adjset");
+
+    // Convert the adjset in all domains to pairwise and test the points again.
+    for(auto dom_ptr : domains)
+    {
+        Node &domain = *dom_ptr;
+        conduit::blueprint::mesh::adjset::to_pairwise(domain["adjsets/corner_adjset"],
+                                                      domain["adjsets/corner_pairwise_adjset"]);
+    }
+    test_adjset_points(mesh, "corner_pairwise_adjset");
+
+    bool same_pointwise = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(
+                              mesh, "corner_pairwise_adjset", MPI_COMM_WORLD);
+    EXPECT_TRUE(same_pointwise);
 }
 
 //-----------------------------------------------------------------------------
