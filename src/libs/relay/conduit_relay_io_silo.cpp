@@ -3352,8 +3352,10 @@ void silo_write_matset(DBfile *dbfile,
                        Node &local_type_domain_info,
                        Node &n_mesh_info)
 {
-    Node silo_matset;
+    Node silo_matset, silo_matset_compact;
     conduit::blueprint::mesh::matset::to_silo(n_matset, silo_matset);
+
+    detail::conditional_compact(silo_matset, silo_matset_compact);
 
     if (!n_matset.has_path("topology"))
     {
@@ -3362,7 +3364,7 @@ void silo_write_matset(DBfile *dbfile,
                       << "matsets/" << matset_name << "/topology");
         return;
     }
-    const std::string topo_name = silo_matset["topology"].as_string();
+    const std::string topo_name = silo_matset_compact["topology"].as_string();
     if (!n_mesh_info.has_path(topo_name))
     {
         CONDUIT_INFO("Skipping this matset because the linked "
@@ -3373,9 +3375,9 @@ void silo_write_matset(DBfile *dbfile,
     }
     const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
-    int nmat = silo_matset["material_map"].number_of_children();
+    int nmat = silo_matset_compact["material_map"].number_of_children();
 
-    // we will sort the material map before saving out to silo
+    // We will sort the material map before saving out to silo.
     // this is to preserve parity with the behavior of the blueprint
     // reader inside visit. It presents materials to visit in order
     // of ascending material id, while the silo reader in visit does
@@ -3384,7 +3386,7 @@ void silo_write_matset(DBfile *dbfile,
     // same as the order the blueprint reader would have presented to 
     // visit.
     std::map<int, std::string> mat_map;
-    auto matmap_itr = silo_matset["material_map"].children();
+    auto matmap_itr = silo_matset_compact["material_map"].children();
     while (matmap_itr.has_next())
     {
         const Node &n_mat = matmap_itr.next();
@@ -3426,12 +3428,10 @@ void silo_write_matset(DBfile *dbfile,
         dims[0] = num_elems;
     }
 
-    const int mixlen = silo_matset["mix_mat"].dtype().number_of_elements();
-    const int mat_type = detail::dtype_to_silo_type(silo_matset["mix_vf"].dtype());
-    if (mat_type != DB_FLOAT && mat_type != DB_DOUBLE)
-    {
-        CONDUIT_ERROR("Invalid matset volume fraction type: " << silo_matset["mix_vf"].dtype().to_string());
-    }
+    const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
+    const int mat_type = detail::dtype_to_silo_type(silo_matset_compact["mix_vf"].dtype());
+    CONDUIT_ASSERT(mat_type == DB_FLOAT || mat_type == DB_DOUBLE,
+        "Invalid matset volume fraction type: " << silo_matset_compact["mix_vf"].dtype().to_string());
 
     // create optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
@@ -3445,21 +3445,19 @@ void silo_write_matset(DBfile *dbfile,
                                           matname_ptrs.data()),
                              "error adding matnames option");
 
-    // TODO conditional compact data arrays
-
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
                       detail::sanitize_silo_varname(matset_name).c_str(), // matset name
                       safe_meshname.c_str(), // mesh name
                       nmat, // number of materials
                       matnos.data(), // material numbers
-                      silo_matset["matlist"].value(),
+                      silo_matset_compact["matlist"].value(),
                       dims, // number of elements in each dimension in matlist
                       ndims, // number of dimensions in dims
-                      silo_matset["mix_next"].value(),
-                      silo_matset["mix_mat"].value(),
+                      silo_matset_compact["mix_next"].value(),
+                      silo_matset_compact["mix_mat"].value(),
                       NULL, // mix zone is optional
-                      silo_matset["mix_vf"].data_ptr(), // volume fractions
+                      silo_matset_compact["mix_vf"].data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays
                       mat_type, // data type of volume fractions
                       optlist.getSiloObject()); // optlist
