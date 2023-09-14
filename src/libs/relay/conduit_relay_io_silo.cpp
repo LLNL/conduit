@@ -433,17 +433,9 @@ void convert_to_double_array(const Node &n_src,
         auto val_itr = n_src.children();
         while (val_itr.has_next())
         {
-            const Node &n_val = val_itr.next();
+            val_itr.next();
             const std::string label = val_itr.name();
-            // if it's already a double array, we just need to compact it
-            if (n_val.dtype().is_double())
-            {
-                conditional_compact(n_val, n_dest[label]);
-            }
-            else
-            {
-                n_val.to_double_array(n_dest[label]);
-            }
+            convert_to_double_array(n_src[label], n_dest[label]);
         }
     }
     else
