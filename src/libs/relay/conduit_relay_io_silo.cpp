@@ -394,7 +394,7 @@ int dtype_to_silo_type(DataType dtype)
 }
 
 //-----------------------------------------------------------------------------
-// assumes you pass either a leaf node or a node one step up from leaf nodes
+// recursively compacts nodes if they are not already compact
 void conditional_compact(const Node &n_src,
                          Node &n_dest)
 {
@@ -410,17 +410,9 @@ void conditional_compact(const Node &n_src,
             auto val_itr = n_src.children();
             while (val_itr.has_next())
             {
-                const Node &n_val = val_itr.next();
+                val_itr.next();
                 const std::string label = val_itr.name();
-                // is this piece already compact?
-                if (n_src[label].dtype().is_compact())
-                {
-                    n_dest[label].set_external(n_val);
-                }
-                else
-                {
-                    n_val.compact_to(n_dest[label]);
-                }
+                conditional_compact(n_src[label], n_dest[label]);
             }
         }
         else
@@ -2831,9 +2823,6 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         n_mesh_conn.set_external(n_elements["connectivity"]);
     }
 
-    // convert to compact ints ...
-    detail::conditional_compact(n_mesh_conn, n_conn);
-
     if (topo_shape == "quad")
     {
         int num_elems = n_mesh_conn.dtype().number_of_elements() / 4;
@@ -2898,13 +2887,11 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
     }
 
-    // Final Compaction
-    Node n_conn_final;
-    // TODO why compact again at all?
-    detail::conditional_compact(n_conn, n_conn_final);
+    Node n_conn_compact;
+    detail::conditional_compact(n_mesh_conn, n_conn_compact);
 
-    int conn_len = n_conn_final.total_bytes_compact() / sizeof(int);
-    int *conn_ptr = (int *)n_conn_final.data_ptr();
+    int conn_len = n_conn_compact.total_bytes_compact() / sizeof(int);
+    int *conn_ptr = (int *)n_conn_compact.data_ptr();
 
     n_mesh_info[topo_name]["num_elems"].set(total_num_elems);
 
@@ -3451,10 +3438,8 @@ void silo_write_matset(DBfile *dbfile,
         DBMakeOptlist(1),
         &DBFreeOptlist,
         "Error freeing optlist."};
-    if (!optlist.getSiloObject())
-    {
-        CONDUIT_ERROR("Error creating optlist");
-    }
+    CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
+    
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
                                           DBOPT_MATNAMES,
                                           matname_ptrs.data()),
