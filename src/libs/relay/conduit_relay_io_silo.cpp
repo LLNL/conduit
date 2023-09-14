@@ -2608,8 +2608,6 @@ void silo_write_field(DBfile *dbfile,
                             comp_vals_ptrs,
                             comp_name_ptrs);
 
-    // TODO any time you are sending arrays to silo make sure they are compact
-
     const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
     int var_type;
     int silo_error = 0;
@@ -2671,6 +2669,7 @@ void silo_write_field(DBfile *dbfile,
                                   centering, // centering (nodal or zonal)
                                   NULL); // optlist
     }
+    // TODO should i error if there are mixvars and we are doing points case?
     else if (mesh_type == "points") 
     {
         // save the var type
@@ -2775,6 +2774,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     Node ucd_zlist;
 
     index_t num_shapes = 1;
+    // TODO what is this even for? why create the node at all?
     ucd_zlist["shapetype"].set(DataType::c_int(1));
     ucd_zlist["shapesize"].set(DataType::c_int(1));
     ucd_zlist["shapecnt"].set(DataType::c_int(1));
@@ -2782,10 +2782,8 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     const Node &n_elements = n_topo["elements"];
     std::string coordset_name = n_topo["coordset"].as_string();
 
-    if (!n_elements.dtype().is_object())
-    {
-        CONDUIT_ERROR("Invalid elements for 'unstructured' case");
-    }
+    CONDUIT_ASSERT(n_elements.dtype().is_object(),
+        "Invalid elements for 'unstructured' case");
 
     int *shapetype = ucd_zlist["shapetype"].value();
     int *shapesize = ucd_zlist["shapesize"].value();
@@ -3461,6 +3459,8 @@ void silo_write_matset(DBfile *dbfile,
                                           DBOPT_MATNAMES,
                                           matname_ptrs.data()),
                              "error adding matnames option");
+
+    // TODO conditional compact data arrays
 
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
