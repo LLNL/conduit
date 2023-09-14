@@ -85,7 +85,8 @@ set(BLUEPRINT_RELAY_PARMETIS_MPI_TESTS
 set(BLUEPRINT_RELAY_MPI_TESTS_RANKS_4
     t_blueprint_mpi_mesh_flatten
     t_blueprint_mpi_mesh_partition
-    t_blueprint_mpi_mesh_distribute_4_ranks)
+    t_blueprint_mpi_mesh_distribute_4_ranks
+    t_blueprint_mpi_mesh_tiled)
 
 if(MPI_FOUND)
     message(STATUS "MPI enabled: Adding conduit_blueprint_mpi  and conduit_relay_mpi unit tests")
