@@ -132,6 +132,21 @@ protected:
     /// Fill in the tile pattern from a Node.
     void initialize(const conduit::Node &t);
 
+    /// Return the topology (the first one)
+    const conduit::Node &getTopology() const
+    {
+        const conduit::Node &t = m_options.fetch_existing("topologies");
+        return t[0];
+    }
+
+    /// Return the coordset
+    const conduit::Node &getCoordset() const
+    {
+        const conduit::Node &t = getTopology();
+        std::string coordsetName(t.fetch_existing("coordset").as_string());
+        return m_options.fetch_existing("coordsets/" + coordsetName);
+    }
+
     /// Return point indices of points along left edge.
     const std::vector<conduit::index_t> &left() const { return m_left; }
 
@@ -158,16 +173,18 @@ protected:
     {
         // Iterate through points in the template and add them if they have
         // not been created yet.
-        for(size_t i = 0; i < m_xpts.size(); i++)
+        const auto &xpts = getCoordset().fetch_existing("values/x").as_double_array();
+        const auto &ypts = getCoordset().fetch_existing("values/y").as_double_array();
+        for(conduit::index_t i = 0; i < xpts.number_of_elements(); i++)
         {
             if(ptids[i] == Tile::INVALID_POINT)
             {
                 ptids[i] = static_cast<int>(x.size());
 
                 // (x,y,1) * M
-                double xc = m_xpts[i] * M[0][0] + m_ypts[i] * M[1][0] + M[2][0];
-                double yc = m_xpts[i] * M[0][1] + m_ypts[i] * M[1][1] + M[2][1];
-                double h  = m_xpts[i] * M[0][2] + m_ypts[i] * M[1][2] + M[2][2];
+                double xc = xpts[i] * M[0][0] + ypts[i] * M[1][0] + M[2][0];
+                double yc = xpts[i] * M[0][1] + ypts[i] * M[1][1] + M[2][1];
+                double h  = xpts[i] * M[0][2] + ypts[i] * M[1][2] + M[2][2];
                 xc /= h;
                 yc /= h;
                 x.push_back(xc);
@@ -176,69 +193,160 @@ protected:
         }
     }
 
-    /// Iterate over the tile's quad cells and apply a lambda.
-    template <typename Body>
-    void iterateFaces(const std::vector<conduit::index_t> &ptids, conduit::index_t offset,
-                      bool reverse, int stype, Body &&body) const
+    /// Iterate over faces
+    template <typename Connectivity, typename Body>
+    void iterateFaces(const Connectivity &conn,
+                      conduit::index_t nelem,
+                      conduit::index_t sides,
+                      conduit::index_t *idlist,
+                      const std::vector<conduit::index_t> &ptids,
+                      conduit::index_t offset,
+                      bool reverse,
+                      int stype,
+                      Body &&body) const
     {
-        const size_t nquads = m_quads.size() / 4;
-        int order[] = {reverse ? 3 : 0, reverse ? 2 : 1, reverse ? 1 : 2, reverse ? 0 : 3};
-        for(size_t i = 0; i < nquads; i++)
+        if(reverse)
+        {
+            for(conduit::index_t i = 0; i < nelem; i++)
+            {
+                auto start = i * sides;
+                for(conduit::index_t s = 0; s < sides; s++)
+                    idlist[s] = offset + ptids[conn[start + sides - s]];
+                body(idlist, sides, stype);
+            }
+        }
+        else
+        {
+            for(conduit::index_t i = 0; i < nelem; i++)
+            {
+                auto start = i * sides;
+                for(conduit::index_t s = 0; s < sides; s++)
+                    idlist[s] = offset + ptids[conn[start + s]];
+                body(idlist, sides, stype);
+            }
+        }
+    }
+
+    /// Iterate over the tile's elements and apply a lambda.
+    template <typename Body>
+    void iterateFaces(const std::vector<conduit::index_t> &ptids,
+                      conduit::index_t offset,
+                      bool reverse,
+                      int stype,
+                      Body &&body) const
+    {
+        const conduit::Node &topo = getTopology();
+        std::string shape = topo.fetch_existing("elements/shape").as_string();
+        conduit::index_t sides = 0;
+        if(shape == "tri")
+            sides = 3;
+        else if(shape == "quad")
+            sides = 4;
+
+        // Handle triangles and quads.
+        const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
+        if(sides == 3 || sides == 4)
         {
             conduit::index_t idlist[4];
-            idlist[0] = offset + ptids[m_quads[4*i + order[0]]];
-            idlist[1] = offset + ptids[m_quads[4*i + order[1]]];
-            idlist[2] = offset + ptids[m_quads[4*i + order[2]]];
-            idlist[3] = offset + ptids[m_quads[4*i + order[3]]];
-            body(idlist, 4, stype);
+            bool handled = false;
+            if(n_conn.dtype().spanned_bytes() == n_conn.dtype().strided_bytes())
+            {
+                if(n_conn.dtype().is_index_t())
+                {
+                    iterateFaces(n_conn.as_index_t_ptr(),
+                                 n_conn.dtype().number_of_elements() / sides,
+                                 sides, idlist, ptids,
+                                 offset, reverse, stype, body);
+                    handled = true;
+                }
+                else if(n_conn.dtype().is_int32())
+                {
+                    iterateFaces(n_conn.as_int32_ptr(),
+                                 n_conn.dtype().number_of_elements() / sides,
+                                 sides, idlist, ptids,
+                                 offset, reverse, stype, body);
+                    handled = true;
+                }
+            }
+            if(!handled)
+            {
+                iterateFaces(n_conn.as_index_t_accessor(),
+                             n_conn.dtype().number_of_elements() / sides,
+                             sides, idlist, ptids,
+                             offset, reverse, stype, body);
+            }
+        }
+        else if(shape == "polygonal")
+        {
+            // handle polygons
+            const auto conn = n_conn.as_index_t_accessor();
+            const auto sizes = topo.fetch_existing("elements/sizes").as_index_t_accessor();
+            const conduit::index_t nelem = sizes.number_of_elements();
+            conduit::index_t start = 0;
+            std::vector<index_t> idlist(10);
+            if(reverse)
+            {
+                for(conduit::index_t i = 0; i < nelem; i++)
+                {
+                    auto esides = sizes[i];
+                    idlist.reserve(esides);
+                    for(conduit::index_t s = 0; s < esides; s++)
+                        idlist[s] = offset + ptids[conn[start + esides - s]];
+                    body(&idlist[0], esides, stype);
+                    start += esides;
+                }
+            }
+            else
+            {
+                for(conduit::index_t i = 0; i < nelem; i++)
+                {
+                    auto esides = sizes[i];
+                    idlist.reserve(esides);
+                    for(conduit::index_t s = 0; s < esides; s++)
+                        idlist[s] = offset + ptids[conn[start + s]];
+                    body(&idlist[0], esides, stype);
+                    start += esides;
+                }
+            }
         }
     }
 
     /// Emit the hex cells using this tile's point ids.
-    void addHexs(const std::vector<conduit::index_t> &ptids,
+    void addVolumeElements(const std::vector<conduit::index_t> &ptids,
                  conduit::index_t plane1Offset,
                  conduit::index_t plane2Offset,
                  std::vector<conduit::index_t> &conn,
                  std::vector<conduit::index_t> &sizes) const
     {
-        const size_t nquads = m_quads.size() / 4;
-        for(size_t i = 0; i < nquads; i++)
+        const conduit::Node &topo = getTopology();
+        std::string shape = topo.fetch_existing("elements/shape").as_string();
+        conduit::index_t sides = 0;
+        if(shape == "tri")
+            sides = 3;
+        else if(shape == "quad")
+            sides = 4;
+
+        if(sides == 3 || sides == 4)
         {
-            conn.push_back(plane1Offset + ptids[m_quads[4*i + 0]]);
-            conn.push_back(plane1Offset + ptids[m_quads[4*i + 1]]);
-            conn.push_back(plane1Offset + ptids[m_quads[4*i + 2]]);
-            conn.push_back(plane1Offset + ptids[m_quads[4*i + 3]]);
+            const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
+            const auto tileconn = n_conn.as_index_t_accessor();
+            const conduit::index_t nelem = tileconn.number_of_elements() / sides;
+            for(conduit::index_t i = 0; i < nelem; i++)
+            {
+                conduit::index_t start = i * sides;
+                for(conduit::index_t s = 0; s < sides; s++)
+                    conn.push_back(plane1Offset + ptids[tileconn[start + s]]);
 
-            conn.push_back(plane2Offset + ptids[m_quads[4*i + 0]]);
-            conn.push_back(plane2Offset + ptids[m_quads[4*i + 1]]);
-            conn.push_back(plane2Offset + ptids[m_quads[4*i + 2]]);
-            conn.push_back(plane2Offset + ptids[m_quads[4*i + 3]]);
+                for(conduit::index_t s = 0; s < sides; s++)
+                    conn.push_back(plane2Offset + ptids[tileconn[start + s]]);
 
-            sizes.push_back(8);
+                sizes.push_back(2 * sides);
+            }
         }
-    }
-
-    /// Compute the extents of the supplied values.
-    double computeExtents(const std::vector<double> &values) const
-    {
-        double ext[2] = {values[0], values[0]};
-        for(auto val : values)
+        else
         {
-            ext[0] = std::min(ext[0], val);
-            ext[1] = std::max(ext[1], val);
+            CONDUIT_ERROR("Tiling polygonal shapes into 3D polyhedra is not yet supported.");
         }
-        return ext[1] - ext[0];
-    }
-
-    /// Turn a node into a double vector.
-    std::vector<double> toDoubleVector(const conduit::Node &n) const
-    {
-        auto acc = n.as_double_accessor();
-        std::vector<double> vec;
-        vec.reserve(acc.number_of_elements());
-        for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
-            vec.push_back(acc[i]);
-        return vec;
     }
 
     /// Turn a node into an int vector.
@@ -284,15 +392,15 @@ protected:
                    const conduit::Node &options,
                    conduit::Node &out) const;
 private:
-    std::vector<double> m_xpts, m_ypts;
+    conduit::Node m_options;
     double m_width, m_height;
-    std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top, m_quads;
+    std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top;
     std::string meshName, boundaryMeshName;
 };
 
 //---------------------------------------------------------------------------
-Tiler::Tiler() : m_xpts(), m_ypts(),  m_width(0.), m_height(0.),
-                 m_left(), m_right(), m_bottom(), m_top(), m_quads(),
+Tiler::Tiler() : m_options(), m_width(0.), m_height(0.),
+                 m_left(), m_right(), m_bottom(), m_top(),
                  meshName("mesh"), boundaryMeshName("boundary")
 {
     initialize();
@@ -303,7 +411,7 @@ void
 Tiler::initialize()
 {
     // Default pattern
-    m_xpts = std::vector<double>{
+    const double x[] = {
         0., 3., 10., 17., 20.,
         0., 3., 17., 20.,
         5., 15.,
@@ -315,7 +423,7 @@ Tiler::initialize()
         0., 3., 10., 17., 20.,
     };
 
-    m_ypts = std::vector<double>{
+    const double y[] = {
         0., 0., 0., 0., 0.,
         3., 3., 3., 3.,
         5., 5.,
@@ -327,7 +435,7 @@ Tiler::initialize()
         20., 20., 20., 20., 20.,
     };
 
-    m_quads = std::vector<conduit::index_t>{
+    const conduit::index_t conn[] = {
         // lower-left quadrant
         0,1,6,5,
         1,2,9,6,
@@ -358,29 +466,97 @@ Tiler::initialize()
         26,27,32,31
     };
 
-    m_left = std::vector<conduit::index_t>{0,5,14,24,28};
-    m_right = std::vector<conduit::index_t>{4,8,18,27,32};
-    m_bottom = std::vector<conduit::index_t>{0,1,2,3,4};
-    m_top = std::vector<conduit::index_t>{28,29,30,31,32};
+    // Define the tile as a topology.
+    conduit::Node opts;
+    opts["coordsets/coords/type"] = "explicit";
+    opts["coordsets/coords/values/x"].set(x, sizeof(x) / sizeof(double));
+    opts["coordsets/coords/values/y"].set(y, sizeof(y) / sizeof(double));
+    opts["topologies/tile/type"] = "unstructured";
+    opts["topologies/tile/coordset"] = "coords";
+    opts["topologies/tile/elements/shape"] = "quad";
+    constexpr auto nelem = (sizeof(conn) / sizeof(conduit::index_t)) / 4;
+    opts["topologies/tile/elements/connectivity"].set(conn, nelem * 4);
+    std::vector<conduit::index_t> size(nelem, 4);
+    opts["topologies/tile/elements/sizes"].set(size.data(), size.size());
 
-    m_width = computeExtents(m_xpts);
-    m_height = computeExtents(m_ypts);
+    // Define tile boundary indices.
+    const conduit::index_t left[] = {0,5,14,24,28};
+    const conduit::index_t right[] = {4,8,18,27,32};
+    const conduit::index_t bottom[] = {0,1,2,3,4};
+    const conduit::index_t top[] = {28,29,30,31,32};
+    opts["left"].set(left, sizeof(left) / sizeof(conduit::index_t));
+    opts["right"].set(right, sizeof(right) / sizeof(conduit::index_t));
+    opts["bottom"].set(bottom, sizeof(bottom) / sizeof(conduit::index_t));
+    opts["top"].set(top, sizeof(top) / sizeof(conduit::index_t));
+
+    initialize(opts);
 }
 
 //---------------------------------------------------------------------------
 void
 Tiler::initialize(const conduit::Node &t)
 {
-    m_xpts = toDoubleVector(t.fetch_existing("x"));
-    m_ypts = toDoubleVector(t.fetch_existing("y"));
-    m_quads = toIndexVector(t.fetch_existing("quads"));
+    std::vector<std::string> required{"coordsets", "topologies", "left", "right", "bottom", "top"};
+    for(const auto &name : required)
+    {
+        if(!t.has_child(name))
+        {
+            CONDUIT_ERROR("Node does not contain key: " << name);
+        }
+    }
+
+    // Get the tile boundaries and convert them.
     m_left = toIndexVector(t.fetch_existing("left"));
     m_right = toIndexVector(t.fetch_existing("right"));
     m_bottom = toIndexVector(t.fetch_existing("bottom"));
     m_top = toIndexVector(t.fetch_existing("top"));
+    if(m_left.size() != m_right.size())
+    {
+        CONDUIT_ERROR("left/right vectors have different lengths.");
+    }
+    if(m_bottom.size() != m_top.size())
+    {
+        CONDUIT_ERROR("bottom/top vectors have different lengths.");
+    }
 
-    m_width = computeExtents(m_xpts);
-    m_height = computeExtents(m_ypts);
+    // Save the tile definition options.
+    m_options.set(t);
+
+    // Make sure the coordset is 2D, explicit.
+    if(conduit::blueprint::mesh::coordset::dims(getCoordset()) != 2)
+    {
+        CONDUIT_ERROR("The tile coordset must be 2D.");
+    }
+    if(getCoordset()["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("The tile coordset must be explicit.");
+    }
+    // Make sure the topology is 2D, unstructured
+    if(conduit::blueprint::mesh::topology::dims(getTopology()) != 2)
+    {
+        CONDUIT_ERROR("The tile topology must be 2D.");
+    }
+    if(getTopology()["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The tile topology must be 2D.");
+    }
+
+    // Compute the tile extents.
+    if(t.has_path("translate/x"))
+        m_width = t["translate/x"].to_double();
+    else
+    {
+        const auto &xc = getCoordset().fetch_existing("values/x").as_double_array();
+        m_width = xc.max() - xc.min();
+    }
+
+    if(t.has_path("translate/y"))
+         m_height = t["translate/y"].to_double();
+    else
+    {
+        const auto &yc = getCoordset().fetch_existing("values/y").as_double_array();
+        m_height = yc.max() - yc.min();
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -433,6 +609,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     double M[3][3] = {{1., 0., 0.}, {0., 1., 0.}, {0., 0., 1.}};
     if(options.has_path("extents"))
     {
+        // Extents for the domain were given. Fit the domain into it.
         auto extents = options.fetch_existing("extents").as_double_accessor();
         tx = (extents[1] - extents[0]) / nx;
         ty = (extents[3] - extents[2]) / ny;
@@ -465,6 +642,9 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     M[2][0] = origin[0];
     M[2][1] = origin[1];
 
+    // Number of tile points.
+    const auto nTilePts = getCoordset().fetch_existing("values/x").dtype().number_of_elements();
+
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
     for(conduit::index_t j = 0; j < ny; j++)
@@ -475,7 +655,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
             Tile &current = tiles[(j*nx + i)];
 
             // The first time we've used the tile, set its size.
-            current.reset(m_xpts.size());
+            current.reset(nTilePts);
 
             // Copy some previous points over so they can be shared.
             if(i > 0)
@@ -496,6 +676,8 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     }
 
     conduit::index_t ptsPerPlane = 0;
+    std::string shape2, shape3;
+    shape2 = getTopology().fetch_existing("elements/shape").as_string();
     if(nz < 1)
     {
         // Iterate over the tiles and add their quads.
@@ -519,6 +701,8 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     else
     {
         ptsPerPlane = static_cast<conduit::index_t>(x.size());
+
+        shape3 = (shape2 == "tri") ? "wedge" : "hex";
 
         // We have x,y points now. We need to replicate them to make multiple planes.
         // We make z coordinates too.
@@ -552,7 +736,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                 for(conduit::index_t i = 0; i < nx; i++)
                 {
                     Tile &current = tiles[(j*nx + i)];
-                    addHexs(current.getPointIds(), offset1, offset2, conn, sizes);
+                    addVolumeElements(current.getPointIds(), offset1, offset2, conn, sizes);
                 }
             }
         }
@@ -568,7 +752,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     conduit::Node &topo = res["topologies/" + meshName];
     topo["type"] = "unstructured";
     topo["coordset"] = "coords";
-    topo["elements/shape"] = z.empty() ? "quad" : "hex";
+    topo["elements/shape"] = z.empty() ? shape2 : shape3;
     conduit::Node tmp;
     tmp.set_external(conn.data(), conn.size());
     tmp.to_data_type(indexDT.id(), topo["elements/connectivity"]);
@@ -660,6 +844,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     std::string bshape;
     bool flags[6];
     boundaryFlags(options, flags);
+    
     if(nz < 1)
     {
         // 2D
@@ -691,6 +876,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     {
         // 3D
         bshape = "quad";
+        bool anyNonQuads = false;
         if(reorder)
         {
             iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
@@ -700,6 +886,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                         bconn.push_back(old2NewPoint[ids[i]]); // Renumber
                     bsizes.push_back(npts);
                     btype.push_back(bnd + 1); // Make 1-origin
+                    anyNonQuads |= (npts != 4);
                 });
         }
         else
@@ -711,8 +898,11 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                         bconn.push_back(ids[i]);
                     bsizes.push_back(npts);
                     btype.push_back(bnd + 1); // Make 1-origin
+                    anyNonQuads |= (npts != 4);
                 });
         }
+        if(anyNonQuads)
+            bshape = "polygonal";
     }
     if(!bconn.empty())
     {
