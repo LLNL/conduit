@@ -1268,7 +1268,7 @@ TEST(conduit_relay_io_silo, read_silo)
 // }
 
 // // TODO add tests for...
-// //  - materials once they are supported
+// //  - materials once they are supported + mpi tests
 // //  - polytopal meshes once they are supported
 // //  - units once they are supported
 // //  - etc.

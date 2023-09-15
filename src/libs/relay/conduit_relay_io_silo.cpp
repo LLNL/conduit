@@ -763,25 +763,13 @@ assign_values(int datatype,
     {
         assign_values_helper<double>(nvals, nels, vals, field_out);
     }
-    else if (datatype == DB_CHAR)
-    {
-        // implementation taken from assign_values_helper
-        if (nvals == 1)
-        {
-            field_out.set_char_ptr(static_cast<char *>(vals[0]), nels);
-        }
-        else
-        {
-            for (int i = 0; i < nvals; i ++)
-            {
-                // need to put the values under a vector component
-                field_out[std::to_string(i)].set_char_ptr(static_cast<char *>(vals[0]), nels);
-            }
-        }
-    }
     else if (datatype == DB_LONG_LONG)
     {
         assign_values_helper<long long>(nvals, nels, vals, field_out);
+    }
+    else if (datatype == DB_CHAR)
+    {
+        CONDUIT_ERROR("Variable values cannot be strings.");
     }
     else
     {
@@ -1204,10 +1192,53 @@ read_matset_values(const Node &silo_mixvals,
                    const Node &matset_field_reconstruction,
                    Node &field_out)
 {
-    std::vector<T> matset_values = 
-        read_matset_values_helper<T>(silo_mixvals,
-                                     matset_field_reconstruction,
-                                     field_out);
+    std::vector<T> matset_values;
+
+    const T *silo_mixvals_ptr = silo_mixvals.value();
+    const T *bp_field_vals    = field_out["values"].value();
+
+    int_accessor recipe = matset_field_reconstruction["recipe"].value();
+    int_accessor sizes  = matset_field_reconstruction["sizes"].value();
+
+    int num_elems = matset_field_reconstruction["sizes"].dtype().number_of_elements();
+    int bp_vals_index = 0;
+    int recipe_index = 0;
+
+    // iterate thru the zones
+    for (int i = 0; i < num_elems; i ++)
+    {
+        // this is not a mixed zone
+        if (sizes[i] == 1) // and recipe[i] == -1
+        {
+            // we can simply copy from the field values
+            matset_values.push_back(bp_field_vals[bp_vals_index]);
+            // we have advanced thru one bp field value
+            bp_vals_index ++;
+            // we have advanced thru one recipe value
+            recipe_index ++;
+        }
+        // this zone is mixed
+        else
+        {
+            // fetch how many materials are in the zone
+            int size = sizes[i];
+            // we want to copy one value for every material
+            while (size > 0)
+            {
+                // the recipe contains the index of the silo mixval we want
+                int silo_mixval_index = recipe[recipe_index];
+                // we grab that mixval and save it
+                matset_values.push_back(silo_mixvals_ptr[silo_mixval_index]);
+                // we have advanced thru one recipe value
+                recipe_index ++;
+                // advanced thru one material
+                size --;
+            }
+            // we have only advanced thru one bp field value b/c the zone was mixed
+            bp_vals_index ++;
+        }
+    }
+
     field_out["matset_values"].set(matset_values.data(), matset_values.size());
 }
 
@@ -1275,21 +1306,15 @@ read_variable_domain_mixvals(const T *var_ptr,
                                    matset_field_reconstruction,
                                    field_out);
     }
-    // TODO hey cyrus why are chars special
-    else if (var_ptr->datatype == DB_CHAR)
-    {
-        // char is special
-        std::vector<char> matset_values =
-            read_matset_values_helper<char>(silo_mixvals,
-                                            matset_field_reconstruction,
-                                            field_out);
-        field_out["matset_values"].set_char_ptr(matset_values.data(), matset_values.size());
-    }
     else if (var_ptr->datatype == DB_LONG_LONG)
     {
         read_matset_values<long long>(silo_mixvals,
                                       matset_field_reconstruction,
                                       field_out);
+    }
+    else if (var_ptr->datatype == DB_CHAR)
+    {
+        CONDUIT_ERROR("Mixvar values cannot be strings.");
     }
     else
     {
@@ -1360,8 +1385,8 @@ read_variable_domain_helper(const T *var_ptr,
         field_out["association"] = "vertex";
     }
 
-    // TODO can we have multi-dimensional arrays for the field values in silo?
-    // if so I'll need to do some row major column major stuff
+    // TODO_LATER investigate the dims, major_order, and stride for vars. Should match the mesh;
+    // what to do if it is different? Will I need to walk these arrays differently?
 
     detail::assign_values(var_ptr->datatype,
                           var_ptr->nvals,
@@ -1618,7 +1643,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     }
 
     // TODO find colmajor data to test this
-    // TODO are there other places where I'm reading where things could be rowmajor or colmajor
+    // TODO_LATER are there other places where I'm reading where things could be rowmajor or colmajor
 
     matset_out["material_ids"].set(material_ids.data(), material_ids.size());
     matset_out["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
