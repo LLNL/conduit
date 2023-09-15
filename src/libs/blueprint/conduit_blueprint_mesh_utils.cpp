@@ -2297,7 +2297,7 @@ topology::unstructured::reorder(const conduit::Node &topo,
         auto npts = conduit::blueprint::mesh::coordset::length(coordset);
         // Fill in the old2New point mapping. It gets passed out of the function.
         old2NewPoints.resize(npts);
-        for(size_t i = 0; i < npts; i++)
+        for(conduit::index_t i = 0; i < npts; i++)
             old2NewPoints[i] = invalidNode;
         // ptReorder is used to reorder/slice vertex-associated data. We'll allow
         // up to npts values but it might not be that large if we are selecting a

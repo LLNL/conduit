@@ -467,7 +467,6 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
 
     // Make a pass where we make nx*ny tiles so we can generate their points.
     std::vector<Tile> tiles(nx * ny);
-    double newOrigin[] = {origin[0], origin[1], origin[2]};
     for(conduit::index_t j = 0; j < ny; j++)
     {
         M[2][0] = origin[0];
@@ -1033,7 +1032,7 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                         if(reorder)
                         {
                             iterateBoundary2D(tiles, nx, ny, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
                                 {
                                     for(conduit::index_t i = 0; i < npts; i++)
                                         unique.insert(old2NewPoint[ids[i]]); // Renumber
@@ -1042,7 +1041,7 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                         else
                         {
                             iterateBoundary2D(tiles, nx, ny, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
                                 {
                                     for(conduit::index_t i = 0; i < npts; i++)
                                         unique.insert(ids[i]);
@@ -1054,7 +1053,7 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                         if(reorder)
                         {
                             iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
                                 {
                                     for(conduit::index_t i = 0; i < npts; i++)
                                         unique.insert(old2NewPoint[ids[i]]); // Renumber
@@ -1063,7 +1062,7 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                         else
                         {
                             iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
                                 {
                                     for(conduit::index_t i = 0; i < npts; i++)
                                         unique.insert(ids[i]);
