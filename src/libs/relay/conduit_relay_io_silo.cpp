@@ -1130,63 +1130,6 @@ read_mesh_domain(const int meshtype,
 
 //-----------------------------------------------------------------------------
 template <typename T>
-std::vector<T>
-read_matset_values_helper(const Node &silo_mixvals,
-                          const Node &matset_field_reconstruction,
-                          Node &field_out)
-{
-    std::vector<T> matset_values;
-
-    const T *silo_mixvals_ptr = silo_mixvals.value();
-    const T *bp_field_vals    = field_out["values"].value();
-
-    int_accessor recipe = matset_field_reconstruction["recipe"].value();
-    int_accessor sizes  = matset_field_reconstruction["sizes"].value();
-
-    int num_elems = matset_field_reconstruction["sizes"].dtype().number_of_elements();
-    int bp_vals_index = 0;
-    int recipe_index = 0;
-
-    // iterate thru the zones
-    for (int i = 0; i < num_elems; i ++)
-    {
-        // this is not a mixed zone
-        if (sizes[i] == 1) // and recipe[i] == -1
-        {
-            // we can simply copy from the field values
-            matset_values.push_back(bp_field_vals[bp_vals_index]);
-            // we have advanced thru one bp field value
-            bp_vals_index ++;
-            // we have advanced thru one recipe value
-            recipe_index ++;
-        }
-        // this zone is mixed
-        else
-        {
-            // fetch how many materials are in the zone
-            int size = sizes[i];
-            // we want to copy one value for every material
-            while (size > 0)
-            {
-                // the recipe contains the index of the silo mixval we want
-                int silo_mixval_index = recipe[recipe_index];
-                // we grab that mixval and save it
-                matset_values.push_back(silo_mixvals_ptr[silo_mixval_index]);
-                // we have advanced thru one recipe value
-                recipe_index ++;
-                // advanced thru one material
-                size --;
-            }
-            // we have only advanced thru one bp field value b/c the zone was mixed
-            bp_vals_index ++;
-        }
-    }
-
-    return matset_values;
-}
-
-//-----------------------------------------------------------------------------
-template <typename T>
 void
 read_matset_values(const Node &silo_mixvals,
                    const Node &matset_field_reconstruction,
