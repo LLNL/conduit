@@ -207,11 +207,12 @@ protected:
     {
         if(reverse)
         {
+            auto s1 = sides - 1;
             for(conduit::index_t i = 0; i < nelem; i++)
             {
                 auto start = i * sides;
                 for(conduit::index_t s = 0; s < sides; s++)
-                    idlist[s] = offset + ptids[conn[start + sides - s]];
+                    idlist[s1 - s] = offset + ptids[conn[start + s]];
                 body(idlist, sides, stype);
             }
         }
@@ -916,6 +917,9 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
 
         tmp.set_external(bsizes.data(), bsizes.size());
         tmp.to_data_type(indexDT.id(), btopo["elements/sizes"]);
+
+        if(bshape == "polygonal")
+            conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(btopo, btopo["elements/offsets"]);
 
         res["fields/boundary_attribute/topology"] = boundaryMeshName;
         res["fields/boundary_attribute/association"] = "element";
