@@ -220,6 +220,7 @@ test_tiled_adjsets(const int dims[3], const std::string &testName)
     });
 }
 
+#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mpi_mesh_tiled, two_dimensional)
 {
@@ -233,7 +234,57 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional)
     const int dims[]= {2,2,2};
     test_tiled_adjsets(dims, "three_dimensional");
 }
+#endif
+#if 0
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
+{
+    // This 12 domain case was found to cause adjset problems.
+    const int dims[] = {2,2,2}, domains[] = {3,2,2};
+    const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
 
+    for(int r = 0; r < 2; r++)
+    {
+        // Make the mesh.
+        bool reorder = r == 1;
+        conduit::Node mesh;
+        make_tiled(mesh, dims, domains, reorder, std::vector<int>{});
+
+        // Now, make a corner mesh
+        conduit::Node s2dmap, d2smap;
+        conduit::blueprint::mpi::mesh::generate_corners(mesh,
+                                                        "mesh_adjset",
+                                                        "corner_adjset",
+                                                        "corner_mesh",
+                                                        "corner_coords",
+                                                        s2dmap,
+                                                        d2smap,
+                                                        MPI_COMM_WORLD);
+        // Convert to pairwise adjset.
+        std::vector<conduit::Node *> doms = conduit::blueprint::mesh::domains(mesh);
+        for(auto dom_ptr : doms)
+        {
+            conduit::Node &domain = *dom_ptr;
+            conduit::blueprint::mesh::adjset::to_pairwise(domain["adjsets/corner_adjset"],
+                                                          domain["adjsets/corner_pairwise_adjset"]);
+        }
+
+#ifdef CONDUIT_WRITE_TEST_DATA
+        // Save the mesh.
+        std::stringstream ss;
+        ss << "_r" << r;
+        for(const auto &value : domainNumbering)
+            ss << "_" << value;
+        std::string filebase(testName + ss.str());
+        save_mesh(mesh, filebase);
+#endif
+
+        // Check that its adjset points are the same along the edges.
+        bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", MPI_COMM_WORLD);
+        EXPECT_TRUE(same);
+    }
+}
+#endif
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
