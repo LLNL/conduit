@@ -1157,6 +1157,26 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
     }
 }
 
+#if 0
+//---------------------------------------------------------------------------
+template <typename Body>
+void
+Tiler::iterateDomainEdges(const std::vector<Tile> &tiles,
+    conduit::index_t nx,
+    conduit::index_t ny,
+    conduit::index_t nz,
+    conduit::index_t nPtsPerPlane,
+    conduit::index_t dom[3],
+    conduit::index_t domains[3],
+    Body &&body) const
+{
+    conduit::index_t idlist[4];
+
+    if(domainExists(domain[0], 
+
+}
+#endif
+
 //---------------------------------------------------------------------------
 void
 Tiler::addAdjset(const std::vector<Tile> &tiles,
@@ -1171,6 +1191,8 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
 {
     // Make the adjset name for 2 domains.
     auto adjset_name = [](conduit::index_t d0, conduit::index_t d1) {
+        if(d0 > d1)
+            std::swap(d0, d1);
         std::stringstream ss;
         ss << "domain_" << d0 << "_" << d1;
         return ss.str();
@@ -1206,9 +1228,271 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                 neighbor[BoundaryFront]  = (domain[2] + 1 < domains[2]) ? DOMAIN_INDEX(0, 0, 1) : -1;
 #undef DOMAIN_INDEX
 
+#if 0
+                if(nz < 1)
+                {
+                }
+                else
+                {
+                    const conduit::index_t cornerNeighbors[][3] = {{-1, -1, -1},
+                                                      {1, -1, -1},
+                                                      {-1, 1, -1},
+                                                      {1, 1, -1},
+                                                      {-1, -1, 1},
+                                                      {1, -1, 1},
+                                                      {-1, 1, 1},
+                                                      {1, 1, 1}};
+                    for(int ni = 0; ni < 8; ni++)
+                    {
+                        conduit::index_t ndom[3] = {domain[0] + cornerNeighbors[ni][0],
+                                                    domain[1] + cornerNeighbors[ni][1],
+                                                    domain[2] + cornerNeighbors[ni][2]};
+                        // If the neighbor domain exists, 
+                        if((ndom[0] >= 0 && ndom[0] < domains[0]) &&
+                           (ndom[1] >= 0 && ndom[1] < domains[1]) &&
+                           (ndom[2] >= 0 && ndom[2] < domains[2]))
+                        {
+                            conduit::index_t ti = (cornerNeighbors[ni][0] == -1) ? 0 : (nx - 1);
+                            conduit::index_t tj = (cornerNeighbors[ni][1] == -1) ? 0 : (ny - 1);
+                            conduit::index_t planeOffset = (cornerNeighbors[ni][2] == -1) ? 0 : (nz - 1) * ptsPerPlane;
+                            const Tile &tile = tiles[tj * nx + ti];
+                            
+                        }
+                    }
+                }
+
+                if(domainExists(-1, -1, -1, domain, domains))
+                {
+                    
+                    const Tile &tile = tiles[tj * nx + ti];
+                }
+
+                // Trace around the tile to get the points for the edges of the tile
+                // in original node ordering.
+                std::vector<conduit::index_t> left, right, bottom, top;
+                const bool left_flags[] = {true, false, false, false};
+                iterateBoundary2D(tiles, nx, ny, left_flags,
+                    [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
+                    {
+                        for(conduit::index_t i = 0; i < npts; i++)
+// TODO: add unique tests because we get passed the start/end of each line segment.
+// Maybe pass a "lastSegment" flag to the lambda so we can keep just the first point most of the time.
+// Also, why pass npts when it is always 2?
+                            left.push_back(ids[i]);
+                    });
+                const bool right_flags[] = {false, true, false, false};
+                iterateBoundary2D(tiles, nx, ny, right_flags,
+                    [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
+                    {
+                        right.reserve(npts);
+                        for(conduit::index_t i = 0; i < npts; i++)
+                            right.push_back(ids[i]);
+                    });
+                const bool bottom_flags[] = {false, false, true, false};
+                iterateBoundary2D(tiles, nx, ny, right_flags,
+                    [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
+                    {
+                        bottom.reserve(npts);
+                        for(conduit::index_t i = 0; i < npts; i++)
+                            bottom.push_back(ids[i]);
+                    });
+                const bool top_flags[] = {false, false, false, true};
+                iterateBoundary2D(tiles, nx, ny, right_flags,
+                    [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
+                    {
+                        top.reserve(npts);
+                        for(conduit::index_t i = 0; i < npts; i++)
+                            top.push_back(ids[i]);
+                    });
+
+                conduit::index_t frontPlane = ptsPerPlane * (nz - 1);
+                conduit::index_t corners[8];
+                corner[0] = left[0];                 // back, lower left
+                corner[1] = right[0];                // back, lower right
+                corner[2] = left[left.size() - 1];   // back, upper left
+                corner[3] = right[right.size() - 1]; // back, upper right
+                corner[4] = left[0] + frontPlane;     // front, lower left
+                corner[5] = right[0] + frontPlane;    // front, lower right
+                corner[6] = left[left.size() - 1] + frontPlane;   // front, upper left
+                corner[7] = right[right.size() - 1] + frontPlane; // front, upper right
+
+conduit::index_t
+Tiler::domainExists(conduit::index_t d0, conduit::index_t d1, conduit::index_t d2,
+                    const conduit::index_t domain[3], 
+                    const conduit::index_t domains[3]) const
+{
+    const conduit::index_t dom[3] = {domain[0] + d0,
+                                     domain[1] + d1,
+                                     domain[2] + d2};
+    // If the domain exists, make its domain id.
+    conduit::index_t domainId = InvalidDomain;
+    if((dom[0] >= 0 && dom[0] < domains[0]) &&
+       (dom[1] >= 0 && dom[1] < domains[1]) &&
+       (dom[2] >= 0 && dom[2] < domains[2]))
+    {
+        domainId = dom[2] * (domains[0] * domains[1]) + dom[1] * domains[0] + dom[0];
+    }
+    return domainId;
+}
+
+conduit::index_t
+Tiler::domainExists(const conduit::index_t delta[3], 
+                    const conduit::index_t domain[3], 
+                    const conduit::index_t domains[3]) const
+{
+    return domainExists(delta[0], delta[1], delta[2], domain, domains);
+}
+
+void
+Tiler::addValues(const std::vector<conduit::index_t> &ptids, conduit::index_t planeOffset, bool reorder, const std::vector<conduit::index_t> &old2NewPoint, conduit::Node &values) const
+{
+    if(reorder)
+    {
+        if(planeOffset > 0)
+        {
+            values.set(conduit::DataType::index_t(ptids.size());
+            conduit::index_t *dest = values.as_index_t_ptr();
+            for(size_t i = 0; i < ptids.size(); i++)
+                *dest++ = old2NewPoint[ptids[i] + planeOffset];
+        }
+        else
+        {
+            values.set(conduit::DataType::index_t(ptids.size());
+            conduit::index_t *dest = values.as_index_t_ptr();
+            for(size_t i = 0; i < ptids.size(); i++)
+                *dest++ = old2NewPoint[ptids[i]];
+        }
+    }
+    else if(planeOffset > 0)
+    {
+        values.set(conduit::DataType::index_t(ptids.size());
+        conduit::index_t *dest = values.as_index_t_ptr();
+        for(size_t i = 0; i < ptids.size(); i++)
+            *dest++ = ptids[i] + planeOffset;
+    }
+    else
+    {
+        values.set(ptids);
+    }
+}
+
+                // Make corner neighbors.
+                const conduit::index_t cornerNeighbors[][3] = {{-1, -1, -1},
+                                                      {1, -1, -1},
+                                                      {-1, 1, -1},
+                                                      {1, 1, -1},
+                                                      {-1, -1, 1},
+                                                      {1, -1, 1},
+                                                      {-1, 1, 1},
+                                                      {1, 1, 1}};
+                for(int ni = 0; ni < 8; ni++)
+                {
+                    conduit::index_t neighborId;
+                    if((neighborId = domainExists(cornerNeighbors[i], domain, domains)) != InvalidDomain)
+                    {
+                        auto name = adjset_name(thisDom, neighborId);
+                        conduit::Node &group = groups[name];
+                        group["neighbors"] = neighborId;
+                        group["values"] = reorder ? old2NewPoint[corner[0]] : corner[0];
+                    }    
+                }
+
+                // Back, left edge.
+                if(neighborId = domainExists(-1, 0, -1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(left, 0, reorder, old2NewPoint, group["values"]);
+                }
+                // Back, right edge.
+                if(neighborId = domainExists(1, 0, -1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(right, 0, reorder, old2NewPoint, group["values"]);
+                }
+                // Back, bottom edge.
+                if(neighborId = domainExists(0, -1, -1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(bottom, 0, reorder, old2NewPoint, group["values"]);
+                }
+                // Back, top edge.
+                if(neighborId = domainExists(0, -1, -1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(bottom, 0, reorder, old2NewPoint, group["values"]);
+                }
+                // Front, left edge.
+                if(neighborId = domainExists(-1, 0, 1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(left, frontPlane, reorder, old2NewPoint, group["values"]);
+                }
+                // Front, right edge.
+                if(neighborId = domainExists(1, 0, 1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(right, frontPlane, reorder, old2NewPoint, group["values"]);
+                }
+                // Front, bottom edge.
+                if(neighborId = domainExists(0, -1, 1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(bottom, frontPlane, reorder, old2NewPoint, group["values"]);
+                }
+                // Front, top edge.
+                if(neighborId = domainExists(0, -1, 1, domain, domains)) != InvalidDomain)
+                {
+                    auto name = adjset_name(thisDom, neighborId);
+                    conduit::Node &group = groups[name];
+                    group["neighbors"] = neighborId;
+                    addValues(bottom, frontPlane, reorder, old2NewPoint, group["values"]);
+                }
+
+
+#endif
                 // Make a state node.
                 out["state/domain_id"] = thisDom;
 
+                std::set<conduit::index_t> unique;
+                std::vector<conduit::index_t> ptvec;
+                auto addPoints = [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
+                {
+                    for(conduit::index_t i = 0; i < npts; i++)
+                    {
+                        const auto id = ids[i];
+                        if(unique.find(id) == unique.end())
+                        {
+                            unique.insert(id);
+                            ptvec.push_back(id);
+                        }
+                    }
+                };
+                auto addPointsReorder = [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
+                {
+                    for(conduit::index_t i = 0; i < npts; i++)
+                    {
+                        const auto id = old2NewPoint[ids[i]]; // Reorder
+                        if(unique.find(id) == unique.end())
+                        {
+                            unique.insert(id);
+                            ptvec.push_back(id);
+                        }
+                    }
+                };
                 int maxNeighbors = (nz < 1) ? 4 : 6;
                 for(int ni = 0; ni < maxNeighbors; ni++)
                 {
@@ -1219,51 +1503,32 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                     // Iterate over faces and come up with unique points.
                     bool flags[6] = {false, false, false, false, false, false};
                     flags[ni] = true;
-                    std::set<conduit::index_t> unique;
+                    unique.clear();
+                    ptvec.clear();
                     if(nz < 1)
                     {
                          // 2D
                         if(reorder)
-                        {
-                            iterateBoundary2D(tiles, nx, ny, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
-                                {
-                                    for(conduit::index_t i = 0; i < npts; i++)
-                                        unique.insert(old2NewPoint[ids[i]]); // Renumber
-                                });
-                        }
+                            iterateBoundary2D(tiles, nx, ny, flags, addPointsReorder);
                         else
-                        {
-                            iterateBoundary2D(tiles, nx, ny, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
-                                {
-                                    for(conduit::index_t i = 0; i < npts; i++)
-                                        unique.insert(ids[i]);
-                                });
-                        }
+                            iterateBoundary2D(tiles, nx, ny, flags, addPoints);
                     }
                     else
                     {
                         if(reorder)
-                        {
-                            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
-                                {
-                                    for(conduit::index_t i = 0; i < npts; i++)
-                                        unique.insert(old2NewPoint[ids[i]]); // Renumber
-                                });
-                        }
+                            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags, addPointsReorder);
                         else
-                        {
-                            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
-                                [&](const conduit::index_t *ids, conduit::index_t npts, int /*bnd*/)
-                                {
-                                    for(conduit::index_t i = 0; i < npts; i++)
-                                        unique.insert(ids[i]);
-                                });
-                        }
+                            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags, addPoints);
                     }
-
+#if 1
+                    if(!ptvec.empty())
+                    {
+                        auto name = adjset_name(thisDom, neighbor[ni]);
+                        conduit::Node &group = groups[name];
+                        group["neighbors"] = neighbor[ni];
+                        group["values"].set(ptvec);
+                    }
+#else
                     if(!unique.empty())
                     {
                         auto name = adjset_name(thisDom, neighbor[ni]);
@@ -1277,6 +1542,7 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                         for(const auto &ptid : unique)
                             *out_ptr++ = ptid;
                     }
+#endif
                 } // end for
             }
         }
