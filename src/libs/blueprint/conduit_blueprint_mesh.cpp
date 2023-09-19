@@ -6894,43 +6894,40 @@ mesh::adjset::to_pairwise(const Node &adjset,
     std::vector<std::string> adjset_group_names = adjset["groups"].child_names();
     std::sort(adjset_group_names.begin(), adjset_group_names.end());
 
-    // Determine the max number of neighbors.
-    int maxNeighbors = 1;
+    // Compile ordered lists for each neighbor containing their unique lists
+    // of 'adjset' entity indices, as compiled from all groups in the source 'adjset'.
+    std::map<index_t, std::vector<index_t>> pair_values_map;
     for(const std::string &group_name : adjset_group_names)
     {
         const Node &group_node = adjset["groups"][group_name];
-        const Node &neighbors_node = group_node["neighbors"];
-        maxNeighbors = std::max(maxNeighbors, static_cast<int>(neighbors_node.dtype().number_of_elements()));
-    }
 
-    // Compile ordered lists for each neighbor containing their unique lists
-    // of 'adjset' entity indices, as compiled from all groups in the source 'adjset'.
-    // We append the values in order according to the length of the neighbor lists,
-    // with shorter lists going first.
-    std::map<index_t, std::vector<index_t>> pair_values_map;
-    for(int nlen = 1; nlen <= maxNeighbors; nlen++)
-    {
-        for(const std::string &group_name : adjset_group_names)
+        std::vector<index_t> group_neighbors;
         {
-            const Node &group_node = adjset["groups"][group_name];
-            const Node &neighbors_node = group_node["neighbors"];
-            const auto thisNeighborLen = neighbors_node.dtype().number_of_elements();
-            if(neighbors_node.dtype().number_of_elements() != nlen)
-                continue;
-
-            const Node &group_vals = group_node["values"];
-            const auto group_neighbors = neighbors_node.as_index_t_accessor();
-            const auto group_values = group_vals.as_index_t_accessor();
-
-            for(index_t ni = 0; ni < thisNeighborLen; ni++)
+            const Node &group_nvals = group_node["neighbors"];
+            for(index_t ni = 0; ni < group_nvals.dtype().number_of_elements(); ++ni)
             {
-                const index_t neighbor_id = group_neighbors[ni];
-                std::vector<index_t> &neighbor_values = pair_values_map[neighbor_id];
-                auto numValues = group_values.number_of_elements();
-                neighbor_values.reserve(neighbor_values.size() + numValues);
-                for(index_t vi = 0; vi < numValues; vi++)
-                    neighbor_values.push_back(group_values[vi]);
+                Node temp(DataType(group_nvals.dtype().id(), 1),
+                    (void*)group_nvals.element_ptr(ni), true);
+                group_neighbors.push_back(temp.to_index_t());
             }
+        }
+
+        std::vector<index_t> group_values;
+        {
+            const Node &group_vals = group_node["values"];
+            for(index_t vi = 0; vi < group_vals.dtype().number_of_elements(); ++vi)
+            {
+                Node temp(DataType(group_vals.dtype().id(), 1),
+                    (void*)group_vals.element_ptr(vi), true);
+                group_values.push_back(temp.to_index_t());
+            }
+        }
+
+        for(const index_t &neighbor_id : group_neighbors)
+        {
+            std::vector<index_t> &neighbor_values = pair_values_map[neighbor_id];
+            neighbor_values.insert(neighbor_values.end(),
+                group_values.begin(), group_values.end());
         }
     }
 
