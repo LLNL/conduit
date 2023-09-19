@@ -31,7 +31,7 @@ using namespace conduit::utils;
 using namespace generate;
 
 // Uncomment if we want to write the data files.
-// #define CONDUIT_WRITE_TEST_DATA
+//#define CONDUIT_WRITE_TEST_DATA
 
 //---------------------------------------------------------------------------
 #ifdef CONDUIT_WRITE_TEST_DATA
@@ -220,7 +220,6 @@ test_tiled_adjsets(const int dims[3], const std::string &testName)
     });
 }
 
-#if 1
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mpi_mesh_tiled, two_dimensional)
 {
@@ -234,8 +233,7 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional)
     const int dims[]= {2,2,2};
     test_tiled_adjsets(dims, "three_dimensional");
 }
-#endif
-#if 0
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
 {
@@ -271,10 +269,9 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
 
 #ifdef CONDUIT_WRITE_TEST_DATA
         // Save the mesh.
+        const std::string testName("three_dimensional_12");
         std::stringstream ss;
         ss << "_r" << r;
-        for(const auto &value : domainNumbering)
-            ss << "_" << value;
         std::string filebase(testName + ss.str());
         save_mesh(mesh, filebase);
 #endif
@@ -284,7 +281,7 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
         EXPECT_TRUE(same);
     }
 }
-#endif
+
 //-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
