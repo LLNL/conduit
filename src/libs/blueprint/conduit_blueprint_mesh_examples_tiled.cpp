@@ -573,7 +573,7 @@ Tiler::initialize(const conduit::Node &t)
     }
     if(getTopology()["type"].as_string() != "unstructured")
     {
-        CONDUIT_ERROR("The tile topology must be 2D.");
+        CONDUIT_ERROR("The tile topology must be unstructured.");
     }
 
     // Compute the tile extents.

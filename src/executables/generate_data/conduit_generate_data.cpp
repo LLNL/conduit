@@ -33,6 +33,7 @@
 class DomainGenerator
 {
 public:
+    virtual ~DomainGenerator() = default;
     virtual void generate(int domain[3], conduit::Node &n, conduit::Node &opts) = 0;
 
     void setDims(const int d[3])

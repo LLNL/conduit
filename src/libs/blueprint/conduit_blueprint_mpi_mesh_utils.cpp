@@ -385,7 +385,7 @@ MatchQuery::execute()
                    m_comm);
 
     // Look up a rank that owns a domain.
-    auto domain_to_rank = [&ntuple_values](const std::vector<int> &allqueries, int d) -> int
+    auto domain_to_rank = [=](const std::vector<int> &allqueries, int d) -> int
     {
         for(size_t i = 0; i < allqueries.size(); i += ntuple_values)
         {
@@ -683,7 +683,6 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MP
             for(auto dom_ptr : domains)
             {
                 Node &domain = *dom_ptr;
-                auto domainId = bputils::find_domain_id(domain);
 
                 // If the domain has the adjset, make a point mesh of its points
                 // that we can send to the neighbor.
