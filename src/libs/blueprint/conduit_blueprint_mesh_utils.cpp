@@ -415,6 +415,16 @@ slice_array_internal(const conduit::Node &n_src_values,
         auto dest(n_dest_values.as_uint64_array());
         typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
     }
+    else if(dt.is_float32())
+    {
+        auto dest(n_dest_values.as_float32_array());
+        typed_slice_array(n_src_values.as_float32_array(), ids, dest);
+    }
+    else if(dt.is_float64())
+    {
+        auto dest(n_dest_values.as_float64_array());
+        typed_slice_array(n_src_values.as_float64_array(), ids, dest);
+    }
     else if(dt.is_char())
     {
         auto dest(n_dest_values.as_char_array());

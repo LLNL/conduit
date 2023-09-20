@@ -1696,7 +1696,7 @@ a regular square tiling of the supplied tile. If no topology is given, a default
 is used. The output mesh can be either 2D or 3D. For 3D, supply a ``nz`` parameter greater than zero. Note
 that the input tile must consist of a homogeneous set of triangles or quads to extrude the tile into 3D since
 polyhedral output is not yet supported. The ``tiled()`` function produces a single domain comprised of a
-main mesh, a boundary mesh, and adjacency sets of the output mesh is to be part of a multi-domain dataset.
+main mesh, a boundary mesh, and adjacency sets if the output mesh is to be part of a multi-domain dataset.
 
 .. code:: cpp
 
@@ -1707,29 +1707,30 @@ main mesh, a boundary mesh, and adjacency sets of the output mesh is to be part 
                                               const conduit::Node &options);// options node
 
 The ``tiled()`` function accepts a Conduit node containing options that influence how the mesh is generated.
-If the node contains a ``tile`` that contains a 2D blueprint topology, then the first supplied topology will
+If the options contain a ``tile`` node that contains a 2D blueprint topology, the first supplied topology will
 be used to override the default tile pattern. The ``reorder`` option indicates the type of point and element
 reordering that will be done. Reordering can improve cache-friendliness. The default is to reorder points
 and elements, using "kdtree" method. Passing "none" or an empty string will prevent reordering.
-The name of the mesh can be given by passing ``meshname`` option string. Likewise, the name of the boundary
+The name of the mesh can be given by passing a ``meshname`` option string. Likewise, the name of the boundary
 mesh can be supplied using the ``boundarymeshname`` option. The optional ``translate/x`` and ``translate/y``
-options determing the tile spacing. If the translation values are not given, they will be determined from
+options determine the tile spacing. If the translation values are not given, they will be determined from
 the coordset extents. The output mesh topology will store its integer connectivity information as index_t
 by default. The precision of the integer output can turned to int32 by passing a ``datatype`` option containing
 the "int", "int32", "integer" strings.
 
-An important set of options define the left, right, bottom, top sets of points within the supplied tile
+An important set of options define the left, right, bottom, and top sets of points within the supplied tile
 pattern. The values in the ``left`` option identify the list of points that define the left edge of the tile.
 These are indices into the coordset and the values should be in consecutive order along the edge. Opposite point
 sets must match. In other words, the left and right point sets must contain the same number of points and
 they need to proceed along their edges in the same order. The same is true of the bottom and top point sets.
 
-The ``tiled()`` function options also support options that simplify the task of using ``tiled()`` to generate
+The ``tiled()`` function also accepts options that simplify the task of generating
 mesh domains for a multi-domain dataset. The coordinate extents of the current mesh domain are given using
 the ``extents`` option, which contains 6 double values: {xmin, xmax, ymin, ymax, zmin, zmax}. The ``domains``
 option contains a triple of {domainsI, domainsJ, domainsK} values that indicate how many divisions there are
-of the extents in the I,J,K dimensions. The ``domain`` option specifies a triple indicating the I,J,K domain
-id within the overall set of domains. This is used to help construct adjacency sets.
+of the extents in the I,J,K dimensions. The product of these numbers determines the total number of domains.
+The ``domain`` option specifies a triple indicating the I,J,K domain id within the overall set of domains.
+This is used to help construct adjacency sets.
 
 .. code:: yaml
 
