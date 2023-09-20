@@ -847,7 +847,7 @@ verify_single_domain(const Node &n,
                     chld, chld_info, "topology", "topologies");
             }
 
-            log::validation(info["nestets"],nset_res);
+            log::validation(info["nestsets"],nset_res);
             res &= nset_res;
         }
     }

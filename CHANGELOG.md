@@ -8,6 +8,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### General
+- Added `conduit_json_external` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to `set_external()`.
+- Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
+
 #### Relay
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 
@@ -19,8 +23,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `conduit::blueprint::mesh::utils::slice_array()` function that can slice Conduit nodes that contain arrays. A new node with the same type is created but it contains only the selected indices.
 - Added a `conduit::blueprint::mesh::utils::slice_field()` was added. It is like slice_array() but it can handle the mcarray protocol. This functionality was generalized from the partitioner.
 
-#### Executables
-- Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
+### Changed
+
+#### General
+- Improved the efficiency of json parsing logic.
+
+#### Blueprint
+- The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
 
 ### Fixed
 

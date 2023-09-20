@@ -240,7 +240,6 @@ void silo_read(DBfile *dbfile,
     char *data   = new char[data_len];
 
 
-
     DBReadVar(dbfile, src_json.c_str(), schema);
     DBReadVar(dbfile, src_data.c_str(), data);
 
