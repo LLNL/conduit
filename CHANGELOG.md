@@ -11,6 +11,13 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Relay
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 
+#### Blueprint
+- Added a `conduit::blueprint::mesh::examples::tiled()` function that can generate meshes by repeating a tiled pattern.
+- Added a `conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise()` function that can compare adjsets for multi-domain meshes in parallel. The function is used to diagnose adjsets with points that are out of order on either side of the boundary. The comparison is done point by point within each group and it checks to ensure that the points reference the same spatial location.
+
+#### Executables
+- Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
+
 ### Fixed
 
 #### Blueprint
