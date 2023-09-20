@@ -10,10 +10,18 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### General
 - Added `conduit_json_external` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to `set_external()`.
+- Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
 
 #### Relay
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 
+#### Blueprint
+- Added a `conduit::blueprint::mesh::examples::tiled()` function that can generate meshes by repeating a tiled pattern.
+- Added a `conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise()` function that can compare adjsets for multi-domain meshes in parallel. The function is used to diagnose adjsets with points that are out of order on either side of the boundary. The comparison is done point by point within each group and it checks to ensure that the points reference the same spatial location.
+- Added a `conduit::blueprint::mesh::utils::reorder()` function that can accept a vector of element ids and create a reordered topology. The points and coordinates are re-ordered according to their first use in the new element ordering.
+- Added a `conduit::blueprint::mesh::utils::topology::spatial_ordering()` function that takes a topology and computes centroids for each element, passes them through a kdtree, and returns the new element ordering. The new ordering can be used with the `reorder()` function.
+- Added a `conduit::blueprint::mesh::utils::slice_array()` function that can slice Conduit nodes that contain arrays. A new node with the same type is created but it contains only the selected indices.
+- Added a `conduit::blueprint::mesh::utils::slice_field()` function. It is like `slice_array()` but it can handle the mcarray protocol. This functionality was generalized from the partitioner.
 
 ### Changed
 
