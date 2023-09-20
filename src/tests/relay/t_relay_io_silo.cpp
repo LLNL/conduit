@@ -422,9 +422,9 @@ TEST(conduit_relay_io_silo, round_trip_venn)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_silo, funny_venn)
+TEST(conduit_relay_io_silo, round_trip_venn_modded_matnos)
 {
-    std::string matset_type = "sparse_by_element";
+    const std::string matset_type = "sparse_by_element";
     Node save_mesh, load_mesh, info;
     const int nx = 4;
     const int ny = 4;
@@ -448,51 +448,75 @@ TEST(conduit_relay_io_silo, funny_venn)
     }
 
     int_array matids = save_mesh["matsets"]["matset"]["material_ids"].value();
-
     for (int i = 0; i < save_mesh["matsets"]["matset"]["material_ids"].dtype().number_of_elements(); i ++)
     {
         matids[i] = replace_matno(matids[i]);
     }
 
-    save_mesh["matsets"]["matset"].print();
-
-    const std::string silo_basename = "silo_funny_venn";
-    const std::string bp_basename = "bp_funny_venn";
+    const std::string silo_basename = "silo_venn_" + matset_type + "_modded_matnos";
     const std::string silo_filename = silo_basename + ".root";
-    const std::string bp_filename = bp_basename + ".root";
-
     remove_path_if_exists(silo_filename);
-    remove_path_if_exists(bp_filename);
     io::silo::save_mesh(save_mesh, silo_basename);
+
+    const std::string bp_basename = "bp_venn_" + matset_type + "_modded_matnos";
+    const std::string bp_filename = bp_basename + ".root";
+    remove_path_if_exists(bp_filename);
     io::blueprint::save_mesh(save_mesh, bp_basename, "hdf5");
     
-    // io::silo::load_mesh(silo_filename, load_mesh);
-    // EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    io::silo::load_mesh(silo_filename, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-    // // make changes to save mesh so the diff will pass
-    // save_mesh["state/cycle"] = (int64) 0;
-    // save_mesh["state/domain_id"] = 0;
+    // make changes to save mesh so the diff will pass
+    save_mesh["state/cycle"] = (int64) 0;
+    save_mesh["state/domain_id"] = 0;
 
-    // // TODO remove once https://github.com/LLNL/conduit/issues/1163 is closed
-    // save_mesh["coordsets"]["coords"].remove_child("params");
+    // TODO remove once https://github.com/LLNL/conduit/issues/1163 is closed
+    save_mesh["coordsets"]["coords"].remove_child("params");
 
-    // // The field mat_check has values that are one type and matset_values
-    // // that are another type. The silo writer converts both to double arrays
-    // // in this case, so we follow suit.
-    // Node mat_check_new_values, mat_check_new_matset_values;
-    // save_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
-    // save_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
-    // save_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
-    // save_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
+    // The field mat_check has values that are one type and matset_values
+    // that are another type. The silo writer converts both to double arrays
+    // in this case, so we follow suit.
+    Node mat_check_new_values, mat_check_new_matset_values;
+    save_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
+    save_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
+    save_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
+    save_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
 
-    // silo_name_changer("mesh", save_mesh);
+    // to_silo is going to reorder mixed materials least to greatest
+    // so we must do the same
+    int_array mat_ids = save_mesh["matsets"]["matset"]["material_ids"].value();
+    const auto mat_id10 = mat_ids[10];
+    const auto mat_id11 = mat_ids[11];
+    const auto mat_id12 = mat_ids[12];
+    mat_ids[10] = mat_id12;
+    mat_ids[11] = mat_id10;
+    mat_ids[12] = mat_id11;
+    auto field_itr = save_mesh["fields"].children();
+    while (field_itr.has_next())
+    {
+        const Node &n_field = field_itr.next();
+        if (n_field.has_child("matset"))
+        {
+            double_array matset_vals = n_field["matset_values"].value();
+            const auto matset_val10 = matset_vals[10];
+            const auto matset_val11 = matset_vals[11];
+            const auto matset_val12 = matset_vals[12];
+            matset_vals[10] = matset_val12;
+            matset_vals[11] = matset_val10;
+            matset_vals[12] = matset_val11;
+        }
+    }
 
-    // // the loaded mesh will be in the multidomain format
-    // // but the saved mesh is in the single domain format
-    // EXPECT_EQ(load_mesh.number_of_children(), 1);
-    // EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+    silo_name_changer("mesh", save_mesh);
 
-    // EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    // the loaded mesh will be in the multidomain format
+    // but the saved mesh is in the single domain format
+    EXPECT_EQ(load_mesh.number_of_children(), 1);
+    EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+
+    // info.print();
 }
 
 // //-----------------------------------------------------------------------------
