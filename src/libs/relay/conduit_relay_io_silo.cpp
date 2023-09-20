@@ -437,43 +437,31 @@ shapetype_to_string(int shapetype)
 }
 
 //---------------------------------------------------------------------------//
-// TODO do these have to be templated or can I get away with something slick?
-template<typename T>
 void
-silo_wedge_connectivity_to_conduit(Node &n_mesh_conn)
+swizzle_wedge_connectivity(Node &n_mesh_conn, bool silo_to_conduit)
 {
     const int conn_size = n_mesh_conn.dtype().number_of_elements();
-    T *conn_ptr = n_mesh_conn.value();
+    int_array conn_arr = n_mesh_conn.value();
     for (int i = 0; i < conn_size; i += 6)
     {
-        auto conn0 = conn_ptr[i + 0];
-        auto conn2 = conn_ptr[i + 2];
-        auto conn4 = conn_ptr[i + 4];
-        auto conn5 = conn_ptr[i + 5];
-        conn_ptr[i + 0] = conn2;
-        conn_ptr[i + 2] = conn5;
-        conn_ptr[i + 4] = conn0;
-        conn_ptr[i + 5] = conn4;
-    }
-}
-
-//---------------------------------------------------------------------------//
-template<typename T>
-void
-conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
-{
-    const int conn_size = n_mesh_conn.dtype().number_of_elements();
-    T *conn_ptr = n_mesh_conn.value();
-    for (int i = 0; i < conn_size; i += 6)
-    {
-        auto conn0 = conn_ptr[i + 0];
-        auto conn2 = conn_ptr[i + 2];
-        auto conn4 = conn_ptr[i + 4];
-        auto conn5 = conn_ptr[i + 5];
-        conn_ptr[i + 2] = conn0;
-        conn_ptr[i + 5] = conn2;
-        conn_ptr[i + 0] = conn4;
-        conn_ptr[i + 4] = conn5;
+        auto conn0 = conn_arr[i + 0];
+        auto conn2 = conn_arr[i + 2];
+        auto conn4 = conn_arr[i + 4];
+        auto conn5 = conn_arr[i + 5];
+        if (silo_to_conduit)
+        {
+            conn_arr[i + 0] = conn2;
+            conn_arr[i + 2] = conn5;
+            conn_arr[i + 4] = conn0;
+            conn_arr[i + 5] = conn4;
+        }
+        else // conduit to silo
+        {
+            conn_arr[i + 2] = conn0;
+            conn_arr[i + 5] = conn2;
+            conn_arr[i + 0] = conn4;
+            conn_arr[i + 4] = conn5;
+        }
     }
 }
 
@@ -672,27 +660,8 @@ add_shape_info(DBzonelist *zones,
         // vtk ordering, NOT the silo ordering
         DataType dtype = elements["connectivity"].dtype();
 
-        // swizzle the connectivity
-        if (dtype.is_uint64())
-        {
-            silo_wedge_connectivity_to_conduit<uint64>(elements["connectivity"]);
-        }
-        else if (dtype.is_uint32())
-        {
-            silo_wedge_connectivity_to_conduit<uint32>(elements["connectivity"]);
-        }
-        else if (dtype.is_int64())
-        {
-            silo_wedge_connectivity_to_conduit<int64>(elements["connectivity"]);
-        }
-        else if (dtype.is_int32())
-        {
-            silo_wedge_connectivity_to_conduit<int32>(elements["connectivity"]);
-        }
-        else
-        {
-            CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
-        }
+        // swizzle the connectivity to convert silo -> blueprint
+        swizzle_wedge_connectivity(elements["connectivity"], true);
     }
 
     // TODO_LATER polytopal support
@@ -1585,7 +1554,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         }
     }
 
-    // TODO find colmajor data to test this
+    // TODO_LATER find colmajor data to test this
     // TODO_LATER are there other places where I'm reading where things could be rowmajor or colmajor
 
     matset_out["material_ids"].set(material_ids.data(), material_ids.size());
@@ -2807,10 +2776,10 @@ void silo_write_field(DBfile *dbfile,
         CONDUIT_ERROR("only DBPutQuadvar + DBPutUcdvar + DBPutPointvar var are supported");
     }
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error,
-                             " after creating field " << var_name);
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
     // bookkeeping
+    // TODO_LATER refactor so this is in a function call - we can share logic with meshes and mats
     if (! local_type_domain_info["vars"].has_child(var_name))
     {
         local_type_domain_info["vars"][var_name]["domain_ids"].set(DataType::index_t(local_num_domains));
@@ -2892,7 +2861,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     Node ucd_zlist;
 
     index_t num_shapes = 1;
-    // TODO what is this even for? why create the node at all?
+    // TODO_LATER what is this even for? why create the node at all?
     ucd_zlist["shapetype"].set(DataType::c_int(1));
     ucd_zlist["shapesize"].set(DataType::c_int(1));
     ucd_zlist["shapecnt"].set(DataType::c_int(1));
@@ -2922,27 +2891,8 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     {
         n_mesh_conn.set(n_elements["connectivity"]);
         DataType dtype = n_mesh_conn.dtype();
-        // swizzle the connectivity
-        if (dtype.is_uint64())
-        {
-            detail::conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
-        }
-        else if (dtype.is_uint32())
-        {
-            detail::conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
-        }
-        else if (dtype.is_int64())
-        {
-            detail::conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
-        }
-        else if (dtype.is_int32())
-        {
-            detail::conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
-        }
-        else
-        {
-            CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
-        }
+        // swizzle the connectivity to convert blueprint -> silo
+        detail::swizzle_wedge_connectivity(n_mesh_conn, false);
     }
     else
     {
@@ -3478,9 +3428,11 @@ void silo_write_matset(DBfile *dbfile,
                        Node &local_type_domain_info,
                        Node &n_mesh_info)
 {
+    // use to_silo utility to create the needed silo arrays
     Node silo_matset, silo_matset_compact;
     conduit::blueprint::mesh::matset::to_silo(n_matset, silo_matset);
 
+    // compact the arrays if necessary
     detail::conditional_compact(silo_matset, silo_matset_compact);
 
     if (!n_matset.has_path("topology"))
@@ -3501,22 +3453,20 @@ void silo_write_matset(DBfile *dbfile,
     }
     const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
+    // get the number of materials in this matset to write out
     int nmat = silo_matset_compact["material_map"].number_of_children();
 
+    // get material names and material numbers and package up char ptrs for silo
     std::vector<std::string> matnames = silo_matset_compact["material_map"].child_names();
-    std::vector<int> matnos;
-    for (const auto &matname : matnames)
-    {
-        matnos.push_back(silo_matset_compact["material_map"][matname].to_int());
-    }
-
-    // package up char ptrs for silo
     std::vector<const char *> matname_ptrs;
+    std::vector<int> matnos;
     for (size_t i = 0; i < matnames.size(); i ++)
     {
+        matnos.push_back(silo_matset_compact["material_map"][matnames[i]].to_int());
         matname_ptrs.push_back(matnames[i].c_str());
     }
-    
+
+    // calculate dims
     int dims[] = {0,0,0};
     int ndims = 1;
     const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
@@ -3536,21 +3486,23 @@ void silo_write_matset(DBfile *dbfile,
         dims[0] = num_elems;
     }
 
+    // get the length of the mixed data arrays
     const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
+    
+    // get the datatype of the volume fractions
     const int mat_type = detail::dtype_to_silo_type(silo_matset_compact["mix_vf"].dtype());
     CONDUIT_ASSERT(mat_type == DB_FLOAT || mat_type == DB_DOUBLE,
         "Invalid matset volume fraction type: " << silo_matset_compact["mix_vf"].dtype().to_string());
 
-    // create optlist
+    // create optlist and add to it
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
         DBMakeOptlist(1),
         &DBFreeOptlist,
         "Error freeing optlist."};
     CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
-    
-    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-                                          DBOPT_MATNAMES,
-                                          matname_ptrs.data()),
+    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                         DBOPT_MATNAMES,
+                                         matname_ptrs.data()),
                              "error adding matnames option");
 
     int silo_error = 
