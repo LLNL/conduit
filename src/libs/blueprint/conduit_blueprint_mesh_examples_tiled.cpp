@@ -16,7 +16,9 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
 #include "conduit_blueprint_mesh_utils.hpp"
+
 #include <cmath>
+#include <algorithm>
 
 // Uncomment this to add some fields on the filed mesh prior to reordering.
 // #define CONDUIT_TILER_DEBUG_FIELDS
