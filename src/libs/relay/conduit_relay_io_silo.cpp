@@ -3503,29 +3503,11 @@ void silo_write_matset(DBfile *dbfile,
 
     int nmat = silo_matset_compact["material_map"].number_of_children();
 
-    // We will sort the material map before saving out to silo.
-    // this is to preserve parity with the behavior of the blueprint
-    // reader inside visit. It presents materials to visit in order
-    // of ascending material id, while the silo reader in visit does
-    // not. To keep things consistent with silo files created from
-    // blueprint, we sort the material map so that the order is the
-    // same as the order the blueprint reader would have presented to 
-    // visit.
-    std::map<int, std::string> mat_map;
-    auto matmap_itr = silo_matset_compact["material_map"].children();
-    while (matmap_itr.has_next())
-    {
-        const Node &n_mat = matmap_itr.next();
-        mat_map[n_mat.to_int()] = n_mat.name();
-    }
-
-    // when we extract from the map, these will be sorted
+    std::vector<std::string> matnames = silo_matset_compact["material_map"].child_names();
     std::vector<int> matnos;
-    std::vector<std::string> matnames;
-    for (auto & matmap_item : mat_map)
+    for (const auto &matname : matnames)
     {
-        matnos.emplace_back(std::move(matmap_item.first));
-        matnames.emplace_back(std::move(matmap_item.second));
+        matnos.push_back(silo_matset_compact["material_map"][matname].to_int());
     }
 
     // package up char ptrs for silo
