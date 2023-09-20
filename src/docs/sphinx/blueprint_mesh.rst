@@ -1708,8 +1708,9 @@ main mesh, a boundary mesh, and adjacency sets of the output mesh is to be part 
 
 The ``tiled()`` function accepts a Conduit node containing options that influence how the mesh is generated.
 If the node contains a ``tile`` that contains a 2D blueprint topology, then the first supplied topology will
-be used to override the default tile pattern. A ``reorder`` flag indicates whether the mesh's
-points and elements will be reordered to be more cache-friendly. The default is to reorder points and elements.
+be used to override the default tile pattern. The ``reorder`` option indicates the type of point and element
+reordering that will be done. Reordering can improve cache-friendliness. The default is to reorder points
+and elements, using "kdtree" method. Passing "none" or an empty string will prevent reordering.
 The name of the mesh can be given by passing ``meshname`` option string. Likewise, the name of the boundary
 mesh can be supplied using the ``boundarymeshname`` option. The optional ``translate/x`` and ``translate/y``
 options determing the tile spacing. If the translation values are not given, they will be determined from

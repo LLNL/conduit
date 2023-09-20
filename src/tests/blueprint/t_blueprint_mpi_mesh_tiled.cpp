@@ -54,10 +54,12 @@ void save_mesh(const conduit::Node &root, const std::string &filebase)
  @param mesh The node that will contain the domains.
  @param dims The number of zones in each domain. dims[2] == 0 for 2D meshes.
  @param domains The number of domains to make. All values > 0.
+ @param reorder The reordering method, if any.
  @param domainNumbering An optional vector that can reorder the domains.
  */
 void
-make_tiled(conduit::Node &mesh, const int dims[3], const int domains[3], bool reorder, const std::vector<int> &domainNumbering)
+make_tiled(conduit::Node &mesh, const int dims[3], const int domains[3],
+           const std::string &reorder, const std::vector<int> &domainNumbering)
 {
     const int ndoms = domains[0] * domains[1] * domains[2];
     const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
@@ -99,7 +101,7 @@ make_tiled(conduit::Node &mesh, const int dims[3], const int domains[3], bool re
             opts["extents"].set(domainExt, 6);
             opts["domain"].set(domain, 3);
             opts["domains"].set(domains, 3);
-            opts["reorder"] = reorder ? 1 : 0;
+            opts["reorder"] = reorder;
 
             if(ndoms > 1)
             {
@@ -163,14 +165,12 @@ test_tiled_adjsets(const int dims[3], const std::string &testName)
     {
         const int domains[] = {2,2,1};
         const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
-
-        for(int r = 0; r < 2; r++)
+        const std::vector<std::string> reorder{"normal", "kdtree"};
+        for(const auto &r : reorder)
         {
-            bool reorder = r == 1;
-
             // Make the mesh.
             conduit::Node mesh;
-            make_tiled(mesh, dims, domains, reorder, domainNumbering);
+            make_tiled(mesh, dims, domains, r, domainNumbering);
 
             // Now, make a corner mesh
             conduit::Node s2dmap, d2smap;
@@ -240,13 +240,13 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
     // This 12 domain case was found to cause adjset problems.
     const int dims[] = {2,2,2}, domains[] = {3,2,2};
     const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
+    const std::vector<std::string> reorder{"normal", "kdtree"};
 
-    for(int r = 0; r < 2; r++)
+    for(const auto &r : reorder)
     {
         // Make the mesh.
-        bool reorder = r == 1;
         conduit::Node mesh;
-        make_tiled(mesh, dims, domains, reorder, std::vector<int>{});
+        make_tiled(mesh, dims, domains, r, std::vector<int>{});
 
         // Now, make a corner mesh
         conduit::Node s2dmap, d2smap;
@@ -271,7 +271,7 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
         // Save the mesh.
         const std::string testName("three_dimensional_12");
         std::stringstream ss;
-        ss << "_r" << r;
+        ss << "_r_" << r;
         std::string filebase(testName + ss.str());
         save_mesh(mesh, filebase);
 #endif

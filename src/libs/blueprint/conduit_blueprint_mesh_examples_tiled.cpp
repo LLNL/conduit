@@ -621,7 +621,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
 
     bool reorder = true;
     if(options.has_path("reorder"))
-        reorder = options.fetch_existing("reorder").to_int() > 0;
+        reorder = options.fetch_existing("reorder").as_string() == "kdtree";
 
     if(options.has_path("meshname"))
         meshName = options.fetch_existing("meshname").as_string();
