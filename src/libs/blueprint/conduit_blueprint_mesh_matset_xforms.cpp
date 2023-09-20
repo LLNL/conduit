@@ -444,12 +444,8 @@ to_silo(const conduit::Node &field,
     for(index_t elem_index = 0, slot_index = 0; elem_index < mset_num_elems; elem_index++)
     {
         const std::map<index_t, float64>& elem_mat_map = elem_mat_maps[elem_index];
-        if(elem_mat_map.size() == 0)
-        {
-            // TODO this makes tests fail
-            CONDUIT_ERROR("A zone has no materials.");
-        }
-        else if(elem_mat_map.size() == 1)
+        CONDUIT_ASSERT(elem_mat_map.size() != 0, "A zone has no materials.");
+        if (elem_mat_map.size() == 1)
         {
             temp.reset();
             temp.set(elem_mat_map.begin()->first);
