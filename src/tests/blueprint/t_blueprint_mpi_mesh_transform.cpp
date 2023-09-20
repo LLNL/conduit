@@ -843,7 +843,7 @@ test_adjset_points(conduit::Node &mesh, const std::string &adjsetName)
 
     // Iterate over the points in the adjset and add them to the 
     iterate_adjset(mesh, adjsetName,
-        [&](int /*dom*/, int nbr, int val, const conduit::Node *cset, const conduit::Node */*topo*/)
+        [&](int /*dom*/, int nbr, int val, const conduit::Node *cset, const conduit::Node * /*topo*/)
         {
             // Get the point (it might not be 3D)
             auto pt = conduit::blueprint::mesh::utils::coordset::_explicit::coords(*cset, val);
