@@ -437,33 +437,45 @@ shapetype_to_string(int shapetype)
 }
 
 //---------------------------------------------------------------------------//
+template<typename T>
 void
-swizzle_wedge_connectivity(Node &n_mesh_conn, bool silo_to_conduit)
+silo_wedge_connectivity_to_conduit(Node &n_mesh_conn)
 {
     const int conn_size = n_mesh_conn.dtype().number_of_elements();
-    int_array conn_arr = n_mesh_conn.value();
+    T *conn_ptr = n_mesh_conn.value();
     for (int i = 0; i < conn_size; i += 6)
     {
-        auto conn0 = conn_arr[i + 0];
-        auto conn2 = conn_arr[i + 2];
-        auto conn4 = conn_arr[i + 4];
-        auto conn5 = conn_arr[i + 5];
-        if (silo_to_conduit)
-        {
-            conn_arr[i + 0] = conn2;
-            conn_arr[i + 2] = conn5;
-            conn_arr[i + 4] = conn0;
-            conn_arr[i + 5] = conn4;
-        }
-        else // conduit to silo
-        {
-            conn_arr[i + 2] = conn0;
-            conn_arr[i + 5] = conn2;
-            conn_arr[i + 0] = conn4;
-            conn_arr[i + 4] = conn5;
-        }
+        auto conn0 = conn_ptr[i + 0];
+        auto conn2 = conn_ptr[i + 2];
+        auto conn4 = conn_ptr[i + 4];
+        auto conn5 = conn_ptr[i + 5];
+        conn_ptr[i + 0] = conn2;
+        conn_ptr[i + 2] = conn5;
+        conn_ptr[i + 4] = conn0;
+        conn_ptr[i + 5] = conn4;
     }
 }
+
+//---------------------------------------------------------------------------//
+template<typename T>
+void
+conduit_wedge_connectivity_to_silo(Node &n_mesh_conn)
+{
+    const int conn_size = n_mesh_conn.dtype().number_of_elements();
+    T *conn_ptr = n_mesh_conn.value();
+    for (int i = 0; i < conn_size; i += 6)
+    {
+        auto conn0 = conn_ptr[i + 0];
+        auto conn2 = conn_ptr[i + 2];
+        auto conn4 = conn_ptr[i + 4];
+        auto conn5 = conn_ptr[i + 5];
+        conn_ptr[i + 2] = conn0;
+        conn_ptr[i + 5] = conn2;
+        conn_ptr[i + 0] = conn4;
+        conn_ptr[i + 4] = conn5;
+    }
+}
+
 
 //---------------------------------------------------------------------------//
 int get_coordset_silo_type(const std::string &sys)
@@ -586,21 +598,6 @@ void convert_to_double_array(const Node &n_src,
 }
 
 //-----------------------------------------------------------------------------
-// converts arrays to int32 arrays if they are not already int32 arrays
-void convert_to_int32_array(const Node &n_src,
-                            Node &n_dest)
-{
-    if (n_src.dtype().is_int32())
-    {
-        n_dest.set_external(n_src);
-    }
-    else
-    {
-        n_src.to_int32_array(n_dest);
-    }
-}
-
-//-----------------------------------------------------------------------------
 void
 copy_point_coords(const int datatype,
                   void *coords[3],
@@ -675,8 +672,27 @@ add_shape_info(DBzonelist *zones,
         // vtk ordering, NOT the silo ordering
         DataType dtype = elements["connectivity"].dtype();
 
-        // swizzle the connectivity to convert silo -> blueprint
-        swizzle_wedge_connectivity(elements["connectivity"], true);
+        // swizzle the connectivity
+        if (dtype.is_uint64())
+        {
+            silo_wedge_connectivity_to_conduit<uint64>(elements["connectivity"]);
+        }
+        else if (dtype.is_uint32())
+        {
+            silo_wedge_connectivity_to_conduit<uint32>(elements["connectivity"]);
+        }
+        else if (dtype.is_int64())
+        {
+            silo_wedge_connectivity_to_conduit<int64>(elements["connectivity"]);
+        }
+        else if (dtype.is_int32())
+        {
+            silo_wedge_connectivity_to_conduit<int32>(elements["connectivity"]);
+        }
+        else
+        {
+            CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
+        }
     }
 
     // TODO_LATER polytopal support
@@ -2771,8 +2787,7 @@ void silo_write_field(DBfile *dbfile,
                                   centering, // centering (nodal or zonal)
                                   NULL); // optlist
     }
-    // TODO should i error if there are mixvars and we are doing points case?
-    else if (mesh_type == "points") 
+    else if (mesh_type == "points")
     {
         // save the var type
         var_type = DB_POINTVAR;
@@ -2876,7 +2891,8 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     Node ucd_zlist;
 
     index_t num_shapes = 1;
-    // TODO_LATER what is this even for? why create the node at all?
+    // we are using a conduit node here b/c we are expecting to support mixed elements
+    // which will have arrays here instead of single ints
     ucd_zlist["shapetype"].set(DataType::c_int(1));
     ucd_zlist["shapesize"].set(DataType::c_int(1));
     ucd_zlist["shapecnt"].set(DataType::c_int(1));
@@ -2906,8 +2922,27 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     {
         n_mesh_conn.set(n_elements["connectivity"]);
         DataType dtype = n_mesh_conn.dtype();
-        // swizzle the connectivity to convert blueprint -> silo
-        detail::swizzle_wedge_connectivity(n_mesh_conn, false);
+        // swizzle the connectivity
+        if (dtype.is_uint64())
+        {
+            detail::conduit_wedge_connectivity_to_silo<uint64>(n_mesh_conn);
+        }
+        else if (dtype.is_uint32())
+        {
+            detail::conduit_wedge_connectivity_to_silo<uint32>(n_mesh_conn);
+        }
+        else if (dtype.is_int64())
+        {
+            detail::conduit_wedge_connectivity_to_silo<int64>(n_mesh_conn);
+        }
+        else if (dtype.is_int32())
+        {
+            detail::conduit_wedge_connectivity_to_silo<int32>(n_mesh_conn);
+        }
+        else
+        {
+            CONDUIT_ERROR("Unsupported connectivity type in " << dtype.to_yaml());
+        }
     }
     else
     {
@@ -3520,11 +3555,22 @@ void silo_write_matset(DBfile *dbfile,
                                          matname_ptrs.data()),
                              "error adding matnames option");
 
-    // silo is expecting int32s here
-    Node int32_arrays;
-    detail::convert_to_int32_array(silo_matset_compact["mix_mat"], int32_arrays["mix_mat"]);
-    detail::convert_to_int32_array(silo_matset_compact["mix_next"], int32_arrays["mix_next"]);
-    detail::convert_to_int32_array(silo_matset_compact["matlist"], int32_arrays["matlist"]);
+    auto convert_to_c_int_array = [](const Node &n_src, Node &n_dest)
+    {
+        if (n_src.dtype().is_int())
+        {
+            n_dest.set_external(n_src);
+        }
+        else
+        {
+            n_src.to_int_array(n_dest);
+        }
+    };
+
+    Node int_arrays;
+    convert_to_c_int_array(silo_matset_compact["mix_mat"], int_arrays["mix_mat"]);
+    convert_to_c_int_array(silo_matset_compact["mix_next"], int_arrays["mix_next"]);
+    convert_to_c_int_array(silo_matset_compact["matlist"], int_arrays["matlist"]);
 
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
@@ -3532,11 +3578,11 @@ void silo_write_matset(DBfile *dbfile,
                       safe_meshname.c_str(), // mesh name
                       nmat, // number of materials
                       matnos.data(), // material numbers
-                      int32_arrays["matlist"].value(),
+                      int_arrays["matlist"].value(),
                       dims, // number of elements in each dimension in matlist
                       ndims, // number of dimensions in dims
-                      int32_arrays["mix_next"].value(),
-                      int32_arrays["mix_mat"].value(),
+                      int_arrays["mix_next"].value(),
+                      int_arrays["mix_mat"].value(),
                       NULL, // mix zone is optional
                       silo_matset_compact["mix_vf"].data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays

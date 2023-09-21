@@ -435,7 +435,7 @@ TEST(conduit_relay_io_silo, round_trip_venn_modded_matnos)
     {
         return (matno == 1 ? 15 : 
                (matno == 2 ? 37 : 
-               (matno == 3 ? 4 : 
+               (matno == 3 ? 4  : 
                (matno == 0 ? 22 : 
                -1))));
     };
@@ -546,9 +546,8 @@ TEST(conduit_relay_io_silo, round_trip_spiral_multi_dom_materials)
         
         // clean up material ids
         Node mat_ids_arr;
-        n_matset["material_ids"].to_int32_array(mat_ids_arr);
+        n_matset["material_ids"].to_int_array(mat_ids_arr);
         n_matset["material_ids"].reset();
-        // TODO hey cyrus why do I need to use set here and not set external?
         n_matset["material_ids"].set(mat_ids_arr);
 
         // clean up volume fractions
@@ -669,6 +668,7 @@ TEST(conduit_relay_io_silo, missing_domain_var)
     }
 }
 
+// TODO finish this; use the multidom matset test from up above
 // //-----------------------------------------------------------------------------
 // // matset is not defined on a domain
 // // 
