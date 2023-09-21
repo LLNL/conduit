@@ -586,6 +586,21 @@ void convert_to_double_array(const Node &n_src,
 }
 
 //-----------------------------------------------------------------------------
+// converts arrays to int32 arrays if they are not already int32 arrays
+void convert_to_int32_array(const Node &n_src,
+                            Node &n_dest)
+{
+    if (n_src.dtype().is_int32())
+    {
+        n_dest.set_external(n_src);
+    }
+    else
+    {
+        n_src.to_int32_array(n_dest);
+    }
+}
+
+//-----------------------------------------------------------------------------
 void
 copy_point_coords(const int datatype,
                   void *coords[3],
@@ -3488,7 +3503,7 @@ void silo_write_matset(DBfile *dbfile,
 
     // get the length of the mixed data arrays
     const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
-    
+
     // get the datatype of the volume fractions
     const int mat_type = detail::dtype_to_silo_type(silo_matset_compact["mix_vf"].dtype());
     CONDUIT_ASSERT(mat_type == DB_FLOAT || mat_type == DB_DOUBLE,
@@ -3505,17 +3520,23 @@ void silo_write_matset(DBfile *dbfile,
                                          matname_ptrs.data()),
                              "error adding matnames option");
 
+    // silo is expecting int32s here
+    Node int32_arrays;
+    detail::convert_to_int32_array(silo_matset_compact["mix_mat"], int32_arrays["mix_mat"]);
+    detail::convert_to_int32_array(silo_matset_compact["mix_next"], int32_arrays["mix_next"]);
+    detail::convert_to_int32_array(silo_matset_compact["matlist"], int32_arrays["matlist"]);
+
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
                       detail::sanitize_silo_varname(matset_name).c_str(), // matset name
                       safe_meshname.c_str(), // mesh name
                       nmat, // number of materials
                       matnos.data(), // material numbers
-                      silo_matset_compact["matlist"].value(),
+                      int32_arrays["matlist"].value(),
                       dims, // number of elements in each dimension in matlist
                       ndims, // number of dimensions in dims
-                      silo_matset_compact["mix_next"].value(),
-                      silo_matset_compact["mix_mat"].value(),
+                      int32_arrays["mix_next"].value(),
+                      int32_arrays["mix_mat"].value(),
                       NULL, // mix zone is optional
                       silo_matset_compact["mix_vf"].data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays
