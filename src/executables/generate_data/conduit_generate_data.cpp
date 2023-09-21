@@ -283,7 +283,6 @@ main(int argc, char *argv[])
 
     MPI_Finalize();
 #else
-    conduit::relay::io::save(n, output + "-inspect.yaml", "yaml");
     conduit::relay::io::blueprint::save_mesh(n, output, protocol);
 #endif
 
