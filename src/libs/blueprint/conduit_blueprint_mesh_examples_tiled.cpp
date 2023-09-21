@@ -139,7 +139,7 @@ protected:
     /// Return the topology (the first one)
     const conduit::Node &getTopology() const
     {
-        const conduit::Node &t = m_options.fetch_existing("topologies");
+        const conduit::Node &t = m_tile.fetch_existing("topologies");
         return t[0];
     }
 
@@ -148,7 +148,7 @@ protected:
     {
         const conduit::Node &t = getTopology();
         std::string coordsetName(t.fetch_existing("coordset").as_string());
-        return m_options.fetch_existing("coordsets/" + coordsetName);
+        return m_tile.fetch_existing("coordsets/" + coordsetName);
     }
 
     /// Return point indices of points along left edge.
@@ -173,7 +173,8 @@ protected:
     void addPoints(const double M[3][3],
                    std::vector<conduit::index_t> &ptids,
                    std::vector<double> &x,
-                   std::vector<double> &y)
+                   std::vector<double> &y,
+                   std::vector<conduit::index_t> &srcPointId)
     {
         // Iterate through points in the template and add them if they have
         // not been created yet.
@@ -193,6 +194,8 @@ protected:
                 yc /= h;
                 x.push_back(xc);
                 y.push_back(yc);
+
+                srcPointId.push_back(i);
             }
         }
     }
@@ -414,14 +417,14 @@ protected:
                    const conduit::Node &options,
                    conduit::Node &out) const;
 private:
-    conduit::Node m_options;
+    conduit::Node m_tile;
     double m_width, m_height;
     std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top;
     std::string meshName, boundaryMeshName;
 };
 
 //---------------------------------------------------------------------------
-Tiler::Tiler() : m_options(), m_width(0.), m_height(0.),
+Tiler::Tiler() : m_tile(), m_width(0.), m_height(0.),
                  m_left(), m_right(), m_bottom(), m_top(),
                  meshName("mesh"), boundaryMeshName("boundary")
 {
@@ -437,6 +440,7 @@ Tiler::initialize()
     const double x[] = {0., 1., 0., 1.};
     const double y[] = {0., 0., 1., 1.};
     const conduit::index_t conn[] = {0,1,3,2};
+    const conduit::index_t color[] = {0};
 
     const conduit::index_t left[] = {0,2};
     const conduit::index_t right[] = {1,3};
@@ -499,6 +503,13 @@ Tiler::initialize()
         26,27,32,31
     };
 
+    const conduit::index_t color[] = {
+        0, 1, 1, 1, 1, 0,
+        1, 0, 1, 1, 0, 1,
+        1, 1, 0, 0, 1, 1,
+        0, 1, 1, 1, 1, 0
+    };
+
     const conduit::index_t left[] = {0,5,14,24,28};
     const conduit::index_t right[] = {4,8,18,27,32};
     const conduit::index_t bottom[] = {0,1,2,3,4};
@@ -517,6 +528,9 @@ Tiler::initialize()
     opts["topologies/tile/elements/connectivity"].set(conn, nelem * 4);
     std::vector<conduit::index_t> size(nelem, 4);
     opts["topologies/tile/elements/sizes"].set(size.data(), size.size());
+    opts["fields/color/association"] = "element";
+    opts["fields/color/topology"] = "tile";
+    opts["fields/color/values"].set(color, sizeof(color) / sizeof(conduit::index_t));
 
     // Define tile boundary indices.
     opts["left"].set(left, sizeof(left) / sizeof(conduit::index_t));
@@ -554,8 +568,8 @@ Tiler::initialize(const conduit::Node &t)
         CONDUIT_ERROR("bottom/top vectors have different lengths.");
     }
 
-    // Save the tile definition options.
-    m_options.set(t);
+    // Save the tile definition.
+    m_tile.set(t);
 
     // Make sure the coordset is 2D, explicit.
     if(conduit::blueprint::mesh::coordset::dims(getCoordset()) != 2)
@@ -611,7 +625,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     const conduit::Node &options)
 {
     std::vector<double> x, y, z;
-    std::vector<conduit::index_t> conn, sizes, bconn, bsizes;
+    std::vector<conduit::index_t> conn, sizes, bconn, bsizes, srcPointIds;
     std::vector<int> btype;
 
     // Process any options.
@@ -704,7 +718,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                current.setPointIds(bottom(), prevY.getPointIds(top()));
             }
 
-            addPoints(M, current.getPointIds(), x, y);
+            addPoints(M, current.getPointIds(), x, y, srcPointIds);
             M[2][0] += tx;
         }
         M[2][1] += ty;
@@ -745,6 +759,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         x.reserve(ptsPerPlane * nplanes);
         y.reserve(ptsPerPlane * nplanes);
         z.reserve(ptsPerPlane * nplanes);
+        srcPointIds.reserve(ptsPerPlane * nplanes);
         for(conduit::index_t i = 0; i < ptsPerPlane; i++)
             z.push_back(origin[2]);
         for(conduit::index_t p = 1; p < nplanes; p++)
@@ -756,6 +771,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                 x.push_back(x[i]);
                 y.push_back(y[i]);
                 z.push_back(zvalue);
+                srcPointIds.push_back(srcPointIds[i]);
             }
         }
 
@@ -829,6 +845,40 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     res["fields/dist/association"] = "vertex";
     res["fields/dist/values"].set(dist);
 #endif
+
+    // If there are any fields on the mesh then replicate them.
+    if(m_tile.has_child("fields"))
+    {
+        // Make source cell ids list.
+        auto nTileElem = conduit::blueprint::mesh::utils::topology::length(getTopology());
+        std::vector<conduit::index_t> srcCellIds;
+        srcCellIds.reserve(nTileElem * nx * ny * std::max(nz, conduit::index_t{1}));
+        for(conduit::index_t k = 0; k < std::max(nz, conduit::index_t{1}); k++)
+        for(conduit::index_t j = 0; j < ny; j++)
+        for(conduit::index_t i = 0; i < nx; i++)
+        {
+            for(conduit::index_t ci = 0; ci < nTileElem; ci++)
+                srcCellIds.push_back(ci);
+        }
+
+        // Make new fields.
+        const conduit::Node &fields = m_tile.fetch_existing("fields");
+        for(conduit::index_t fi = 0; fi < fields.number_of_children(); fi++)
+        {
+            const conduit::Node &f = fields[fi];
+            if(f["topology"].as_string() == getTopology().name())
+            {
+                conduit::Node &newfields = res["fields"];
+                conduit::Node &destField = newfields[f.name()];
+                destField["topology"] = meshName;
+                destField["association"] = f["association"];
+                if(f["association"].as_string() == "element")
+                    conduit::blueprint::mesh::utils::slice_field(f["values"], srcCellIds, destField["values"]);
+                else if(f["association"].as_string() == "vertex")
+                    conduit::blueprint::mesh::utils::slice_field(f["values"], srcPointIds, destField["values"]);
+            }
+        }
+    }
 
     // Reorder the elements unless it was turned off.
     std::vector<conduit::index_t> old2NewPoint;
