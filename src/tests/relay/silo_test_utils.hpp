@@ -270,10 +270,8 @@ overlink_name_changer(conduit::Node &save_mesh)
 
 //-----------------------------------------------------------------------------
 void
-create_spiral_w_matset(Node &n_mesh, const int ndomains)
+add_matset_to_spiral(Node &n_mesh, const int ndomains)
 {
-    blueprint::mesh::examples::spiral(ndomains, n_mesh);
-
     // Add a matset to each domain
     for (index_t domain_id = 0; domain_id < n_mesh.number_of_children(); domain_id ++)
     {

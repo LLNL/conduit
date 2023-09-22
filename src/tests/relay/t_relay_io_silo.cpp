@@ -522,7 +522,8 @@ TEST(conduit_relay_io_silo, round_trip_spiral_multi_dom_materials)
 {
     Node save_mesh, load_mesh, info;
     const int ndomains = 4;
-    create_spiral_w_matset(save_mesh, ndomains);
+    blueprint::mesh::examples::spiral(ndomains, save_mesh);
+    add_matset_to_spiral(save_mesh, ndomains);
     EXPECT_TRUE(blueprint::mesh::verify(save_mesh, info));
     
     const std::string basename = "silo_multidom_materials_spiral";
@@ -677,7 +678,8 @@ TEST(conduit_relay_io_silo, missing_domain_matset)
 {
     Node save_mesh, load_mesh, info;
     const int ndomains = 4;
-    create_spiral_w_matset(save_mesh, ndomains);
+    blueprint::mesh::examples::spiral(ndomains, save_mesh);
+    add_matset_to_spiral(save_mesh, ndomains);
     EXPECT_TRUE(blueprint::mesh::verify(save_mesh, info));
 
     // remove information for a particular domain
