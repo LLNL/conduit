@@ -437,12 +437,6 @@ TEST(conduit_relay_mpi_io_silo, spiral_multi_file)
         Node opts;
         opts["number_of_files"] = nfiles;
 
-        if (par_rank == 0)
-        {
-            std::cout << save_mesh.to_yaml() << std::endl;
-        }
-
-
         conduit::relay::mpi::io::silo::save_mesh(save_mesh,
                                                  output_base,
                                                  opts,
