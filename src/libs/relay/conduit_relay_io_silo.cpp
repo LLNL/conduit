@@ -1744,8 +1744,8 @@ read_multimesh(DBfile *dbfile,
     else
     {
         root_node[multimesh_name]["nameschemes"] = "no";
-        root_node[multimesh_name]["mesh_types"].set(DataType::int64(nblocks));
-        int64_array mesh_types = root_node[multimesh_name]["mesh_types"].value();
+        root_node[multimesh_name]["mesh_types"].set(DataType::index_t(nblocks));
+        index_t_array mesh_types = root_node[multimesh_name]["mesh_types"].value();
         for (int block_id = 0; block_id < nblocks; block_id ++)
         {
             // save the mesh name and mesh type
@@ -1829,8 +1829,8 @@ read_multivars(DBtoc *toc,
             else
             {
                 var["nameschemes"] = "no";
-                var["var_types"].set(DataType::int64(nblocks));
-                int64_array var_types = var["var_types"].value();
+                var["var_types"].set(DataType::index_t(nblocks));
+                index_t_array var_types = var["var_types"].value();
                 for (int block_id = 0; block_id < nblocks; block_id ++)
                 {
                     // save the var name and var type
@@ -2593,7 +2593,7 @@ void silo_write_field(DBfile *dbfile,
                       const bool overlink,
                       const int local_num_domains,
                       const int local_domain_index,
-                      const int global_domain_id,
+                      const uint64 global_domain_id,
                       Node &local_type_domain_info,
                       Node &n_mesh_info)
 {
@@ -3250,7 +3250,7 @@ void silo_write_topo(const Node &mesh_domain,
                      const bool overlink,
                      const int local_num_domains,
                      const int local_domain_index,
-                     const int global_domain_id,
+                     const uint64 global_domain_id,
                      Node &local_type_domain_info,
                      DBfile *dbfile)
 {
@@ -3474,7 +3474,7 @@ void silo_write_matset(DBfile *dbfile,
                        const bool overlink,
                        const int local_num_domains,
                        const int local_domain_index,
-                       const int global_domain_id,
+                       const uint64 global_domain_id,
                        Node &local_type_domain_info,
                        Node &n_mesh_info)
 {
@@ -3609,7 +3609,7 @@ void silo_mesh_write(const Node &mesh_domain,
                      const std::string &ovl_topo_name,
                      const int local_num_domains,
                      const int local_domain_index,
-                     const int global_domain_id,
+                     const uint64 global_domain_id,
                      Node &local_type_domain_info,
                      const bool overlink)
 {
@@ -3746,7 +3746,7 @@ void write_multimesh(DBfile *dbfile,
                      const std::string &multimesh_name,
                      const bool overlink)
 {
-    const int num_files = root["number_of_files"].as_int32();
+    const int num_files = root["number_of_files"].as_int();
     const bool root_only = root["file_style"].as_string() == "root_only";
     const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
     const std::string silo_path = root["silo_path"].as_string();
@@ -3810,7 +3810,6 @@ void write_multimesh(DBfile *dbfile,
     }
 
     // TODO_LATER add dboptions for nameschemes
-
     CONDUIT_CHECK_SILO_ERROR(
         DBPutMultimesh(
             dbfile,
@@ -3829,15 +3828,13 @@ void write_multimeshes(DBfile *dbfile,
                        const Node &root,
                        const bool overlink)
 {
-    const int global_num_domains = root["number_of_domains"].as_int32();
+    const int global_num_domains = root["number_of_domains"].to_index_t();
     const Node &n_mesh = root["blueprint_index"][opts_out_mesh_name];
 
     // these should be the same b/c the num domains the bp index was given
     // was global_num_domains
-    if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
-    {
-        CONDUIT_ERROR("Domain count mismatch");
-    }
+    CONDUIT_ASSERT(((index_t) global_num_domains) == n_mesh["state/number_of_domains"].to_index_t(),
+        "Domain count mismatch");
 
     // write only the chosen mesh for overlink case
     if (overlink)
@@ -3878,17 +3875,15 @@ write_multivars(DBfile *dbfile,
                 const Node &root,
                 const bool overlink)
 {
-    const int num_files = root["number_of_files"].as_int32();
-    const int global_num_domains = root["number_of_domains"].as_int32();
+    const int num_files = root["number_of_files"].to_index_t();
+    const int global_num_domains = root["number_of_domains"].to_index_t();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     const bool root_only = root["file_style"].as_string() == "root_only";
 
     // these should be the same b/c the num domains the bp index was given
     // was global_num_domains
-    if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
-    {
-        CONDUIT_ERROR("Domain count mismatch");
-    }
+    CONDUIT_ASSERT(((index_t) global_num_domains) == n_mesh["state/number_of_domains"].to_index_t(),
+        "Domain count mismatch");
 
     if (n_mesh.has_child("fields"))
     {
@@ -3973,17 +3968,15 @@ write_multimats(DBfile *dbfile,
                 const Node &root,
                 const bool overlink)
 {
-    const int num_files = root["number_of_files"].as_int32();
-    const int global_num_domains = root["number_of_domains"].as_int32();
+    const int num_files = root["number_of_files"].to_index_t();
+    const int global_num_domains = root["number_of_domains"].to_index_t();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     const bool root_only = root["file_style"].as_string() == "root_only";
 
     // these should be the same b/c the num domains the bp index was given
     // was global_num_domains
-    if (global_num_domains != n_mesh["state/number_of_domains"].as_int64())
-    {
-        CONDUIT_ERROR("Domain count mismatch");
-    }
+    CONDUIT_ASSERT(((index_t) global_num_domains) == n_mesh["state/number_of_domains"].to_index_t(),
+        "Domain count mismatch");
 
     if (n_mesh.has_child("matsets"))
     {
@@ -5114,7 +5107,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 #endif
 
     // root_file_writer will now write out the root file
-    if(par_rank == root_file_writer)
+    if (par_rank == root_file_writer)
     {
         // we will gather type info into one place and organize it
         // by the end we should have a root_type_domain_info that looks like this:

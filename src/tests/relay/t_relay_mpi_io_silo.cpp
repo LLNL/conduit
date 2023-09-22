@@ -46,10 +46,10 @@ TEST(conduit_relay_mpi_io_silo, round_trip_basic)
 
     Node save_mesh;
     blueprint::mesh::examples::braid(mesh_type,
-                                      npts_x,
-                                      npts_y,
-                                      npts_z,
-                                      save_mesh);
+                                     npts_x,
+                                     npts_y,
+                                     npts_z,
+                                     save_mesh);
 
     // the example data set has the bounds -10 to 10 in all dims
     // Offset this along x to create mpi 'pencil'
