@@ -669,7 +669,6 @@ TEST(conduit_relay_io_silo, missing_domain_var)
     }
 }
 
-// TODO finish this; use the multidom matset test from up above
 //-----------------------------------------------------------------------------
 // matset is not defined on a domain
 // 
@@ -1306,7 +1305,6 @@ TEST(conduit_relay_io_silo, read_silo)
             out_name += "_" + meshname;
         }
 
-        // TODO apparently the bp files can't even be opened by visit
         remove_path_if_exists(out_name + "_write_blueprint");
         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
@@ -1493,11 +1491,8 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
 }
 
 // TODO add tests for...
-//  - materials once they are supported + mpi tests
 //  - polytopal meshes once they are supported
 //  - units once they are supported
 //  - etc.
 
 // TODO what are those bonus tar files doing in the overlink data dir?
-
-// TODO make mpi test for materials
