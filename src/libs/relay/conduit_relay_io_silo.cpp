@@ -322,7 +322,7 @@ class SiloTreePathGenerator
 {
 private:
     bool nameschemes;
-    // TODO_LATER more work is required to support nameschemes
+    // TODO more work is required to support nameschemes
 
 public:
     SiloTreePathGenerator(bool nameschemes_on) : nameschemes(nameschemes_on) {}
@@ -695,19 +695,19 @@ add_shape_info(DBzonelist *zones,
         }
     }
 
-    // TODO_LATER polytopal support
+    // TODO polytopal support
     if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
         CONDUIT_ERROR("Polyhedra not yet supported");
         elements["sizes"].set(zones->shapesize, zones->nzones);
-        // TODO_LATER double check this approach
+        // TODO double check this approach
         add_offsets(zones, elements["subelements"]); 
     }
     if (zones->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
         CONDUIT_ERROR("Polygons not yet supported");
-        // TODO_LATER zones->shapesize is NOT zones->nzones elements long; see docs
-        // TODO_LATER need to loop over the shapes array and expand it out to resemble the blueprint approach
+        // TODO zones->shapesize is NOT zones->nzones elements long; see docs
+        // TODO need to loop over the shapes array and expand it out to resemble the blueprint approach
         elements["sizes"].set(zones->shapesize, zones->nzones);
         add_offsets(zones, elements);
     }
@@ -948,7 +948,7 @@ read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
     }
     else if (ucdmesh_ptr->phzones)
     {
-        // TODO_LATER implement support for phzones
+        // TODO implement support for phzones
         CONDUIT_ERROR("Silo ucdmesh phzones not yet supported");
         mesh_domain["topologies"][multimesh_name]["elements"]["shape"] =
             detail::shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
@@ -1328,7 +1328,7 @@ read_variable_domain_helper(const T *var_ptr,
         field_out["association"] = "vertex";
     }
 
-    // TODO_LATER investigate the dims, major_order, and stride for vars. Should match the mesh;
+    // TODO investigate the dims, major_order, and stride for vars. Should match the mesh;
     // what to do if it is different? Will I need to walk these arrays differently?
 
     detail::assign_values(var_ptr->datatype,
@@ -1458,7 +1458,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     matset_out["topology"] = multimesh_name;
 
     // we are choosing to do sparse by element
-    // TODO_LATER later support sparse by material and full
+    // TODO later support sparse by material and full
 
     Node &material_map = matset_out["material_map"];
     for (int i = 0; i < matset_ptr->nmat; i ++)
@@ -1585,8 +1585,8 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         }
     }
 
-    // TODO_LATER find colmajor data to test this
-    // TODO_LATER are there other places where I'm reading where things could be rowmajor or colmajor
+    // TODO find colmajor data to test this
+    // TODO are there other places where I'm reading where things could be rowmajor or colmajor
 
     matset_out["material_ids"].set(material_ids.data(), material_ids.size());
     matset_out["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
@@ -1734,7 +1734,7 @@ read_multimesh(DBfile *dbfile,
     {
         nameschemes = true;
     }
-    // TODO_LATER nameschemes
+    // TODO nameschemes
     if (nameschemes)
     {
         root_node[multimesh_name]["nameschemes"] = "yes";
@@ -1821,7 +1821,7 @@ read_multivars(DBtoc *toc,
                 continue;
             }
             Node &var = root_node[multimesh_name]["vars"][multivar_name];
-            // TODO_LATER nameschemes
+            // TODO nameschemes
             if (nameschemes)
             {
                 var["nameschemes"] = "yes";
@@ -1908,7 +1908,7 @@ read_multimats(DBtoc *toc,
                 continue;
             }
             Node &material = root_node[multimesh_name]["matsets"][multimat_name];
-            // TODO_LATER nameschemes
+            // TODO nameschemes
             if (nameschemes)
             {
                 material["nameschemes"] = "yes";
@@ -2207,7 +2207,7 @@ read_mesh(const std::string &root_file_path,
         mesh_index["nameschemes"].as_string() == "yes")
     {
         mesh_nameschemes = true;
-        CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
+        CONDUIT_ERROR("TODO no support for nameschemes yet");
     }
     detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
 
@@ -2307,7 +2307,7 @@ read_mesh(const std::string &root_file_path,
                     n_matset["nameschemes"].as_string() == "yes")
                 {
                     matset_nameschemes = true;
-                    CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
+                    CONDUIT_ERROR("TODO no support for nameschemes yet");
                 }
                 detail::SiloTreePathGenerator matset_path_gen{matset_nameschemes};
 
@@ -2375,7 +2375,7 @@ read_mesh(const std::string &root_file_path,
                     n_var["nameschemes"].as_string() == "yes")
                 {
                     var_nameschemes = true;
-                    CONDUIT_ERROR("TODO_LATER no support for nameschemes yet");
+                    CONDUIT_ERROR("TODO no support for nameschemes yet");
                 }
                 detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
 
@@ -2809,7 +2809,7 @@ void silo_write_field(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
     // bookkeeping
-    // TODO_LATER refactor so this is in a function call - we can share logic with meshes and mats
+    // TODO refactor so this is in a function call - we can share logic with meshes and mats
     if (! local_type_domain_info["vars"].has_child(var_name))
     {
         local_type_domain_info["vars"][var_name]["domain_ids"].set(DataType::index_t(local_num_domains));
@@ -3009,7 +3009,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
     else
     {
-        // TODO_LATER add polygons and polyhedra and mixed
+        // TODO add polygons and polyhedra and mixed
         CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
     }
 
@@ -3125,7 +3125,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
 {
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
-    // TODO_LATER there is a different approach for polyhedral zone lists
+    // TODO there is a different approach for polyhedral zone lists
     const std::string zlist_name = topo_name + "_connectivity";
     const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
@@ -3809,7 +3809,7 @@ void write_multimesh(DBfile *dbfile,
                                  " creating state optlist (time, cycle) ");
     }
 
-    // TODO_LATER add dboptions for nameschemes
+    // TODO add dboptions for nameschemes
     CONDUIT_CHECK_SILO_ERROR(
         DBPutMultimesh(
             dbfile,
@@ -4021,7 +4021,7 @@ write_multimats(DBfile *dbfile,
                 std::string multimesh_name, multimat_name;
                 if (overlink)
                 {
-                    // TODO_LATER is this the right choice for overlink?
+                    // TODO is this the right choice for overlink?
                     multimesh_name = opts_mesh_name;
                     multimat_name = safe_matset_name;
                 }
@@ -4175,7 +4175,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     {
         opts_silo_type = opts["silo_type"].as_string();
 
-        // TODO_LATER if we were to add additional silo_type options in the future,
+        // TODO if we were to add additional silo_type options in the future,
         // they would need to be added here.
         if(opts_silo_type != "default" && 
            opts_silo_type != "pdb" &&
@@ -4206,7 +4206,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     {
         silo_type = DB_UNKNOWN;
     }
-    // TODO_LATER these are the additional silo_type options we could add support 
+    // TODO these are the additional silo_type options we could add support 
     // for in the future.
     // else if (opts_silo_type == "hdf5_sec2")
     // {
@@ -5133,7 +5133,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         Node &root_type_domain_info_matsets = root_type_domain_info["matsets"];
 
         auto type_domain_info_itr = global_type_domain_info.children();
-        // TODO_LATER refactor this monstrosity
+        // TODO refactor this monstrosity
         while (type_domain_info_itr.has_next())
         {
             // type info from a particular MPI rank
@@ -5372,7 +5372,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             if(!dbfile.getSiloObject())
             {
                 dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
-                // TODO_LATER use conduit asserts everywhere to cut down on error lines
+                // TODO use conduit asserts everywhere to cut down on error lines
                 CONDUIT_ASSERT(dbfile.getSiloObject(),
                     "Error opening Silo file for writing: " << root_filename);
             }
