@@ -33,6 +33,7 @@
 class DomainGenerator
 {
 public:
+    virtual ~DomainGenerator() = default;
     virtual void generate(int domain[3], conduit::Node &n, conduit::Node &opts) = 0;
 
     void setDims(const int d[3])
@@ -282,7 +283,6 @@ main(int argc, char *argv[])
 
     MPI_Finalize();
 #else
-    conduit::relay::io::save(n, output + "-inspect.yaml", "yaml");
     conduit::relay::io::blueprint::save_mesh(n, output, protocol);
 #endif
 
