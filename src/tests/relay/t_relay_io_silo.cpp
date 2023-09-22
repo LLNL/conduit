@@ -1323,59 +1323,59 @@ TEST(conduit_relay_io_silo, read_silo)
     }
 }
 
-// //-----------------------------------------------------------------------------
-// // test that we can read the fake overlink files from the visit test data
-// TEST(conduit_relay_io_silo, read_fake_overlink)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//      // {"ev_0_0_100",              "OvlTop", ".silo", ""     }, // test default case
-//      // {"ev_0_0_100",              "OvlTop", ".silo", "MMESH"},
-//         // uncomment once silo ucdmesh phzones are supported
-//         {"hl18spec",                "OvlTop", ".silo", ""     }, // test default case
-//         {"hl18spec",                "OvlTop", ".silo", "MMESH"},
-//      // {"regrovl_qh_1000_10001_4", "OvlTop", ".silo", ""     }, // test default case
-//      // {"regrovl_qh_1000_10001_4", "OvlTop", ".silo", "MMESH"},
-//         // uncomment once silo ucdmesh phzones are supported
-//         {"utpyr4",                  "OvlTop", ".silo", ""     }, // test default case
-//         {"utpyr4",                  "OvlTop", ".silo", "MMESH"},
-//     };
+//-----------------------------------------------------------------------------
+// test that we can read the fake overlink files from the visit test data
+TEST(conduit_relay_io_silo, read_fake_overlink)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+     // {"ev_0_0_100",              "OvlTop", ".silo", ""     }, // test default case
+     // {"ev_0_0_100",              "OvlTop", ".silo", "MMESH"},
+        // uncomment once silo ucdmesh phzones are supported
+        {"hl18spec",                "OvlTop", ".silo", ""     }, // test default case
+        {"hl18spec",                "OvlTop", ".silo", "MMESH"},
+     // {"regrovl_qh_1000_10001_4", "OvlTop", ".silo", ""     }, // test default case
+     // {"regrovl_qh_1000_10001_4", "OvlTop", ".silo", "MMESH"},
+        // uncomment once silo ucdmesh phzones are supported
+        {"utpyr4",                  "OvlTop", ".silo", ""     }, // test default case
+        {"utpyr4",                  "OvlTop", ".silo", "MMESH"},
+    };
 
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string dirname  = file_info[i][0];
-//         const std::string basename = file_info[i][1];
-//         const std::string fileext  = file_info[i][2];
-//         const std::string meshname = file_info[i][3];
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string dirname  = file_info[i][0];
+        const std::string basename = file_info[i][1];
+        const std::string fileext  = file_info[i][2];
+        const std::string meshname = file_info[i][3];
 
-//         Node load_mesh, info, read_opts, write_opts;
-//         std::string filepath = utils::join_file_path(dirname, basename) + fileext;
-//         filepath = utils::join_file_path("fake_overlink", filepath);
-//         std::string input_file = relay_test_silo_data_path(filepath);
+        Node load_mesh, info, read_opts, write_opts;
+        std::string filepath = utils::join_file_path(dirname, basename) + fileext;
+        filepath = utils::join_file_path("fake_overlink", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-//         read_opts["mesh_name"] = meshname;
+        read_opts["mesh_name"] = meshname;
 
-//         io::silo::load_mesh(input_file, read_opts, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        io::silo::load_mesh(input_file, read_opts, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//         std::string out_name = "read_fake_overlink_" + dirname;
-//         if (!meshname.empty())
-//         {
-//             out_name += "_" + meshname;
-//         }
+        std::string out_name = "read_fake_overlink_" + dirname;
+        if (!meshname.empty())
+        {
+            out_name += "_" + meshname;
+        }
 
-//         remove_path_if_exists(out_name + "_write_blueprint");
-//         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-//         remove_path_if_exists(out_name + "_write_silo");
-//         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+        remove_path_if_exists(out_name + "_write_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-//         // TODO uncomment when overlink is fully supported
-//         // remove_path_if_exists(out_name + "_write_overlink");
-//         // write_opts["file_style"] = "overlink";
-//         // write_opts["ovl_topo_name"] = "MMESH";
-//         // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-//     }
-// }
+        // TODO uncomment when overlink is fully supported
+        // remove_path_if_exists(out_name + "_write_overlink");
+        // write_opts["file_style"] = "overlink";
+        // write_opts["ovl_topo_name"] = "MMESH";
+        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+    }
+}
 
 // //-----------------------------------------------------------------------------
 // // read overlink files in symlink format
