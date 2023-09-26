@@ -98,6 +98,11 @@ set(conduit_sources
     conduit_annotations.cpp
     )
 
+if(TOTALVIEW_FOUND)
+  list(APPEND conduit_sources $<$<CONFIG:Debug>:debug/conduit_node_totalview.cpp>)
+  list(APPEND conduit_sources $<$<CONFIG:Debug>:${TOTALVIEW_SOURCE_DIRECTORY}/tv_data_display.c>)
+endif()
+
 #
 # Specify conduit c interface sources
 #
@@ -164,7 +169,8 @@ add_compiled_library(NAME   conduit
 target_include_directories(conduit
                            PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+                           $<$<AND:$<BOOL:TOTALVIEW_FOUND>,$<CONFIG:Debug>>:${TOTALVIEW_INCLUDE_DIRECTORIES}>)
 
 
 #################################
