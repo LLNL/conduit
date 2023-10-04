@@ -38,6 +38,11 @@
 #include "conduit_node_iterator.hpp"
 #include "conduit_utils.hpp"
 
+#if defined(CONDUIT_USE_TOTALVIEW)
+// forward declaration of debugger visualizer function
+int TV_ttf_display_type ( const conduit::Node *n );
+#endif
+
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -83,6 +88,10 @@ public:
     friend class NodeIterator;
     friend class NodeConstIterator;
     friend class Generator;
+
+#if defined(CONDUIT_USE_TOTALVIEW)
+    friend int ::TV_ttf_display_type ( const conduit::Node *n );
+#endif
 
 //-----------------------------------------------------------------------------
 //

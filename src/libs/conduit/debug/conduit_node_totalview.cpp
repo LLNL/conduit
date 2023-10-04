@@ -70,19 +70,18 @@ int TV_ttf_display_type ( const conduit::Node *n )
    case conduit::DataType::OBJECT_ID:
    {
       const std::vector<std::string> & child_names = n->child_names();
+      const conduit::Schema & schema = n->schema();
       for (const std::string & name : child_names) {
-         const conduit::Node * ptr = n->fetch_ptr(name);
-         TV_ttf_add_row (name.c_str(), "conduit::Node *", &ptr);
-         std::cout << "Added child " << name << " with pointer " << ptr << std::endl;
+         size_t cidx = (size_t)schema.child_index(name);
+         TV_ttf_add_row (name.c_str(), "conduit::Node *", &(n->m_children[cidx]));
       }
       break;
    }
    case conduit::DataType::LIST_ID:
    {
-      int number_of_children = n->number_of_children();
-      for (int cidx = 0; cidx < number_of_children; ++cidx) {
-         const conduit::Node * ptr = n->child_ptr(cidx);
-         TV_ttf_add_row (index_to_TV_string(cidx).c_str(), "conduit::Node *", &ptr);
+      size_t number_of_children = (size_t)n->number_of_children();
+      for (size_t cidx = 0; cidx < number_of_children; ++cidx) {
+         TV_ttf_add_row (index_to_TV_string(cidx).c_str(), "conduit::Node *", &(n->m_children[cidx]));
       }
       break;
    }
