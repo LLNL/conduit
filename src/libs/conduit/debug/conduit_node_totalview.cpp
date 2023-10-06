@@ -10,30 +10,8 @@
 
 static const char * empty_Node_TV_string = "(empty Node)";
 
-const std::string dtype_to_TV_string ( const conduit::DataType dtype );
 const std::string dtype_to_TV_string ( const conduit::DataType dtype, const char *hint );
 const std::string index_to_TV_string ( int idx );
-const std::string dtype_subscript ( const conduit::DataType dtype );
-
-const std::string dtype_to_TV_string ( const conduit::DataType dtype )
-{
-   // We'll see if this works.
-   const char *hint = dtype.name().c_str();
-
-   return dtype_to_TV_string(dtype, hint);
-}
-
-const std::string dtype_subscript ( const conduit::DataType dtype )
-{
-   std::stringstream ss;
-
-   if (dtype.number_of_elements() > 1)
-   {
-      ss << "[" << dtype.number_of_elements() << "]";
-   }
-
-   return ss.str();
-}
 
 const std::string dtype_to_TV_string ( const conduit::DataType dtype, const char *hint )
 {
@@ -44,8 +22,6 @@ const std::string dtype_to_TV_string ( const conduit::DataType dtype, const char
    {
       ss << index_to_TV_string(dtype.number_of_elements());
    }
-
-   std::cout << "dtype_to_TV_string: " << ss.str() << std::endl;
 
    return ss.str();
 }
@@ -61,17 +37,18 @@ const std::string index_to_TV_string ( int idx )
 
 int TV_ttf_display_type ( const conduit::Node *n )
 {
-   const std::string type_name = dtype_to_TV_string(n->dtype());
-
    switch(n->dtype().id()) {
    case conduit::DataType::EMPTY_ID:
+   {
       TV_ttf_add_row ("data", TV_ttf_type_ascii_string, empty_Node_TV_string);
       break;
+   }
    case conduit::DataType::OBJECT_ID:
    {
       const std::vector<std::string> & child_names = n->child_names();
       const conduit::Schema & schema = n->schema();
-      for (const std::string & name : child_names) {
+      for (const std::string & name : child_names)
+      {
          size_t cidx = (size_t)schema.child_index(name);
          TV_ttf_add_row (name.c_str(), "conduit::Node *", &(n->m_children[cidx]));
       }
@@ -80,7 +57,8 @@ int TV_ttf_display_type ( const conduit::Node *n )
    case conduit::DataType::LIST_ID:
    {
       size_t number_of_children = (size_t)n->number_of_children();
-      for (size_t cidx = 0; cidx < number_of_children; ++cidx) {
+      for (size_t cidx = 0; cidx < number_of_children; ++cidx)
+      {
          TV_ttf_add_row (index_to_TV_string(cidx).c_str(), "conduit::Node *", &(n->m_children[cidx]));
       }
       break;

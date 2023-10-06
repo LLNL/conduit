@@ -99,8 +99,10 @@ set(conduit_sources
     )
 
 if(TOTALVIEW_FOUND)
-  list(APPEND conduit_sources $<$<CONFIG:Debug>:debug/conduit_node_totalview.cpp>)
-  list(APPEND conduit_sources $<$<CONFIG:Debug>:${TOTALVIEW_SOURCE_DIRECTORY}/tv_data_display.c>)
+  list(APPEND conduit_sources debug/conduit_node_totalview.cpp)
+  if(NOT CONDUIT_EXCLUDE_TV_DATA_DISPLAY)
+    list(APPEND conduit_sources ${TOTALVIEW_SOURCE_DIRECTORY}/tv_data_display.c)
+  endif()
 endif()
 
 #
@@ -170,7 +172,7 @@ target_include_directories(conduit
                            PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-                           $<$<AND:$<BOOL:TOTALVIEW_FOUND>,$<CONFIG:Debug>>:${TOTALVIEW_INCLUDE_DIRECTORIES}>)
+                           $<$<BOOL:TOTALVIEW_FOUND>:${TOTALVIEW_INCLUDE_DIRECTORIES}>)
 
 
 #################################
