@@ -105,6 +105,10 @@ if(TOTALVIEW_FOUND)
   endif()
 endif()
 
+if (CMAKE_GENERATOR MATCHES "Visual Studio")
+  list(APPEND conduit_sources ../../debug/msvs/ConduitNode.natvis)
+endif()
+
 #
 # Specify conduit c interface sources
 #
