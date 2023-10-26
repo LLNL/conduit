@@ -42,7 +42,7 @@ jobs:
         submodules: 'recursive'
     - name: Install
       run: |
-        python3 scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
+        python3 scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/ --spec="^silo~fortran"
 
 
 
