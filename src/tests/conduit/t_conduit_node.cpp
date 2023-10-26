@@ -1315,9 +1315,73 @@ TEST(conduit_node, avoid_crazy_town)
     EXPECT_EQ(res,"\ncrazy_town: \"not here\"\n");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, swap_schema_parent)
+{
+    Node root, subtree;
+    subtree["to/data"] = 5;
+    root["path"]["to"]["data"] = 6;
+
+
+    // std::cout << "Node name: " << root["path"].name() << std::endl;
+    // if (root["path"].schema().parent() != NULL)
+    //     std::cout << "path schema parent exists" << std::endl;
+    // else
+    //     std::cout << "path schema parent does not exist" << std::endl;
+
+    // // swap gets rid of the schema parent, which breaks name()
+    // root["path"].swap(subtree);
+
+    // std::cout << "Node name: " << root["path"].name() << std::endl;
+    // if (root["path"].schema().parent() != NULL)
+    //     std::cout << "path schema parent exists" << std::endl;
+    // else
+    //     std::cout << "path schema parent does not exist" << std::endl;
 
 
 
 
 
+    conduit::Node root;
 
+    double* ptr = new double[3]{1, 2, 3};
+    conduit::Node subtree;
+    subtree["to/data"].set_external(ptr, 3);
+
+    auto subtree_parent = subtree.parent();
+    if (subtree_parent != NULL)
+        std::cout << "subtree parent exists" << std::endl;
+    else
+        std::cout << "subtree parent does not exist" << std::endl;
+
+    auto subtree_schema_parent = subtree.schema().parent();
+    if (subtree_schema_parent != NULL)
+        std::cout << "subtree schema parent exists" << std::endl;
+    else
+        std::cout << "subtree schema parent does not exist" << std::endl;
+
+
+
+    
+    root["path"].move(subtree);
+    root["empty"];
+
+
+    auto path_parent = root["path"].parent();
+    if (path_parent != NULL)
+        std::cout << "path parent exists" << std::endl;
+    else
+        std::cout << "path parent does not exist" << std::endl;
+
+    auto path_schema_parent = root["path"].schema().parent();
+    if (path_schema_parent != NULL)
+        std::cout << "path schema parent exists" << std::endl;
+    else
+        std::cout << "path schema parent does not exist" << std::endl;
+
+    root.print();
+    std::cout << "Node name: " << root["path"].name() << std::endl;
+    std::cout << "Node name: " << root["empty"].name() << std::endl;
+    conduit::Node copy = root;
+    std::cout << "Node name after copy: " << copy["path"].name() << std::endl;
+}
