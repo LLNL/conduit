@@ -1322,66 +1322,69 @@ TEST(conduit_node, swap_schema_parent)
     subtree["to/data"] = 5;
     root["path"]["to"]["data"] = 6;
 
-
-    // std::cout << "Node name: " << root["path"].name() << std::endl;
-    // if (root["path"].schema().parent() != NULL)
-    //     std::cout << "path schema parent exists" << std::endl;
-    // else
-    //     std::cout << "path schema parent does not exist" << std::endl;
-
-    // // swap gets rid of the schema parent, which breaks name()
-    // root["path"].swap(subtree);
-
-    // std::cout << "Node name: " << root["path"].name() << std::endl;
-    // if (root["path"].schema().parent() != NULL)
-    //     std::cout << "path schema parent exists" << std::endl;
-    // else
-    //     std::cout << "path schema parent does not exist" << std::endl;
-
-
-
-
-
-    conduit::Node root;
-
-    double* ptr = new double[3]{1, 2, 3};
-    conduit::Node subtree;
-    subtree["to/data"].set_external(ptr, 3);
-
-    auto subtree_parent = subtree.parent();
-    if (subtree_parent != NULL)
-        std::cout << "subtree parent exists" << std::endl;
+    std::string path_name = root["path"].name();
+    std::string path_schema_parent_existence;
+    if (root["path"].schema().parent() != NULL)
+    {
+        path_schema_parent_existence = "path schema parent exists";
+    }
     else
-        std::cout << "subtree parent does not exist" << std::endl;
+    {
+        path_schema_parent_existence = "path schema parent does not exist";
+    }
+    EXPECT_EQ(path_name, "path");
+    EXPECT_EQ(path_schema_parent_existence, "path schema parent exists");
 
-    auto subtree_schema_parent = subtree.schema().parent();
-    if (subtree_schema_parent != NULL)
-        std::cout << "subtree schema parent exists" << std::endl;
+    // swap should preserve the schema parent, allowing name() to work
+    root["path"].swap(subtree);
+
+    path_name = root["path"].name();
+    path_schema_parent_existence;
+    if (root["path"].schema().parent() != NULL)
+    {
+        path_schema_parent_existence = "path schema parent exists";
+    }
     else
-        std::cout << "subtree schema parent does not exist" << std::endl;
+    {
+        path_schema_parent_existence = "path schema parent does not exist";
+    }
+    EXPECT_EQ(path_name, "path");
+    EXPECT_EQ(path_schema_parent_existence, "path schema parent exists");
+}
 
+//-----------------------------------------------------------------------------
+TEST(conduit_node, move_schema_parent)
+{
+    Node root, subtree;
+    subtree["to/data"] = 5;
+    root["path"]["to"]["data"] = 6;
 
+    std::string path_name = root["path"].name();
+    std::string path_schema_parent_existence;
+    if (root["path"].schema().parent() != NULL)
+    {
+        path_schema_parent_existence = "path schema parent exists";
+    }
+    else
+    {
+        path_schema_parent_existence = "path schema parent does not exist";
+    }
+    EXPECT_EQ(path_name, "path");
+    EXPECT_EQ(path_schema_parent_existence, "path schema parent exists");
 
-    
+    // move should preserve the schema parent, allowing name() to work
     root["path"].move(subtree);
-    root["empty"];
 
-
-    auto path_parent = root["path"].parent();
-    if (path_parent != NULL)
-        std::cout << "path parent exists" << std::endl;
+    path_name = root["path"].name();
+    path_schema_parent_existence;
+    if (root["path"].schema().parent() != NULL)
+    {
+        path_schema_parent_existence = "path schema parent exists";
+    }
     else
-        std::cout << "path parent does not exist" << std::endl;
-
-    auto path_schema_parent = root["path"].schema().parent();
-    if (path_schema_parent != NULL)
-        std::cout << "path schema parent exists" << std::endl;
-    else
-        std::cout << "path schema parent does not exist" << std::endl;
-
-    root.print();
-    std::cout << "Node name: " << root["path"].name() << std::endl;
-    std::cout << "Node name: " << root["empty"].name() << std::endl;
-    conduit::Node copy = root;
-    std::cout << "Node name after copy: " << copy["path"].name() << std::endl;
+    {
+        path_schema_parent_existence = "path schema parent does not exist";
+    }
+    EXPECT_EQ(path_name, "path");
+    EXPECT_EQ(path_schema_parent_existence, "path schema parent exists");
 }
