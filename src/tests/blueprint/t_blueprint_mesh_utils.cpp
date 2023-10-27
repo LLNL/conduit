@@ -238,3 +238,118 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_vertex_3d)
         EXPECT_TRUE(std::find(d1err_vertex.begin(), d1err_vertex.end(), n1[i]["vertex"].to_int()) != d1err_vertex.end());
     }
 }
+
+//-----------------------------------------------------------------------------
+template <typename CoordType, typename ConnType>
+void test_rewrite_connectivity(int dims)
+{
+    conduit::Node n;
+    n["coordsets/coords1/type"] = "explicit";
+    n["coordsets/coords1/values/x"].set(std::vector<CoordType>{0.f,1.f,2.f,0.f,1.f,2.f,0.f,1.f,2.f});
+    n["coordsets/coords1/values/y"].set(std::vector<CoordType>{0.f,0.f,0.f,1.f,1.f,1.f,2.f,2.f,2.f});
+    if(dims > 2)
+        n["coordsets/coords1/values/z"].set(std::vector<CoordType>{5.f,5.f,5.f,5.f,5.f,5.f,5.f,5.f,5.f});
+    n["topologies/mesh1/type"] = "unstructured";
+    n["topologies/mesh1/coordset"] = "coords1";
+    n["topologies/mesh1/elements/shape"] = "quad";
+    n["topologies/mesh1/elements/connectivity"].set(std::vector<ConnType>{0,1,4,3, 1,2,5,4, 3,4,7,6, 4,5,8,7});
+    n["topologies/mesh1/elements/sizes"].set(std::vector<ConnType>{4,4,4,4});
+    n["topologies/mesh1/elements/offsets"].set(std::vector<ConnType>{0,4,8,12});
+
+    n["coordsets/coords2/type"] = "explicit";
+    n["coordsets/coords2/values/x"].set(std::vector<CoordType>{1.f,2.f,1.f,2.f});
+    n["coordsets/coords2/values/y"].set(std::vector<CoordType>{1.f,1.f,2.f,2.f});
+    if(dims > 2)
+        n["coordsets/coords2/values/z"].set(std::vector<CoordType>{5.f,5.f,5.f,5.f});
+    n["topologies/mesh2/type"] = "unstructured";
+    n["topologies/mesh2/coordset"] = "coords2";
+    n["topologies/mesh2/elements/shape"] = "tri";
+    n["topologies/mesh2/elements/connectivity"].set(std::vector<ConnType>{0,1,2, 1,3,2});
+    n["topologies/mesh2/elements/sizes"].set(std::vector<ConnType>{3,3});
+    n["topologies/mesh2/elements/offsets"].set(std::vector<ConnType>{0,3});
+
+    conduit::Node info;
+    EXPECT_TRUE(conduit::blueprint::mesh::topology::verify(n["topologies/mesh1"], info));
+    EXPECT_TRUE(conduit::blueprint::mesh::topology::verify(n["topologies/mesh2"], info));
+
+    // Make mesh2 use coords1
+    conduit::blueprint::mesh::utils::topology::unstructured::rewrite_connectivity(n["topologies/mesh2"],
+                                                                                  n["coordsets/coords1"]);
+
+    // Make sure that mesh2's connectivity uses coords1 ids.
+    auto conn = n["topologies/mesh2/elements/connectivity"].as_int_accessor();
+    EXPECT_EQ(conn[0], 4);
+    EXPECT_EQ(conn[1], 5);
+    EXPECT_EQ(conn[2], 7);
+
+    EXPECT_EQ(conn[3], 5);
+    EXPECT_EQ(conn[4], 8);
+    EXPECT_EQ(conn[5], 7);
+
+    EXPECT_EQ(n["topologies/mesh2/coordset"].as_string(), "coords1");
+}
+
+void test_rewrite_connectivity_top(int dims)
+{
+    test_rewrite_connectivity<float, conduit::int32>(dims);
+    test_rewrite_connectivity<float, conduit::uint32>(dims);
+    test_rewrite_connectivity<float, conduit::int64>(dims);
+    test_rewrite_connectivity<float, conduit::uint64>(dims);
+    test_rewrite_connectivity<float, conduit::index_t>(dims);
+
+    test_rewrite_connectivity<double, conduit::int32>(dims);
+    test_rewrite_connectivity<double, conduit::uint32>(dims);
+    test_rewrite_connectivity<double, conduit::int64>(dims);
+    test_rewrite_connectivity<double, conduit::uint64>(dims);
+    test_rewrite_connectivity<double, conduit::index_t>(dims);
+}
+
+TEST(conduit_blueprint_mesh_utils, rewrite_connectivity_2d)
+{
+    test_rewrite_connectivity_top(2);
+}
+
+TEST(conduit_blueprint_mesh_utils, rewrite_connectivity_3d)
+{
+    test_rewrite_connectivity_top(3);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, copy_fields)
+{
+    conduit::Node n;
+    n["fields/f1/association"] = "vertex";
+    n["fields/f1/topology"] = "mesh1";
+    n["fields/f1/values"].set(std::vector<double>{0., 1., 2., 3.});
+    n["fields/f2/association"] = "vertex";
+    n["fields/f2/topology"] = "mesh1";
+    n["fields/f2/values"].set(std::vector<double>{4., 5., 6., 7.});
+    n["fields/f3/association"] = "vertex";
+    n["fields/f3/topology"] = "mesh2";
+    n["fields/f3/values"].set(std::vector<double>{8., 9., 10., 11.});
+    n["fields/f4/association"] = "vertex";
+    n["fields/f4/topology"] = "mesh2";
+    n["fields/f4/values"].set(std::vector<double>{12., 13., 14., 15.});
+
+    conduit::Node opts, fields;
+    opts["exclusions"].append().set("f2");
+    conduit::blueprint::mesh::utils::copy_fields(n["fields"], fields, opts);
+    EXPECT_EQ(fields.number_of_children(), 3);
+    EXPECT_EQ(fields[0].name(), "f1");
+    EXPECT_EQ(fields[1].name(), "f3");
+    EXPECT_EQ(fields[2].name(), "f4");
+
+    opts.reset();
+    fields.reset();
+    opts["topology"] = "mesh2";
+    conduit::blueprint::mesh::utils::copy_fields(n["fields"], fields, opts);
+    EXPECT_EQ(fields.number_of_children(), 2);
+    EXPECT_EQ(fields[0].name(), "f3");
+    EXPECT_EQ(fields[1].name(), "f4");
+
+    fields.reset();
+    opts["exclusions"].append().set("f3");
+    conduit::blueprint::mesh::utils::copy_fields(n["fields"], fields, opts);
+    EXPECT_EQ(fields.number_of_children(), 1);
+    EXPECT_EQ(fields[0].name(), "f4");
+}

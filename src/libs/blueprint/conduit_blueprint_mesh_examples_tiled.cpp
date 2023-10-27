@@ -632,9 +632,9 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     if(options.has_path("tile"))
         initialize(options.fetch_existing("tile"));
 
-    bool reorder = true;
+    std::string reorder;
     if(options.has_path("reorder"))
-        reorder = options.fetch_existing("reorder").as_string() == "kdtree";
+        reorder = options.fetch_existing("reorder").as_string();
 
     if(options.has_path("meshname"))
         meshName = options.fetch_existing("meshname").as_string();
@@ -882,13 +882,18 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
 
     // Reorder the elements unless it was turned off.
     std::vector<conduit::index_t> old2NewPoint;
-    if(reorder)
+    bool doReorder = (reorder == "kdtree" || reorder == "hilbert");
+    if(doReorder)
     {
         // We need offsets.
         conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(topo, topo["elements/offsets"]);
 
         // Create a new order for the mesh elements.
-        const auto elemOrder = conduit::blueprint::mesh::utils::topology::spatial_ordering(topo);
+        std::vector<conduit::index_t> elemOrder;
+        if(reorder == "kdtree")
+            elemOrder = conduit::blueprint::mesh::utils::topology::spatial_ordering(topo);
+        else
+            elemOrder = conduit::blueprint::mesh::utils::topology::hilbert_ordering(topo);
 
 #ifdef CONDUIT_USE_PARTITIONER_FOR_REORDER
         // NOTE: This was an idea I had after I made reorder. Reordering is like
@@ -934,7 +939,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     {
         // 2D
         bshape = "line";
-        if(reorder)
+        if(doReorder)
         {
             iterateBoundary2D(tiles, nx, ny, flags,
                 [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
@@ -962,7 +967,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         // 3D
         bshape = "quad";
         bool anyNonQuads = false;
-        if(reorder)
+        if(doReorder)
         {
             iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
                 [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
@@ -1011,7 +1016,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
     }
 
     // Build an adjacency set.
-    addAdjset(tiles, nx, ny, nz, ptsPerPlane, reorder, old2NewPoint, options, res);
+    addAdjset(tiles, nx, ny, nz, ptsPerPlane, doReorder, old2NewPoint, options, res);
 
 #if 0
     // Print for debugging.
