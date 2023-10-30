@@ -810,7 +810,15 @@ PyBlueprint_mesh_examples_strided_structured(PyObject *, //self
         return (NULL);
     }
 
-    if(!PyConduit_Node_Check(py_node_res))
+    if(!PyConduit_Node_Check(py_node_desc))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'desc' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    if(!PyConduit_Node_Check(py_node_dest))
     {
         PyErr_SetString(PyExc_TypeError,
                         "'dest' argument must be a "
