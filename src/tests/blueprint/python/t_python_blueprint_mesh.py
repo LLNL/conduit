@@ -180,6 +180,24 @@ class Test_Blueprint_Mesh(unittest.TestCase):
         self.assertTrue(blueprint.mesh.verify(n,info))
         self.assertFalse(self.has_empty_warning(info))
 
+    def test_strided_structured(self):
+        n = Node()
+        info = Node()
+        opts = Node()
+        blueprint.mesh.examples.strided_structured(opts,5,5,5,n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
+
+        # test w/ options
+        opts["vertex_data/shape"]   = [7,8,0]
+        opts["vertex_data/origin"]  = [2,1,0]
+        opts["element_data/shape"]  = [6,4,0]
+        opts["element_data/origin"] = [1,1,0]
+
+        blueprint::mesh::examples::strided_structured(opts,4, 3, 0,n);
+        self.assertTrue(blueprint.mesh.verify(n,info))
+        self.assertFalse(self.has_empty_warning(info))
+
     def test_partition(self):
         def same(a, b):
             for i in range(len(a)):

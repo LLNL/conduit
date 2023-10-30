@@ -747,7 +747,88 @@ PyBlueprint_mesh_examples_polystar(PyObject *, //self
     Py_RETURN_NONE;
 }
 
+//---------------------------------------------------------------------------//
+// conduit::blueprint::mesh::examples::strided_structured
+//---------------------------------------------------------------------------//
 
+// doc string
+const char *PyBlueprint_mesh_examples_strided_structured_doc_str =
+"strided_structured(desc,npts_x,npts_y,npts_z,dest)\n"
+"\n"
+"Generates a strided structured grid with an element field and a vertex "
+"field, each element of which contains a sequentially increasing value. "
+"Calling code can specify the shape of the storage array for the fields "
+"and the location of the field values within the array.\n"
+"\n"
+"Pass the extra specifications with a conduit Node desc:\n"
+"\n"
+"vertex_data:\n"
+"  shape: [vx, vy, vz]\n"
+"  origin: [wx, wy, wz]\n"
+"element_data:\n"
+"   shape: [ex, ey, ez]\n"
+"   origin: [fx, fy, fz]\n";
+
+
+// python func
+static PyObject * 
+PyBlueprint_mesh_examples_strided_structured(PyObject *, //self
+                                             PyObject *args,
+                                             PyObject *kwargs)
+{
+
+  // Wraps:
+  // void CONDUIT_BLUEPRINT_API strided_structured(conduit::Node &desc,
+  //                                               conduit::index_t npts_x,
+  //                                               conduit::index_t npts_y,
+  //                                               conduit::index_t npts_z,
+  //                                               conduit::Node &res);
+
+    PyObject   *py_node_desc = NULL;
+    Py_ssize_t  npts_x       = 0;
+    Py_ssize_t  npts_y       = 0;
+    Py_ssize_t  npts_z       = 0;
+    PyObject   *py_node_dest = NULL;
+
+    static const char *kwlist[] = {"desc",
+                                   "npts_x",
+                                   "npts_y",
+                                   "npts_z",
+                                   "dest",
+                                   NULL};
+
+    if (!PyArg_ParseTupleAndKeywords(args,
+                                     kwargs,
+                                     "OnnnO",
+                                     const_cast<char**>(kwlist),
+                                     &py_node_desc,
+                                     &nx,
+                                     &ny,
+                                     &nz,
+                                     &py_node_dest))
+    {
+        return (NULL);
+    }
+
+    if(!PyConduit_Node_Check(py_node_res))
+    {
+        PyErr_SetString(PyExc_TypeError,
+                        "'dest' argument must be a "
+                        "conduit.Node instance");
+        return NULL;
+    }
+
+    Node &node_desc = *PyConduit_Node_Get_Node_Ptr(py_node_desc);
+    Node &node_dest = *PyConduit_Node_Get_Node_Ptr(py_node_dest);
+
+    blueprint::mesh::examples::strided_structured(node_desc,
+                                                  npts_x,
+                                                  npts_y,
+                                                  npts_z,
+                                                  node_dest);
+
+    Py_RETURN_NONE;
+}
 
 //---------------------------------------------------------------------------//
 // Python Module Method Defs
@@ -804,7 +885,11 @@ static PyMethodDef blueprint_mesh_examples_python_funcs[] =
      (PyCFunction)PyBlueprint_mesh_examples_polystar,
       METH_VARARGS | METH_KEYWORDS,
       PyBlueprint_mesh_examples_polystar_doc_str},
-
+    //-----------------------------------------------------------------------//
+    {"strided_structured",
+     (PyCFunction)PyBlueprint_mesh_examples_strided_structured,
+      METH_VARARGS | METH_KEYWORDS,
+      PyBlueprint_mesh_examples_strided_structured_doc_str},
     //-----------------------------------------------------------------------//
     // end methods table
     //-----------------------------------------------------------------------//
