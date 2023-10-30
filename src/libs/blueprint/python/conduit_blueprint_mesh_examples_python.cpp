@@ -802,9 +802,9 @@ PyBlueprint_mesh_examples_strided_structured(PyObject *, //self
                                      "OnnnO",
                                      const_cast<char**>(kwlist),
                                      &py_node_desc,
-                                     &nx,
-                                     &ny,
-                                     &nz,
+                                     &npts_x,
+                                     &npts_y,
+                                     &npts_z,
                                      &py_node_dest))
     {
         return (NULL);
