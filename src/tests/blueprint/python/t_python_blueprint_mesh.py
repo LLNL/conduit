@@ -194,7 +194,7 @@ class Test_Blueprint_Mesh(unittest.TestCase):
         opts["element_data/shape"]  = [6,4,0]
         opts["element_data/origin"] = [1,1,0]
 
-        blueprint::mesh::examples::strided_structured(opts,4, 3, 0,n);
+        blueprint.mesh.examples.strided_structured(opts,4, 3, 0,n);
         self.assertTrue(blueprint.mesh.verify(n,info))
         self.assertFalse(self.has_empty_warning(info))
 
