@@ -22,6 +22,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `conduit::blueprint::mesh::utils::topology::spatial_ordering()` function that takes a topology and computes centroids for each element, passes them through a kdtree, and returns the new element ordering. The new ordering can be used with the `reorder()` function.
 - Added a `conduit::blueprint::mesh::utils::slice_array()` function that can slice Conduit nodes that contain arrays. A new node with the same type is created but it contains only the selected indices.
 - Added a `conduit::blueprint::mesh::utils::slice_field()` function. It is like `slice_array()` but it can handle the mcarray protocol. This functionality was generalized from the partitioner.
+- Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
 
 ### Changed
 
