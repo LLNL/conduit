@@ -8774,6 +8774,7 @@ Node::swap(Node &n_b)
     
     // things we need to swap
     // schema pointer
+    // schema parent pointer
     // data pointer and data size
     // if data is allocated or not
     // if data is memory mapped or not
@@ -8782,6 +8783,7 @@ Node::swap(Node &n_b)
     // any children
     std::swap(m_data,n_b.m_data);
     std::swap(m_data_size,n_b.m_data_size);
+    std::swap(m_schema->m_parent,n_b.m_schema->m_parent);
     std::swap(m_schema,n_b.m_schema);
     std::swap(m_alloced,n_b.m_alloced);
     std::swap(m_mmaped,n_b.m_mmaped);
