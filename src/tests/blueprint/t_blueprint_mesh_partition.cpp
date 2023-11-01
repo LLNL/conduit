@@ -2526,72 +2526,8 @@ TEST(conduit_blueprint_mesh_partition, matset_spiral)
         }
     }
 
-    // Another test, remove domain 5's contribution to the final matset
-    {
-        for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
-        {
-            conduit::Node &spiral = spirals[flavor];
-            for(conduit::index_t i = 0; i < spiral.number_of_children(); i++)
-            {
-                conduit::Node &domain = spiral[i];
-                if(i == 4)
-                {
-                    domain.remove_child("matsets");
-                }
-                else
-                {
-                    conduit::Node &matset = domain["matsets/matset"];
-                    if(matset.has_child("material_map"))
-                    {
-                        matset["material_map"].remove_child("mat4");
-                    }
-                    conduit::Node info;
-                    ASSERT_TRUE(conduit::blueprint::mesh::matset::verify(matset, info))
-                        << "Flavor " << flavor << ", domain " << i << ":" << info.to_yaml() << matset.to_yaml();
-                }
-            }
-        }
-
-        // Use the first spiral mesh to create the baseline file
-        const std::string baseline_fname = baseline_file("spiral_with_matset_no_mat4");
-#ifdef GENERATE_BASELINES
-        {
-            conduit::Node opts, spiral_combined;
-            opts["target"].set(1);
-            conduit::blueprint::mesh::partition(spirals[0], opts, spiral_combined);
-            make_baseline(baseline_fname, spiral_combined);
-        }
-#endif
-
-        // Load the baseline mesh into a node, we will call diff_to_silo on this for each mesh
-        conduit::Node baseline;
-        load_baseline(baseline_fname, baseline);
-
-        {
-            conduit::Node silo;
-            conduit::blueprint::mesh::matset::to_silo(baseline["matsets/matset"], silo);
-            // std::cout << silo.to_yaml() << std::endl;
-        }
-
-        // Combine the spiral down to 1 domain and compare to baseline
-        for(conduit::index_t flavor = 0; flavor < (conduit::index_t)spirals.size(); flavor++)
-        {
-            const std::string mesh_name("spiral_with_matset_no_mat4_" + std::to_string(flavor));
-            conduit::Node &spiral = spirals[flavor];
-            save_visit(mesh_name, spiral, true);
-            conduit::Node opts, spiral_combined;
-            opts["target"].set(1);
-            conduit::blueprint::mesh::partition(spiral, opts, spiral_combined);
-            const std::string combined_mesh_name = mesh_name + "_combined";
-            save_visit(combined_mesh_name, spiral_combined, true);
-
-            // NOTE: to_silo fills with 0's on each cell without a material
-            //   so there are a lot more cells with mat0 than expected.
-            conduit::Node info;
-            EXPECT_FALSE(diff_to_silo(baseline, spiral_combined, info))
-                << "Flavor " << flavor << ":" << info.to_yaml();
-        }
-    }
+    // we are not allowed to have zones without any materials defined on them, so there is no
+    // reason to test that case.
 }
 
 

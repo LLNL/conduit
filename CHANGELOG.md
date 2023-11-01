@@ -27,6 +27,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `conduit::blueprint::mesh::utils::copy_fields()` function that helps copy fields from one fields node to another.
 - Added a `conduit::blueprint::mesh::utils::convert()` function that converts a list of nodes to a desired data type.
 - Added a `conduit::blueprint::mesh::generate_boundary_partition_field()` function that can take a topology and a partition field and generate a field for a related boundary topology. This is helpful when partitioning a boundary topology in the same manner as its parent topology.
+- Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
+
 
 ### Changed
 
