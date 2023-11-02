@@ -254,6 +254,31 @@ void CONDUIT_BLUEPRINT_API slice_field(const conduit::Node &n_src_values,
                                        conduit::Node &n_dest_values);
 
 //-----------------------------------------------------------------------------
+/**
+ @brief Copy fields from one node to another, making full copies.
+
+ @param srcFields The node containing the source fields.
+ @param destFields The node that will contain the copied fields.
+ @param options A node that contains options. Currently, it supports an "exclusions"
+                node. The names under the exclusions node will not be copied. 
+ */
+void CONDUIT_BLUEPRINT_API copy_fields(const conduit::Node &srcFields,
+                                       conduit::Node &destFields,
+                                       const conduit::Node &options);
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Convert a list of nodes to the desired type if they are not already that type.
+
+ @param root The root node that contains the keys.
+ @param desired_type The desired data type.
+ @param keys A vector of paths in the root node that will be converted to desired type.
+ */
+void CONDUIT_BLUEPRINT_API convert(conduit::Node &root,
+                                   const conduit::DataType &desired_type,
+                                   const std::vector<std::string> &keys);
+
+//-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
 //-----------------------------------------------------------------------------
 namespace connectivity
@@ -431,6 +456,18 @@ namespace topology
 
     //-------------------------------------------------------------------------
     /**
+     * @brief Applies a spatial sorting algorithm (based on a Hilbert curve) to
+     *        the topology's centroids and returns a vector containing the sorted
+     *        order.
+     *
+     * @param topo The topology whose elements are being sorted.
+     *
+     * @return A vector containing the new element order.
+     */
+    std::vector<conduit::index_t> CONDUIT_BLUEPRINT_API hilbert_ordering(const conduit::Node &topo);
+
+    //-------------------------------------------------------------------------
+    /**
      @brief Given a single topology, make a series of Add calls that add an
             entity using the source mesh's coordinates but with a potentially
             different shape from the original topology. We can for example have
@@ -520,6 +557,16 @@ namespace topology
         //-------------------------------------------------------------------------
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
                                                           const index_t i);
+        //-------------------------------------------------------------------------
+        /**
+         * @brief Rewrite the topology's connectivity in terms of the supplied
+         *        coordset, using point queries to look up the new node ids.
+         *
+         * @param topo The input topology to be modified.
+         * @param cset The new coordinate set to use for the topology.
+         */
+        void CONDUIT_BLUEPRINT_API rewrite_connectivity(conduit::Node &topo,
+                                                        const conduit::Node &cset);
 
         //-------------------------------------------------------------------------
         /**

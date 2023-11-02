@@ -565,6 +565,60 @@ slice_field(const conduit::Node &n_src_values,
     slice_field_internal(n_src_values, ids, n_dest_values);
 }
 
+//---------------------------------------------------------------------------
+void
+copy_fields(const conduit::Node &srcFields,
+            conduit::Node &destFields,
+            const conduit::Node &options)
+{
+    // Pull out any exclusions
+    std::vector<std::string> exclusions;
+    if(options.has_child("exclusions"))
+    {
+        const conduit::Node &ex = options["exclusions"];
+        for(conduit::index_t i = 0; i < ex.number_of_children(); i++)
+            exclusions.push_back(ex[i].as_string());
+    }
+    std::string topoName;
+    if(options.has_child("topology"))
+    {
+        topoName = options.fetch_existing("topology").as_string();
+    }
+
+    // Copy any fields that are not excluded (and match the topo).
+    for (conduit::index_t i = 0; i < srcFields.number_of_children(); i++)
+    {
+        const conduit::Node &f = srcFields[i];
+        if(topoName.empty() || topoName == f.fetch_existing("topology").as_string())
+        {
+            if(std::find(exclusions.begin(), exclusions.end(), f.name()) == exclusions.end())
+            {
+                destFields[f.name()].set(f);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+convert(conduit::Node &root,
+        const conduit::DataType &desired_type,
+        const std::vector<std::string> &keys)
+{
+    for (const auto &path : keys)
+    {
+        if (root.has_path(path))
+        {
+            conduit::Node &n = root.fetch_existing(path);
+            if (n.dtype().id() != desired_type.id())
+            {
+                conduit::Node changed;
+                n.to_data_type(desired_type.id(), changed);
+                n.set(changed);
+            }
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
@@ -1717,6 +1771,210 @@ topology::spatial_ordering(const conduit::Node &topo)
     return reorder;
 }
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::utils::detail --
+//-----------------------------------------------------------------------------
+namespace detail
+{
+
+// Adapted from MFEM
+struct HilbertCmp
+{
+   int coord;
+   bool dir;
+   const double *points;
+   double mid;
+
+   HilbertCmp(int coord, bool dir, const double *points, double mid)
+      : coord(coord), dir(dir), points(points), mid(mid) {}
+
+   bool operator()(int i) const
+   {
+      return (points[3*i + coord] < mid) != dir;
+   }
+};
+
+//-----------------------------------------------------------------------------
+// Adapted from MFEM
+static void HilbertSort2D(int coord1, // major coordinate to sort points by
+                          bool dir1,  // sort coord1 ascending/descending?
+                          bool dir2,  // sort coord2 ascending/descending?
+                          const double *points, conduit::index_t *beg, conduit::index_t *end,
+                          double xmin, double ymin, double xmax, double ymax)
+{
+   if (end - beg <= 1) { return; }
+
+   double xmid = (xmin + xmax)*0.5;
+   double ymid = (ymin + ymax)*0.5;
+
+   int coord2 = (coord1 + 1) % 2; // the 'other' coordinate
+
+   // sort (partition) points into four quadrants
+   conduit::index_t *p0 = beg, *p4 = end;
+   conduit::index_t *p2 = std::partition(p0, p4, HilbertCmp(coord1,  dir1, points, xmid));
+   conduit::index_t *p1 = std::partition(p0, p2, HilbertCmp(coord2,  dir2, points, ymid));
+   conduit::index_t *p3 = std::partition(p2, p4, HilbertCmp(coord2, !dir2, points, ymid));
+
+   if (p1 != p4)
+   {
+      HilbertSort2D(coord2, dir2, dir1, points, p0, p1,
+                    ymin, xmin, ymid, xmid);
+   }
+   if (p1 != p0 || p2 != p4)
+   {
+      HilbertSort2D(coord1, dir1, dir2, points, p1, p2,
+                    xmin, ymid, xmid, ymax);
+   }
+   if (p2 != p0 || p3 != p4)
+   {
+      HilbertSort2D(coord1, dir1, dir2, points, p2, p3,
+                    xmid, ymid, xmax, ymax);
+   }
+   if (p3 != p0)
+   {
+      HilbertSort2D(coord2, !dir2, !dir1, points, p3, p4,
+                    ymid, xmax, ymin, xmid);
+   }
+}
+
+//-----------------------------------------------------------------------------
+// Adapted from MFEM
+static void HilbertSort3D(int coord1, bool dir1, bool dir2, bool dir3,
+                          const double *points, conduit::index_t *beg, conduit::index_t *end,
+                          double xmin, double ymin, double zmin,
+                          double xmax, double ymax, double zmax)
+{
+   if (end - beg <= 1) { return; }
+
+   double xmid = (xmin + xmax)*0.5;
+   double ymid = (ymin + ymax)*0.5;
+   double zmid = (zmin + zmax)*0.5;
+
+   int coord2 = (coord1 + 1) % 3;
+   int coord3 = (coord1 + 2) % 3;
+
+   // sort (partition) points into eight octants
+   conduit::index_t *p0 = beg, *p8 = end;
+   conduit::index_t *p4 = std::partition(p0, p8, HilbertCmp(coord1,  dir1, points, xmid));
+   conduit::index_t *p2 = std::partition(p0, p4, HilbertCmp(coord2,  dir2, points, ymid));
+   conduit::index_t *p6 = std::partition(p4, p8, HilbertCmp(coord2, !dir2, points, ymid));
+   conduit::index_t *p1 = std::partition(p0, p2, HilbertCmp(coord3,  dir3, points, zmid));
+   conduit::index_t *p3 = std::partition(p2, p4, HilbertCmp(coord3, !dir3, points, zmid));
+   conduit::index_t *p5 = std::partition(p4, p6, HilbertCmp(coord3,  dir3, points, zmid));
+   conduit::index_t *p7 = std::partition(p6, p8, HilbertCmp(coord3, !dir3, points, zmid));
+
+   if (p1 != p8)
+   {
+      HilbertSort3D(coord3, dir3, dir1, dir2, points, p0, p1,
+                    zmin, xmin, ymin, zmid, xmid, ymid);
+   }
+   if (p1 != p0 || p2 != p8)
+   {
+      HilbertSort3D(coord2, dir2, dir3, dir1, points, p1, p2,
+                    ymin, zmid, xmin, ymid, zmax, xmid);
+   }
+   if (p2 != p0 || p3 != p8)
+   {
+      HilbertSort3D(coord2, dir2, dir3, dir1, points, p2, p3,
+                    ymid, zmid, xmin, ymax, zmax, xmid);
+   }
+   if (p3 != p0 || p4 != p8)
+   {
+      HilbertSort3D(coord1, dir1, !dir2, !dir3, points, p3, p4,
+                    xmin, ymax, zmid, xmid, ymid, zmin);
+   }
+   if (p4 != p0 || p5 != p8)
+   {
+      HilbertSort3D(coord1, dir1, !dir2, !dir3, points, p4, p5,
+                    xmid, ymax, zmid, xmax, ymid, zmin);
+   }
+   if (p5 != p0 || p6 != p8)
+   {
+      HilbertSort3D(coord2, !dir2, dir3, !dir1, points, p5, p6,
+                    ymax, zmid, xmax, ymid, zmax, xmid);
+   }
+   if (p6 != p0 || p7 != p8)
+   {
+      HilbertSort3D(coord2, !dir2, dir3, !dir1, points, p6, p7,
+                    ymid, zmid, xmax, ymin, zmax, xmid);
+   }
+   if (p7 != p0)
+   {
+      HilbertSort3D(coord3, !dir3, !dir1, dir2, points, p7, p8,
+                    zmid, xmax, ymin, zmin, xmid, ymid);
+   }
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::utils::detail --
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Adapted from MFEM
+std::vector<conduit::index_t>
+topology::hilbert_ordering(const conduit::Node &topo)
+{
+    // Make a new centroid topo and coordset. The coordset will contain the
+    // element centers. This ought to be an explicit coordset.
+    conduit::Node topo_dest, coords_dest, s2dmap, d2smap;
+    conduit::blueprint::mesh::topology::unstructured::generate_centroids(topo,
+                                                                         topo_dest,
+                                                                         coords_dest,
+                                                                         s2dmap,
+                                                                         d2smap);
+
+    const auto spaceDim = conduit::blueprint::mesh::coordset::dims(coords_dest);
+    const auto nelem = conduit::blueprint::mesh::topology::length(topo);
+
+    std::vector<conduit::index_t> indices(nelem);
+    std::vector<double> points(3 * nelem, 0.);
+    double min[3] = {0., 0., 0.}, max[3] = {0., 0., 0.};
+    conduit::double_accessor acc[3];
+    for (int i = 0; i < spaceDim; i++)
+    {
+        acc[i] = coords_dest["values"][i].as_double_accessor();
+        min[i] = acc[i].min();
+        max[i] = acc[i].max();
+    }
+    for (conduit::index_t i = 0; i < nelem; i++)
+    {
+        for (int j = 0; j < spaceDim; j++)
+        {
+            points[3*i + j] = acc[j][i];
+        }
+        indices[i] = i;
+    }
+
+    if (spaceDim == 1)
+    {
+        std::sort(indices.begin(), indices.end(), [&](int a, int b)
+        { return points[3*a] < points[3*b]; });
+    }
+    else if (spaceDim == 2)
+    {
+        // Recursively partition the points in 2D
+        detail::HilbertSort2D(0, false, false,
+                      &points[0], indices.data(), indices.data() + indices.size(),
+                      min[0], min[1], max[0], max[1]);
+    }
+    else
+    {
+        // Recursively partition the points in 3D
+        detail::HilbertSort3D(0, false, false, false,
+                    &points[0], indices.data(), indices.data() + indices.size(),
+                    min[0], min[1], min[2], max[0], max[1], max[2]);
+    }
+
+    std::vector<conduit::index_t> ordering;
+    ordering.resize(nelem);
+    for (conduit::index_t i = 0; i < nelem; i++)
+    {
+        ordering[indices[i]] = i;
+    }
+    return ordering;
+}
+
 //---------------------------------------------------------------------------
 topology::TopologyBuilder::TopologyBuilder(const conduit::Node &_topo) : topo(_topo),
     old_to_new(), topo_conn(), topo_sizes()
@@ -2269,6 +2527,91 @@ topology::unstructured::points(const Node &n,
     }
 
     return std::vector<index_t>(pidxs.begin(), pidxs.end());
+}
+
+//-----------------------------------------------------------------------------
+void
+topology::unstructured::rewrite_connectivity(conduit::Node &btopo,
+                                             const conduit::Node &coordset)
+{
+    const conduit::Node &bcoordset = topology::coordset(btopo);
+    // Needed for PointQuery.
+    const conduit::Node &mesh = *(coordset.parent()->parent());
+
+    // Iterate over the boundary mesh coordinates and look them up in the
+    // volume mesh's coordset.
+    conduit::blueprint::mesh::utils::query::PointQuery Q(mesh);
+    const auto axes = conduit::blueprint::mesh::utils::coordset::axes(bcoordset);
+    const auto ndims = axes.size();
+    const conduit::Node &bcvalues = bcoordset.fetch_existing("values");
+    const int domain_id = static_cast<int>(find_domain_id(mesh));
+    const auto bx = bcvalues[axes[0]].as_double_accessor();
+    const auto by = bcvalues[axes[ndims > 1 ? 1 : 0]].as_double_accessor();
+    const auto bz = bcvalues[axes[ndims > 2 ? 2 : 0]].as_double_accessor();
+    conduit::index_t nSearchPoints = bx.number_of_elements();
+    for (conduit::index_t i = 0; i < nSearchPoints; i++)
+    {
+       double pt[3];
+       pt[0] = bx[i];
+       pt[1] = ndims > 1 ? by[i] : 0.;
+       pt[2] = ndims > 2 ? bz[i] : 0.;
+       Q.add(domain_id, pt);
+    }
+    Q.execute(coordset.name());
+
+    // Scan the points to see if there are any NotFound.
+    const auto &res = Q.results(domain_id);
+    for (conduit::index_t i = 0; i < nSearchPoints; i++)
+    {
+        if(res[i] == conduit::blueprint::mesh::utils::query::PointQuery::NotFound)
+        {
+            CONDUIT_ERROR("Point " << i << " was not found in new coordset " << coordset.name() << ".");
+        }
+    }
+
+    // Make a new the boundary topology that uses the volume mesh coordset.
+    // We remap the connectivity.
+    const auto &n_bconnSrc = btopo["elements/connectivity"];
+    const auto bconnSrc = n_bconnSrc.as_index_t_accessor();
+    conduit::index_t nbconn = bconnSrc.number_of_elements();
+    conduit::Node newconn;
+    newconn.set(conduit::DataType(n_bconnSrc.dtype().id(), nbconn));
+    if(newconn.dtype().is_int32())
+    {
+        auto bconnNew = newconn.as_int32_array();
+        for (conduit::index_t i = 0; i < nbconn; i++)
+            bconnNew[i] = static_cast<conduit::int32>(res[bconnSrc[i]]);
+    }
+    else if(newconn.dtype().is_int64())
+    {
+        auto bconnNew = newconn.as_int64_array();
+        for (conduit::index_t i = 0; i < nbconn; i++)
+            bconnNew[i] = static_cast<conduit::int64>(res[bconnSrc[i]]);
+    }
+    else if(newconn.dtype().is_uint32())
+    {
+        auto bconnNew = newconn.as_uint32_array();
+        for (conduit::index_t i = 0; i < nbconn; i++)
+            bconnNew[i] = static_cast<conduit::uint32>(res[bconnSrc[i]]);
+    }
+    else if(newconn.dtype().is_uint64())
+    {
+        auto bconnNew = newconn.as_uint64_array();
+        for (conduit::index_t i = 0; i < nbconn; i++)
+            bconnNew[i] = static_cast<conduit::uint64>(res[bconnSrc[i]]);
+    }
+    else if(newconn.dtype().is_index_t())
+    {
+        auto bconnNew = newconn.as_index_t_array();
+        for (conduit::index_t i = 0; i < nbconn; i++)
+            bconnNew[i] = static_cast<conduit::index_t>(res[bconnSrc[i]]);
+    }
+    else
+    {
+        CONDUIT_ERROR(newconn.dtype().name() << " is not supported for connectivity.");
+    }
+    btopo["coordset"] = coordset.name();
+    btopo["elements/connectivity"].move(newconn);
 }
 
 //-----------------------------------------------------------------------------
