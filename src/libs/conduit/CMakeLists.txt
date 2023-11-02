@@ -193,6 +193,7 @@ endif()
 
 ####################################################################
 # Special install targets for conduit fortran modules
+# Use regex to match either lowercase or uppercase module names.
 ####################################################################
 if(FORTRAN_FOUND)
     set(conduit_fortran_modules
@@ -200,13 +201,15 @@ if(FORTRAN_FOUND)
 
     if(ENABLE_FORTRAN_OBJ_INTERFACE)
         list(APPEND conduit_fortran_modules
-                    ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
+                    "(?i)${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod")
     endif()
 
     # Setup install to copy the fortran modules
-    install(FILES
-            ${conduit_fortran_modules}
-            DESTINATION include/conduit)
+    install(DIRECTORY
+            ${CMAKE_Fortran_MODULE_DIRECTORY}/
+            DESTINATION include/conduit
+            PATTERN "${conduit_fortran_modules}")
+
 endif()
 
 

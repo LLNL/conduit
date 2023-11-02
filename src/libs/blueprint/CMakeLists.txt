@@ -149,17 +149,17 @@ if(FORTRAN_FOUND)
     ###############################################################################
 
     set(conduit_blueprint_fortran_modules
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mesh.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_table.mod
+        "(?i)${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint.mod"
+        "(?i)${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mesh.mod"
+        "(?i)${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod"
+        "(?i)${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_table.mod"
         )
 
     # Setup install to copy the fortran modules
-    install(FILES
-            ${conduit_blueprint_fortran_modules}
-            DESTINATION include/conduit)
-
+    install(DIRECTORY
+            ${CMAKE_Fortran_MODULE_DIRECTORY}/
+            DESTINATION include/conduit
+            PATTERN "${conduit_blueprint_fortran_modules}")
 endif()
 
 

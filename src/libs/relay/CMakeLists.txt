@@ -307,12 +307,13 @@ endif()
 ###############################################################################
 if(FORTRAN_FOUND)
     set(conduit_relay_fortran_modules
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_relay.mod)
+        "(?i)${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_relay.mod")
 
     # Setup install to copy the fortran modules 
-    install(FILES 
-            ${conduit_relay_fortran_modules}
-            DESTINATION include/conduit)
+    install(DIRECTORY
+            ${CMAKE_Fortran_MODULE_DIRECTORY}
+            DESTINATION include/conduit
+            PATTERN "${conduit_relay_fortran_modules}")
 endif()
 
 
