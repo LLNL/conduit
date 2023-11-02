@@ -39,6 +39,7 @@ set(blueprint_headers
     conduit_blueprint_mesh_examples_related_boundary.hpp
     conduit_blueprint_mesh_examples_polystar.hpp
     conduit_blueprint_mesh_examples_rz_cylinder.hpp
+    conduit_blueprint_mesh_examples_tiled.hpp
     conduit_blueprint_mcarray.hpp
     conduit_blueprint_mcarray_examples.hpp
     conduit_blueprint_o2mrelation.hpp
@@ -81,6 +82,7 @@ set(blueprint_sources
     conduit_blueprint_mesh_examples_related_boundary.cpp
     conduit_blueprint_mesh_examples_polystar.cpp
     conduit_blueprint_mesh_examples_rz_cylinder.cpp
+    conduit_blueprint_mesh_examples_tiled.cpp
     conduit_blueprint_mesh_flatten.cpp
     conduit_blueprint_mcarray.cpp
     conduit_blueprint_mcarray_examples.cpp

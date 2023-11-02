@@ -356,6 +356,16 @@ namespace coordset
                                               conduit::Node& coordset_dest);
 
     //-------------------------------------------------------------------------
+    /**
+     @brief Convert the coordset, no matter its type, to explicit.
+
+     @param coordset The input coordset.
+     @param[out] coordset_dest The output coordset.
+     */
+    void CONDUIT_BLUEPRINT_API to_explicit(const conduit::Node& coordset,
+                                           conduit::Node& coordset_dest);
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface
     //-------------------------------------------------------------------------
     namespace uniform
