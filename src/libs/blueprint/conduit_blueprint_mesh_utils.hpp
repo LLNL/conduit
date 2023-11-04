@@ -17,6 +17,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <memory>
 
@@ -216,6 +217,41 @@ CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const s
 //-----------------------------------------------------------------------------
 index_t CONDUIT_BLUEPRINT_API find_domain_id(const Node &node);
 
+//-----------------------------------------------------------------------------
+/**
+ @brief Slice a node containing array data and copy data for the supplied ids
+        to a new node.
+
+ @param n_src_values The node containing the source values.
+ @param ids The ids that will be extracted from the source values.
+ @param dest The new node that will contain the sliced data.
+ */
+void CONDUIT_BLUEPRINT_API slice_array(const conduit::Node &n_src_values,
+                                       const std::vector<int> &ids,
+                                       Node &n_dest_values);
+
+/// Same as above.
+void CONDUIT_BLUEPRINT_API slice_array(const conduit::Node &n_src_values,
+                                       const std::vector<conduit::index_t> &ids,
+                                       Node &n_dest_values);
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Slice a values node for a field where values may be an mcarray. The new
+        node will contain the data for the supplied indices.
+
+ @param n_src_values The node containing the source values.
+ @param ids The ids that will be extracted from the source values.
+ @param dest The new node that will contain the sliced data.
+ */
+void CONDUIT_BLUEPRINT_API slice_field(const conduit::Node &n_src_values,
+                                       const std::vector<int> &ids,
+                                       conduit::Node &dest);
+
+/// Same as above.
+void CONDUIT_BLUEPRINT_API slice_field(const conduit::Node &n_src_values,
+                                       const std::vector<conduit::index_t> &ids,
+                                       conduit::Node &n_dest_values);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
@@ -312,6 +348,18 @@ namespace coordset
     */
     std::vector<float64> CONDUIT_BLUEPRINT_API extents(const Node &n);
 
+    //-----------------------------------------------------------------------------
+    /**
+     @brief Check whether all component types match and are compact, making it
+            suitable for pointer access.
+
+     @param cset The coordset we're checking.
+
+     @return A tuple containing 1) whether the components are suitable for pointer
+             access and 2) the data type.
+     */
+    std::tuple<bool, conduit::DataType> CONDUIT_BLUEPRINT_API supports_pointer_access(const conduit::Node &coordset);
+
     namespace uniform
     {
         /**
@@ -369,6 +417,17 @@ namespace topology
                                               const conduit::Node& old_gvids,
                                               const conduit::Node& new_gvids,
                                               conduit::Node& out_topo);
+    //-------------------------------------------------------------------------
+    /**
+     * @brief Applies a spatial sorting algorithm (based on a kdtree) to the
+     *        topology's centroids and returns a vector containing the sorted
+     *        order.
+     *
+     * @param topo The topology whose elements are being sorted.
+     *
+     * @return A vector containing the new element order.
+     */
+    std::vector<conduit::index_t> CONDUIT_BLUEPRINT_API spatial_ordering(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
     /**
@@ -461,6 +520,40 @@ namespace topology
         //-------------------------------------------------------------------------
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
                                                           const index_t i);
+
+        //-------------------------------------------------------------------------
+        /**
+         * @brief Reorder the topology's elements and nodes, according to the new
+         *        element \order vector.
+         *
+         * @param topo     A node containing the topo to be reordered.
+         * @param coordset A node containing the coordset to be reordered.
+         * @param fields   A node containing the fields to be reordered. Only fields
+         *                 that match the topology node name will be modified.
+         * @param order    A vector containing element indices in their new order.
+         * @param dest_topo A node that will contain reordered topo. It can
+         *                  be the same node as topo.
+         * @param dest_coordset A node that will contain reordered coordset. It can
+         *                  be the same node as coordset.
+         * @param dest_fields A node that will contain the reordered fields. It can
+         *                  be the same node as fields.
+         * @param[out] old2NewPoints A vector that contains new point indices for
+         *                           old point indices, which can be used for mapping
+         *                           data from the original order to the new order.
+         *
+         * @note This reorder function is similar to calling partition with an explicit
+         *       index selection if the indices are provided in a new order. This
+         *       function will also reorder the nodes in their order of use by elements
+         *       in the new order and partition does not currently do that.
+         */
+        void CONDUIT_BLUEPRINT_API reorder(const conduit::Node &topo,
+                                           const conduit::Node &coordset,
+                                           const conduit::Node &fields,
+                                           const std::vector<conduit::index_t> &order,
+                                           conduit::Node &dest_topo,
+                                           conduit::Node &dest_coordset,
+                                           conduit::Node &dest_fields,
+                                           std::vector<conduit::index_t> &old2NewPoints);
     }
     //-------------------------------------------------------------------------
     // -- end conduit::blueprint::mesh::utils::topology::unstructured --

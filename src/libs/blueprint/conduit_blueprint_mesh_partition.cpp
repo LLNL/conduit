@@ -812,6 +812,17 @@ SelectionExplicit::determine_is_whole(const conduit::Node &n_mesh) const
             for(index_t i = 0; i < n; i++)
                 unique.insert(indices[i]);
             is_whole = static_cast<index_t>(unique.size()) == num_elem_in_mesh;
+
+            // If the mesh is whole, check that the indices are all in ascending
+            // order. If not, we're reordering and we should not consider the
+            // chunk available for passing through whole.
+            if(n > 1)
+            {
+                for(index_t i = 1; i < n && is_whole; i++)
+                {
+                    is_whole &= (indices[i - 1] < indices[i]);
+                }
+            }
         }
     }
     catch(conduit::Error &)
@@ -2768,11 +2779,11 @@ Partitioner::copy_field(const conduit::Node &n_field,
             for(index_t i = 0; i < n_values.number_of_children(); i++)
             {
                 const conduit::Node &n_vals = n_values[i];
-                slice_array(n_vals, ids, new_values[n_vals.name()]);
+                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
             }
         }
         else
-            slice_array(n_values, ids, new_values);
+            conduit::blueprint::mesh::utils::slice_array(n_values, ids, new_values);
     }
     else
     {
@@ -2785,130 +2796,11 @@ Partitioner::copy_field(const conduit::Node &n_field,
             for(index_t i = 0; i < n.number_of_children(); i++)
             {
                 const conduit::Node &n_vals = n[i];
-                slice_array(n_vals, ids, new_values[n_vals.name()]);
+                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
             }
         }
         else
-            slice_array(n, ids, new_values);
-    }
-}
-
-//---------------------------------------------------------------------------
-// @brief Slice the n_src array using the indices stored in ids. We use the
-//        array classes for their [] operators that deal with interleaved
-//        and non-interleaved arrays.
-template <typename T>
-inline void
-typed_slice_array(const T &src, const std::vector<index_t> &ids, T &dest)
-{
-    size_t n = ids.size();
-    for(size_t i = 0; i < n; i++)
-        dest[i] = src[ids[i]];
-}
-
-//---------------------------------------------------------------------------
-// @note Should this be part of conduit::Node or DataArray somehow. The number
-//       of times I've had to slice an array...
-void
-Partitioner::slice_array(const conduit::Node &n_src_values,
-    const std::vector<index_t> &ids, Node &n_dest_values) const
-{
-    // Copy the DataType of the input conduit::Node but override the number of elements
-    // before copying it in so assigning to n_dest_values triggers a memory
-    // allocation.
-    auto dt = n_src_values.dtype();
-    n_dest_values = DataType(n_src_values.dtype().id(), ids.size());
-
-    // Do the slice.
-    if(dt.is_int8())
-    {
-        auto dest(n_dest_values.as_int8_array());
-        typed_slice_array(n_src_values.as_int8_array(), ids, dest);
-    }
-    else if(dt.is_int16())
-    {
-        auto dest(n_dest_values.as_int16_array());
-        typed_slice_array(n_src_values.as_int16_array(), ids, dest);
-    }
-    else if(dt.is_int32())
-    {
-        auto dest(n_dest_values.as_int32_array());
-        typed_slice_array(n_src_values.as_int32_array(), ids, dest);
-    }
-    else if(dt.is_int64())
-    {
-        auto dest(n_dest_values.as_int64_array());
-        typed_slice_array(n_src_values.as_int64_array(), ids, dest);
-    }
-    else if(dt.is_uint8())
-    {
-        auto dest(n_dest_values.as_uint8_array());
-        typed_slice_array(n_src_values.as_uint8_array(), ids, dest);
-    }
-    else if(dt.is_uint16())
-    {
-        auto dest(n_dest_values.as_uint16_array());
-        typed_slice_array(n_src_values.as_uint16_array(), ids, dest);
-    }
-    else if(dt.is_uint32())
-    {
-        auto dest(n_dest_values.as_uint32_array());
-        typed_slice_array(n_src_values.as_uint32_array(), ids, dest);
-    }
-    else if(dt.is_uint64())
-    {
-        auto dest(n_dest_values.as_uint64_array());
-        typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
-    }
-    else if(dt.is_char())
-    {
-        auto dest(n_dest_values.as_char_array());
-        typed_slice_array(n_src_values.as_char_array(), ids, dest);
-    }
-    else if(dt.is_short())
-    {
-        auto dest(n_dest_values.as_short_array());
-        typed_slice_array(n_src_values.as_short_array(), ids, dest);
-    }
-    else if(dt.is_int())
-    {
-        auto dest(n_dest_values.as_int_array());
-        typed_slice_array(n_src_values.as_int_array(), ids, dest);
-    }
-    else if(dt.is_long())
-    {
-        auto dest(n_dest_values.as_long_array());
-        typed_slice_array(n_src_values.as_long_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_char())
-    {
-        auto dest(n_dest_values.as_unsigned_char_array());
-        typed_slice_array(n_src_values.as_unsigned_char_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_short())
-    {
-        auto dest(n_dest_values.as_unsigned_short_array());
-        typed_slice_array(n_src_values.as_unsigned_short_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_int())
-    {
-        auto dest(n_dest_values.as_unsigned_int_array());
-        typed_slice_array(n_src_values.as_unsigned_int_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_long())
-    {
-        auto dest(n_dest_values.as_unsigned_long_array());
-        typed_slice_array(n_src_values.as_unsigned_long_array(), ids, dest);
-    }
-    else if(dt.is_float())
-    {
-        auto dest(n_dest_values.as_float_array());
-        typed_slice_array(n_src_values.as_float_array(), ids, dest);
-    }
-    else if(dt.is_double())
-    {
-        auto dest(n_dest_values.as_double_array());
-        typed_slice_array(n_src_values.as_double_array(), ids, dest);
+            conduit::blueprint::mesh::utils::slice_array(n, ids, new_values);
     }
 }
 
@@ -3270,7 +3162,7 @@ Partitioner::create_new_rectilinear_coordset(const conduit::Node &n_coordset,
             indices.push_back(i);
 
         const conduit::Node &src = n_values[d];
-        slice_array(src, indices, n_new_values[src.name()]);
+        conduit::blueprint::mesh::utils::slice_array(src, indices, n_new_values[src.name()]);
     }
 }
 
@@ -3292,7 +3184,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
     else if(n_coordset["type"].as_string() == "rectilinear")
@@ -3306,7 +3198,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
     else if(n_coordset["type"].as_string() == "explicit")
@@ -3318,7 +3210,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
 }
