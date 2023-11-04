@@ -7507,12 +7507,85 @@ mesh::partition(const conduit::Node &n_mesh,
     }
 }
 
+//-------------------------------------------------------------------------
 void mesh::partition_map_back(const Node& repart_mesh,
                               const Node& options,
                               Node& orig_mesh)
 {
     mesh::Partitioner p;
     p.map_back_fields(repart_mesh, options, orig_mesh);
+}
+
+//-------------------------------------------------------------------------
+void mesh::generate_boundary_partition_field(const conduit::Node &topo,
+                                             const conduit::Node &partField,
+                                             const conduit::Node &btopo,
+                                             conduit::Node &bpartField)
+{
+    // Basic checks.
+    if(topo.has_child("coordset") && btopo.has_child("coordset"))
+    {
+        if(topo.fetch_existing("coordset").as_string() != btopo.fetch_existing("coordset").as_string())
+        {
+            CONDUIT_ERROR("Input topologies must use the same coordset.");
+        }
+    }
+    if(partField.has_child("topology") && (partField.fetch_existing("topology").as_string() != topo.name()))
+    {
+        CONDUIT_ERROR("The partition field must be associated with the " << topo.name() << " topology.");
+    }
+
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+
+    // Produce the external "faces" of the domain and for each "face", hash
+    // its node ids and associate that hash with the parent zone for the face.
+    auto d = static_cast<size_t>(conduit::blueprint::mesh::utils::topology::dims(btopo));
+    std::vector<std::pair<size_t, size_t>> desired_maps{{d, d + 1}};
+    bputils::TopologyMetadata md(topo, *coordset, d, desired_maps);
+    const conduit::Node &dtopo = md.get_topology(d);
+    auto nent = md.get_topology_length(d);
+    std::map<conduit::uint64, int> hashToZone;
+    for (conduit::index_t ei = 0; ei < nent; ei++)
+    {
+        // The global associatino for this "face" tells us how many elements
+        // it belongs to. If there is just one parent, it is external and can
+        // belong to the boundary.
+        const auto vv = md.get_global_association(ei, d, d + 1);
+        if (vv.size() == 1)
+        {
+            // Get the ids that make up the entity and hash them.
+            auto ids = conduit::blueprint::mesh::utils::topology::unstructured::points(dtopo, ei);
+            std::sort(ids.begin(), ids.end());
+            conduit::uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+
+            // Save hash to parent zone.
+            hashToZone[h] = vv[0];
+        }
+    }
+
+    // Get the partition field.
+    const auto f = partField.fetch_existing("values").as_int32_accessor();
+
+    // Now, iterate through the boundary topology, hash each entity's ids
+    // and try to look up the parent zone. The hashToZone map should contain
+    // all possible external faces for the domain so the boundary should be
+    // a subset of that.
+    auto blen = conduit::blueprint::mesh::topology::length(btopo);
+    bpartField.reset();
+    bpartField["association"] = "element";
+    bpartField["topology"] = btopo.name();
+    bpartField["values"].set(conduit::DataType::int32(blen));
+    auto bndPartition = bpartField["values"].as_int32_ptr();
+    for (conduit::index_t ei = 0; ei < blen; ei++)
+    {
+        // Get the ids that make up the entity and hash them.
+        auto ids = conduit::blueprint::mesh::utils::topology::unstructured::points(btopo, ei);
+        std::sort(ids.begin(), ids.end());
+        conduit::uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+
+        auto it = hashToZone.find(h);
+        bndPartition[ei] = (it != hashToZone.end()) ? f[it->second] : 0;
+    }
 }
 
 //-------------------------------------------------------------------------

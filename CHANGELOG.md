@@ -20,9 +20,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise()` function that can compare adjsets for multi-domain meshes in parallel. The function is used to diagnose adjsets with points that are out of order on either side of the boundary. The comparison is done point by point within each group and it checks to ensure that the points reference the same spatial location.
 - Added a `conduit::blueprint::mesh::utils::reorder()` function that can accept a vector of element ids and create a reordered topology. The points and coordinates are re-ordered according to their first use in the new element ordering.
 - Added a `conduit::blueprint::mesh::utils::topology::spatial_ordering()` function that takes a topology and computes centroids for each element, passes them through a kdtree, and returns the new element ordering. The new ordering can be used with the `reorder()` function.
+- Added a `conduit::blueprint::mesh::utils::topology::hilbert_ordering()` function that computes a new order for a topology's elements based on their centroids and a Hilbert curve. The new ordering can be used with the `reorder()` function.
 - Added a `conduit::blueprint::mesh::utils::slice_array()` function that can slice Conduit nodes that contain arrays. A new node with the same type is created but it contains only the selected indices.
 - Added a `conduit::blueprint::mesh::utils::slice_field()` function. It is like `slice_array()` but it can handle the mcarray protocol. This functionality was generalized from the partitioner.
+- Added a `conduit::blueprint::mesh::utils::topology::unstructured::rewrite_connectivity()` function that will rewrite a topology's connectivity in terms of a different coordset. The PointQuery is used internally to search for equivalent coordinates in the new coordset.
+- Added a `conduit::blueprint::mesh::utils::copy_fields()` function that helps copy fields from one fields node to another.
+- Added a `conduit::blueprint::mesh::utils::convert()` function that converts a list of nodes to a desired data type.
+- Added a `conduit::blueprint::mesh::generate_boundary_partition_field()` function that can take a topology and a partition field and generate a field for a related boundary topology. This is helpful when partitioning a boundary topology in the same manner as its parent topology.
 - Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
+
 
 ### Changed
 
