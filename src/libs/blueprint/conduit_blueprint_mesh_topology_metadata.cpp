@@ -3647,7 +3647,6 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
     const Node &topo_elem_offsets = dim_topos[topo_shape.dim]["elements/offsets"];
     const auto elem_conn_access = topo_elem_conn.as_index_t_accessor();
     const auto elem_offsets_access = topo_elem_offsets.as_index_t_accessor();
-    index_t topo_conn_len = 0;
     for(index_t ei = 0; ei < topo_num_elems; ei++)
     {
         index_t bi = topo_num_coords + ei;
@@ -3656,7 +3655,6 @@ TopologyMetadata::TopologyMetadata(const conduit::Node &topology,
         index_t entity_end_index = (ei < topo_num_elems - 1) ? elem_offsets_access[ei + 1] : 
                                        topo_elem_conn.dtype().number_of_elements();
         index_t entity_size = entity_end_index - entity_start_index;
-        topo_conn_len += entity_size;
 
         // Get the vector we'll populate.
         std::vector<int64> &elem_indices = entity_index_bag[bi];

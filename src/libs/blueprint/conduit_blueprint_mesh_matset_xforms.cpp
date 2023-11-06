@@ -444,17 +444,11 @@ to_silo(const conduit::Node &field,
     for(index_t elem_index = 0, slot_index = 0; elem_index < mset_num_elems; elem_index++)
     {
         const std::map<index_t, float64>& elem_mat_map = elem_mat_maps[elem_index];
-        if(elem_mat_map.size() == 0)
+        CONDUIT_ASSERT(elem_mat_map.size() != 0, "A zone has no materials.");
+        if (elem_mat_map.size() == 1)
         {
             temp.reset();
-            temp.set(0);
-            data.set_external(int_dtype, dest["matlist"].element_ptr(elem_index));
-            temp.to_data_type(int_dtype.id(), data);
-        }
-        else if(elem_mat_map.size() == 1)
-        {
-            temp.reset();
-            temp.set(elem_mat_map.begin()->first + 1);
+            temp.set(elem_mat_map.begin()->first);
             data.set_external(int_dtype, dest["matlist"].element_ptr(elem_index));
             temp.to_data_type(int_dtype.id(), data);
         }
@@ -548,7 +542,7 @@ to_silo(const conduit::Node &matset,
 
 
 //-----------------------------------------------------------------------------
-// -- begin conduit::blueprint::mesh::matset --
+// -- begin conduit::blueprint::mesh::field --
 //-----------------------------------------------------------------------------
 namespace field
 {

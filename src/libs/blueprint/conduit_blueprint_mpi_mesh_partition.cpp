@@ -775,7 +775,7 @@ ParallelPartitioner::get_prelb_adjset_maps(const std::vector<int>& chunk_offsets
     }
 
     conduit::relay::mpi::communicate_using_schema C(comm);
-    C.set_logging(true);
+    //C.set_logging(true);
 
     // 2. Setup nonblocking sends.
     for (const auto& send_dom : send_rank)
@@ -871,7 +871,7 @@ ParallelPartitioner::communicate_mapback(std::unordered_map<index_t, Node>& pack
     }
 
     conduit::relay::mpi::communicate_using_schema C(comm);
-    C.set_logging(true);
+    //C.set_logging(true);
 
     constexpr int MAPBACK_TAG_BASE = 16000;
 

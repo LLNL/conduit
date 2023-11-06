@@ -385,7 +385,7 @@ MatchQuery::execute()
                    m_comm);
 
     // Look up a rank that owns a domain.
-    auto domain_to_rank = [&ntuple_values](const std::vector<int> &allqueries, int d) -> int
+    auto domain_to_rank = [=](const std::vector<int> &allqueries, int d) -> int
     {
         for(size_t i = 0; i < allqueries.size(); i += ntuple_values)
         {
@@ -633,6 +633,113 @@ adjset::validate(const Node &doms,
     // Make sure all ranks agree on the answer.
     retval = agree(retval, comm);
     return retval;
+}
+
+//-----------------------------------------------------------------------------
+bool
+adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MPI_Comm comm)
+{
+    namespace bputils = conduit::blueprint::mesh::utils;
+    std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
+
+    // Determine total number of domains.
+    conduit::Node nd_local, nd_total;
+    nd_local = static_cast<int>(domains.size());
+    relay::mpi::sum_all_reduce(nd_local, nd_total, comm);
+    int maxDomains = nd_total.to_int();
+    const int par_rank = relay::mpi::rank(comm);
+
+    // Figure out which MPI ranks own each domain.
+    conduit::Node n_domain2rank;
+    {
+        conduit::Node n_local(DataType::int32(maxDomains));
+        int *iptr = n_local.as_int_ptr();
+        memset(iptr, 0, sizeof(int) * maxDomains);
+        for(size_t i = 0; i < domains.size(); i++)
+        {
+            auto domainId = bputils::find_domain_id(*domains[i]);
+            iptr[domainId] = par_rank;
+        }
+        relay::mpi::sum_all_reduce(n_local, n_domain2rank, comm);
+    }
+    const int *domain2rank = n_domain2rank.as_int_ptr();
+
+    // Iterate over each of the possible adjset relationships. Not all of these
+    // will have adjset groups.
+    const int tag = 12211221;
+    for(int d0 = 0; d0 < maxDomains; d0++)
+    {
+        for(int d1 = d0 + 1; d1 < maxDomains; d1++)
+        {
+            // make the adjset group name.
+            std::stringstream ss;
+            ss << "group_" << d0 << "_" << d1;
+            std::string groupName(ss.str());
+
+            // There are up to 2 local meshes and their corresponding remote mesh.
+            relay::mpi::communicate_using_schema C(comm);
+            conduit::Node localMesh[2], remoteMesh[2];
+            int mi = 0;            
+            for(auto dom_ptr : domains)
+            {
+                Node &domain = *dom_ptr;
+
+                // If the domain has the adjset, make a point mesh of its points
+                // that we can send to the neighbor.
+                std::string key("adjsets/" + adjsetName + "/groups/" + groupName + "/values");
+                if(domain.has_path(key))
+                {
+                    // Get the topology that the adjset wants.
+                    std::string tkey("adjsets/" + adjsetName + "/topology");
+                    std::string topoName = domain.fetch_existing(tkey).as_string();
+                    const Node &topo = domain.fetch_existing("topologies/" + topoName);
+
+                    // Get the group values and add them as points to the topo builder
+                    // so we pull out a point mesh.
+                    std::string key("adjsets/" + adjsetName + "/groups/" + groupName + "/values");
+                    const Node &n_values = domain.fetch_existing(key);
+                    const auto values = n_values.as_index_t_accessor();
+                    bputils::topology::TopologyBuilder B(topo);
+                    for(index_t i = 0; i < values.number_of_elements(); i++)
+                    {
+                        index_t ptid = values[i];
+                        B.add(&ptid, 1);
+                    }
+
+                    // Make the local point mesh.
+                    B.execute(localMesh[mi], "vertex");
+
+                    // Get the neighbor for this group
+                    std::string nkey("adjsets/" + adjsetName + "/groups/" + groupName + "/neighbors");
+                    int neighbor = domain.fetch_existing(nkey).to_int();
+
+                    // Send this local mesh to the neighbor.
+                    C.add_isend(localMesh[mi], domain2rank[neighbor], tag + mi);
+                    // That neighbor will have to send us a mesh too.
+                    C.add_irecv(remoteMesh[mi], domain2rank[neighbor], tag + mi);
+
+                    mi++;
+                }
+            }
+
+            // Perform the exchange.
+            C.execute();
+
+            // Make sure the nodes are not different.
+            Node different, reducedDiff;
+            different = 0;
+            for(int i = 0; i < mi; i++)
+            {
+                Node info;
+                bool d = localMesh[i].diff(remoteMesh[i], info, 1.e-8);
+                different = different.to_int() + (d ? 1 : 0);
+            }
+            relay::mpi::sum_all_reduce(different, reducedDiff, comm);
+            if(reducedDiff.to_int() > 0)
+                return false;
+        }
+    }
+    return true;
 }
 
 //-----------------------------------------------------------------------------
