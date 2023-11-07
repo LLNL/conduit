@@ -115,7 +115,7 @@ Contributors
 - Mark Miller (LLNL)
 - Todd Gamblin (LLNL)
 - Kevin Huynh (LLNL)
-- Brad Whitlock (Intelligent Light)
+- Brad Whitlock (LLNL)
 - Chris Laganella (Intelligent Light)
 - George Aspesi (Harvey Mudd)
 - Justin Bai (Harvey Mudd)

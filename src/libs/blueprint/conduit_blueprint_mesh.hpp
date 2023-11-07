@@ -162,7 +162,7 @@ void CONDUIT_BLUEPRINT_API paint_adjset(const std::string &adjset_name,
 /**
  @brief Partition an input mesh or set of mesh domains into a different decomposition,
         according to options. This is the serial implementation.
- @param n_mesh  A Conduit node containing a Blueprint mesh or set of mesh domains.
+ @param mesh    A Conduit node containing a Blueprint mesh or set of mesh domains.
  @param options A Conduit node containing options that govern the partitioning.
  @param[out]    A Conduit node to accept the repartitioned mesh(es).
  */
@@ -188,7 +188,24 @@ void CONDUIT_BLUEPRINT_API partition(const conduit::Node &mesh,
 void CONDUIT_BLUEPRINT_API partition_map_back(const conduit::Node& repart_mesh,
                                               const conduit::Node& options,
                                               conduit::Node& orig_mesh);
+//-------------------------------------------------------------------------
+/**
+ @brief Take a partition field on the source mesh and make a corresponding field
+        on the boundary mesh so it can be partitioned in a compatible way in
+        another call to partition.
 
+ @param topo       The source topology.
+ @param partField  The partition field.
+ @param btopo      The boundary topology.
+ @param bpartField The node that will contain the new field.
+
+ */
+void CONDUIT_BLUEPRINT_API generate_boundary_partition_field(const conduit::Node &topo,
+                                                             const conduit::Node &partField,
+                                                             const conduit::Node &btopo,
+                                                             conduit::Node &bpartField);
+
+//-------------------------------------------------------------------------
 /**
  @brief Convert the given blueprint mesh into a blueprint table.
  @param mesh    A Conduit node containing a blueprint mesh or set of mesh domains.
@@ -354,6 +371,16 @@ namespace coordset
     //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API generate_strip(const conduit::Node& coordset,
                                               conduit::Node& coordset_dest);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Convert the coordset, no matter its type, to explicit.
+
+     @param coordset The input coordset.
+     @param[out] coordset_dest The output coordset.
+     */
+    void CONDUIT_BLUEPRINT_API to_explicit(const conduit::Node& coordset,
+                                           conduit::Node& coordset_dest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::coordset::uniform protocol interface

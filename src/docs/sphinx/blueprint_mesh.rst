@@ -1687,6 +1687,98 @@ equal to half the number of prisms.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+
+tiled
++++++++++
+
+The ``tiled()`` function repeats a tile (given as a 2D Blueprint topology) into a larger mesh composed of
+a regular square tiling of the supplied tile. If no topology is given, a default pattern consisting of quads
+is used. The output mesh can be either 2D or 3D. For 3D, supply a ``nz`` parameter greater than zero. Note
+that the input tile must consist of a homogeneous set of triangles or quads to extrude the tile into 3D since
+polyhedral output is not yet supported. The ``tiled()`` function produces a single domain comprised of a
+main mesh, a boundary mesh, and adjacency sets if the output mesh is to be part of a multi-domain dataset.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::tiled(index_t nx,                   // number of tiles along x
+                                              index_t ny,                   // number of tiles along y
+                                              index_t nz,                   // number of elements along z (0 for 2D)
+                                              conduit::Node &res,           // result container
+                                              const conduit::Node &options);// options node
+
+The ``tiled()`` function accepts a Conduit node containing options that influence how the mesh is generated.
+If the options contain a ``tile`` node that contains a 2D blueprint topology, the first supplied topology will
+be used to override the default tile pattern. The ``tile`` node may contain additional options.
+An important set of options define the left, right, bottom, and top sets of points within the supplied tile
+pattern. The values in the ``left`` option identify the list of points that define the left edge of the tile.
+These are indices into the coordset and the values should be in consecutive order along the edge. Opposite point
+sets must match. In other words, the left and right point sets must contain the same number of points and
+they need to proceed along their edges in the same order. The same is true of the bottom and top point sets.
+The optional ``translate/x`` and ``translate/y`` options determine the tile spacing. If the translation
+values are not given, they will be determined from the coordset extents.
+
+The remaining options described are not part of the ``tile`` node. The ``reorder`` option indicates the
+type of point and element reordering that will be done. Reordering can improve cache-friendliness. The
+default is to reorder points and elements, using "kdtree" method. Passing "none" or an empty string will
+prevent reordering. The name of the mesh can be given by passing a ``meshname`` option string. Likewise,
+the name of the boundary mesh can be supplied using the ``boundarymeshname`` option. The output mesh
+topology will store its integer connectivity information as index_t by default. The precision of the
+integer output can turned to int32 by passing a ``datatype`` option containing the "int", "int32",
+"integer" strings.
+
+The ``tiled()`` function also accepts options that simplify the task of generating
+mesh domains for a multi-domain dataset. The coordinate extents of the current mesh domain are given using
+the ``extents`` option, which contains 6 double values: {xmin, xmax, ymin, ymax, zmin, zmax}. The ``domains``
+option contains a triple of {domainsI, domainsJ, domainsK} values that indicate how many divisions there are
+of the extents in the I,J,K dimensions. The product of these numbers determines the total number of domains.
+The ``domain`` option specifies a triple indicating the I,J,K domain id within the overall set of domains.
+This is used to help construct adjacency sets.
+
+.. code:: yaml
+
+    tile:
+      # Define the tile
+      coordsets:
+        coords:
+          type: explicit
+          values:
+            x: [0., 1., 2., 0., 1., 2., 0., 1., 2.]
+            y: [0., 0.5, 0., 1., 1.5, 1., 2., 2.5, 2.]
+      topologies:
+        tile:
+          type: unstructured
+          coordset: coords
+          elements:
+            shape: tri
+            connectivity: [0,1,4, 0,4,3, 1,2,5, 1,5,4, 3,4,7, 3,7,6, 4,5,8, 4,8,7]
+      # Define the tile edges
+      left: [0,3,6]
+      right: [2,5,8]
+      bottom: [0,1,2]
+      top: [6,7,8]
+      # Optional tile translation
+      translate:
+        x: 2.
+        y: 2.
+    # Set some options that aid tiling.
+    reorder: kdtree
+    domain: [0,0,0]
+    domains: [2,2,2]
+    extents: [0., 0.5, 0., 0.5, 0., 0.5]
+
+.. figure:: tiled_single.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of zoneid for default tile mesh that has been reordered.
+
+.. figure:: tiled.png
+    :width: 600px
+    :align: center
+
+    Subset plots of multi-domain datasets created using the ``tiled()`` function.
+
+
 miscellaneous
 ++++++++++++++
 

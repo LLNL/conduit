@@ -71,3 +71,4 @@ blt_register_library(NAME parmetis
                      INCLUDES ${PARMETIS_INCLUDE_DIRS}
                      LIBRARIES ${PARMETIS_LIBRARIES} )
 
+set(CONDUIT_USE_PARMETIS TRUE)

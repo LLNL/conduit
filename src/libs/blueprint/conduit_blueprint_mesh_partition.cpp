@@ -812,6 +812,17 @@ SelectionExplicit::determine_is_whole(const conduit::Node &n_mesh) const
             for(index_t i = 0; i < n; i++)
                 unique.insert(indices[i]);
             is_whole = static_cast<index_t>(unique.size()) == num_elem_in_mesh;
+
+            // If the mesh is whole, check that the indices are all in ascending
+            // order. If not, we're reordering and we should not consider the
+            // chunk available for passing through whole.
+            if(n > 1)
+            {
+                for(index_t i = 1; i < n && is_whole; i++)
+                {
+                    is_whole &= (indices[i - 1] < indices[i]);
+                }
+            }
         }
     }
     catch(conduit::Error &)
@@ -2768,11 +2779,11 @@ Partitioner::copy_field(const conduit::Node &n_field,
             for(index_t i = 0; i < n_values.number_of_children(); i++)
             {
                 const conduit::Node &n_vals = n_values[i];
-                slice_array(n_vals, ids, new_values[n_vals.name()]);
+                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
             }
         }
         else
-            slice_array(n_values, ids, new_values);
+            conduit::blueprint::mesh::utils::slice_array(n_values, ids, new_values);
     }
     else
     {
@@ -2785,130 +2796,11 @@ Partitioner::copy_field(const conduit::Node &n_field,
             for(index_t i = 0; i < n.number_of_children(); i++)
             {
                 const conduit::Node &n_vals = n[i];
-                slice_array(n_vals, ids, new_values[n_vals.name()]);
+                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
             }
         }
         else
-            slice_array(n, ids, new_values);
-    }
-}
-
-//---------------------------------------------------------------------------
-// @brief Slice the n_src array using the indices stored in ids. We use the
-//        array classes for their [] operators that deal with interleaved
-//        and non-interleaved arrays.
-template <typename T>
-inline void
-typed_slice_array(const T &src, const std::vector<index_t> &ids, T &dest)
-{
-    size_t n = ids.size();
-    for(size_t i = 0; i < n; i++)
-        dest[i] = src[ids[i]];
-}
-
-//---------------------------------------------------------------------------
-// @note Should this be part of conduit::Node or DataArray somehow. The number
-//       of times I've had to slice an array...
-void
-Partitioner::slice_array(const conduit::Node &n_src_values,
-    const std::vector<index_t> &ids, Node &n_dest_values) const
-{
-    // Copy the DataType of the input conduit::Node but override the number of elements
-    // before copying it in so assigning to n_dest_values triggers a memory
-    // allocation.
-    auto dt = n_src_values.dtype();
-    n_dest_values = DataType(n_src_values.dtype().id(), ids.size());
-
-    // Do the slice.
-    if(dt.is_int8())
-    {
-        auto dest(n_dest_values.as_int8_array());
-        typed_slice_array(n_src_values.as_int8_array(), ids, dest);
-    }
-    else if(dt.is_int16())
-    {
-        auto dest(n_dest_values.as_int16_array());
-        typed_slice_array(n_src_values.as_int16_array(), ids, dest);
-    }
-    else if(dt.is_int32())
-    {
-        auto dest(n_dest_values.as_int32_array());
-        typed_slice_array(n_src_values.as_int32_array(), ids, dest);
-    }
-    else if(dt.is_int64())
-    {
-        auto dest(n_dest_values.as_int64_array());
-        typed_slice_array(n_src_values.as_int64_array(), ids, dest);
-    }
-    else if(dt.is_uint8())
-    {
-        auto dest(n_dest_values.as_uint8_array());
-        typed_slice_array(n_src_values.as_uint8_array(), ids, dest);
-    }
-    else if(dt.is_uint16())
-    {
-        auto dest(n_dest_values.as_uint16_array());
-        typed_slice_array(n_src_values.as_uint16_array(), ids, dest);
-    }
-    else if(dt.is_uint32())
-    {
-        auto dest(n_dest_values.as_uint32_array());
-        typed_slice_array(n_src_values.as_uint32_array(), ids, dest);
-    }
-    else if(dt.is_uint64())
-    {
-        auto dest(n_dest_values.as_uint64_array());
-        typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
-    }
-    else if(dt.is_char())
-    {
-        auto dest(n_dest_values.as_char_array());
-        typed_slice_array(n_src_values.as_char_array(), ids, dest);
-    }
-    else if(dt.is_short())
-    {
-        auto dest(n_dest_values.as_short_array());
-        typed_slice_array(n_src_values.as_short_array(), ids, dest);
-    }
-    else if(dt.is_int())
-    {
-        auto dest(n_dest_values.as_int_array());
-        typed_slice_array(n_src_values.as_int_array(), ids, dest);
-    }
-    else if(dt.is_long())
-    {
-        auto dest(n_dest_values.as_long_array());
-        typed_slice_array(n_src_values.as_long_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_char())
-    {
-        auto dest(n_dest_values.as_unsigned_char_array());
-        typed_slice_array(n_src_values.as_unsigned_char_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_short())
-    {
-        auto dest(n_dest_values.as_unsigned_short_array());
-        typed_slice_array(n_src_values.as_unsigned_short_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_int())
-    {
-        auto dest(n_dest_values.as_unsigned_int_array());
-        typed_slice_array(n_src_values.as_unsigned_int_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_long())
-    {
-        auto dest(n_dest_values.as_unsigned_long_array());
-        typed_slice_array(n_src_values.as_unsigned_long_array(), ids, dest);
-    }
-    else if(dt.is_float())
-    {
-        auto dest(n_dest_values.as_float_array());
-        typed_slice_array(n_src_values.as_float_array(), ids, dest);
-    }
-    else if(dt.is_double())
-    {
-        auto dest(n_dest_values.as_double_array());
-        typed_slice_array(n_src_values.as_double_array(), ids, dest);
+            conduit::blueprint::mesh::utils::slice_array(n, ids, new_values);
     }
 }
 
@@ -3270,7 +3162,7 @@ Partitioner::create_new_rectilinear_coordset(const conduit::Node &n_coordset,
             indices.push_back(i);
 
         const conduit::Node &src = n_values[d];
-        slice_array(src, indices, n_new_values[src.name()]);
+        conduit::blueprint::mesh::utils::slice_array(src, indices, n_new_values[src.name()]);
     }
 }
 
@@ -3292,7 +3184,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
     else if(n_coordset["type"].as_string() == "rectilinear")
@@ -3306,7 +3198,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
     else if(n_coordset["type"].as_string() == "explicit")
@@ -3318,7 +3210,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
 }
@@ -9337,6 +9229,16 @@ combine(const std::vector<Node> &inputs,
         out_matset["volume_fractions"][name].set(volume_fractions);
         out_matset["element_ids"][name].set(element_ids);
     }
+
+    // If the material_map does not exist, add it since it supplies the entire
+    // list of materials, which can be important when a domain does not have
+    // all materials.
+    if(!out_matset.has_child("material_map") && !material_map.empty())
+    {
+        Node &mm = out_matset["material_map"];
+        for(auto it = material_map.begin(); it != material_map.end(); it++)
+            mm[it->second] = it->first;
+    }
 }
 
 }
@@ -9993,6 +9895,12 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         }
     }
 
+    // Get a field prefix. Some of the mapping fields used here may have
+    // used a field_prefix when they were generated.
+    std::string field_prefix;
+    if(options.has_child("field_prefix"))
+       field_prefix = options.fetch_existing("field_prefix").as_string();
+
     // map repart domid -> orig domids
     vector<vector<index_t>> map_tgt_domains(repart_doms.size());
     // map repart domid -> orig domid -> original elem/vertex ids
@@ -10034,16 +9942,19 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // first.
     if (has_vert_fields)
     {
+        std::string global_vertex_ids(field_prefix + "global_vertex_ids");
+
         // map of orig domid -> global vert ids
         map<index_t, vector<index_t>> orig_dom_gvids;
         for (const auto& dom_ent : gid_to_orig_dom)
         {
             index_t orig_idx = dom_ent.first;
             const Node& orig_dom = *dom_ent.second;
+            const Node& orig_dom_fields = orig_dom.fetch_existing("fields");
             vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
-            if (orig_dom["fields"].has_child("global_vertex_ids"))
+            if (orig_dom_fields.has_child(global_vertex_ids))
             {
-                const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
+                const index_t_accessor gvids = orig_dom_fields[global_vertex_ids + "/values"].value();
                 orig_gvids.resize(gvids.number_of_elements());
                 for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
                 {
@@ -10063,12 +9974,13 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
 
         for (index_t repart_idx = 0; repart_idx < static_cast<index_t>(repart_doms.size()); repart_idx++)
         {
-            const conduit::Node& dom = *repart_doms[repart_idx];
+            const Node& dom = *repart_doms[repart_idx];
+            const Node& dom_fields = dom.fetch_existing("fields");
 
             std::unordered_map<index_t, index_t> gvid_to_repart_vid;
-            if (dom["fields"].has_child("global_vertex_ids"))
+            if (dom_fields.has_child(global_vertex_ids))
             {
-                const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
+                const Node& global_vid_node = dom_fields[global_vertex_ids + "/values"];
                 const index_t_accessor gvids = global_vid_node.value();
                 for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
                 {

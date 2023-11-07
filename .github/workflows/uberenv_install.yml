@@ -7,42 +7,43 @@ on:
 jobs:
   uberenv_install_ubuntu_latest:
     name: Uberenv Install ubuntu-latest
+    container: alpinedav/ascent-ci:ubuntu-22.04-devel
     runs-on: ubuntu-latest
     steps:
-    - name: Install Deps
-      run: |
-           sudo apt-get update
-           sudo apt-get install binutils \
-                                gcc \
-                                g++ \
-                                gfortran \
-                                python3 \
-                                perl \
-                                git \
-                                git-lfs \
-                                curl \
-                                wget \
-                                tar \
-                                unzip \
-                                build-essential \
-                                libncurses-dev \
-                                libssl-dev \
-                                libblas-dev \
-                                liblapack-dev \
-                                zlib1g-dev \
-                                libgdbm-dev \
-                                libreadline-dev \
-                                libsqlite3-dev \
-                                libbz2-dev \
-                                mpich \
-                                libmpich-dev \
-                                libhdf5-dev 
+    # - name: Install Deps
+    #   run: |
+    #        sudo apt-get update
+    #        sudo apt-get install binutils \
+    #                             gcc \
+    #                             g++ \
+    #                             gfortran \
+    #                             python3 \
+    #                             perl \
+    #                             git \
+    #                             git-lfs \
+    #                             curl \
+    #                             wget \
+    #                             tar \
+    #                             unzip \
+    #                             build-essential \
+    #                             libncurses-dev \
+    #                             libssl-dev \
+    #                             libblas-dev \
+    #                             liblapack-dev \
+    #                             zlib1g-dev \
+    #                             libgdbm-dev \
+    #                             libreadline-dev \
+    #                             libsqlite3-dev \
+    #                             libbz2-dev \
+    #                             mpich \
+    #                             libmpich-dev \
+    #                             libhdf5-dev
     - uses: actions/checkout@v2
       with:
         submodules: 'recursive'
     - name: Install
       run: |
-        python3 scripts/uberenv/uberenv.py --install --prefix="build"
+        python3 scripts/uberenv/uberenv.py --install --prefix="build" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
 
 
 

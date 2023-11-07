@@ -51,9 +51,10 @@
 
 #cmakedefine CONDUIT_USE_OPENMP
 
+#cmakedefine CONDUIT_USE_PARMETIS
+
 #cmakedefine CONDUIT_USE_TOTALVIEW
 
 #endif
-
 
 

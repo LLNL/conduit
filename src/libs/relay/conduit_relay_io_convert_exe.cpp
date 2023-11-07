@@ -13,6 +13,7 @@
 #ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
 #include "conduit_relay_io_hdf5.hpp"
 #endif
+#include "conduit_relay_io_blueprint.hpp"
 #include <iostream>
 #include <stdlib.h>
 
@@ -24,20 +25,24 @@ using namespace conduit::relay;
 void
 usage()
 {
-    std::cout << "usage: conduit_relay_io_convert {input file} {output file}"
+    std::cout << "usage: conduit_relay_io_convert {input file} {output file} [--read-protocol protocol] [--write-protocol protocol] [--opts filename] [--help]"
               << std::endl << std::endl 
               << " optional arguments:"
               << std::endl
-              << "  --read-proto  {relay protocol string used to read data file}"
+              << "  --read-protocol  {relay protocol} Protocol used to read data file, e.g. \"hdf5\""
               << std::endl
-              << "  --write-proto {relay protocol string used to read data file}"
-              << "  --opts  {options file}"
-              << std::endl << std::endl ;
+              << "  --write-protocol {relay protocol} Protocol used to write data file"
+              << std::endl
+              << "  --opts {options file}             Set options file used to initialize program."
+              << std::endl
+              << "  --help/-h                         Print usage and exit."
+              << std::endl
+              << std::endl;
 
 }
 
 //-----------------------------------------------------------------------------
-void
+int
 parse_args(int argc,
            char *argv[],
            std::string &input_file,
@@ -46,10 +51,16 @@ parse_args(int argc,
            std::string &write_proto,
            std::string &opts_file)
 {
+    int retval = 0;
     for(int i=1; i < argc ; i++)
     {
         std::string arg_str(argv[i]);
-        if(arg_str == "--read-protocol")
+        if(arg_str == "-h" || arg_str == "--help")
+        {
+            retval = -1;
+            break;
+        }
+        else if(arg_str == "--read-protocol")
         {
             if(i+1 >= argc )
             {
@@ -88,6 +99,7 @@ parse_args(int argc,
             output_file = arg_str;
         }
     }
+    return retval;
 }
 
 
@@ -108,13 +120,17 @@ main(int argc, char* argv[])
     std::string write_proto("");
     std::string opts_file("");
 
-    parse_args(argc,
-               argv,
-               input_file,
-               output_file,
-               read_proto,
-               write_proto,
-               opts_file);
+    if(parse_args(argc,
+                  argv,
+                  input_file,
+                  output_file,
+                  read_proto,
+                  write_proto,
+                  opts_file) < 0)
+    {
+        usage();
+        return -2;
+    }
 
     if(opts_file != "")
     {
@@ -144,6 +160,16 @@ main(int argc, char* argv[])
     {
         relay::io::load(input_file,data);
     }
+    else if(read_proto == "blueprint")
+    {
+        // NOTE: "blueprint" is not technically a protocol for Conduit but it
+        //        does require a different function to read.
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        relay::io::blueprint::load_mesh(input_file, data);
+#else
+        std::cout << "A Blueprint root file cannot be read without HDF5." << std::endl;
+#endif
+    }
     else
     {
         relay::io::load(input_file, read_proto, data);
@@ -153,6 +179,16 @@ main(int argc, char* argv[])
     {
         relay::io::save(data,output_file);
     }
+    else if(write_proto == "blueprint")
+    {
+        // NOTE: "blueprint" is not technically a protocol for Conduit but it
+        //        does require a different function to write.
+#ifdef CONDUIT_RELAY_IO_HDF5_ENABLED
+        relay::io::blueprint::save_mesh(data, output_file, "hdf5");
+#else
+        std::cout << "A Blueprint root file cannot be written without HDF5." << std::endl;
+#endif
+    }
     else
     {
         relay::io::save(data, output_file, write_proto);
@@ -160,6 +196,3 @@ main(int argc, char* argv[])
 
     return 0;
 }
-
-
-
