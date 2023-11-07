@@ -617,7 +617,7 @@ stages:
           #  this wasn't needed with older spack. 
           #  I think embedded linking logic is resolving symlinks and therefore
           #  not using view layout that wires up dependent python modules
-          py_site_pkgs_dir=`ls -d ${ROOT_DIR}/uberenv_libs/spack_view/lib/python*/site-packages
+          py_site_pkgs_dir=`ls -d ${ROOT_DIR}/uberenv_libs/spack_view/lib/python*/site-packages`
           export PYTHONPATH=${PYTHONPATH}:${py_site_pkgs_dir}
           echo $PYTHONPATH
           # CI LD_LIB FIX
