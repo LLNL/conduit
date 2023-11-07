@@ -301,21 +301,6 @@ if(PYTHON_FOUND)
     add_subdirectory(python)
 endif()
 
-
-###############################################################################
-# Special install targets for conduit fortran modules 
-###############################################################################
-if(FORTRAN_FOUND)
-    set(conduit_relay_fortran_modules
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_relay.mod)
-
-    # Setup install to copy the fortran modules 
-    install(FILES 
-            ${conduit_relay_fortran_modules}
-            DESTINATION include/conduit)
-endif()
-
-
 ################################################################
 # If we have mpi, add the conduit relay mpi library
 ################################################################

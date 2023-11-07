@@ -142,27 +142,6 @@ target_include_directories(conduit_blueprint
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
 
-
-if(FORTRAN_FOUND)
-    ###############################################################################
-    # Special install targets for conduit fortran modules
-    ###############################################################################
-
-    set(conduit_blueprint_fortran_modules
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mesh.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_mcarray.mod
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_blueprint_table.mod
-        )
-
-    # Setup install to copy the fortran modules
-    install(FILES
-            ${conduit_blueprint_fortran_modules}
-            DESTINATION include/conduit)
-
-endif()
-
-
 ###################################
 # add conduit_blueprint_verify exe
 ###################################

@@ -192,21 +192,11 @@ endif()
 
 
 ####################################################################
-# Special install targets for conduit fortran modules
+# Install target for conduit fortran modules
 ####################################################################
 if(FORTRAN_FOUND)
-    set(conduit_fortran_modules
-        ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit.mod)
-
-    if(ENABLE_FORTRAN_OBJ_INTERFACE)
-        list(APPEND conduit_fortran_modules
-                    ${CMAKE_Fortran_MODULE_DIRECTORY}/conduit_obj.mod)
-    endif()
-
-    # Setup install to copy the fortran modules
-    install(FILES
-            ${conduit_fortran_modules}
-            DESTINATION include/conduit)
+   install(DIRECTORY
+   ${CMAKE_Fortran_MODULE_DIRECTORY}/
+   DESTINATION include/conduit)
 endif()
-
 
