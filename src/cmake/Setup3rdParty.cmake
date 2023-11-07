@@ -70,6 +70,13 @@ if(ENABLE_RELAY_WEBSERVER)
     include_directories(thirdparty_builtin/civetweb-0a95342/include)
 endif()
 
+################################
+# Setup ZLib if available
+################################
+if(ZLIB_DIR)
+    include(cmake/thirdparty/SetupZlib.cmake)
+endif()
+
 if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy
