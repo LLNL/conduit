@@ -609,7 +609,7 @@ stages:
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
           # find spack installed python (use spack view dir)
-          export PYTHON_EXE=`ls ${ROOT_DIR}/uberenv_libs/spack_env/view/python*/bin/python3`
+          export PYTHON_EXE=`ls ${ROOT_DIR}/uberenv_libs/spack_view/bin/python3` 
           # add conduit module to python path
           export PYTHONPATH=${ROOT_DIR}/install/python-modules/
           # NOTE:
@@ -617,7 +617,7 @@ stages:
           #  this wasn't needed with older spack. 
           #  I think embedded linking logic is resolving symlinks and therefore
           #  not using view layout that wires up dependent python modules
-          py_site_pkgs_dir=`ls -d ${ROOT_DIR}/uberenv_libs/spack_env/view/python*/lib/python*/site-packages/`
+          py_site_pkgs_dir=`ls -d ${ROOT_DIR}/uberenv_libs/spack_view/bin/python3`
           export PYTHONPATH=${PYTHONPATH}:${py_site_pkgs_dir}
           echo $PYTHONPATH
           # CI LD_LIB FIX
