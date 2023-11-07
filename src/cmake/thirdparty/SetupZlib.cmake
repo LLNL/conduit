@@ -1,12 +1,12 @@
-###############################################################################
-# Copyright (c) Lawrence Livermore National Security, LLC and other Ascent
+# Copyright (c) Lawrence Livermore National Security, LLC and other Conduit
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
-# other details. No copyright assignment is required to contribute to Ascent.
+# other details. No copyright assignment is required to contribute to Conduit.
 ###############################################################################
+#
 
 ###############################################################################
 #
-# Setup ZLIB_DIR
+# Setup ZLIB
 #
 ###############################################################################
 
@@ -16,8 +16,3 @@ if(ZLIB_DIR)
 endif()
 
 message(STATUS "ZLIB_LIBRARIES: ${ZLIB_LIBRARIES}")
-
-# zlib dll
-if(ZLIB_DIR)
-    list(APPEND ASCENT_TPL_DLL_PATHS ${ZLIB_DIR}/bin/)
-endif()
