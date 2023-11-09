@@ -17,11 +17,13 @@ MS Visual Studio uses `XML files`_ with the extension .natvis to display custom 
 
 .. _instructions: https://learn.microsoft.com/en-us/visualstudio/debugger/create-custom-views-of-native-objects#add-a-natvis-file-to-a-c-project
 
-(add MSVS screenshot here)
+.. image:: debugger_MSVS_Conduit_list.png
+  :width: 772
+  :alt: Screenshot of MS Visual Studio debugger session using ConduitNode.natvis, showing list, scalar, object, and array Nodes
 
-The screenshot above shows how Visual Studio shows scalar, array, string, list, and object Nodes.
+The screenshot above shows how Visual Studio shows scalar, array, list, and object Nodes.
 
-Because of limits on what a .natvis file can do, it is possible that sequences of adding and removing child Nodes from an object Node can get the object in a state where the .natvis cannot understand it and shows incorrect data.  If you don't remove child Nodes from an object, the visualizer should show the correct data structure.
+Because of limits on what a .natvis file can do, adding and removing child Nodes from an object Node can get the object in a state where the .natvis cannot understand it and shows incorrect data.  If you don't remove child Nodes from an object, the visualizer should show the correct data structure.
 
 Totalview
 ---------
@@ -30,15 +32,21 @@ To display custom C++ objects, Totalview `requires you`_ to compile some extra f
 
 .. _requires you: https://help.totalview.io/classicTV/current/HTML/index.html#page/Reference_Guide/cppview.html
 
-(add Totalview screenshots here)
+.. image:: debugger_Totalview_Conduit_list_mainwindow.png
+  :width: 734
+  :alt: Screenshot of Totalview debugger session main window
 
-Totalview can display Nodes with scalar, array, string, list, and object data.
+Totalview can display Nodes with scalar, array, string, list, and object data.  Here is a screenshot of a the main window of a Totalview session stopped with a Node ``n`` in scope.
+
+.. image:: debugger_Totalview_Conduit_list_datawindows.png
+  :width: 903
+  :alt: Screenshot of Totalview debugger session data windows, showing object, list, scalar, and array Nodes
+
+On the left, the top window shows the contents of ``n``, a child Node named "mylist."  Lower left shows the contents of ``n["mylist"]``, a list of four Nodes.  Diving into each of the four nodes produces the windows on the right, showing the values of each.
 
 GDB
 ---
 
 GDB uses Python routines to display custom objects.  Configure and build a debug build of Conduit.  From within GDB, load ``conduit/src/debug/gdb/conduit-gdb.py``.
 
-(add gdb screenshot of loading the file and displaying Nodes)
-
-GDB can display all the types of Nodes.  It has the same kind of limitation as MS Visual Studio regarding object Nodes: you can add and remove Node children enough to confuse the debugger, but most use cases will work properly.
+The GDB debugger helper works in principle like the MSVS .natvis file.  At present, it is a work in progress (object Nodes don't display properly).
