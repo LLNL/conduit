@@ -22,5 +22,5 @@ with C++ and Python examples.
    tutorial_cpp_move_and_swap
    tutorial_cpp_utils
    tutorial_cpp_errors
-
+   tutorial_cpp_debugger
 

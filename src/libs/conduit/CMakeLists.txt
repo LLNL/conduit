@@ -98,6 +98,17 @@ set(conduit_sources
     conduit_annotations.cpp
     )
 
+if(TOTALVIEW_FOUND)
+  list(APPEND conduit_sources debug/conduit_node_totalview.cpp)
+  if(NOT CONDUIT_EXCLUDE_TV_DATA_DISPLAY)
+    list(APPEND conduit_sources ${TOTALVIEW_SOURCE_DIRECTORY}/tv_data_display.c)
+  endif()
+endif()
+
+if (CMAKE_GENERATOR MATCHES "Visual Studio")
+  list(APPEND conduit_sources ../../debug/msvs/ConduitNode.natvis)
+endif()
+
 #
 # Specify conduit c interface sources
 #
@@ -164,7 +175,8 @@ add_compiled_library(NAME   conduit
 target_include_directories(conduit
                            PUBLIC
                            $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+                           $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+                           $<$<BOOL:TOTALVIEW_FOUND>:${TOTALVIEW_INCLUDE_DIRECTORIES}>)
 
 
 #################################

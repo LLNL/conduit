@@ -53,7 +53,8 @@
 
 #cmakedefine CONDUIT_USE_PARMETIS
 
-#endif
+#cmakedefine CONDUIT_USE_TOTALVIEW
 
+#endif
 
 

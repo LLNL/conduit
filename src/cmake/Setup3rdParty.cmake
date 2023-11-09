@@ -190,3 +190,14 @@ if(CALIPER_DIR)
         message(FATAL_ERROR "CALIPER_DIR is set, but Caliper wasn't found.")
     endif()
 endif()
+
+################################
+# Setup Totalview if available
+################################
+# Search for Totalview.
+if(TOTALVIEW_DIR)
+    include(cmake/thirdparty/SetupTotalview.cmake)
+    if(NOT TOTALVIEW_FOUND)
+        message(WARNING "TOTALVIEW_DIR is set, but Totalview wasn't found.")
+    endif()
+endif()

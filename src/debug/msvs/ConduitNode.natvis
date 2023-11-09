@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?> 
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+    <Type Name="conduit::Node">
+        <!-- Node can be empty, object, list, or leaf. -->
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_EMPTY_ID">empty conduit::Node</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_OBJECT_ID">object {{ size: { m_children.size() } }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_LIST_ID">list {{ size: { m_children.size() } }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT8_ID">int8 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT16_ID">int16 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT32_ID">int32 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_INT64_ID">int64 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT8_ID">uint8 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT16_ID">uint16 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT32_ID">int32 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_UINT64_ID">int64 {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_FLOAT32_ID">float {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_FLOAT64_ID">double {{ size: {m_schema->m_dtype.m_num_ele} }}</DisplayString>
+        <DisplayString Condition="m_schema->m_dtype.m_id == CONDUIT_CHAR8_STR_ID">string: { (char *)m_data }</DisplayString>
+        <DisplayString>leaf value</DisplayString>
+        <Expand>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_LIST_ID">
+                <Size>m_children.size()</Size>
+                <ValuePointer>m_children._Mypair._Myval2._Myfirst</ValuePointer>
+            </ArrayItems>
+            <CustomListItems Condition="m_schema->m_dtype.m_id == CONDUIT_OBJECT_ID">
+                <Variable Name="i" InitialValue="0"/>
+                <Variable Name="hier" InitialValue="(conduit::Schema::Schema_Object_Hierarchy *)(m_schema->m_hierarchy_data)"/>
+                <Size>m_children.size()</Size>
+                <Loop Condition="i&lt;m_children.size()">
+                    <!-- This works only if the order of the children hasn't been messed up. -->
+                    <!-- I haven't found a way to get a temporary Node here in the loop. -->
+                    <Item Name="{hier->object_order[i]}">m_children[i]</Item>
+                    <Exec>i++</Exec>
+                </Loop>
+            </CustomListItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_INT8_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(signed char *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_INT16_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(signed short *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_INT32_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(signed int *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_INT64_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(signed long *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_UINT8_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(unsigned char *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_UINT16_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(unsigned short *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_UINT32_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(unsigned int *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_UINT64_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(unsigned long *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_FLOAT32_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(float *)m_data</ValuePointer>
+            </ArrayItems>
+            <ArrayItems Condition="m_schema->m_dtype.m_id == CONDUIT_FLOAT64_ID">
+                <Size>m_schema->m_dtype.m_num_ele</Size>
+                <ValuePointer>(double *)m_data</ValuePointer>
+            </ArrayItems>
+        </Expand>
+    </Type>
+</AutoVisualizer>
