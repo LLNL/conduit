@@ -106,10 +106,7 @@ silo_write(const Node &node,
                                     silo_obj_base);
 
     /// If silo_obj_base is empty, we have a problem ...
-    if(silo_obj_base.size() == 0)
-    {
-        CONDUIT_ERROR("Invalid path for save: " << path);
-    }
+    CONDUIT_ASSERT(silo_obj_base.size() != 0, "Invalid path for save: " << path);
 
     silo_write(node,file_path,silo_obj_base);
 }
@@ -128,10 +125,7 @@ silo_read(const std::string &path,
                                     silo_obj_base);
 
     /// If silo_obj_base is empty, we have a problem ...
-    if(silo_obj_base.size() == 0)
-    {
-        CONDUIT_ERROR("Invalid path for load: " << path);
-    }
+    CONDUIT_ASSERT(silo_obj_base.size() != 0, "Invalid path for load: " << path);
 
     silo_read(file_path,silo_obj_base,node);
 }
@@ -148,20 +142,9 @@ void silo_write(const Node &node,
                               NULL,
                               DB_HDF5);
 
-    if(dbfile)
-    {
-        silo_write(node,dbfile,silo_obj_path);
-    }
-    else
-    {
-        CONDUIT_ERROR("Error opening Silo file for writing: " << file_path );
-        return;
-    }
-
-    if(DBClose(dbfile) != 0)
-    {
-        CONDUIT_ERROR("Error closing Silo file: " << file_path);
-    }
+    CONDUIT_ASSERT(dbfile, "Error opening Silo file for writing: " << file_path);
+    silo_write(node,dbfile,silo_obj_path);
+    CONDUIT_ASSERT(DBClose(dbfile) == 0, "Error closing Silo file: " << file_path);
 }
 
 //---------------------------------------------------------------------------//
@@ -171,19 +154,9 @@ void silo_read(const std::string &file_path,
 {
     DBfile *dbfile = DBOpen(file_path.c_str(), DB_HDF5, DB_READ);
 
-    if(dbfile)
-    {
-        silo_read(dbfile,silo_obj_path,n);
-    }
-    else
-    {
-        CONDUIT_ERROR("Error opening Silo file for reading: " << file_path );
-    }
-
-    if(DBClose(dbfile) != 0)
-    {
-        CONDUIT_ERROR("Error closing Silo file: " << file_path );
-    }
+    CONDUIT_ASSERT(dbfile, "Error opening Silo file for reading: " << file_path);
+    silo_read(dbfile,silo_obj_path,n);
+    CONDUIT_ASSERT(DBClose(dbfile) == 0, "Error closing Silo file: " << file_path);
 }
 
 
@@ -243,10 +216,8 @@ void silo_read(DBfile *dbfile,
     DBReadVar(dbfile, src_json.c_str(), schema);
     DBReadVar(dbfile, src_data.c_str(), data);
 
-    if (schema == NULL || data == NULL)
-    {
-        CONDUIT_ERROR("Error extracting data conduit Node from Silo file");
-    }
+    CONDUIT_ASSERT(!(schema == NULL || data == NULL), 
+        "Error extracting data conduit Node from Silo file");
 
     Generator node_gen(schema, "conduit_json", data);
     /// gen copy
@@ -308,13 +279,7 @@ public:
     void setErrMsg(std::string newmsg) { errmsg = newmsg; }
     ~SiloObjectWrapperCheckError()
     {
-        if (obj)
-        {
-            if (del(obj) != 0 && !errmsg.empty())
-            {
-                CONDUIT_ERROR(errmsg);
-            }
-        }
+        CONDUIT_ASSERT(!(obj && del(obj) != 0 && !errmsg.empty()), errmsg);
     }
 };
 
@@ -608,10 +573,8 @@ copy_point_coords(const int datatype,
 {
     ndims = ndims < 3 ? ndims : 3;
     std::vector<const char *> labels = get_coordset_axis_labels(coord_sys);
-    if (coord_sys == DB_CYLINDRICAL && ndims >= 3)
-    {
-        CONDUIT_ERROR("Blueprint only supports 2D cylindrical coordinates");    
-    }
+    CONDUIT_ASSERT(!(coord_sys == DB_CYLINDRICAL && ndims >= 3), 
+        "Blueprint only supports 2D cylindrical coordinates");
     for (int i = 0; i < ndims; i ++)
     {
         if (coords[i] != NULL)
@@ -922,6 +885,35 @@ generate_silo_material_names(const Node &n_mesh_state,
 
         // we create the silo names
         name_strings.push_back(silo_name);
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+track_local_type_domain_info(Node &local_type_domain_info_comp,
+                             const std::string &comp_name,
+                             index_t local_num_domains,
+                             index_t local_domain_index,
+                             index_t global_domain_id,
+                             index_t comp_type,
+                             bool matsets = false)
+{
+    if (! local_type_domain_info_comp.has_child(comp_name))
+    {
+        local_type_domain_info_comp[comp_name]["domain_ids"].set(DataType::index_t(local_num_domains));
+        index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
+        domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
+        if (! matsets)
+        {
+            local_type_domain_info_comp[comp_name]["types"].set(DataType::index_t(local_num_domains));
+        }
+    }
+    index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
+    domain_ids[local_domain_index] = global_domain_id;
+    if (! matsets)
+    {
+        index_t_array comp_types = local_type_domain_info_comp[comp_name]["types"].value();
+        comp_types[local_domain_index] = comp_type;
     }
 }
 
@@ -1677,10 +1669,8 @@ open_or_reuse_file(const bool ovltop_case,
                 {
                     domain_file.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
                     domain_file.setErrMsg("Error closing Silo file: " + domain_filename);
-                    if (! (domain_file_to_use = domain_file.getSiloObject()))
-                    {
-                        CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
-                    }
+                    CONDUIT_ASSERT(domain_file_to_use = domain_file.getSiloObject(),
+                        "Error opening Silo file for reading: " << domain_filename);
                 }
             }
         }
@@ -1698,10 +1688,8 @@ open_or_reuse_file(const bool ovltop_case,
         {
             domain_file.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
             domain_file.setErrMsg("Error closing Silo file: " + domain_filename);
-            if (! (domain_file_to_use = domain_file.getSiloObject()))
-            {
-                CONDUIT_ERROR("Error opening Silo file for reading: " << domain_filename);
-            }
+            CONDUIT_ASSERT(domain_file_to_use = domain_file.getSiloObject(),
+                "Error opening Silo file for reading: " << domain_filename);
         }
     }
 
@@ -2623,11 +2611,8 @@ void silo_write_field(DBfile *dbfile,
     int centering = 0;
     int num_values = 0;
 
-    if (!n_var.has_path("association"))
-    {
-        CONDUIT_ERROR("Missing association! "
-                      << "fields/" << var_name << "/association");
-    }
+    CONDUIT_ASSERT(n_var.has_path("association"),
+        "Missing association! " << "fields/" << var_name << "/association");
 
     const std::string association = n_var["association"].as_string();
     if (association == "element")
@@ -2809,18 +2794,12 @@ void silo_write_field(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
     // bookkeeping
-    // TODO refactor so this is in a function call - we can share logic with meshes and mats
-    if (! local_type_domain_info["vars"].has_child(var_name))
-    {
-        local_type_domain_info["vars"][var_name]["domain_ids"].set(DataType::index_t(local_num_domains));
-        index_t_array domain_ids = local_type_domain_info["vars"][var_name]["domain_ids"].value();
-        domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
-        local_type_domain_info["vars"][var_name]["types"].set(DataType::index_t(local_num_domains));
-    }
-    index_t_array domain_ids = local_type_domain_info["vars"][var_name]["domain_ids"].value();
-    domain_ids[local_domain_index] = global_domain_id;
-    index_t_array var_types = local_type_domain_info["vars"][var_name]["types"].value();
-    var_types[local_domain_index] = var_type;
+    detail::track_local_type_domain_info(local_type_domain_info["vars"],
+                                         var_name,
+                                         local_num_domains,
+                                         local_domain_index,
+                                         global_domain_id,
+                                         var_type);
 }
 
 //---------------------------------------------------------------------------//
@@ -2865,19 +2844,15 @@ assign_coords_ptrs(void *coords_ptrs[3],
 int get_explicit_num_pts(const Node &n_vals)
 {
     auto val_itr = n_vals.children();
-    if (!val_itr.has_next())
-    {
-        CONDUIT_ERROR("Cannot count the number of points because no points given.");
-    }
+    CONDUIT_ASSERT(val_itr.has_next(),
+        "Cannot count the number of points because no points given.");
     const Node &n_first_val = val_itr.next();
     int num_pts = n_first_val.dtype().number_of_elements();
     while (val_itr.has_next())
     {
         const Node &n_val = val_itr.next();
-        if (num_pts != n_val.dtype().number_of_elements())
-        {
-            CONDUIT_ERROR("Number of points in explicit coordset does not match between dimensions.");
-        }
+        CONDUIT_ASSERT(num_pts == n_val.dtype().number_of_elements(),
+            "Number of points in explicit coordset does not match between dimensions.");
     }
     return num_pts;
 }
@@ -3280,11 +3255,7 @@ void silo_write_topo(const Node &mesh_domain,
     }
 
     // make sure we have coordsets
-
-    if (!mesh_domain.has_path("coordsets"))
-    {
-        CONDUIT_ERROR("mesh missing: coordsets");
-    }
+    CONDUIT_ASSERT(mesh_domain.has_path("coordsets"), "mesh missing: coordsets");
 
     // get this topo's coordset name
     std::string coordset_name = n_topo["coordset"].as_string();
@@ -3292,12 +3263,10 @@ void silo_write_topo(const Node &mesh_domain,
     n_mesh_info[topo_name]["coordset"].set(coordset_name);
 
     // obtain the coordset with the name
-    if (!mesh_domain["coordsets"].has_path(coordset_name))
-    {
-        CONDUIT_ERROR("mesh is missing coordset named "
-                      << coordset_name << " for topology named "
-                      << topo_name);
-    }
+    CONDUIT_ASSERT(mesh_domain["coordsets"].has_path(coordset_name),
+        "mesh is missing coordset named "
+        << coordset_name << " for topology named "
+        << topo_name);
 
     const Node &n_coords = mesh_domain["coordsets"][coordset_name];
 
@@ -3315,10 +3284,7 @@ void silo_write_topo(const Node &mesh_domain,
         DBMakeOptlist(1),
         &DBFreeOptlist,
         "Error freeing state optlist."};
-    if (!optlist.getSiloObject())
-    {
-        CONDUIT_ERROR("Error creating optlist");
-    }
+    CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
     CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
                                           DBOPT_COORDSYS,
                                           &silo_coordsys_type),
@@ -3331,11 +3297,9 @@ void silo_write_topo(const Node &mesh_domain,
         topo_type == "points")
     {
         // check for explicit coords
-        if (n_coords["type"].as_string() != "explicit")
-        {
-            CONDUIT_ERROR("Expected an explicit coordset when writing " << topo_type 
-                          << " mesh " << topo_name);
-        }
+        CONDUIT_ASSERT(n_coords["type"].as_string() == "explicit",
+            "Expected an explicit coordset when writing " << topo_type 
+            << " mesh " << topo_name)
 
         // compact arrays
         Node n_coords_compact, new_coords;
@@ -3454,17 +3418,12 @@ void silo_write_topo(const Node &mesh_domain,
     }
 
     // bookkeeping
-    if (! local_type_domain_info["meshes"].has_child(topo_name))
-    {
-        local_type_domain_info["meshes"][topo_name]["domain_ids"].set(DataType::index_t(local_num_domains));
-        index_t_array domain_ids = local_type_domain_info["meshes"][topo_name]["domain_ids"].value();
-        domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
-        local_type_domain_info["meshes"][topo_name]["types"].set(DataType::index_t(local_num_domains));
-    }
-    index_t_array domain_ids = local_type_domain_info["meshes"][topo_name]["domain_ids"].value();
-    domain_ids[local_domain_index] = global_domain_id;
-    index_t_array topo_types = local_type_domain_info["meshes"][topo_name]["types"].value();
-    topo_types[local_domain_index] = mesh_type;
+    detail::track_local_type_domain_info(local_type_domain_info["meshes"],
+                                         topo_name,
+                                         local_num_domains,
+                                         local_domain_index,
+                                         global_domain_id,
+                                         mesh_type);
 }
 
 //---------------------------------------------------------------------------//
@@ -3592,14 +3551,13 @@ void silo_write_matset(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMaterial");
 
     // bookkeeping
-    if (! local_type_domain_info["matsets"].has_child(matset_name))
-    {
-        local_type_domain_info["matsets"][matset_name]["domain_ids"].set(DataType::index_t(local_num_domains));
-        index_t_array domain_ids = local_type_domain_info["matsets"][matset_name]["domain_ids"].value();
-        domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
-    }
-    index_t_array domain_ids = local_type_domain_info["matsets"][matset_name]["domain_ids"].value();
-    domain_ids[local_domain_index] = global_domain_id;
+    detail::track_local_type_domain_info(local_type_domain_info["matsets"],
+                                         matset_name,
+                                         local_num_domains,
+                                         local_domain_index,
+                                         global_domain_id,
+                                         -1,
+                                         true);
 }
 
 //---------------------------------------------------------------------------//
@@ -3775,10 +3733,7 @@ void write_multimesh(DBfile *dbfile,
         DBMakeOptlist(3), 
         &DBFreeOptlist,
         "Error freeing state optlist."};
-    if (!state_optlist.getSiloObject())
-    {
-        CONDUIT_ERROR("Error creating state optlist");
-    }
+    CONDUIT_ASSERT(state_optlist.getSiloObject(), "Error creating state optlist");
 
     int cycle;
     float ftime;
@@ -3925,8 +3880,7 @@ write_multivars(DBfile *dbfile,
                     DBMakeOptlist(1),
                     &DBFreeOptlist,
                     "Error freeing optlist."};
-                if (!optlist.getSiloObject())
-                    CONDUIT_ERROR("Error creating options");
+                CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
 
                 std::string multimesh_name, multivar_name;
                 if (overlink)
@@ -4015,8 +3969,7 @@ write_multimats(DBfile *dbfile,
                     DBMakeOptlist(1),
                     &DBFreeOptlist,
                     "Error freeing optlist."};
-                if (!optlist.getSiloObject())
-                    CONDUIT_ERROR("Error creating options");
+                CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
 
                 std::string multimesh_name, multimat_name;
                 if (overlink)
@@ -4195,11 +4148,14 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     {
         opts_silo_type = opts["silo_type"].as_string();
 
-        // TODO if we were to add additional silo_type options in the future,
-        // they would need to be added here.
         if(opts_silo_type != "default" && 
            opts_silo_type != "pdb" &&
            opts_silo_type != "hdf5" &&
+           // opts_silo_type != "hdf5_sec2" &&
+           // opts_silo_type != "hdf5_stdio" &&
+           // opts_silo_type != "hdf5_mpio" &&
+           // opts_silo_type != "hdf5_mpiposix" &&
+           // opts_silo_type != "taurus" &&
            opts_silo_type != "unknown" )
         {
             CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
@@ -4532,10 +4488,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         dir_ok = (n_reduced.as_int() == 1);
 #endif
 
-        if(!dir_ok)
-        {
-            CONDUIT_ERROR("Error: failed to create directory " << output_dir);
-        }
+        CONDUIT_ASSERT(dir_ok, "Error: failed to create directory " << output_dir);
     }
 
     // ----------------------------------------------------
@@ -5154,114 +5107,73 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         //   matset2: 1, -1, 1, ...
 
         Node root_type_domain_info;
-        Node &root_type_domain_info_meshes = root_type_domain_info["meshes"];
-        Node &root_type_domain_info_vars = root_type_domain_info["vars"];
+        Node &root_type_domain_info_meshes  = root_type_domain_info["meshes"];
+        Node &root_type_domain_info_vars    = root_type_domain_info["vars"];
         Node &root_type_domain_info_matsets = root_type_domain_info["matsets"];
 
         auto type_domain_info_itr = global_type_domain_info.children();
-        // TODO refactor this monstrosity
         while (type_domain_info_itr.has_next())
         {
             // type info from a particular MPI rank
             const Node &type_domain_info_from_rank = type_domain_info_itr.next();
             
-            if (type_domain_info_from_rank.has_child("meshes"))
+            auto assemble_root_type_dom_info = [&](std::string comp, Node &root_type_domain_info_comp)
             {
-                auto read_meshes_itr = type_domain_info_from_rank["meshes"].children();
-                while (read_meshes_itr.has_next())
+                if (type_domain_info_from_rank.has_child(comp))
                 {
-                    const Node &read_mesh_type_domain_info = read_meshes_itr.next();
-                    const std::string read_mesh_name = read_meshes_itr.name();
-
-                    if (!root_type_domain_info_meshes.has_child(read_mesh_name)) 
+                    auto read_comp_itr = type_domain_info_from_rank[comp].children();
+                    while (read_comp_itr.has_next())
                     {
-                        root_type_domain_info_meshes[read_mesh_name].set(DataType::index_t(global_num_domains));
-                        index_t_array root_mesh_types = root_type_domain_info_meshes[read_mesh_name].value();
-                        root_mesh_types.fill(-1); // empty domains get -1
-                    }
-                    // the global domain ids array is of length local domain ids
-                    // local domain ids index into it to read global domain ids out
-                    index_t_accessor global_domain_ids = read_mesh_type_domain_info["domain_ids"].value();
-                    index_t_accessor read_mesh_types = read_mesh_type_domain_info["types"].value();
+                        const Node &read_comp_type_domain_info = read_comp_itr.next();
+                        const std::string read_comp_name = read_comp_itr.name();
 
-                    // this is where we are writing the data to
-                    index_t_array root_mesh_types = root_type_domain_info_meshes[read_mesh_name].value();
-
-                    for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
-                    {
-                        index_t global_domain_index = global_domain_ids[local_domain_id];
-                        if (global_domain_index != -1)
+                        if (!root_type_domain_info_comp.has_child(read_comp_name)) 
                         {
-                            root_mesh_types[global_domain_index] = read_mesh_types[local_domain_id];
+                            root_type_domain_info_comp[read_comp_name].set(DataType::index_t(global_num_domains));
+                            index_t_array root_comp_types = root_type_domain_info_comp[read_comp_name].value();
+                            root_comp_types.fill(-1); // empty domains get -1
+                        }
+                        // this is where we are writing the data to
+                        index_t_array root_comp_types = root_type_domain_info_comp[read_comp_name].value();
+
+                        // the global domain ids array is of length local domain ids
+                        // local domain ids index into it to read global domain ids out
+                        index_t_accessor global_domain_ids = read_comp_type_domain_info["domain_ids"].value();
+                        
+                        if (comp == "matsets")
+                        {
+                            for (index_t local_domain_id = 0; 
+                                 local_domain_id < global_domain_ids.number_of_elements(); 
+                                 local_domain_id ++)
+                            {
+                                index_t global_domain_index = global_domain_ids[local_domain_id];
+                                if (global_domain_index != -1)
+                                {
+                                    root_comp_types[global_domain_index] = 1;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            index_t_accessor read_comp_types = read_comp_type_domain_info["types"].value();
+                            for (index_t local_domain_id = 0; 
+                                 local_domain_id < global_domain_ids.number_of_elements(); 
+                                 local_domain_id ++)
+                            {
+                                index_t global_domain_index = global_domain_ids[local_domain_id];
+                                if (global_domain_index != -1)
+                                {
+                                    root_comp_types[global_domain_index] = read_comp_types[local_domain_id];
+                                }
+                            }
                         }
                     }
                 }
-            }
+            };
 
-            if (type_domain_info_from_rank.has_child("vars"))
-            {
-                auto read_vars_itr = type_domain_info_from_rank["vars"].children();
-                while (read_vars_itr.has_next())
-                {
-                    const Node &read_var_type_domain_info = read_vars_itr.next();
-                    const std::string read_var_name = read_vars_itr.name();
-
-                    if (!root_type_domain_info_vars.has_child(read_var_name)) 
-                    {
-                        root_type_domain_info_vars[read_var_name].set(DataType::index_t(global_num_domains));
-                        index_t_array root_var_types = root_type_domain_info_vars[read_var_name].value();
-                        root_var_types.fill(-1); // empty domains get -1
-                    }
-                    // the global domain ids array is of length local domain ids
-                    // local domain ids index into it to read global domain ids out
-                    index_t_accessor global_domain_ids = read_var_type_domain_info["domain_ids"].value();
-                    index_t_accessor read_var_types = read_var_type_domain_info["types"].value();
-
-                    // this is where we are writing the data to
-                    index_t_array root_var_types = root_type_domain_info_vars[read_var_name].value();
-
-                    for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
-                    {
-                        index_t global_domain_index = global_domain_ids[local_domain_id];
-                        if (global_domain_index != -1)
-                        {
-                            root_var_types[global_domain_index] = read_var_types[local_domain_id];
-                        }
-                    }
-                }
-            }
-
-            if (type_domain_info_from_rank.has_child("matsets"))
-            {
-                auto read_matsets_itr = type_domain_info_from_rank["matsets"].children();
-                while (read_matsets_itr.has_next())
-                {
-                    const Node &read_matset_type_domain_info = read_matsets_itr.next();
-                    const std::string read_matset_name = read_matsets_itr.name();
-
-                    if (!root_type_domain_info_matsets.has_child(read_matset_name)) 
-                    {
-                        root_type_domain_info_matsets[read_matset_name].set(DataType::index_t(global_num_domains));
-                        index_t_array root_matset_types = root_type_domain_info_matsets[read_matset_name].value();
-                        root_matset_types.fill(-1); // empty domains get -1
-                    }
-                    // the global domain ids array is of length local domain ids
-                    // local domain ids index into it to read global domain ids out
-                    index_t_accessor global_domain_ids = read_matset_type_domain_info["domain_ids"].value();
-
-                    // this is where we are writing the data to
-                    index_t_array root_matset_types = root_type_domain_info_matsets[read_matset_name].value();
-
-                    for (index_t local_domain_id = 0; local_domain_id < global_domain_ids.number_of_elements(); local_domain_id ++)
-                    {
-                        index_t global_domain_index = global_domain_ids[local_domain_id];
-                        if (global_domain_index != -1)
-                        {
-                            root_matset_types[global_domain_index] = 1;
-                        }
-                    }
-                }
-            }
+            assemble_root_type_dom_info("meshes",  root_type_domain_info_meshes);
+            assemble_root_type_dom_info("vars",    root_type_domain_info_vars);
+            assemble_root_type_dom_info("matsets", root_type_domain_info_matsets);
         }
 
         std::string output_silo_path;
@@ -5398,7 +5310,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             if(!dbfile.getSiloObject())
             {
                 dbfile.setSiloObject(DBCreate(root_filename.c_str(), DB_CLOBBER, DB_LOCAL, NULL, silo_type));
-                // TODO use conduit asserts everywhere to cut down on error lines
                 CONDUIT_ASSERT(dbfile.getSiloObject(),
                     "Error opening Silo file for writing: " << root_filename);
             }
