@@ -971,6 +971,10 @@ TEST(conduit_relay_io_silo, unstructured_points)
 ///            when cycle is present,  "default"   ==> "cycle"
 ///            else,                   "default"   ==> "none"
 ///
+///      root_file_ext: "default", "root", "silo"
+///            "default"   ==> "root"
+///            if overlink, this parameter is unused.
+///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
 ///      ovl_topo_name: (used if present, default ==> "")
@@ -1123,6 +1127,45 @@ TEST(conduit_relay_io_silo, round_trip_save_option_suffix)
         EXPECT_EQ(load_mesh.number_of_children(), 1);
         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_save_option_root_file_ext)
+{
+    const std::vector<std::string> root_file_exts = {"default", "root", "silo"};
+
+    for (int i = 0; i < root_file_exts.size(); i ++)
+    {
+        Node opts;
+        opts["root_file_ext"] = root_file_exts[i];
+
+        std::string actual_file_ext = root_file_exts[i];
+        if (actual_file_ext == "default")
+        {
+            actual_file_ext = "root";
+        }
+
+        const std::string basename = "round_trip_save_option_root_file_ext_" + 
+                                     root_file_exts[i] + "_basic";
+        const std::string filename = basename + "." + actual_file_ext;
+
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::basic("rectilinear", 3, 4, 0, save_mesh);
+        remove_path_if_exists(filename);
+        io::silo::save_mesh(save_mesh, basename, opts);
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+        save_mesh["state/cycle"] = (int64) 0;
+        save_mesh["state/domain_id"] = 0;
+        silo_name_changer("mesh", save_mesh);
+
+        // the loaded mesh will be in the multidomain format
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), 1);
+        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
         EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
     }
 }
