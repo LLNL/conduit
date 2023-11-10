@@ -397,9 +397,6 @@ TEST(conduit_relay_io_silo, round_trip_venn)
             save_mesh["state/cycle"] = (int64) 0;
             save_mesh["state/domain_id"] = 0;
 
-            // TODO remove once https://github.com/LLNL/conduit/issues/1163 is closed
-            save_mesh["coordsets"]["coords"].remove_child("params");
-
             // The field mat_check has values that are one type and matset_values
             // that are another type. The silo writer converts both to double arrays
             // in this case, so we follow suit.
@@ -469,9 +466,6 @@ TEST(conduit_relay_io_silo, round_trip_venn_modded_matnos)
     // make changes to save mesh so the diff will pass
     save_mesh["state/cycle"] = (int64) 0;
     save_mesh["state/domain_id"] = 0;
-
-    // TODO remove once https://github.com/LLNL/conduit/issues/1163 is closed
-    save_mesh["coordsets"]["coords"].remove_child("params");
 
     // The field mat_check has values that are one type and matset_values
     // that are another type. The silo writer converts both to double arrays
