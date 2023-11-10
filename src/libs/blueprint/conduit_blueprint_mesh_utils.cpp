@@ -2073,7 +2073,7 @@ topology::unstructured::generate_offsets(const Node &topo,
         {
             const Node &n_element_counts = topo["elements/element_index/element_counts"];
 
-            index_t offset = 0, elemid = 0;
+            index_t offset = 0;
             for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
             {
                 // Get the j'th elements from n_stream_ids, n_element_counts
@@ -2088,7 +2088,6 @@ topology::unstructured::generate_offsets(const Node &topo,
                 {
                     offsets.push_back(offset);
                     offset += npts;
-                    elemid++;
                 }
             }
         }
@@ -2096,7 +2095,7 @@ topology::unstructured::generate_offsets(const Node &topo,
         {
             const Node &n_stream = topo["elements/stream"];
             const Node &n_element_offsets = topo["elements/element_index/offsets"];
-            index_t offset = 0, elemid = 0;
+            index_t offset = 0;
             for(index_t j = 0; j < n_stream_ids.dtype().number_of_elements(); j++)
             {
                 // Get the j'th elements from n_stream_ids, n_element_offsets
@@ -2121,7 +2120,6 @@ topology::unstructured::generate_offsets(const Node &topo,
                 while(offset < next_offset) {
                     offsets.push_back(offset);
                     offset += npts;
-                    elemid++;
                 }
             }
         }

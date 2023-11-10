@@ -1339,7 +1339,6 @@ TEST(conduit_node, swap_schema_parent)
     root["path"].swap(subtree);
 
     path_name = root["path"].name();
-    path_schema_parent_existence;
     if (root["path"].schema().parent() != NULL)
     {
         path_schema_parent_existence = "path schema parent exists";
@@ -1376,7 +1375,6 @@ TEST(conduit_node, move_schema_parent)
     root["path"].move(subtree);
 
     path_name = root["path"].name();
-    path_schema_parent_existence;
     if (root["path"].schema().parent() != NULL)
     {
         path_schema_parent_existence = "path schema parent exists";

@@ -8623,7 +8623,6 @@ Node::update_compatible(const Node &n_src)
     {
         // if we are already a list type, then call update_compatible on
         // the children in the list
-        index_t src_idx = 0;
         index_t src_num_children = n_src.number_of_children();
         if( dtype().id() == DataType::LIST_ID)
         {
@@ -8633,7 +8632,6 @@ Node::update_compatible(const Node &n_src)
                  idx++)
             {
                 child(idx).update_compatible(n_src.child(idx));
-                src_idx++;
             }
         }
     }

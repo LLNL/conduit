@@ -266,7 +266,7 @@ main(int argc, char *argv[])
 #endif
                         // Make the new domain.
                         char domainName[32];
-                        sprintf(domainName, "domain_%07d", domainid);
+                        snprintf(domainName, sizeof(domainName), "domain_%07d", domainid);
                         conduit::Node &d = n[domainName];
                         g->generate(domain, d, opts);
 #ifdef CONDUIT_PARALLEL

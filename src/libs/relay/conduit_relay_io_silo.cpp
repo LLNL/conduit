@@ -2727,7 +2727,7 @@ void silo_write_field(DBfile *dbfile,
                             comp_name_ptrs);
 
     const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
-    int var_type;
+    int var_type = DB_INVALID_OBJECT;
     int silo_error = 0;
     if (mesh_type == "unstructured")
     {
@@ -3324,7 +3324,7 @@ void silo_write_topo(const Node &mesh_domain,
                                           &silo_coordsys_type),
                              "error adding coordsys option");
 
-    int mesh_type;
+    int mesh_type = DB_INVALID_OBJECT;
 
     if (topo_type == "unstructured" ||
         topo_type == "structured" ||
