@@ -3852,7 +3852,7 @@ write_multivars(DBfile *dbfile,
 
             if (! overlink || linked_topo_name == ovl_topo_name)
             {
-                std::string safe_varname = detail::sanitize_silo_varname(var_name); 
+                std::string safe_varname = detail::sanitize_silo_varname(var_name);
                 std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
                 std::string silo_path = root["silo_path"].as_string();
 
@@ -3909,7 +3909,7 @@ write_multivars(DBfile *dbfile,
                         var_types.data(),
                         optlist.getSiloObject()),
                     "Error putting multivar corresponding to field: " << var_name);
-            }        
+            }
         }
     }
 }
@@ -5304,21 +5304,95 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                 "Error opening Silo file for writing: " << root_filename);
         }
 
+        const bool write_overlink = opts_file_style == "overlink";
+
         write_multimeshes(dbfile.getSiloObject(), 
                           opts_out_mesh_name, 
                           opts_ovl_topo_name, 
                           root, 
-                          opts_file_style == "overlink");
+                          write_overlink);
         write_multivars(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
                         opts_ovl_topo_name, 
                         root, 
-                        opts_file_style == "overlink");
+                        write_overlink);
         write_multimats(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
                         opts_ovl_topo_name, 
                         root, 
-                        opts_file_style == "overlink");
+                        write_overlink);
+
+        if (write_overlink)
+        {
+            std::cout << root.to_yaml() << std::endl;
+
+            // write var attributes
+            const Node &n_mesh = root["blueprint_index"][opts_out_mesh_name];
+            if (n_mesh.has_child("fields"))
+            {
+                std::vector<std::string> multivar_name_strings;
+                std::vector<int> elemlengths;
+                int nvalues = 0;
+                Node var_attributes;
+
+                auto field_itr = n_mesh["fields"].children();
+                while (field_itr.has_next())
+                {
+                    const Node &n_var = field_itr.next();
+                    std::string var_name = field_itr.name();
+                    std::string safe_varname = detail::sanitize_silo_varname(var_name);
+                    multivar_name_strings.push_back(safe_varname);
+
+                    const int num_attr = 5; // we are writing 5 var attributes for now
+
+                    elemlengths.push_back(num_attr);
+                    nvalues += num_attr;
+
+                    var_attributes[safe_varname].set(DataType::index_t(num_attr));
+                    index_t_array attrs = var_attributes[safe_varname].value();
+
+                    // centering: ATTR NODAL 0, ATTR ZONAL 1, ATTR FACE, ATTR EDGE
+                    attrs[0] = (n_var["association"].as_string() == "vertex" ? 0 : 1);
+
+                    // // scaling property: ATTR INTENSIVE, ATTR EXTENSIVE
+                    // attrs[1] = ;
+
+                    // // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
+                    // attrs[2] = ;
+
+                    // // unused: 0
+                    // attrs[3] = 0;
+
+                    // // data type: ATTR INTEGER, ATTR FLOAT
+                    // attrs[4] = ;
+                }
+                // package up char ptrs for silo
+                std::vector<const char *> multivar_name_ptrs;
+                for (size_t i = 0; i < multivar_name_strings.size(); i ++)
+                {
+                    multivar_name_ptrs.push_back(multivar_name_strings[i].c_str());
+                }
+
+                // DBPutCompoundArray(dbfile.getSiloObject(), // dbfile
+                //                    "VAR ATTRIBUTES", // name
+                //                    multivar_name_ptrs.data(), // elemnames
+                //                    elemlengths.data(), // elemlengths
+                //                    multivar_name_ptrs.size(), // nelems
+                //                    ???, // values
+                //                    nvalues, // nvalues
+                //                    DB_INT, // datatype
+                //                    NULL); // optlist
+
+
+                
+                // void const *values
+
+
+                // std::vector<const void *> comp_vals_ptrs;
+
+                // comp_vals_ptrs.data();
+            }
+        }
     }
 
     // barrier at end of work to avoid file system race

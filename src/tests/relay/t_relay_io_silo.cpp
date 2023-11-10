@@ -1424,11 +1424,10 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = "MMESH";
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
