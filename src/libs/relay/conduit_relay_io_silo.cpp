@@ -5382,6 +5382,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                 std::vector<int> elemlengths;
                 int nvalues = 0;
                 Node var_attributes;
+                std::vector<const void *> var_attr_values;
 
                 auto field_itr = n_mesh["fields"].children();
                 while (field_itr.has_next())
@@ -5424,7 +5425,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
                     // TODO
                     // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
-                    // attrs[2] = ;
+                    attrs[2] = -1;
 
                     // unused: 0
                     attrs[3] = 0;
@@ -5432,6 +5433,8 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                     // data type: ATTR INTEGER, ATTR FLOAT
                     // we cached this info earlier, just need to retrieve it
                     attrs[4] = n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t();
+
+                    var_attr_values.push_back(var_attributes[safe_varname].element_ptr(0));
                 }
                 // package up char ptrs for silo
                 std::vector<const char *> multivar_name_ptrs;
@@ -5440,24 +5443,15 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                     multivar_name_ptrs.push_back(multivar_name_strings[i].c_str());
                 }
 
-                // DBPutCompoundArray(dbfile.getSiloObject(), // dbfile
-                //                    "VAR ATTRIBUTES", // name
-                //                    multivar_name_ptrs.data(), // elemnames
-                //                    elemlengths.data(), // elemlengths
-                //                    multivar_name_ptrs.size(), // nelems
-                //                    ???, // values
-                //                    nvalues, // nvalues
-                //                    DB_INT, // datatype
-                //                    NULL); // optlist
-
-
-                
-                // void const *values
-
-
-                // std::vector<const void *> comp_vals_ptrs;
-
-                // comp_vals_ptrs.data();
+                DBPutCompoundarray(dbfile.getSiloObject(), // dbfile
+                                   "VAR_ATTRIBUTES", // name
+                                   multivar_name_ptrs.data(), // elemnames
+                                   elemlengths.data(), // elemlengths
+                                   multivar_name_ptrs.size(), // nelems
+                                   var_attr_values.data(), // values
+                                   nvalues, // nvalues
+                                   DB_INT, // datatype
+                                   NULL); // optlist
             }
         }
     }
