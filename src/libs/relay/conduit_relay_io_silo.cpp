@@ -5397,6 +5397,10 @@ void CONDUIT_RELAY_API save_mesh(const Node &mesh,
 ///            when cycle is present,  "default"   ==> "cycle"
 ///            else,                   "default"   ==> "none"
 ///
+///      root_file_ext: "default", "root", "silo"
+///            "default"   ==> "root"
+///            if overlink, this parameter is unused.
+///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
 ///      ovl_topo_name: (used if present, default ==> "")
