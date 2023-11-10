@@ -4045,6 +4045,89 @@ write_multimats(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
+// only for overlink
+void
+write_var_attributes(DBfile *dbfile, 
+                     const std::string &opts_mesh_name,
+                     const Node &root)
+
+{
+    const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    const Node &n_type_dom_info = root["type_domain_info"];
+    if (n_mesh.has_child("fields"))
+    {
+        std::vector<std::string> multivar_name_strings;
+        std::vector<int> elemlengths;
+        int nvalues = 0;
+        std::vector<int> var_attr_values;
+
+        auto field_itr = n_mesh["fields"].children();
+        while (field_itr.has_next())
+        {
+            const Node &n_var = field_itr.next();
+            std::string var_name = field_itr.name();
+            std::string safe_varname = detail::sanitize_silo_varname(var_name);
+            multivar_name_strings.push_back(safe_varname);
+
+            const int num_attr = 5; // we are writing 5 var attributes for now
+
+            elemlengths.push_back(num_attr);
+            nvalues += num_attr;
+
+            // centering: ATTR NODAL 0, ATTR ZONAL 1, ATTR FACE, ATTR EDGE
+            if (n_var["association"].as_string() == "vertex")
+            {
+                var_attr_values.push_back(0); // nodal == vertex
+            }
+            else
+            {
+                var_attr_values.push_back(1); // zonal == element
+            }
+
+            // scaling property: ATTR INTENSIVE 0, ATTR EXTENSIVE 1
+            // intensive (0) IS NOT volume dependent
+            // extensive (1) IS volume dependent
+            if (n_var.has_child("volume_dependent") &&
+                n_var["volume_dependent"].as_string() == "true")
+            {
+                var_attr_values.push_back(1); // extensive == volume dependent
+            }
+            else
+            {
+                var_attr_values.push_back(0); // intensive == NOT volume dependent
+            }
+
+            // TODO
+            // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
+            var_attr_values.push_back(-1);
+
+            // unused: 0
+            var_attr_values.push_back(0);
+
+            // data type: ATTR INTEGER, ATTR FLOAT
+            // we cached this info earlier, just need to retrieve it
+            var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
+        }
+        // package up char ptrs for silo
+        std::vector<const char *> multivar_name_ptrs;
+        for (size_t i = 0; i < multivar_name_strings.size(); i ++)
+        {
+            multivar_name_ptrs.push_back(multivar_name_strings[i].c_str());
+        }
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           "VAR_ATTRIBUTES", // name
+                           multivar_name_ptrs.data(), // elemnames
+                           elemlengths.data(), // elemlengths
+                           multivar_name_ptrs.size(), // nelems
+                           static_cast<void *>(var_attr_values.data()), // values
+                           nvalues, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+    }
+}
+
+//-----------------------------------------------------------------------------
 /// The following options can be passed via the opts Node:
 //-----------------------------------------------------------------------------
 /// opts:
@@ -5371,82 +5454,9 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
         if (write_overlink)
         {
-            std::cout << root.to_yaml() << std::endl;
-
-            // write var attributes
-            const Node &n_mesh = root["blueprint_index"][opts_out_mesh_name];
-            const Node &n_type_dom_info = root["type_domain_info"];
-            if (n_mesh.has_child("fields"))
-            {
-                std::vector<std::string> multivar_name_strings;
-                std::vector<int> elemlengths;
-                int nvalues = 0;
-                std::vector<int> var_attr_values;
-
-                auto field_itr = n_mesh["fields"].children();
-                while (field_itr.has_next())
-                {
-                    const Node &n_var = field_itr.next();
-                    std::string var_name = field_itr.name();
-                    std::string safe_varname = detail::sanitize_silo_varname(var_name);
-                    multivar_name_strings.push_back(safe_varname);
-
-                    const int num_attr = 5; // we are writing 5 var attributes for now
-
-                    elemlengths.push_back(num_attr);
-                    nvalues += num_attr;
-
-                    // centering: ATTR NODAL 0, ATTR ZONAL 1, ATTR FACE, ATTR EDGE
-                    if (n_var["association"].as_string() == "vertex")
-                    {
-                        var_attr_values.push_back(0); // nodal == vertex
-                    }
-                    else
-                    {
-                        var_attr_values.push_back(1); // zonal == element
-                    }
-
-                    // scaling property: ATTR INTENSIVE 0, ATTR EXTENSIVE 1
-                    // intensive (0) IS NOT volume dependent
-                    // extensive (1) IS volume dependent
-                    if (n_var.has_child("volume_dependent") &&
-                        n_var["volume_dependent"].as_string() == "true")
-                    {
-                        var_attr_values.push_back(1); // extensive == volume dependent
-                    }
-                    else
-                    {
-                        var_attr_values.push_back(0); // intensive == NOT volume dependent
-                    }
-
-                    // TODO
-                    // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
-                    var_attr_values.push_back(-1);
-
-                    // unused: 0
-                    var_attr_values.push_back(0);
-
-                    // data type: ATTR INTEGER, ATTR FLOAT
-                    // we cached this info earlier, just need to retrieve it
-                    var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
-                }
-                // package up char ptrs for silo
-                std::vector<const char *> multivar_name_ptrs;
-                for (size_t i = 0; i < multivar_name_strings.size(); i ++)
-                {
-                    multivar_name_ptrs.push_back(multivar_name_strings[i].c_str());
-                }
-
-                DBPutCompoundarray(dbfile.getSiloObject(), // dbfile
-                                   "VAR_ATTRIBUTES", // name
-                                   multivar_name_ptrs.data(), // elemnames
-                                   elemlengths.data(), // elemlengths
-                                   multivar_name_ptrs.size(), // nelems
-                                   static_cast<void *>(var_attr_values.data()), // values
-                                   nvalues, // nvalues
-                                   DB_INT, // datatype
-                                   NULL); // optlist
-            }
+            write_var_attributes(dbfile.getSiloObject(),
+                                 opts_out_mesh_name,
+                                 root);
         }
     }
 
