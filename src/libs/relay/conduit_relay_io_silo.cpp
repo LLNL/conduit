@@ -5381,8 +5381,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                 std::vector<std::string> multivar_name_strings;
                 std::vector<int> elemlengths;
                 int nvalues = 0;
-                Node var_attributes;
-                std::vector<const void *> var_attr_values;
+                std::vector<int> var_attr_values;
 
                 auto field_itr = n_mesh["fields"].children();
                 while (field_itr.has_next())
@@ -5397,17 +5396,14 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                     elemlengths.push_back(num_attr);
                     nvalues += num_attr;
 
-                    var_attributes[safe_varname].set(DataType::index_t(num_attr));
-                    index_t_array attrs = var_attributes[safe_varname].value();
-
                     // centering: ATTR NODAL 0, ATTR ZONAL 1, ATTR FACE, ATTR EDGE
                     if (n_var["association"].as_string() == "vertex")
                     {
-                        attrs[0] = 0; // nodal == vertex
+                        var_attr_values.push_back(0); // nodal == vertex
                     }
                     else
                     {
-                        attrs[0] = 1; // zonal == element
+                        var_attr_values.push_back(1); // zonal == element
                     }
 
                     // scaling property: ATTR INTENSIVE 0, ATTR EXTENSIVE 1
@@ -5416,25 +5412,23 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                     if (n_var.has_child("volume_dependent") &&
                         n_var["volume_dependent"].as_string() == "true")
                     {
-                        attrs[1] = 1; // extensive == volume dependent
+                        var_attr_values.push_back(1); // extensive == volume dependent
                     }
                     else
                     {
-                        attrs[1] = 0; // intensive == NOT volume dependent
+                        var_attr_values.push_back(0); // intensive == NOT volume dependent
                     }
 
                     // TODO
                     // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
-                    attrs[2] = -1;
+                    var_attr_values.push_back(-1);
 
                     // unused: 0
-                    attrs[3] = 0;
+                    var_attr_values.push_back(0);
 
                     // data type: ATTR INTEGER, ATTR FLOAT
                     // we cached this info earlier, just need to retrieve it
-                    attrs[4] = n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t();
-
-                    var_attr_values.push_back(var_attributes[safe_varname].element_ptr(0));
+                    var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
                 }
                 // package up char ptrs for silo
                 std::vector<const char *> multivar_name_ptrs;
@@ -5448,7 +5442,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                                    multivar_name_ptrs.data(), // elemnames
                                    elemlengths.data(), // elemlengths
                                    multivar_name_ptrs.size(), // nelems
-                                   var_attr_values.data(), // values
+                                   static_cast<void *>(var_attr_values.data()), // values
                                    nvalues, // nvalues
                                    DB_INT, // datatype
                                    NULL); // optlist
