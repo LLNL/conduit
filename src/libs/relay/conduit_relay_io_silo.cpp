@@ -4023,10 +4023,6 @@ write_multimats(DBfile *dbfile,
 ///            when cycle is present,  "default"   ==> "cycle"
 ///            else,                   "default"   ==> "none"
 ///
-///      root_file_ext: "default", "root", "silo"
-///            "default"   ==> "root"
-///            if overlink, this parameter is unused.
-///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
 ///      ovl_topo_name: (used if present, default ==> "")
@@ -4060,7 +4056,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
     std::string opts_file_style    = "default";
     std::string opts_suffix        = "default";
-    std::string opts_root_file_ext = "default";
     std::string opts_out_mesh_name = "mesh"; // used only for the non-overlink case
     std::string opts_ovl_topo_name = ""; // used only for the overlink case
     std::string opts_silo_type     = "default";
@@ -4098,21 +4093,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
                           << opts_suffix << "\"\n"
                           " expected: \"default\", \"cycle\", or \"none\"");
-        }
-    }
-
-    // check for + validate root_file_ext option
-    if(opts.has_child("root_file_ext") && opts["root_file_ext"].dtype().is_string())
-    {
-        opts_root_file_ext = opts["root_file_ext"].as_string();
-
-        if(opts_root_file_ext != "default" && 
-           opts_root_file_ext != "root" &&
-           opts_root_file_ext != "silo" )
-        {
-            CONDUIT_ERROR("write_mesh invalid root_file_ext option: \"" 
-                          << opts_root_file_ext << "\"\n"
-                          " expected: \"default\", \"root\", or \"silo\"");
         }
     }
     
@@ -4205,11 +4185,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     //     silo_type = DB_TAURUS;
     // }
 
-    if (opts_root_file_ext == "default")
-    {
-        opts_root_file_ext = "root";
-    }
-
     // more will happen for this case later
     if (opts_file_style == "overlink")
     {
@@ -4217,7 +4192,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                      "with this option will be missing several components "
                      "that Overlink requires.")
         opts_suffix = "none"; // force no suffix for overlink case
-        opts_root_file_ext = "silo"; // force .silo file extension for root file
     }
 
     int num_files = opts_num_files;
@@ -4497,7 +4471,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     std::string root_filename;
     if (opts_file_style == "overlink")
     {
-        root_filename = utils::join_file_path(output_dir, "OvlTop." + opts_root_file_ext);
+        root_filename = utils::join_file_path(output_dir, "OvlTop.silo");
     }
     else
     {
@@ -4510,7 +4484,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
         }
 
-        root_filename += "." + opts_root_file_ext;
+        root_filename += ".root";
     }
 
     // ----------------------------------------------------
