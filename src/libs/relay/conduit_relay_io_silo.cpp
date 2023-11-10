@@ -323,6 +323,29 @@ std::string sanitize_silo_varname(const std::string &varname)
 }
 
 //-----------------------------------------------------------------------------
+// ATTR_INTEGER      0  /* Integer variable */
+// ATTR_FLOAT        1  /* Double precision floating point variable */
+int silo_type_to_ovl_attr_type(int silo_type)
+{
+    const int ATTR_INTEGER = 0;
+    const int ATTR_FLOAT = 1;
+
+    if (silo_type == DB_FLOAT ||
+        silo_type == DB_DOUBLE)
+    {
+        return ATTR_FLOAT;
+    }
+    else if (silo_type == DB_NOTYPE)
+    {
+        return -1;
+    }
+    else
+    {
+        return ATTR_INTEGER;
+    }
+}
+
+//-----------------------------------------------------------------------------
 int dtype_to_silo_type(DataType dtype)
 {
     if (dtype.is_float())
@@ -890,27 +913,41 @@ generate_silo_material_names(const Node &n_mesh_state,
 
 //-----------------------------------------------------------------------------
 void
-track_local_type_domain_info(Node &local_type_domain_info_comp,
-                             const std::string &comp_name,
+track_local_type_domain_info(Node &local_type_domain_info,
+                             const std::string &comp, // "meshes", "vars", or "matsets"
+                             const std::string &comp_name, // meshname, varname, or matsetname
                              index_t local_num_domains,
                              index_t local_domain_index,
                              index_t global_domain_id,
                              index_t comp_type,
-                             bool matsets = false)
+                             index_t var_data_type = -1)
 {
+    Node &local_type_domain_info_comp = local_type_domain_info[comp];
+
     if (! local_type_domain_info_comp.has_child(comp_name))
     {
         local_type_domain_info_comp[comp_name]["domain_ids"].set(DataType::index_t(local_num_domains));
         index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
         domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
-        if (! matsets)
+        
+        // matsets do not have type information that must be tracked
+        if (comp != "matsets")
         {
             local_type_domain_info_comp[comp_name]["types"].set(DataType::index_t(local_num_domains));
+        }
+
+        // for overlink, we must save the var data type for each var (int or float)
+        // this is used later when writing out the var attributes
+        if (comp == "vars")
+        {
+            // we only need to do this once since overlink assumes all domains have
+            // the same data type.
+            local_type_domain_info_comp[comp_name]["ovl_datatype"] = var_data_type;
         }
     }
     index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
     domain_ids[local_domain_index] = global_domain_id;
-    if (! matsets)
+    if (comp != "matsets")
     {
         index_t_array comp_types = local_type_domain_info_comp[comp_name]["types"].value();
         comp_types[local_domain_index] = comp_type;
@@ -2794,12 +2831,14 @@ void silo_write_field(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info["vars"],
+    detail::track_local_type_domain_info(local_type_domain_info,
+                                         "vars",
                                          var_name,
                                          local_num_domains,
                                          local_domain_index,
                                          global_domain_id,
-                                         var_type);
+                                         var_type,
+                                         detail::silo_type_to_ovl_attr_type(silo_vals_type));
 }
 
 //---------------------------------------------------------------------------//
@@ -3418,7 +3457,8 @@ void silo_write_topo(const Node &mesh_domain,
     }
 
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info["meshes"],
+    detail::track_local_type_domain_info(local_type_domain_info,
+                                         "meshes",
                                          topo_name,
                                          local_num_domains,
                                          local_domain_index,
@@ -3551,7 +3591,8 @@ void silo_write_matset(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMaterial");
 
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info["matsets"],
+    detail::track_local_type_domain_info(local_type_domain_info,
+                                         "matsets",
                                          matset_name,
                                          local_num_domains,
                                          local_domain_index,
@@ -5081,9 +5122,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         //   matset2: 1, -1, 1, ...
 
         Node root_type_domain_info;
-        Node &root_type_domain_info_meshes  = root_type_domain_info["meshes"];
-        Node &root_type_domain_info_vars    = root_type_domain_info["vars"];
-        Node &root_type_domain_info_matsets = root_type_domain_info["matsets"];
 
         auto type_domain_info_itr = global_type_domain_info.children();
         while (type_domain_info_itr.has_next())
@@ -5091,8 +5129,9 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             // type info from a particular MPI rank
             const Node &type_domain_info_from_rank = type_domain_info_itr.next();
             
-            auto assemble_root_type_dom_info = [&](std::string comp, Node &root_type_domain_info_comp)
+            auto assemble_root_type_dom_info = [&](std::string comp)
             {
+                Node &root_type_domain_info_comp = root_type_domain_info[comp];
                 if (type_domain_info_from_rank.has_child(comp))
                 {
                     auto read_comp_itr = type_domain_info_from_rank[comp].children();
@@ -5106,6 +5145,14 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                             root_type_domain_info_comp[read_comp_name].set(DataType::index_t(global_num_domains));
                             index_t_array root_comp_types = root_type_domain_info_comp[read_comp_name].value();
                             root_comp_types.fill(-1); // empty domains get -1
+
+                            // for overlink, we need the overlink data type for each var
+                            // to save out in the var attributes
+                            if (comp == "vars" && opts_file_style == "overlink")
+                            {
+                                root_type_domain_info["ovl_var_datatypes"][read_comp_name].set(
+                                    read_comp_type_domain_info["ovl_datatype"]);
+                            }
                         }
                         // this is where we are writing the data to
                         index_t_array root_comp_types = root_type_domain_info_comp[read_comp_name].value();
@@ -5145,9 +5192,9 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                 }
             };
 
-            assemble_root_type_dom_info("meshes",  root_type_domain_info_meshes);
-            assemble_root_type_dom_info("vars",    root_type_domain_info_vars);
-            assemble_root_type_dom_info("matsets", root_type_domain_info_matsets);
+            assemble_root_type_dom_info("meshes");
+            assemble_root_type_dom_info("vars");
+            assemble_root_type_dom_info("matsets");
         }
 
         std::string output_silo_path;
@@ -5328,6 +5375,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
             // write var attributes
             const Node &n_mesh = root["blueprint_index"][opts_out_mesh_name];
+            const Node &n_type_dom_info = root["type_domain_info"];
             if (n_mesh.has_child("fields"))
             {
                 std::vector<std::string> multivar_name_strings;
@@ -5352,19 +5400,38 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                     index_t_array attrs = var_attributes[safe_varname].value();
 
                     // centering: ATTR NODAL 0, ATTR ZONAL 1, ATTR FACE, ATTR EDGE
-                    attrs[0] = (n_var["association"].as_string() == "vertex" ? 0 : 1);
+                    if (n_var["association"].as_string() == "vertex")
+                    {
+                        attrs[0] = 0; // nodal == vertex
+                    }
+                    else
+                    {
+                        attrs[0] = 1; // zonal == element
+                    }
 
-                    // // scaling property: ATTR INTENSIVE, ATTR EXTENSIVE
-                    // attrs[1] = ;
+                    // scaling property: ATTR INTENSIVE 0, ATTR EXTENSIVE 1
+                    // intensive (0) IS NOT volume dependent
+                    // extensive (1) IS volume dependent
+                    if (n_var.has_child("volume_dependent") &&
+                        n_var["volume_dependent"].as_string() == "true")
+                    {
+                        attrs[1] = 1; // extensive == volume dependent
+                    }
+                    else
+                    {
+                        attrs[1] = 0; // intensive == NOT volume dependent
+                    }
 
-                    // // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
+                    // TODO
+                    // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
                     // attrs[2] = ;
 
-                    // // unused: 0
-                    // attrs[3] = 0;
+                    // unused: 0
+                    attrs[3] = 0;
 
-                    // // data type: ATTR INTEGER, ATTR FLOAT
-                    // attrs[4] = ;
+                    // data type: ATTR INTEGER, ATTR FLOAT
+                    // we cached this info earlier, just need to retrieve it
+                    attrs[4] = n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t();
                 }
                 // package up char ptrs for silo
                 std::vector<const char *> multivar_name_ptrs;
