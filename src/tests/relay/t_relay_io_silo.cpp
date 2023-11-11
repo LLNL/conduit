@@ -1424,6 +1424,9 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
+        // TODO what to do about this section??? Was commented out before
+        // TODO add tests for my new var attributes feature
+        // TODO read support for var attributes - they tell you volume dependence
         remove_path_if_exists(out_name + "_write_overlink");
         write_opts["file_style"] = "overlink";
         write_opts["ovl_topo_name"] = "MMESH";
