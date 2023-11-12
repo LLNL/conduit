@@ -104,6 +104,8 @@ initialize(const Node &opts)
     }
     cali_cfg_manager->start();
 
+#else
+    (void)opts;
 #endif
 }
 

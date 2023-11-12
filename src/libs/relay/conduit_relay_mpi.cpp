@@ -1753,7 +1753,7 @@ communicate_using_schema::execute()
     if(logging)
     {
         char fn[128];
-        sprintf(fn, ".%04d.log", rank);
+        snprintf(fn, sizeof(fn), ".%04d.log", rank);
         std::string filename(loggingRoot + fn);
         log.open(filename.c_str(), std::ofstream::out);
         log << "* Log started on rank " << rank << " at " << t0 << std::endl;

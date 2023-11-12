@@ -2969,7 +2969,7 @@ Partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
 
             // Compute some size,offsets into the stream to help
             std::vector<index_t> sizes, offsets;
-            index_t offset = 0, elemid = 0;
+            index_t offset = 0;
             for(index_t j = 0; j < stream_ids.number_of_elements(); j++)
             {
                 auto n = static_cast<index_t>(element_counts[j]);
@@ -2979,7 +2979,6 @@ Partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
                     sizes.push_back(npts);
                     offsets.push_back(offset);
                     offset += npts;
-                    elemid++;
                 }
             }
 
@@ -3499,7 +3498,7 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
 
             // Compute some size,offsets into the stream to help
             std::vector<index_t> stream_ids_expanded, offsets;
-            index_t offset = 0, elemid = 0;
+            index_t offset = 0;
             for(index_t j = 0; j < stream_ids.number_of_elements(); j++)
             {
                 auto n = static_cast<index_t>(element_counts[j]);
@@ -3509,7 +3508,6 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
                     stream_ids_expanded.push_back(stream_ids[j]);
                     offsets.push_back(offset);
                     offset += npts;
-                    elemid++;
                 }
             }
 
@@ -5531,7 +5529,7 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
     std::vector<Node> working_sets;
     std::vector<coord_system> systems;
     std::vector<std::vector<float64>> extents;
-    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0, nlogical = 0;
+    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0;
     index_t dimension = 0;
     for(size_t i = 0u; i < coordsets.size(); i++)
     {
@@ -5567,7 +5565,6 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
         }
         else if(system == "logical")
         {
-            nlogical++;
             systems.push_back(coord_system::logical);
         }
         else // system == cartesian
@@ -7626,6 +7623,7 @@ private:
             }
             std::cout << std::endl;
         #else
+            (void)iteration;
         #endif
             iteration++;
 
