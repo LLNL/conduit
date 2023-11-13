@@ -4004,6 +4004,53 @@ write_multimats(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
+// only for overlink
+void
+write_pad_dims(DBfile *dbfile,
+               const std::string &opts_mesh_name,
+               const Node &root)
+{
+    // TODO add tests for this
+    // TODO anything to do to read pad dims?
+
+    const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    // this only applies to structured topos
+    // TODO what happens for rectilinear topos? They don't show up in overlink spec
+    //      should I treat them like structured meshes?
+    // we can grab the "first" topo because we know there is only one.
+    if (n_mesh["topologies"][0]["type"].as_string() == "structured")
+    {
+        char const *elemname = "paddims";
+        const int elemlength = 6;
+        const int nelems = 1;
+        const int nvalues = 6;
+
+        std::vector<int> paddim_vals;
+
+        // TODO ghost zone stuff
+        // PLACEHOLDER until I know what is happening
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(1);
+        paddim_vals.push_back(2);
+        paddim_vals.push_back(3);
+        paddim_vals.push_back(4);
+        paddim_vals.push_back(5);
+        // END PLACEHOLDER
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           "PAD_DIMS", // name
+                           &elemname, // elemnames
+                           &elemlength, // elemlengths
+                           nelems, // nelems
+                           static_cast<void *>(paddim_vals.data()), // values
+                           nvalues, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+    }
+
+}
+
+//-----------------------------------------------------------------------------
 /// The following options can be passed via the opts Node:
 //-----------------------------------------------------------------------------
 /// opts:
@@ -5304,21 +5351,31 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                 "Error opening Silo file for writing: " << root_filename);
         }
 
+        const bool write_overlink = opts_file_style == "overlink";
+
         write_multimeshes(dbfile.getSiloObject(), 
                           opts_out_mesh_name, 
                           opts_ovl_topo_name, 
                           root, 
-                          opts_file_style == "overlink");
+                          write_overlink);
         write_multivars(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
                         opts_ovl_topo_name, 
                         root, 
-                        opts_file_style == "overlink");
+                        write_overlink);
         write_multimats(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
                         opts_ovl_topo_name, 
                         root, 
-                        opts_file_style == "overlink");
+                        write_overlink);
+
+        if (write_overlink)
+        {
+            std::cout << root.to_yaml() << std::endl;
+            write_pad_dims(dbfile.getSiloObject(), 
+                           opts_out_mesh_name, 
+                           root);
+        }
     }
 
     // barrier at end of work to avoid file system race
