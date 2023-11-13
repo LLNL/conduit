@@ -4052,6 +4052,7 @@ write_var_attributes(DBfile *dbfile,
                      const Node &root)
 
 {
+    // TODO add tests for this
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     const Node &n_type_dom_info = root["type_domain_info"];
     if (n_mesh.has_child("fields"))
@@ -4074,7 +4075,9 @@ write_var_attributes(DBfile *dbfile,
             elemlengths.push_back(num_attr);
             nvalues += num_attr;
 
-            // centering: ATTR NODAL 0, ATTR ZONAL 1, ATTR FACE, ATTR EDGE
+            // 
+            // centering: ATTR_NODAL 0, ATTR_ZONAL 1, ATTR_FACE, ATTR_EDGE
+            // 
             if (n_var["association"].as_string() == "vertex")
             {
                 var_attr_values.push_back(0); // nodal == vertex
@@ -4084,7 +4087,9 @@ write_var_attributes(DBfile *dbfile,
                 var_attr_values.push_back(1); // zonal == element
             }
 
-            // scaling property: ATTR INTENSIVE 0, ATTR EXTENSIVE 1
+            // 
+            // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
+            // 
             // intensive (0) IS NOT volume dependent
             // extensive (1) IS volume dependent
             if (n_var.has_child("volume_dependent") &&
@@ -4097,14 +4102,23 @@ write_var_attributes(DBfile *dbfile,
                 var_attr_values.push_back(0); // intensive == NOT volume dependent
             }
 
-            // TODO
-            // linking: ATTR FIRST ORDER, ATTR SECOND ORDER
-            var_attr_values.push_back(-1);
+            // 
+            // linking: ATTR_FIRST ORDER 0, ATTR_SECOND ORDER 1
+            // 
+            // Use ATTR_SECOND_ORDER which means it computes the gradient of the 
+            // field value in each zone for a second order remap of the values.
+            // The first order remap is less accurate since it treats the value 
+            // as constant within the zone.
+            var_attr_values.push_back(1);
 
+            // 
             // unused: 0
+            // 
             var_attr_values.push_back(0);
 
-            // data type: ATTR INTEGER, ATTR FLOAT
+            // 
+            // data type: ATTR_INTEGER, ATTR_FLOAT
+            // 
             // we cached this info earlier, just need to retrieve it
             var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
         }
