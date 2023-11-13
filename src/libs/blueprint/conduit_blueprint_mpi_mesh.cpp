@@ -634,12 +634,44 @@ void to_polygonal(const Node &n,
                                 {
                                     new_x.reserve(out_x_size + added*2);
                                 }
-                                for (index_t ni = 0; ni < (index_t)xbuffer.size(); ++ni)
+
+                                bool flip = false;
+                                if (group.has_child("orientation"))
                                 {
-                                    if (ni % use_ratio)
+                                    auto& orientation = group["orientation"].as_int_array();
+                                    index_t ref_size_i = ref_win["dims/i"].to_index_t();
+                                    index_t ref_size_j = ref_win["dims/j"].to_index_t();
+                                    if (ref_size_i == 1 && orientation[0] < 0)
                                     {
-                                        new_x.push_back(xbuffer[ni]);
-                                        new_y.push_back(ybuffer[ni]);
+                                        flip = true; 
+                                    }
+                                    if (ref_size_j == 1 && orientation[1] < 0)
+                                    {
+                                        flip = true; 
+                                    }
+                                }
+
+                                if (flip)
+                                {
+                                    for (index_t ni = (index_t)xbuffer.size()-1;
+                                         ni >=0; --ni)
+                                    {
+                                        if (ni % use_ratio)
+                                        {
+                                            new_x.push_back(xbuffer[ni]);
+                                            new_y.push_back(ybuffer[ni]);
+                                        }
+                                    }
+                                }
+                                else
+                                {
+                                    for (index_t ni = 0; ni < (index_t)xbuffer.size(); ++ni)
+                                    {
+                                        if (ni % use_ratio)
+                                        {
+                                            new_x.push_back(xbuffer[ni]);
+                                            new_y.push_back(ybuffer[ni]);
+                                        }
                                     }
                                 }
 
@@ -784,7 +816,6 @@ find_delegate_domain(const conduit::Node &n,
         relay::mpi::broadcast_using_schema(domain, min_delegate_rank, comm);
     }
 }
-
 
 //-----------------------------------------------------------------------------
 void match_nbr_elems(PolyBndry& pbnd,
