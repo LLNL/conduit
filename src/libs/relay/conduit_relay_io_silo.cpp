@@ -4162,7 +4162,6 @@ write_var_attributes(DBfile *dbfile,
                      const Node &root)
 
 {
-    // TODO read this in if it is present and get info out
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     const Node &n_type_dom_info = root["type_domain_info"];
     if (n_mesh.has_child("fields"))

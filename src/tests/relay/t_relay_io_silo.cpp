@@ -1261,7 +1261,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
 // this tests var attributes
 TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
 {
-    // TODO add a second var to fully test
     const std::string basename = "silo_save_option_overlink_basic";
     const std::string filename = basename + "/OvlTop.silo";
 
