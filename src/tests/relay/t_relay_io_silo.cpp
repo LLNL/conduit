@@ -1270,6 +1270,14 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
 
     Node save_mesh, load_mesh, info;
     blueprint::mesh::examples::basic("structured", 3, 3, 1, save_mesh);
+
+    // add another field that is volume dependent
+    Node &field2 = save_mesh["fields"]["field2"];
+    field2["association"] = "element";
+    field2["topology"] = "mesh";
+    field2["volume_dependent"] = "true";
+    field2["values"].set_external(save_mesh["fields"]["field"]["values"]);
+
     remove_path_if_exists(basename);
     io::silo::save_mesh(save_mesh, basename, opts);
     io::silo::load_mesh(filename, load_mesh);
