@@ -1303,6 +1303,7 @@ read_variable_domain_helper(const T *var_ptr,
                             const std::string &multivar_name,
                             const int vartype,
                             const std::string &bottom_level_mesh_name,
+                            const std::string &volume_dependent,
                             Node &mesh_out)
 {
     // If we cannot fetch this var we will skip
@@ -1357,6 +1358,12 @@ read_variable_domain_helper(const T *var_ptr,
         field_out["association"] = "vertex";
     }
 
+    // if we have volume dependence we can track it
+    if (! volume_dependent.empty())
+    {
+        field_out["volume_dependent"] = volume_dependent;
+    }
+
     // TODO investigate the dims, major_order, and stride for vars. Should match the mesh;
     // what to do if it is different? Will I need to walk these arrays differently?
 
@@ -1377,6 +1384,7 @@ read_variable_domain(const int vartype,
                      const std::string &multimesh_name,
                      const std::string &multivar_name,
                      const std::string &bottom_level_mesh_name,
+                     const std::string &volume_dependent,
                      const Node &matset_field_reconstruction,
                      Node &mesh_out)
 {
@@ -1388,8 +1396,8 @@ read_variable_domain(const int vartype,
             &DBFreeUcdvar};
 
         if (!read_variable_domain_helper<DBucdvar>(
-            ucdvar.getSiloObject(), var_name, multimesh_name,
-            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+            ucdvar.getSiloObject(), var_name, multimesh_name, multivar_name,
+            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1406,8 +1414,8 @@ read_variable_domain(const int vartype,
             &DBFreeQuadvar};
 
         if (!read_variable_domain_helper<DBquadvar>(
-            quadvar.getSiloObject(), var_name, multimesh_name,
-            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+            quadvar.getSiloObject(), var_name, multimesh_name, multivar_name,
+            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1424,8 +1432,8 @@ read_variable_domain(const int vartype,
             &DBFreeMeshvar};
 
         if (!read_variable_domain_helper<DBmeshvar>(
-            meshvar.getSiloObject(), var_name, multimesh_name,
-            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+            meshvar.getSiloObject(), var_name, multimesh_name, multivar_name,
+            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1984,16 +1992,41 @@ read_state(DBfile *dbfile,
 //-----------------------------------------------------------------------------
 void
 read_var_attributes(DBfile *dbfile,
-                    Node &root_node,
-                    const std::string &multimesh_name)
+                    const std::string &multimesh_name,
+                    Node &root_node)
 {
+    if (! root_node[multimesh_name].has_child("vars"))
+    {
+        // nothing to do if there are no vars
+        return;
+    }
+
+    // TODO it is annoying to see the error message that this was not found in the
+    // silo file every time. Is there a way to check that it is there OR to not call this
+    // unconditionally?
     const std::string var_attr_name = "VAR_ATTRIBUTES";
-    detail::SiloObjectWrapper<DBCompoundarray, decltype(&DBFreeMultimat)> var_attr{
+    detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> var_attr_obj{
         DBGetCompoundarray(dbfile, var_attr_name.c_str()), 
         &DBFreeCompoundarray};
+    DBcompoundarray *var_attr = var_attr_obj.getSiloObject();
     // the var attributes are not present. They are optional, so we can return early
-    if (! var_attr.getSiloObject())
+    if (! var_attr)
     {
+        return;
+    }
+
+    // fetch pointers to elements inside the compound array
+    char **elemnames = var_attr->elemnames;
+    int *elemlengths = var_attr->elemlengths;
+    int nelems       = var_attr->nelems;
+    int *values      = static_cast<int *>(var_attr->values);
+    int datatype     = var_attr->datatype;
+
+    if (datatype != DB_INT)
+    {
+        // for overlink, the var attributes must contain integer data
+        // we don't want to complain however, since we don't know if we are doing overlink
+        // or not at this point.
         return;
     }
 
@@ -2001,14 +2034,32 @@ read_var_attributes(DBfile *dbfile,
     std::map<std::string, bool> field_vol_dep;
 
     // next we fill our map
-    // TODO
+    int currpos = 0;
+    for (int i = 0; i < nelems; i ++)
+    {
+        const std::string varname = elemnames[i];
+        const int elemlength = elemlengths[i];
+        const int scaling_property = values[currpos + 1]; // + 1 b/c scaling property is stored 
+        // in the 2nd position
+
+        // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
+        // intensive (0) IS NOT volume dependent
+        // extensive (1) IS volume dependent
+        const bool vol_dep = scaling_property != 0;
+
+        field_vol_dep[varname] = vol_dep;
+
+        currpos += elemlength;
+    }
 
     // finally we use our map to put information into our fields
-    Node &root_fields = root_node[multimesh_name]["fields"];
+    Node &root_fields = root_node[multimesh_name]["vars"];
     for (auto const &mapitem : field_vol_dep)
     {
         std::string fieldname = mapitem.first;
         std::string volume_dependent = mapitem.second ? "true" : "false";
+
+        // we only want this information for variables that we have read
         if (root_fields.has_child(fieldname))
         {
             root_fields[fieldname]["volume_dependent"] = volume_dependent;
@@ -2094,37 +2145,34 @@ read_root_silo_index(const std::string &root_file_path,
     }
 
     int nblocks;
-    if (! read_multimesh(dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
+    if ((! read_multimesh(dbfile.getSiloObject(),
+                          multimesh_name,
+                          nblocks,
+                          root_node,
+                          error_oss)) ||
+        (! read_multivars(toc,
+                          dbfile.getSiloObject(),
+                          multimesh_name,
+                          nblocks,
+                          root_node,
+                          error_oss)) ||
+        (! read_multimats(toc,
+                          dbfile.getSiloObject(),
+                          multimesh_name,
+                          nblocks,
+                          root_node,
+                          error_oss)))
     {
+        // if any of these fail, we want to quit. The 1st one to fail
+        // will end the if condition execution
         return false;
     }
-    if (! read_multivars(toc,
-                         dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
-        return false;
-    }
-    if (! read_multimats(toc,
-                         dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
-        return false;
-    }
+
     read_state(dbfile.getSiloObject(), root_node, multimesh_name);
 
     // overlink-specific
     read_var_attributes(dbfile.getSiloObject(),
-                        multimesh_name
+                        multimesh_name,
                         root_node);
 
     // our silo index should look like this:
@@ -2472,6 +2520,13 @@ read_mesh(const std::string &root_file_path,
                     continue;
                 }
 
+                // this info can be tracked with overlink VAR_ATTRIBUTES
+                std::string volume_dependent = "";
+                if (n_var.has_child("volume_dependent"))
+                {
+                    volume_dependent = n_var["volume_dependent"].as_string();
+                }
+
                 // root only case
                 if (var_domain_filename.empty())
                 {
@@ -2490,7 +2545,7 @@ read_mesh(const std::string &root_file_path,
                 // last thing in the loop iteration
                 read_variable_domain(vartype, var_domain_file_to_use, var_name,
                     multimesh_name, multivar_name, bottom_level_mesh_name,
-                    matset_field_reconstruction, mesh_out);
+                    volume_dependent, matset_field_reconstruction, mesh_out);
             }
         }
     }
