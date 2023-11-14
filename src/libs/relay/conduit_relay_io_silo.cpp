@@ -1982,6 +1982,41 @@ read_state(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
+void
+read_var_attributes(DBfile *dbfile,
+                    Node &root_node,
+                    const std::string &multimesh_name)
+{
+    const std::string var_attr_name = "VAR_ATTRIBUTES";
+    detail::SiloObjectWrapper<DBCompoundarray, decltype(&DBFreeMultimat)> var_attr{
+        DBGetCompoundarray(dbfile, var_attr_name.c_str()), 
+        &DBFreeCompoundarray};
+    // the var attributes are not present. They are optional, so we can return early
+    if (! var_attr.getSiloObject())
+    {
+        return;
+    }
+
+    // a map from field names (strings) to whether or not it is volume dependent (bools)
+    std::map<std::string, bool> field_vol_dep;
+
+    // next we fill our map
+    // TODO
+
+    // finally we use our map to put information into our fields
+    Node &root_fields = root_node[multimesh_name]["fields"];
+    for (auto const &mapitem : field_vol_dep)
+    {
+        std::string fieldname = mapitem.first;
+        std::string volume_dependent = mapitem.second ? "true" : "false";
+        if (root_fields.has_child(fieldname))
+        {
+            root_fields[fieldname]["volume_dependent"] = volume_dependent;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 bool
 read_root_silo_index(const std::string &root_file_path,
                      const Node &opts,
@@ -2059,19 +2094,38 @@ read_root_silo_index(const std::string &root_file_path,
     }
 
     int nblocks;
-    if (!read_multimesh(dbfile.getSiloObject(), multimesh_name, nblocks, root_node, error_oss))
+    if (! read_multimesh(dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
     {
         return false;
     }
-    if (!read_multivars(toc, dbfile.getSiloObject(), multimesh_name, nblocks, root_node, error_oss))
+    if (! read_multivars(toc,
+                         dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
     {
         return false;
     }
-    if (!read_multimats(toc, dbfile.getSiloObject(), multimesh_name, nblocks, root_node, error_oss))
+    if (! read_multimats(toc,
+                         dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
     {
         return false;
     }
     read_state(dbfile.getSiloObject(), root_node, multimesh_name);
+
+    // overlink-specific
+    read_var_attributes(dbfile.getSiloObject(),
+                        multimesh_name
+                        root_node);
 
     // our silo index should look like this:
 
@@ -2095,6 +2149,7 @@ read_root_silo_index(const std::string &root_file_path,
     //             - "domain_000001.silo:field"
     //               ...
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
+    //          volume_dependent: "false" // (optional) this can be provided with overlink var attributes
     //       ...
     //    matsets:
     //       material:
@@ -4052,7 +4107,7 @@ write_var_attributes(DBfile *dbfile,
                      const Node &root)
 
 {
-    // TODO add tests for this
+    // TODO read this in if it is present and get info out
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     const Node &n_type_dom_info = root["type_domain_info"];
     if (n_mesh.has_child("fields"))
@@ -4109,6 +4164,7 @@ write_var_attributes(DBfile *dbfile,
             // field value in each zone for a second order remap of the values.
             // The first order remap is less accurate since it treats the value 
             // as constant within the zone.
+            // TODO do we want to store any of this info in the state node on read?
             var_attr_values.push_back(1);
 
             // 
