@@ -3027,6 +3027,37 @@ Block neighbors(const std::vector<Block> &blocks, size_t BlockId, bool threeD)
     return selectedBlock;
 }
 
+//---------------------------------------------------------------------------
+/**
+ \brief This class accepts the overall mesh size for the whole problem and
+        divides it up to make N domains.
+ */
+class TopDownTiler : public TilerBase
+{
+public:
+    TopDownTiler();
+
+    void generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
+                  conduit::Node &res, const conduit::Node &options);
+
+private:
+    std::vector<block> blocks;
+    std::vector<IndexType> domainIds; // The list domains we want to make.
+};
+
+TopDownTiler::TopDownTiler() : TilerBase()
+{
+}
+
+void
+TopDownTiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
+                       conduit::Node &res, const conduit::Node &options)
+{
+#if 0
+#endif
+}
+
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::examples::detail --
@@ -3036,8 +3067,16 @@ void
 tiled(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
       conduit::Node &res, const conduit::Node &options)
 {
-    detail::Tiler T;
-    T.generate(nx, ny, nz, res, options);
+    if(options.has_path("method") && options["method"].as_string() == "topdown")
+    {
+        detail::TopDownTiler T;
+        T.generate(nx, ny, nz, res, options);
+    }
+    else
+    {
+        detail::Tiler T;
+        T.generate(nx, ny, nz, res, options);
+    }
 }
 
 }
