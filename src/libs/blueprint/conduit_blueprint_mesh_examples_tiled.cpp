@@ -16,9 +16,11 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_exports.h"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_curves.hpp"
 
 #include <cmath>
 #include <algorithm>
+#include <array>
 
 // Uncomment this to add some fields on the filed mesh prior to reordering.
 // #define CONDUIT_TILER_DEBUG_FIELDS
@@ -29,6 +31,9 @@
 
 // Uncomment this to use a simpler tiled pattern for debugging.
 // #define CONDUIT_SIMPLE_TILED_PATTERN
+
+// Uncomment this to print information about block splitting.
+// #define CONDUIT_DEBUG_BLOCK_SPLITTER
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
@@ -1593,6 +1598,1433 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
             }
         }
     }
+}
+
+//---------------------------------------------------------------------------
+//---------------------------------------------------------------------------
+typedef conduit::index_t IndexType;
+typedef std::array<IndexType, 3> LogicalIndex;
+
+std::ostream &
+operator << (std::ostream &os, const LogicalIndex &obj)
+{
+    os << "{" << obj[0] << ", " << obj[1] << ", " << obj[2] << "}";
+    return os;
+}
+
+//---------------------------------------------------------------------------
+template <typename T>
+std::ostream &operator << (std::ostream &os, const std::vector<T> &obj)
+{
+    os << "{";
+    for(const auto &v : obj)
+       os << v << ", ";
+    os << "}";
+    return os;
+};
+
+//---------------------------------------------------------------------------
+
+/**
+ @brief This class represents a cartesian Block, though it can be subset using
+        the image member.
+ */
+struct Block
+{
+    static const IndexType Empty;
+    static const IndexType Self;
+    static const IndexType Neighbor;
+    static const IndexType InvalidDomainId;
+
+    LogicalIndex           start{0,0,0};
+    LogicalIndex           end{0,0,0};
+    IndexType              hilbertBlockId{InvalidDomainId};
+    std::vector<IndexType> image{};
+
+    /**
+     @brief Return the number of total zones spanned by the mesh start,end.
+            For "complex" blocks, which use the image to identify the actual
+            zones, size can be larger than the actual number of zones.
+
+     @return The size.
+    */
+    IndexType size() const;
+
+    /**
+     @brief Return the length of the specified dimension.
+     @param dimension A dimension in (0,1,2).
+     @return The length of the block in the requested dimension.
+     */
+    IndexType length(IndexType dimension) const;
+
+    /**
+     @brief Returns the dimension index of the longest dimension.
+     @return The index of the longest dimension.
+     */
+    IndexType longest() const;
+
+    /**
+     @brief Returns whether the block is "complex" (has non-empty image)
+     @return True of the block is complex; False otherwise.
+     */
+    bool complex() const;
+
+    /**
+     @brief Turn an index to a logical index.
+     @param index An index in [0,nx*ny*nz)
+     @return A logical index that matches the input index.
+     */
+    LogicalIndex IndexToIJK(IndexType index) const;
+
+    /**
+     @brief Turn a local logical index into a local index.
+     @param ijk The local logical index with values all within start,end.
+     @return The local index that matches the logical index.
+     */
+    IndexType IJKToIndex(const LogicalIndex &ijk) const;
+
+    /**
+     @brief Expand the Block by some number of layers and return the expanded Block.
+     @param n The number of layers to expand (for non-complex blocks)
+     @param threeD Whether the block is allowed to expand in Z.
+     @return A new expanded block.
+     */
+    Block expand(IndexType n, bool threeD) const;
+
+    /**
+     @brief Returns the actual number of zones in the block, taking into account
+            empty zones if the block is complex.
+     @return The actual number of zones.
+     */
+    IndexType numZones() const;
+
+    /**
+     @brief Determines whether the logical index is contained in the block.
+     @param index The logical index being checked.
+     @return True if index is contained in block; False otherwise.
+     */
+    bool contains(const LogicalIndex &index) const;
+
+    /**
+     @brief Iterate over all zones in the Block and apply a function that takes
+            the logical id and the zone type.
+     @param func A function/lambda that operates on a zone given by a logical index.
+     */
+    template <typename Func>
+    void iterate(Func &&func) const;
+
+    /**
+     @brief Intersects the zones in block B with those in this block and returns a
+            vector of logical indices for the intersected region.
+
+     @note A vector of logical indices is used since one or more blocks might be
+           complex.
+
+     @param B The block we're checking against this block.
+     @return A vector of logical indices that make up the intersection region.
+     */
+    std::vector<LogicalIndex> intersect(const Block &B) const;
+private:
+    /**
+     @brief Intersects the zones in block B with those in this block and returns a
+            vector of logical indices for the intersected region.
+
+     @note A vector of logical indices is used since one or more blocks might be
+           complex.
+
+     @param B The block we're checking against this block.
+     @return A vector of logical indices that make up the intersection region.
+     */
+    std::vector<LogicalIndex> intersectInternal(const Block &B) const;
+};
+
+const IndexType Block::Empty = -1;
+const IndexType Block::Self = -2;
+const IndexType Block::Neighbor = -3;
+const IndexType Block::InvalidDomainId = -1;
+
+//---------------------------------------------------------------------------
+std::ostream &operator << (std::ostream &os, const Block &obj)
+{
+    os << "{start=" << obj.start
+       << ", end=" << obj.end
+       << ", size=" << obj.size()
+       << ", length={" << obj.length(0) << ", " << obj.length(1) << ", " << obj.length(2) << "}"
+       << ", hilbertBlockId=" << obj.hilbertBlockId
+       << ", image.size=" << obj.image.size()
+       << ", numZones=" << obj.numZones()
+       << "}";
+    return os;
+};
+
+//---------------------------------------------------------------------------
+IndexType Block::size() const
+{
+    IndexType nx = end[0] - start[0] + 1;
+    IndexType ny = end[1] - start[1] + 1;
+    IndexType nz = end[2] - start[2] + 1;
+    return nx * ny * nz;
+}
+
+//---------------------------------------------------------------------------
+IndexType Block::length(IndexType dimension) const
+{
+    IndexType nx = end[0] - start[0] + 1;
+    IndexType ny = end[1] - start[1] + 1;
+    IndexType nz = end[2] - start[2] + 1;
+    return (dimension == 2) ? nz : ((dimension == 1) ? ny : nx);
+}
+
+//---------------------------------------------------------------------------
+IndexType Block::longest() const
+{
+    IndexType L[3] = {end[0] - start[0] + 1,
+                      end[1] - start[1] + 1,
+                      end[2] - start[2] + 1};
+    IndexType dim = 0;
+    if(L[1] > L[dim])
+        dim = 1;
+    if(L[2] > L[dim])
+        dim = 2;
+    return dim;
+}
+
+//---------------------------------------------------------------------------
+bool Block::complex() const
+{
+    return !image.empty();
+}
+
+//---------------------------------------------------------------------------
+LogicalIndex Block::IndexToIJK(IndexType index) const
+{
+    auto nx = length(0);
+    auto ny = length(1);
+    auto nxny = nx * ny;
+
+    auto i = index % nx;
+    auto j = (index % (nxny)) / nx;
+    auto k = index / (nxny);
+
+    return LogicalIndex{i, j, k};
+}
+
+//---------------------------------------------------------------------------
+IndexType
+Block::IJKToIndex(const LogicalIndex &ijk) const
+{
+    auto nx = length(0);
+    auto ny = length(1);
+    return ijk[2] * nx * ny + ijk[1] * nx + ijk[0];
+}
+
+//---------------------------------------------------------------------------
+Block Block::expand(IndexType n, bool threeD) const
+{
+    int ndims = threeD ? 3 : 2;
+    Block e;
+    e.start = start;
+    e.end = end;
+    for(int d = 0; d < ndims; d++)
+    {
+        e.start[d] -= n;
+    }
+    for(int d = 0; d < ndims; d++)
+    {
+        e.end[d] += n;
+    }
+
+    if(complex())
+    {
+        e.image.resize(e.size(), Empty);
+        iterate([&](const LogicalIndex &index, IndexType zonetype) {
+            auto logicalIndex = LogicalIndex{index[0] - start[0] + n,
+                                             index[1] - start[1] + n,
+                                             index[2] - start[2] + (threeD ? n : 0)};
+            auto dest = e.IJKToIndex(logicalIndex);
+            e.image[dest] = zonetype;
+        });
+    }
+
+    return e;
+}
+
+//---------------------------------------------------------------------------
+IndexType Block::numZones() const
+{
+    IndexType retval;
+    if(complex())
+    {
+        retval = 0;
+        for(const auto &z : image)
+            retval += (z == Self) ? 1 : 0;
+    }
+    else
+    {
+        retval = size();
+    }
+    return retval;
+}
+
+//---------------------------------------------------------------------------
+inline bool interval_contains(IndexType start, IndexType end, IndexType index)
+{
+    return index >= start && index <= end;
+}
+
+//---------------------------------------------------------------------------
+bool Block::contains(const LogicalIndex &index) const
+{
+    bool inside = interval_contains(start[0], end[0], index[0]) && 
+                  interval_contains(start[1], end[1], index[1]) && 
+                  interval_contains(start[2], end[2], index[2]);
+    return inside;
+}
+
+//---------------------------------------------------------------------------
+template <typename Func>
+void Block::iterate(Func &&func) const
+{
+    if(complex())
+    {
+        IndexType ii = 0;
+        for(IndexType k = start[2]; k <= end[2]; k++)
+        for(IndexType j = start[1]; j <= end[1]; j++)
+        for(IndexType i = start[0]; i <= end[0]; i++, ii++)
+        {
+            func(LogicalIndex{i,j,k}, image[ii]);
+        }
+    }
+    else
+    {
+        for(IndexType k = start[2]; k <= end[2]; k++)
+        for(IndexType j = start[1]; j <= end[1]; j++)
+        for(IndexType i = start[0]; i <= end[0]; i++)
+        {
+            func(LogicalIndex{i,j,k}, Self);
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+std::vector<LogicalIndex>
+Block::intersectInternal(const Block &B) const
+{
+    std::vector<LogicalIndex> ids;
+
+    bool complexHit = false;
+
+    auto b0 = LogicalIndex{B.start[0], B.start[1], B.start[2]};
+    auto b1 = LogicalIndex{B.end[0],   B.start[1], B.start[2]};
+    auto b2 = LogicalIndex{B.start[0], B.end[1],   B.start[2]};
+    auto b3 = LogicalIndex{B.end[0],   B.end[1],   B.start[2]};
+    auto b4 = LogicalIndex{B.start[0], B.start[1], B.end[2]};
+    auto b5 = LogicalIndex{B.end[0],   B.start[1], B.end[2]};
+    auto b6 = LogicalIndex{B.start[0], B.end[1],   B.end[2]};
+    auto b7 = LogicalIndex{B.end[0],   B.end[1],   B.end[2]};
+
+    bool ac[8];
+    ac[0] = contains(b0);
+    ac[1] = contains(b1);
+    ac[2] = contains(b2);
+    ac[3] = contains(b3);
+    ac[4] = contains(b4);
+    ac[5] = contains(b5);
+    ac[6] = contains(b6);
+    ac[7] = contains(b7);
+
+    if(ac[0] && ac[1] && ac[2] && ac[3] && ac[4] && ac[5] && ac[6] && ac[7])
+    {
+        // A contains all of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            B.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    // Left-Right cases
+    else if(ac[0] && ac[2] && ac[4] && ac[6])
+    {
+        // A contains left face of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.end[0] = end[0];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[1] && ac[3] && ac[5] && ac[7])
+    {
+        // A contains right face of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = start[0];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    // Up-Down cases cases
+    else if(ac[0] && ac[1] && ac[4] && ac[5])
+    {
+        // A contains bottom face of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.end[1] = end[1];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[2] && ac[3] && ac[6] && ac[7])
+    {
+        // A contains top face of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[1] = start[1];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    // Front-Back cases
+    else if(ac[0] && ac[2] && ac[3] && ac[4])
+    {
+        // A contains back face of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.end[2] = end[2];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[2] && ac[3] && ac[6] && ac[7])
+    {
+        // A contains front face of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[2] = start[2];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    // X edges
+    else if(ac[0] || ac[1])
+    {
+        // A contains edge 0 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.end[2] = end[2];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[2] || ac[3])
+    {
+        // A contains edge 1 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+
+            clip.end[2] = end[2];
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[4] || ac[5])
+    {
+        // A contains edge 2 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[6] || ac[7])
+    {
+        // A contains edge 3 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    // Y edges
+    else if(ac[0] || ac[2])
+    {
+        // A contains edge 4 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.end[2] = std::min(clip.end[2], end[2]);
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[0] || ac[2])
+    {
+        // A contains edge 5 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.end[2] = std::min(clip.end[2], end[2]);
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[4] || ac[6])
+    {
+        // A contains edge 6 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[5] || ac[7])
+    {
+        // A contains edge 7 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.end[2] = std::min(clip.end[2], end[2]);
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    // Z edges
+    else if(ac[0] || ac[4])
+    {
+        // A contains edge 8 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.end[2] = std::min(clip.end[2], end[2]);
+
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[1] || ac[5])
+    {
+        // A contains edge 9 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.end[2] = std::min(clip.end[2], end[2]);
+
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[2] || ac[6])
+    {
+        // A contains edge 10 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.end[2] = std::min(clip.end[2], end[2]);
+
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if(ac[3] || ac[7])
+    {
+        // A contains edge 11 of B
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.end[2] = std::min(clip.end[2], end[2]);
+
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if((B.start[0] <= start[0] && B.end[0] >= end[0]) &&
+            interval_contains(start[2], end[2], B.start[2]) &&
+            interval_contains(start[2], end[2], B.end[2]))
+    {
+        // B pierces in XY
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.start[1] = std::max(clip.start[1], start[1]);
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }
+    else if((B.start[0] <= start[0] && B.end[0] >= end[0]) &&
+            interval_contains(start[1], end[1], B.start[1]) &&
+            interval_contains(start[1], end[1], B.end[1]))
+    {
+        // B pierces in XZ
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[0] = std::max(clip.start[0], start[0]);
+            clip.end[0] = std::min(clip.end[0], end[0]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.end[2] = std::min(clip.end[2], end[2]);
+
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }      
+    else if((B.start[2] <= start[2] && B.end[2] >= end[2]) &&
+            interval_contains(start[0], end[0], B.start[0]) &&
+            interval_contains(start[0], end[0], B.end[0]))
+    {
+        // B pierces in YZ
+        complexHit = complex() || B.complex();
+        if(!complexHit)
+        {
+            Block clip{B};
+            clip.start[1] = std::max(clip.start[1], start[1]);
+            clip.end[1] = std::min(clip.end[1], end[1]);
+
+            clip.start[2] = std::max(clip.start[2], start[2]);
+            clip.end[2] = std::min(clip.end[2], end[2]);
+
+            clip.iterate([&](const LogicalIndex &index, IndexType)
+            {
+                ids.push_back(index);
+            });
+        }
+    }      
+
+    // If we had a hit but one or more blocks was complex then we
+    // need to do zone-based intersection.
+    if(complexHit)
+    {
+        if(complex())
+        {
+            B.iterate([&](const LogicalIndex &index, IndexType type) {
+                if(type == Block::Self && contains(index))
+                {
+                    // the zone in B is real. See if it is real in 
+                    LogicalIndex aindex{index[0] - start[0],
+                                        index[1] - start[1],
+                                        index[2] - start[2]};
+                    auto ai = IJKToIndex(aindex);
+                    if(image[ai] != Block::Empty)
+                        ids.push_back(index);
+                }
+            });
+        }
+        else
+        {
+            B.iterate([&](const LogicalIndex &index, IndexType type) {
+                if(type == Block::Self && contains(index))
+                    ids.push_back(index);
+            });
+        }
+    }
+
+    return ids;
+}
+
+//------------------------------------------------------------------------------
+std::vector<LogicalIndex>
+Block::intersect(const Block &B) const
+{
+    std::vector<LogicalIndex> ids = intersectInternal(B);
+    if(ids.empty())
+        ids = B.intersectInternal(*this);
+    return ids;
+}
+
+
+//---------------------------------------------------------------------------
+/**
+ @brief This class splits a block into N smaller blocks.
+ */
+class BlockSplitter
+{
+public:
+    struct Options
+    {
+        bool curveSplitting{false};         // Whether curve splitting is enabled.
+        IndexType maximumSize{100*100*100}; // The max size a domain can be to be considered for curve splitting.
+    };
+
+    /**
+     @brief Split the input whole block into nblocks smaller blocks.
+     */
+    std::vector<Block> split(const Block &whole, IndexType nblocks) const;
+
+public:
+    Options options;
+private:
+    /**
+     @brief Split whole into 2 blocks a,b such that we split along a dimension
+            that yields a split proportional to the sizes of a, b.
+
+     @param whole The block to split.
+     @param a The number of blocks to make from the "left" split.
+     @param b The number of blocks to make from the "right" split.
+     @return A vector of new blocks.
+     */
+    std::vector<Block> split2(const Block &whole, IndexType a, IndexType b) const;
+
+    /**
+     @brief Split whole into numBlocks blocks by replicating the input whole
+            block and marking the output blocks as blocks that need to be split
+            together later using a hilbert curve.
+
+     @param whole The block to split.
+     @param numBlocks The number of blocks to make from whole.
+     @return A vector of new blocks.
+     */
+    std::vector<Block> split_hilbert(const Block &whole, IndexType numBlocks) const;
+
+};
+
+//---------------------------------------------------------------------------
+std::vector<Block>
+BlockSplitter::split2(const Block &whole, IndexType a, IndexType b) const
+{
+    std::vector<Block> blocks;
+
+    double blockRatio = static_cast<double>(a) / static_cast<double>(b);
+    auto d = whole.longest();
+
+    // Split whole along the longest dimension such that the volumes on
+    // both sides are proportional.
+    Block A, B;
+    A.start = whole.start;
+    A.end = whole.end;
+    B.start = whole.start;
+    B.end = whole.end;
+    double bestDiff = std::numeric_limits<double>::max();
+    IndexType bestS = whole.start[d];
+    for(IndexType s = whole.start[d]; s < whole.end[d] - 1; s++)
+    {
+        A.end[d] = s;
+        B.start[d] = A.end[d] + 1;
+
+        double volRatio = static_cast<double>(A.size()) / static_cast<double>(B.size());
+        double currDiff = fabs(volRatio - blockRatio);
+
+        if(currDiff < bestDiff)
+        {
+            bestDiff = currDiff;
+            bestS = s;
+        }
+    }
+    A.end[d] = bestS;
+    B.start[d] = A.end[d] + 1;
+
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+    std::cout << "  blockRatio: " << blockRatio << std::endl;
+    std::cout << "  d: " << d << std::endl;
+    std::cout << "  a: " << a << std::endl;
+    std::cout << "  b: " << b << std::endl;
+    std::cout << "  bestS:" << bestS << std::endl;
+    std::cout << "  A:" << A << std::endl;
+    std::cout << "  B:" << B << std::endl;
+#endif
+
+    // Deal with cases where we ask for more domains than there are zones.
+    if(a > A.size())
+    {
+        auto n = a + b;
+        a = A.size();
+        b = n - a;
+    }
+    else if(b > B.size())
+    {
+        auto n = a + b;
+        b = B.size();
+        a = n - b;
+    }
+
+    if(a == 1)
+        blocks.push_back(A);
+    else
+    {
+        auto ablocks = split(A, a);
+        for(const auto &blk : ablocks)
+            blocks.push_back(blk);
+    }
+    if(b == 1)
+        blocks.push_back(B);
+    else
+    {
+        auto bblocks = split(B, b);
+        for(const auto &blk : bblocks)
+            blocks.push_back(blk);
+    }
+
+    return blocks;
+}
+
+//---------------------------------------------------------------------------
+std::vector<Block> BlockSplitter::split_hilbert(const Block &whole, IndexType numblocks) const
+{
+    static IndexType hilbertBlockId = 1;
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+    std::cout << "  hilbert:\n";
+#endif
+    std::vector<Block> blocks;
+    // Repeat the whole Block numblocks times but give it a valid hilbertBlockId to
+    // indicate that it will be split later into a real Block.
+    for(IndexType i = 0; i < numblocks; i++)
+    {
+        Block b(whole);                    // All these blocks cover the same space initially.
+        b.hilbertBlockId = hilbertBlockId; // Supply a valid id so we know which blocks are related.
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+        std::cout << "    " << b << std::endl;
+#endif
+        blocks.push_back(b);
+    }
+
+    hilbertBlockId++;
+    return blocks;
+}
+
+//---------------------------------------------------------------------------
+std::vector<Block> BlockSplitter::split(const Block &whole, IndexType nblocks) const
+{
+    std::vector<Block> blocks;
+    const IndexType ndims = 3;
+
+    auto large_factors = [](const std::vector<IndexType> &f) -> bool
+    {
+        for(const auto &a : f)
+        {
+            if(a > 7)
+                return true;
+        }
+        return false;
+    };
+
+    auto f = conduit::utils::factor(nblocks);
+
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+    std::cout << "make_blocks:\n";
+    std::cout << "  whole: " << whole << std::endl;
+    std::cout << "  nblocks: " << nblocks << std::endl;
+    std::cout << "  factors: " << f << std::endl;
+#endif
+
+    if(f.size() == 1 && f[0] == 1)
+    {
+        // Single Block
+        blocks.push_back(whole);
+    }
+    else if(options.curveSplitting && whole.size() <= options.maximumSize)
+    {
+        // Hilbert curve splitting is enabled so do it.
+        auto newblocks = split_hilbert(whole, nblocks);
+        for(const auto &blk : newblocks)
+            blocks.push_back(blk);
+    }
+    else if(f.size() == 1)
+    {
+        // nblocks is prime. Split it into 2 numbers.
+        IndexType b = nblocks / 2;
+        IndexType a = nblocks - b;
+        auto newblocks = split2(whole, a, b);
+        for(const auto &blk : newblocks)
+            blocks.push_back(blk);
+    }
+    else if(f.size() >= 2 && large_factors(f))
+    {
+        // nblocks is not prime but its largest factor is quite a bit larger
+        // than the next smallest factor. If we let it proceed into the next
+        // if-Block then we could get some really thin domains. Here we can
+        // reorganize the number.
+        //
+        // Example: nblocks = p * q
+        //          nblocks = p * (r + s)  where q = r + s
+        //          nblocks = p * r + p * s
+        //          a = p * r
+        //          b = p * s
+
+        IndexType p = 1;
+        for(size_t i = 0; i < f.size() - 1; i++)
+            p *= f[i];
+        IndexType q = f[f.size() - 1];
+        IndexType s = q / 2;
+        IndexType r = q - s;
+        IndexType a = p * r;
+        IndexType b = p * s;
+
+        auto newblocks = split2(whole, a, b);
+        for(const auto &blk : newblocks)
+            blocks.push_back(blk);
+    }
+    else
+    {
+        // Determine the best arrangement for making blocks.
+        IndexType divisions[] = {1, 1, 1};
+        for (size_t i = 0; i < f.size(); i++)
+        {
+            auto currentFactor = f[f.size() - 1 - i];
+            IndexType selectedDim = 0;
+
+            // Favor giving the factor to the dimension that makes the shortest diagonal.
+            double shortestDiag = std::numeric_limits<double>::max();
+            for(int di = 0; di < ndims; di++)
+            {
+                auto side = whole.length(di);
+                if(side > 1 && divisions[di] * currentFactor <= side)
+                {
+                    IndexType sum = 0;
+                    for(IndexType c = 0; c < ndims; c++)
+                    {
+                        IndexType len = divisions[c];
+                        if(c == di)
+                            len *= currentFactor;
+                        sum += len * len;
+                    }
+
+                    double diag = pow(sum, 1. / 3.);
+                    if(diag < shortestDiag)
+                    {
+                        selectedDim = di;
+                        shortestDiag = diag;
+                    }
+                }
+            }
+
+            divisions[selectedDim] *= currentFactor;
+        }
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+        std::cout << "  divisions: [" << divisions[0]
+                  << ", " << divisions[1]
+                  << ", " << divisions[2] << "]" << std::endl;
+#endif
+        if(divisions[0] > whole.length(0) ||
+           divisions[1] > whole.length(1) ||
+           divisions[2] > whole.length(2))
+        {
+            // If any of the divisions are larger than the side lengths that we
+            // came up with divisions that can't work.
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+            std::cout << "   !! Divisions do not work. Try a different partition." << std::endl;
+#endif
+            // Split nblocks into 2 numbers.
+            IndexType b = nblocks / 2;
+            IndexType a = nblocks - b;
+            auto newblocks = split2(whole, a, b);
+            for(const auto &blk : newblocks)
+                blocks.push_back(blk);
+        }
+        else
+        {
+            // Figure out the sizes for each domain in I,J,K
+            std::vector<IndexType> sizes[3];
+            for(int d = 0; d < 3; d++)
+            {
+                IndexType zonesInWhole = whole.length(d);
+                IndexType zonesPerDomain = zonesInWhole / divisions[d];
+                IndexType zoneSum = 0;
+                for(IndexType i = 0; i < divisions[d]; i++)
+                {
+                    sizes[d].push_back(zonesPerDomain);
+                    zoneSum += zonesPerDomain;
+                }
+                // Offset the dimensions where they start increasing sizes so they
+                // don't all increase at the start, making the first domain larger
+                // than all others.
+                IndexType offset = (d * (sizes[d].size() - 1)) / 3;
+                for(IndexType i = 0; zoneSum < zonesInWhole; i++)
+                {
+                    sizes[d][(offset + i) % sizes[d].size()]++;
+                    zoneSum++;
+                }
+            }
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+            std::cout << "  sizes:" << std::endl;
+            std::cout << "    x: " << sizes[0] << std::endl;
+            std::cout << "    y: " << sizes[1] << std::endl;
+            std::cout << "    z: " << sizes[2] << std::endl;
+            std::cout << "  domains:" << std::endl;
+#endif
+            // Make the domains.
+            Block dom;
+            dom.start[2] = whole.start[2];
+            for(const auto &ksize : sizes[2])
+            {
+                dom.end[2] = dom.start[2] + ksize - 1;
+    
+                dom.start[1] = whole.start[1];
+                for(const auto &jsize : sizes[1])
+                {
+                    dom.end[1] = dom.start[1] + jsize - 1;
+    
+                    dom.start[0] = whole.start[0];
+                    for(const auto &isize : sizes[0])
+                    {
+                        dom.end[0] = dom.start[0] + isize - 1;
+#ifdef CONDUIT_DEBUG_BLOCK_SPLITTER
+                        std::cout << "    -\n    " << dom << std::endl;
+#endif
+                        blocks.push_back(dom);
+                        dom.start[0] = dom.end[0] + 1;
+                    }
+                    dom.start[1] = dom.end[1] + 1;
+                }
+                dom.start[2] = dom.end[2] + 1;
+            }
+        }
+    }
+
+    return blocks;
+}
+
+//------------------------------------------------------------------------------
+/**
+ @brief Accepts a list of logical indices within domain that identify specific
+        zones that are selected. From that, we'll make a new Block that contains
+        just those zones (by setting the image in the Block).
+
+ @param zoneIds The vector of zone ids that are enabled in the domain. These are global indices.
+
+ @note We'd get the zoneIds from the hilbert code.
+ */
+Block logicalIndicesToBlock(const std::vector<LogicalIndex> &zoneIds)
+{
+    // Figure out the bounding box of the zones that are selected in domain.
+    // we'll figure it out relative to the whole.
+    Block selected;
+    selected.start = LogicalIndex{std::numeric_limits<IndexType>::max(),
+                                  std::numeric_limits<IndexType>::max(),
+                                  std::numeric_limits<IndexType>::max()};
+    selected.end = LogicalIndex{-std::numeric_limits<IndexType>::max(),
+                                -std::numeric_limits<IndexType>::max(),
+                                -std::numeric_limits<IndexType>::max()};
+    // Determine the selected extents in the domain.
+    for(const auto &zid : zoneIds)
+    {
+        selected.start[0] = std::min(selected.start[0], zid[0]);
+        selected.start[1] = std::min(selected.start[1], zid[1]);
+        selected.start[2] = std::min(selected.start[2], zid[2]);
+
+        selected.end[0] = std::max(selected.end[0], zid[0]);
+        selected.end[1] = std::max(selected.end[1], zid[1]);
+        selected.end[2] = std::max(selected.end[2], zid[2]);
+    }
+
+    // Make another selected Block to help with indexing.
+    Block selectedLocal;
+    selectedLocal.start = LogicalIndex{0,0,0};
+    selectedLocal.end = LogicalIndex{selected.length(0) - 1,
+                                     selected.length(1) - 1,
+                                     selected.length(2) - 1};
+
+    // Fill in the selected image.
+    selected.image.resize(selected.size(), Block::Empty);
+    for(const auto &zid : zoneIds)
+    {
+        // The IJK within the selected Block.
+        auto local = LogicalIndex{zid[0] - selected.start[0],
+                                  zid[1] - selected.start[1],
+                                  zid[2] - selected.start[2]};
+
+        // Make the local index in the selected region.
+        auto localIndex = selectedLocal.IJKToIndex(local);
+
+        // Mark the zone as self.
+        selected.image[localIndex] = Block::Self;
+    }
+
+    return selected;
+}
+
+//------------------------------------------------------------------------------
+/**
+ @brief Iterate over a block in the style of a hilbert curve and divide the
+        zones into a set of segments, each of which is aggregated and used to
+        construct a new block that contains the subset.
+
+ @param whole The block whose zones will be iterated in hilbert order.
+ @param numSegments The number of segments to produce from the input block.
+ @param func A function/lambda to apply to a vector of LogicalIndex that
+             comprise the segment.
+ */
+template <typename Func>
+void
+hilbert_iterate(const Block &whole, IndexType numSegments, Func &&func)
+{
+    auto totalZones = whole.size();
+    auto zonesPerSegment = totalZones / numSegments;
+    IndexType zoneCount = 0, segmentId = 0;
+    IndexType dims[3] = {whole.length(0), whole.length(1), whole.length(2)};
+
+    std::vector<LogicalIndex> segmentIds;
+    segmentIds.reserve(zonesPerSegment);
+
+    auto lastSegmentId = numSegments - 1;
+
+    if(dims[2] <= 1)
+    {
+        // Tweak zonesPerSegment the decomposition is a little better behaved.
+        // zonesPerSegment = zonesPerSegment + (4 - (zonesPerSegment % 4));
+
+        // Store zone ids in segmentIds and call func when we have enough.
+        auto store2d = [&](IndexType i, IndexType j)
+        {
+            LogicalIndex zid = {i + whole.start[0], j + whole.start[1], 0};
+            segmentIds.push_back(zid);
+            zoneCount++;
+
+            if((segmentId < lastSegmentId && static_cast<IndexType>(segmentIds.size()) == zonesPerSegment) ||
+               (segmentId == lastSegmentId && zoneCount == totalZones))
+            {
+                func(segmentId, segmentIds);
+                segmentIds.clear();
+                segmentId++;
+            }
+        };
+
+        conduit::blueprint::curves::gilbert2d(dims[0], dims[1], store2d);
+
+        // Process any leftover segments.
+        if(!segmentIds.empty())
+            func(segmentId, segmentIds);
+    }
+    else if(dims[2] > 1)
+    {
+        // Tweak zonesPerSegment the decomposition is a little better behaved.
+        // This bakes in some inequality though since the last curve segment
+        // will be shorter.
+        // zonesPerSegment = zonesPerSegment + (8 - (zonesPerSegment % 8));
+
+        // Store zone ids in segmentIds and call func when we have enough.
+        auto store3d = [&](IndexType i, IndexType j, IndexType k)
+        {
+            LogicalIndex zid = {i + whole.start[0], j + whole.start[1], k + whole.start[2]};
+            segmentIds.push_back(zid);
+            zoneCount++;
+
+            if((segmentId < lastSegmentId && static_cast<IndexType>(segmentIds.size()) == zonesPerSegment) ||
+               (segmentId == lastSegmentId && zoneCount == totalZones))
+            {
+                func(segmentId, segmentIds);
+                segmentIds.clear();
+                segmentId++;
+            }
+        };
+
+        conduit::blueprint::curves::gilbert3d(dims[0], dims[1], dims[2], store3d);
+
+        // Process any leftover segments.
+        if(!segmentIds.empty())
+            func(segmentId, segmentIds);
+    }
+}
+
+//------------------------------------------------------------------------------
+/**
+ @brief This step looks through the Block and performs any hilbert iteration
+        needed to further partition them using a hilbert curve.
+
+ @param blocks         The vector of all blocks. Some will be updated here.
+ @param selectedblocks An optional vector of selected Block ids. If the vector is not
+                       empty then only these blocsk will be realized.
+ */
+void
+realizeHilbertBlocks(std::vector<Block> &blocks,
+    const std::vector<IndexType> &selectedblocks = std::vector<IndexType>())
+{
+    // Scan the blocks to make a map of hilbert ids to Block indices.
+    std::map<IndexType, std::set<IndexType>> hilberts;
+    std::set<IndexType> hkeys;
+    for(size_t bi = 0; bi < blocks.size(); bi++)
+    {
+        const auto &b = blocks[bi];
+        if(b.hilbertBlockId > Block::InvalidDomainId)
+        {
+            // If there are no selected blocks then we selected the hilbertBlockId.
+            // Or, if there are selected blocks then we selected the hilbertBlockId
+            // it contains one of the blocks that we do want.
+            if(selectedblocks.empty() ||
+               std::find(selectedblocks.begin(), selectedblocks.end(), bi) != selectedblocks.end())
+            {
+                hkeys.insert(b.hilbertBlockId);
+            }
+
+            hilberts[b.hilbertBlockId].insert(bi);
+        }
+    }
+
+    for(auto it = hilberts.begin(); it != hilberts.end(); it++)
+    {
+        // Check whether the curve is selected.
+        if(hkeys.find(it->first) != hkeys.end())
+        {
+            auto block_it = it->second.begin();
+            size_t nblocks = it->second.size();
+            // Make a copy of the original Block since we're going to replace the blocks.
+            Block b = blocks[*block_it];
+
+            // Iterate through the Block with a hilbert curve and each time we get
+            // a new segment, make a new Block that records the 
+            hilbert_iterate(b, nblocks,
+                [&](IndexType, const std::vector<LogicalIndex> &segmentZones)
+            {
+                auto bi = *block_it;
+                blocks[bi] = logicalIndicesToBlock(segmentZones);
+
+                block_it++;
+            });
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+/**
+ @brief Scans through the Block's image and makes a layer of possible neighbor
+        zones around the zones that are part of the domain. The Block should be
+        expanded by a layer before calling this function.
+
+ @param obj The Block
+ @param n The number of neighbor layers
+ @param threeD Whether we're allowing 3D
+ */
+void highlightNeighborZones(Block &obj, IndexType n, bool threeD)
+{
+    IndexType nz = 1, dkmin = 0, dkmax = 0;
+    IndexType ny = obj.length(1);
+    IndexType nx = obj.length(0);
+
+    if(threeD)
+    {
+        nz = obj.length(2);
+        dkmin = -1;
+        dkmax = 1;
+    }
+
+    if(obj.complex())
+    {
+        for(IndexType k = 0; k < nz; k++)
+        for(IndexType j = 0; j < ny; j++)
+        for(IndexType i = 0; i < nx; i++)
+        {
+            // Point cp is the current i,j,k point.
+            IndexType cp = obj.IJKToIndex(LogicalIndex{i, j, k});
+            // If the point is part of the domain then activate the neighbor zones around it.
+            if(obj.image[cp] == Block::Self)
+            {
+                // Look at the neighboring zones and make them neighbors if they are empty.
+                for(IndexType dk = dkmin; dk <= dkmax; dk++)
+                for(IndexType dj = -1; dj <= 1; dj++)
+                for(IndexType di = -1; di <= 1; di++)
+                {
+                    auto ii = i + di;
+                    auto jj = j + dj;
+                    auto kk = k + dk;
+
+                    if(ii >= 0 && ii <= nx &&
+                       jj >= 0 && jj <= ny &&
+                       kk >= 0 && kk <= nz)
+                    {
+                        auto np = obj.IJKToIndex(LogicalIndex{ii, jj, kk});
+                        if(obj.image[np] == Block::Empty)
+                        {
+                            obj.image[np] = Block::Neighbor;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        // We need to blow it up anyway.
+        obj.image.resize(obj.size(), Block::Self);
+        for(IndexType k = 0; k < nz; k++)
+        for(IndexType j = 0; j < ny; j++)
+        for(IndexType i = 0; i < nx; i++)
+        {
+            bool end = (threeD && (k < n || k == nz-n)) || (j < n || j == ny-n) || (i < n || i == nx-n);
+            if(end)
+            {
+                auto index = obj.IJKToIndex(LogicalIndex{i,j,k});
+                obj.image[index] = Block::Neighbor;
+            }
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
+/**
+ @brief Return a Block whose image has neighbors painted into it.
+ */
+// Returns the number of neighbors in the Block.
+Block neighbors(const std::vector<Block> &blocks, size_t BlockId, bool threeD)
+{
+    const int neighborLayers = 1;
+
+    // Expand the selected Block by a layer, also creating its image.
+    Block selectedBlock = blocks[BlockId].expand(neighborLayers, threeD);
+
+    // Iterate over the zones in the selected Block and highlight the zones that
+    // should count as neighbor zones. This handles non-brick-like blocks.
+    highlightNeighborZones(selectedBlock, neighborLayers, threeD);
+
+    for(size_t bi = 0; bi < blocks.size(); bi++)
+    {
+        if(bi != BlockId)
+        {
+            // Get a list of IJK indices in global coordinates that are the intersecting zones.
+            auto zids = selectedBlock.intersect(blocks[bi]);
+
+            // If there were intersections, paint the Block index into the neighbor slots.
+            for(const auto &zid : zids)
+            {
+                auto local = LogicalIndex{zid[0] - selectedBlock.start[0],
+                                          zid[1] - selectedBlock.start[1],
+                                          zid[2] - selectedBlock.start[2]};
+                auto index = selectedBlock.IJKToIndex(local);
+                if(selectedBlock.image[index] == Block::Neighbor)
+                    selectedBlock.image[index] = static_cast<IndexType>(bi);
+            }
+        }
+    }
+
+    return selectedBlock;
 }
 
 }

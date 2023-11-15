@@ -29,6 +29,7 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_blueprint_exports.h.in"
 #
 set(blueprint_headers
     conduit_blueprint.hpp
+    conduit_blueprint_curves.hpp
     conduit_blueprint_mesh.hpp
     conduit_blueprint_mesh_utils.hpp
     conduit_blueprint_mesh_kdtree.hpp
