@@ -1242,7 +1242,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
+TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
 {
     const std::vector<std::string> ovl_topo_names = {"", "topo"};
     for (int i = 0; i < ovl_topo_names.size(); i ++)
@@ -1277,6 +1277,8 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
             int cycle = save_mesh[child]["state"]["cycle"].as_int32();
             save_mesh[child]["state"]["cycle"].reset();
             save_mesh[child]["state"]["cycle"] = (int64) cycle;
+            // overlink preserves volume dependence in VAR_ATTRIBUTES
+            save_mesh[child]["fields"]["dist"]["volume_dependent"] = "false";
         }
 
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
@@ -1290,6 +1292,44 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink)
             EXPECT_FALSE(l_curr.diff(s_curr, info));
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+// this tests var attributes
+TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
+{
+    const std::string basename = "silo_save_option_overlink_basic";
+    const std::string filename = basename + "/OvlTop.silo";
+
+    Node opts;
+    opts["file_style"] = "overlink";
+
+    Node save_mesh, load_mesh, info;
+    blueprint::mesh::examples::basic("structured", 3, 3, 1, save_mesh);
+
+    // add another field that is volume dependent
+    Node &field2 = save_mesh["fields"]["field2"];
+    field2["association"] = "element";
+    field2["topology"] = "mesh";
+    field2["volume_dependent"] = "true";
+    field2["values"].set_external(save_mesh["fields"]["field"]["values"]);
+
+    remove_path_if_exists(basename);
+    io::silo::save_mesh(save_mesh, basename, opts);
+    io::silo::load_mesh(filename, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+    overlink_name_changer(save_mesh);
+    // make changes to save mesh so the diff will pass
+    save_mesh["state/cycle"] = (int64) 0;
+    save_mesh["state/domain_id"] = 0;
+
+    // the loaded mesh will be in the multidomain format
+    // but the saved mesh is in the single domain format
+    EXPECT_EQ(load_mesh.number_of_children(), 1);
+    EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
 }
 
 //-----------------------------------------------------------------------------
