@@ -2001,17 +2001,24 @@ read_var_attributes(DBfile *dbfile,
         return;
     }
 
-    // TODO it is annoying to see the error message that this was not found in the
-    // silo file every time. Is there a way to check that it is there OR to not call this
-    // unconditionally?
     const std::string var_attr_name = "VAR_ATTRIBUTES";
+    if (! DBInqVarExists(dbfile, var_attr_name.c_str()))
+    {
+        // The var attributes are not present. They are optional, so we can return early
+        return;
+    }
+    if (DBInqVarType(dbfile, var_attr_name.c_str()) != DB_ARRAY)
+    {
+        // The var attributes are the wrong type. They are optional, so we can return early
+        return;
+    }
     detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> var_attr_obj{
         DBGetCompoundarray(dbfile, var_attr_name.c_str()), 
         &DBFreeCompoundarray};
     DBcompoundarray *var_attr = var_attr_obj.getSiloObject();
-    // the var attributes are not present. They are optional, so we can return early
     if (! var_attr)
     {
+        // we failed to read the variable attributes. We can skip them.
         return;
     }
 
@@ -2145,26 +2152,30 @@ read_root_silo_index(const std::string &root_file_path,
     }
 
     int nblocks;
-    if ((! read_multimesh(dbfile.getSiloObject(),
-                          multimesh_name,
-                          nblocks,
-                          root_node,
-                          error_oss)) ||
-        (! read_multivars(toc,
-                          dbfile.getSiloObject(),
-                          multimesh_name,
-                          nblocks,
-                          root_node,
-                          error_oss)) ||
-        (! read_multimats(toc,
-                          dbfile.getSiloObject(),
-                          multimesh_name,
-                          nblocks,
-                          root_node,
-                          error_oss)))
+    if (! read_multimesh(dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
     {
-        // if any of these fail, we want to quit. The 1st one to fail
-        // will end the if condition execution
+        return false;
+    }
+    if (! read_multivars(toc,
+                         dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
+    {
+        return false;
+    }
+    if (! read_multimats(toc,
+                         dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
+    {
         return false;
     }
 
@@ -4160,7 +4171,6 @@ void
 write_var_attributes(DBfile *dbfile, 
                      const std::string &opts_mesh_name,
                      const Node &root)
-
 {
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     const Node &n_type_dom_info = root["type_domain_info"];
