@@ -637,6 +637,20 @@ namespace utils
      uint64       CONDUIT_API hash(const uint64 *k,
                                    unsigned int length);
 
+//-----------------------------------------------------------------------------
+// Math utility functions
+//-----------------------------------------------------------------------------
+    /**
+     \brief Factor an integer and return a vector of its factors. If the number
+            is not prime, we omit 1, num from the vector.
+
+     \param num The number to factor.
+
+     \return A vector containing the factors of the number. The product of these
+             values will equal the original number.
+     */
+    std::vector<conduit::index_t> factor(conduit::index_t num);
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::utils --
