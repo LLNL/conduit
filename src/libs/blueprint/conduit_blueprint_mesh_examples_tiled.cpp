@@ -107,11 +107,8 @@ private:
 
 const conduit::index_t Tile::INVALID_POINT = -1;
 
-/**
- \brief Build a mesh from tiles. There is a default tile pattern, although it can
-        be replaced using an options Node containing new tile information.
- */
-class Tiler
+//---------------------------------------------------------------------------
+class TilerBase
 {
 public:
     static const int BoundaryLeft = 0;
@@ -123,12 +120,8 @@ public:
 
     static const conduit::index_t InvalidDomain = -1;
 
-    Tiler();
+    TilerBase();
 
-    /// Generate the tiled mesh.
-    void generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
-                  conduit::Node &res,
-                  const conduit::Node &options);
 protected:
     /// Fill a default tile pattern into the filter.
     void initialize();
@@ -169,6 +162,223 @@ protected:
     /// Return tile height
     double height() const { return m_height; }
 
+    /// Turn a node into an int vector.
+    std::vector<conduit::index_t> toIndexVector(const conduit::Node &n) const
+    {
+        auto acc = n.as_index_t_accessor();
+        std::vector<index_t> vec;
+        vec.reserve(acc.number_of_elements());
+        for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
+            vec.push_back(acc[i]);
+        return vec;
+    }
+protected:
+    conduit::Node m_tile;
+    double m_width, m_height;
+    std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top;
+    std::string meshName, boundaryMeshName;
+};
+
+//---------------------------------------------------------------------------
+TilerBase::TilerBase() : m_tile(), m_width(0.), m_height(0.),
+                         m_left(), m_right(), m_bottom(), m_top(),
+                         meshName("mesh"), boundaryMeshName("boundary")
+{
+    initialize();
+}
+
+//---------------------------------------------------------------------------
+void
+TilerBase::initialize()
+{
+#ifdef CONDUIT_SIMPLE_TILED_PATTERN
+    // Simpler case for debugging.
+    const double x[] = {0., 1., 0., 1.};
+    const double y[] = {0., 0., 1., 1.};
+    const conduit::index_t conn[] = {0,1,3,2};
+    const conduit::index_t color[] = {0};
+
+    const conduit::index_t left[] = {0,2};
+    const conduit::index_t right[] = {1,3};
+    const conduit::index_t bottom[] = {0,1};
+    const conduit::index_t top[] = {2,3};
+#else
+    // Default pattern
+    const double x[] = {
+        0., 3., 10., 17., 20.,
+        0., 3., 17., 20.,
+        5., 15.,
+        7., 10., 13.,
+        0., 7., 10., 13., 20.,
+        7., 10., 13.,
+        5., 15.,
+        0., 3., 17., 20.,
+        0., 3., 10., 17., 20.,
+    };
+
+    const double y[] = {
+        0., 0., 0., 0., 0.,
+        3., 3., 3., 3.,
+        5., 5.,
+        7., 7., 7.,
+        10., 10., 10., 10., 10.,
+        13., 13., 13.,
+        15., 15.,
+        17., 17., 17., 17.,
+        20., 20., 20., 20., 20.,
+    };
+
+    const conduit::index_t conn[] = {
+        // lower-left quadrant
+        0,1,6,5,
+        1,2,9,6,
+        2,12,11,9,
+        5,6,9,14,
+        9,11,15,14,
+        11,12,16,15,
+        // lower-right quadrant
+        2,3,7,10,
+        3,4,8,7,
+        7,8,18,10,
+        2,10,13,12,
+        12,13,17,16,
+        10,18,17,13,
+        // upper-left quadrant
+        14,22,25,24,
+        14,15,19,22,
+        15,16,20,19,
+        24,25,29,28,
+        22,30,29,25,
+        19,20,30,22,
+        // upper-right quadrant
+        16,17,21,20,
+        17,18,23,21,
+        18,27,26,23,
+        20,21,23,30,
+        23,26,31,30,
+        26,27,32,31
+    };
+
+    const conduit::index_t color[] = {
+        0, 1, 1, 1, 1, 0,
+        1, 0, 1, 1, 0, 1,
+        1, 1, 0, 0, 1, 1,
+        0, 1, 1, 1, 1, 0
+    };
+
+    const conduit::index_t left[] = {0,5,14,24,28};
+    const conduit::index_t right[] = {4,8,18,27,32};
+    const conduit::index_t bottom[] = {0,1,2,3,4};
+    const conduit::index_t top[] = {28,29,30,31,32};
+#endif
+
+    // Define the tile as a topology.
+    conduit::Node opts;
+    opts["coordsets/coords/type"] = "explicit";
+    opts["coordsets/coords/values/x"].set(x, sizeof(x) / sizeof(double));
+    opts["coordsets/coords/values/y"].set(y, sizeof(y) / sizeof(double));
+    opts["topologies/tile/type"] = "unstructured";
+    opts["topologies/tile/coordset"] = "coords";
+    opts["topologies/tile/elements/shape"] = "quad";
+    constexpr auto nelem = (sizeof(conn) / sizeof(conduit::index_t)) / 4;
+    opts["topologies/tile/elements/connectivity"].set(conn, nelem * 4);
+    std::vector<conduit::index_t> size(nelem, 4);
+    opts["topologies/tile/elements/sizes"].set(size.data(), size.size());
+    opts["fields/color/association"] = "element";
+    opts["fields/color/topology"] = "tile";
+    opts["fields/color/values"].set(color, sizeof(color) / sizeof(conduit::index_t));
+
+    // Define tile boundary indices.
+    opts["left"].set(left, sizeof(left) / sizeof(conduit::index_t));
+    opts["right"].set(right, sizeof(right) / sizeof(conduit::index_t));
+    opts["bottom"].set(bottom, sizeof(bottom) / sizeof(conduit::index_t));
+    opts["top"].set(top, sizeof(top) / sizeof(conduit::index_t));
+
+    initialize(opts);
+}
+
+//---------------------------------------------------------------------------
+void
+TilerBase::initialize(const conduit::Node &t)
+{
+    std::vector<std::string> required{"coordsets", "topologies", "left", "right", "bottom", "top"};
+    for(const auto &name : required)
+    {
+        if(!t.has_child(name))
+        {
+            CONDUIT_ERROR("Node does not contain key: " << name);
+        }
+    }
+
+    // Get the tile boundaries and convert them.
+    m_left = toIndexVector(t.fetch_existing("left"));
+    m_right = toIndexVector(t.fetch_existing("right"));
+    m_bottom = toIndexVector(t.fetch_existing("bottom"));
+    m_top = toIndexVector(t.fetch_existing("top"));
+    if(m_left.size() != m_right.size())
+    {
+        CONDUIT_ERROR("left/right vectors have different lengths.");
+    }
+    if(m_bottom.size() != m_top.size())
+    {
+        CONDUIT_ERROR("bottom/top vectors have different lengths.");
+    }
+
+    // Save the tile definition.
+    m_tile.set(t);
+
+    // Make sure the coordset is 2D, explicit.
+    if(conduit::blueprint::mesh::coordset::dims(getCoordset()) != 2)
+    {
+        CONDUIT_ERROR("The tile coordset must be 2D.");
+    }
+    if(getCoordset()["type"].as_string() != "explicit")
+    {
+        CONDUIT_ERROR("The tile coordset must be explicit.");
+    }
+    // Make sure the topology is 2D, unstructured
+    if(conduit::blueprint::mesh::topology::dims(getTopology()) != 2)
+    {
+        CONDUIT_ERROR("The tile topology must be 2D.");
+    }
+    if(getTopology()["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The tile topology must be unstructured.");
+    }
+
+    // Compute the tile extents.
+    if(t.has_path("translate/x"))
+        m_width = t["translate/x"].to_double();
+    else
+    {
+        const auto &xc = getCoordset().fetch_existing("values/x").as_double_array();
+        m_width = xc.max() - xc.min();
+    }
+
+    if(t.has_path("translate/y"))
+         m_height = t["translate/y"].to_double();
+    else
+    {
+        const auto &yc = getCoordset().fetch_existing("values/y").as_double_array();
+        m_height = yc.max() - yc.min();
+    }
+}
+
+//---------------------------------------------------------------------------
+/**
+ \brief Build a mesh from tiles. There is a default tile pattern, although it can
+        be replaced using an options Node containing new tile information.
+ */
+class Tiler : public TilerBase
+{
+public:
+    Tiler();
+
+    /// Generate the tiled mesh.
+    void generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
+                  conduit::Node &res,
+                  const conduit::Node &options);
+protected:
     /// Creates the points for the tile (if they need to be created).
     void addPoints(const double M[3][3],
                    std::vector<conduit::index_t> &ptids,
@@ -357,17 +567,6 @@ protected:
         }
     }
 
-    /// Turn a node into an int vector.
-    std::vector<conduit::index_t> toIndexVector(const conduit::Node &n) const
-    {
-        auto acc = n.as_index_t_accessor();
-        std::vector<index_t> vec;
-        vec.reserve(acc.number_of_elements());
-        for(conduit::index_t i = 0; i < acc.number_of_elements(); i++)
-            vec.push_back(acc[i]);
-        return vec;
-    }
-
     /// Determine which boundaries are needed.
     void boundaryFlags(const conduit::Node &options, bool flags[6]) const;
 
@@ -416,196 +615,11 @@ protected:
                    const std::vector<conduit::index_t> &old2NewPoint,
                    const conduit::Node &options,
                    conduit::Node &out) const;
-private:
-    conduit::Node m_tile;
-    double m_width, m_height;
-    std::vector<conduit::index_t> m_left, m_right, m_bottom, m_top;
-    std::string meshName, boundaryMeshName;
 };
 
 //---------------------------------------------------------------------------
-Tiler::Tiler() : m_tile(), m_width(0.), m_height(0.),
-                 m_left(), m_right(), m_bottom(), m_top(),
-                 meshName("mesh"), boundaryMeshName("boundary")
+Tiler::Tiler() : TilerBase()
 {
-    initialize();
-}
-
-//---------------------------------------------------------------------------
-void
-Tiler::initialize()
-{
-#ifdef CONDUIT_SIMPLE_TILED_PATTERN
-    // Simpler case for debugging.
-    const double x[] = {0., 1., 0., 1.};
-    const double y[] = {0., 0., 1., 1.};
-    const conduit::index_t conn[] = {0,1,3,2};
-    const conduit::index_t color[] = {0};
-
-    const conduit::index_t left[] = {0,2};
-    const conduit::index_t right[] = {1,3};
-    const conduit::index_t bottom[] = {0,1};
-    const conduit::index_t top[] = {2,3};
-#else
-    // Default pattern
-    const double x[] = {
-        0., 3., 10., 17., 20.,
-        0., 3., 17., 20.,
-        5., 15.,
-        7., 10., 13.,
-        0., 7., 10., 13., 20.,
-        7., 10., 13.,
-        5., 15.,
-        0., 3., 17., 20.,
-        0., 3., 10., 17., 20.,
-    };
-
-    const double y[] = {
-        0., 0., 0., 0., 0.,
-        3., 3., 3., 3.,
-        5., 5.,
-        7., 7., 7.,
-        10., 10., 10., 10., 10.,
-        13., 13., 13.,
-        15., 15.,
-        17., 17., 17., 17.,
-        20., 20., 20., 20., 20.,
-    };
-
-    const conduit::index_t conn[] = {
-        // lower-left quadrant
-        0,1,6,5,
-        1,2,9,6,
-        2,12,11,9,
-        5,6,9,14,
-        9,11,15,14,
-        11,12,16,15,
-        // lower-right quadrant
-        2,3,7,10,
-        3,4,8,7,
-        7,8,18,10,
-        2,10,13,12,
-        12,13,17,16,
-        10,18,17,13,
-        // upper-left quadrant
-        14,22,25,24,
-        14,15,19,22,
-        15,16,20,19,
-        24,25,29,28,
-        22,30,29,25,
-        19,20,30,22,
-        // upper-right quadrant
-        16,17,21,20,
-        17,18,23,21,
-        18,27,26,23,
-        20,21,23,30,
-        23,26,31,30,
-        26,27,32,31
-    };
-
-    const conduit::index_t color[] = {
-        0, 1, 1, 1, 1, 0,
-        1, 0, 1, 1, 0, 1,
-        1, 1, 0, 0, 1, 1,
-        0, 1, 1, 1, 1, 0
-    };
-
-    const conduit::index_t left[] = {0,5,14,24,28};
-    const conduit::index_t right[] = {4,8,18,27,32};
-    const conduit::index_t bottom[] = {0,1,2,3,4};
-    const conduit::index_t top[] = {28,29,30,31,32};
-#endif
-
-    // Define the tile as a topology.
-    conduit::Node opts;
-    opts["coordsets/coords/type"] = "explicit";
-    opts["coordsets/coords/values/x"].set(x, sizeof(x) / sizeof(double));
-    opts["coordsets/coords/values/y"].set(y, sizeof(y) / sizeof(double));
-    opts["topologies/tile/type"] = "unstructured";
-    opts["topologies/tile/coordset"] = "coords";
-    opts["topologies/tile/elements/shape"] = "quad";
-    constexpr auto nelem = (sizeof(conn) / sizeof(conduit::index_t)) / 4;
-    opts["topologies/tile/elements/connectivity"].set(conn, nelem * 4);
-    std::vector<conduit::index_t> size(nelem, 4);
-    opts["topologies/tile/elements/sizes"].set(size.data(), size.size());
-    opts["fields/color/association"] = "element";
-    opts["fields/color/topology"] = "tile";
-    opts["fields/color/values"].set(color, sizeof(color) / sizeof(conduit::index_t));
-
-    // Define tile boundary indices.
-    opts["left"].set(left, sizeof(left) / sizeof(conduit::index_t));
-    opts["right"].set(right, sizeof(right) / sizeof(conduit::index_t));
-    opts["bottom"].set(bottom, sizeof(bottom) / sizeof(conduit::index_t));
-    opts["top"].set(top, sizeof(top) / sizeof(conduit::index_t));
-
-    initialize(opts);
-}
-
-//---------------------------------------------------------------------------
-void
-Tiler::initialize(const conduit::Node &t)
-{
-    std::vector<std::string> required{"coordsets", "topologies", "left", "right", "bottom", "top"};
-    for(const auto &name : required)
-    {
-        if(!t.has_child(name))
-        {
-            CONDUIT_ERROR("Node does not contain key: " << name);
-        }
-    }
-
-    // Get the tile boundaries and convert them.
-    m_left = toIndexVector(t.fetch_existing("left"));
-    m_right = toIndexVector(t.fetch_existing("right"));
-    m_bottom = toIndexVector(t.fetch_existing("bottom"));
-    m_top = toIndexVector(t.fetch_existing("top"));
-    if(m_left.size() != m_right.size())
-    {
-        CONDUIT_ERROR("left/right vectors have different lengths.");
-    }
-    if(m_bottom.size() != m_top.size())
-    {
-        CONDUIT_ERROR("bottom/top vectors have different lengths.");
-    }
-
-    // Save the tile definition.
-    m_tile.set(t);
-
-    // Make sure the coordset is 2D, explicit.
-    if(conduit::blueprint::mesh::coordset::dims(getCoordset()) != 2)
-    {
-        CONDUIT_ERROR("The tile coordset must be 2D.");
-    }
-    if(getCoordset()["type"].as_string() != "explicit")
-    {
-        CONDUIT_ERROR("The tile coordset must be explicit.");
-    }
-    // Make sure the topology is 2D, unstructured
-    if(conduit::blueprint::mesh::topology::dims(getTopology()) != 2)
-    {
-        CONDUIT_ERROR("The tile topology must be 2D.");
-    }
-    if(getTopology()["type"].as_string() != "unstructured")
-    {
-        CONDUIT_ERROR("The tile topology must be unstructured.");
-    }
-
-    // Compute the tile extents.
-    if(t.has_path("translate/x"))
-        m_width = t["translate/x"].to_double();
-    else
-    {
-        const auto &xc = getCoordset().fetch_existing("values/x").as_double_array();
-        m_width = xc.max() - xc.min();
-    }
-
-    if(t.has_path("translate/y"))
-         m_height = t["translate/y"].to_double();
-    else
-    {
-        const auto &yc = getCoordset().fetch_existing("values/y").as_double_array();
-        m_height = yc.max() - yc.min();
-    }
 }
 
 //---------------------------------------------------------------------------
