@@ -148,7 +148,26 @@ printUsage(const char *exeName)
     std::cout << "-extents ext          A list of 4 or 6 comma-separated values indicating extents\n";
     std::cout << "                      as pairs of min,max values for each dimension.\n";
     std::cout << "\n";
+    std::cout << "-select a,...         A comma-separated list of integers that correspond to a list\n";
+    std::cout << "                      of domains to select from the total set of domains. Only these\n";   
+    std::cout << "                      domains will be created/saved.\n";
+    std::cout << "\n";
     std::cout << "-help                 Print the usage and exit.\n";
+}
+
+//-----------------------------------------------------------------------------
+std::vector<int> toIntVector(const std::string &s)
+{
+    std::vector<int> values;
+    std::string tmp(s);
+    char *sptr = const_cast<char *>(tmp.c_str());
+    char *p = strtok(sptr, " ,");
+    while(p != nullptr)
+    {
+        values.push_back(atoi(p));
+        p = strtok(nullptr, " ,");
+    }
+    return values;
 }
 
 //-----------------------------------------------------------------------------
@@ -170,6 +189,7 @@ main(int argc, char *argv[])
     conduit::Node n, opts;
     std::unique_ptr<DomainGenerator> g = MAKE_UNIQUE(TiledDomainGenerator);
     std::string meshType("hexs"),meshTypeDefault("hexs"), output("output"), protocol("hdf5");
+    std::vector<int> selectedDomains;
     for(int i = 1; i < argc; i++)
     {
         if(strcmp(argv[i], "-dims") == 0 && (i+1) < argc)
@@ -247,6 +267,11 @@ main(int argc, char *argv[])
             }
             i++;
         }
+        else if(strcmp(argv[i], "-select") == 0 && (i+1) < argc)
+        {
+            selectedDomains = toIntVector(argv[i + 1]);
+            i++;
+        }
         else if(strcmp(argv[i], "-help") == 0 ||
                 strcmp(argv[i], "--help") == 0)
         {
@@ -283,20 +308,22 @@ main(int argc, char *argv[])
             // When numDomains is present, the generator must support top down.
             if(g->supportsTopDown())
             {
-                std::vector<int> selectedDomains;
-                int nd = opts["numDomains"].to_int();
-                for(int dom = 0; dom < ndoms; dom++)
+                if(selectedDomains.empty())
                 {
-#ifdef CONDUIT_PARALLEL
-                    // Limit the domains each rank makes in parallel.
-                    if(dom % size == rank)
+                    for(int dom = 0; dom < ndoms; dom++)
                     {
-                        selectedDomains.push_back(dom);
-                    }
+#ifdef CONDUIT_PARALLEL
+                        // Limit the domains each rank makes in parallel.
+                        if(dom % size == rank)
+                            selectedDomains.push_back(dom);
 #endif
+                    }
                 }
                 if(!selectedDomains.empty())
+                {
                     opts["selectedDomains"].set(selectedDomains);
+                    opts["selectedDomains"].print();
+                }
                 int domain[] = {0, 0, 0};
                 g->generate(domain, n, opts);
             }
@@ -316,18 +343,27 @@ main(int argc, char *argv[])
                     {
                         int domain[] = {i, j, k};
 
-#ifdef CONDUIT_PARALLEL
-                        if(domainid % size == rank)
+                        bool gen = true;
+                        if(selectedDomains.empty())
                         {
+#ifdef CONDUIT_PARALLEL
+                            // Limit the domains each rank makes in parallel.
+                            gen = (domainid % size == rank);
 #endif
+                        }
+                        else
+                        {
+                            gen = std::find(selectedDomains.begin(), selectedDomains.end(), domainid) != selectedDomains.end();
+                        }
+
+                        if(gen)
+                        {
                             // Make the new domain.
                             char domainName[32];
                             snprintf(domainName, sizeof(domainName), "domain_%07d", domainid);
                             conduit::Node &d = n[domainName];
                             g->generate(domain, d, opts);
-#ifdef CONDUIT_PARALLEL
                         }
-#endif
                     }
                 }
             }
