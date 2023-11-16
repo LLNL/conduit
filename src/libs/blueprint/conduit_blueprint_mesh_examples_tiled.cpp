@@ -31,7 +31,7 @@
 // #define CONDUIT_USE_PARTITIONER_FOR_REORDER
 
 // Uncomment this to use a simpler tiled pattern for debugging.
-#define CONDUIT_SIMPLE_TILED_PATTERN
+// #define CONDUIT_SIMPLE_TILED_PATTERN
 
 // Uncomment this to print information about block splitting.
 // #define CONDUIT_DEBUG_BLOCK_SPLITTER
@@ -3279,7 +3279,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     double size[3];
     size[0] = (extents[1] - extents[0]) / static_cast<double>(nx);
     size[1] = (extents[3] - extents[2]) / static_cast<double>(ny);
-    size[2] = (extents[5] - extents[4]) / std::max(static_cast<double>(nx), 1.);
+    size[2] = (extents[5] - extents[4]) / std::max(static_cast<double>(nz), 1.);
     double origin[3];
     origin[0] = extents[0];
     origin[1] = extents[2];
@@ -3310,12 +3310,12 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             // Copy points from previous neighbor tiles if possible.
             if(selectedBlock.image[prevX] == Block::Self)
             {
-std::cout << "Copy X points from " << selectedBlock.IndexToIJK(prevX) << " ("<< tiles[prevX].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
+//std::cout << "Copy X points from " << selectedBlock.IndexToIJK(prevX) << " ("<< tiles[prevX].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
                 current.setPointIds(left3d, tiles[prevX].getPointIds(right3d));
             }
             if(selectedBlock.image[prevY] == Block::Self)
             {
-std::cout << "Copy Y points from " << selectedBlock.IndexToIJK(prevY) << " ("<< tiles[prevY].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
+//std::cout << "Copy Y points from " << selectedBlock.IndexToIJK(prevY) << " ("<< tiles[prevY].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
                 current.setPointIds(bottom3d, tiles[prevY].getPointIds(top3d));
             }
 
@@ -3331,10 +3331,10 @@ std::cout << "Copy Y points from " << selectedBlock.IndexToIJK(prevY) << " ("<< 
                 auto prevZ = localIndex - dZ;
                 if(selectedBlock.image[prevZ] == Block::Self)
                 {
-std::cout << "Copy Z points from " << selectedBlock.IndexToIJK(prevZ) << " ("<< tiles[prevZ].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
-std::cout << "back3d=" << back3d << std::endl;
-std::cout << "front3d=" << front3d << std::endl;
-std::cout << "current.pointIds=" << current.getPointIds() << std::endl;
+//std::cout << "Copy Z points from " << selectedBlock.IndexToIJK(prevZ) << " ("<< tiles[prevZ].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
+//std::cout << "back3d=" << back3d << std::endl;
+//std::cout << "front3d=" << front3d << std::endl;
+//std::cout << "current.pointIds=" << current.getPointIds() << std::endl;
                     current.setPointIds(back3d, tiles[prevZ].getPointIds(front3d));
                 }
 
