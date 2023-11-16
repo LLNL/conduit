@@ -1104,8 +1104,25 @@ read_mesh_domain(const int meshtype,
                  const std::string &domain_path,
                  Node &mesh)
 {
+    // quadmeshes are finnicky with their types so we use this helpful lambda
+    auto meshtype_is_quad = [](const int meshtype)
+    {
+        return meshtype == DB_QUADMESH || meshtype == DB_QUADCURV || meshtype == DB_QUADRECT;
+    };
+
+    if (! DBInqVarExists(mesh_domain_file_to_use, mesh_name.c_str()))
+    {
+        // This mesh is missing
+        return false;
+    }
+
     if (meshtype == DB_UCDMESH)
     {
+        if (DBInqVarType(mesh_domain_file_to_use, mesh_name.c_str()) != DB_UCDMESH)
+        {
+            // This mesh is the wrong type
+            return false;
+        }
         detail::SiloObjectWrapper<DBucdmesh, decltype(&DBFreeUcdmesh)> ucdmesh{
             DBGetUcdmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
             &DBFreeUcdmesh};
@@ -1119,10 +1136,13 @@ read_mesh_domain(const int meshtype,
                             multimesh_name, 
                             mesh[domain_path]);
     }
-    else if (meshtype == DB_QUADMESH ||
-             meshtype == DB_QUADCURV ||
-             meshtype == DB_QUADRECT)
+    else if (meshtype_is_quad(meshtype))
     {
+        if (! meshtype_is_quad(DBInqVarType(mesh_domain_file_to_use, mesh_name.c_str())))
+        {
+            // This mesh is the wrong type
+            return false;
+        }
         detail::SiloObjectWrapper<DBquadmesh, decltype(&DBFreeQuadmesh)> quadmesh{
             DBGetQuadmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
             &DBFreeQuadmesh};
@@ -1137,6 +1157,11 @@ read_mesh_domain(const int meshtype,
     }
     else if (meshtype == DB_POINTMESH)
     {
+        if (DBInqVarType(mesh_domain_file_to_use, mesh_name.c_str()) != DB_POINTMESH)
+        {
+            // This mesh is the wrong type
+            return false;
+        }
         detail::SiloObjectWrapper<DBpointmesh, decltype(&DBFreePointmesh)> pointmesh{
             DBGetPointmesh(mesh_domain_file_to_use, mesh_name.c_str()), 
             &DBFreePointmesh};
@@ -1388,6 +1413,17 @@ read_variable_domain(const int vartype,
                      const Node &matset_field_reconstruction,
                      Node &mesh_out)
 {
+    if (! DBInqVarExists(var_domain_file_to_use, var_name.c_str()))
+    {
+        // This var is missing
+        return false;
+    }
+    if (DBInqVarType(var_domain_file_to_use, var_name.c_str()) != vartype)
+    {
+        // This var is the wrong type
+        return false;
+    }
+
     if (vartype == DB_UCDVAR)
     {
         // create ucd var
@@ -1456,6 +1492,17 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                    Node &matset_field_reconstruction,
                    Node &mesh_out)
 {
+    if (! DBInqVarExists(matset_domain_file_to_use, matset_name.c_str()))
+    {
+        // This matset is missing
+        return false;
+    }
+    if (DBInqVarType(matset_domain_file_to_use, matset_name.c_str()) != DB_MATERIAL)
+    {
+        // This matset is the wrong type
+        return false;
+    }
+
     // create silo matset
     detail::SiloObjectWrapper<DBmaterial, decltype(&DBFreeMaterial)> material{
         DBGetMaterial(matset_domain_file_to_use, matset_name.c_str()),
