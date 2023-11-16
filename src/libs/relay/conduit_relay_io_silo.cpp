@@ -1742,12 +1742,10 @@ open_or_reuse_file(const bool ovltop_case,
         // otherwise we need to open our own file
         else
         {
-            domain_file.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
-            domain_file.setErrMsg("Error closing Silo file: " + domain_filename);
-            if (! (domain_file_to_use = domain_file.getSiloObject()))
+            auto not_valid_overlink = [&]()
             {
                 CONDUIT_INFO("Provided file is not valid Overlink; defaulting "
-                             " to absolute path rather than assumed path.")
+                             "to absolute path rather than assumed path.")
                 // this is not valid overlink so we default to what is in the path
                 domain_filename = old_domain_filename;
 
@@ -1764,6 +1762,20 @@ open_or_reuse_file(const bool ovltop_case,
                     CONDUIT_ASSERT(domain_file_to_use = domain_file.getSiloObject(),
                         "Error opening Silo file for reading: " << domain_filename);
                 }
+            };
+
+            if (DBInqFile(domain_filename.c_str()) > 0) // the file exists
+            {
+                domain_file.setSiloObject(DBOpen(domain_filename.c_str(), DB_UNKNOWN, DB_READ));
+                domain_file.setErrMsg("Error closing Silo file: " + domain_filename);
+                if (! (domain_file_to_use = domain_file.getSiloObject()))
+                {
+                    not_valid_overlink();
+                }
+            }
+            else
+            {
+                not_valid_overlink();
             }
         }
     }
@@ -3790,6 +3802,7 @@ void silo_mesh_write(const Node &mesh_domain,
         std::stringstream ss(silo_obj_path);
         while (getline(ss, dir, '/'))
         {
+            // create the directory if it doesn't already exist
             DBMkDir(dbfile, dir.c_str()); // if this fails we want to keep going
             silo_error += DBSetDir(dbfile, dir.c_str());
         }
