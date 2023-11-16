@@ -2736,7 +2736,7 @@ void silo_write_field(DBfile *dbfile,
                       const std::string &var_name,
                       const Node &n_var,
                       const Node &mesh_domain,
-                      const bool overlink,
+                      const bool write_overlink,
                       const int local_num_domains,
                       const int local_domain_index,
                       const uint64 global_domain_id,
@@ -2869,7 +2869,7 @@ void silo_write_field(DBfile *dbfile,
                             comp_vals_ptrs,
                             comp_name_ptrs);
 
-    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
+    const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
     int var_type = DB_INVALID_OBJECT;
     int silo_error = 0;
     if (mesh_type == "unstructured")
@@ -3185,7 +3185,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                DBoptlist *state_optlist,
                                const int ndims,
                                char const * const coordnames[],
-                               const bool overlink,
+                               const bool write_overlink,
                                Node &n_mesh_info) 
 {
     Node n_coords_compact;
@@ -3230,7 +3230,7 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
                                   "Error adding option");
     }
 
-    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
+    const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error =
         DBPutQuadmesh(dbfile,                      // silo file ptr
@@ -3255,14 +3255,14 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                          char const * const coordnames[],
                          const void *coords_ptrs,
                          const int coords_dtype,
-                         const bool overlink,
+                         const bool write_overlink,
                          Node &n_mesh_info)
 {
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
     // TODO there is a different approach for polyhedral zone lists
     const std::string zlist_name = topo_name + "_connectivity";
-    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
+    const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
                                   safe_meshname.c_str(), // mesh name
@@ -3288,7 +3288,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 char const * const coordnames[],
                                 const void *coords_ptrs,
                                 const int coords_dtype,
-                                const bool overlink,
+                                const bool write_overlink,
                                 Node &n_mesh_info) 
 {
     int ele_dims[3];
@@ -3337,7 +3337,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                   "Error adding option");
     }
 
-    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
+    const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error =
         DBPutQuadmesh(dbfile,                // silo file ptr
@@ -3994,7 +3994,7 @@ write_multivars(DBfile *dbfile,
                 const std::string &opts_mesh_name,
                 const std::string &ovl_topo_name,
                 const Node &root,
-                const bool overlink)
+                const bool write_overlink)
 {
     const int num_files = root["number_of_files"].to_index_t();
     const int global_num_domains = root["number_of_domains"].to_index_t();
@@ -4016,7 +4016,7 @@ write_multivars(DBfile *dbfile,
 
             std::string linked_topo_name = n_var["topology"].as_string();
 
-            if (! overlink || linked_topo_name == ovl_topo_name)
+            if (! write_overlink || linked_topo_name == ovl_topo_name)
             {
                 std::string safe_varname = detail::sanitize_silo_varname(var_name);
                 std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
@@ -4049,7 +4049,7 @@ write_multivars(DBfile *dbfile,
                 CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
 
                 std::string multimesh_name, multivar_name;
-                if (overlink)
+                if (write_overlink)
                 {
                     multimesh_name = opts_mesh_name;
                     multivar_name = safe_varname;
