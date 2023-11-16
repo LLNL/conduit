@@ -4176,11 +4176,13 @@ write_pad_dims(DBfile *dbfile,
     // TODO anything to do to read pad dims?
 
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
-    // this only applies to structured topos
-    // TODO what happens for rectilinear topos? They don't show up in overlink spec
-    //      should I treat them like structured meshes?
+    // this only applies to structured topos 
+    // (quadmeshes, so rectilinear, uniform, and structured)
     // we can grab the "first" topo because we know there is only one.
-    if (n_mesh["topologies"][0]["type"].as_string() == "structured")
+    // we can also just check that it is NOT unstructured b/c we have
+    // errored on pointmeshes earlier since they are not allowed in overlink,
+    // and the only other options are structured variants.
+    if (n_mesh["topologies"][0]["type"].as_string() != "unstructured")
     {
         char const *elemname = "paddims";
         const int elemlength = 6;
