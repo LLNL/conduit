@@ -979,6 +979,26 @@ track_local_type_domain_info(const Node &options,
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+read_material_map(const Node &material_map,
+                  int &nmat,
+                  std::vector<std::string> &matnames,
+                  std::vector<const char *> &matname_ptrs,
+                  std::vector<int> &matnos)
+{
+    // get the number of materials in this matset to write out
+    nmat = material_map.number_of_children();
+
+    // get material names and material numbers and package up char ptrs for silo
+    matnames = material_map.child_names();
+    for (size_t i = 0; i < matnames.size(); i ++)
+    {
+        matnos.push_back(material_map[matnames[i]].to_int());
+        matname_ptrs.push_back(matnames[i].c_str());
+    }
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::relay::<mpi>::io::silo::detail --
@@ -3705,18 +3725,16 @@ void silo_write_matset(DBfile *dbfile,
     }
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
-    // get the number of materials in this matset to write out
-    int nmat = silo_matset_compact["material_map"].number_of_children();
-
-    // get material names and material numbers and package up char ptrs for silo
-    std::vector<std::string> matnames = silo_matset_compact["material_map"].child_names();
+    // extract data from material map
+    int nmat;
+    std::vector<std::string> matnames;
     std::vector<const char *> matname_ptrs;
     std::vector<int> matnos;
-    for (size_t i = 0; i < matnames.size(); i ++)
-    {
-        matnos.push_back(silo_matset_compact["material_map"][matnames[i]].to_int());
-        matname_ptrs.push_back(matnames[i].c_str());
-    }
+    detail::read_material_map(silo_matset_compact["material_map"],
+                              nmat,
+                              matnames,
+                              matname_ptrs,
+                              matnos);
 
     // calculate dims
     int dims[] = {0,0,0};
@@ -4229,13 +4247,34 @@ write_multimats(DBfile *dbfile,
                     multimat_name = opts_mesh_name + "_" + safe_matset_name;
                 }
 
-                // have to const_cast because converting to void *
-                CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-                                                      DBOPT_MMESH_NAME,
-                                                      const_cast<char *>(multimesh_name.c_str())),
-                                          "Error creating options for putting multimaterial");
+                // extract info from the material map to save to dbopts
+                int nmat;
+                std::vector<std::string> matnames;
+                std::vector<const char *> matname_ptrs;
+                std::vector<int> matnos;
+                detail::read_material_map(n_matset["material_map"],
+                                          nmat,
+                                          matnames,
+                                          matname_ptrs,
+                                          matnos);
 
-                // TODO add db options for overlink
+                // have to const_cast because converting to void *
+                CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                                     DBOPT_MMESH_NAME,
+                                                     const_cast<char *>(multimesh_name.c_str())),
+                                         "Error adding mmesh name db option.");
+                CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                                     DBOPT_NMATNOS,
+                                                     &nmat),
+                                         "Error adding nmatnos db option.");
+                CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                                     DBOPT_MATNOS,
+                                                     matnos.data()),
+                                         "Error adding matnos db option.");
+                CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                                     DBOPT_MATNAMES,
+                                                     matname_ptrs.data()),
+                                         "Error adding matnames db option.");
 
                 CONDUIT_CHECK_SILO_ERROR(
                     DBPutMultimat(
@@ -5698,7 +5737,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                         opts_ovl_topo_name, 
                         root, 
                         write_overlink);
-        // TODO need material names here for overlink (not matset names, material names)
         write_multimats(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
                         opts_ovl_topo_name,
