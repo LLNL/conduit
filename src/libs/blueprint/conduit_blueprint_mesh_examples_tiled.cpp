@@ -21,6 +21,7 @@
 #include <cmath>
 #include <algorithm>
 #include <array>
+#include <numeric>
 
 // Uncomment this to add some fields on the filed mesh prior to reordering.
 // #define CONDUIT_TILER_DEBUG_FIELDS
@@ -126,6 +127,7 @@ public:
     static const conduit::index_t InvalidDomain = -1;
 
     TilerBase();
+    virtual ~TilerBase() = default;
 
 protected:
     /// Fill a default tile pattern into the filter.
@@ -177,6 +179,126 @@ protected:
             vec.push_back(acc[i]);
         return vec;
     }
+
+    /// Iterate over faces
+    template <typename Connectivity, typename Body>
+    void iterateFaces(const Connectivity &conn,
+                      conduit::index_t nelem,
+                      conduit::index_t sides,
+                      conduit::index_t *idlist,
+                      const std::vector<conduit::index_t> &ptids,
+                      conduit::index_t offset,
+                      bool reverse,
+                      int stype,
+                      Body &&body) const
+    {
+        if(reverse)
+        {
+            auto s1 = sides - 1;
+            for(conduit::index_t i = 0; i < nelem; i++)
+            {
+                auto start = i * sides;
+                for(conduit::index_t s = 0; s < sides; s++)
+                    idlist[s1 - s] = offset + ptids[conn[start + s]];
+                body(idlist, sides, stype);
+            }
+        }
+        else
+        {
+            for(conduit::index_t i = 0; i < nelem; i++)
+            {
+                auto start = i * sides;
+                for(conduit::index_t s = 0; s < sides; s++)
+                    idlist[s] = offset + ptids[conn[start + s]];
+                body(idlist, sides, stype);
+            }
+        }
+    }
+
+    /// Iterate over the tile's elements and apply a lambda.
+    template <typename Body>
+    void iterateFaces(const std::vector<conduit::index_t> &ptids,
+                      conduit::index_t offset,
+                      bool reverse,
+                      int stype,
+                      Body &&body) const
+    {
+        const conduit::Node &topo = getTopology();
+        std::string shape = topo.fetch_existing("elements/shape").as_string();
+        conduit::index_t sides = 0;
+        if(shape == "tri")
+            sides = 3;
+        else if(shape == "quad")
+            sides = 4;
+
+        // Handle triangles and quads.
+        const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
+        if(sides == 3 || sides == 4)
+        {
+            conduit::index_t idlist[4];
+            bool handled = false;
+            if(n_conn.dtype().spanned_bytes() == n_conn.dtype().strided_bytes())
+            {
+                if(n_conn.dtype().is_index_t())
+                {
+                    iterateFaces(n_conn.as_index_t_ptr(),
+                                 n_conn.dtype().number_of_elements() / sides,
+                                 sides, idlist, ptids,
+                                 offset, reverse, stype, body);
+                    handled = true;
+                }
+                else if(n_conn.dtype().is_int32())
+                {
+                    iterateFaces(n_conn.as_int32_ptr(),
+                                 n_conn.dtype().number_of_elements() / sides,
+                                 sides, idlist, ptids,
+                                 offset, reverse, stype, body);
+                    handled = true;
+                }
+            }
+            if(!handled)
+            {
+                iterateFaces(n_conn.as_index_t_accessor(),
+                             n_conn.dtype().number_of_elements() / sides,
+                             sides, idlist, ptids,
+                             offset, reverse, stype, body);
+            }
+        }
+        else if(shape == "polygonal")
+        {
+            // handle polygons
+            const auto conn = n_conn.as_index_t_accessor();
+            const auto sizes = topo.fetch_existing("elements/sizes").as_index_t_accessor();
+            const conduit::index_t nelem = sizes.number_of_elements();
+            conduit::index_t start = 0;
+            std::vector<index_t> idlist(10);
+            if(reverse)
+            {
+                for(conduit::index_t i = 0; i < nelem; i++)
+                {
+                    auto esides = sizes[i];
+                    idlist.reserve(esides);
+                    for(conduit::index_t s = 0; s < esides; s++)
+                        idlist[s] = offset + ptids[conn[start + esides - s]];
+                    body(&idlist[0], esides, stype);
+                    start += esides;
+                }
+            }
+            else
+            {
+                for(conduit::index_t i = 0; i < nelem; i++)
+                {
+                    auto esides = sizes[i];
+                    idlist.reserve(esides);
+                    for(conduit::index_t s = 0; s < esides; s++)
+                        idlist[s] = offset + ptids[conn[start + s]];
+                    body(&idlist[0], esides, stype);
+                    start += esides;
+                }
+            }
+        }
+    }
+
 protected:
     conduit::Node m_tile;
     double m_width, m_height;
@@ -411,125 +533,6 @@ protected:
                 y.push_back(yc);
 
                 srcPointId.push_back(i);
-            }
-        }
-    }
-
-    /// Iterate over faces
-    template <typename Connectivity, typename Body>
-    void iterateFaces(const Connectivity &conn,
-                      conduit::index_t nelem,
-                      conduit::index_t sides,
-                      conduit::index_t *idlist,
-                      const std::vector<conduit::index_t> &ptids,
-                      conduit::index_t offset,
-                      bool reverse,
-                      int stype,
-                      Body &&body) const
-    {
-        if(reverse)
-        {
-            auto s1 = sides - 1;
-            for(conduit::index_t i = 0; i < nelem; i++)
-            {
-                auto start = i * sides;
-                for(conduit::index_t s = 0; s < sides; s++)
-                    idlist[s1 - s] = offset + ptids[conn[start + s]];
-                body(idlist, sides, stype);
-            }
-        }
-        else
-        {
-            for(conduit::index_t i = 0; i < nelem; i++)
-            {
-                auto start = i * sides;
-                for(conduit::index_t s = 0; s < sides; s++)
-                    idlist[s] = offset + ptids[conn[start + s]];
-                body(idlist, sides, stype);
-            }
-        }
-    }
-
-    /// Iterate over the tile's elements and apply a lambda.
-    template <typename Body>
-    void iterateFaces(const std::vector<conduit::index_t> &ptids,
-                      conduit::index_t offset,
-                      bool reverse,
-                      int stype,
-                      Body &&body) const
-    {
-        const conduit::Node &topo = getTopology();
-        std::string shape = topo.fetch_existing("elements/shape").as_string();
-        conduit::index_t sides = 0;
-        if(shape == "tri")
-            sides = 3;
-        else if(shape == "quad")
-            sides = 4;
-
-        // Handle triangles and quads.
-        const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
-        if(sides == 3 || sides == 4)
-        {
-            conduit::index_t idlist[4];
-            bool handled = false;
-            if(n_conn.dtype().spanned_bytes() == n_conn.dtype().strided_bytes())
-            {
-                if(n_conn.dtype().is_index_t())
-                {
-                    iterateFaces(n_conn.as_index_t_ptr(),
-                                 n_conn.dtype().number_of_elements() / sides,
-                                 sides, idlist, ptids,
-                                 offset, reverse, stype, body);
-                    handled = true;
-                }
-                else if(n_conn.dtype().is_int32())
-                {
-                    iterateFaces(n_conn.as_int32_ptr(),
-                                 n_conn.dtype().number_of_elements() / sides,
-                                 sides, idlist, ptids,
-                                 offset, reverse, stype, body);
-                    handled = true;
-                }
-            }
-            if(!handled)
-            {
-                iterateFaces(n_conn.as_index_t_accessor(),
-                             n_conn.dtype().number_of_elements() / sides,
-                             sides, idlist, ptids,
-                             offset, reverse, stype, body);
-            }
-        }
-        else if(shape == "polygonal")
-        {
-            // handle polygons
-            const auto conn = n_conn.as_index_t_accessor();
-            const auto sizes = topo.fetch_existing("elements/sizes").as_index_t_accessor();
-            const conduit::index_t nelem = sizes.number_of_elements();
-            conduit::index_t start = 0;
-            std::vector<index_t> idlist(10);
-            if(reverse)
-            {
-                for(conduit::index_t i = 0; i < nelem; i++)
-                {
-                    auto esides = sizes[i];
-                    idlist.reserve(esides);
-                    for(conduit::index_t s = 0; s < esides; s++)
-                        idlist[s] = offset + ptids[conn[start + esides - s]];
-                    body(&idlist[0], esides, stype);
-                    start += esides;
-                }
-            }
-            else
-            {
-                for(conduit::index_t i = 0; i < nelem; i++)
-                {
-                    auto esides = sizes[i];
-                    idlist.reserve(esides);
-                    for(conduit::index_t s = 0; s < esides; s++)
-                        idlist[s] = offset + ptids[conn[start + s]];
-                    body(&idlist[0], esides, stype);
-                    start += esides;
-                }
             }
         }
     }
@@ -3028,6 +3031,61 @@ Block neighbors(const std::vector<Block> &blocks, size_t BlockId, bool threeD)
 }
 
 //---------------------------------------------------------------------------
+struct matrix4x4
+{
+     double M[4][4]{{1.,0.,0.,0.},{0.,1.,0.,0.},{0.,0.,1.,0.},{0.,0.,0.,1.}};
+};
+
+matrix4x4 translate(const double t[3])
+{
+    matrix4x4 mat;
+    mat.M[3][0] = t[0];
+    mat.M[3][1] = t[1];
+    mat.M[3][2] = t[2];
+    return mat;
+}
+
+matrix4x4 scale(const double s[3])
+{
+    matrix4x4 mat;
+    mat.M[0][0] = s[0];
+    mat.M[1][1] = s[1];
+    mat.M[2][2] = s[2];
+    mat.M[3][3] = 1.;
+    return mat;
+}
+
+matrix4x4 operator *(const matrix4x4 &A, const matrix4x4 &B)
+{
+    matrix4x4 mat;
+    for(int r = 0; r < 4; r++)
+    {
+        for(int c = 0; c < 4; c++)
+        {
+            double sum = 0.;
+            for(int i = 0; i < 4; i++)
+            {
+                sum += A.M[r][i] * B.M[i][c];
+            }
+            mat.M[r][c] = sum;
+        }
+    }
+    return mat;
+}
+
+void vec_matrix4x4_mult(const double A[3], const matrix4x4 &B, double C[3])
+{
+    // Treat A as (A.x, A.y, A.x, 1.)
+    C[0] = A[0] * B.M[0][0] + A[1] * B.M[1][0] + A[2] * B.M[2][0] + B.M[3][0];
+    C[1] = A[0] * B.M[0][1] + A[1] * B.M[1][1] + A[2] * B.M[2][1] + B.M[3][1];
+    C[2] = A[0] * B.M[0][2] + A[1] * B.M[1][2] + A[2] * B.M[2][2] + B.M[3][2];
+    double h = A[0] * B.M[0][3] + A[1] * B.M[1][3] + A[2] * B.M[2][3] + B.M[3][3];
+    C[0] /= h;
+    C[1] /= h;
+    C[2] /= h;
+}
+
+//---------------------------------------------------------------------------
 /**
  \brief This class accepts the overall mesh size for the whole problem and
         divides it up to make N domains.
@@ -3039,24 +3097,368 @@ public:
 
     void generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                   conduit::Node &res, const conduit::Node &options);
+protected:
+    /// Fill in the tile pattern from a Node.
+    void initializeFromOptions(const conduit::Node &t);
 
+    void generateDomain(IndexType nx, IndexType ny, IndexType nz,
+                        conduit::Node &res,
+                        const Block &selectedBlock,
+                        IndexType domainId,
+                        const conduit::Node &options);
+
+    void addPoints(const matrix4x4 &A,
+                   const std::vector<double> &zvalues,
+                   std::vector<conduit::index_t> &ptids,
+                   std::vector<double> &x,
+                   std::vector<double> &y,
+                   std::vector<double> &z,
+                   std::vector<conduit::index_t> &srcPointId) const;
+
+    void addVolumeElements(const std::vector<conduit::index_t> &ptids,
+                           std::vector<conduit::index_t> &conn,
+                           std::vector<conduit::index_t> &sizes) const;
 private:
-    std::vector<block> blocks;
-    std::vector<IndexType> domainIds; // The list domains we want to make.
+    IndexType m_numDomains;
+    bool m_curveSplitting;
+    std::vector<IndexType> m_selectedDomains; // The list domains we want to make.
 };
 
-TopDownTiler::TopDownTiler() : TilerBase()
+//---------------------------------------------------------------------------
+TopDownTiler::TopDownTiler() : TilerBase(), m_numDomains(1), m_curveSplitting(true), m_selectedDomains()
 {
 }
 
+//---------------------------------------------------------------------------
+void
+TopDownTiler::initializeFromOptions(const conduit::Node &t)
+{
+    if(t.has_path("numDomains"))
+    {
+        m_numDomains = static_cast<IndexType>(t["numDomains"].to_index_t());
+    }
+    else
+    {
+        CONDUIT_ERROR("TopDownTiler requires numDomains so it knows how many domains to create.");
+    }
+
+    // Get the list of domains we're building. If it is not given, assume all domains.
+    if(t.has_path("selectedDomains"))
+    {
+        m_selectedDomains = toIndexVector(t.fetch_existing("selectedDomains"));
+        // Range check
+        for(const auto dom : m_selectedDomains)
+        {
+            if(dom < 0 || dom >= m_numDomains)
+            {
+                CONDUIT_ERROR("selectedDomains value " << dom << " is out of range.");
+            }
+        }
+    }
+
+    // Get the list of domains we're building. If it is not given, assume all domains.
+    if(t.has_path("curveSplitting"))
+    {
+        m_curveSplitting = t.fetch_existing("curveSplitting").to_int() > 0;
+    }
+
+    if(t.has_path("meshname"))
+        meshName = t.fetch_existing("meshname").as_string();
+    if(t.has_path("boundarymeshname"))
+        boundaryMeshName = t.fetch_existing("boundarymeshname").as_string();
+}
+
+//---------------------------------------------------------------------------
 void
 TopDownTiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                        conduit::Node &res, const conduit::Node &options)
 {
-#if 0
-#endif
+    initializeFromOptions(options);
+
+    // Make the whole block
+    const IndexType dims[3] = {static_cast<IndexType>(nx),
+                               static_cast<IndexType>(ny),
+                               std::max(static_cast<IndexType>(nz), static_cast<IndexType>(1))};
+    Block whole;
+    whole.start = LogicalIndex{0, 0, 0};
+    whole.end = LogicalIndex{dims[0] - 1, dims[1] - 1, dims[2] - 1};
+
+    // Split whole into m_numDomains blocks.
+    BlockSplitter S;
+    S.options.curveSplitting = m_curveSplitting;
+    auto blocks = S.split(whole, m_numDomains);
+
+    // Realize any blocks we're asking for that might be hilbert blocks.
+    realizeHilbertBlocks(blocks, m_selectedDomains);
+
+    // Build the domains. We first expand the domain and loko for its neighbors
+    // so we know how the selected domain is connected.
+    if(m_selectedDomains.empty())
+    {
+        for(size_t bi = 0; bi < blocks.size(); bi++)
+        {
+            auto selectedBlock = neighbors(blocks, bi, dims[2] > 1);
+            generateDomain(nx, ny, nz, res.append(), selectedBlock, static_cast<IndexType>(bi), options);
+        }
+    }
+    else
+    {
+        for(const auto bi : m_selectedDomains)
+        {
+            auto selectedBlock = neighbors(blocks, bi, dims[2] > 1);
+            generateDomain(nx, ny, nz, res.append(), selectedBlock, static_cast<IndexType>(bi), options);
+        }
+    }
 }
 
+//---------------------------------------------------------------------------
+void
+TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::Node &res,
+    const Block &selectedBlock, IndexType domainId, const conduit::Node &options)
+{
+    std::vector<double> x, y, z;
+    std::vector<conduit::index_t> conn, sizes, bconn, bsizes, srcPointIds;
+    std::vector<int> btype;
+
+    // Process any options.
+    if(options.has_path("tile"))
+        initialize(options.fetch_existing("tile"));
+    conduit::DataType indexDT(conduit::DataType::index_t());
+    if(options.has_child("datatype"))
+    {
+        auto s = options.fetch_existing("datatype").as_string();
+        if((s == "int") || (s == "int32") || (s == "integer"))
+        {
+            indexDT = conduit::DataType::int32();
+        }
+    }
+    // Populate the extents.
+    double extents[] = {0., 1, 0., 1., 0., 1.};
+    if(options.has_path("extents"))
+    {
+        // Extents for the domain were given. Fit the domain into it.
+        auto e = options.fetch_existing("extents").as_double_accessor();
+        for(int i = 0; i < 6; i++)
+            extents[i] = e[i];
+    }
+
+    // Number of tile points.
+    auto nTilePts = getCoordset().fetch_existing("values/x").dtype().number_of_elements();
+    bool threeD = (nz >= 1);
+
+    // Make some tile face indexing vectors.
+    std::vector<conduit::index_t> left3d, right3d, bottom3d, top3d, back3d, front3d;
+    left3d = left();
+    right3d = right();
+    bottom3d = bottom();
+    top3d = top();
+    if(threeD)
+    {
+        for(const auto value : left())
+            left3d.push_back(value * 2);
+        for(const auto value : right())
+            right3d.push_back(value * 2);
+        for(const auto value : bottom())
+            bottom3d.push_back(value * 2);
+        for(const auto value : top())
+            top3d.push_back(value * 2);
+
+        back3d.resize(nTilePts);
+        std::iota(back3d.begin(), back3d.end(), 0);
+        front3d.resize(nTilePts);
+        std::iota(front3d.begin(), front3d.end(), nTilePts);
+
+        nTilePts *= 2;
+    }
+
+    // Data for transforming a single tile to fit in the extents.
+    double normalize[3];
+    normalize[0] = 1. / m_width;
+    normalize[1] = 1. / m_height;
+    normalize[2] = 1.;
+    double size[3];
+    size[0] = (extents[1] - extents[0]) / static_cast<double>(nx);
+    size[1] = (extents[3] - extents[2]) / static_cast<double>(ny);
+    size[2] = (extents[5] - extents[4]) / std::max(static_cast<double>(nx), 1.);
+    double origin[3];
+    origin[0] = extents[0];
+    origin[1] = extents[2];
+    origin[2] = extents[4];
+    matrix4x4 SO = scale(size) * translate(origin);
+
+    // We can iterate over the block's zones. It will traverse them in usual IJK order.
+    // Since the selectedBlock is expanded to know about neighbors, each real/self zone
+    // will have neighbors in IJK.
+    IndexType dY = selectedBlock.length(0);
+    IndexType dZ = selectedBlock.length(0) * selectedBlock.length(1);
+    std::vector<Tile> tiles(selectedBlock.size());
+    selectedBlock.iterate([&](const LogicalIndex &index, IndexType zonetype) {
+        // If the zone is part of the domain then we need to stamp out our tile.
+        if(zonetype == Block::Self)
+        {
+            auto local = LogicalIndex{index[0] - selectedBlock.start[0],
+                                      index[1] - selectedBlock.start[1],
+                                      index[2] - selectedBlock.start[2]};
+            auto localIndex = selectedBlock.IJKToIndex(local);
+
+            // Get the current tile and allocate its point ids.
+            Tile &current = tiles[localIndex];
+            current.reset(nTilePts);
+
+            auto prevX = localIndex - 1;
+            auto prevY = localIndex - dY;
+            // Copy points from previous neighbor tiles if possible.
+            if(selectedBlock.image[prevX] == Block::Self)
+            {
+std::cout << "Copy X points from " << selectedBlock.IndexToIJK(prevX) << " ("<< tiles[prevX].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
+                current.setPointIds(left3d, tiles[prevX].getPointIds(right3d));
+            }
+            if(selectedBlock.image[prevY] == Block::Self)
+            {
+std::cout << "Copy Y points from " << selectedBlock.IndexToIJK(prevY) << " ("<< tiles[prevY].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
+                current.setPointIds(bottom3d, tiles[prevY].getPointIds(top3d));
+            }
+
+            // Make a transformation matrix.
+            double T[3] = {static_cast<double>(index[0]),
+                           static_cast<double>(index[1]),
+                           static_cast<double>(index[2])};
+            matrix4x4 M = (scale(normalize) * translate(T)) * SO;
+
+            if(threeD)
+            {
+                // Copy Z face points if possible.
+                auto prevZ = localIndex - dZ;
+                if(selectedBlock.image[prevZ] == Block::Self)
+                {
+std::cout << "Copy Z points from " << selectedBlock.IndexToIJK(prevZ) << " ("<< tiles[prevZ].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
+std::cout << "back3d=" << back3d << std::endl;
+std::cout << "front3d=" << front3d << std::endl;
+std::cout << "current.pointIds=" << current.getPointIds() << std::endl;
+                    current.setPointIds(back3d, tiles[prevZ].getPointIds(front3d));
+                }
+
+                const std::vector<double> zvalues{0., 1.};
+                addPoints(M, zvalues, current.getPointIds(), x, y, z, srcPointIds);
+
+                addVolumeElements(current.getPointIds(), conn, sizes);
+            }
+            else
+            {
+                const std::vector<double> zvalues{0.};
+                addPoints(M, zvalues, current.getPointIds(), x, y, z, srcPointIds);
+
+                iterateFaces(current.getPointIds(), 0, false, BoundaryBack,
+                    [&](const conduit::index_t *ids, conduit::index_t npts, int)
+                    {
+                        for(conduit::index_t pi = 0; pi < npts; pi++)
+                            conn.push_back(ids[pi]);
+                        sizes.push_back(npts);
+                    });
+            }
+        }
+    });
+
+    // Make the Blueprint mesh.
+    res["coordsets/coords/type"] = "explicit";
+    res["coordsets/coords/values/x"].set(x);
+    res["coordsets/coords/values/y"].set(y);
+    if(!z.empty())
+        res["coordsets/coords/values/z"].set(z);
+
+    std::string shape2, shape3;
+    shape2 = getTopology().fetch_existing("elements/shape").as_string();
+    shape3 = (shape2 == "tri") ? "wedge" : "hex";
+
+    conduit::Node &topo = res["topologies/" + meshName];
+    topo["type"] = "unstructured";
+    topo["coordset"] = "coords";
+    topo["elements/shape"] = z.empty() ? shape2 : shape3;
+    conduit::Node tmp;
+    tmp.set_external(conn.data(), conn.size());
+    tmp.to_data_type(indexDT.id(), topo["elements/connectivity"]);
+    tmp.set_external(sizes.data(), sizes.size());
+    tmp.to_data_type(indexDT.id(), topo["elements/sizes"]);
+
+    res["state/domain_id"] = domainId;
+
+}
+
+//---------------------------------------------------------------------------
+void
+TopDownTiler::addPoints(const matrix4x4 &A,
+                        const std::vector<double> &zvalues,
+                        std::vector<conduit::index_t> &ptids,
+                        std::vector<double> &x,
+                        std::vector<double> &y,
+                        std::vector<double> &z,
+                        std::vector<conduit::index_t> &srcPointId) const
+{
+    // Iterate through points in the template and add them if they have
+    // not been created yet.
+    const auto &xpts = getCoordset().fetch_existing("values/x").as_double_array();
+    const auto &ypts = getCoordset().fetch_existing("values/y").as_double_array();
+    conduit::index_t index = 0;
+    for(const double zval : zvalues)
+    {
+        for(conduit::index_t i = 0; i < xpts.number_of_elements(); i++, index++)
+        {
+            if(ptids[index] == Tile::INVALID_POINT)
+            {
+                ptids[index] = static_cast<int>(x.size());
+
+                double P0[3] = {xpts[i], ypts[i], zval};
+                double P[3];
+                vec_matrix4x4_mult(P0, A, P);
+
+                x.push_back(P[0]);
+                y.push_back(P[1]);
+                z.push_back(P[2]);
+
+                srcPointId.push_back(i);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+TopDownTiler::addVolumeElements(const std::vector<conduit::index_t> &ptids,
+                                std::vector<conduit::index_t> &conn,
+                                std::vector<conduit::index_t> &sizes) const
+{
+    const conduit::Node &topo = getTopology();
+    std::string shape = topo.fetch_existing("elements/shape").as_string();
+    conduit::index_t sides = 0;
+    if(shape == "tri")
+        sides = 3;
+    else if(shape == "quad")
+        sides = 4;
+
+    if(sides == 3 || sides == 4)
+    {
+        const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
+        const auto tileconn = n_conn.as_index_t_accessor();
+        const conduit::index_t nelem = tileconn.number_of_elements() / sides;
+        for(conduit::index_t i = 0; i < nelem; i++)
+        {
+            conduit::index_t start = i * sides;
+            // back face
+            for(conduit::index_t s = 0; s < sides; s++)
+                conn.push_back(ptids[tileconn[start + s]]);
+
+            // front face
+            for(conduit::index_t s = 0; s < sides; s++)
+                conn.push_back(ptids[2 * tileconn[start + s]]);
+
+            sizes.push_back(2 * sides);
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Tiling polygonal shapes into 3D polyhedra is not yet supported.");
+    }
+}
 
 }
 //-----------------------------------------------------------------------------
@@ -3067,7 +3469,7 @@ void
 tiled(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
       conduit::Node &res, const conduit::Node &options)
 {
-    if(options.has_path("method") && options["method"].as_string() == "topdown")
+    if(options.has_path("numDomains"))
     {
         detail::TopDownTiler T;
         T.generate(nx, ny, nz, res, options);

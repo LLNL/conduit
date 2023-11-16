@@ -55,6 +55,10 @@ public:
     {
         meshType = m;
     }
+    virtual bool supportsTopDown() const
+    {
+        return false;
+    }
 protected:
     int dims[3]{0,0,0};
     int domains[3]{1,1,1};
@@ -69,21 +73,33 @@ class TiledDomainGenerator : public DomainGenerator
 public:
     virtual void generate(int domain[3], conduit::Node &n, conduit::Node &opts) override
     {
-        // Determine the size and location of this domain in the whole.
-        double sideX = (extents[1] - extents[0]) / static_cast<double>(domains[0]);
-        double sideY = (extents[3] - extents[2]) / static_cast<double>(domains[1]);
-        double sideZ = (extents[5] - extents[4]) / static_cast<double>(domains[2]);
-        double domainExt[] = {extents[0] + domain[0]     * sideX,
-                              extents[0] + (domain[0]+1) * sideX,
-                              extents[2] + domain[1]     * sideY,
-                              extents[2] + (domain[1]+1) * sideY,
-                              extents[4] + domain[2]     * sideZ,
-                              extents[4] + (domain[2]+1) * sideZ};
-        opts["extents"].set(domainExt, 6);
-        opts["domain"].set(domain, 3);
-        opts["domains"].set(domains, 3);
+        if(opts.has_path("numDomains"))
+        {
+            // By setting numDomains, the tiler will do a top-down decomposition.
+            opts["extents"].set(extents, 6);
+        }
+        else
+        {
+            // Determine the size and location of this domain in the whole.
+            double sideX = (extents[1] - extents[0]) / static_cast<double>(domains[0]);
+            double sideY = (extents[3] - extents[2]) / static_cast<double>(domains[1]);
+            double sideZ = (extents[5] - extents[4]) / static_cast<double>(domains[2]);
+            double domainExt[] = {extents[0] + domain[0]     * sideX,
+                                  extents[0] + (domain[0]+1) * sideX,
+                                  extents[2] + domain[1]     * sideY,
+                                  extents[2] + (domain[1]+1) * sideY,
+                                  extents[4] + domain[2]     * sideZ,
+                                  extents[4] + (domain[2]+1) * sideZ};
+            opts["extents"].set(domainExt, 6);
+            opts["domain"].set(domain, 3);
+            opts["domains"].set(domains, 3);
+        }
 
         conduit::blueprint::mesh::examples::tiled(dims[0], dims[1], dims[2], n, opts);
+    }
+    virtual bool supportsTopDown() const override
+    {
+        return true;
     }
 };
 
@@ -113,7 +129,8 @@ printUsage(const char *exeName)
     std::cout << "-dims x,y,z           The number of mesh zones in each dimension. For 2D meshes,\n";
     std::cout << "                      supply 0 for z.\n";
     std::cout << "\n";
-    std::cout << "-domains x,y,z        The number of domains in each dimension.\n";
+    std::cout << "-domains x,y,z | n    The number of domains in each dimension x,y,z or a total number.\n";
+    std::cout << "                      of domains if doing top-down domain decomposition.\n";
     std::cout << "\n";
     std::cout << "-tile                 Generate a mesh using the tiled data generator.\n";
     std::cout << "\n";
@@ -181,6 +198,11 @@ main(int argc, char *argv[])
                 domains[1] = std::max(d[1], 1);
                 domains[2] = std::max(d[2], 1);
             }
+            else if(sscanf(argv[i+1], "%d", &d[0]) == 1)
+            {
+                // Select top-down decomposition.
+                opts["numDomains"] = d[0];
+            }
             i++;
         }
         else if(strcmp(argv[i], "-tile") == 0)
@@ -242,7 +264,12 @@ main(int argc, char *argv[])
     g->setMeshType(meshType);
     g->setExtents(extents);
 
-    int ndoms = domains[0] * domains[1] * domains[2];
+    int ndoms;
+    if(opts.has_path("numDomains"))
+        ndoms = opts["numDomains"].to_int();
+    else
+        ndoms = domains[0] * domains[1] * domains[2];
+
     if(ndoms == 1 && rank == 0)
     {
         // Single domain.
@@ -251,27 +278,57 @@ main(int argc, char *argv[])
     }
     else
     {
-        int domainid = 0;
-        for(int k = 0; k < domains[2]; k++)
+        if(opts.has_path("numDomains"))
         {
-            for(int j = 0; j < domains[1]; j++)
+            // When numDomains is present, the generator must support top down.
+            if(g->supportsTopDown())
             {
-                for(int i = 0; i < domains[0]; i++, domainid++)
+                std::vector<int> selectedDomains;
+                int nd = opts["numDomains"].to_int();
+                for(int dom = 0; dom < ndoms; dom++)
                 {
-                    int domain[] = {i, j, k};
-
 #ifdef CONDUIT_PARALLEL
-                    if(domainid % size == rank)
+                    // Limit the domains each rank makes in parallel.
+                    if(dom % size == rank)
                     {
-#endif
-                        // Make the new domain.
-                        char domainName[32];
-                        snprintf(domainName, sizeof(domainName), "domain_%07d", domainid);
-                        conduit::Node &d = n[domainName];
-                        g->generate(domain, d, opts);
-#ifdef CONDUIT_PARALLEL
+                        selectedDomains.push_back(dom);
                     }
 #endif
+                }
+                if(!selectedDomains.empty())
+                    opts["selectedDomains"].set(selectedDomains);
+                int domain[] = {0, 0, 0};
+                g->generate(domain, n, opts);
+            }
+            else
+            {
+                std::cout << "The generator does not support top-down domain decomposition.\n";
+            }
+        }
+        else
+        {
+            int domainid = 0;
+            for(int k = 0; k < domains[2]; k++)
+            {
+                for(int j = 0; j < domains[1]; j++)
+                {
+                    for(int i = 0; i < domains[0]; i++, domainid++)
+                    {
+                        int domain[] = {i, j, k};
+
+#ifdef CONDUIT_PARALLEL
+                        if(domainid % size == rank)
+                        {
+#endif
+                            // Make the new domain.
+                            char domainName[32];
+                            snprintf(domainName, sizeof(domainName), "domain_%07d", domainid);
+                            conduit::Node &d = n[domainName];
+                            g->generate(domain, d, opts);
+#ifdef CONDUIT_PARALLEL
+                        }
+#endif
+                    }
                 }
             }
         }
