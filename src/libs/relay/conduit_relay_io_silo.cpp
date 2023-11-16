@@ -3534,6 +3534,7 @@ void silo_write_topo(const Node &mesh_domain,
                                        coords_ptrs, coords_dtype,
                                        overlink, n_mesh_info);
         }
+        // TODO pretty sure we can't write this to overlink
         else if (topo_type == "points")
         {
             mesh_type = DB_POINTMESH;
@@ -4344,6 +4345,10 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         }
     }
 
+    // this is the earliest place we know for sure if we are writing overlink or not
+    // this is set in stone.
+    const bool write_overlink = opts_file_style == "overlink";
+
     // check for + validate suffix option
     if(opts.has_child("suffix") && opts["suffix"].dtype().is_string())
     {
@@ -4469,7 +4474,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     }
 
     // more will happen for this case later
-    if (opts_file_style == "overlink")
+    if (write_overlink)
     {
         CONDUIT_INFO("Overlink is not yet fully supported. Outputted files "
                      "with this option will be missing several components "
@@ -4654,7 +4659,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     // -----------------------------------------------------------
     // handle overlink-specific rules
     // -----------------------------------------------------------
-    if (opts_file_style == "overlink")
+    if (write_overlink)
     {
         // for overlink, things are different.
         // we are only going to write out one multimesh, with the name "MMESH"
@@ -4707,7 +4712,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     // if using multi_file or overlink, create output dir
     // ----------------------------------------------------
     if (opts_file_style == "multi_file" ||
-        opts_file_style == "overlink")
+        write_overlink)
     {
         // setup the directory
         output_dir = path;
@@ -4753,7 +4758,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     // setup root file name
     // ----------------------------------------------------
     std::string root_filename;
-    if (opts_file_style == "overlink")
+    if (write_overlink)
     {
         root_filename = utils::join_file_path(output_dir, "OvlTop." + opts_root_file_ext);
     }
@@ -4920,7 +4925,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                                     i, // local domain index
                                     domain, // global domain id
                                     local_type_domain_info,
-                                    opts_file_style == "overlink");
+                                    write_overlink);
                 }
             }
 
@@ -4944,7 +4949,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             uint64 domain = dom["state/domain_id"].to_uint64();
 
             std::string output_file;
-            if (opts_file_style == "overlink")
+            if (write_overlink)
             {
                 output_file = conduit::utils::join_file_path(output_dir,
                                                 conduit_fmt::format("domain{:d}.silo",
@@ -4975,7 +4980,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             CONDUIT_ASSERT(dbfile.getSiloObject(),
                 "Error opening Silo file for writing: " << output_file);
 
-            std::string mesh_path = opts_file_style == "overlink" ? "" : opts_out_mesh_name;
+            std::string mesh_path = write_overlink ? "" : opts_out_mesh_name;
 
             // write to mesh name subpath
             silo_mesh_write(dom, 
@@ -4986,7 +4991,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                             i, // local domain index
                             domain, // global domain id
                             local_type_domain_info,
-                            opts_file_style == "overlink");
+                            write_overlink);
         }
     }
     else // more complex case, N domains to M files
@@ -5138,7 +5143,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
                             // construct file name and path name
                             std::string file_name, curr_path;
-                            if (opts_file_style == "overlink")
+                            if (write_overlink)
                             {
                                 file_name = conduit_fmt::format("domfile{:d}.silo", f);
                                 curr_path = conduit_fmt::format("domain{:d}/{}",
@@ -5202,7 +5207,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                                                 d, // local domain index
                                                 domain_id, // global domain id
                                                 local_type_domain_info,
-                                                opts_file_style == "overlink");
+                                                write_overlink);
                                 
                                 // update status, we are done with this doman
                                 local_domain_status[d] = 0;
@@ -5391,7 +5396,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
                             // for overlink, we need the overlink data type for each var
                             // to save out in the var attributes
-                            if (comp == "vars" && opts_file_style == "overlink")
+                            if (comp == "vars" && write_overlink)
                             {
                                 root_type_domain_info["ovl_var_datatypes"][read_comp_name].set(
                                     read_comp_type_domain_info["ovl_datatype"]);
@@ -5485,7 +5490,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                     part_map_domain_vals[i] = i;
                 }
 
-                if (opts_file_style == "overlink")
+                if (write_overlink)
                 {
                     output_silo_path = utils::join_file_path(output_dir_base, "domain{:d}.silo:{}");
                 }
@@ -5500,7 +5505,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             {
                 // we generated the partition map earlier
 
-                if (opts_file_style == "overlink")
+                if (write_overlink)
                 {
                     output_silo_path = utils::join_file_path(output_dir_base, "domfile{:d}.silo:domain{:d}/{}");
                 }
@@ -5593,8 +5598,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             CONDUIT_ASSERT(dbfile.getSiloObject(),
                 "Error opening Silo file for writing: " << root_filename);
         }
-
-        const bool write_overlink = opts_file_style == "overlink";
 
         write_multimeshes(dbfile.getSiloObject(), 
                           opts_out_mesh_name, 
