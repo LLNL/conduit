@@ -4086,7 +4086,7 @@ write_multimats(DBfile *dbfile,
                 const std::string &opts_mesh_name,
                 const std::string &ovl_topo_name,
                 const Node &root,
-                const bool overlink)
+                const bool write_overlink)
 {
     const int num_files = root["number_of_files"].to_index_t();
     const int global_num_domains = root["number_of_domains"].to_index_t();
@@ -4100,6 +4100,8 @@ write_multimats(DBfile *dbfile,
 
     if (n_mesh.has_child("matsets"))
     {
+        // TODO haven't we only written a subset of these? same goes for variables
+        // how can I ensure that only ones that have been written are in the bp index?
         auto matset_itr = n_mesh["matsets"].children();
         while (matset_itr.has_next())
         {
@@ -4108,9 +4110,9 @@ write_multimats(DBfile *dbfile,
 
             std::string linked_topo_name = n_matset["topology"].as_string();
 
-            if (! overlink || linked_topo_name == ovl_topo_name)
+            if (! write_overlink || linked_topo_name == ovl_topo_name)
             {
-                std::string safe_matset_name = detail::sanitize_silo_varname(matset_name); 
+                std::string safe_matset_name = (write_overlink ? "MATERIAL" : detail::sanitize_silo_varname(matset_name));
                 std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
                 std::string silo_path = root["silo_path"].as_string();
 
@@ -4138,11 +4140,10 @@ write_multimats(DBfile *dbfile,
                 CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
 
                 std::string multimesh_name, multimat_name;
-                if (overlink)
+                if (write_overlink)
                 {
-                    // TODO is this the right choice for overlink?
                     multimesh_name = opts_mesh_name;
-                    multimat_name = safe_matset_name;
+                    multimat_name = "MMATERIAL";
                 }
                 else
                 {
@@ -4155,6 +4156,8 @@ write_multimats(DBfile *dbfile,
                                                       DBOPT_MMESH_NAME,
                                                       const_cast<char *>(multimesh_name.c_str())),
                                           "Error creating options for putting multimaterial");
+
+                // TODO add db options for overlink
 
                 CONDUIT_CHECK_SILO_ERROR(
                     DBPutMultimat(
