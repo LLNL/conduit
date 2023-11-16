@@ -4388,12 +4388,16 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         opts_out_mesh_name = opts["mesh_name"].as_string();
     }
 
-    // check for + validate ovl_topo_name option
-    // only used for overlink case
-    if(opts.has_child("ovl_topo_name") && opts["ovl_topo_name"].dtype().is_string())
+    // we only care about this argument if we are using overlink
+    if (write_overlink)
     {
-        opts_ovl_topo_name = opts["ovl_topo_name"].as_string();
+        // check for + validate ovl_topo_name option
+        if(opts.has_child("ovl_topo_name") && opts["ovl_topo_name"].dtype().is_string())
+        {
+            opts_ovl_topo_name = opts["ovl_topo_name"].as_string();
+        }
     }
+    
 
     // check for number_of_files, 0 or -1 implies #files => # domains
     if(opts.has_child("number_of_files") && opts["number_of_files"].dtype().is_integer())
@@ -4677,7 +4681,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             {
                 if (par_rank == 0)
                 {
-                    CONDUIT_INFO("Silo save: overlink: topo name not provided or not found.");
+                    CONDUIT_INFO("Silo save: Overlink: topo name not provided or not found.");
                 }
 
                 if (dom_topos.number_of_children() > 0)
@@ -4685,14 +4689,14 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                     opts_ovl_topo_name = dom_topos.children().next().name();
                     if (par_rank == 0)
                     {
-                        CONDUIT_INFO("Silo save: overlink: topo name defaulting to " + opts_ovl_topo_name);
+                        CONDUIT_INFO("Silo save: Overlink: topo name defaulting to " + opts_ovl_topo_name);
                     }
                 }
                 else
                 {
                     if (par_rank == 0)
                     {
-                        CONDUIT_WARN("Silo save: overlink: No topologies to save. Doing nothing.");
+                        CONDUIT_WARN("Silo save: Overlink: No topologies to save. Doing nothing.");
                     }
                     return;
                 }
@@ -4703,11 +4707,12 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         {
             if (par_rank == 0)
             {
-                CONDUIT_WARN("Silo save: overlink: No topologies to save. Doing nothing.");
+                CONDUIT_WARN("Silo save: Overlink: No topologies to save. Doing nothing.");
             }
             return;
         }
 
+        // hardcode this so that we use the correct name going forward
         opts_out_mesh_name = "MMESH";
     }
 
@@ -5612,9 +5617,10 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                         opts_ovl_topo_name, 
                         root, 
                         write_overlink);
+        // TODO need material names here for overlink (not matset names, material names)
         write_multimats(dbfile.getSiloObject(), 
                         opts_out_mesh_name, 
-                        opts_ovl_topo_name, 
+                        opts_ovl_topo_name,
                         root, 
                         write_overlink);
 
