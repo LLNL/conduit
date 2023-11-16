@@ -3642,7 +3642,7 @@ void silo_write_topo(const Node &mesh_domain,
 void silo_write_matset(DBfile *dbfile,
                        const std::string &matset_name,
                        const Node &n_matset,
-                       const bool overlink,
+                       const bool write_overlink,
                        const int local_num_domains,
                        const int local_domain_index,
                        const uint64 global_domain_id,
@@ -3672,7 +3672,7 @@ void silo_write_matset(DBfile *dbfile,
                       << "/topology: " << topo_name);
         return;
     }
-    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
+    const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     // get the number of materials in this matset to write out
     int nmat = silo_matset_compact["material_map"].number_of_children();
@@ -3745,6 +3745,7 @@ void silo_write_matset(DBfile *dbfile,
 
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
+            // TODO the material name for overlink should be MATERIAL
                       detail::sanitize_silo_varname(matset_name).c_str(), // matset name
                       safe_meshname.c_str(), // mesh name
                       nmat, // number of materials
@@ -3782,7 +3783,7 @@ void silo_mesh_write(const Node &mesh_domain,
                      const int local_domain_index,
                      const uint64 global_domain_id,
                      Node &local_type_domain_info,
-                     const bool overlink)
+                     const bool write_overlink)
 {
     int silo_error = 0;
     char silo_prev_dir[256];
@@ -3804,7 +3805,7 @@ void silo_mesh_write(const Node &mesh_domain,
 
     Node n_mesh_info;
 
-    if (overlink)
+    if (write_overlink)
     {
         if (mesh_domain["topologies"].has_child(ovl_topo_name))
         {
@@ -3812,7 +3813,7 @@ void silo_mesh_write(const Node &mesh_domain,
             silo_write_topo(mesh_domain,
                             ovl_topo_name,
                             n_mesh_info,
-                            overlink,
+                            write_overlink,
                             local_num_domains,
                             local_domain_index,
                             global_domain_id,
@@ -3831,7 +3832,7 @@ void silo_mesh_write(const Node &mesh_domain,
             silo_write_topo(mesh_domain,
                             topo_name,
                             n_mesh_info,
-                            overlink,
+                            write_overlink,
                             local_num_domains,
                             local_domain_index,
                             global_domain_id,
@@ -3862,12 +3863,12 @@ void silo_mesh_write(const Node &mesh_domain,
                 << "For topo " << topo_name << ". This is ambiguous in silo.");
             topo_names.insert(topo_name);
             
-            if (! overlink || topo_name == ovl_topo_name)
+            if (! write_overlink || topo_name == ovl_topo_name)
             {
                 silo_write_matset(dbfile,
                                   matset_name,
                                   n_matset,
-                                  overlink,
+                                  write_overlink,
                                   local_num_domains,
                                   local_domain_index,
                                   global_domain_id,
@@ -3884,13 +3885,13 @@ void silo_mesh_write(const Node &mesh_domain,
         {
             const Node &n_var = itr.next();
             const std::string var_name = itr.name();
-            if (! overlink || n_var["topology"].as_string() == ovl_topo_name)
+            if (! write_overlink || n_var["topology"].as_string() == ovl_topo_name)
             {
                 silo_write_field(dbfile,
                                  var_name,
                                  n_var,
                                  mesh_domain,
-                                 overlink,
+                                 write_overlink,
                                  local_num_domains,
                                  local_domain_index,
                                  global_domain_id,
@@ -4147,8 +4148,6 @@ write_multimats(DBfile *dbfile,
 
     if (n_mesh.has_child("matsets"))
     {
-        // TODO haven't we only written a subset of these? same goes for variables
-        // how can I ensure that only ones that have been written are in the bp index?
         auto matset_itr = n_mesh["matsets"].children();
         while (matset_itr.has_next())
         {
