@@ -3361,11 +3361,10 @@ void silo_write_pointmesh(DBfile *dbfile,
                           const int num_pts,
                           const void *coords_ptrs,
                           const int coords_dtype,
-                          const bool overlink,
                           Node &n_mesh_info)
 {
     n_mesh_info[topo_name]["num_elems"].set(num_pts);
-    const std::string safe_meshname = (overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
+    const std::string safe_meshname = detail::sanitize_silo_varname(topo_name);
 
     int silo_error = DBPutPointmesh(dbfile,                // silo file ptr
                                     safe_meshname.c_str(), // mesh name
@@ -3382,7 +3381,7 @@ void silo_write_pointmesh(DBfile *dbfile,
 void silo_write_topo(const Node &mesh_domain,
                      const std::string &topo_name,
                      Node &n_mesh_info,
-                     const bool overlink,
+                     const bool write_overlink,
                      const int local_num_domains,
                      const int local_domain_index,
                      const uint64 global_domain_id,
@@ -3523,7 +3522,7 @@ void silo_write_topo(const Node &mesh_domain,
                                 optlist.getSiloObject(), 
                                 ndims, num_pts, silo_coordset_axis_labels.data(),
                                 coords_ptrs, coords_dtype,
-                                overlink, n_mesh_info);
+                                write_overlink, n_mesh_info);
         }
         else if (topo_type == "structured")
         {
@@ -3532,17 +3531,21 @@ void silo_write_topo(const Node &mesh_domain,
                                        optlist.getSiloObject(), 
                                        ndims, silo_coordset_axis_labels.data(),
                                        coords_ptrs, coords_dtype,
-                                       overlink, n_mesh_info);
+                                       write_overlink, n_mesh_info);
         }
-        // TODO pretty sure we can't write this to overlink
         else if (topo_type == "points")
         {
+            if (write_overlink)
+            {
+                CONDUIT_ERROR("Cannot write point mesh " << topo_name << " to overlink."
+                              << " Only DB_UCDMESH and DB_QUADMESH are supported.");
+            }
             mesh_type = DB_POINTMESH;
             silo_write_pointmesh(dbfile, topo_name,
                                  optlist.getSiloObject(), 
                                  ndims, num_pts,
                                  coords_ptrs, coords_dtype,
-                                 overlink, n_mesh_info);
+                                 n_mesh_info);
         }
     }
     else if (topo_type == "rectilinear")
@@ -3552,7 +3555,7 @@ void silo_write_topo(const Node &mesh_domain,
                                   n_topo, n_coords,
                                   optlist.getSiloObject(), 
                                   ndims, silo_coordset_axis_labels.data(),
-                                  overlink, n_mesh_info);
+                                  write_overlink, n_mesh_info);
     }
     else if (topo_type == "uniform")
     {
@@ -3571,7 +3574,7 @@ void silo_write_topo(const Node &mesh_domain,
                                   n_rect_topo, n_rect_coords,
                                   optlist.getSiloObject(), 
                                   ndims, silo_coordset_axis_labels.data(),
-                                  overlink, n_mesh_info);
+                                  write_overlink, n_mesh_info);
     }
     else
     {
