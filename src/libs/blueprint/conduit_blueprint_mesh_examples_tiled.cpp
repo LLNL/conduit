@@ -31,7 +31,7 @@
 // #define CONDUIT_USE_PARTITIONER_FOR_REORDER
 
 // Uncomment this to use a simpler tiled pattern for debugging.
-// #define CONDUIT_SIMPLE_TILED_PATTERN
+#define CONDUIT_SIMPLE_TILED_PATTERN
 
 // Uncomment this to print information about block splitting.
 // #define CONDUIT_DEBUG_BLOCK_SPLITTER
@@ -3255,13 +3255,13 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     if(threeD)
     {
         for(const auto value : left())
-            left3d.push_back(value * 2);
+            left3d.push_back(value + nTilePts);
         for(const auto value : right())
-            right3d.push_back(value * 2);
+            right3d.push_back(value + nTilePts);
         for(const auto value : bottom())
-            bottom3d.push_back(value * 2);
+            bottom3d.push_back(value + nTilePts);
         for(const auto value : top())
-            top3d.push_back(value * 2);
+            top3d.push_back(value + nTilePts);
 
         back3d.resize(nTilePts);
         std::iota(back3d.begin(), back3d.end(), 0);
@@ -3440,6 +3440,7 @@ TopDownTiler::addVolumeElements(const std::vector<conduit::index_t> &ptids,
         const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
         const auto tileconn = n_conn.as_index_t_accessor();
         const conduit::index_t nelem = tileconn.number_of_elements() / sides;
+        conduit::index_t offset = static_cast<conduit::index_t>(ptids.size()) / 2;
         for(conduit::index_t i = 0; i < nelem; i++)
         {
             conduit::index_t start = i * sides;
@@ -3449,7 +3450,7 @@ TopDownTiler::addVolumeElements(const std::vector<conduit::index_t> &ptids,
 
             // front face
             for(conduit::index_t s = 0; s < sides; s++)
-                conn.push_back(ptids[2 * tileconn[start + s]]);
+                conn.push_back(ptids[offset + tileconn[start + s]]);
 
             sizes.push_back(2 * sides);
         }
