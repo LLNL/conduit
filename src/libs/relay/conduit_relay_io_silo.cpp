@@ -912,16 +912,36 @@ generate_silo_material_names(const Node &n_mesh_state,
 }
 
 //-----------------------------------------------------------------------------
+// options Node:
+// 
+// comp_info:
+//   comp:                "meshes", "vars", or "matsets"
+//   comp_name:           meshname, varname, or matsetname
+// domain_info:
+//   local_num_domains: 
+//   local_domain_index: 
+//   global_domain_id: 
+// write_overlink:      "yes" or "no"
+// (only one version of the following is included, depending on what the comp is)
+// specific_info: // for meshes
+//   comp_type:           only used for meshes and vars (not matsets)
+// specific_info: // for vars
+//   comp_type:           only used for meshes and vars (not matsets)
+//   var_data_type:       only used for vars
+// specific_info: // omitted for matsets
+// 
 void
-track_local_type_domain_info(Node &local_type_domain_info,
-                             const std::string &comp, // "meshes", "vars", or "matsets"
-                             const std::string &comp_name, // meshname, varname, or matsetname
-                             index_t local_num_domains,
-                             index_t local_domain_index,
-                             index_t global_domain_id,
-                             index_t comp_type,
-                             index_t var_data_type = -1)
+track_local_type_domain_info(const Node &options,
+                             Node &local_type_domain_info)
 {
+    // fetch the passed in options
+    const std::string &comp = options["comp_info"]["comp"].as_string();
+    const std::string &comp_name = options["comp_info"]["comp_name"].as_string();
+    index_t local_num_domains = options["domain_info"]["local_num_domains"].to_index_t();
+    index_t local_domain_index = options["domain_info"]["local_domain_index"].to_index_t();
+    index_t global_domain_id = options["domain_info"]["global_domain_id"].to_index_t();
+    const bool write_overlink = options["write_overlink"].as_string() == "yes";
+    
     Node &local_type_domain_info_comp = local_type_domain_info[comp];
 
     if (! local_type_domain_info_comp.has_child(comp_name))
@@ -938,8 +958,10 @@ track_local_type_domain_info(Node &local_type_domain_info,
 
         // for overlink, we must save the var data type for each var (int or float)
         // this is used later when writing out the var attributes
-        if (comp == "vars")
+        if (write_overlink && comp == "vars")
         {
+            index_t var_data_type = options["specific_info"]["var_data_type"].to_index_t();
+
             // we only need to do this once since overlink assumes all domains have
             // the same data type.
             local_type_domain_info_comp[comp_name]["ovl_datatype"] = var_data_type;
@@ -947,8 +969,11 @@ track_local_type_domain_info(Node &local_type_domain_info,
     }
     index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
     domain_ids[local_domain_index] = global_domain_id;
+    // for vars and meshes we want to store the var and mesh type, respectively
     if (comp != "matsets")
     {
+        index_t comp_type = options["specific_info"]["comp_type"].to_index_t();
+
         index_t_array comp_types = local_type_domain_info_comp[comp_name]["types"].value();
         comp_types[local_domain_index] = comp_type;
     }
@@ -2998,15 +3023,18 @@ void silo_write_field(DBfile *dbfile,
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
+    Node bookkeeping_info;
+    bookkeeping_info["comp_info"]["comp"] = "vars";
+    bookkeeping_info["comp_info"]["comp_name"] = var_name;
+    bookkeeping_info["specific_info"]["comp_type"] = var_type;
+    bookkeeping_info["specific_info"]["var_data_type"] = detail::silo_type_to_ovl_attr_type(silo_vals_type);
+    bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
+    bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
+    bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
+    bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
+
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info,
-                                         "vars",
-                                         var_name,
-                                         local_num_domains,
-                                         local_domain_index,
-                                         global_domain_id,
-                                         var_type,
-                                         detail::silo_type_to_ovl_attr_type(silo_vals_type));
+    detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
 }
 
 //---------------------------------------------------------------------------//
@@ -3628,14 +3656,17 @@ void silo_write_topo(const Node &mesh_domain,
         CONDUIT_ERROR("Unknown topo type in " << topo_type);
     }
 
+    Node bookkeeping_info;
+    bookkeeping_info["comp_info"]["comp"] = "meshes";
+    bookkeeping_info["comp_info"]["comp_name"] = topo_name;
+    bookkeeping_info["specific_info"]["comp_type"] = mesh_type;
+    bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
+    bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
+    bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
+    bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
+
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info,
-                                         "meshes",
-                                         topo_name,
-                                         local_num_domains,
-                                         local_domain_index,
-                                         global_domain_id,
-                                         mesh_type);
+    detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
 }
 
 //---------------------------------------------------------------------------//
@@ -3763,15 +3794,16 @@ void silo_write_matset(DBfile *dbfile,
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMaterial");
 
+    Node bookkeeping_info;
+    bookkeeping_info["comp_info"]["comp"] = "matsets";
+    bookkeeping_info["comp_info"]["comp_name"] = matset_name;
+    bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
+    bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
+    bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
+    bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
+
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info,
-                                         "matsets",
-                                         matset_name,
-                                         local_num_domains,
-                                         local_domain_index,
-                                         global_domain_id,
-                                         -1,
-                                         true);
+    detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
 }
 
 //---------------------------------------------------------------------------//

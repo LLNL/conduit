@@ -835,8 +835,6 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
         save_mesh[child]["state"]["cycle"] = (int64) cycle;
     }
 
-    std::cout << save_mesh.to_yaml() << std::endl;
-
     // we must merge the two meshes in load mesh
     // the indexing is tricky because one is missing a domain
     load_mesh[0]["coordsets"]["mesh_topo"].set_external(load_mesh2[0]["coordsets"]["mesh_topo"]);
@@ -1575,3 +1573,5 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
 //  - etc.
 
 // TODO what are those bonus tar files doing in the overlink data dir?
+
+// TODO somewhere I need to error on overlink when there are different var or mesh types across domains
