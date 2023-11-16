@@ -323,6 +323,29 @@ std::string sanitize_silo_varname(const std::string &varname)
 }
 
 //-----------------------------------------------------------------------------
+// ATTR_INTEGER      0  /* Integer variable */
+// ATTR_FLOAT        1  /* Double precision floating point variable */
+int silo_type_to_ovl_attr_type(int silo_type)
+{
+    const int ATTR_INTEGER = 0;
+    const int ATTR_FLOAT = 1;
+
+    if (silo_type == DB_FLOAT ||
+        silo_type == DB_DOUBLE)
+    {
+        return ATTR_FLOAT;
+    }
+    else if (silo_type == DB_NOTYPE)
+    {
+        return -1;
+    }
+    else
+    {
+        return ATTR_INTEGER;
+    }
+}
+
+//-----------------------------------------------------------------------------
 int dtype_to_silo_type(DataType dtype)
 {
     if (dtype.is_float())
@@ -890,27 +913,41 @@ generate_silo_material_names(const Node &n_mesh_state,
 
 //-----------------------------------------------------------------------------
 void
-track_local_type_domain_info(Node &local_type_domain_info_comp,
-                             const std::string &comp_name,
+track_local_type_domain_info(Node &local_type_domain_info,
+                             const std::string &comp, // "meshes", "vars", or "matsets"
+                             const std::string &comp_name, // meshname, varname, or matsetname
                              index_t local_num_domains,
                              index_t local_domain_index,
                              index_t global_domain_id,
                              index_t comp_type,
-                             bool matsets = false)
+                             index_t var_data_type = -1)
 {
+    Node &local_type_domain_info_comp = local_type_domain_info[comp];
+
     if (! local_type_domain_info_comp.has_child(comp_name))
     {
         local_type_domain_info_comp[comp_name]["domain_ids"].set(DataType::index_t(local_num_domains));
         index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
         domain_ids.fill(-1); // we want missing domains to have -1 and not 0 to avoid confusion
-        if (! matsets)
+        
+        // matsets do not have type information that must be tracked
+        if (comp != "matsets")
         {
             local_type_domain_info_comp[comp_name]["types"].set(DataType::index_t(local_num_domains));
+        }
+
+        // for overlink, we must save the var data type for each var (int or float)
+        // this is used later when writing out the var attributes
+        if (comp == "vars")
+        {
+            // we only need to do this once since overlink assumes all domains have
+            // the same data type.
+            local_type_domain_info_comp[comp_name]["ovl_datatype"] = var_data_type;
         }
     }
     index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
     domain_ids[local_domain_index] = global_domain_id;
-    if (! matsets)
+    if (comp != "matsets")
     {
         index_t_array comp_types = local_type_domain_info_comp[comp_name]["types"].value();
         comp_types[local_domain_index] = comp_type;
@@ -1266,6 +1303,7 @@ read_variable_domain_helper(const T *var_ptr,
                             const std::string &multivar_name,
                             const int vartype,
                             const std::string &bottom_level_mesh_name,
+                            const std::string &volume_dependent,
                             Node &mesh_out)
 {
     // If we cannot fetch this var we will skip
@@ -1320,6 +1358,12 @@ read_variable_domain_helper(const T *var_ptr,
         field_out["association"] = "vertex";
     }
 
+    // if we have volume dependence we can track it
+    if (! volume_dependent.empty())
+    {
+        field_out["volume_dependent"] = volume_dependent;
+    }
+
     // TODO investigate the dims, major_order, and stride for vars. Should match the mesh;
     // what to do if it is different? Will I need to walk these arrays differently?
 
@@ -1340,6 +1384,7 @@ read_variable_domain(const int vartype,
                      const std::string &multimesh_name,
                      const std::string &multivar_name,
                      const std::string &bottom_level_mesh_name,
+                     const std::string &volume_dependent,
                      const Node &matset_field_reconstruction,
                      Node &mesh_out)
 {
@@ -1351,8 +1396,8 @@ read_variable_domain(const int vartype,
             &DBFreeUcdvar};
 
         if (!read_variable_domain_helper<DBucdvar>(
-            ucdvar.getSiloObject(), var_name, multimesh_name,
-            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+            ucdvar.getSiloObject(), var_name, multimesh_name, multivar_name,
+            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1369,8 +1414,8 @@ read_variable_domain(const int vartype,
             &DBFreeQuadvar};
 
         if (!read_variable_domain_helper<DBquadvar>(
-            quadvar.getSiloObject(), var_name, multimesh_name,
-            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+            quadvar.getSiloObject(), var_name, multimesh_name, multivar_name,
+            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1387,8 +1432,8 @@ read_variable_domain(const int vartype,
             &DBFreeMeshvar};
 
         if (!read_variable_domain_helper<DBmeshvar>(
-            meshvar.getSiloObject(), var_name, multimesh_name,
-            multivar_name, vartype, bottom_level_mesh_name, mesh_out))
+            meshvar.getSiloObject(), var_name, multimesh_name, multivar_name,
+            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1945,6 +1990,91 @@ read_state(DBfile *dbfile,
 }
 
 //-----------------------------------------------------------------------------
+void
+read_var_attributes(DBfile *dbfile,
+                    const std::string &multimesh_name,
+                    Node &root_node)
+{
+    if (! root_node[multimesh_name].has_child("vars"))
+    {
+        // nothing to do if there are no vars
+        return;
+    }
+
+    const std::string var_attr_name = "VAR_ATTRIBUTES";
+    if (! DBInqVarExists(dbfile, var_attr_name.c_str()))
+    {
+        // The var attributes are not present. They are optional, so we can return early
+        return;
+    }
+    if (DBInqVarType(dbfile, var_attr_name.c_str()) != DB_ARRAY)
+    {
+        // The var attributes are the wrong type. They are optional, so we can return early
+        return;
+    }
+    detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> var_attr_obj{
+        DBGetCompoundarray(dbfile, var_attr_name.c_str()), 
+        &DBFreeCompoundarray};
+    DBcompoundarray *var_attr = var_attr_obj.getSiloObject();
+    if (! var_attr)
+    {
+        // we failed to read the variable attributes. We can skip them.
+        return;
+    }
+
+    // fetch pointers to elements inside the compound array
+    char **elemnames = var_attr->elemnames;
+    int *elemlengths = var_attr->elemlengths;
+    int nelems       = var_attr->nelems;
+    int *values      = static_cast<int *>(var_attr->values);
+    int datatype     = var_attr->datatype;
+
+    if (datatype != DB_INT)
+    {
+        // for overlink, the var attributes must contain integer data
+        // we don't want to complain however, since we don't know if we are doing overlink
+        // or not at this point.
+        return;
+    }
+
+    // a map from field names (strings) to whether or not it is volume dependent (bools)
+    std::map<std::string, bool> field_vol_dep;
+
+    // next we fill our map
+    int currpos = 0;
+    for (int i = 0; i < nelems; i ++)
+    {
+        const std::string varname = elemnames[i];
+        const int elemlength = elemlengths[i];
+        const int scaling_property = values[currpos + 1]; // + 1 b/c scaling property is stored 
+        // in the 2nd position
+
+        // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
+        // intensive (0) IS NOT volume dependent
+        // extensive (1) IS volume dependent
+        const bool vol_dep = scaling_property != 0;
+
+        field_vol_dep[varname] = vol_dep;
+
+        currpos += elemlength;
+    }
+
+    // finally we use our map to put information into our fields
+    Node &root_fields = root_node[multimesh_name]["vars"];
+    for (auto const &mapitem : field_vol_dep)
+    {
+        std::string fieldname = mapitem.first;
+        std::string volume_dependent = mapitem.second ? "true" : "false";
+
+        // we only want this information for variables that we have read
+        if (root_fields.has_child(fieldname))
+        {
+            root_fields[fieldname]["volume_dependent"] = volume_dependent;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 bool
 read_root_silo_index(const std::string &root_file_path,
                      const Node &opts,
@@ -2022,19 +2152,39 @@ read_root_silo_index(const std::string &root_file_path,
     }
 
     int nblocks;
-    if (!read_multimesh(dbfile.getSiloObject(), multimesh_name, nblocks, root_node, error_oss))
+    if (! read_multimesh(dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
     {
         return false;
     }
-    if (!read_multivars(toc, dbfile.getSiloObject(), multimesh_name, nblocks, root_node, error_oss))
+    if (! read_multivars(toc,
+                         dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
     {
         return false;
     }
-    if (!read_multimats(toc, dbfile.getSiloObject(), multimesh_name, nblocks, root_node, error_oss))
+    if (! read_multimats(toc,
+                         dbfile.getSiloObject(),
+                         multimesh_name,
+                         nblocks,
+                         root_node,
+                         error_oss))
     {
         return false;
     }
+
     read_state(dbfile.getSiloObject(), root_node, multimesh_name);
+
+    // overlink-specific
+    read_var_attributes(dbfile.getSiloObject(),
+                        multimesh_name,
+                        root_node);
 
     // our silo index should look like this:
 
@@ -2058,6 +2208,7 @@ read_root_silo_index(const std::string &root_file_path,
     //             - "domain_000001.silo:field"
     //               ...
     //          var_types: [DB_UCDVAR, DB_UCDVAR, ...]
+    //          volume_dependent: "false" // (optional) this can be provided with overlink var attributes
     //       ...
     //    matsets:
     //       material:
@@ -2380,6 +2531,13 @@ read_mesh(const std::string &root_file_path,
                     continue;
                 }
 
+                // this info can be tracked with overlink VAR_ATTRIBUTES
+                std::string volume_dependent = "";
+                if (n_var.has_child("volume_dependent"))
+                {
+                    volume_dependent = n_var["volume_dependent"].as_string();
+                }
+
                 // root only case
                 if (var_domain_filename.empty())
                 {
@@ -2398,7 +2556,7 @@ read_mesh(const std::string &root_file_path,
                 // last thing in the loop iteration
                 read_variable_domain(vartype, var_domain_file_to_use, var_name,
                     multimesh_name, multivar_name, bottom_level_mesh_name,
-                    matset_field_reconstruction, mesh_out);
+                    volume_dependent, matset_field_reconstruction, mesh_out);
             }
         }
     }
@@ -2794,12 +2952,14 @@ void silo_write_field(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info["vars"],
+    detail::track_local_type_domain_info(local_type_domain_info,
+                                         "vars",
                                          var_name,
                                          local_num_domains,
                                          local_domain_index,
                                          global_domain_id,
-                                         var_type);
+                                         var_type,
+                                         detail::silo_type_to_ovl_attr_type(silo_vals_type));
 }
 
 //---------------------------------------------------------------------------//
@@ -3418,7 +3578,8 @@ void silo_write_topo(const Node &mesh_domain,
     }
 
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info["meshes"],
+    detail::track_local_type_domain_info(local_type_domain_info,
+                                         "meshes",
                                          topo_name,
                                          local_num_domains,
                                          local_domain_index,
@@ -3551,7 +3712,8 @@ void silo_write_matset(DBfile *dbfile,
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMaterial");
 
     // bookkeeping
-    detail::track_local_type_domain_info(local_type_domain_info["matsets"],
+    detail::track_local_type_domain_info(local_type_domain_info,
+                                         "matsets",
                                          matset_name,
                                          local_num_domains,
                                          local_domain_index,
@@ -3852,7 +4014,7 @@ write_multivars(DBfile *dbfile,
 
             if (! overlink || linked_topo_name == ovl_topo_name)
             {
-                std::string safe_varname = detail::sanitize_silo_varname(var_name); 
+                std::string safe_varname = detail::sanitize_silo_varname(var_name);
                 std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
                 std::string silo_path = root["silo_path"].as_string();
 
@@ -3909,7 +4071,7 @@ write_multivars(DBfile *dbfile,
                         var_types.data(),
                         optlist.getSiloObject()),
                     "Error putting multivar corresponding to field: " << var_name);
-            }        
+            }
         }
     }
 }
@@ -4047,7 +4209,102 @@ write_pad_dims(DBfile *dbfile,
                            DB_INT, // datatype
                            NULL); // optlist
     }
+}
 
+//-----------------------------------------------------------------------------
+// only for overlink
+void
+write_var_attributes(DBfile *dbfile, 
+                     const std::string &opts_mesh_name,
+                     const Node &root)
+{
+    const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    const Node &n_type_dom_info = root["type_domain_info"];
+    if (n_mesh.has_child("fields"))
+    {
+        std::vector<std::string> multivar_name_strings;
+        std::vector<int> elemlengths;
+        int nvalues = 0;
+        std::vector<int> var_attr_values;
+
+        auto field_itr = n_mesh["fields"].children();
+        while (field_itr.has_next())
+        {
+            const Node &n_var = field_itr.next();
+            std::string var_name = field_itr.name();
+            std::string safe_varname = detail::sanitize_silo_varname(var_name);
+            multivar_name_strings.push_back(safe_varname);
+
+            const int num_attr = 5; // we are writing 5 var attributes for now
+
+            elemlengths.push_back(num_attr);
+            nvalues += num_attr;
+
+            // 
+            // centering: ATTR_NODAL 0, ATTR_ZONAL 1, ATTR_FACE, ATTR_EDGE
+            // 
+            if (n_var["association"].as_string() == "vertex")
+            {
+                var_attr_values.push_back(0); // nodal == vertex
+            }
+            else
+            {
+                var_attr_values.push_back(1); // zonal == element
+            }
+
+            // 
+            // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
+            // 
+            // intensive (0) IS NOT volume dependent
+            // extensive (1) IS volume dependent
+            if (n_var.has_child("volume_dependent") &&
+                n_var["volume_dependent"].as_string() == "true")
+            {
+                var_attr_values.push_back(1); // extensive == volume dependent
+            }
+            else
+            {
+                var_attr_values.push_back(0); // intensive == NOT volume dependent
+            }
+
+            // 
+            // linking: ATTR_FIRST ORDER 0, ATTR_SECOND ORDER 1
+            // 
+            // Use ATTR_SECOND_ORDER which means it computes the gradient of the 
+            // field value in each zone for a second order remap of the values.
+            // The first order remap is less accurate since it treats the value 
+            // as constant within the zone.
+            // TODO do we want to store any of this info in the state node on read?
+            var_attr_values.push_back(1);
+
+            // 
+            // unused: 0
+            // 
+            var_attr_values.push_back(0);
+
+            // 
+            // data type: ATTR_INTEGER, ATTR_FLOAT
+            // 
+            // we cached this info earlier, just need to retrieve it
+            var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
+        }
+        // package up char ptrs for silo
+        std::vector<const char *> multivar_name_ptrs;
+        for (size_t i = 0; i < multivar_name_strings.size(); i ++)
+        {
+            multivar_name_ptrs.push_back(multivar_name_strings[i].c_str());
+        }
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           "VAR_ATTRIBUTES", // name
+                           multivar_name_ptrs.data(), // elemnames
+                           elemlengths.data(), // elemlengths
+                           multivar_name_ptrs.size(), // nelems
+                           static_cast<void *>(var_attr_values.data()), // values
+                           nvalues, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -4069,6 +4326,10 @@ write_pad_dims(DBfile *dbfile,
 ///      suffix: "default", "cycle", "none"
 ///            when cycle is present,  "default"   ==> "cycle"
 ///            else,                   "default"   ==> "none"
+///
+///      root_file_ext: "default", "root", "silo"
+///            "default"   ==> "root"
+///            if overlink, this parameter is unused.
 ///
 ///      mesh_name:  (used if present, default ==> "mesh")
 ///
@@ -4103,6 +4364,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
     std::string opts_file_style    = "default";
     std::string opts_suffix        = "default";
+    std::string opts_root_file_ext = "default";
     std::string opts_out_mesh_name = "mesh"; // used only for the non-overlink case
     std::string opts_ovl_topo_name = ""; // used only for the overlink case
     std::string opts_silo_type     = "default";
@@ -4140,6 +4402,21 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             CONDUIT_ERROR("write_mesh invalid suffix option: \"" 
                           << opts_suffix << "\"\n"
                           " expected: \"default\", \"cycle\", or \"none\"");
+        }
+    }
+
+    // check for + validate root_file_ext option
+    if(opts.has_child("root_file_ext") && opts["root_file_ext"].dtype().is_string())
+    {
+        opts_root_file_ext = opts["root_file_ext"].as_string();
+
+        if(opts_root_file_ext != "default" && 
+           opts_root_file_ext != "root" &&
+           opts_root_file_ext != "silo" )
+        {
+            CONDUIT_ERROR("write_mesh invalid root_file_ext option: \"" 
+                          << opts_root_file_ext << "\"\n"
+                          " expected: \"default\", \"root\", or \"silo\"");
         }
     }
     
@@ -4232,6 +4509,11 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     //     silo_type = DB_TAURUS;
     // }
 
+    if (opts_root_file_ext == "default")
+    {
+        opts_root_file_ext = "root";
+    }
+
     // more will happen for this case later
     if (opts_file_style == "overlink")
     {
@@ -4239,6 +4521,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                      "with this option will be missing several components "
                      "that Overlink requires.")
         opts_suffix = "none"; // force no suffix for overlink case
+        opts_root_file_ext = "silo"; // force .silo file extension for root file
     }
 
     int num_files = opts_num_files;
@@ -4518,7 +4801,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     std::string root_filename;
     if (opts_file_style == "overlink")
     {
-        root_filename = utils::join_file_path(output_dir, "OvlTop.silo");
+        root_filename = utils::join_file_path(output_dir, "OvlTop." + opts_root_file_ext);
     }
     else
     {
@@ -4531,7 +4814,7 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             root_filename += conduit_fmt::format(".cycle_{:06d}",cycle);
         }
 
-        root_filename += ".root";
+        root_filename += "." + opts_root_file_ext;
     }
 
     // ----------------------------------------------------
@@ -5128,9 +5411,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
         //   matset2: 1, -1, 1, ...
 
         Node root_type_domain_info;
-        Node &root_type_domain_info_meshes  = root_type_domain_info["meshes"];
-        Node &root_type_domain_info_vars    = root_type_domain_info["vars"];
-        Node &root_type_domain_info_matsets = root_type_domain_info["matsets"];
 
         auto type_domain_info_itr = global_type_domain_info.children();
         while (type_domain_info_itr.has_next())
@@ -5138,8 +5418,9 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             // type info from a particular MPI rank
             const Node &type_domain_info_from_rank = type_domain_info_itr.next();
             
-            auto assemble_root_type_dom_info = [&](std::string comp, Node &root_type_domain_info_comp)
+            auto assemble_root_type_dom_info = [&](std::string comp)
             {
+                Node &root_type_domain_info_comp = root_type_domain_info[comp];
                 if (type_domain_info_from_rank.has_child(comp))
                 {
                     auto read_comp_itr = type_domain_info_from_rank[comp].children();
@@ -5153,6 +5434,14 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                             root_type_domain_info_comp[read_comp_name].set(DataType::index_t(global_num_domains));
                             index_t_array root_comp_types = root_type_domain_info_comp[read_comp_name].value();
                             root_comp_types.fill(-1); // empty domains get -1
+
+                            // for overlink, we need the overlink data type for each var
+                            // to save out in the var attributes
+                            if (comp == "vars" && opts_file_style == "overlink")
+                            {
+                                root_type_domain_info["ovl_var_datatypes"][read_comp_name].set(
+                                    read_comp_type_domain_info["ovl_datatype"]);
+                            }
                         }
                         // this is where we are writing the data to
                         index_t_array root_comp_types = root_type_domain_info_comp[read_comp_name].value();
@@ -5192,9 +5481,9 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                 }
             };
 
-            assemble_root_type_dom_info("meshes",  root_type_domain_info_meshes);
-            assemble_root_type_dom_info("vars",    root_type_domain_info_vars);
-            assemble_root_type_dom_info("matsets", root_type_domain_info_matsets);
+            assemble_root_type_dom_info("meshes");
+            assemble_root_type_dom_info("vars");
+            assemble_root_type_dom_info("matsets");
         }
 
         std::string output_silo_path;
@@ -5371,6 +5660,11 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
 
         if (write_overlink)
         {
+            write_var_attributes(dbfile.getSiloObject(),
+                                 opts_out_mesh_name,
+                                 root);
+
+            // in progress
             std::cout << root.to_yaml() << std::endl;
             write_pad_dims(dbfile.getSiloObject(), 
                            opts_out_mesh_name, 

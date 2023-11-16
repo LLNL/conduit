@@ -233,11 +233,7 @@ overlink_name_changer(conduit::Node &save_mesh)
         n_field["topology"].reset();
         n_field["topology"] = "MMESH";
 
-        // remove vol dep
-        if (n_field.has_child("volume_dependent"))
-        {
-            n_field.remove_child("volume_dependent");
-        }
+        // overlink tracks volume dependence so we do not have to remove it
 
         // we need to rename vector components
         if (n_field["values"].dtype().is_object())

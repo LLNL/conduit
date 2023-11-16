@@ -2413,6 +2413,10 @@ mesh::generate_index_for_single_domain(const Node &mesh,
             {
                 idx_fld["matset"] = fld["matset"].as_string();
             }
+            if(fld.has_child("volume_dependent"))
+            {
+                idx_fld["volume_dependent"] = fld["volume_dependent"].as_string();
+            }
 
             if(fld.has_child("association"))
             {
