@@ -1911,7 +1911,7 @@ void Block::iterate(Func &&func) const
     }
 }
 
-//------------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 std::vector<LogicalIndex>
 Block::intersectInternal(const Block &B) const
 {
@@ -2367,7 +2367,7 @@ Block::intersectInternal(const Block &B) const
     return ids;
 }
 
-//------------------------------------------------------------------------------
+//---------------------------------------------------------------------------
 std::vector<LogicalIndex>
 Block::intersect(const Block &B) const
 {
@@ -2376,7 +2376,6 @@ Block::intersect(const Block &B) const
         ids = B.intersectInternal(*this);
     return ids;
 }
-
 
 //---------------------------------------------------------------------------
 /**
@@ -3110,6 +3109,39 @@ public:
     void generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                   conduit::Node &res, const conduit::Node &options);
 protected:
+    /**
+     @brief This class represents the various sets of node indices within a tile.
+     */
+    struct TileIndices
+    {
+        /**
+                                                          top f3   / back f4
+                c2                c3                      |       /
+                *------e3---------*                 *-----|-----------*
+               /|                /|                /|     |     /    /|
+              / |               / |               / |     |    /    / |
+            e9  |             e11 |              /  |     +   /    /  |
+            /   e0            /   |             /   |        +    /   |
+           /    |            /    e1           /    |            /    |
+        c6*--------e7-------*c7   |           *-----------------*     |
+          |     |           |     |           |     |           |     |
+          |     |           |     |     left--|--+  |           |  +----- right
+          |     *- - - e2- -|- - -* c1   f0   |     *- - - - - -|- - -*     f1
+          e4   / c0         e5   /            |    /    +       |    /
+          |   e8            |   e10           |   /    /        |   /
+          |  /              |  /              |  /    /   +     |  /
+          | /               | /               | /    /    |     | /
+          |/                |/                |/    /     |     |/
+          *--------e6-------*                 *----/-----------*
+          c4                c5                    /       |
+                                              front f5    bottom f2
+
+         */
+        std::vector<conduit::index_t> left, right, bottom, top, back, front;
+        std::vector<conduit::index_t> edges[12];
+        std::vector<conduit::index_t> corners[8];
+    };
+
     /// Initialize some member fields from values in the node.
     void initializeFromOptions(const conduit::Node &t);
 
@@ -3129,6 +3161,16 @@ protected:
                         const Block &selectedBlock,
                         IndexType domainId,
                         const conduit::Node &options);
+
+    /**
+     @brief Build the tile indices.
+
+     @param[out] The TileIndices to construct.
+     @param threeD Whether to make all of the indices needed for 3D.
+
+     @return The number of points in a tile.
+     */
+    conduit::index_t buildTileIndices(TileIndices &ti, bool threeD) const;
 
     /**
      @brief Add points for a tile if they do not yet exist.
@@ -3151,10 +3193,20 @@ protected:
                    std::vector<double> &z,
                    std::vector<conduit::index_t> &srcPointId) const;
 
+    /**
+     @brief This method adds the volume elements for a single tile, using the
+            supplied point ids.
+
+     @param ptids The point ids that make up the tile.
+     @param[out] conn A vector to which connectivity for this tile is appended.
+     @param[out] sizes A vector to which the size for this tile is appended.
+     */
     void addVolumeElements(const std::vector<conduit::index_t> &ptids,
                            std::vector<conduit::index_t> &conn,
                            std::vector<conduit::index_t> &sizes) const;
 
+    // These take lambdas to make the actual boundary info so node reordering can
+    // be done there.
     template <typename Body>
     void iterateBoundary2D(const Block &selectedBlock,
                            const std::vector<Tile> &tiles,
@@ -3166,6 +3218,24 @@ protected:
                            bool ccFaces,
                            Body &&body) const;
 
+    /**
+     @brief Iterates over the selectedBlock and encodes its neighbor information
+            into an adjset.
+
+     @param selectedBlock The selected block with neighbor information.
+     @param tiles The tiles that were created for the selected block.
+     @param ti An object that contains tile indices for 1 tile.
+     @param threeD Whether to make the adjset in 3D.
+     @param domainId The domain id for the current domain.
+     @param[out] out The Conduit node where the adjset will be made.
+
+     */
+    void addAdjset(const Block &selectedBlock,
+                   const std::vector<Tile> &tiles,
+                   const TopDownTiler::TileIndices &ti,
+                   bool threeD,
+                   conduit::index_t domainId,
+                   conduit::Node &out) const;
 private:
     IndexType m_numDomains;                   //!< The number of domains to make in total.
     bool m_curveSplitting;                    //!< Whether to allow Hilbert curve domains.
@@ -3290,34 +3360,10 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             extents[i] = e[i];
     }
 
-    // Number of tile points.
-    auto nTilePts = getCoordset().fetch_existing("values/x").dtype().number_of_elements();
+    // Make some tile indexing vectors.
     bool threeD = (nz >= 1);
-
-    // Make some tile face indexing vectors.
-    std::vector<conduit::index_t> leftIds, rightIds, bottomIds, topIds, backIds, frontIds;
-    leftIds = left();
-    rightIds = right();
-    bottomIds = bottom();
-    topIds = top();
-    if(threeD)
-    {
-        for(const auto value : left())
-            leftIds.push_back(value + nTilePts);
-        for(const auto value : right())
-            rightIds.push_back(value + nTilePts);
-        for(const auto value : bottom())
-            bottomIds.push_back(value + nTilePts);
-        for(const auto value : top())
-            topIds.push_back(value + nTilePts);
-
-        backIds.resize(nTilePts);
-        std::iota(backIds.begin(), backIds.end(), 0);
-        frontIds.resize(nTilePts);
-        std::iota(frontIds.begin(), frontIds.end(), nTilePts);
-
-        nTilePts *= 2;
-    }
+    TileIndices ti;
+    auto nTilePts = buildTileIndices(ti, threeD);
 
     // Data for transforming a single tile to fit in the extents.
     double normalize[3];
@@ -3334,6 +3380,9 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     origin[2] = extents[4];
     matrix4x4 SO = scale(size) * translate(origin);
 
+    // -------------------
+    // Make points / conn
+    // -------------------
     // We can iterate over the block's zones. It will traverse them in usual IJK order.
     // Since the selectedBlock is expanded to know about neighbors, each real/self zone
     // will have neighbors in IJK.
@@ -3358,11 +3407,11 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             // Copy points from previous neighbor tiles if possible.
             if(selectedBlock.image[prevX] == Block::Self)
             {
-                current.setPointIds(leftIds, tiles[prevX].getPointIds(rightIds));
+                current.setPointIds(ti.left, tiles[prevX].getPointIds(ti.right));
             }
             if(selectedBlock.image[prevY] == Block::Self)
             {
-                current.setPointIds(bottomIds, tiles[prevY].getPointIds(topIds));
+                current.setPointIds(ti.bottom, tiles[prevY].getPointIds(ti.top));
             }
 
             // Make a transformation matrix.
@@ -3377,7 +3426,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
                 auto prevZ = localIndex - dZ;
                 if(nz > 1 && selectedBlock.image[prevZ] == Block::Self)
                 {
-                    current.setPointIds(backIds, tiles[prevZ].getPointIds(frontIds));
+                    current.setPointIds(ti.back, tiles[prevZ].getPointIds(ti.front));
                 }
 
                 const std::vector<double> zvalues{0., 1.};
@@ -3401,7 +3450,9 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
         }
     });   
 
-    // Make the Blueprint mesh.
+    // -------------------
+    // Make Blueprint mesh
+    // -------------------
     res["coordsets/coords/type"] = "explicit";
     res["coordsets/coords/values/x"].set(x);
     res["coordsets/coords/values/y"].set(y);
@@ -3424,7 +3475,9 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
 
     res["state/domain_id"] = domainId;
 
-    // Make boundaries.
+    // -------------------
+    // Make boundaries
+    // -------------------
     std::string bshape;
     if(threeD)
     {
@@ -3473,6 +3526,160 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
         res["fields/boundary_attribute/topology"] = boundaryMeshName;
         res["fields/boundary_attribute/association"] = "element";
         res["fields/boundary_attribute/values"].set(btype);
+    }
+
+    // -------------------
+    // Make adjsets
+    // -------------------
+    if(m_numDomains > 1)
+    {
+        addAdjset(selectedBlock, tiles, ti, threeD, domainId, res);
+    }
+}
+
+//---------------------------------------------------------------------------
+conduit::index_t
+TopDownTiler::buildTileIndices(TileIndices &ti, bool threeD) const
+{
+    auto nTilePts = getCoordset().fetch_existing("values/x").dtype().number_of_elements();
+
+    // Make some tile face indexing vectors.
+    std::vector<conduit::index_t> leftIds, rightIds, bottomIds, topIds, backIds, frontIds;
+    ti.left = left();
+    ti.right = right();
+    ti.bottom = bottom();
+    ti.top = top();
+
+    // Back face corners
+    ti.corners[0].push_back(ti.left[0]);
+    ti.corners[1].push_back(ti.right[0]);
+    ti.corners[2].push_back(ti.left[ti.left.size() - 1]);
+    ti.corners[3].push_back(ti.right[ti.right.size() - 1]);
+
+    if(threeD)
+    {
+        // Front face corners
+        ti.corners[4].push_back(ti.left[0] + nTilePts);
+        ti.corners[5].push_back(ti.right[0] + nTilePts);
+        ti.corners[6].push_back(ti.left[ti.left.size() - 1] + nTilePts);
+        ti.corners[7].push_back(ti.right[ti.right.size() - 1] + nTilePts);
+
+        // Edges
+        ti.edges[0] = left();
+        ti.edges[1] = right();
+        ti.edges[2] = bottom();
+        ti.edges[3] = top();
+
+        for(const auto value : left())
+            ti.edges[4].push_back(value + nTilePts);
+        for(const auto value : right())
+            ti.edges[5].push_back(value + nTilePts);
+        for(const auto value : bottom())
+            ti.edges[6].push_back(value + nTilePts);
+        for(const auto value : top())
+            ti.edges[7].push_back(value + nTilePts);
+
+        ti.edges[8] = std::vector<conduit::index_t>{ti.corners[0][0], ti.corners[4][0]};
+        ti.edges[9] = std::vector<conduit::index_t>{ti.corners[2][0], ti.corners[6][0]};
+        ti.edges[10] = std::vector<conduit::index_t>{ti.corners[1][0], ti.corners[5][0]};
+        ti.edges[11] = std::vector<conduit::index_t>{ti.corners[3][0], ti.corners[7][0]};
+
+        // Extend faces
+        for(const auto value : left())
+            ti.left.push_back(value + nTilePts);
+        for(const auto value : right())
+            ti.right.push_back(value + nTilePts);
+        for(const auto value : bottom())
+            ti.bottom.push_back(value + nTilePts);
+        for(const auto value : top())
+            ti.top.push_back(value + nTilePts);
+
+        // Front/back faces
+        ti.back.resize(nTilePts);
+        std::iota(ti.back.begin(), ti.back.end(), 0);
+        ti.front.resize(nTilePts);
+        std::iota(ti.front.begin(), ti.front.end(), nTilePts);
+
+        nTilePts *= 2;
+    }
+
+    return nTilePts;
+}
+
+//---------------------------------------------------------------------------
+void
+TopDownTiler::addPoints(const matrix4x4 &A,
+                        const std::vector<double> &zvalues,
+                        std::vector<conduit::index_t> &ptids,
+                        std::vector<double> &x,
+                        std::vector<double> &y,
+                        std::vector<double> &z,
+                        std::vector<conduit::index_t> &srcPointId) const
+{
+    // Iterate through points in the template and add them if they have
+    // not been created yet.
+    const auto &xpts = getCoordset().fetch_existing("values/x").as_double_array();
+    const auto &ypts = getCoordset().fetch_existing("values/y").as_double_array();
+    conduit::index_t index = 0;
+    for(const double zval : zvalues)
+    {
+        for(conduit::index_t i = 0; i < xpts.number_of_elements(); i++, index++)
+        {
+            if(ptids[index] == Tile::INVALID_POINT)
+            {
+                ptids[index] = static_cast<int>(x.size());
+
+                double P0[3] = {xpts[i], ypts[i], zval};
+                double P[3];
+                vec_matrix4x4_mult(P0, A, P);
+
+                x.push_back(P[0]);
+                y.push_back(P[1]);
+                z.push_back(P[2]);
+
+                srcPointId.push_back(i);
+            }
+        }
+    }
+}
+
+//---------------------------------------------------------------------------
+void
+TopDownTiler::addVolumeElements(const std::vector<conduit::index_t> &ptids,
+                                std::vector<conduit::index_t> &conn,
+                                std::vector<conduit::index_t> &sizes) const
+{
+    const conduit::Node &topo = getTopology();
+    std::string shape = topo.fetch_existing("elements/shape").as_string();
+    conduit::index_t sides = 0;
+    if(shape == "tri")
+        sides = 3;
+    else if(shape == "quad")
+        sides = 4;
+
+    if(sides == 3 || sides == 4)
+    {
+        const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
+        const auto tileconn = n_conn.as_index_t_accessor();
+        const conduit::index_t nelem = tileconn.number_of_elements() / sides;
+        conduit::index_t offset = static_cast<conduit::index_t>(ptids.size()) / 2;
+        for(conduit::index_t i = 0; i < nelem; i++)
+        {
+            conduit::index_t start = i * sides;
+            // back face
+            for(conduit::index_t s = 0; s < sides; s++)
+                conn.push_back(ptids[tileconn[start + s]]);
+
+            // front face
+            for(conduit::index_t s = 0; s < sides; s++)
+                conn.push_back(ptids[offset + tileconn[start + s]]);
+
+            sizes.push_back(2 * sides);
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Tiling polygonal shapes into 3D polyhedra is not yet supported.");
     }
 }
 
@@ -3668,14 +3875,14 @@ TopDownTiler::iterateBoundary3D(const Block &selectedBlock, const std::vector<Ti
 }
 
 //---------------------------------------------------------------------------
-#if 0
-template <typename Body>
 void
-TopDownTiler::addAdjset2D(const Block &selectedBlock, const std::vector<Tile> &tiles,
-    conduit::index_t domainId, Body &&body) const
+TopDownTiler::addAdjset(const Block &selectedBlock,
+                        const std::vector<Tile> &tiles,
+                        const TopDownTiler::TileIndices &ti,
+                        bool threeD,
+                        conduit::index_t domainId,
+                        conduit::Node &out) const
 {
-    const auto dY = selectedBlock.length(0);
-
     // Make the adjset name for 2 domains.
     auto adjset_name = [](conduit::index_t d0, conduit::index_t d1) {
         if(d0 > d1)
@@ -3685,9 +3892,12 @@ TopDownTiler::addAdjset2D(const Block &selectedBlock, const std::vector<Tile> &t
         return ss.str();
     };
 
-    // NOTE: I might want to use a set instead.
-    std::map<std::string, std::vector<conduit::index_t>> neighborValues;
+    // This map keeps track of the neighbor values. The key is the neighbor domainId.
+    std::map<conduit::index_t, std::vector<conduit::index_t>> neighborValues;
 
+    // Iterate over the block and if there is a neighbor in the supplied offset
+    // direction, pull out a subset of the tile's nodes and append them to
+    // the neighbor values.
     auto addPoints = [&](const Block &b, const LogicalIndex &offset, const std::vector<conduit::index_t> &srcIds)
     {
         b.iterate([&](const LogicalIndex &index, IndexType zonetype) {
@@ -3697,20 +3907,19 @@ TopDownTiler::addAdjset2D(const Block &selectedBlock, const std::vector<Tile> &t
                 const auto localPrev = LogicalIndex{index[0] - b.start[0] + offset[0],
                                                     index[1] - b.start[1] + offset[1],
                                                     index[2] - b.start[2] + offset[2]};
-                const auto prevIndex = b.IJKIndex(localPrev);
-                // Check whether there is a neighbor in that direction.
+                const auto prevIndex = b.IJKToIndex(localPrev);
+                // Check whether there is a neighbor in the offset direction.
                 conduit::index_t neighborId = b.image[prevIndex];
                 if(neighborId > Block::InvalidDomainId)
                 {
                     // Get the neighbor values that match the domain pair. If we
                     // can't get them, create them.
-                    const auto name = adjset_name(domainId, neighborId);
-                    auto it = neighborValues.find(name);
+                    auto it = neighborValues.find(neighborId);
                     if(it == neighborValues.end())
                     {
-                        neighborValues[name] = std::vector<conduit::index_t>>();
-                        it = neighborValues.find(name);
-                        size_t sizeGuess = b.numZones() / 4;
+                        neighborValues[neighborId] = std::vector<conduit::index_t>();
+                        it = neighborValues.find(neighborId);
+                        size_t sizeGuess = b.numZones() / 6;
                         it->second.reserve(sizeGuess);
                     }
 
@@ -3722,108 +3931,67 @@ TopDownTiler::addAdjset2D(const Block &selectedBlock, const std::vector<Tile> &t
                     const auto ptids = tiles[localIndex].getPointIds(srcIds);
                     // Add the points to the values.
                     for(const auto &id : ptids)
-                        it->second.push_back(insert(id);
+                        it->second.push_back(id);
                 }
             }
-        };
+        });
     };
 
-// IDEA: Make a struct that has all these vectors in it since I use them elsewhere and they are useful for traversing tiles.
+    // Traverse the selectedBlock to pull out faces. In 2D, these are edges.
+    addPoints(selectedBlock, LogicalIndex{-1, 0, 0}, ti.left);
+    addPoints(selectedBlock, LogicalIndex{1, 0, 0}, ti.right);
+    addPoints(selectedBlock, LogicalIndex{0, -1, 0}, ti.bottom);
+    addPoints(selectedBlock, LogicalIndex{0, 1, 0}, ti.top);
 
-    // Traverse the selectedBlock to pull out faces.
-    addPoints(selectedBlock, LogicalIndex{-1, 0, 0}, leftIds);
-    addPoints(selectedBlock, LogicalIndex{1, 0, 0}, rightIds);
-    addPoints(selectedBlock, LogicalIndex{0, -1, 0}, bottomIds);
-    addPoints(selectedBlock, LogicalIndex{0, 1, 0}, topIds);
-//    addPoints(selectedBlock, LogicalIndex{0, 0, -1}, bottomIds);
-//    addPoints(selectedBlock, LogicalIndex{0, 0, 1}, topIds);
-
-    // TODO: For 3D, need to do edges too.
-
-    // Traverse the selected block pull out points
-    addPoints(selectedBlock, LogicalIndex{-1, -1, 0}, lowerLeftIds);
-    addPoints(selectedBlock, LogicalIndex{1, -1, 0}, rightIds);
-    addPoints(selectedBlock, LogicalIndex{-1, 1, 0}, upperLeftIds);
-    addPoints(selectedBlock, LogicalIndex{1, 1, 0}, upperRightIds);
-
-// TODO: Turn the vectors into Conduit adjsets.
-}
-#endif
-
-//---------------------------------------------------------------------------
-void
-TopDownTiler::addPoints(const matrix4x4 &A,
-                        const std::vector<double> &zvalues,
-                        std::vector<conduit::index_t> &ptids,
-                        std::vector<double> &x,
-                        std::vector<double> &y,
-                        std::vector<double> &z,
-                        std::vector<conduit::index_t> &srcPointId) const
-{
-    // Iterate through points in the template and add them if they have
-    // not been created yet.
-    const auto &xpts = getCoordset().fetch_existing("values/x").as_double_array();
-    const auto &ypts = getCoordset().fetch_existing("values/y").as_double_array();
-    conduit::index_t index = 0;
-    for(const double zval : zvalues)
+    if(threeD)
     {
-        for(conduit::index_t i = 0; i < xpts.number_of_elements(); i++, index++)
-        {
-            if(ptids[index] == Tile::INVALID_POINT)
-            {
-                ptids[index] = static_cast<int>(x.size());
+        // Front/back faces
+        addPoints(selectedBlock, LogicalIndex{0, 0, -1}, ti.bottom);
+        addPoints(selectedBlock, LogicalIndex{0, 0, 1}, ti.top);
 
-                double P0[3] = {xpts[i], ypts[i], zval};
-                double P[3];
-                vec_matrix4x4_mult(P0, A, P);
-
-                x.push_back(P[0]);
-                y.push_back(P[1]);
-                z.push_back(P[2]);
-
-                srcPointId.push_back(i);
-            }
-        }
+        // Edges
+        addPoints(selectedBlock, LogicalIndex{-1, 0, -1}, ti.edges[0]);
+        addPoints(selectedBlock, LogicalIndex{1, 0, -1}, ti.edges[1]);
+        addPoints(selectedBlock, LogicalIndex{0, -1, -1}, ti.edges[2]);
+        addPoints(selectedBlock, LogicalIndex{0, 1, -1}, ti.edges[3]);  
+        addPoints(selectedBlock, LogicalIndex{-1, 0, 1}, ti.edges[4]);
+        addPoints(selectedBlock, LogicalIndex{1, 0, 1}, ti.edges[5]);
+        addPoints(selectedBlock, LogicalIndex{0, -1, 1}, ti.edges[6]);
+        addPoints(selectedBlock, LogicalIndex{0, 1, 1}, ti.edges[7]);
+        addPoints(selectedBlock, LogicalIndex{-1, -1, 0}, ti.edges[8]);
+        addPoints(selectedBlock, LogicalIndex{-1, 1, 0}, ti.edges[9]);
+        addPoints(selectedBlock, LogicalIndex{1, -1, 0}, ti.edges[10]);
+        addPoints(selectedBlock, LogicalIndex{1, 1, 0}, ti.edges[11]);  
     }
-}
 
-//---------------------------------------------------------------------------
-void
-TopDownTiler::addVolumeElements(const std::vector<conduit::index_t> &ptids,
-                                std::vector<conduit::index_t> &conn,
-                                std::vector<conduit::index_t> &sizes) const
-{
-    const conduit::Node &topo = getTopology();
-    std::string shape = topo.fetch_existing("elements/shape").as_string();
-    conduit::index_t sides = 0;
-    if(shape == "tri")
-        sides = 3;
-    else if(shape == "quad")
-        sides = 4;
-
-    if(sides == 3 || sides == 4)
+    // Handle corner neighbors
+    addPoints(selectedBlock, LogicalIndex{-1, -1, 0}, ti.corners[0]);
+    addPoints(selectedBlock, LogicalIndex{1, -1, 0}, ti.corners[1]);
+    addPoints(selectedBlock, LogicalIndex{-1, 1, 0}, ti.corners[2]);
+    addPoints(selectedBlock, LogicalIndex{1, 1, 0}, ti.corners[3]);
+    if(threeD)
     {
-        const conduit::Node &n_conn = topo.fetch_existing("elements/connectivity");
-        const auto tileconn = n_conn.as_index_t_accessor();
-        const conduit::index_t nelem = tileconn.number_of_elements() / sides;
-        conduit::index_t offset = static_cast<conduit::index_t>(ptids.size()) / 2;
-        for(conduit::index_t i = 0; i < nelem; i++)
-        {
-            conduit::index_t start = i * sides;
-            // back face
-            for(conduit::index_t s = 0; s < sides; s++)
-                conn.push_back(ptids[tileconn[start + s]]);
-
-            // front face
-            for(conduit::index_t s = 0; s < sides; s++)
-                conn.push_back(ptids[offset + tileconn[start + s]]);
-
-            sizes.push_back(2 * sides);
-        }
+        addPoints(selectedBlock, LogicalIndex{-1, -1, 1}, ti.corners[4]);
+        addPoints(selectedBlock, LogicalIndex{1, -1, 1}, ti.corners[5]);
+        addPoints(selectedBlock, LogicalIndex{-1, 1, 1}, ti.corners[6]);
+        addPoints(selectedBlock, LogicalIndex{1, 1, 1}, ti.corners[7]);  
     }
-    else
+
+    // Make the Conduit adjset.
+    if(!neighborValues.empty())
     {
-        CONDUIT_ERROR("Tiling polygonal shapes into 3D polyhedra is not yet supported.");
+        // Make the top level adjset nodes.
+        conduit::Node &adjset = out["adjsets/" + meshName + "_adjset"];
+        adjset["association"] = "vertex";
+        adjset["topology"] = meshName;
+        conduit::Node &groups = adjset["groups"];
+        for(auto it = neighborValues.begin(); it != neighborValues.end(); it++)
+        {
+            const std::string name = adjset_name(domainId, it->first);
+            conduit::Node &group = groups[name];
+            group["neighbors"] = it->first;
+            group["values"].set(it->second);
+        }
     }
 }
 
