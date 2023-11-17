@@ -4179,10 +4179,10 @@ write_pad_dims(DBfile *dbfile,
     // this only applies to structured topos 
     // (quadmeshes, so rectilinear, uniform, and structured)
     // we can grab the "first" topo because we know there is only one.
-    // we can also just check that it is NOT unstructured b/c we have
-    // errored on pointmeshes earlier since they are not allowed in overlink,
-    // and the only other options are structured variants.
-    if (n_mesh["topologies"][0]["type"].as_string() != "unstructured")
+    const std::string topo_type = n_mesh["topologies"][0]["type"].as_string();
+    if (topo_type == "structured" ||
+        topo_type == "rectilinear" ||
+        topo_type == "uniform")
     {
         char const *elemname = "paddims";
         const int elemlength = 6;
