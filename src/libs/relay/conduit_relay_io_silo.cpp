@@ -1530,6 +1530,7 @@ read_variable_domain(const int vartype,
 //-----------------------------------------------------------------------------
 bool
 read_matset_domain(DBfile* matset_domain_file_to_use,
+                   const Node &n_matset,
                    const std::string &matset_name,
                    const std::string &multimesh_name,
                    const std::string &multimat_name,
@@ -1590,18 +1591,87 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     // TODO later support sparse by material and full
 
     Node &material_map = matset_out["material_map"];
-    for (int i = 0; i < matset_ptr->nmat; i ++)
+    // if we have material map information from the multimat, we want to use that instead
+    // if the multimat was missing matnames and we have them here, we want to use them
+    // otherwise we will just use the information that is here
+    const std::string multimat_matmap_status = n_matset["material_map_status"].as_string();
+    if (multimat_matmap_status == "not provided")
     {
-        const int matno = matset_ptr->matnos[i];
-        if (matset_ptr->matnames) // may be null
+        for (int i = 0; i < matset_ptr->nmat; i ++)
         {
-            material_map[matset_ptr->matnames[i]] = matno;
-        }
-        else // matnos should always be there
-        {
-            material_map[std::to_string(matno)] = matno;
+            const int matno = matset_ptr->matnos[i];
+            if (matset_ptr->matnames) // may be null
+            {
+                material_map[matset_ptr->matnames[i]] = matno;
+            }
+            else // matnos should always be there
+            {
+                material_map[std::to_string(matno)] = matno;
+            }
         }
     }
+    // TODO do I even want to support this case? It seems unnecessarily complicated
+    else if (multimat_matmap_status == "missing matnames")
+    {
+        // if there are matnames here we can use
+        if (matset_ptr->matnames && matset_ptr->matnos)
+        {
+            // split mat map from multimat into constituent parts
+            int multimat_nmat;
+            std::vector<std::string> multimat_matnames;
+            std::vector<const char *> multimat_matname_ptrs;
+            std::vector<int> multimat_matnos;
+            detail::read_material_map(n_matset["material_map"],
+                                      multimat_nmat,
+                                      multimat_matnames,
+                                      multimat_matname_ptrs,
+                                      multimat_matnos);
+
+            CONDUIT_ASSERT(matset_ptr->nmat == multimat_nmat,
+                "Multimat and material disagree on number of materials.");
+            
+            // map material numbers to names
+            Node mat_intermediate_map;
+            for (int i = 0; i < multimat_nmat; i ++)
+            {
+                const std::string mat_number = std::to_string(matset_ptr->matnos[i]);
+                const std::string mat_name = matset_ptr->matnames[i];
+                mat_intermediate_map[mat_number] = mat_name;
+            }
+
+            // we cannot merge the for loop above with the for loop below because
+            // they are potentially operating on lists in a different order!
+
+            // now, for each material, I want to extract its name and build the real material map
+            // the name could not exist if there is some kind of mismatch, in this case
+            // we will use the number as a name
+            for (int i = 0; i < multimat_nmat; i ++)
+            {
+                const int mat_number = multimat_matnos[i];
+                const std::string mat_number_str = std::to_string(mat_number);
+                std::string mat_name;
+                if (mat_intermediate_map.has_child(mat_number_str))
+                {
+                    mat_name = mat_intermediate_map[mat_number_str].as_string();
+                }
+                else
+                {
+                    mat_name = mat_number_str;
+                }
+                material_map[mat_name] = mat_number;
+            }
+        }
+        else
+        {
+            // ignore what is here and use what was found in the multimat
+            material_map.set(n_matset["material_map"]);
+        }
+    }   
+    else // (multimat_matmap_status == "provided")
+    {
+        // ignore what is here and use what was found in the multimat
+        material_map.set(n_matset["material_map"]);
+    } 
 
     std::vector<double> volume_fractions;
     std::vector<int> material_ids;
@@ -1936,33 +2006,37 @@ read_multivars(DBtoc *toc,
             multimesh_assoc = true;
         }
 
-        if (multimesh_assoc)
+        if (! multimesh_assoc)
         {
-            if (multivar.getSiloObject()->nvars != nblocks)
+            CONDUIT_INFO("MultiVar " << multivar_name << " is not associated " <<
+                "with a multimesh. Skipping.");
+            continue;
+        }
+
+        if (multivar.getSiloObject()->nvars != nblocks)
+        {
+            CONDUIT_INFO("Domain count mismatch between multivar " +
+                         multivar_name + " and multimesh " + 
+                         multimesh_name + ". Skipping.");
+            continue;
+        }
+        Node &var = root_node[multimesh_name]["vars"][multivar_name];
+        // TODO nameschemes
+        if (nameschemes)
+        {
+            var["nameschemes"] = "yes";
+        }
+        else
+        {
+            var["nameschemes"] = "no";
+            var["var_types"].set(DataType::index_t(nblocks));
+            index_t_array var_types = var["var_types"].value();
+            for (int block_id = 0; block_id < nblocks; block_id ++)
             {
-                CONDUIT_INFO("Domain count mismatch between multivar " +
-                             multivar_name + " and multimesh " + 
-                             multimesh_name + ". Skipping.");
-                continue;
-            }
-            Node &var = root_node[multimesh_name]["vars"][multivar_name];
-            // TODO nameschemes
-            if (nameschemes)
-            {
-                var["nameschemes"] = "yes";
-            }
-            else
-            {
-                var["nameschemes"] = "no";
-                var["var_types"].set(DataType::index_t(nblocks));
-                index_t_array var_types = var["var_types"].value();
-                for (int block_id = 0; block_id < nblocks; block_id ++)
-                {
-                    // save the var name and var type
-                    Node &var_path = var["var_paths"].append();
-                    var_path.set(multivar.getSiloObject()->varnames[block_id]);
-                    var_types[block_id] = multivar.getSiloObject()->vartypes[block_id];
-                }
+                // save the var name and var type
+                Node &var_path = var["var_paths"].append();
+                var_path.set(multivar.getSiloObject()->varnames[block_id]);
+                var_types[block_id] = multivar.getSiloObject()->vartypes[block_id];
             }
         }
     }
@@ -1984,10 +2058,11 @@ read_multimats(DBtoc *toc,
     for (int multimat_id = 0; multimat_id < toc->nmultimat; multimat_id ++)
     {
         const std::string multimat_name = toc->multimat_names[multimat_id];
-        detail::SiloObjectWrapper<DBmultimat, decltype(&DBFreeMultimat)> multimat{
+        detail::SiloObjectWrapper<DBmultimat, decltype(&DBFreeMultimat)> multimat_obj{
             DBGetMultimat(dbfile, multimat_name.c_str()), 
             &DBFreeMultimat};
-        if (! multimat.getSiloObject())
+        DBmultimat *multimat_ptr = multimat_obj.getSiloObject();
+        if (! multimat_ptr)
         {
             error_oss << "Error opening multimat " << multimat_name;
             return false;
@@ -1995,7 +2070,7 @@ read_multimats(DBtoc *toc,
 
         // does this variable use nameschemes?
         bool nameschemes = false;
-        if (!multimat.getSiloObject()->matnames)
+        if (!multimat_ptr->matnames)
         {
             nameschemes = true;
             error_oss << "multimat " << multimat_name << " uses nameschemes which are not yet supported.";
@@ -2010,7 +2085,7 @@ read_multimats(DBtoc *toc,
         // 2. the components of the multimat are associated with components of a multimesh
 
         // we begin with the second case:
-        if (!multimat.getSiloObject()->mmesh_name)
+        if (!multimat_ptr->mmesh_name)
         {
             // This multimat has no associated multimesh. 
             // We will assume it is associated with the multimesh
@@ -2018,35 +2093,81 @@ read_multimats(DBtoc *toc,
             multimesh_assoc = true;
         }
         // and then the first case
-        else if (multimat.getSiloObject()->mmesh_name == multimesh_name)
+        else if (multimat_ptr->mmesh_name == multimesh_name)
         {
             multimesh_assoc = true;
         }
 
-        if (multimesh_assoc)
+        if (! multimesh_assoc)
         {
-            if (multimat.getSiloObject()->nmats != nblocks)
+            CONDUIT_INFO("MultiMaterial " << multimat_name << " is not associated " <<
+                "with a multimesh. Skipping.");
+            continue;
+        }
+
+        if (multimat_ptr->allowmat0 != 0)
+        {
+            CONDUIT_INFO("MultiMaterial " << multimat_name << 
+                " for multimesh " << multimesh_name << 
+                " may contain zones with no materials defined on them." << 
+                "We currently do not support this case. Either contact a Conduit developer" <<
+                " or disable DBOPT_ALLOWMAT0 in calls to DBPutMaterial()." <<
+                " Skipping this MultiMaterial.");
+            continue;
+        }
+
+        if (multimat_ptr->nmats != nblocks)
+        {
+            CONDUIT_INFO("Domain count mismatch between multimat " +
+                         multimat_name + " and multimesh " + 
+                         multimesh_name + ". Skipping.");
+            continue;
+        }
+        
+        Node &material = root_node[multimesh_name]["matsets"][multimat_name];
+        
+        // TODO nameschemes
+        if (nameschemes)
+        {
+            material["nameschemes"] = "yes";
+        }
+        else
+        {
+            material["nameschemes"] = "no";
+            for (int block_id = 0; block_id < nblocks; block_id ++)
             {
-                CONDUIT_INFO("Domain count mismatch between multimat " +
-                             multimat_name + " and multimesh " + 
-                             multimesh_name + ". Skipping.");
-                continue;
+                Node &mat_path = material["matset_paths"].append();
+                mat_path.set(multimat_ptr->matnames[block_id]);
             }
-            Node &material = root_node[multimesh_name]["matsets"][multimat_name];
-            // TODO nameschemes
-            if (nameschemes)
+        }
+
+        // reconstruct material map, if possible
+        int nmatnos = multimat_ptr->nmatnos;
+        int *matnos = multimat_ptr->matnos;
+        char **matnames = multimat_ptr->material_names;
+        if (nmatnos > 0 && matnos)
+        {
+            Node &material_map = material["material_map"];
+            if (matnames)
             {
-                material["nameschemes"] = "yes";
+                material["material_map_status"] = "provided";
+                for (int i = 0; i < nmatnos; i ++)
+                {
+                    material_map[matnames[i]] = matnos[i];
+                }
             }
             else
             {
-                material["nameschemes"] = "no";
-                for (int block_id = 0; block_id < nblocks; block_id ++)
+                material["material_map_status"] = "missing matnames";
+                for (int i = 0; i < nmatnos; i ++)
                 {
-                    Node &mat_path = material["matset_paths"].append();
-                    mat_path.set(multimat.getSiloObject()->matnames[block_id]);
+                    material_map[std::to_string(matnos[i])] = matnos[i];
                 }
             }
+        }
+        else
+        {
+            material["material_map_status"] = "not provided";
         }
     }
 
@@ -2309,6 +2430,12 @@ read_root_silo_index(const std::string &root_file_path,
     //             - "domain_000000.silo:material"
     //             - "domain_000001.silo:material"
     //               ...
+    //          material_map_status: "not provided", "provided", or "missing matnames"
+    //          material_map: // (optional) this can be reconstructed if dboptions are present
+    //             a: 1
+    //             b: 2    
+    //             c: 0
+    //             ...
     //       ...
 
     return true;
@@ -2578,7 +2705,7 @@ read_mesh(const std::string &root_file_path,
                 // topo, because the fields explicitly link to the matset they use.
                 // Right now, we only ever read one mesh, meaning that there can only
                 // be one matset in our newly created blueprint mesh.
-                if (read_matset_domain(matset_domain_file_to_use, matset_name,
+                if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
                                        multimesh_name, multimat_name, bottom_level_mesh_name,
                                        matset_field_reconstruction, mesh_out))
                 {
