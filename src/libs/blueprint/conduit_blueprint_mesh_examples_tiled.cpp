@@ -3097,18 +3097,52 @@ class TopDownTiler : public TilerBase
 public:
     TopDownTiler();
 
+    /**
+     @brief Generates new domain(s) for an overall mesh {nx,ny,nz} zones, split
+            a set of domains and stored in the res node.
+
+     @param nx The number of tiles in X.
+     @param ny The number of tiles in Y.
+     @param nz The number of tiles in Z.
+     @param[out] res The Conduit node that will contain the new domain(s).
+     @param options A Conduit node containing options for generating the mesh.
+     */
     void generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
                   conduit::Node &res, const conduit::Node &options);
 protected:
-    /// Fill in the tile pattern from a Node.
+    /// Initialize some member fields from values in the node.
     void initializeFromOptions(const conduit::Node &t);
 
+    /**
+     @brief Generate a single domain for selectedBlock and add it to res node.
+
+     @param nx The number of tiles in X.
+     @param ny The number of tiles in Y.
+     @param nz The number of tiles in Z.
+     @param[output] res The conduit node that will contain the new domain.
+     @param selectedBlock The selected block that describes the domain.
+     @param domainId The domain number for the new domain.
+     @param options A Conduit node containing any options that affect generation.
+     */
     void generateDomain(IndexType nx, IndexType ny, IndexType nz,
                         conduit::Node &res,
                         const Block &selectedBlock,
                         IndexType domainId,
                         const conduit::Node &options);
 
+    /**
+     @brief Add points for a tile if they do not yet exist.
+
+     @param A A 4x4 transformation matrix to apply to tile points when creating
+              new points.
+     @param zvalues A vector of Z values over which to iterate each 2d tile's vertices.
+     @param ptids A vector of point ids. If any are -1 then they will make a new point.
+     @param[out] x A vector that holds the X components of a coordinate.
+     @param[out] y A vector that holds the Y components of a coordinate.
+     @param[out] z A vector that holds the Z components of a coordinate.
+     @param[out] srcPointId A vector that holds the id of the original tile points
+                            that created each point.
+     */
     void addPoints(const matrix4x4 &A,
                    const std::vector<double> &zvalues,
                    std::vector<conduit::index_t> &ptids,
@@ -3122,15 +3156,20 @@ protected:
                            std::vector<conduit::index_t> &sizes) const;
 
     template <typename Body>
+    void iterateBoundary2D(const Block &selectedBlock,
+                           const std::vector<Tile> &tiles,
+                           Body &&body) const;
+
+    template <typename Body>
     void iterateBoundary3D(const Block &selectedBlock,
                            const std::vector<Tile> &tiles,
                            bool ccFaces,
                            Body &&body) const;
 
 private:
-    IndexType m_numDomains;
-    bool m_curveSplitting;
-    std::vector<IndexType> m_selectedDomains; // The list domains we want to make.
+    IndexType m_numDomains;                   //!< The number of domains to make in total.
+    bool m_curveSplitting;                    //!< Whether to allow Hilbert curve domains.
+    std::vector<IndexType> m_selectedDomains; //!< The list domains we want to make.
 };
 
 //---------------------------------------------------------------------------
@@ -3256,26 +3295,26 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     bool threeD = (nz >= 1);
 
     // Make some tile face indexing vectors.
-    std::vector<conduit::index_t> left3d, right3d, bottom3d, top3d, back3d, front3d;
-    left3d = left();
-    right3d = right();
-    bottom3d = bottom();
-    top3d = top();
+    std::vector<conduit::index_t> leftIds, rightIds, bottomIds, topIds, backIds, frontIds;
+    leftIds = left();
+    rightIds = right();
+    bottomIds = bottom();
+    topIds = top();
     if(threeD)
     {
         for(const auto value : left())
-            left3d.push_back(value + nTilePts);
+            leftIds.push_back(value + nTilePts);
         for(const auto value : right())
-            right3d.push_back(value + nTilePts);
+            rightIds.push_back(value + nTilePts);
         for(const auto value : bottom())
-            bottom3d.push_back(value + nTilePts);
+            bottomIds.push_back(value + nTilePts);
         for(const auto value : top())
-            top3d.push_back(value + nTilePts);
+            topIds.push_back(value + nTilePts);
 
-        back3d.resize(nTilePts);
-        std::iota(back3d.begin(), back3d.end(), 0);
-        front3d.resize(nTilePts);
-        std::iota(front3d.begin(), front3d.end(), nTilePts);
+        backIds.resize(nTilePts);
+        std::iota(backIds.begin(), backIds.end(), 0);
+        frontIds.resize(nTilePts);
+        std::iota(frontIds.begin(), frontIds.end(), nTilePts);
 
         nTilePts *= 2;
     }
@@ -3319,13 +3358,11 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             // Copy points from previous neighbor tiles if possible.
             if(selectedBlock.image[prevX] == Block::Self)
             {
-//std::cout << "Copy X points from " << selectedBlock.IndexToIJK(prevX) << " ("<< tiles[prevX].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
-                current.setPointIds(left3d, tiles[prevX].getPointIds(right3d));
+                current.setPointIds(leftIds, tiles[prevX].getPointIds(rightIds));
             }
             if(selectedBlock.image[prevY] == Block::Self)
             {
-//std::cout << "Copy Y points from " << selectedBlock.IndexToIJK(prevY) << " ("<< tiles[prevY].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
-                current.setPointIds(bottom3d, tiles[prevY].getPointIds(top3d));
+                current.setPointIds(bottomIds, tiles[prevY].getPointIds(topIds));
             }
 
             // Make a transformation matrix.
@@ -3340,11 +3377,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
                 auto prevZ = localIndex - dZ;
                 if(selectedBlock.image[prevZ] == Block::Self)
                 {
-//std::cout << "Copy Z points from " << selectedBlock.IndexToIJK(prevZ) << " ("<< tiles[prevZ].getPointIds().size() << ") to " << selectedBlock.IndexToIJK(localIndex) << std::endl;
-//std::cout << "back3d=" << back3d << std::endl;
-//std::cout << "front3d=" << front3d << std::endl;
-//std::cout << "current.pointIds=" << current.getPointIds() << std::endl;
-                    current.setPointIds(back3d, tiles[prevZ].getPointIds(front3d));
+                    current.setPointIds(backIds, tiles[prevZ].getPointIds(frontIds));
                 }
 
                 const std::vector<double> zvalues{0., 1.};
@@ -3372,7 +3405,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     res["coordsets/coords/type"] = "explicit";
     res["coordsets/coords/values/x"].set(x);
     res["coordsets/coords/values/y"].set(y);
-    if(!z.empty())
+    if(threeD)
         res["coordsets/coords/values/z"].set(z);
 
     std::string shape2, shape3;
@@ -3382,7 +3415,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     conduit::Node &topo = res["topologies/" + meshName];
     topo["type"] = "unstructured";
     topo["coordset"] = "coords";
-    topo["elements/shape"] = z.empty() ? shape2 : shape3;
+    topo["elements/shape"] = threeD ? shape3 : shape2;
     conduit::Node tmp;
     tmp.set_external(conn.data(), conn.size());
     tmp.to_data_type(indexDT.id(), topo["elements/connectivity"]);
@@ -3409,6 +3442,18 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
         if(anyNonQuads)
             bshape = "polygonal";
     }
+    else
+    {
+        bshape = "line";
+        iterateBoundary2D(selectedBlock, tiles,
+            [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+            {
+                for(conduit::index_t pi = 0; pi < npts; pi++)
+                    bconn.push_back(ids[pi]);
+                bsizes.push_back(npts);
+                btype.push_back(bnd + 1); // Make 1-origin
+            });
+    }
     if(!bconn.empty())
     {
         conduit::Node &btopo = res["topologies/" + boundaryMeshName];
@@ -3429,6 +3474,68 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
         res["fields/boundary_attribute/association"] = "element";
         res["fields/boundary_attribute/values"].set(btype);
     }
+}
+
+//---------------------------------------------------------------------------
+template <typename Body>
+void
+TopDownTiler::iterateBoundary2D(const Block &selectedBlock, const std::vector<Tile> &tiles,
+    Body &&body) const
+{
+    const auto dY = selectedBlock.length(0);
+
+    selectedBlock.iterate([&](const LogicalIndex &index, IndexType zonetype) {
+        // If the zone is part of the domain then check its face neighbors to
+        // see if any are still marked as Neighbor. They should be >= 0 if
+        // there are real neighbors. So, if they are still Neighbor, they
+        // must be external and will border boundaries.
+        if(zonetype == Block::Self)
+        {
+            const auto local = LogicalIndex{index[0] - selectedBlock.start[0],
+                                            index[1] - selectedBlock.start[1],
+                                            index[2] - selectedBlock.start[2]};
+            const auto localIndex = selectedBlock.IJKToIndex(local);
+            const auto prevX = localIndex - 1;
+            const auto nextX = localIndex + 1;
+            const auto prevY = localIndex - dY;
+            const auto nextY = localIndex + dY;
+
+            // Get the current tile
+            const Tile &current = tiles[localIndex];
+
+            // Left boundary.
+            if(selectedBlock.image[prevX] == Block::Neighbor)
+            {
+                const auto ptids = current.getPointIds(left());
+                for(size_t i = 0; i < ptids.size() - 1; i++)
+                    body(&ptids[i], 2, BoundaryLeft);
+            }
+
+            // Right boundary.
+            if(selectedBlock.image[nextX] == Block::Neighbor)
+            {
+                const auto ptids = current.getPointIds(right());
+                for(size_t i = 0; i < ptids.size() - 1; i++)
+                    body(&ptids[i], 2, BoundaryRight);
+            }
+
+            // Bottom boundary.
+            if(selectedBlock.image[prevY] == Block::Neighbor)
+            {
+                const auto ptids = current.getPointIds(bottom());
+                for(size_t i = 0; i < ptids.size() - 1; i++)
+                    body(&ptids[i], 2, BoundaryBottom);
+            }
+
+            // Top boundary.
+            if(selectedBlock.image[nextY] == Block::Neighbor)
+            {
+                const auto ptids = current.getPointIds(top());
+                for(size_t i = 0; i < ptids.size() - 1; i++)
+                    body(&ptids[i], 2, BoundaryTop);
+            }
+        }
+    });
 }
 
 //---------------------------------------------------------------------------
@@ -3559,7 +3666,6 @@ TopDownTiler::iterateBoundary3D(const Block &selectedBlock, const std::vector<Ti
         }
     });
 }
-
 
 //---------------------------------------------------------------------------
 void
