@@ -31,7 +31,7 @@
 // #define CONDUIT_USE_PARTITIONER_FOR_REORDER
 
 // Uncomment this to use a simpler tiled pattern for debugging.
-// #define CONDUIT_SIMPLE_TILED_PATTERN
+#define CONDUIT_SIMPLE_TILED_PATTERN
 
 // Uncomment this to print information about block splitting.
 // #define CONDUIT_DEBUG_BLOCK_SPLITTER
@@ -92,18 +92,22 @@ public:
     std::vector<conduit::index_t> getPointIds(const std::vector<conduit::index_t> &indices) const
     {
         std::vector<conduit::index_t> ids;
-        ids.reserve(indices.size());
-        for(const auto &idx : indices)
-           ids.push_back(ptids[idx]);
+        if(!ptids.empty())
+        {
+            ids.reserve(indices.size());
+            for(const auto &idx : indices)
+                ids.push_back(ptids[idx]);
+        }
         return ids;
     }
 
-    // Set the point ids
+    // Set the point ids (if the ids are valid)
     void setPointIds(const std::vector<conduit::index_t> &indices, const std::vector<conduit::index_t> &ids)
     {
         for(size_t i = 0; i < indices.size(); i++)
         {
-            ptids[indices[i]] = ids[i];
+            if(ids[i] != INVALID_POINT)
+                ptids[indices[i]] = ids[i];
         }
     }
 
@@ -3380,6 +3384,30 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     origin[2] = extents[4];
     matrix4x4 SO = scale(size) * translate(origin);
 
+    // Copy relevant points from neighbor tiles to the current tile if it makes sense.
+    auto copyPoints = [&](const Block &b,
+                          std::vector<Tile> &tiles,
+                          const LogicalIndex &index,
+                          const LogicalIndex &offset,
+                          const std::vector<conduit::index_t> &destIds,
+                          const std::vector<conduit::index_t> &srcIds)
+    {
+        auto localPrev = LogicalIndex{index[0] - b.start[0] + offset[0],
+                                      index[1] - b.start[1] + offset[1],
+                                      index[2] - b.start[2] + offset[2]};
+        auto prevIndex = selectedBlock.IJKToIndex(localPrev);
+        // Copy points from neighbor tile if possible.
+        if(selectedBlock.image[prevIndex] == Block::Self)
+        {
+            auto local = LogicalIndex{index[0] - b.start[0],
+                                      index[1] - b.start[1],
+                                      index[2] - b.start[2]};
+            auto localIndex = selectedBlock.IJKToIndex(local);
+            Tile &current = tiles[localIndex];
+            current.setPointIds(destIds, tiles[prevIndex].getPointIds(srcIds));
+        }
+    };
+
     // -------------------
     // Make points / conn
     // -------------------
@@ -3401,7 +3429,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             // Get the current tile and allocate its point ids.
             Tile &current = tiles[localIndex];
             current.reset(nTilePts);
-
+#if 0
             auto prevX = localIndex - 1;
             auto prevY = localIndex - dY;
             // Copy points from previous neighbor tiles if possible.
@@ -3413,7 +3441,18 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             {
                 current.setPointIds(ti.bottom, tiles[prevY].getPointIds(ti.top));
             }
-
+            else
+            {
+                auto lr = selectedBlock.IJKToIndex(LogicalIndex{local[0] + 1, local[0] - 1, 0});
+                if(selectedBlock.image[lr] == Block::Self)
+                {
+                    if(threeD)
+                        current.setPointIds(ti.edges[10], tiles[lr].getPointIds(ti.edges[9]));
+                    else
+                        current.setPointIds(ti.corners[1], tiles[lr].getPointIds(ti.corners[2]));
+                }
+            }
+#endif
             // Make a transformation matrix.
             double T[3] = {static_cast<double>(index[0]),
                            static_cast<double>(index[1]),
@@ -3436,6 +3475,12 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             }
             else
             {
+                // Copy points from adjacent tiles into the current tile.
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{-1, 0, 0}, ti.left, ti.right);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{0, -1, 0}, ti.bottom, ti.top);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{-1, -1, 0}, ti.corners[0], ti.corners[3]);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{1, -1, 0}, ti.corners[1], ti.corners[2]);
+
                 const std::vector<double> zvalues{0.};
                 addPoints(M, zvalues, current.getPointIds(), x, y, z, srcPointIds);
 
