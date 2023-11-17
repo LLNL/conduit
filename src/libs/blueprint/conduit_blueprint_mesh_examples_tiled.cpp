@@ -3375,7 +3375,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
             {
                 // Copy Z face points if possible.
                 auto prevZ = localIndex - dZ;
-                if(selectedBlock.image[prevZ] == Block::Self)
+                if(nz > 1 && selectedBlock.image[prevZ] == Block::Self)
                 {
                     current.setPointIds(backIds, tiles[prevZ].getPointIds(frontIds));
                 }
