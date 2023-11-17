@@ -188,6 +188,7 @@ protected:
                       conduit::index_t *idlist,
                       const std::vector<conduit::index_t> &ptids,
                       conduit::index_t offset,
+                      conduit::index_t offset2,
                       bool reverse,
                       int stype,
                       Body &&body) const
@@ -199,7 +200,7 @@ protected:
             {
                 auto start = i * sides;
                 for(conduit::index_t s = 0; s < sides; s++)
-                    idlist[s1 - s] = offset + ptids[conn[start + s]];
+                    idlist[s1 - s] = offset + ptids[conn[start + s] + offset2];
                 body(idlist, sides, stype);
             }
         }
@@ -209,7 +210,7 @@ protected:
             {
                 auto start = i * sides;
                 for(conduit::index_t s = 0; s < sides; s++)
-                    idlist[s] = offset + ptids[conn[start + s]];
+                    idlist[s] = offset + ptids[conn[start + s] + offset2];
                 body(idlist, sides, stype);
             }
         }
@@ -219,6 +220,7 @@ protected:
     template <typename Body>
     void iterateFaces(const std::vector<conduit::index_t> &ptids,
                       conduit::index_t offset,
+                      conduit::index_t offset2,
                       bool reverse,
                       int stype,
                       Body &&body) const
@@ -244,7 +246,7 @@ protected:
                     iterateFaces(n_conn.as_index_t_ptr(),
                                  n_conn.dtype().number_of_elements() / sides,
                                  sides, idlist, ptids,
-                                 offset, reverse, stype, body);
+                                 offset, offset2, reverse, stype, body);
                     handled = true;
                 }
                 else if(n_conn.dtype().is_int32())
@@ -252,7 +254,7 @@ protected:
                     iterateFaces(n_conn.as_int32_ptr(),
                                  n_conn.dtype().number_of_elements() / sides,
                                  sides, idlist, ptids,
-                                 offset, reverse, stype, body);
+                                 offset, offset2, reverse, stype, body);
                     handled = true;
                 }
             }
@@ -261,7 +263,7 @@ protected:
                 iterateFaces(n_conn.as_index_t_accessor(),
                              n_conn.dtype().number_of_elements() / sides,
                              sides, idlist, ptids,
-                             offset, reverse, stype, body);
+                             offset, offset2, reverse, stype, body);
             }
         }
         else if(shape == "polygonal")
@@ -279,7 +281,7 @@ protected:
                     auto esides = sizes[i];
                     idlist.reserve(esides);
                     for(conduit::index_t s = 0; s < esides; s++)
-                        idlist[s] = offset + ptids[conn[start + esides - s]];
+                        idlist[s] = offset + ptids[conn[start + esides - s] + offset2];
                     body(&idlist[0], esides, stype);
                     start += esides;
                 }
@@ -291,7 +293,7 @@ protected:
                     auto esides = sizes[i];
                     idlist.reserve(esides);
                     for(conduit::index_t s = 0; s < esides; s++)
-                        idlist[s] = offset + ptids[conn[start + s]];
+                        idlist[s] = offset + ptids[conn[start + s] + offset2];
                     body(&idlist[0], esides, stype);
                     start += esides;
                 }
@@ -758,7 +760,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
             for(conduit::index_t i = 0; i < nx; i++)
             {
                 Tile &current = tiles[(j*nx + i)];
-                iterateFaces(current.getPointIds(), 0, false, BoundaryBack,
+                iterateFaces(current.getPointIds(), 0, 0, false, BoundaryBack,
                     [&](const conduit::index_t *ids, conduit::index_t npts, int)
                     {
                         for(conduit::index_t pi = 0; pi < npts; pi++)
@@ -1254,7 +1256,7 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
         for(conduit::index_t i = 0; i < nx; i++)
         {
            const Tile &current = tiles[(j*nx + i)];
-           iterateFaces(current.getPointIds(), 0, true, BoundaryBack, body);
+           iterateFaces(current.getPointIds(), 0, 0, true, BoundaryBack, body);
         }
     }
     if(flags[BoundaryFront])
@@ -1263,7 +1265,7 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
         for(conduit::index_t i = 0; i < nx; i++)
         {
            const Tile &current = tiles[(j*nx + i)];
-           iterateFaces(current.getPointIds(), nz * nPtsPerPlane, false, BoundaryFront, body);
+           iterateFaces(current.getPointIds(), nz * nPtsPerPlane, 0, false, BoundaryFront, body);
         }
     }
 }
@@ -3118,6 +3120,13 @@ protected:
     void addVolumeElements(const std::vector<conduit::index_t> &ptids,
                            std::vector<conduit::index_t> &conn,
                            std::vector<conduit::index_t> &sizes) const;
+
+    template <typename Body>
+    void iterateBoundary3D(const Block &selectedBlock,
+                           const std::vector<Tile> &tiles,
+                           bool ccFaces,
+                           Body &&body) const;
+
 private:
     IndexType m_numDomains;
     bool m_curveSplitting;
@@ -3348,7 +3357,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
                 const std::vector<double> zvalues{0.};
                 addPoints(M, zvalues, current.getPointIds(), x, y, z, srcPointIds);
 
-                iterateFaces(current.getPointIds(), 0, false, BoundaryBack,
+                iterateFaces(current.getPointIds(), 0, 0, false, BoundaryBack,
                     [&](const conduit::index_t *ids, conduit::index_t npts, int)
                     {
                         for(conduit::index_t pi = 0; pi < npts; pi++)
@@ -3357,7 +3366,7 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
                     });
             }
         }
-    });
+    });   
 
     // Make the Blueprint mesh.
     res["coordsets/coords/type"] = "explicit";
@@ -3382,7 +3391,175 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
 
     res["state/domain_id"] = domainId;
 
+    // Make boundaries.
+    std::string bshape;
+    if(threeD)
+    {
+        bshape = "quad";
+        bool anyNonQuads = false;
+        iterateBoundary3D(selectedBlock, tiles, true,
+            [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+            {
+                for(conduit::index_t pi = 0; pi < npts; pi++)
+                    bconn.push_back(ids[pi]);
+                bsizes.push_back(npts);
+                btype.push_back(bnd + 1); // Make 1-origin
+                anyNonQuads |= (npts != 4);
+            });
+        if(anyNonQuads)
+            bshape = "polygonal";
+    }
+    if(!bconn.empty())
+    {
+        conduit::Node &btopo = res["topologies/" + boundaryMeshName];
+        btopo["type"] = "unstructured";
+        btopo["coordset"] = "coords";
+        btopo["elements/shape"] = bshape;
+
+        tmp.set_external(bconn.data(), bconn.size());
+        tmp.to_data_type(indexDT.id(), btopo["elements/connectivity"]);
+
+        tmp.set_external(bsizes.data(), bsizes.size());
+        tmp.to_data_type(indexDT.id(), btopo["elements/sizes"]);
+
+        if(bshape == "polygonal")
+            conduit::blueprint::mesh::utils::topology::unstructured::generate_offsets(btopo, btopo["elements/offsets"]);
+
+        res["fields/boundary_attribute/topology"] = boundaryMeshName;
+        res["fields/boundary_attribute/association"] = "element";
+        res["fields/boundary_attribute/values"].set(btype);
+    }
 }
+
+//---------------------------------------------------------------------------
+template <typename Body>
+void
+TopDownTiler::iterateBoundary3D(const Block &selectedBlock, const std::vector<Tile> &tiles,
+    bool ccFaces, Body &&body) const
+{
+    const auto dY = selectedBlock.length(0);
+    const auto dZ = selectedBlock.length(0) * selectedBlock.length(1);
+
+    selectedBlock.iterate([&](const LogicalIndex &index, IndexType zonetype) {
+        // If the zone is part of the domain then check its face neighbors to
+        // see if any are still marked as Neighbor. They should be >= 0 if
+        // there are real neighbors. So, if they are still Neighbor, they
+        // must be external and will border boundaries.
+        if(zonetype == Block::Self)
+        {
+            const auto local = LogicalIndex{index[0] - selectedBlock.start[0],
+                                            index[1] - selectedBlock.start[1],
+                                            index[2] - selectedBlock.start[2]};
+            const auto localIndex = selectedBlock.IJKToIndex(local);
+            const auto prevX = localIndex - 1;
+            const auto nextX = localIndex + 1;
+            const auto prevY = localIndex - dY;
+            const auto nextY = localIndex + dY;
+            const auto prevZ = localIndex - dZ;
+            const auto nextZ = localIndex + dZ;
+
+            // Get the current tile
+            const Tile &current = tiles[localIndex];
+            const auto zoffset = current.getPointIds().size() / 2;
+
+            conduit::index_t pts[4];
+            // Left boundary.
+            if(selectedBlock.image[prevX] == Block::Neighbor)
+            {
+                const auto &ids = left();
+                const auto &ptids = current.getPointIds();
+                for(size_t i = 0; i < ids.size() - 1; i++)
+                {
+                    pts[0] = ptids[ids[i]];
+                    pts[1] = ptids[ids[i] + zoffset];
+                    pts[2] = ptids[ids[i + 1] + zoffset];
+                    pts[3] = ptids[ids[i + 1]];
+                    body(pts, 4, BoundaryLeft);
+                }
+            }
+
+            // Right boundary.
+            if(selectedBlock.image[nextX] == Block::Neighbor)
+            {
+                const auto &ids = right();
+                const auto &ptids = current.getPointIds();
+                for(size_t i = 0; i < ids.size() - 1; i++)
+                {
+                    if(ccFaces)
+                    {
+                        pts[0] = ptids[ids[i]];
+                        pts[1] = ptids[ids[i + 1]];
+                        pts[2] = ptids[ids[i + 1] + zoffset];
+                        pts[3] = ptids[ids[i] + zoffset];
+                    }
+                    else
+                    {
+                        // Matches BoundaryLeft
+                        pts[0] = ptids[ids[i]];
+                        pts[1] = ptids[ids[i] + zoffset];
+                        pts[2] = ptids[ids[i + 1] + zoffset];
+                        pts[3] = ptids[ids[i + 1]];
+                    }
+                    body(pts, 4, BoundaryRight);
+                }
+            }
+
+            // Bottom boundary.
+            if(selectedBlock.image[prevY] == Block::Neighbor)
+            {
+                const auto &ids = bottom();
+                const auto &ptids = current.getPointIds();
+                for(size_t i = 0; i < ids.size() - 1; i++)
+                {
+                    pts[0] = ptids[ids[i]];
+                    pts[1] = ptids[ids[i + 1]];
+                    pts[2] = ptids[ids[i + 1] + zoffset];
+                    pts[3] = ptids[ids[i] + zoffset];
+                    body(pts, 4, BoundaryBottom);
+                }
+            }
+
+            // Top boundary.
+            if(selectedBlock.image[nextY] == Block::Neighbor)
+            {
+                const auto &ids = top();
+                const auto &ptids = current.getPointIds();
+                for(size_t i = 0; i < ids.size() - 1; i++)
+                {
+                    if(ccFaces)
+                    {
+                        pts[0] = ptids[ids[i]];
+                        pts[1] = ptids[ids[i] + zoffset];
+                        pts[2] = ptids[ids[i + 1] + zoffset];
+                        pts[3] = ptids[ids[i + 1]];
+                    }
+                    else
+                    {
+                        // Matches BoundaryBottom
+                        pts[0] = ptids[ids[i]];
+                        pts[1] = ptids[ids[i + 1]];
+                        pts[2] = ptids[ids[i + 1] + zoffset];
+                        pts[3] = ptids[ids[i] + zoffset];
+                    }
+                    body(pts, 4, BoundaryTop);
+                }
+            }
+
+            // Back boundary
+            if(selectedBlock.image[prevZ] == Block::Neighbor)
+            {
+                iterateFaces(current.getPointIds(), 0, 0, true, BoundaryBack, body);
+            }
+
+            // Front boundary
+            if(selectedBlock.image[nextZ] == Block::Neighbor)
+            {
+                iterateFaces(current.getPointIds(), 0, zoffset, !ccFaces, BoundaryFront, body);
+            }
+        }
+    });
+}
+
 
 //---------------------------------------------------------------------------
 void
