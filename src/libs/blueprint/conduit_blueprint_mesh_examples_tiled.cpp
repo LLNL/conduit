@@ -3668,6 +3668,89 @@ TopDownTiler::iterateBoundary3D(const Block &selectedBlock, const std::vector<Ti
 }
 
 //---------------------------------------------------------------------------
+#if 0
+template <typename Body>
+void
+TopDownTiler::addAdjset2D(const Block &selectedBlock, const std::vector<Tile> &tiles,
+    conduit::index_t domainId, Body &&body) const
+{
+    const auto dY = selectedBlock.length(0);
+
+    // Make the adjset name for 2 domains.
+    auto adjset_name = [](conduit::index_t d0, conduit::index_t d1) {
+        if(d0 > d1)
+            std::swap(d0, d1);
+        std::stringstream ss;
+        ss << "domain_" << d0 << "_" << d1;
+        return ss.str();
+    };
+
+    // NOTE: I might want to use a set instead.
+    std::map<std::string, std::vector<conduit::index_t>> neighborValues;
+
+    auto addPoints = [&](const Block &b, const LogicalIndex &offset, const std::vector<conduit::index_t> &srcIds)
+    {
+        b.iterate([&](const LogicalIndex &index, IndexType zonetype) {
+            if(zonetype == Block::Self)
+            {
+                // Get the zone that is next to this one in the offset direction.
+                const auto localPrev = LogicalIndex{index[0] - b.start[0] + offset[0],
+                                                    index[1] - b.start[1] + offset[1],
+                                                    index[2] - b.start[2] + offset[2]};
+                const auto prevIndex = b.IJKIndex(localPrev);
+                // Check whether there is a neighbor in that direction.
+                conduit::index_t neighborId = b.image[prevIndex];
+                if(neighborId > Block::InvalidDomainId)
+                {
+                    // Get the neighbor values that match the domain pair. If we
+                    // can't get them, create them.
+                    const auto name = adjset_name(domainId, neighborId);
+                    auto it = neighborValues.find(name);
+                    if(it == neighborValues.end())
+                    {
+                        neighborValues[name] = std::vector<conduit::index_t>>();
+                        it = neighborValues.find(name);
+                        size_t sizeGuess = b.numZones() / 4;
+                        it->second.reserve(sizeGuess);
+                    }
+
+                    // Get relevant points from the tile.
+                    const auto local = LogicalIndex{index[0] - b.start[0],
+                                                    index[1] - b.start[1],
+                                                    index[2] - b.start[2]};
+                    const auto localIndex = b.IJKToIndex(local);
+                    const auto ptids = tiles[localIndex].getPointIds(srcIds);
+                    // Add the points to the values.
+                    for(const auto &id : ptids)
+                        it->second.push_back(insert(id);
+                }
+            }
+        };
+    };
+
+// IDEA: Make a struct that has all these vectors in it since I use them elsewhere and they are useful for traversing tiles.
+
+    // Traverse the selectedBlock to pull out faces.
+    addPoints(selectedBlock, LogicalIndex{-1, 0, 0}, leftIds);
+    addPoints(selectedBlock, LogicalIndex{1, 0, 0}, rightIds);
+    addPoints(selectedBlock, LogicalIndex{0, -1, 0}, bottomIds);
+    addPoints(selectedBlock, LogicalIndex{0, 1, 0}, topIds);
+//    addPoints(selectedBlock, LogicalIndex{0, 0, -1}, bottomIds);
+//    addPoints(selectedBlock, LogicalIndex{0, 0, 1}, topIds);
+
+    // TODO: For 3D, need to do edges too.
+
+    // Traverse the selected block pull out points
+    addPoints(selectedBlock, LogicalIndex{-1, -1, 0}, lowerLeftIds);
+    addPoints(selectedBlock, LogicalIndex{1, -1, 0}, rightIds);
+    addPoints(selectedBlock, LogicalIndex{-1, 1, 0}, upperLeftIds);
+    addPoints(selectedBlock, LogicalIndex{1, 1, 0}, upperRightIds);
+
+// TODO: Turn the vectors into Conduit adjsets.
+}
+#endif
+
+//---------------------------------------------------------------------------
 void
 TopDownTiler::addPoints(const matrix4x4 &A,
                         const std::vector<double> &zvalues,
