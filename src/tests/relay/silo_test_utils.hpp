@@ -279,24 +279,12 @@ overlink_name_changer(conduit::Node &save_mesh)
                 n_field["volume_dependent"] = "false";
             }
 
+            // there are only scalar variables for overlink so we do not
+            // need to worry about renaming vector components.
             // we need to rename vector components
             if (n_field["values"].dtype().is_object())
             {
-                if (n_field["values"].number_of_children() > 0)
-                {
-                    int child_index = 0;
-                    auto val_itr = n_field["values"].children();
-                    while (val_itr.has_next())
-                    {
-                        val_itr.next();
-                        std::string comp_name = val_itr.name();
-
-                        // rename vector components
-                        n_field["values"].rename_child(comp_name, std::to_string(child_index));
-
-                        child_index ++;
-                    }
-                }
+                CONDUIT_ERROR("Overlink only allows scalar variables. You are doing this wrong.");
             }
         }
     }
