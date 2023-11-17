@@ -3128,18 +3128,49 @@ void silo_write_field(DBfile *dbfile,
         // save the var type
         var_type = DB_UCDVAR;
 
-        silo_error = DBPutUcdvar(dbfile, // Database file pointer
-                                 detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                 safe_meshname.c_str(), // mesh name
-                                 nvars, // number of variable components
-                                 comp_name_ptrs.data(), // variable component names
-                                 comp_vals_ptrs.data(), // the data values
-                                 num_values, // number of elements
-                                 mixvars_ptr_ptr, // mixed data arrays
-                                 mixlen, // length of mixed data arrays
-                                 silo_vals_type, // Datatype of the variable
-                                 centering, // centering (nodal or zonal)
-                                 NULL); // optlist
+        // TODO do I actually need to do this? Or am I just letting the overlink spec bully me?
+        // use the scalar variant for writing scalars
+        // this will make overlink happy
+        if (nvars == 1)
+        {
+            void *vals_ptr = nullptr;
+            if (comp_vals_ptrs.size() > 0)
+            {
+                vals_ptr = const_cast<void *>(comp_vals_ptrs[0]);
+            }
+
+            void *mixvar_ptr = nullptr;
+            if (mixvars_ptrs.size() > 0)
+            {
+                mixvar_ptr = mixvars_ptrs[0];
+            }
+
+            silo_error = DBPutUcdvar1(dbfile, // Database file pointer
+                                      detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                      safe_meshname.c_str(), // mesh name
+                                      vals_ptr, // the data values
+                                      num_values, // number of elements
+                                      mixvar_ptr, // mixed data arrays
+                                      mixlen, // length of mixed data arrays
+                                      silo_vals_type, // Datatype of the variable
+                                      centering, // centering (nodal or zonal)
+                                      NULL); // optlist
+        }
+        else
+        {
+            silo_error = DBPutUcdvar(dbfile, // Database file pointer
+                                     detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                     safe_meshname.c_str(), // mesh name
+                                     nvars, // number of variable components
+                                     comp_name_ptrs.data(), // variable component names
+                                     comp_vals_ptrs.data(), // the data values
+                                     num_values, // number of elements
+                                     mixvars_ptr_ptr, // mixed data arrays
+                                     mixlen, // length of mixed data arrays
+                                     silo_vals_type, // Datatype of the variable
+                                     centering, // centering (nodal or zonal)
+                                     NULL); // optlist
+        }
     }
     else if (mesh_type == "rectilinear" || 
              mesh_type == "uniform" ||
