@@ -1303,7 +1303,7 @@ read_variable_domain_mixvals(const T *var_ptr,
         "mixlen is > 0 but no mixvals are provided for var " << var_name);
     CONDUIT_ASSERT(var_ptr->mixvals[0], "mixvals are NULL for var " << var_name);
     CONDUIT_ASSERT(mesh_out.has_child("matsets"),
-        "Missing matset despite field " << var_name << "requiring one.");
+        "Missing matset despite field " << var_name << " requiring one.");
     // should be enforced earlier, but doesn't hurt to check again
     CONDUIT_ASSERT(mesh_out["matsets"].number_of_children() == 1,
         "This mesh has multiple matsets, which is ambiguous.");
@@ -3054,10 +3054,6 @@ void silo_write_field(DBfile *dbfile,
     }
     if (write_overlink && nvars != 1)
     {
-        // TODO how can I know that this var was not actually written?
-        // the key is in the type domain info
-        // I need to use that info to filter out vars that were not written
-        // can do the same for meshes and materials
         CONDUIT_INFO("Overlink requires scalar variables. " << 
             var_name << " is not a scalar variable. Skipping.");
         return;
@@ -4276,10 +4272,11 @@ void write_multimeshes(DBfile *dbfile,
                        const std::string &opts_out_mesh_name,
                        const std::string &ovl_topo_name,
                        const Node &root,
-                       const bool overlink)
+                       const bool write_overlink)
 {
     const int global_num_domains = root["number_of_domains"].to_index_t();
     const Node &n_mesh = root["blueprint_index"][opts_out_mesh_name];
+    const Node &n_type_dom_info = root["type_domain_info"];
 
     // these should be the same b/c the num domains the bp index was given
     // was global_num_domains
@@ -4287,7 +4284,7 @@ void write_multimeshes(DBfile *dbfile,
         "Domain count mismatch");
 
     // write only the chosen mesh for overlink case
-    if (overlink)
+    if (write_overlink)
     {
         write_multimesh(dbfile,
                         n_mesh,
@@ -4295,7 +4292,7 @@ void write_multimeshes(DBfile *dbfile,
                         root,
                         global_num_domains,
                         opts_out_mesh_name, // "MMESH"
-                        overlink);
+                        write_overlink);
     }
     // write all meshes for nonoverlink case
     else
@@ -4306,13 +4303,21 @@ void write_multimeshes(DBfile *dbfile,
             topo_itr.next();
             std::string topo_name = topo_itr.name();
             std::string multimesh_name = opts_out_mesh_name + "_" + topo_name;
+
+            // did we actually write this mesh to silo?
+            if (! n_type_dom_info.has_path("meshes/" + topo_name))
+            {
+                // we skipped this mesh before so we can skip it now
+                continue;
+            }
+
             write_multimesh(dbfile,
                             n_mesh,
                             topo_name,
                             root,
                             global_num_domains,
                             multimesh_name,
-                            overlink);
+                            write_overlink);
         }
     }
 }
@@ -4328,6 +4333,7 @@ write_multivars(DBfile *dbfile,
     const int num_files = root["number_of_files"].to_index_t();
     const int global_num_domains = root["number_of_domains"].to_index_t();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    const Node &n_type_dom_info = root["type_domain_info"];
     const bool root_only = root["file_style"].as_string() == "root_only";
 
     // these should be the same b/c the num domains the bp index was given
@@ -4342,6 +4348,13 @@ write_multivars(DBfile *dbfile,
         {
             const Node &n_var = field_itr.next();
             std::string var_name = field_itr.name();
+            
+            // did we actually write this field to silo?
+            if (! n_type_dom_info.has_path("vars/" + var_name))
+            {
+                // we skipped this field before so we can skip it now
+                continue;
+            }
 
             std::string linked_topo_name = n_var["topology"].as_string();
 
@@ -4420,6 +4433,7 @@ write_multimats(DBfile *dbfile,
     const int num_files = root["number_of_files"].to_index_t();
     const int global_num_domains = root["number_of_domains"].to_index_t();
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    const Node &n_type_dom_info = root["type_domain_info"];
     const bool root_only = root["file_style"].as_string() == "root_only";
 
     // these should be the same b/c the num domains the bp index was given
@@ -4434,6 +4448,13 @@ write_multimats(DBfile *dbfile,
         {
             const Node &n_matset = matset_itr.next();
             std::string matset_name = matset_itr.name();
+
+            // did we actually write this matset to silo?
+            if (! n_type_dom_info.has_path("matsets/" + matset_name))
+            {
+                // we skipped this matset before so we can skip it now
+                continue;
+            }
 
             std::string linked_topo_name = n_matset["topology"].as_string();
 
@@ -4541,6 +4562,14 @@ write_var_attributes(DBfile *dbfile,
         {
             const Node &n_var = field_itr.next();
             std::string var_name = field_itr.name();
+
+            // did we actually write this field to silo?
+            if (! n_type_dom_info.has_path("vars/" + var_name))
+            {
+                // we skipped this field before so we can skip it now
+                continue;
+            }
+            
             std::string safe_varname = detail::sanitize_silo_varname(var_name);
             multivar_name_strings.push_back(safe_varname);
 
