@@ -1255,9 +1255,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
             int cycle = save_mesh[child]["state"]["cycle"].as_int32();
             save_mesh[child]["state"]["cycle"].reset();
             save_mesh[child]["state"]["cycle"] = (int64) cycle;
-            // overlink preserves volume dependence in VAR_ATTRIBUTES
-            // TODO can I remove this b/c ovl name changer does htis?
-            save_mesh[child]["fields"]["dist"]["volume_dependent"] = "false";
         }
 
         EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());

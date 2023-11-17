@@ -3125,6 +3125,7 @@ void silo_write_field(DBfile *dbfile,
         var_type = DB_UCDVAR;
 
         // TODO do I actually need to do this? Or am I just letting the overlink spec bully me?
+        // TODO does overlink support non scalars?????
         // use the scalar variant for writing scalars
         // this will make overlink happy
         if (nvars == 1)
