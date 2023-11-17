@@ -122,7 +122,8 @@ printUsage(const char *exeName)
 {
     std::cout << "Usage: " << exeName << "[-dims x,y,z] [-domains x,y,z] [-tile]\n"
               << "   [-braid] [-output fileroot] [-protocol name] [-meshtype type]\n"
-              << "   [-tiledef filename] [-extents x0,x1,y0,y1[,z0,z1]] [-help]\n";
+              << "   [-tiledef filename] [-extents x0,x1,y0,y1[,z0,z1]]\n"
+              << "   [-select a,...] [-curvesplit on|off] [-help]\n";
     std::cout << "\n";
     std::cout << "Argument              Description\n";
     std::cout << "===================   ==========================================================\n";
@@ -151,6 +152,8 @@ printUsage(const char *exeName)
     std::cout << "-select a,...         A comma-separated list of integers that correspond to a list\n";
     std::cout << "                      of domains to select from the total set of domains. Only these\n";   
     std::cout << "                      domains will be created/saved.\n";
+    std::cout << "\n";
+    std::cout << "-curvesplit on|off    Turn curve-based splitting on/off in generators that support it.\n";
     std::cout << "\n";
     std::cout << "-help                 Print the usage and exit.\n";
 }
@@ -270,6 +273,11 @@ main(int argc, char *argv[])
         else if(strcmp(argv[i], "-select") == 0 && (i+1) < argc)
         {
             selectedDomains = toIntVector(argv[i + 1]);
+            i++;
+        }
+        else if(strcmp(argv[i], "-curvesplit") == 0 && (i+1) < argc)
+        {
+            opts["curveSplitting"] = (strcmp(argv[i + 1], "on") == 0) ? 1 : 0;
             i++;
         }
         else if(strcmp(argv[i], "-help") == 0 ||
