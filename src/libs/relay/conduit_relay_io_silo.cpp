@@ -3040,6 +3040,16 @@ void silo_write_field(DBfile *dbfile,
         nvars = 1;
         silo_vals_type = detail::dtype_to_silo_type(vals_dtype);
     }
+    if (write_overlink && nvars != 1)
+    {
+        // TODO how can I know that this var was not actually written?
+        // the key is in the type domain info
+        // I need to use that info to filter out vars that were not written
+        // can do the same for meshes and materials
+        CONDUIT_INFO("Overlink requires scalar variables. " << 
+            var_name << " is not a scalar variable. Skipping.");
+        return;
+    }
     if (silo_vals_type == DB_NOTYPE)
     {
         // skip the field if we don't support its type
@@ -3145,22 +3155,60 @@ void silo_write_field(DBfile *dbfile,
         // save the var type
         var_type = DB_QUADVAR;
 
-        silo_error = DBPutQuadvar(dbfile, // Database file pointer
-                                  detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                  safe_meshname.c_str(), // mesh name
-                                  nvars, // number of variable components
-                                  comp_name_ptrs.data(), // variable component names
-                                  comp_vals_ptrs.data(), // the data values
-                                  dims, // the dimensions of the data
-                                  num_dims, // number of dimensions
-                                  mixvars_ptr_ptr, // mixed data arrays
-                                  mixlen, // length of mixed data arrays
-                                  silo_vals_type, // Datatype of the variable
-                                  centering, // centering (nodal or zonal)
-                                  NULL); // optlist
+        // TODO do I actually need to do this? Or am I just letting the overlink spec bully me?
+        // use the scalar variant for writing scalars
+        // this will make overlink happy
+        if (nvars == 1)
+        {
+            void *vals_ptr = nullptr;
+            if (comp_vals_ptrs.size() > 0)
+            {
+                vals_ptr = const_cast<void *>(comp_vals_ptrs[0]);
+            }
+
+            void *mixvar_ptr = nullptr;
+            if (mixvars_ptrs.size() > 0)
+            {
+                mixvar_ptr = mixvars_ptrs[0];
+            }
+
+            silo_error = DBPutQuadvar1(dbfile, // Database file pointer
+                                       detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                       safe_meshname.c_str(), // mesh name
+                                       vals_ptr, // the data values
+                                       dims, // the dimensions of the data
+                                       num_dims, // number of dimensions
+                                       mixvar_ptr, // mixed data arrays
+                                       mixlen, // length of mixed data arrays
+                                       silo_vals_type, // Datatype of the variable
+                                       centering, // centering (nodal or zonal)
+                                       NULL); // optlist
+        }
+        else
+        {
+            silo_error = DBPutQuadvar(dbfile, // Database file pointer
+                                      detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                      safe_meshname.c_str(), // mesh name
+                                      nvars, // number of variable components
+                                      comp_name_ptrs.data(), // variable component names
+                                      comp_vals_ptrs.data(), // the data values
+                                      dims, // the dimensions of the data
+                                      num_dims, // number of dimensions
+                                      mixvars_ptr_ptr, // mixed data arrays
+                                      mixlen, // length of mixed data arrays
+                                      silo_vals_type, // Datatype of the variable
+                                      centering, // centering (nodal or zonal)
+                                      NULL); // optlist
+        }
     }
     else if (mesh_type == "points")
     {
+        if (write_overlink)
+        {
+            // TODO what I should probably do is force conversion to a ucd point var
+            CONDUIT_ERROR("Cannot write point var " << topo_name << " to overlink."
+                          << " Only DB_UCDVAR and DB_QUADVAR are supported.");
+        }
         // save the var type
         var_type = DB_POINTVAR;
 
@@ -3769,6 +3817,7 @@ void silo_write_topo(const Node &mesh_domain,
         {
             if (write_overlink)
             {
+                // TODO what I should probably do is force conversion to a ucd point mesh
                 CONDUIT_ERROR("Cannot write point mesh " << topo_name << " to overlink."
                               << " Only DB_UCDMESH and DB_QUADMESH are supported.");
             }
