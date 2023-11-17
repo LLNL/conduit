@@ -169,8 +169,6 @@ TEST(conduit_relay_io_silo, round_trip_basic)
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
         // make changes to save mesh so the diff will pass
-        save_mesh["state/cycle"] = (int64) 0;
-        save_mesh["state/domain_id"] = 0;
         if (mesh_type == "uniform")
         {
             silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
@@ -326,8 +324,6 @@ TEST(conduit_relay_io_silo, round_trip_julia)
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
     // make changes to save mesh so the diff will pass
-    save_mesh["state/cycle"] = (int64) 0;
-    save_mesh["state/domain_id"] = 0;
     silo_name_changer("mesh", save_mesh);
 
     // the loaded mesh will be in the multidomain format
@@ -394,8 +390,6 @@ TEST(conduit_relay_io_silo, round_trip_venn)
             }
 
             // make changes to save mesh so the diff will pass
-            save_mesh["state/cycle"] = (int64) 0;
-            save_mesh["state/domain_id"] = 0;
 
             // The field mat_check has values that are one type and matset_values
             // that are another type. The silo writer converts both to double arrays
@@ -464,8 +458,6 @@ TEST(conduit_relay_io_silo, round_trip_venn_modded_matnos)
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
     // make changes to save mesh so the diff will pass
-    save_mesh["state/cycle"] = (int64) 0;
-    save_mesh["state/domain_id"] = 0;
 
     // The field mat_check has values that are one type and matset_values
     // that are another type. The silo writer converts both to double arrays
@@ -1108,12 +1100,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_suffix)
         io::silo::load_mesh(filename, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        // this is to pass the diff, as silo will add cycle in if it is not there
-        if (include_cycle[i] == "no")
-        {
-            save_mesh["state/cycle"] = (int64) 0;
-        }
-        save_mesh["state/domain_id"] = 0;
         silo_name_changer("mesh", save_mesh);
 
         // the loaded mesh will be in the multidomain format
@@ -1152,8 +1138,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_root_file_ext)
         io::silo::load_mesh(filename, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        save_mesh["state/cycle"] = (int64) 0;
-        save_mesh["state/domain_id"] = 0;
         silo_name_changer("mesh", save_mesh);
 
         // the loaded mesh will be in the multidomain format
@@ -1180,8 +1164,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
     io::silo::load_mesh(filename, load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-    save_mesh["state/cycle"] = (int64) 0;
-    save_mesh["state/domain_id"] = 0;
     silo_name_changer("mymesh", save_mesh);
 
     // the loaded mesh will be in the multidomain format
@@ -1225,10 +1207,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_silo_type)
         io::silo::save_mesh(save_mesh, basename, opts);
         io::silo::load_mesh(filename, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-        // this is to pass the diff, as silo will add cycle in if it is not there
-        save_mesh["state/cycle"] = (int64) 0;
-        save_mesh["state/domain_id"] = 0;
         
         silo_name_changer("mesh", save_mesh);
 
@@ -1266,7 +1244,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
-        remove_path_if_exists(basename);
+        remove_path_if_exists(filename);
         io::silo::save_mesh(save_mesh, basename, opts);
         io::silo::load_mesh(filename, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
@@ -1278,6 +1256,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
             save_mesh[child]["state"]["cycle"].reset();
             save_mesh[child]["state"]["cycle"] = (int64) cycle;
             // overlink preserves volume dependence in VAR_ATTRIBUTES
+            // TODO can I remove this b/c ovl name changer does htis?
             save_mesh[child]["fields"]["dist"]["volume_dependent"] = "false";
         }
 
@@ -1314,15 +1293,54 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     field2["volume_dependent"] = "true";
     field2["values"].set_external(save_mesh["fields"]["field"]["values"]);
 
-    remove_path_if_exists(basename);
+    remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename, opts);
     io::silo::load_mesh(filename, load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
-    overlink_name_changer(save_mesh);
     // make changes to save mesh so the diff will pass
-    save_mesh["state/cycle"] = (int64) 0;
-    save_mesh["state/domain_id"] = 0;
+    overlink_name_changer(save_mesh);
+
+    // the loaded mesh will be in the multidomain format
+    // but the saved mesh is in the single domain format
+    EXPECT_EQ(load_mesh.number_of_children(), 1);
+    EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+}
+
+//-----------------------------------------------------------------------------
+// this tests material i/o
+TEST(conduit_relay_io_silo, round_trip_save_option_overlink3)
+{
+    Node save_mesh, load_mesh, info;
+    const int nx = 100, ny = 100;
+    const double radius = 0.25;
+    blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, save_mesh);
+
+    const std::string basename = "silo_save_option_overlink_venn";
+    const std::string filename = basename + "/OvlTop.silo";
+
+    Node opts;
+    opts["file_style"] = "overlink";
+
+    remove_path_if_exists(filename);
+    io::silo::save_mesh(save_mesh, basename, opts);
+    io::silo::load_mesh(filename, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    // make changes to save mesh so the diff will pass
+
+    // The field mat_check has values that are one type and matset_values
+    // that are another type. The silo writer converts both to double arrays
+    // in this case, so we follow suit.
+    Node mat_check_new_values, mat_check_new_matset_values;
+    save_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
+    save_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
+    save_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
+    save_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
+
+    overlink_name_changer(save_mesh);
 
     // the loaded mesh will be in the multidomain format
     // but the saved mesh is in the single domain format
@@ -1382,6 +1400,7 @@ TEST(conduit_relay_io_silo, read_silo)
             out_name += "_" + meshname;
         }
 
+        // TODO are these remove paths doing anything? Don't they need filenames?
         remove_path_if_exists(out_name + "_write_blueprint");
         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
