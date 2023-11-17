@@ -1599,7 +1599,17 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     {
         for (int i = 0; i < matset_ptr->nmat; i ++)
         {
-            const int matno = matset_ptr->matnos[i];
+            int matno;
+            if (matset_ptr->matnos)
+            {
+                // we have mat nos to work with
+                matno = matset_ptr->matnos[i];
+            }
+            else
+            {
+                // we infer that matnos run from 1 to nmat, inclusive
+                matno = i + 1;
+            }
             if (matset_ptr->matnames) // may be null
             {
                 material_map[matset_ptr->matnames[i]] = matno;
@@ -3919,10 +3929,11 @@ void silo_write_matset(DBfile *dbfile,
     convert_to_c_int_array(silo_matset_compact["mix_next"], int_arrays["mix_next"]);
     convert_to_c_int_array(silo_matset_compact["matlist"], int_arrays["matlist"]);
 
+    const std::string safe_matset_name = (write_overlink ? "MATERIAL" : detail::sanitize_silo_varname(matset_name));
+
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
-            // TODO the material name for overlink should be MATERIAL
-                      detail::sanitize_silo_varname(matset_name).c_str(), // matset name
+                      safe_matset_name.c_str(), // matset name
                       safe_meshname.c_str(), // mesh name
                       nmat, // number of materials
                       matnos.data(), // material numbers
