@@ -31,7 +31,7 @@
 // #define CONDUIT_USE_PARTITIONER_FOR_REORDER
 
 // Uncomment this to use a simpler tiled pattern for debugging.
-#define CONDUIT_SIMPLE_TILED_PATTERN
+// #define CONDUIT_SIMPLE_TILED_PATTERN
 
 // Uncomment this to print information about block splitting.
 // #define CONDUIT_DEBUG_BLOCK_SPLITTER
