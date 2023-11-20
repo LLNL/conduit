@@ -1645,8 +1645,8 @@ struct Block
     static const IndexType Neighbor;
     static const IndexType InvalidDomainId;
 
-    LogicalIndex           start{0,0,0};
-    LogicalIndex           end{0,0,0};
+    LogicalIndex           start{{0,0,0}};
+    LogicalIndex           end{{0,0,0}};
     IndexType              hilbertBlockId{InvalidDomainId};
     std::vector<IndexType> image{};
 
@@ -1815,7 +1815,7 @@ LogicalIndex Block::IndexToIJK(IndexType index) const
     auto j = (index % (nxny)) / nx;
     auto k = index / (nxny);
 
-    return LogicalIndex{i, j, k};
+    return LogicalIndex{{i, j, k}};
 }
 
 //---------------------------------------------------------------------------
@@ -1847,9 +1847,9 @@ Block Block::expand(IndexType n, bool threeD) const
     {
         e.image.resize(e.size(), Empty);
         iterate([&](const LogicalIndex &index, IndexType zonetype) {
-            auto logicalIndex = LogicalIndex{index[0] - start[0] + n,
-                                             index[1] - start[1] + n,
-                                             index[2] - start[2] + (threeD ? n : 0)};
+            auto logicalIndex = LogicalIndex{{index[0] - start[0] + n,
+                                              index[1] - start[1] + n,
+                                              index[2] - start[2] + (threeD ? n : 0)}};
             auto dest = e.IJKToIndex(logicalIndex);
             e.image[dest] = zonetype;
         });
@@ -1901,7 +1901,7 @@ void Block::iterate(Func &&func) const
         for(IndexType j = start[1]; j <= end[1]; j++)
         for(IndexType i = start[0]; i <= end[0]; i++, ii++)
         {
-            func(LogicalIndex{i,j,k}, image[ii]);
+            func(LogicalIndex{{i,j,k}}, image[ii]);
         }
     }
     else
@@ -1910,7 +1910,7 @@ void Block::iterate(Func &&func) const
         for(IndexType j = start[1]; j <= end[1]; j++)
         for(IndexType i = start[0]; i <= end[0]; i++)
         {
-            func(LogicalIndex{i,j,k}, Self);
+            func(LogicalIndex{{i,j,k}}, Self);
         }
     }
 }
@@ -1923,14 +1923,14 @@ Block::intersectInternal(const Block &B) const
 
     bool complexHit = false;
 
-    auto b0 = LogicalIndex{B.start[0], B.start[1], B.start[2]};
-    auto b1 = LogicalIndex{B.end[0],   B.start[1], B.start[2]};
-    auto b2 = LogicalIndex{B.start[0], B.end[1],   B.start[2]};
-    auto b3 = LogicalIndex{B.end[0],   B.end[1],   B.start[2]};
-    auto b4 = LogicalIndex{B.start[0], B.start[1], B.end[2]};
-    auto b5 = LogicalIndex{B.end[0],   B.start[1], B.end[2]};
-    auto b6 = LogicalIndex{B.start[0], B.end[1],   B.end[2]};
-    auto b7 = LogicalIndex{B.end[0],   B.end[1],   B.end[2]};
+    auto b0 = LogicalIndex{{B.start[0], B.start[1], B.start[2]}};
+    auto b1 = LogicalIndex{{B.end[0],   B.start[1], B.start[2]}};
+    auto b2 = LogicalIndex{{B.start[0], B.end[1],   B.start[2]}};
+    auto b3 = LogicalIndex{{B.end[0],   B.end[1],   B.start[2]}};
+    auto b4 = LogicalIndex{{B.start[0], B.start[1], B.end[2]}};
+    auto b5 = LogicalIndex{{B.end[0],   B.start[1], B.end[2]}};
+    auto b6 = LogicalIndex{{B.start[0], B.end[1],   B.end[2]}};
+    auto b7 = LogicalIndex{{B.end[0],   B.end[1],   B.end[2]}};
 
     bool ac[8];
     ac[0] = contains(b0);
@@ -2350,9 +2350,9 @@ Block::intersectInternal(const Block &B) const
                 if(type == Block::Self && contains(index))
                 {
                     // the zone in B is real. See if it is real in 
-                    LogicalIndex aindex{index[0] - start[0],
-                                        index[1] - start[1],
-                                        index[2] - start[2]};
+                    LogicalIndex aindex{{index[0] - start[0],
+                                         index[1] - start[1],
+                                         index[2] - start[2]}};
                     auto ai = IJKToIndex(aindex);
                     if(image[ai] != Block::Empty)
                         ids.push_back(index);
@@ -2736,12 +2736,12 @@ Block logicalIndicesToBlock(const std::vector<LogicalIndex> &zoneIds)
     // Figure out the bounding box of the zones that are selected in domain.
     // we'll figure it out relative to the whole.
     Block selected;
-    selected.start = LogicalIndex{std::numeric_limits<IndexType>::max(),
-                                  std::numeric_limits<IndexType>::max(),
-                                  std::numeric_limits<IndexType>::max()};
-    selected.end = LogicalIndex{-std::numeric_limits<IndexType>::max(),
-                                -std::numeric_limits<IndexType>::max(),
-                                -std::numeric_limits<IndexType>::max()};
+    selected.start = LogicalIndex{{std::numeric_limits<IndexType>::max(),
+                                   std::numeric_limits<IndexType>::max(),
+                                   std::numeric_limits<IndexType>::max()}};
+    selected.end = LogicalIndex{{-std::numeric_limits<IndexType>::max(),
+                                 -std::numeric_limits<IndexType>::max(),
+                                 -std::numeric_limits<IndexType>::max()}};
     // Determine the selected extents in the domain.
     for(const auto &zid : zoneIds)
     {
@@ -2756,19 +2756,19 @@ Block logicalIndicesToBlock(const std::vector<LogicalIndex> &zoneIds)
 
     // Make another selected Block to help with indexing.
     Block selectedLocal;
-    selectedLocal.start = LogicalIndex{0,0,0};
-    selectedLocal.end = LogicalIndex{selected.length(0) - 1,
-                                     selected.length(1) - 1,
-                                     selected.length(2) - 1};
+    selectedLocal.start = LogicalIndex{{0,0,0}};
+    selectedLocal.end = LogicalIndex{{selected.length(0) - 1,
+                                      selected.length(1) - 1,
+                                      selected.length(2) - 1}};
 
     // Fill in the selected image.
     selected.image.resize(selected.size(), Block::Empty);
     for(const auto &zid : zoneIds)
     {
         // The IJK within the selected Block.
-        auto local = LogicalIndex{zid[0] - selected.start[0],
-                                  zid[1] - selected.start[1],
-                                  zid[2] - selected.start[2]};
+        auto local = LogicalIndex{{zid[0] - selected.start[0],
+                                   zid[1] - selected.start[1],
+                                   zid[2] - selected.start[2]}};
 
         // Make the local index in the selected region.
         auto localIndex = selectedLocal.IJKToIndex(local);
@@ -2813,7 +2813,7 @@ hilbert_iterate(const Block &whole, IndexType numSegments, Func &&func)
         // Store zone ids in segmentIds and call func when we have enough.
         auto store2d = [&](IndexType i, IndexType j)
         {
-            LogicalIndex zid = {i + whole.start[0], j + whole.start[1], 0};
+            LogicalIndex zid{{i + whole.start[0], j + whole.start[1], 0}};
             segmentIds.push_back(zid);
             zoneCount++;
 
@@ -2842,7 +2842,7 @@ hilbert_iterate(const Block &whole, IndexType numSegments, Func &&func)
         // Store zone ids in segmentIds and call func when we have enough.
         auto store3d = [&](IndexType i, IndexType j, IndexType k)
         {
-            LogicalIndex zid = {i + whole.start[0], j + whole.start[1], k + whole.start[2]};
+            LogicalIndex zid{{i + whole.start[0], j + whole.start[1], k + whole.start[2]}};
             segmentIds.push_back(zid);
             zoneCount++;
 
@@ -2951,7 +2951,7 @@ void highlightNeighborZones(Block &obj, IndexType n, bool threeD)
         for(IndexType i = 0; i < nx; i++)
         {
             // Point cp is the current i,j,k point.
-            IndexType cp = obj.IJKToIndex(LogicalIndex{i, j, k});
+            IndexType cp = obj.IJKToIndex(LogicalIndex{{i, j, k}});
             // If the point is part of the domain then activate the neighbor zones around it.
             if(obj.image[cp] == Block::Self)
             {
@@ -2968,7 +2968,7 @@ void highlightNeighborZones(Block &obj, IndexType n, bool threeD)
                        jj >= 0 && jj <= ny &&
                        kk >= 0 && kk <= nz)
                     {
-                        auto np = obj.IJKToIndex(LogicalIndex{ii, jj, kk});
+                        auto np = obj.IJKToIndex(LogicalIndex{{ii, jj, kk}});
                         if(obj.image[np] == Block::Empty)
                         {
                             obj.image[np] = Block::Neighbor;
@@ -2989,7 +2989,7 @@ void highlightNeighborZones(Block &obj, IndexType n, bool threeD)
             bool end = (threeD && (k < n || k == nz-n)) || (j < n || j == ny-n) || (i < n || i == nx-n);
             if(end)
             {
-                auto index = obj.IJKToIndex(LogicalIndex{i,j,k});
+                auto index = obj.IJKToIndex(LogicalIndex{{i,j,k}});
                 obj.image[index] = Block::Neighbor;
             }
         }
@@ -3022,9 +3022,9 @@ Block neighbors(const std::vector<Block> &blocks, size_t BlockId, bool threeD)
             // If there were intersections, paint the Block index into the neighbor slots.
             for(const auto &zid : zids)
             {
-                auto local = LogicalIndex{zid[0] - selectedBlock.start[0],
-                                          zid[1] - selectedBlock.start[1],
-                                          zid[2] - selectedBlock.start[2]};
+                auto local = LogicalIndex{{zid[0] - selectedBlock.start[0],
+                                           zid[1] - selectedBlock.start[1],
+                                           zid[2] - selectedBlock.start[2]}};
                 auto index = selectedBlock.IJKToIndex(local);
                 if(selectedBlock.image[index] == Block::Neighbor)
                     selectedBlock.image[index] = static_cast<IndexType>(bi);
@@ -3302,8 +3302,8 @@ TopDownTiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_
                                static_cast<IndexType>(ny),
                                std::max(static_cast<IndexType>(nz), static_cast<IndexType>(1))};
     Block whole;
-    whole.start = LogicalIndex{0, 0, 0};
-    whole.end = LogicalIndex{dims[0] - 1, dims[1] - 1, dims[2] - 1};
+    whole.start = LogicalIndex{{0, 0, 0}};
+    whole.end = LogicalIndex{{dims[0] - 1, dims[1] - 1, dims[2] - 1}};
 
     // Split whole into m_numDomains blocks.
     BlockSplitter S;
@@ -3392,16 +3392,16 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
                           const std::vector<conduit::index_t> &destIds,
                           const std::vector<conduit::index_t> &srcIds)
     {
-        auto localPrev = LogicalIndex{index[0] - b.start[0] + offset[0],
-                                      index[1] - b.start[1] + offset[1],
-                                      index[2] - b.start[2] + offset[2]};
+        auto localPrev = LogicalIndex{{index[0] - b.start[0] + offset[0],
+                                       index[1] - b.start[1] + offset[1],
+                                       index[2] - b.start[2] + offset[2]}};
         auto prevIndex = selectedBlock.IJKToIndex(localPrev);
         // Copy points from neighbor tile if possible.
         if(selectedBlock.image[prevIndex] == Block::Self)
         {
-            auto local = LogicalIndex{index[0] - b.start[0],
-                                      index[1] - b.start[1],
-                                      index[2] - b.start[2]};
+            auto local = LogicalIndex{{index[0] - b.start[0],
+                                       index[1] - b.start[1],
+                                       index[2] - b.start[2]}};
             auto localIndex = selectedBlock.IJKToIndex(local);
             Tile &current = tiles[localIndex];
             current.setPointIds(destIds, tiles[prevIndex].getPointIds(srcIds));
@@ -3414,72 +3414,68 @@ TopDownTiler::generateDomain(IndexType nx, IndexType ny, IndexType nz, conduit::
     // We can iterate over the block's zones. It will traverse them in usual IJK order.
     // Since the selectedBlock is expanded to know about neighbors, each real/self zone
     // will have neighbors in IJK.
-    IndexType dY = selectedBlock.length(0);
-    IndexType dZ = selectedBlock.length(0) * selectedBlock.length(1);
     std::vector<Tile> tiles(selectedBlock.size());
     selectedBlock.iterate([&](const LogicalIndex &index, IndexType zonetype) {
         // If the zone is part of the domain then we need to stamp out our tile.
         if(zonetype == Block::Self)
         {
-            auto local = LogicalIndex{index[0] - selectedBlock.start[0],
-                                      index[1] - selectedBlock.start[1],
-                                      index[2] - selectedBlock.start[2]};
+            auto local = LogicalIndex{{index[0] - selectedBlock.start[0],
+                                       index[1] - selectedBlock.start[1],
+                                       index[2] - selectedBlock.start[2]}};
             auto localIndex = selectedBlock.IJKToIndex(local);
 
-            // Get the current tile and allocate its point ids.
-            Tile &current = tiles[localIndex];
-            current.reset(nTilePts);
-#if 0
-            auto prevX = localIndex - 1;
-            auto prevY = localIndex - dY;
-            // Copy points from previous neighbor tiles if possible.
-            if(selectedBlock.image[prevX] == Block::Self)
-            {
-                current.setPointIds(ti.left, tiles[prevX].getPointIds(ti.right));
-            }
-            if(selectedBlock.image[prevY] == Block::Self)
-            {
-                current.setPointIds(ti.bottom, tiles[prevY].getPointIds(ti.top));
-            }
-            else
-            {
-                auto lr = selectedBlock.IJKToIndex(LogicalIndex{local[0] + 1, local[0] - 1, 0});
-                if(selectedBlock.image[lr] == Block::Self)
-                {
-                    if(threeD)
-                        current.setPointIds(ti.edges[10], tiles[lr].getPointIds(ti.edges[9]));
-                    else
-                        current.setPointIds(ti.corners[1], tiles[lr].getPointIds(ti.corners[2]));
-                }
-            }
-#endif
             // Make a transformation matrix.
             double T[3] = {static_cast<double>(index[0]),
                            static_cast<double>(index[1]),
                            static_cast<double>(index[2])};
             matrix4x4 M = (scale(normalize) * translate(T)) * SO;
 
+            // Get the current tile and allocate its point ids.
+            Tile &current = tiles[localIndex];
+            current.reset(nTilePts);
+
             if(threeD)
             {
-                // Copy Z face points if possible.
-                auto prevZ = localIndex - dZ;
-                if(nz > 1 && selectedBlock.image[prevZ] == Block::Self)
+                // Copy points from adjacent tiles into the current tile.
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, 0, 0}}, ti.left, ti.right);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{{0, -1, 0}}, ti.bottom, ti.top);
+                if(nz > 1)
                 {
-                    current.setPointIds(ti.back, tiles[prevZ].getPointIds(ti.front));
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{0, 0, -1}}, ti.back, ti.front);
+
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, -1, 0}}, ti.edges[8], ti.edges[11]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{1, -1, 0}}, ti.edges[10], ti.edges[9]);
+
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, 0, -1}}, ti.edges[0], ti.edges[5]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{1, 0, -1}}, ti.edges[1], ti.edges[4]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{0, -1, -1}}, ti.edges[2], ti.edges[7]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{0, 1, -1}}, ti.edges[3], ti.edges[6]);
+
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, -1, -1}}, ti.corners[0], ti.corners[7]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{1, -1, -1}}, ti.corners[1], ti.corners[6]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, 1, -1}}, ti.corners[2], ti.corners[5]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{1, 1, -1}}, ti.corners[3], ti.corners[4]);
+                }
+                else
+                {
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, -1, 0}}, ti.edges[8], ti.edges[11]);
+                    copyPoints(selectedBlock, tiles, index, LogicalIndex{{1, -1, 0}}, ti.edges[10], ti.edges[9]);
                 }
 
+                // Make any new points that are needed.
                 const std::vector<double> zvalues{0., 1.};
                 addPoints(M, zvalues, current.getPointIds(), x, y, z, srcPointIds);
 
+                // Add elements
                 addVolumeElements(current.getPointIds(), conn, sizes);
             }
             else
             {
                 // Copy points from adjacent tiles into the current tile.
-                copyPoints(selectedBlock, tiles, index, LogicalIndex{-1, 0, 0}, ti.left, ti.right);
-                copyPoints(selectedBlock, tiles, index, LogicalIndex{0, -1, 0}, ti.bottom, ti.top);
-                copyPoints(selectedBlock, tiles, index, LogicalIndex{-1, -1, 0}, ti.corners[0], ti.corners[3]);
-                copyPoints(selectedBlock, tiles, index, LogicalIndex{1, -1, 0}, ti.corners[1], ti.corners[2]);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, 0, 0}}, ti.left, ti.right);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{{0, -1, 0}}, ti.bottom, ti.top);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{{-1, -1, 0}}, ti.corners[0], ti.corners[3]);
+                copyPoints(selectedBlock, tiles, index, LogicalIndex{{1, -1, 0}}, ti.corners[1], ti.corners[2]);
 
                 const std::vector<double> zvalues{0.};
                 addPoints(M, zvalues, current.getPointIds(), x, y, z, srcPointIds);
@@ -3743,9 +3739,9 @@ TopDownTiler::iterateBoundary2D(const Block &selectedBlock, const std::vector<Ti
         // must be external and will border boundaries.
         if(zonetype == Block::Self)
         {
-            const auto local = LogicalIndex{index[0] - selectedBlock.start[0],
-                                            index[1] - selectedBlock.start[1],
-                                            index[2] - selectedBlock.start[2]};
+            const auto local = LogicalIndex{{index[0] - selectedBlock.start[0],
+                                             index[1] - selectedBlock.start[1],
+                                             index[2] - selectedBlock.start[2]}};
             const auto localIndex = selectedBlock.IJKToIndex(local);
             const auto prevX = localIndex - 1;
             const auto nextX = localIndex + 1;
@@ -3806,9 +3802,9 @@ TopDownTiler::iterateBoundary3D(const Block &selectedBlock, const std::vector<Ti
         // must be external and will border boundaries.
         if(zonetype == Block::Self)
         {
-            const auto local = LogicalIndex{index[0] - selectedBlock.start[0],
+            const auto local = LogicalIndex{{index[0] - selectedBlock.start[0],
                                             index[1] - selectedBlock.start[1],
-                                            index[2] - selectedBlock.start[2]};
+                                            index[2] - selectedBlock.start[2]}};
             const auto localIndex = selectedBlock.IJKToIndex(local);
             const auto prevX = localIndex - 1;
             const auto nextX = localIndex + 1;
@@ -3949,9 +3945,9 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
             if(zonetype == Block::Self)
             {
                 // Get the zone that is next to this one in the offset direction.
-                const auto localPrev = LogicalIndex{index[0] - b.start[0] + offset[0],
-                                                    index[1] - b.start[1] + offset[1],
-                                                    index[2] - b.start[2] + offset[2]};
+                const auto localPrev = LogicalIndex{{index[0] - b.start[0] + offset[0],
+                                                     index[1] - b.start[1] + offset[1],
+                                                     index[2] - b.start[2] + offset[2]}};
                 const auto prevIndex = b.IJKToIndex(localPrev);
                 // Check whether there is a neighbor in the offset direction.
                 conduit::index_t neighborId = b.image[prevIndex];
@@ -3969,9 +3965,9 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
                     }
 
                     // Get relevant points from the tile.
-                    const auto local = LogicalIndex{index[0] - b.start[0],
+                    const auto local = LogicalIndex{{index[0] - b.start[0],
                                                     index[1] - b.start[1],
-                                                    index[2] - b.start[2]};
+                                                    index[2] - b.start[2]}};
                     const auto localIndex = b.IJKToIndex(local);
                     const auto ptids = tiles[localIndex].getPointIds(srcIds);
                     // Add the points to the values.
@@ -3983,43 +3979,43 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
     };
 
     // Traverse the selectedBlock to pull out faces. In 2D, these are edges.
-    addPoints(selectedBlock, LogicalIndex{-1, 0, 0}, ti.left);
-    addPoints(selectedBlock, LogicalIndex{1, 0, 0}, ti.right);
-    addPoints(selectedBlock, LogicalIndex{0, -1, 0}, ti.bottom);
-    addPoints(selectedBlock, LogicalIndex{0, 1, 0}, ti.top);
+    addPoints(selectedBlock, LogicalIndex{{-1, 0, 0}}, ti.left);
+    addPoints(selectedBlock, LogicalIndex{{1, 0, 0}}, ti.right);
+    addPoints(selectedBlock, LogicalIndex{{0, -1, 0}}, ti.bottom);
+    addPoints(selectedBlock, LogicalIndex{{0, 1, 0}}, ti.top);
 
     if(threeD)
     {
         // Front/back faces
-        addPoints(selectedBlock, LogicalIndex{0, 0, -1}, ti.bottom);
-        addPoints(selectedBlock, LogicalIndex{0, 0, 1}, ti.top);
+        addPoints(selectedBlock, LogicalIndex{{0, 0, -1}}, ti.back);
+        addPoints(selectedBlock, LogicalIndex{{0, 0, 1}}, ti.front);
 
         // Edges
-        addPoints(selectedBlock, LogicalIndex{-1, 0, -1}, ti.edges[0]);
-        addPoints(selectedBlock, LogicalIndex{1, 0, -1}, ti.edges[1]);
-        addPoints(selectedBlock, LogicalIndex{0, -1, -1}, ti.edges[2]);
-        addPoints(selectedBlock, LogicalIndex{0, 1, -1}, ti.edges[3]);  
-        addPoints(selectedBlock, LogicalIndex{-1, 0, 1}, ti.edges[4]);
-        addPoints(selectedBlock, LogicalIndex{1, 0, 1}, ti.edges[5]);
-        addPoints(selectedBlock, LogicalIndex{0, -1, 1}, ti.edges[6]);
-        addPoints(selectedBlock, LogicalIndex{0, 1, 1}, ti.edges[7]);
-        addPoints(selectedBlock, LogicalIndex{-1, -1, 0}, ti.edges[8]);
-        addPoints(selectedBlock, LogicalIndex{-1, 1, 0}, ti.edges[9]);
-        addPoints(selectedBlock, LogicalIndex{1, -1, 0}, ti.edges[10]);
-        addPoints(selectedBlock, LogicalIndex{1, 1, 0}, ti.edges[11]);  
+        addPoints(selectedBlock, LogicalIndex{{-1, 0, -1}}, ti.edges[0]);
+        addPoints(selectedBlock, LogicalIndex{{1, 0, -1}}, ti.edges[1]);
+        addPoints(selectedBlock, LogicalIndex{{0, -1, -1}}, ti.edges[2]);
+        addPoints(selectedBlock, LogicalIndex{{0, 1, -1}}, ti.edges[3]);  
+        addPoints(selectedBlock, LogicalIndex{{-1, 0, 1}}, ti.edges[4]);
+        addPoints(selectedBlock, LogicalIndex{{1, 0, 1}}, ti.edges[5]);
+        addPoints(selectedBlock, LogicalIndex{{0, -1, 1}}, ti.edges[6]);
+        addPoints(selectedBlock, LogicalIndex{{0, 1, 1}}, ti.edges[7]);
+        addPoints(selectedBlock, LogicalIndex{{-1, -1, 0}}, ti.edges[8]);
+        addPoints(selectedBlock, LogicalIndex{{-1, 1, 0}}, ti.edges[9]);
+        addPoints(selectedBlock, LogicalIndex{{1, -1, 0}}, ti.edges[10]);
+        addPoints(selectedBlock, LogicalIndex{{1, 1, 0}}, ti.edges[11]);  
     }
 
     // Handle corner neighbors
-    addPoints(selectedBlock, LogicalIndex{-1, -1, 0}, ti.corners[0]);
-    addPoints(selectedBlock, LogicalIndex{1, -1, 0}, ti.corners[1]);
-    addPoints(selectedBlock, LogicalIndex{-1, 1, 0}, ti.corners[2]);
-    addPoints(selectedBlock, LogicalIndex{1, 1, 0}, ti.corners[3]);
+    addPoints(selectedBlock, LogicalIndex{{-1, -1, 0}}, ti.corners[0]);
+    addPoints(selectedBlock, LogicalIndex{{1, -1, 0}}, ti.corners[1]);
+    addPoints(selectedBlock, LogicalIndex{{-1, 1, 0}}, ti.corners[2]);
+    addPoints(selectedBlock, LogicalIndex{{1, 1, 0}}, ti.corners[3]);
     if(threeD)
     {
-        addPoints(selectedBlock, LogicalIndex{-1, -1, 1}, ti.corners[4]);
-        addPoints(selectedBlock, LogicalIndex{1, -1, 1}, ti.corners[5]);
-        addPoints(selectedBlock, LogicalIndex{-1, 1, 1}, ti.corners[6]);
-        addPoints(selectedBlock, LogicalIndex{1, 1, 1}, ti.corners[7]);  
+        addPoints(selectedBlock, LogicalIndex{{-1, -1, 1}}, ti.corners[4]);
+        addPoints(selectedBlock, LogicalIndex{{1, -1, 1}}, ti.corners[5]);
+        addPoints(selectedBlock, LogicalIndex{{-1, 1, 1}}, ti.corners[6]);
+        addPoints(selectedBlock, LogicalIndex{{1, 1, 1}}, ti.corners[7]);  
     }
 
     // Make the Conduit adjset.
