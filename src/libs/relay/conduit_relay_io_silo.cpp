@@ -3022,6 +3022,59 @@ void silo_write_field(DBfile *dbfile,
 }
 
 //---------------------------------------------------------------------------//
+// overlink only
+void silo_write_adjset(DBfile *dbfile,
+                       const std::string &adjset_name,
+                       const Node &n_adjset)
+{
+    // TODO how to get this?
+    // placeholder
+    int num_neighboring_doms = 5;
+    
+    // our compound array data that we are saving
+    std::vector<int> dom_neighbor_nums;
+
+    // the first entry is the number of neighboring domains
+    dom_neighbor_nums.push_back(num_neighboring_doms);
+
+    // the following entries are the domain ids of the neighboring domains
+    for (int i = 0; i < num_neighboring_doms; i ++)
+    {
+        // TODO placeholder for now
+        dom_neighbor_nums.push_back(i);
+    }
+
+    std::vector<std::string> elem_name_strings;
+    elem_name_strings.push_back("num_neighbors");
+    elem_name_strings.push_back("neighbor_nums");
+    // package up char ptrs for silo
+    std::vector<const char *> elem_name_ptrs;
+    for (size_t i = 0; i < elem_name_strings.size(); i ++)
+    {
+        elem_name_ptrs.push_back(elem_name_strings[i].c_str());
+    }
+
+    std::vector<int> elemlengths;
+    elemlengths.push_back(1);
+    elemlengths.push_back(num_neighboring_doms);
+
+    const int nelems = 2;
+    const int nvalues = num_neighboring_doms + 1;
+
+    DBPutCompoundarray(dbfile, // dbfile
+                       "DOMAIN_NEIGHBOR_NUMS", // name
+                       elem_name_ptrs.data(), // elemnames
+                       elemlengths.data(), // elemlengths
+                       nelems, // nelems
+                       static_cast<void *>(dom_neighbor_nums.data()), // values
+                       nvalues, // nvalues
+                       DB_INT, // datatype
+                       NULL); // optlist
+
+    // TODO is this also where I include the communications lists for neighboring domains?
+}
+
+//---------------------------------------------------------------------------//
 int
 assign_coords_ptrs(void *coords_ptrs[3],
                    int ndims,
@@ -3790,7 +3843,7 @@ void silo_mesh_write(const Node &mesh_domain,
                      const int local_domain_index,
                      const uint64 global_domain_id,
                      Node &local_type_domain_info,
-                     const bool overlink)
+                     const bool write_overlink)
 {
     int silo_error = 0;
     char silo_prev_dir[256];
@@ -3813,7 +3866,7 @@ void silo_mesh_write(const Node &mesh_domain,
 
     Node n_mesh_info;
 
-    if (overlink)
+    if (write_overlink)
     {
         if (mesh_domain["topologies"].has_child(ovl_topo_name))
         {
@@ -3821,7 +3874,7 @@ void silo_mesh_write(const Node &mesh_domain,
             silo_write_topo(mesh_domain,
                             ovl_topo_name,
                             n_mesh_info,
-                            overlink,
+                            write_overlink,
                             local_num_domains,
                             local_domain_index,
                             global_domain_id,
@@ -3840,7 +3893,7 @@ void silo_mesh_write(const Node &mesh_domain,
             silo_write_topo(mesh_domain,
                             topo_name,
                             n_mesh_info,
-                            overlink,
+                            write_overlink,
                             local_num_domains,
                             local_domain_index,
                             global_domain_id,
@@ -3871,12 +3924,12 @@ void silo_mesh_write(const Node &mesh_domain,
                 << "For topo " << topo_name << ". This is ambiguous in silo.");
             topo_names.insert(topo_name);
             
-            if (! overlink || topo_name == ovl_topo_name)
+            if (! write_overlink || topo_name == ovl_topo_name)
             {
                 silo_write_matset(dbfile,
                                   matset_name,
                                   n_matset,
-                                  overlink,
+                                  write_overlink,
                                   local_num_domains,
                                   local_domain_index,
                                   global_domain_id,
@@ -3893,18 +3946,36 @@ void silo_mesh_write(const Node &mesh_domain,
         {
             const Node &n_var = itr.next();
             const std::string var_name = itr.name();
-            if (! overlink || n_var["topology"].as_string() == ovl_topo_name)
+            if (! write_overlink || n_var["topology"].as_string() == ovl_topo_name)
             {
                 silo_write_field(dbfile,
                                  var_name,
                                  n_var,
                                  mesh_domain,
-                                 overlink,
+                                 write_overlink,
                                  local_num_domains,
                                  local_domain_index,
                                  global_domain_id,
                                  local_type_domain_info,
                                  n_mesh_info);
+            }
+        }
+    }
+
+    // we only write adjacency set information if we are writing overlink
+    if (write_overlink)
+    {
+        if (mesh_domain.has_path("adjsets"))
+        {
+            auto itr = mesh_domain["adjsets"].children();
+            while (itr.has_next())
+            {
+                const Node &n_adjset = itr.next();
+                const std::string adjset_name = itr.name();
+                if (n_adjset["topology"].as_string() == ovl_topo_name)
+                {
+                    silo_write_adjset(dbfile, adjset_name, n_adjset);
+                }
             }
         }
     }
