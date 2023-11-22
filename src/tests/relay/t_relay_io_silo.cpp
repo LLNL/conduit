@@ -361,7 +361,6 @@ TEST(conduit_relay_io_silo, round_trip_venn)
             {
                 size = "small";
                 nx = ny = 4;
-                
             }
             else
             {

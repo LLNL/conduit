@@ -3027,6 +3027,10 @@ void silo_write_adjset(DBfile *dbfile,
                        const std::string &adjset_name,
                        const Node &n_adjset)
 {
+    // 
+    // DOMAIN NEIGHBOR NUMS
+    // 
+
     // TODO how to get this?
     // placeholder
     int num_neighboring_doms = 5;
@@ -3072,6 +3076,39 @@ void silo_write_adjset(DBfile *dbfile,
                        NULL); // optlist
 
     // TODO is this also where I include the communications lists for neighboring domains?
+
+    // 
+    // COMMUNICATIONS LISTS FOR NEIGHBORING DOMAINS
+    // 
+
+    for (int i = 0; i < num_neighboring_doms; i ++)
+    {
+        std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(i);
+
+        char const *elemname = "shared_nodes";
+        const int nelems_comm = 1;
+
+        std::vector<int> shared_nodes;
+
+        // TODO
+        // PLACEHOLDER until I know what is happening
+        int number_of_shared_nodes = 10; // ???
+        for (int i = 0; i < number_of_shared_nodes; i ++)
+        {
+            shared_nodes.push_back(i);
+        }
+        // END PLACEHOLDER
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           arr_name.c_str(), // name
+                           &elemname, // elemnames
+                           &number_of_shared_nodes, // elemlengths
+                           nelems_comm, // nelems
+                           static_cast<void *>(shared_nodes.data()), // values
+                           number_of_shared_nodes, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+    }
 }
 
 //---------------------------------------------------------------------------//
