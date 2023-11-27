@@ -3978,6 +3978,24 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
         });
     };
 
+    // Make a version of the input vector that filters out duplicates but
+    // otherwise preserves order.
+    auto makeUnique = [](const std::vector<conduit::index_t> &ids)
+    {
+        std::set<conduit::index_t> unique;
+        std::vector<conduit::index_t> uniqueIds;
+        uniqueIds.reserve(ids.size());
+        for(const auto &id : ids)
+        {
+            if(unique.find(id) == unique.end())
+            {
+                unique.insert(id);
+                uniqueIds.push_back(id);
+            }
+        }
+        return uniqueIds;
+    };
+
     // Traverse the selectedBlock to pull out faces. In 2D, these are edges.
     addPoints(selectedBlock, LogicalIndex{{-1, 0, 0}}, ti.left);
     addPoints(selectedBlock, LogicalIndex{{1, 0, 0}}, ti.right);
@@ -4031,7 +4049,8 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
             const std::string name = adjset_name(domainId, it->first);
             conduit::Node &group = groups[name];
             group["neighbors"] = it->first;
-            group["values"].set(it->second);
+            // Add the unique ids
+            group["values"].set(makeUnique(it->second));
         }
     }
 }
