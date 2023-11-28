@@ -3313,22 +3313,26 @@ TopDownTiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_
     // Realize any blocks we're asking for that might be hilbert blocks.
     realizeHilbertBlocks(blocks, m_selectedDomains);
 
-    // Build the domains. We first expand the domain and loko for its neighbors
+    // Build the domains. We first expand the domain and look for its neighbors
     // so we know how the selected domain is connected.
     if(m_selectedDomains.empty())
     {
+        const bool multi = (blocks.size() > 1);
         for(size_t bi = 0; bi < blocks.size(); bi++)
         {
             auto selectedBlock = neighbors(blocks, bi, dims[2] > 1);
-            generateDomain(nx, ny, nz, res.append(), selectedBlock, static_cast<IndexType>(bi), options);
+            generateDomain(nx, ny, nz, multi ? res.append() : res, selectedBlock,
+                           static_cast<IndexType>(bi), options);
         }
     }
     else
     {
+        const bool multi = (m_selectedDomains.size() > 1);
         for(const auto bi : m_selectedDomains)
         {
             auto selectedBlock = neighbors(blocks, bi, dims[2] > 1);
-            generateDomain(nx, ny, nz, res.append(), selectedBlock, static_cast<IndexType>(bi), options);
+            generateDomain(nx, ny, nz, multi ? res.append() : res, selectedBlock,
+                           static_cast<IndexType>(bi), options);
         }
     }
 }
