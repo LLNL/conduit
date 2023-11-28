@@ -958,6 +958,23 @@ namespace adjset
                                         query::PointQuery &PQ,
                                         query::MatchQuery &MQ,
                                         bool checkMultiDomain);
+
+    /**
+     @brief Traverse the adjset groups and make sure that the points are the same
+            on both sides of the interface. This is more restrictive than just
+            checking whether they exist on the other domain. Now, they have to be
+            the same point.
+
+     @param mesh A node that contains one or more mesh domains.
+     @param adjsetName The name of the adjset to check. This must be a pairwise adjset.
+     @param[out] info Information about the failed adjset comparison.
+
+     @return True if the adjset are the same pointwise across each interface;
+             False otherwise.
+     */
+     bool CONDUIT_BLUEPRINT_API compare_pointwise(conduit::Node &mesh,
+                                                  const std::string &adjsetName,
+                                                  conduit::Node &info);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --

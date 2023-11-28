@@ -637,7 +637,8 @@ adjset::validate(const Node &doms,
 
 //-----------------------------------------------------------------------------
 bool
-adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MPI_Comm comm)
+adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName,
+    conduit::Node &info, MPI_Comm comm)
 {
     namespace bputils = conduit::blueprint::mesh::utils;
     std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
@@ -730,9 +731,16 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MP
             different = 0;
             for(int i = 0; i < mi; i++)
             {
-                Node info;
                 bool d = localMesh[i].diff(remoteMesh[i], info, 1.e-8);
                 different = different.to_int() + (d ? 1 : 0);
+
+                // Add some diagnostic info.
+                if(d)
+                {
+                    info["adjset"] = adjsetName;
+                    info["group"] = groupName;
+                    break;
+                }
             }
             relay::mpi::sum_all_reduce(different, reducedDiff, comm);
             if(reducedDiff.to_int() > 0)

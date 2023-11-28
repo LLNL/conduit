@@ -212,7 +212,17 @@ main(int argc, char *argv[])
             bool res = conduit::blueprint::mesh::utils::adjset::validate(root, adjsetName, info);
             if(res)
             {
-                std::cout << msg2 << adjsetName << "... PASS" << std::endl;
+                res = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, adjsetName, info);
+                if(res)
+                {
+                    std::cout << msg2 << adjsetName << "... PASS" << std::endl;
+                }
+                else
+                {
+                    std::cout << msg2 << adjsetName << "... FAIL: The adjset points have different orders" << std::endl;
+                    info.print();
+                    err = true;
+                }
             }
             else
             {

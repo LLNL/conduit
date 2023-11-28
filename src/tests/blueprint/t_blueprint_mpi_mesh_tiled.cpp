@@ -202,7 +202,8 @@ test_tiled_adjsets(const int dims[3], const std::string &testName)
 #endif
 
             // Check that its adjset points are the same along the edges.
-            bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "mesh_adjset", MPI_COMM_WORLD);
+            conduit::Node info;
+            bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "mesh_adjset", info, MPI_COMM_WORLD);
             if(!same)
             {
                 mesh.print();
@@ -210,7 +211,7 @@ test_tiled_adjsets(const int dims[3], const std::string &testName)
             EXPECT_TRUE(same);
 
             // Check that its adjset points are the same along the edges.
-            same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", MPI_COMM_WORLD);
+            same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", info, MPI_COMM_WORLD);
             if(!same)
             {
                 mesh.print();
@@ -277,7 +278,8 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
 #endif
 
         // Check that its adjset points are the same along the edges.
-        bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", MPI_COMM_WORLD);
+        conduit::Node info;
+        bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", info, MPI_COMM_WORLD);
         EXPECT_TRUE(same);
     }
 }

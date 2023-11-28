@@ -3045,6 +3045,83 @@ adjset::validate(const conduit::Node &doms,
 }
 
 //-----------------------------------------------------------------------------
+bool
+adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, conduit::Node &info)
+{
+    namespace bputils = conduit::blueprint::mesh::utils;
+    std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
+
+    // Determine total number of domains.
+    int maxDomains = domains.size();
+
+    // Iterate over each of the possible adjset relationships. Not all of these
+    // will have adjset groups.
+    for(int d0 = 0; d0 < maxDomains; d0++)
+    {
+        for(int d1 = d0 + 1; d1 < maxDomains; d1++)
+        {
+            // make the adjset group name.
+            std::stringstream ss;
+            ss << "group_" << d0 << "_" << d1;
+            std::string groupName(ss.str());
+
+            // There are up to 2 meshes for the shared boundary.
+            conduit::Node mesh[2];
+            int mi = 0;            
+            for(auto dom_ptr : domains)
+            {
+                Node &domain = *dom_ptr;
+
+                // If the domain has the adjset, make a point mesh of its points
+                // that we can send to the neighbor.
+                std::string key("adjsets/" + adjsetName + "/groups/" + groupName + "/values");
+                if(domain.has_path(key))
+                {
+                    // Get the topology that the adjset wants.
+                    std::string tkey("adjsets/" + adjsetName + "/topology");
+                    std::string topoName = domain.fetch_existing(tkey).as_string();
+                    const Node &topo = domain.fetch_existing("topologies/" + topoName);
+
+                    // Get the group values and add them as points to the topo builder
+                    // so we pull out a point mesh.
+                    std::string key("adjsets/" + adjsetName + "/groups/" + groupName + "/values");
+                    const Node &n_values = domain.fetch_existing(key);
+                    const auto values = n_values.as_index_t_accessor();
+                    bputils::topology::TopologyBuilder B(topo);
+                    for(index_t i = 0; i < values.number_of_elements(); i++)
+                    {
+                        index_t ptid = values[i];
+                        B.add(&ptid, 1);
+                    }
+
+                    // Make the local point mesh.
+                    B.execute(mesh[mi], "vertex");
+
+                    mi++;
+                }
+            }
+
+            // Make sure the nodes are not different.
+            bool different = false;
+            if(mi == 2)
+            {
+                different = mesh[0].diff(mesh[1], info, 1.e-8);
+
+                // Add some diagnostic info.
+                if(different)
+                {
+                    info["adjset"] = adjsetName;
+                    info["group"] = groupName;
+                }
+            }
+            if(different)
+                return false;
+        }
+    }
+    return true;
+}
+
+//-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 
