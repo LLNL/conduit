@@ -3000,21 +3000,27 @@ void highlightNeighborZones(Block &obj, IndexType n, bool threeD)
 /**
  @brief Return a Block whose image has neighbors painted into it.
  */
-// Returns the number of neighbors in the Block.
-Block neighbors(const std::vector<Block> &blocks, size_t BlockId, bool threeD)
+Block neighbors(const std::vector<Block> &blocks, size_t blockId, bool threeD)
 {
     const int neighborLayers = 1;
 
     // Expand the selected Block by a layer, also creating its image.
-    Block selectedBlock = blocks[BlockId].expand(neighborLayers, threeD);
-
+    Block selectedBlock = blocks[blockId].expand(neighborLayers, threeD);
+//if(blockId == 0)
+//{
+//std::cout << blocks[blockId] << ", image=" << blocks[blockId].image << std::endl;
+//std::cout << selectedBlock << ", image=" << selectedBlock.image << std::endl;
+//}
     // Iterate over the zones in the selected Block and highlight the zones that
     // should count as neighbor zones. This handles non-brick-like blocks.
     highlightNeighborZones(selectedBlock, neighborLayers, threeD);
-
+//if(blockId == 0)
+//{
+//std::cout << selectedBlock << ", image=" << selectedBlock.image << std::endl;
+//}
     for(size_t bi = 0; bi < blocks.size(); bi++)
     {
-        if(bi != BlockId)
+        if(bi != blockId)
         {
             // Get a list of IJK indices in global coordinates that are the intersecting zones.
             auto zids = selectedBlock.intersect(blocks[bi]);
@@ -3031,7 +3037,10 @@ Block neighbors(const std::vector<Block> &blocks, size_t BlockId, bool threeD)
             }
         }
     }
-
+//if(blockId == 0)
+//{
+//std::cout << selectedBlock << ", image=" << selectedBlock.image << std::endl;
+//}
     return selectedBlock;
 }
 
@@ -3247,7 +3256,8 @@ private:
 };
 
 //---------------------------------------------------------------------------
-TopDownTiler::TopDownTiler() : TilerBase(), m_numDomains(1), m_curveSplitting(true), m_selectedDomains()
+// FIXME: turn m_curveSplitting back on
+TopDownTiler::TopDownTiler() : TilerBase(), m_numDomains(1), m_curveSplitting(false), m_selectedDomains()
 {
 }
 
@@ -3938,6 +3948,9 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
     };
 
     // This map keeps track of the neighbor values. The key is the neighbor domainId.
+    // The order vector keeps track of the order in which the neighbors were added
+    // so we can emit the groups in that order.
+    std::vector<conduit::index_t> neighborIds;
     std::map<conduit::index_t, std::vector<conduit::index_t>> neighborValues;
 
     // Iterate over the block and if there is a neighbor in the supplied offset
@@ -3962,6 +3975,7 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
                     auto it = neighborValues.find(neighborId);
                     if(it == neighborValues.end())
                     {
+                        neighborIds.push_back(neighborId);
                         neighborValues[neighborId] = std::vector<conduit::index_t>();
                         it = neighborValues.find(neighborId);
                         size_t sizeGuess = b.numZones() / 6;
@@ -3970,8 +3984,8 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
 
                     // Get relevant points from the tile.
                     const auto local = LogicalIndex{{index[0] - b.start[0],
-                                                    index[1] - b.start[1],
-                                                    index[2] - b.start[2]}};
+                                                     index[1] - b.start[1],
+                                                     index[2] - b.start[2]}};
                     const auto localIndex = b.IJKToIndex(local);
                     const auto ptids = tiles[localIndex].getPointIds(srcIds);
                     // Add the points to the values.
@@ -4048,8 +4062,9 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
         adjset["association"] = "vertex";
         adjset["topology"] = meshName;
         conduit::Node &groups = adjset["groups"];
-        for(auto it = neighborValues.begin(); it != neighborValues.end(); it++)
+        for(const auto id : neighborIds)
         {
+            const auto it = neighborValues.find(id);
             const std::string name = adjset_name(domainId, it->first);
             conduit::Node &group = groups[name];
             group["neighbors"] = it->first;
