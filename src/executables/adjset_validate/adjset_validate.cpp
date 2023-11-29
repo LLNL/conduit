@@ -212,7 +212,14 @@ main(int argc, char *argv[])
             bool res = conduit::blueprint::mesh::utils::adjset::validate(root, adjsetName, info);
             if(res)
             {
-                res = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, adjsetName, info);
+                // If the adjset is vertex associated then compare the points in
+                // it to make sure that they are the same on each side of the boundary.
+                bool vertex = false;
+                if(adjsets[i]->has_path("association"))
+                    vertex = adjsets[i]->fetch_existing("association").as_string() == "vertex";
+                if(vertex)
+                    res = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, adjsetName, info);
+
                 if(res)
                 {
                     std::cout << msg2 << adjsetName << "... PASS" << std::endl;
