@@ -173,6 +173,9 @@ protected:
     /// Return tile height
     double height() const { return m_height; }
 
+    /// Make the adjset name for 2 domains.
+    std::string adjset_name(conduit::index_t d0, conduit::index_t d1) const;
+
     /// Turn a node into an int vector.
     std::vector<conduit::index_t> toIndexVector(const conduit::Node &n) const
     {
@@ -495,6 +498,16 @@ TilerBase::initialize(const conduit::Node &t)
         const auto &yc = getCoordset().fetch_existing("values/y").as_double_array();
         m_height = yc.max() - yc.min();
     }
+}
+
+//---------------------------------------------------------------------------
+std::string TilerBase::adjset_name(conduit::index_t d0, conduit::index_t d1) const
+{
+    if(d0 > d1)
+        std::swap(d0, d1);
+    std::stringstream ss;
+    ss << "domain_" << d0 << "_" << d1;
+    return ss.str();
 }
 
 //---------------------------------------------------------------------------
@@ -1349,15 +1362,6 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                  const conduit::Node &options,
                  conduit::Node &out) const
 {
-    // Make the adjset name for 2 domains.
-    auto adjset_name = [](conduit::index_t d0, conduit::index_t d1) {
-        if(d0 > d1)
-            std::swap(d0, d1);
-        std::stringstream ss;
-        ss << "domain_" << d0 << "_" << d1;
-        return ss.str();
-    };
-
     // Build up unique points, given a list of points. Use unique and ptvec by capture.
     std::set<conduit::index_t> unique;
     std::vector<conduit::index_t> ptvec;
@@ -3256,8 +3260,7 @@ private:
 };
 
 //---------------------------------------------------------------------------
-// FIXME: turn m_curveSplitting back on
-TopDownTiler::TopDownTiler() : TilerBase(), m_numDomains(1), m_curveSplitting(false), m_selectedDomains()
+TopDownTiler::TopDownTiler() : TilerBase(), m_numDomains(1), m_curveSplitting(true), m_selectedDomains()
 {
 }
 
@@ -3938,59 +3941,100 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
                         conduit::index_t domainId,
                         conduit::Node &out) const
 {
-    // Make the adjset name for 2 domains.
-    auto adjset_name = [](conduit::index_t d0, conduit::index_t d1) {
-        if(d0 > d1)
-            std::swap(d0, d1);
-        std::stringstream ss;
-        ss << "domain_" << d0 << "_" << d1;
-        return ss.str();
-    };
-
-    // This map keeps track of the neighbor values. The key is the neighbor domainId.
-    // The order vector keeps track of the order in which the neighbors were added
-    // so we can emit the groups in that order.
-    std::vector<conduit::index_t> neighborIds;
-    std::map<conduit::index_t, std::vector<conduit::index_t>> neighborValues;
-
     // Iterate over the block and if there is a neighbor in the supplied offset
     // direction, pull out a subset of the tile's nodes and append them to
     // the neighbor values.
-    auto addPoints = [&](const Block &b, const LogicalIndex &offset, const std::vector<conduit::index_t> &srcIds)
+    auto addPoints = [&](const Block &b,
+                         std::map<conduit::index_t, std::vector<conduit::index_t>> &neighborValues,
+                         const LogicalIndex &offset,
+                         const std::vector<conduit::index_t> &srcIds)
     {
         b.iterate([&](const LogicalIndex &index, IndexType zonetype) {
             if(zonetype == Block::Self)
             {
-                // Get the zone that is next to this one in the offset direction.
-                const auto localPrev = LogicalIndex{{index[0] - b.start[0] + offset[0],
-                                                     index[1] - b.start[1] + offset[1],
-                                                     index[2] - b.start[2] + offset[2]}};
-                const auto prevIndex = b.IJKToIndex(localPrev);
-                // Check whether there is a neighbor in the offset direction.
-                conduit::index_t neighborId = b.image[prevIndex];
-                if(neighborId > Block::InvalidDomainId)
+                // Use the offset to define a block that includes the current
+                // index and the offset zone. Count how many of the zones in that
+                // block are either self or a neighbor.
+                int nk = 1 + ((offset[2] < 0) ? (-offset[2]) : offset[2]);
+                int nj = 1 + ((offset[1] < 0) ? (-offset[1]) : offset[1]);
+                int ni = 1 + ((offset[0] < 0) ? (-offset[0]) : offset[0]);
+#ifdef DEBUG_PRINT
+if(domainId == 0)
+{
+    std::cout << "n={" << ni << ", " << nj << ", " << nk
+              << "}, index=" << index
+              << ", offset=" << offset
+              << ", ids={";
+}
+#endif
+                int n = nk * nj * ni;
+                int count = 0;
+                for(int kk = 0; kk < nk; kk++)
+                for(int jj = 0; jj < nj; jj++)
+                for(int ii = 0; ii < ni; ii++)
                 {
-                    // Get the neighbor values that match the domain pair. If we
-                    // can't get them, create them.
-                    auto it = neighborValues.find(neighborId);
-                    if(it == neighborValues.end())
+                    // Get the zone that is next to this one in the offset direction.
+                    const auto local = LogicalIndex{{index[0] - b.start[0] + ii * offset[0],
+                                                     index[1] - b.start[1] + jj * offset[1],
+                                                     index[2] - b.start[2] + kk * offset[2]}};
+                    const auto index = b.IJKToIndex(local);
+                    // Check whether there is a neighbor in the offset direction.
+                    conduit::index_t id = b.image[index];
+                    if(id > Block::InvalidDomainId)
                     {
-                        neighborIds.push_back(neighborId);
-                        neighborValues[neighborId] = std::vector<conduit::index_t>();
-                        it = neighborValues.find(neighborId);
-                        size_t sizeGuess = b.numZones() / 6;
-                        it->second.reserve(sizeGuess);
+#ifdef DEBUG_PRINT
+if(domainId == 0)
+{
+    std::cout << id << ", ";
+}
+#endif
+                        count++;
                     }
+                }
+#ifdef DEBUG_PRINT
+if(domainId == 0)
+{
+    std::cout << "}, count=" << count << std::endl;
+}
+#endif
+                // The offset zone is a keeper.
+                if(count == 1 || count == n - 1)
+                {
+                    // Get the neighborId at the offset zone
+                    const auto interest = LogicalIndex{{index[0] - b.start[0] + offset[0],
+                                                        index[1] - b.start[1] + offset[1],
+                                                        index[2] - b.start[2] + offset[2]}};
+                    const auto interestIndex = b.IJKToIndex(interest);
+                    conduit::index_t neighborId = b.image[interestIndex];
+                    if(neighborId > Block::InvalidDomainId)
+                    {
+                        // Get the neighbor values that match the neighbor. If we
+                        // can't get them, create them.
+                        auto it = neighborValues.find(neighborId);
+                        if(it == neighborValues.end())
+                        {
+#ifdef DEBUG_PRINT
+if(domainId == 0)
+{
+    std::cout << "For offset " << offset << ", found new neighbor " << neighborId << std::endl;
+}
+#endif
+                            neighborValues[neighborId] = std::vector<conduit::index_t>();
+                            it = neighborValues.find(neighborId);
+                            size_t sizeGuess = b.numZones() / 6;
+                            it->second.reserve(sizeGuess);
+                        }
 
-                    // Get relevant points from the tile.
-                    const auto local = LogicalIndex{{index[0] - b.start[0],
-                                                     index[1] - b.start[1],
-                                                     index[2] - b.start[2]}};
-                    const auto localIndex = b.IJKToIndex(local);
-                    const auto ptids = tiles[localIndex].getPointIds(srcIds);
-                    // Add the points to the values.
-                    for(const auto &id : ptids)
-                        it->second.push_back(id);
+                        // Get relevant points from the current tile at index.
+                        const auto local = LogicalIndex{{index[0] - b.start[0],
+                                                         index[1] - b.start[1],
+                                                         index[2] - b.start[2]}};
+                        const auto localIndex = b.IJKToIndex(local);
+                        const auto ptids = tiles[localIndex].getPointIds(srcIds);
+                        // Add the points to the values.
+                        for(const auto &id : ptids)
+                            it->second.push_back(id);
+                    }
                 }
             }
         });
@@ -4014,62 +4058,74 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
         return uniqueIds;
     };
 
-    // Traverse the selectedBlock to pull out faces. In 2D, these are edges.
-    addPoints(selectedBlock, LogicalIndex{{-1, 0, 0}}, ti.left);
-    addPoints(selectedBlock, LogicalIndex{{1, 0, 0}}, ti.right);
-    addPoints(selectedBlock, LogicalIndex{{0, -1, 0}}, ti.bottom);
-    addPoints(selectedBlock, LogicalIndex{{0, 1, 0}}, ti.top);
+    // NOTE: We make the adjsets in this order so they are compatible with
+    //       generate_corners().
+    std::map<conduit::index_t, std::vector<conduit::index_t>> neighborValues[3];
 
+    // Corners
+    IndexType z0 = threeD ? -1 : 0;
+    IndexType z1 = threeD ? 1 : 0;
+    addPoints(selectedBlock, neighborValues[0], LogicalIndex{{-1, -1, z0}}, ti.corners[0]);
+    addPoints(selectedBlock, neighborValues[0], LogicalIndex{{1, -1, z0}}, ti.corners[1]);
+    addPoints(selectedBlock, neighborValues[0], LogicalIndex{{-1, 1, z0}}, ti.corners[2]);
+    addPoints(selectedBlock, neighborValues[0], LogicalIndex{{1, 1, z0}}, ti.corners[3]);
+    if(threeD)
+    {
+        addPoints(selectedBlock, neighborValues[0], LogicalIndex{{-1, -1, z1}}, ti.corners[4]);
+        addPoints(selectedBlock, neighborValues[0], LogicalIndex{{1, -1, z1}}, ti.corners[5]);
+        addPoints(selectedBlock, neighborValues[0], LogicalIndex{{-1, 1, z1}}, ti.corners[6]);
+        addPoints(selectedBlock, neighborValues[0], LogicalIndex{{1, 1, z1}}, ti.corners[7]);  
+    }
+
+    // Edges
+    if(threeD)
+    {
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{-1, 0, -1}}, ti.edges[0]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{1, 0, -1}}, ti.edges[1]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{0, -1, -1}}, ti.edges[2]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{0, 1, -1}}, ti.edges[3]);  
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{-1, 0, 1}}, ti.edges[4]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{1, 0, 1}}, ti.edges[5]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{0, -1, 1}}, ti.edges[6]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{0, 1, 1}}, ti.edges[7]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{-1, -1, 0}}, ti.edges[8]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{-1, 1, 0}}, ti.edges[9]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{1, -1, 0}}, ti.edges[10]);
+        addPoints(selectedBlock, neighborValues[1], LogicalIndex{{1, 1, 0}}, ti.edges[11]);  
+    }
+
+    // Faces (or edges in 2D)
+    addPoints(selectedBlock, neighborValues[2], LogicalIndex{{-1, 0, 0}}, ti.left);
+    addPoints(selectedBlock, neighborValues[2], LogicalIndex{{1, 0, 0}}, ti.right);
+    addPoints(selectedBlock, neighborValues[2], LogicalIndex{{0, -1, 0}}, ti.bottom);
+    addPoints(selectedBlock, neighborValues[2], LogicalIndex{{0, 1, 0}}, ti.top);
     if(threeD)
     {
         // Front/back faces
-        addPoints(selectedBlock, LogicalIndex{{0, 0, -1}}, ti.back);
-        addPoints(selectedBlock, LogicalIndex{{0, 0, 1}}, ti.front);
-
-        // Edges
-        addPoints(selectedBlock, LogicalIndex{{-1, 0, -1}}, ti.edges[0]);
-        addPoints(selectedBlock, LogicalIndex{{1, 0, -1}}, ti.edges[1]);
-        addPoints(selectedBlock, LogicalIndex{{0, -1, -1}}, ti.edges[2]);
-        addPoints(selectedBlock, LogicalIndex{{0, 1, -1}}, ti.edges[3]);  
-        addPoints(selectedBlock, LogicalIndex{{-1, 0, 1}}, ti.edges[4]);
-        addPoints(selectedBlock, LogicalIndex{{1, 0, 1}}, ti.edges[5]);
-        addPoints(selectedBlock, LogicalIndex{{0, -1, 1}}, ti.edges[6]);
-        addPoints(selectedBlock, LogicalIndex{{0, 1, 1}}, ti.edges[7]);
-        addPoints(selectedBlock, LogicalIndex{{-1, -1, 0}}, ti.edges[8]);
-        addPoints(selectedBlock, LogicalIndex{{-1, 1, 0}}, ti.edges[9]);
-        addPoints(selectedBlock, LogicalIndex{{1, -1, 0}}, ti.edges[10]);
-        addPoints(selectedBlock, LogicalIndex{{1, 1, 0}}, ti.edges[11]);  
-    }
-
-    // Handle corner neighbors
-    addPoints(selectedBlock, LogicalIndex{{-1, -1, 0}}, ti.corners[0]);
-    addPoints(selectedBlock, LogicalIndex{{1, -1, 0}}, ti.corners[1]);
-    addPoints(selectedBlock, LogicalIndex{{-1, 1, 0}}, ti.corners[2]);
-    addPoints(selectedBlock, LogicalIndex{{1, 1, 0}}, ti.corners[3]);
-    if(threeD)
-    {
-        addPoints(selectedBlock, LogicalIndex{{-1, -1, 1}}, ti.corners[4]);
-        addPoints(selectedBlock, LogicalIndex{{1, -1, 1}}, ti.corners[5]);
-        addPoints(selectedBlock, LogicalIndex{{-1, 1, 1}}, ti.corners[6]);
-        addPoints(selectedBlock, LogicalIndex{{1, 1, 1}}, ti.corners[7]);  
+        addPoints(selectedBlock, neighborValues[2], LogicalIndex{{0, 0, -1}}, ti.back);
+        addPoints(selectedBlock, neighborValues[2], LogicalIndex{{0, 0, 1}}, ti.front);
     }
 
     // Make the Conduit adjset.
-    if(!neighborValues.empty())
+    if(!neighborValues[0].empty() || !neighborValues[1].empty() || !neighborValues[2].empty())
     {
         // Make the top level adjset nodes.
         conduit::Node &adjset = out["adjsets/" + meshName + "_adjset"];
         adjset["association"] = "vertex";
         adjset["topology"] = meshName;
         conduit::Node &groups = adjset["groups"];
-        for(const auto id : neighborIds)
+        for(int ni = 0; ni < 3; ni++)
         {
-            const auto it = neighborValues.find(id);
-            const std::string name = adjset_name(domainId, it->first);
-            conduit::Node &group = groups[name];
-            group["neighbors"] = it->first;
-            // Add the unique ids
-            group["values"].set(makeUnique(it->second));
+//if(domainId == 0) std::cout << "group " << ni << std::endl;
+            for(auto it = neighborValues[ni].begin(); it != neighborValues[ni].end(); it++)
+            {
+                const std::string name = adjset_name(domainId, it->first);
+//if(domainId == 0) std::cout << "  " << name  << ": " << it->second << std::endl;
+                conduit::Node &group = groups[name];
+                group["neighbors"] = it->first;
+                // Add the unique ids
+                group["values"].set(makeUnique(it->second));
+            }
         }
     }
 }
