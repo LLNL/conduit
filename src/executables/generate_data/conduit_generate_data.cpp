@@ -19,6 +19,7 @@
 #include <conduit_relay_io.hpp>
 
 #ifdef CONDUIT_PARALLEL
+#include <conduit_blueprint_mpi.hpp>
 #include <conduit_relay_mpi_io_blueprint.hpp>
 #include <mpi.h>
 #else
@@ -59,6 +60,10 @@ public:
     {
         return false;
     }
+
+    virtual std::string meshName() const = 0;
+    virtual std::string adjsetName() const = 0;
+
 protected:
     int dims[3]{0,0,0};
     int domains[3]{1,1,1};
@@ -101,6 +106,9 @@ public:
     {
         return true;
     }
+
+    virtual std::string meshName() const override { return "mesh"; }
+    virtual std::string adjsetName() const override { return "mesh_adjset"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -114,6 +122,9 @@ public:
 
         // TODO: Use domain,domains to adjust coordinates to get them to line up nicely.
     }
+
+    virtual std::string meshName() const override { return "mesh"; }
+    virtual std::string adjsetName() const override { return "adjset"; }
 };
 
 //-----------------------------------------------------------------------------
@@ -123,7 +134,7 @@ printUsage(const char *exeName)
     std::cout << "Usage: " << exeName << "[-dims x,y,z] [-domains x,y,z] [-tile]\n"
               << "   [-braid] [-output fileroot] [-protocol name] [-meshtype type]\n"
               << "   [-tiledef filename] [-extents x0,x1,y0,y1[,z0,z1]]\n"
-              << "   [-select a,...] [-curvesplit on|off] [-help]\n";
+              << "   [-select a,...] [-curvesplit on|off] [-verify] [-corners] [-help]\n";
     std::cout << "\n";
     std::cout << "Argument              Description\n";
     std::cout << "===================   ==========================================================\n";
@@ -154,6 +165,10 @@ printUsage(const char *exeName)
     std::cout << "                      domains will be created/saved.\n";
     std::cout << "\n";
     std::cout << "-curvesplit on|off    Turn curve-based splitting on/off in generators that support it.\n";
+    std::cout << "\n";
+    std::cout << "-verify               Whether to verify the mesh after saving.\n";
+    std::cout << "\n";
+    std::cout << "-corners              Whether to generate the corner mesh in addition to the mesh.\n";
     std::cout << "\n";
     std::cout << "-help                 Print the usage and exit.\n";
 }
@@ -189,6 +204,7 @@ main(int argc, char *argv[])
     int dims[3] = {10, 10, 10};
     int domains[3] = {1, 1, 1};
     double extents[6] = {0., 1., 0., 1., 0., 1.};
+    bool verify = false, corners = false;
     conduit::Node n, opts;
     std::unique_ptr<DomainGenerator> g = MAKE_UNIQUE(TiledDomainGenerator);
     std::string meshType("hexs"),meshTypeDefault("hexs"), output("output"), protocol("hdf5");
@@ -279,6 +295,14 @@ main(int argc, char *argv[])
         {
             opts["curveSplitting"] = (strcmp(argv[i + 1], "on") == 0) ? 1 : 0;
             i++;
+        }
+        else if(strcmp(argv[i], "-verify") == 0)
+        {
+            verify = true;
+        }
+        else if(strcmp(argv[i], "-corners") == 0)
+        {
+            corners = true;
         }
         else if(strcmp(argv[i], "-help") == 0 ||
                 strcmp(argv[i], "--help") == 0)
@@ -378,14 +402,58 @@ main(int argc, char *argv[])
         }
     }
 
+    // If we were told to generate derived meshes, do so now.
+    if(corners)
+    {
+        conduit::Node s2d, d2s;
+        std::string src_adjset_name(g->adjsetName());
+        std::string dst_adjset_name("corner_adjset");
+        std::string dst_topo_name("corner_mesh");
+        std::string dst_cset_name("corner_coords");
+#ifdef CONDUIT_PARALLEL
+        conduit::blueprint::mpi::mesh::generate_corners(n,
+                                                        src_adjset_name,
+                                                        dst_adjset_name,
+                                                        dst_topo_name,
+                                                        dst_cset_name,
+                                                        s2d,
+                                                        d2s,
+                                                        MPI_COMM_WORLD);
+#else
+        conduit::blueprint::mesh::generate_corners(n,
+                                                   src_adjset_name,
+                                                   dst_adjset_name,
+                                                   dst_topo_name,
+                                                   dst_cset_name,
+                                                   s2d,
+                                                   d2s);
+#endif
+    }
+
     // Save the output domains.
 #ifdef CONDUIT_PARALLEL
     conduit::relay::mpi::io::blueprint::save_mesh(n, output, protocol, MPI_COMM_WORLD);
-
-    MPI_Finalize();
 #else
     conduit::relay::io::blueprint::save_mesh(n, output, protocol);
 #endif
 
+    // Verify the mesh. We do this AFTER in case there is a hang.
+    if(verify)
+    {
+        conduit::Node info;
+#ifdef CONDUIT_PARALLEL
+        bool passed = conduit::blueprint::mpi::verify("mesh", n, info, MPI_COMM_WORLD);
+        std::cout << rank << ": verify " << (passed ? "PASS" : "FAIL") << std::endl;
+#else
+        bool passed = conduit::blueprint::verify("mesh", n, info);
+        std::cout << "verify " << (passed ? "PASS" : "FAIL") << std::endl;
+#endif
+        if(!passed)
+            info.print();
+    }
+
+#ifdef CONDUIT_PARALLEL
+    MPI_Finalize();
+#endif
     return 0;
 }
