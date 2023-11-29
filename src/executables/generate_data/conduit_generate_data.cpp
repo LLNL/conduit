@@ -134,7 +134,8 @@ printUsage(const char *exeName)
     std::cout << "Usage: " << exeName << "[-dims x,y,z] [-domains x,y,z] [-tile]\n"
               << "   [-braid] [-output fileroot] [-protocol name] [-meshtype type]\n"
               << "   [-tiledef filename] [-extents x0,x1,y0,y1[,z0,z1]]\n"
-              << "   [-select a,...] [-curvesplit on|off] [-verify] [-corners] [-help]\n";
+              << "   [-select a,...] [-curvesplit on|off] [-verify] [-corners] [-faces]\n"
+              << "   [-help]\n";
     std::cout << "\n";
     std::cout << "Argument              Description\n";
     std::cout << "===================   ==========================================================\n";
@@ -170,6 +171,8 @@ printUsage(const char *exeName)
     std::cout << "\n";
     std::cout << "-corners              Whether to generate the corner mesh in addition to the mesh.\n";
     std::cout << "\n";
+    std::cout << "-faces                Whether to generate the face mesh in addition to the mesh.\n";
+    std::cout << "\n";
     std::cout << "-help                 Print the usage and exit.\n";
 }
 
@@ -204,7 +207,7 @@ main(int argc, char *argv[])
     int dims[3] = {10, 10, 10};
     int domains[3] = {1, 1, 1};
     double extents[6] = {0., 1., 0., 1., 0., 1.};
-    bool verify = false, corners = false;
+    bool verify = false, corners = false, faces = false;
     conduit::Node n, opts;
     std::unique_ptr<DomainGenerator> g = MAKE_UNIQUE(TiledDomainGenerator);
     std::string meshType("hexs"),meshTypeDefault("hexs"), output("output"), protocol("hdf5");
@@ -303,6 +306,10 @@ main(int argc, char *argv[])
         else if(strcmp(argv[i], "-corners") == 0)
         {
             corners = true;
+        }
+        else if(strcmp(argv[i], "-faces") == 0)
+        {
+            faces = true;
         }
         else if(strcmp(argv[i], "-help") == 0 ||
                 strcmp(argv[i], "--help") == 0)
@@ -427,6 +434,31 @@ main(int argc, char *argv[])
                                                    dst_cset_name,
                                                    s2d,
                                                    d2s);
+#endif
+    }
+
+    // If we were told to generate derived faces, do so now.
+    if(faces)
+    {
+        conduit::Node s2d, d2s;
+        std::string src_adjset_name(g->adjsetName());
+        std::string dst_adjset_name("face_adjset");
+        std::string dst_topo_name("face_mesh");
+#ifdef CONDUIT_PARALLEL
+        conduit::blueprint::mpi::mesh::generate_faces(n,
+                                                      src_adjset_name,
+                                                      dst_adjset_name,
+                                                      dst_topo_name,
+                                                      s2d,
+                                                      d2s,
+                                                      MPI_COMM_WORLD);
+#else
+        conduit::blueprint::mesh::generate_faces(n,
+                                                 src_adjset_name,
+                                                 dst_adjset_name,
+                                                 dst_topo_name,
+                                                 s2d,
+                                                 d2s);
 #endif
     }
 
