@@ -4550,14 +4550,12 @@ write_pad_dims(DBfile *dbfile,
                const Node &root)
 {
     // TODO_PADDIMS add tests for this
-    // TODO_PADDIMS anything to do to read pad dims?
 
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     // this only applies to structured topos 
     // (quadmeshes, so rectilinear, uniform, and structured)
     // we can grab the "first" topo because we know there is only one.
     const std::string topo_type = n_mesh["topologies"][0]["type"].as_string();
-    // TODO_PADDIMS is the following correct? do all of these count as structured?
     if (topo_type == "structured" ||
         topo_type == "rectilinear" ||
         topo_type == "uniform")
@@ -4567,17 +4565,15 @@ write_pad_dims(DBfile *dbfile,
         const int nelems = 1;
         const int nvalues = 6;
 
+        // we do not have a way to record ghost nodes in blueprint
+        // so we just write out all zeroes to make overlink happy
         std::vector<int> paddim_vals;
-
-        // TODO_PADDIMS ghost zone stuff
-        // PLACEHOLDER until I know what is happening
         paddim_vals.push_back(0);
-        paddim_vals.push_back(1);
-        paddim_vals.push_back(2);
-        paddim_vals.push_back(3);
-        paddim_vals.push_back(4);
-        paddim_vals.push_back(5);
-        // END PLACEHOLDER
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
 
         DBPutCompoundarray(dbfile, // dbfile
                            "PAD_DIMS", // name
