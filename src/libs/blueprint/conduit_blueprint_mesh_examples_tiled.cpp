@@ -31,7 +31,7 @@
 // #define CONDUIT_USE_PARTITIONER_FOR_REORDER
 
 // Uncomment this to use a simpler tiled pattern for debugging.
-// #define CONDUIT_SIMPLE_TILED_PATTERN
+#define CONDUIT_SIMPLE_TILED_PATTERN
 
 // Uncomment this to print information about block splitting.
 // #define CONDUIT_DEBUG_BLOCK_SPLITTER
@@ -506,7 +506,7 @@ std::string TilerBase::adjset_name(conduit::index_t d0, conduit::index_t d1) con
     if(d0 > d1)
         std::swap(d0, d1);
     std::stringstream ss;
-    ss << "domain_" << d0 << "_" << d1;
+    ss << "group_" << d0 << "_" << d1;
     return ss.str();
 }
 

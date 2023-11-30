@@ -145,7 +145,7 @@ printUsage(const char *program)
 int
 main(int argc, char *argv[])
 {
-    std::string input, output("adjset_validate"), protocol;
+    std::string input, output, protocol;
 
     // Set default protocol. Use HDF5 if present.
     conduit::Node props;
@@ -235,12 +235,18 @@ main(int argc, char *argv[])
             {
                 std::cout << msg2 << adjsetName << "... FAIL: The adjsets contain errors." << std::endl;
                 info.print();
-                addPointMesh(adjsetName, info, pointMeshes);
+                // If we're outputting, make a point mesh of the differences.
+                if(!output.empty())
+                    addPointMesh(adjsetName, info, pointMeshes);
                 err = true;
             }
+
+            // If we're outputting. write the adjsets as point meshes that we can look at.
+            if(!output.empty())
+                conduit::blueprint::mesh::utils::adjset::to_topo(root, adjsetName, pointMeshes);
         }
         // Write any point meshes that were created.
-        if(pointMeshes.number_of_children() > 0)
+        if(!output.empty() && pointMeshes.number_of_children() > 0)
         {
             conduit::relay::io::blueprint::save_mesh(pointMeshes, output, protocol);
         }

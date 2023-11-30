@@ -2070,7 +2070,7 @@ topology::TopologyBuilder::execute(conduit::Node &n_out, const std::string &shap
     n_ele["shape"] = shape;
     n_ele["connectivity"].set(topo_conn);
     n_ele["sizes"].set(topo_sizes);
-    unstructured::generate_offsets_inline(newtopo);
+    unstructured::generate_offsets(newtopo);
 
     clear();
 }
@@ -3045,8 +3045,10 @@ adjset::validate(const conduit::Node &doms,
 }
 
 //-----------------------------------------------------------------------------
+// NOTE: This only works for pairwise adjsets.
+template <typename Func>
 bool
-adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, conduit::Node &info)
+foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
 {
     namespace bputils = conduit::blueprint::mesh::utils;
     std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
@@ -3102,23 +3104,68 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, co
             }
 
             // Make sure the nodes are not different.
-            bool different = false;
+            bool keepGoing = true;
             if(mi == 2)
             {
-                different = mesh[0].diff(mesh[1], info, 1.e-8);
-
-                // Add some diagnostic info.
-                if(different)
-                {
-                    info["adjset"] = adjsetName;
-                    info["group"] = groupName;
-                }
+                keepGoing = func(groupName, d0, mesh[0], d1, mesh[1]);
             }
-            if(different)
+            if(!keepGoing)
                 return false;
         }
     }
     return true;
+}
+
+//-----------------------------------------------------------------------------
+bool
+adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, conduit::Node &info)
+{
+    auto compareMesh =
+        [&](const std::string &groupName, int /*dom1*/, conduit::Node &mesh1, int /*dom2*/, conduit::Node &mesh2)
+    {
+        // Make sure the nodes are not different.
+        bool different = mesh1.diff(mesh2, info, 1.e-8);
+
+        // Add some diagnostic info.
+        if(different)
+        {
+            info["adjset"] = adjsetName;
+            info["group"] = groupName;
+        }
+
+        return different ? false : true;
+    };
+
+    return foreach_adjset_mesh_pair(mesh, adjsetName, compareMesh);
+}
+
+//-----------------------------------------------------------------------------
+void
+adjset::to_topo(conduit::Node &mesh, const std::string &adjsetName, conduit::Node &out)
+{
+    auto moveMesh = [&](const std::string &groupName, int dom, conduit::Node &mesh, conduit::Node &out)
+    {
+        // Copy the mesh into out node in a way that preserves its name.
+        std::stringstream ss;
+        ss << adjsetName << "_" << dom << "_" << groupName;
+        std::string meshName(ss.str());
+
+        conduit::Node &coordsets = out["coordsets"];
+        conduit::Node &topologies = out["topologies"];
+        conduit::Node &cset = coordsets[meshName+"_coords"];
+        cset.move(mesh["coordsets"][0]);
+        conduit::Node &topo = topologies[meshName];
+        topo.move(mesh["topologies"][0]);
+        topo["coordset"] = meshName + "_coords";
+    };
+
+    foreach_adjset_mesh_pair(mesh, adjsetName,
+        [&](const std::string &groupName, int dom1, conduit::Node &mesh1, int dom2, conduit::Node &mesh2)
+    {
+        moveMesh(groupName, dom1, mesh1, out);
+        moveMesh(groupName, dom2, mesh2, out);
+        return true;
+    });
 }
 
 //-----------------------------------------------------------------------------

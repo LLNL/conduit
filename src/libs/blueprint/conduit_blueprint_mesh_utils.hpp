@@ -901,6 +901,12 @@ protected:
 namespace adjset
 {
     //-------------------------------------------------------------------------
+    /**
+     @brief Makes sure the adjset is in canonical form. This means renaming all
+            groups so they begin with "group_" followed by a sorted list of the
+            neighbors.
+     @param adjset The adjset to be modified.
+     */
     void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
 
     //-------------------------------------------------------------------------
@@ -975,6 +981,19 @@ namespace adjset
      bool CONDUIT_BLUEPRINT_API compare_pointwise(conduit::Node &mesh,
                                                   const std::string &adjsetName,
                                                   conduit::Node &info);
+
+     /**
+      @brief Converts adjsets for domain boundary pairs into point meshes in
+             the out node. This can aid visualization.
+
+      @param mesh A node that contains all domains.
+      @param adjsetName The name of the adjset to select.
+      @param[out] out A node to contain the resulting mesh domains that represent
+                      the adjsets as point meshes.
+      */
+     void CONDUIT_BLUEPRINT_API to_topo(conduit::Node &mesh,
+                                        const std::string &adjsetName,
+                                        conduit::Node &out);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --
