@@ -2070,7 +2070,7 @@ topology::TopologyBuilder::execute(conduit::Node &n_out, const std::string &shap
     n_ele["shape"] = shape;
     n_ele["connectivity"].set(topo_conn);
     n_ele["sizes"].set(topo_sizes);
-    unstructured::generate_offsets(newtopo);
+    unstructured::generate_offsets_inline(newtopo);
 
     clear();
 }
@@ -3097,7 +3097,7 @@ foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Fun
                     }
 
                     // Make the local point mesh.
-                    B.execute(mesh[mi], "vertex");
+                    B.execute(mesh[mi], "point");
 
                     mi++;
                 }
