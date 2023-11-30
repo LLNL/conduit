@@ -4549,14 +4549,15 @@ write_pad_dims(DBfile *dbfile,
                const std::string &opts_mesh_name,
                const Node &root)
 {
-    // TODO add tests for this
-    // TODO anything to do to read pad dims?
+    // TODO_PADDIMS add tests for this
+    // TODO_PADDIMS anything to do to read pad dims?
 
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     // this only applies to structured topos 
     // (quadmeshes, so rectilinear, uniform, and structured)
     // we can grab the "first" topo because we know there is only one.
     const std::string topo_type = n_mesh["topologies"][0]["type"].as_string();
+    // TODO_PADDIMS is the following correct? do all of these count as structured?
     if (topo_type == "structured" ||
         topo_type == "rectilinear" ||
         topo_type == "uniform")
@@ -4568,7 +4569,7 @@ write_pad_dims(DBfile *dbfile,
 
         std::vector<int> paddim_vals;
 
-        // TODO ghost zone stuff
+        // TODO_PADDIMS ghost zone stuff
         // PLACEHOLDER until I know what is happening
         paddim_vals.push_back(0);
         paddim_vals.push_back(1);
