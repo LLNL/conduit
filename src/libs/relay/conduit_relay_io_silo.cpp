@@ -3292,7 +3292,7 @@ void silo_write_adjset(DBfile *dbfile,
     // DOMAIN NEIGHBOR NUMS
     // 
 
-    // TODO how to get this?
+    // TODO_ADJSET how to get this?
     // placeholder
     int num_neighboring_doms = 5;
     
@@ -3305,7 +3305,7 @@ void silo_write_adjset(DBfile *dbfile,
     // the following entries are the domain ids of the neighboring domains
     for (int i = 0; i < num_neighboring_doms; i ++)
     {
-        // TODO placeholder for now
+        // TODO_ADJSET placeholder for now
         dom_neighbor_nums.push_back(i);
     }
 
@@ -3336,7 +3336,7 @@ void silo_write_adjset(DBfile *dbfile,
                        DB_INT, // datatype
                        NULL); // optlist
 
-    // TODO is this also where I include the communications lists for neighboring domains?
+    // TODO_ADJSET is this also where I include the communications lists for neighboring domains?
 
     // 
     // COMMUNICATIONS LISTS FOR NEIGHBORING DOMAINS
@@ -3351,7 +3351,7 @@ void silo_write_adjset(DBfile *dbfile,
 
         std::vector<int> shared_nodes;
 
-        // TODO
+        // TODO_ADJSET
         // PLACEHOLDER until I know what is happening
         int number_of_shared_nodes = 10; // ???
         for (int i = 0; i < number_of_shared_nodes; i ++)
