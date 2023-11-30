@@ -1590,6 +1590,11 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     // we are choosing to do sparse by element
     // TODO later support sparse by material and full
 
+    // TODO if multimat info does not have material ids or does not have matnames
+    // then error
+    // If I do have one or both of those, then I won't worry about reading what is
+    // at the domain level
+
     Node &material_map = matset_out["material_map"];
     // if we have material map information from the multimat, we want to use that instead
     // if the multimat was missing matnames and we have them here, we want to use them
@@ -3125,7 +3130,8 @@ void silo_write_field(DBfile *dbfile,
         var_type = DB_UCDVAR;
 
         // TODO do I actually need to do this? Or am I just letting the overlink spec bully me?
-        // TODO does overlink support non scalars?????
+        // TODO ask Jeff if I need to write out individiual components of vectors
+        // TODO does overlink support non scalars????? - probably no it does not
         // use the scalar variant for writing scalars
         // this will make overlink happy
         if (nvars == 1)
@@ -3245,7 +3251,6 @@ void silo_write_field(DBfile *dbfile,
     {
         if (write_overlink)
         {
-            // TODO what I should probably do is force conversion to a ucd point var
             CONDUIT_ERROR("Cannot write point var " << topo_name << " to overlink."
                           << " Only DB_UCDVAR and DB_QUADVAR are supported.");
         }
@@ -3857,7 +3862,6 @@ void silo_write_topo(const Node &mesh_domain,
         {
             if (write_overlink)
             {
-                // TODO what I should probably do is force conversion to a ucd point mesh
                 CONDUIT_ERROR("Cannot write point mesh " << topo_name << " to overlink."
                               << " Only DB_UCDMESH and DB_QUADMESH are supported.");
             }
@@ -4613,7 +4617,6 @@ write_var_attributes(DBfile *dbfile,
             // field value in each zone for a second order remap of the values.
             // The first order remap is less accurate since it treats the value 
             // as constant within the zone.
-            // TODO do we want to store any of this info in the state node on read?
             var_attr_values.push_back(1);
 
             // 
