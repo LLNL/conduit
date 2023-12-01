@@ -2992,6 +2992,7 @@ void silo_write_field(DBfile *dbfile,
     }
     if (write_overlink && nvars != 1)
     {
+        // TODO convert to multiple vars
         CONDUIT_INFO("Overlink requires scalar variables. " << 
             var_name << " is not a scalar variable. Skipping.");
         return;

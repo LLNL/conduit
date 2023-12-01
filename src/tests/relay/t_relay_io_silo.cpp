@@ -216,6 +216,8 @@ TEST(conduit_relay_io_silo, round_trip_braid)
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
+        std::cout << save_mesh.to_yaml() << std::endl;
+
         const std::string basename = "silo_braid_" + mesh_type + "_" + dim + "D";
         const std::string filename = basename + ".cycle_000100.root";
 
