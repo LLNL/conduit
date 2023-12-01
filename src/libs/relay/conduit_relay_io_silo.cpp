@@ -1591,8 +1591,41 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     // TODO later support sparse by material and full
 
     // ignore what is here and use what was found in the multimat
-    Node &material_map = matset_out["material_map"];    
-    material_map.set(n_matset["material_map"]);
+    Node &material_map = matset_out["material_map"];  
+    // if we have material map information from the multimat, we want to use that instead
+    if (n_matset.has_child("material_map"))
+    {
+        // ignore what is here and use what was found in the multimat
+        material_map.set(n_matset["material_map"]);
+    }
+    else
+    {
+        CONDUIT_ASSERT(matset_ptr->nmat > 0, "Number of materials is non-positive for material "
+            << matset_name << " for multimesh " << multimesh_name);
+        for (int i = 0; i < matset_ptr->nmat; i ++)
+        {
+            int matno;
+            if (matset_ptr->matnos)
+            {
+                // we have mat nos to work with
+                matno = matset_ptr->matnos[i];
+            }
+            else
+            {
+                // we infer that matnos run from 1 to nmat, inclusive
+                matno = i + 1;
+            }
+
+            if (matset_ptr->matnames) // may be null
+            {
+                material_map[matset_ptr->matnames[i]] = matno;
+            }
+            else
+            {
+                material_map[std::to_string(matno)] = matno;
+            }
+        }
+    }
 
     std::vector<double> volume_fractions;
     std::vector<int> material_ids;
@@ -2096,11 +2129,6 @@ read_multimats(DBtoc *toc,
                 }
             }
         }
-        else
-        {
-            CONDUIT_ERROR("Blueprint requires that material numbers are "
-                "provided inside multimaterials. Missing for " << multimat_name);
-        }
     }
 
     return true;
@@ -2362,7 +2390,8 @@ read_root_silo_index(const std::string &root_file_path,
     //             - "domain_000000.silo:material"
     //             - "domain_000001.silo:material"
     //               ...
-    //          material_map: // can be reconstructed if dboptions are present, required
+    //          material_map_status: "not provided", or "provided"
+    //          material_map: // (optional) this can be reconstructed if dboptions are present
     //             a: 1
     //             b: 2    
     //             c: 0
