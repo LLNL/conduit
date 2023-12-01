@@ -1590,103 +1590,9 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     // we are choosing to do sparse by element
     // TODO later support sparse by material and full
 
-    // TODO if multimat info does not have material ids or does not have matnames
-    // then error
-    // If I do have one or both of those, then I won't worry about reading what is
-    // at the domain level
-
-    Node &material_map = matset_out["material_map"];
-    // if we have material map information from the multimat, we want to use that instead
-    // if the multimat was missing matnames and we have them here, we want to use them
-    // otherwise we will just use the information that is here
-    const std::string multimat_matmap_status = n_matset["material_map_status"].as_string();
-    if (multimat_matmap_status == "not provided")
-    {
-        for (int i = 0; i < matset_ptr->nmat; i ++)
-        {
-            int matno;
-            if (matset_ptr->matnos)
-            {
-                // we have mat nos to work with
-                matno = matset_ptr->matnos[i];
-            }
-            else
-            {
-                // we infer that matnos run from 1 to nmat, inclusive
-                matno = i + 1;
-            }
-            if (matset_ptr->matnames) // may be null
-            {
-                material_map[matset_ptr->matnames[i]] = matno;
-            }
-            else // matnos should always be there
-            {
-                material_map[std::to_string(matno)] = matno;
-            }
-        }
-    }
-    // TODO do I even want to support this case? It seems unnecessarily complicated
-    else if (multimat_matmap_status == "missing matnames")
-    {
-        // if there are matnames here we can use
-        if (matset_ptr->matnames && matset_ptr->matnos)
-        {
-            // split mat map from multimat into constituent parts
-            int multimat_nmat;
-            std::vector<std::string> multimat_matnames;
-            std::vector<const char *> multimat_matname_ptrs;
-            std::vector<int> multimat_matnos;
-            detail::read_material_map(n_matset["material_map"],
-                                      multimat_nmat,
-                                      multimat_matnames,
-                                      multimat_matname_ptrs,
-                                      multimat_matnos);
-
-            CONDUIT_ASSERT(matset_ptr->nmat == multimat_nmat,
-                "Multimat and material disagree on number of materials.");
-            
-            // map material numbers to names
-            Node mat_intermediate_map;
-            for (int i = 0; i < multimat_nmat; i ++)
-            {
-                const std::string mat_number = std::to_string(matset_ptr->matnos[i]);
-                const std::string mat_name = matset_ptr->matnames[i];
-                mat_intermediate_map[mat_number] = mat_name;
-            }
-
-            // we cannot merge the for loop above with the for loop below because
-            // they are potentially operating on lists in a different order!
-
-            // now, for each material, I want to extract its name and build the real material map
-            // the name could not exist if there is some kind of mismatch, in this case
-            // we will use the number as a name
-            for (int i = 0; i < multimat_nmat; i ++)
-            {
-                const int mat_number = multimat_matnos[i];
-                const std::string mat_number_str = std::to_string(mat_number);
-                std::string mat_name;
-                if (mat_intermediate_map.has_child(mat_number_str))
-                {
-                    mat_name = mat_intermediate_map[mat_number_str].as_string();
-                }
-                else
-                {
-                    mat_name = mat_number_str;
-                }
-                material_map[mat_name] = mat_number;
-            }
-        }
-        else
-        {
-            // ignore what is here and use what was found in the multimat
-            material_map.set(n_matset["material_map"]);
-        }
-    }   
-    else // (multimat_matmap_status == "provided")
-    {
-        // ignore what is here and use what was found in the multimat
-        material_map.set(n_matset["material_map"]);
-    } 
+    // ignore what is here and use what was found in the multimat
+    Node &material_map = matset_out["material_map"];    
+    material_map.set(n_matset["material_map"]);
 
     std::vector<double> volume_fractions;
     std::vector<int> material_ids;
@@ -2177,7 +2083,6 @@ read_multimats(DBtoc *toc,
             Node &material_map = material["material_map"];
             if (matnames)
             {
-                material["material_map_status"] = "provided";
                 for (int i = 0; i < nmatnos; i ++)
                 {
                     material_map[matnames[i]] = matnos[i];
@@ -2185,7 +2090,6 @@ read_multimats(DBtoc *toc,
             }
             else
             {
-                material["material_map_status"] = "missing matnames";
                 for (int i = 0; i < nmatnos; i ++)
                 {
                     material_map[std::to_string(matnos[i])] = matnos[i];
@@ -2194,7 +2098,8 @@ read_multimats(DBtoc *toc,
         }
         else
         {
-            material["material_map_status"] = "not provided";
+            CONDUIT_ERROR("Blueprint requires that material numbers are "
+                "provided inside multimaterials. Missing for " << multimat_name);
         }
     }
 
@@ -2457,8 +2362,7 @@ read_root_silo_index(const std::string &root_file_path,
     //             - "domain_000000.silo:material"
     //             - "domain_000001.silo:material"
     //               ...
-    //          material_map_status: "not provided", "provided", or "missing matnames"
-    //          material_map: // (optional) this can be reconstructed if dboptions are present
+    //          material_map: // can be reconstructed if dboptions are present, required
     //             a: 1
     //             b: 2    
     //             c: 0
