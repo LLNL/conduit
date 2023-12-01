@@ -31,10 +31,16 @@
 // #define CONDUIT_USE_PARTITIONER_FOR_REORDER
 
 // Uncomment this to use a simpler tiled pattern for debugging.
-#define CONDUIT_SIMPLE_TILED_PATTERN
+// #define CONDUIT_SIMPLE_TILED_PATTERN
 
 // Uncomment this to print information about block splitting.
 // #define CONDUIT_DEBUG_BLOCK_SPLITTER
+
+// Uncomment this to write blocks to a Blueprint file.
+// #define CONDUIT_WRITE_BLOCKS
+#ifdef CONDUIT_WRITE_BLOCKS
+#include <conduit_relay_io_blueprint.hpp>
+#endif
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
@@ -1920,6 +1926,81 @@ void Block::iterate(Func &&func) const
 }
 
 //---------------------------------------------------------------------------
+#if 1
+std::vector<LogicalIndex>
+Block::intersectInternal(const Block &B) const
+{
+    std::vector<LogicalIndex> ids;
+
+    // Check whether ranges overlap.
+    Block clip;
+    int overlaps = 0;
+    for(int i = 0; i < 3; i++)
+    {
+        if(interval_contains(start[i], end[i], B.start[i]) ||
+           interval_contains(start[i], end[i], B.end[i]) ||
+           interval_contains(B.start[i], B.end[i], start[i]) ||
+           interval_contains(B.start[i], B.end[i], end[i]))
+        {
+            clip.start[i] = std::max(start[i], B.start[i]);
+            clip.end[i] = std::min(end[i], B.end[i]);
+            overlaps++;
+        }
+    }
+
+    // If there was overlap in 3 dimensions then there is intersection.
+    if(overlaps == 3)
+    {
+        // If we had a hit but one or more blocks was complex then we
+        // need to do zone-based intersection.
+        if(complex() && B.complex())
+        {
+            clip.iterate([&](const LogicalIndex &index, IndexType) {
+                LogicalIndex aindex{{index[0] - start[0],
+                                     index[1] - start[1],
+                                     index[2] - start[2]}};
+                auto ai = IJKToIndex(aindex);
+                LogicalIndex bindex{{index[0] - B.start[0],
+                                     index[1] - B.start[1],
+                                     index[2] - B.start[2]}};
+                auto bi = B.IJKToIndex(bindex);
+                if(image[ai] != Block::Empty && B.image[bi] != Block::Empty)
+                    ids.push_back(index);
+            });
+        }
+        else if(complex()) // B is not complex.
+        {
+            clip.iterate([&](const LogicalIndex &index, IndexType) {
+                LogicalIndex aindex{{index[0] - start[0],
+                                     index[1] - start[1],
+                                     index[2] - start[2]}};
+                auto ai = IJKToIndex(aindex);
+                if(image[ai] != Block::Empty)
+                    ids.push_back(index);
+            });
+        }
+        else if(B.complex()) // B is complex
+        {
+            clip.iterate([&](const LogicalIndex &index, IndexType) {
+                LogicalIndex bindex{{index[0] - B.start[0],
+                                     index[1] - B.start[1],
+                                     index[2] - B.start[2]}};
+                auto bi = B.IJKToIndex(bindex);
+                if(B.image[bi] != Block::Empty)
+                    ids.push_back(index);
+            });
+        }
+        else // Neither is complex. clip is the intersection.
+        {
+            clip.iterate([&](const LogicalIndex &index, IndexType) {
+                ids.push_back(index);
+            });
+        }
+    }
+
+    return ids;
+}
+#else
 std::vector<LogicalIndex>
 Block::intersectInternal(const Block &B) const
 {
@@ -2374,6 +2455,7 @@ Block::intersectInternal(const Block &B) const
 
     return ids;
 }
+#endif
 
 //---------------------------------------------------------------------------
 std::vector<LogicalIndex>
@@ -2384,6 +2466,113 @@ Block::intersect(const Block &B) const
         ids = B.intersectInternal(*this);
     return ids;
 }
+
+//---------------------------------------------------------------------------
+#ifdef CONDUIT_WRITE_BLOCKS
+static void
+BlockToBlueprintUnstructured(const Block &obj, conduit::Node &dom)
+{
+    // Make a uniform coordset and turn it into explicit.
+    conduit::Node cs;
+    cs["type"] = "uniform";
+    cs["dims/i"] = obj.length(0) + 1;
+    cs["dims/j"] = obj.length(1) + 1;
+    cs["dims/k"] = obj.length(2) + 1;
+    cs["origin/x"] = obj.start[0];
+    cs["origin/y"] = obj.start[1];
+    cs["origin/z"] = obj.start[2];
+    conduit::blueprint::mesh::coordset::to_explicit(cs, dom["coordsets/coords"]);
+
+    Block ptBlock;
+    ptBlock.start = LogicalIndex{0,0,0};
+    ptBlock.end = LogicalIndex{obj.length(0),obj.length(1),obj.length(2)};
+
+    std::vector<IndexType> conn, sizes, offsets, image;
+    obj.iterate([&](const LogicalIndex &idx, IndexType type)
+    {
+        static const IndexType dx[] = {0, 1, 1, 0, 0, 1, 1, 0};
+        static const IndexType dy[] = {0, 0, 1, 1, 0, 0, 1, 1};
+        static const IndexType dz[] = {0, 0, 0, 0, 1, 1, 1, 1};
+        if(type != Block::Empty)
+        {
+            LogicalIndex origin = LogicalIndex{idx[0] - obj.start[0],
+                                               idx[1] - obj.start[1],
+                                               idx[2] - obj.start[2]};
+            for(int corner = 0; corner < 8; corner++)
+            {
+                LogicalIndex pt(origin);
+                pt[0] += dx[corner];
+                pt[1] += dy[corner];
+                pt[2] += dz[corner];
+
+                auto ptid = ptBlock.IJKToIndex(pt);
+                conn.push_back(ptid);
+            }
+            offsets.push_back(sizes.size() * 8);
+            sizes.push_back((sizes.size() + 1) * 8);
+            image.push_back(type);
+        }
+    });
+
+    dom["topologies/topo/coordset"] = "coords";
+    dom["topologies/topo/type"] = "unstructured";
+    dom["topologies/topo/elements/shape"] = "hex";
+    dom["topologies/topo/elements/connectivity"].set(conn);
+    dom["topologies/topo/elements/sizes"].set(sizes);
+    dom["topologies/topo/elements/offsets"].set(offsets);
+
+    // We always have an image here.
+    dom["fields/image/association"] = "element";
+    dom["fields/image/topology"] = "topo";
+    dom["fields/image/values"].set(image);
+}
+
+//------------------------------------------------------------------------------
+static void
+BlockToBlueprint(const std::vector<Block> &blocks, conduit::Node &n)
+{
+    // Determine whether any blocks are complex.
+    bool anyComplex = false;
+    for(const auto &b : blocks)
+        anyComplex |= b.complex();
+
+    int blockId = 0;
+    for(const auto &b : blocks)
+    {
+        conduit::Node &dom = n.append();
+ 
+        if(b.complex())
+        {
+            BlockToBlueprintUnstructured(b, dom);
+        }
+        else
+        {
+            // Make a simple Conduit mesh.
+            dom["coordsets/coords/type"] = "uniform";
+            dom["coordsets/coords/dims/i"] = b.length(0) + 1;
+            dom["coordsets/coords/dims/j"] = b.length(1) + 1;
+            dom["coordsets/coords/dims/k"] = b.length(2) + 1;
+
+            dom["coordsets/coords/origin/x"] = b.start[0];
+            dom["coordsets/coords/origin/y"] = b.start[1];
+            dom["coordsets/coords/origin/z"] = b.start[2];
+
+            dom["topologies/topo/coordset"] = "coords";
+            dom["topologies/topo/type"] = "uniform";
+
+            if(anyComplex)
+            {
+                std::vector<IndexType> image(b.size(), Block::Self);
+                dom["fields/image/association"] = "element";
+                dom["fields/image/topology"] = "topo";
+                dom["fields/image/values"].set(image);
+            }
+        }
+
+        dom["state/domain_id"] = blockId++;
+    }
+}
+#endif
 
 //---------------------------------------------------------------------------
 /**
@@ -3010,18 +3199,11 @@ Block neighbors(const std::vector<Block> &blocks, size_t blockId, bool threeD)
 
     // Expand the selected Block by a layer, also creating its image.
     Block selectedBlock = blocks[blockId].expand(neighborLayers, threeD);
-//if(blockId == 0)
-//{
-//std::cout << blocks[blockId] << ", image=" << blocks[blockId].image << std::endl;
-//std::cout << selectedBlock << ", image=" << selectedBlock.image << std::endl;
-//}
+
     // Iterate over the zones in the selected Block and highlight the zones that
     // should count as neighbor zones. This handles non-brick-like blocks.
     highlightNeighborZones(selectedBlock, neighborLayers, threeD);
-//if(blockId == 0)
-//{
-//std::cout << selectedBlock << ", image=" << selectedBlock.image << std::endl;
-//}
+
     for(size_t bi = 0; bi < blocks.size(); bi++)
     {
         if(bi != blockId)
@@ -3041,10 +3223,7 @@ Block neighbors(const std::vector<Block> &blocks, size_t blockId, bool threeD)
             }
         }
     }
-//if(blockId == 0)
-//{
-//std::cout << selectedBlock << ", image=" << selectedBlock.image << std::endl;
-//}
+
     return selectedBlock;
 }
 
@@ -3328,6 +3507,9 @@ TopDownTiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_
 
     // Build the domains. We first expand the domain and look for its neighbors
     // so we know how the selected domain is connected.
+#ifdef CONDUIT_WRITE_BLOCKS
+    std::vector<Block> writeBlocks;
+#endif
     if(m_selectedDomains.empty())
     {
         const bool multi = (blocks.size() > 1);
@@ -3336,6 +3518,9 @@ TopDownTiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_
             auto selectedBlock = neighbors(blocks, bi, dims[2] > 1);
             generateDomain(nx, ny, nz, multi ? res.append() : res, selectedBlock,
                            static_cast<IndexType>(bi), options);
+#ifdef CONDUIT_WRITE_BLOCKS
+            writeBlocks.push_back(selectedBlock);
+#endif
         }
     }
     else
@@ -3346,8 +3531,19 @@ TopDownTiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_
             auto selectedBlock = neighbors(blocks, bi, dims[2] > 1);
             generateDomain(nx, ny, nz, multi ? res.append() : res, selectedBlock,
                            static_cast<IndexType>(bi), options);
+#ifdef CONDUIT_WRITE_BLOCKS
+            writeBlocks.push_back(selectedBlock);
+#endif
         }
     }
+
+#ifdef CONDUIT_WRITE_BLOCKS
+    // The blocks are simplified versions of the tiles that we used to see
+    // how the decomposition should go. Save them out.
+    conduit::Node out;
+    BlockToBlueprint(writeBlocks, out);
+    conduit::relay::io::blueprint::save_mesh(out, "blocks", "hdf5");
+#endif
 }
 
 //---------------------------------------------------------------------------
