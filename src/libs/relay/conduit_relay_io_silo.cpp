@@ -6055,8 +6055,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                                  opts_out_mesh_name,
                                  root);
 
-            // in progress
-            std::cout << root.to_yaml() << std::endl;
             write_pad_dims(dbfile.getSiloObject(), 
                            opts_out_mesh_name, 
                            root);
