@@ -577,6 +577,7 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
 
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename, opts);
+    io::blueprint::save_mesh(save_mesh, basename, "hdf5");
     // io::silo::load_mesh(filename, load_mesh);
 
     // EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));

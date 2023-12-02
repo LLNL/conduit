@@ -3285,16 +3285,22 @@ void silo_write_field(DBfile *dbfile,
 //---------------------------------------------------------------------------//
 // overlink only
 void silo_write_adjset(DBfile *dbfile,
-                       const std::string &adjset_name,
                        const Node &n_adjset)
 {
+    if (n_adjset["association"].as_string() == "element")
+    {
+        CONDUIT_ERROR("TODO no idea what to do in this case");
+    }
+
+    Node pairwise_adjset;
+    conduit::blueprint::mesh::adjset::to_pairwise(n_adjset, pairwise_adjset);
+
     // 
     // DOMAIN NEIGHBOR NUMS
     // 
 
-    // TODO_ADJSET how to get this?
     // placeholder
-    int num_neighboring_doms = 5;
+    int num_neighboring_doms = pairwise_adjset["groups"].number_of_children();
     
     // our compound array data that we are saving
     std::vector<int> dom_neighbor_nums;
@@ -3303,10 +3309,13 @@ void silo_write_adjset(DBfile *dbfile,
     dom_neighbor_nums.push_back(num_neighboring_doms);
 
     // the following entries are the domain ids of the neighboring domains
-    for (int i = 0; i < num_neighboring_doms; i ++)
+    auto group_itr = pairwise_adjset["groups"].children();
+    while (group_itr.has_next())
     {
-        // TODO_ADJSET placeholder for now
-        dom_neighbor_nums.push_back(i);
+        const Node &group = group_itr.next();
+        // since we have forced pairwise, we can assume that there is only one
+        int neighbor = group["neighbors"].as_int();
+        dom_neighbor_nums.push_back(neighbor);
     }
 
     std::vector<std::string> elem_name_strings;
@@ -3336,29 +3345,36 @@ void silo_write_adjset(DBfile *dbfile,
                        DB_INT, // datatype
                        NULL); // optlist
 
-    // TODO_ADJSET is this also where I include the communications lists for neighboring domains?
-
     // 
     // COMMUNICATIONS LISTS FOR NEIGHBORING DOMAINS
     // 
 
-    for (int i = 0; i < num_neighboring_doms; i ++)
+    // if there are no domain neighbors then we can return early
+    if (num_neighboring_doms <= 0)
     {
-        std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(i);
+        return;
+    }
+
+    int neighbor_index = 0;
+    group_itr = pairwise_adjset["groups"].children();
+    while (group_itr.has_next())
+    {
+        std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(neighbor_index);
 
         char const *elemname = "shared_nodes";
         const int nelems_comm = 1;
 
         std::vector<int> shared_nodes;
 
-        // TODO_ADJSET
-        // PLACEHOLDER until I know what is happening
-        int number_of_shared_nodes = 10; // ???
+        const Node &group = group_itr.next();
+        // since we have forced pairwise, we can assume that there is only one
+        int_accessor group_values = group["values"].value();
+        const int number_of_shared_nodes = group["values"].dtype().number_of_elements();
+
         for (int i = 0; i < number_of_shared_nodes; i ++)
         {
-            shared_nodes.push_back(i);
+            shared_nodes.push_back(group_values[i]);
         }
-        // END PLACEHOLDER
 
         DBPutCompoundarray(dbfile, // dbfile
                            arr_name.c_str(), // name
@@ -3369,6 +3385,8 @@ void silo_write_adjset(DBfile *dbfile,
                            number_of_shared_nodes, // nvalues
                            DB_INT, // datatype
                            NULL); // optlist
+
+        neighbor_index ++;
     }
 }
 
@@ -4277,11 +4295,11 @@ void silo_mesh_write(const Node &mesh_domain,
             auto itr = mesh_domain["adjsets"].children();
             while (itr.has_next())
             {
+                // TODO can't we only write one of these? Otherwise we will overwrite?
                 const Node &n_adjset = itr.next();
-                const std::string adjset_name = itr.name();
                 if (n_adjset["topology"].as_string() == ovl_topo_name)
                 {
-                    silo_write_adjset(dbfile, adjset_name, n_adjset);
+                    silo_write_adjset(dbfile, n_adjset);
                 }
             }
         }
