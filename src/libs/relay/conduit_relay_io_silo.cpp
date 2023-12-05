@@ -4487,8 +4487,6 @@ write_pad_dims(DBfile *dbfile,
                const std::string &opts_mesh_name,
                const Node &root)
 {
-    // TODO_PADDIMS add tests for this
-
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     // this only applies to structured topos 
     // (quadmeshes, so rectilinear, uniform, and structured)
