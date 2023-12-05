@@ -1590,7 +1590,6 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     // we are choosing to do sparse by element
     // TODO later support sparse by material and full
 
-    // ignore what is here and use what was found in the multimat
     Node &material_map = matset_out["material_map"];  
     // if we have material map information from the multimat, we want to use that instead
     if (n_matset.has_child("material_map"))
@@ -2390,7 +2389,6 @@ read_root_silo_index(const std::string &root_file_path,
     //             - "domain_000000.silo:material"
     //             - "domain_000001.silo:material"
     //               ...
-    //          material_map_status: "not provided", or "provided"
     //          material_map: // (optional) this can be reconstructed if dboptions are present
     //             a: 1
     //             b: 2    
