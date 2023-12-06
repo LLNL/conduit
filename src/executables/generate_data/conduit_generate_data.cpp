@@ -195,19 +195,20 @@ std::vector<int> toIntVector(const std::string &s)
 int
 main(int argc, char *argv[])
 {
-    int rank = 0;
+    int rank = 0, size = 1;
 #ifdef CONDUIT_PARALLEL
-    int size = 1;
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 #endif
+    if(rank == 0)
+        std::cout << size << " ranks." << std::endl;
 
     // Some basic arg parsing.
     int dims[3] = {10, 10, 10};
     int domains[3] = {1, 1, 1};
     double extents[6] = {0., 1., 0., 1., 0., 1.};
-    bool verify = false, corners = false, faces = false;
+    bool domainsGiven = false, verify = false, corners = false, faces = false;
     conduit::Node n, opts;
     std::unique_ptr<DomainGenerator> g = MAKE_UNIQUE(TiledDomainGenerator);
     std::string meshType("hexs"),meshTypeDefault("hexs"), output("output"), protocol("hdf5");
@@ -239,11 +240,13 @@ main(int argc, char *argv[])
                 domains[0] = std::max(d[0], 1);
                 domains[1] = std::max(d[1], 1);
                 domains[2] = std::max(d[2], 1);
+                domainsGiven = true;
             }
             else if(sscanf(argv[i+1], "%d", &d[0]) == 1)
             {
                 // Select top-down decomposition.
                 opts["numDomains"] = d[0];
+                domainsGiven = true;
             }
             i++;
         }
@@ -329,10 +332,27 @@ main(int argc, char *argv[])
     g->setExtents(extents);
 
     int ndoms;
-    if(opts.has_path("numDomains"))
-        ndoms = opts["numDomains"].to_int();
+    if(domainsGiven)
+    {
+        if(opts.has_path("numDomains"))
+            ndoms = opts["numDomains"].to_int();
+        else if(domainsGiven)
+            ndoms = domains[0] * domains[1] * domains[2];
+    }
+#ifdef CONDUIT_PARALLEL
     else
-        ndoms = domains[0] * domains[1] * domains[2];
+    {
+        // The user forgot the -domains argument. Default to -domains size.
+        opts["numDomains"] = size;
+        ndoms = size;
+    }
+#endif
+
+    if(rank == 0)
+    {
+        std::cout << ndoms << " domains." << std::endl;
+        std::cout << "Generating mesh." << std::endl;
+    }
 
     if(ndoms == 1 && rank == 0)
     {
@@ -410,8 +430,11 @@ main(int argc, char *argv[])
     }
 
     // If we were told to generate derived meshes, do so now.
-    if(corners)
+    if(ndoms > 1 && corners)
     {
+        if(rank == 0)
+            std::cout << "Generating corners." << std::endl;
+
         conduit::Node s2d, d2s;
         std::string src_adjset_name(g->adjsetName());
         std::string dst_adjset_name("corner_adjset");
@@ -438,8 +461,11 @@ main(int argc, char *argv[])
     }
 
     // If we were told to generate derived faces, do so now.
-    if(faces)
+    if(ndoms > 1 && faces)
     {
+        if(rank == 0)
+            std::cout << "Generating faces." << std::endl;
+
         conduit::Node s2d, d2s;
         std::string src_adjset_name(g->adjsetName());
         std::string dst_adjset_name("face_adjset");
@@ -462,8 +488,24 @@ main(int argc, char *argv[])
 #endif
     }
 
+    // Remove the root file if it exists. Some protocols try and parse it.
+    if(rank == 0)
+    {
+        std::string root = output + ".root";
+        try
+        {
+            if(conduit::utils::is_file(root))
+                conduit::utils::remove_file(root);
+        }
+        catch(...)
+        {
+            std::cerr << "Caught unknown exception while removing " << root << std::endl;
+        }
+    }
+
     // Save the output domains.
 #ifdef CONDUIT_PARALLEL
+    MPI_Barrier(MPI_COMM_WORLD);
     conduit::relay::mpi::io::blueprint::save_mesh(n, output, protocol, MPI_COMM_WORLD);
 #else
     conduit::relay::io::blueprint::save_mesh(n, output, protocol);
