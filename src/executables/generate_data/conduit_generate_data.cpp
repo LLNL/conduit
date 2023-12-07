@@ -141,11 +141,25 @@ public:
 };
 
 //-----------------------------------------------------------------------------
+class PolytessDomainGenerator : public DomainGenerator
+{
+public:
+    virtual void generate(int /*domain*/[3], conduit::Node &n, conduit::Node &) override
+    {
+        conduit::blueprint::mesh::examples::polytess(dims[0], dims[2], n);
+    }
+
+    virtual std::string meshName() const override { return "topo"; }
+    virtual std::string adjsetName() const override { return ""; } // It does not make one
+};
+
+//-----------------------------------------------------------------------------
 void
 printUsage(const char *exeName)
 {
     std::cout << "Usage: " << exeName << "[-dims x,y,z] [-domains x,y,z] [-tile]\n"
-              << "   [-braid] [-polystar] [-output fileroot] [-protocol name] [-meshtype type]\n"
+              << "   [-braid] [-polystar] [-polytess]\n"
+              << "   [-output fileroot] [-protocol name] [-meshtype type]\n"
               << "   [-tiledef filename] [-extents x0,x1,y0,y1[,z0,z1]]\n"
               << "   [-select a,...] [-curvesplit on|off] [-verify] [-corners] [-faces]\n"
               << "   [-help]\n";
@@ -163,6 +177,8 @@ printUsage(const char *exeName)
     std::cout << "-braid                Generate a mesh using the braid data generator.\n";
     std::cout << "\n";
     std::cout << "-polystar             Generate a mesh using the polystar data generator.\n";
+    std::cout << "\n";
+    std::cout << "-polytess             Generate a mesh using the polytess data generator.\n";
     std::cout << "\n";
     std::cout << "-output fileroot      Specify the root used in filenames that are created.\n";
     std::cout << "\n";
@@ -276,6 +292,10 @@ main(int argc, char *argv[])
         else if(strcmp(argv[i], "-polystar") == 0)
         {
             g = MAKE_UNIQUE(PolystarDomainGenerator);
+        }
+        else if(strcmp(argv[i], "-polytess") == 0)
+        {
+            g = MAKE_UNIQUE(PolytessDomainGenerator);
         }
         else if(strcmp(argv[i], "-output") == 0 && (i+1) < argc)
         {
