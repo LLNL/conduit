@@ -1303,7 +1303,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
 }
 
 //-----------------------------------------------------------------------------
-// this tests var attributes
+// this tests var attributes and padding dimensions
 TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
 {
     const std::string basename = "silo_save_option_overlink_basic";
@@ -1336,6 +1336,73 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+
+    // open silo file and do some checks
+
+    DBfile *dbfile = DBOpen(filename.c_str(), DB_UNKNOWN, DB_READ);
+    EXPECT_TRUE(DBInqVarExists(dbfile, "VAR_ATTRIBUTES"));
+    EXPECT_TRUE(DBInqVarType(dbfile, "VAR_ATTRIBUTES") == DB_ARRAY);
+
+    DBcompoundarray *var_attr = DBGetCompoundarray(dbfile, "VAR_ATTRIBUTES");
+
+    // fetch pointers to elements inside the compound array
+    char **elemnames = var_attr->elemnames;
+    int *elemlengths = var_attr->elemlengths;
+    int nelems       = var_attr->nelems;
+    int *values      = static_cast<int *>(var_attr->values);
+    int nvalues      = var_attr->nvalues;
+    int datatype     = var_attr->datatype;
+
+    EXPECT_EQ(std::string(elemnames[0]), "field");
+    EXPECT_EQ(std::string(elemnames[1]), "field2");
+    EXPECT_EQ(elemlengths[0], 5);
+    EXPECT_EQ(elemlengths[1], 5);
+    EXPECT_EQ(nelems, 2);
+    // for first var
+    EXPECT_EQ(values[0], 1);
+    EXPECT_EQ(values[1], 0);
+    EXPECT_EQ(values[2], 1);
+    EXPECT_EQ(values[3], 0);
+    EXPECT_EQ(values[4], 1);
+    // for second var
+    EXPECT_EQ(values[5], 1);
+    EXPECT_EQ(values[6], 1);
+    EXPECT_EQ(values[7], 1);
+    EXPECT_EQ(values[8], 0);
+    EXPECT_EQ(values[9], 1);
+    EXPECT_EQ(nvalues, 10);
+    EXPECT_EQ(datatype, DB_INT);
+
+    DBFreeCompoundarray(var_attr);
+
+    EXPECT_TRUE(DBInqVarExists(dbfile, "PAD_DIMS"));
+    EXPECT_TRUE(DBInqVarType(dbfile, "PAD_DIMS") == DB_ARRAY);
+
+    DBcompoundarray *pad_dims = DBGetCompoundarray(dbfile, "PAD_DIMS");
+
+    // fetch pointers to elements inside the compound array
+    elemnames   = pad_dims->elemnames;
+    elemlengths = pad_dims->elemlengths;
+    nelems      = pad_dims->nelems;
+    values      = static_cast<int *>(pad_dims->values);
+    nvalues     = pad_dims->nvalues;
+    datatype    = pad_dims->datatype;
+
+    EXPECT_EQ(std::string(elemnames[0]), "paddims");
+    EXPECT_EQ(elemlengths[0], 6);
+    EXPECT_EQ(nelems, 1);
+    EXPECT_EQ(values[0], 0);
+    EXPECT_EQ(values[1], 0);
+    EXPECT_EQ(values[2], 0);
+    EXPECT_EQ(values[3], 0);
+    EXPECT_EQ(values[4], 0);
+    EXPECT_EQ(values[5], 0);
+    EXPECT_EQ(nvalues, 6);
+    EXPECT_EQ(datatype, DB_INT);
+
+    DBFreeCompoundarray(pad_dims);
+
+    DBClose(dbfile);
 }
 
 //-----------------------------------------------------------------------------
