@@ -4394,6 +4394,7 @@ write_multivars(DBfile *dbfile,
             {
                 std::string linked_topo_name = n_var["topology"].as_string();
 
+                // TODO do we need this check?
                 if (! write_overlink || linked_topo_name == ovl_topo_name)
                 {
                     std::string safe_varname = detail::sanitize_silo_varname(var_name);
