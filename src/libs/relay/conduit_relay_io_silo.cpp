@@ -4658,66 +4658,94 @@ write_var_attributes(DBfile *dbfile,
             std::string var_name = field_itr.name();
 
             // did we actually write this field to silo?
-            if (! n_type_dom_info.has_path("vars/" + var_name))
+            if (n_var["number_of_components"].to_int64() != 1)
             {
-                // we skipped this field before so we can skip it now
-                continue;
-            }
-            
-            std::string safe_varname = detail::sanitize_silo_varname(var_name);
-            multivar_name_strings.push_back(safe_varname);
-
-            const int num_attr = 5; // we are writing 5 var attributes for now
-
-            elemlengths.push_back(num_attr);
-            nvalues += num_attr;
-
-            // 
-            // centering: ATTR_NODAL 0, ATTR_ZONAL 1, ATTR_FACE, ATTR_EDGE
-            // 
-            if (n_var["association"].as_string() == "vertex")
-            {
-                var_attr_values.push_back(0); // nodal == vertex
+                if (! n_type_dom_info.has_path("ovl_var_parents/" + var_name))
+                {
+                    // we skipped this field before so we can skip it now
+                    continue;
+                }
             }
             else
             {
-                var_attr_values.push_back(1); // zonal == element
+                if (! n_type_dom_info.has_path("vars/" + var_name))
+                {
+                    // we skipped this field before so we can skip it now
+                    continue;
+                }
             }
 
-            // 
-            // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
-            // 
-            // intensive (0) IS NOT volume dependent
-            // extensive (1) IS volume dependent
-            if (n_var.has_child("volume_dependent") &&
-                n_var["volume_dependent"].as_string() == "true")
+            auto write_var_attr_for_field = [&](const std::string var_name)
             {
-                var_attr_values.push_back(1); // extensive == volume dependent
+                std::string safe_varname = detail::sanitize_silo_varname(var_name);
+                multivar_name_strings.push_back(safe_varname);
+
+                const int num_attr = 5; // we are writing 5 var attributes for now
+
+                elemlengths.push_back(num_attr);
+                nvalues += num_attr;
+
+                // 
+                // centering: ATTR_NODAL 0, ATTR_ZONAL 1, ATTR_FACE, ATTR_EDGE
+                // 
+                if (n_var["association"].as_string() == "vertex")
+                {
+                    var_attr_values.push_back(0); // nodal == vertex
+                }
+                else
+                {
+                    var_attr_values.push_back(1); // zonal == element
+                }
+
+                // 
+                // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
+                // 
+                // intensive (0) IS NOT volume dependent
+                // extensive (1) IS volume dependent
+                if (n_var.has_child("volume_dependent") &&
+                    n_var["volume_dependent"].as_string() == "true")
+                {
+                    var_attr_values.push_back(1); // extensive == volume dependent
+                }
+                else
+                {
+                    var_attr_values.push_back(0); // intensive == NOT volume dependent
+                }
+
+                // 
+                // linking: ATTR_FIRST ORDER 0, ATTR_SECOND ORDER 1
+                // 
+                // Use ATTR_SECOND_ORDER which means it computes the gradient of the 
+                // field value in each zone for a second order remap of the values.
+                // The first order remap is less accurate since it treats the value 
+                // as constant within the zone.
+                var_attr_values.push_back(1);
+
+                // 
+                // unused: 0
+                // 
+                var_attr_values.push_back(0);
+
+                // 
+                // data type: ATTR_INTEGER, ATTR_FLOAT
+                // 
+                // we cached this info earlier, just need to retrieve it
+                var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
+            };
+
+            if (n_var["number_of_components"].to_int64() != 1)
+            {
+                std::vector<std::string> comp_var_names = 
+                    n_type_dom_info["ovl_var_parents"][var_name].child_names();
+                for (size_t comp_id = 0; comp_id < comp_var_names.size(); comp_id ++)
+                {
+                    write_var_attr_for_field(comp_var_names[comp_id]);
+                }
             }
             else
             {
-                var_attr_values.push_back(0); // intensive == NOT volume dependent
+                write_var_attr_for_field(var_name);
             }
-
-            // 
-            // linking: ATTR_FIRST ORDER 0, ATTR_SECOND ORDER 1
-            // 
-            // Use ATTR_SECOND_ORDER which means it computes the gradient of the 
-            // field value in each zone for a second order remap of the values.
-            // The first order remap is less accurate since it treats the value 
-            // as constant within the zone.
-            var_attr_values.push_back(1);
-
-            // 
-            // unused: 0
-            // 
-            var_attr_values.push_back(0);
-
-            // 
-            // data type: ATTR_INTEGER, ATTR_FLOAT
-            // 
-            // we cached this info earlier, just need to retrieve it
-            var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
         }
         // package up char ptrs for silo
         std::vector<const char *> multivar_name_ptrs;
