@@ -1620,6 +1620,6 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
 // //  - units once they are supported
 // //  - etc.
 
-// // TODO what are those bonus tar files doing in the overlink data dir?
+// // TODO add tetra8 and c36_m5 to all the overlink i/o tests
 
 // // TODO somewhere I need to error on overlink when there are different var or mesh types across domains

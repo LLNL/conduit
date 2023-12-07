@@ -4671,6 +4671,51 @@ write_multimats(DBfile *dbfile,
 //-----------------------------------------------------------------------------
 // only for overlink
 void
+write_pad_dims(DBfile *dbfile,
+               const std::string &opts_mesh_name,
+               const Node &root)
+{
+    // TODO_PADDIMS add tests for this
+
+    const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
+    // this only applies to structured topos 
+    // (quadmeshes, so rectilinear, uniform, and structured)
+    // we can grab the "first" topo because we know there is only one.
+    const std::string topo_type = n_mesh["topologies"][0]["type"].as_string();
+    if (topo_type == "structured" ||
+        topo_type == "rectilinear" ||
+        topo_type == "uniform")
+    {
+        char const *elemname = "paddims";
+        const int elemlength = 6;
+        const int nelems = 1;
+        const int nvalues = 6;
+
+        // we do not have a way to record ghost nodes in blueprint
+        // so we just write out all zeroes to make overlink happy
+        std::vector<int> paddim_vals;
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+        paddim_vals.push_back(0);
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           "PAD_DIMS", // name
+                           &elemname, // elemnames
+                           &elemlength, // elemlengths
+                           nelems, // nelems
+                           static_cast<void *>(paddim_vals.data()), // values
+                           nvalues, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+    }
+}
+
+//-----------------------------------------------------------------------------
+// only for overlink
+void
 write_var_attributes(DBfile *dbfile, 
                      const std::string &opts_mesh_name,
                      const Node &root)
@@ -6135,6 +6180,10 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
             write_var_attributes(dbfile.getSiloObject(),
                                  opts_out_mesh_name,
                                  root);
+
+            write_pad_dims(dbfile.getSiloObject(), 
+                           opts_out_mesh_name, 
+                           root);
         }
     }
 
