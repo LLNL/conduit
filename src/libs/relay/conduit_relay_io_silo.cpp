@@ -3261,6 +3261,7 @@ void silo_write_field(DBfile *dbfile,
     {
         for (int comp_id = 0; comp_id < nvars; comp_id ++)
         {
+            // TODO can't this be simplified?
             Node bookkeeping_info;
             bookkeeping_info["comp_info"]["comp"] = "vars";
             bookkeeping_info["comp_info"]["comp_name"] = var_name + "_" + comp_name_strings[comp_id];
