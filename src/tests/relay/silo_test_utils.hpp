@@ -66,7 +66,7 @@ silo_name_changer(const std::string &mmesh_name,
     if (! save_mesh.has_path("state/cycle"))
     {
         // this is to pass the diff, as silo will add cycle in if it is not there
-        save_mesh["state/cycle"] = (int64) 0;
+        save_mesh["state/cycle"] = 0;
     }
 
     if (save_mesh.has_child("topologies"))
@@ -217,7 +217,7 @@ overlink_name_changer(conduit::Node &save_mesh)
     }
     if (! save_mesh.has_path("state/cycle"))
     {
-        save_mesh["state/cycle"] = (int64) 0;
+        save_mesh["state/cycle"] = 0;
     }
 
     // we assume 1 coordset and 1 topo
