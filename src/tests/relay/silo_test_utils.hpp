@@ -237,6 +237,24 @@ overlink_name_changer(conduit::Node &save_mesh)
     // rename the topo
     topologies.rename_child(topo_name, "MMESH");
 
+    if (save_mesh.has_child("adjsets"))
+    {
+        // we assume 1 adjset
+        Node &n_adjset = save_mesh["adjsets"].children().next();
+        std::string adjset_name = n_adjset.name();
+
+        // use new topo name
+        n_adjset["topology"].reset();
+        n_adjset["topology"] = "MMESH";
+
+
+        if (adjset_name != "adjset")
+        {
+            // rename the adjset
+            save_mesh["adjsets"].rename_child(adjset_name, "adjset");
+        }
+    }
+
     if (save_mesh.has_child("matsets"))
     {
         // you can have multiple matsets when saving, provided you only have

@@ -566,7 +566,7 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
 {
     Node save_mesh, load_mesh, info;
     blueprint::mesh::examples::grid("structured", 3, 3, 1, 2, 2, 1, save_mesh);
-    std::cout << save_mesh.to_yaml() << std::endl;
+    // std::cout << save_mesh.to_yaml() << std::endl;
 
     const std::string basename = "silo_grid_adjset";
     const std::string filename = basename + "/OvlTop.silo";
@@ -578,20 +578,54 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename, opts);
     io::blueprint::save_mesh(save_mesh, basename, "hdf5");
-    // io::silo::load_mesh(filename, load_mesh);
+    io::silo::load_mesh(filename, load_mesh);
 
-    // EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    save_mesh.print();
+    load_mesh.print();
 
-    // EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
-    // NodeConstIterator l_itr = load_mesh.children();
-    // NodeConstIterator s_itr = save_mesh.children();
-    // while (l_itr.has_next())
-    // {
-    //     const Node &l_curr = l_itr.next();
-    //     const Node &s_curr = s_itr.next();
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-    //     EXPECT_FALSE(l_curr.diff(s_curr, info));
-    // }
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        // separate out vector fields
+        Node &field_vel = save_mesh[child]["fields"]["vel"];
+        Node &field_vel_u = save_mesh[child]["fields"]["vel_u"];
+        Node &field_vel_v = save_mesh[child]["fields"]["vel_v"];
+        
+        field_vel_u["topology"].set(field_vel["topology"]);
+        field_vel_u["association"].set(field_vel["association"]);
+        field_vel_u["values"].set(field_vel["values/u"]);
+        field_vel_v["topology"].set(field_vel["topology"]);
+        field_vel_v["association"].set(field_vel["association"]);
+        field_vel_v["values"].set(field_vel["values/v"]);
+
+        save_mesh[child]["fields"].remove_child("vel");
+
+        // make adjset pairwise
+        Node &pairwise_adjset = save_mesh[child]["adjsets"]["adjset"];
+        conduit::blueprint::mesh::adjset::to_pairwise(save_mesh[child]["adjsets"]["mesh_adj"], pairwise_adjset);
+        save_mesh[child]["adjsets"].remove_child("mesh_adj");
+
+        // make changes to save mesh so the diff will pass
+        overlink_name_changer(save_mesh[child]);
+        // TODO can't the following be handled in the silo name changer
+        int cycle = save_mesh[child]["state"]["cycle"].as_uint64();
+        save_mesh[child]["state"]["cycle"].reset();
+        save_mesh[child]["state"]["cycle"] = (int64) cycle;
+    }
+
+    EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
+    NodeConstIterator l_itr = load_mesh.children();
+    NodeConstIterator s_itr = save_mesh.children();
+    while (l_itr.has_next())
+    {
+        const Node &l_curr = l_itr.next();
+        const Node &s_curr = s_itr.next();
+
+        EXPECT_FALSE(l_curr.diff(s_curr, info));
+
+        info.print();
+    }
 }
 
 // //-----------------------------------------------------------------------------
@@ -1346,12 +1380,12 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
 //     DBcompoundarray *var_attr = DBGetCompoundarray(dbfile, "VAR_ATTRIBUTES");
 
 //     // fetch pointers to elements inside the compound array
-//     char **elemnames = var_attr->elemnames;
-//     int *elemlengths = var_attr->elemlengths;
-//     int nelems       = var_attr->nelems;
-//     int *values      = static_cast<int *>(var_attr->values);
-//     int nvalues      = var_attr->nvalues;
-//     int datatype     = var_attr->datatype;
+//     const char **elemnames = var_attr->elemnames;
+//     const int *elemlengths = var_attr->elemlengths;
+//     const int nelems       = var_attr->nelems;
+//     const int *values      = static_cast<int *>(var_attr->values);
+//     const int nvalues      = var_attr->nvalues;
+//     const int datatype     = var_attr->datatype;
 
 //     EXPECT_EQ(std::string(elemnames[0]), "field");
 //     EXPECT_EQ(std::string(elemnames[1]), "field2");
@@ -1381,12 +1415,12 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
 //     DBcompoundarray *pad_dims = DBGetCompoundarray(dbfile, "PAD_DIMS");
 
 //     // fetch pointers to elements inside the compound array
-//     elemnames   = pad_dims->elemnames;
-//     elemlengths = pad_dims->elemlengths;
-//     nelems      = pad_dims->nelems;
-//     values      = static_cast<int *>(pad_dims->values);
-//     nvalues     = pad_dims->nvalues;
-//     datatype    = pad_dims->datatype;
+//     const elemnames   = pad_dims->elemnames;
+//     const elemlengths = pad_dims->elemlengths;
+//     const nelems      = pad_dims->nelems;
+//     const values      = static_cast<int *>(pad_dims->values);
+//     const nvalues     = pad_dims->nvalues;
+//     const datatype    = pad_dims->datatype;
 
 //     EXPECT_EQ(std::string(elemnames[0]), "paddims");
 //     EXPECT_EQ(elemlengths[0], 6);
