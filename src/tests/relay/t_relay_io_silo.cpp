@@ -180,7 +180,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
         EXPECT_EQ(load_mesh.number_of_children(), 1);
         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
     }
 }
 
@@ -257,7 +257,7 @@ TEST(conduit_relay_io_silo, round_trip_braid)
         EXPECT_EQ(load_mesh.number_of_children(), 1);
         EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
     }
 }
 
@@ -296,7 +296,7 @@ TEST(conduit_relay_io_silo, round_trip_spiral)
             const Node &l_curr = l_itr.next();
             const Node &s_curr = s_itr.next();
 
-            EXPECT_FALSE(l_curr.diff(s_curr, info));
+            EXPECT_FALSE(l_curr.diff(s_curr, info, CONDUIT_EPSILON, true));
         }
     }
 }
@@ -331,7 +331,7 @@ TEST(conduit_relay_io_silo, round_trip_julia)
     EXPECT_EQ(load_mesh.number_of_children(), 1);
     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
 }
 
 //-----------------------------------------------------------------------------
@@ -406,7 +406,7 @@ TEST(conduit_relay_io_silo, round_trip_venn)
             EXPECT_EQ(load_mesh.number_of_children(), 1);
             EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-            EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+            EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
         }
     }
 }
@@ -499,7 +499,7 @@ TEST(conduit_relay_io_silo, round_trip_venn_modded_matnos)
     EXPECT_EQ(load_mesh.number_of_children(), 1);
     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
 
-    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
 }
 
 //-----------------------------------------------------------------------------
@@ -557,7 +557,7 @@ TEST(conduit_relay_io_silo, round_trip_spiral_multi_dom_materials)
         const Node &l_curr = l_itr.next();
         const Node &s_curr = s_itr.next();
 
-        EXPECT_FALSE(l_curr.diff(s_curr, info));
+        EXPECT_FALSE(l_curr.diff(s_curr, info, CONDUIT_EPSILON, true));
     }
 }
 
@@ -608,10 +608,6 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
 
         // make changes to save mesh so the diff will pass
         overlink_name_changer(save_mesh[child]);
-        // TODO can't the following be handled in the silo name changer
-        int cycle = save_mesh[child]["state"]["cycle"].as_uint64();
-        save_mesh[child]["state"]["cycle"].reset();
-        save_mesh[child]["state"]["cycle"] = (int64) cycle;
     }
 
     EXPECT_EQ(load_mesh.number_of_children(), save_mesh.number_of_children());
@@ -622,9 +618,7 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
         const Node &l_curr = l_itr.next();
         const Node &s_curr = s_itr.next();
 
-        EXPECT_FALSE(l_curr.diff(s_curr, info));
-
-        info.print();
+        EXPECT_FALSE(l_curr.diff(s_curr, info, CONDUIT_EPSILON, true));
     }
 }
 

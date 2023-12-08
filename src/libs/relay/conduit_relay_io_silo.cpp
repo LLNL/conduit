@@ -2717,7 +2717,7 @@ read_mesh(const std::string &root_file_path,
         // Read State
         //
 
-        mesh_out["state"]["domain_id"] = domain_id;
+        mesh_out["state"]["domain_id"] = static_cast<index_t>(domain_id);
         if (mesh_index.has_path("state/time"))
         {
             mesh_out["state"]["time"] = mesh_index["state"]["time"].as_double();
