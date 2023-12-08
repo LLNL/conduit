@@ -1761,86 +1761,83 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
 
 //-----------------------------------------------------------------------------
 void
-read_adjset(DBfile *dbfile, //TODO
-                    const std::string &multimesh_name,
-                    Node &root_node)
+read_adjset(DBfile *dbfile,
+            const std::string &multimesh_name,
+            Node &root_node,
+            Node &mesh_out)
 {
-    if (! root_node[multimesh_name].has_child("vars"))
+    const std::string dom_neighbor_nums_name = "DOMAIN_NEIGHBOR_NUMS";
+    if (! DBInqVarExists(dbfile, dom_neighbor_nums_name.c_str()))
     {
-        // nothing to do if there are no vars
+        // The domain neighbor nums are not present. They are optional, so we can return early
         return;
     }
-
-    const std::string var_attr_name = "VAR_ATTRIBUTES";
-    if (! DBInqVarExists(dbfile, var_attr_name.c_str()))
+    if (DBInqVarType(dbfile, dom_neighbor_nums_name.c_str()) != DB_ARRAY)
     {
-        // The var attributes are not present. They are optional, so we can return early
+        // The domain neighbor nums are the wrong type. They are optional, so we can return early
         return;
     }
-    if (DBInqVarType(dbfile, var_attr_name.c_str()) != DB_ARRAY)
-    {
-        // The var attributes are the wrong type. They are optional, so we can return early
-        return;
-    }
-    detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> var_attr_obj{
-        DBGetCompoundarray(dbfile, var_attr_name.c_str()), 
+    detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> dom_neighbor_nums_obj{
+        DBGetCompoundarray(dbfile, dom_neighbor_nums_name.c_str()), 
         &DBFreeCompoundarray};
-    DBcompoundarray *var_attr = var_attr_obj.getSiloObject();
-    if (! var_attr)
+    DBcompoundarray *dom_neighbor_nums = dom_neighbor_nums_obj.getSiloObject();
+    if (! dom_neighbor_nums)
     {
-        // we failed to read the variable attributes. We can skip them.
+        // we failed to read the domain neighbor nums. We can skip them.
         return;
     }
 
     // fetch pointers to elements inside the compound array
-    char **elemnames = var_attr->elemnames;
-    int *elemlengths = var_attr->elemlengths;
-    int nelems       = var_attr->nelems;
-    int *values      = static_cast<int *>(var_attr->values);
-    int datatype     = var_attr->datatype;
+    char **elemnames = dom_neighbor_nums->elemnames;
+    int *elemlengths = dom_neighbor_nums->elemlengths;
+    int nelems       = dom_neighbor_nums->nelems;
+    int *values      = static_cast<int *>(dom_neighbor_nums->values);
+    int datatype     = dom_neighbor_nums->datatype;
 
     if (datatype != DB_INT)
     {
-        // for overlink, the var attributes must contain integer data
+        // for overlink, the domain neighbor nums must contain integer data
         // we don't want to complain however, since we don't know if we are doing overlink
         // or not at this point.
         return;
     }
 
-    // a map from field names (strings) to whether or not it is volume dependent (bools)
-    std::map<std::string, bool> field_vol_dep;
+    // create the adjset
+    Node &n_adjset = mesh_out["adjsets"]["adjset"];
+    n_adjset["topology"] = multimesh_name;
+    n_adjset["association"] = "vertex";
+    // TODO how do I handle element case?
 
-    // next we fill our map
-    int currpos = 0;
-    for (int i = 0; i < nelems; i ++)
+    const int num_neighboring_doms = values[0];
+    for (int i = 1; i <= num_neighboring_doms; i ++)
     {
-        const std::string varname = elemnames[i];
-        const int elemlength = elemlengths[i];
-        const int scaling_property = values[currpos + 1]; // + 1 b/c scaling property is stored 
-        // in the 2nd position
+        n_adjset["groups"]["neighbors"] = values[i];
+        // TODO now read the DOMAIN_NEIGHBORX arrays
+        const int m = i - 1;
+        const std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(m);
 
-        // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
-        // intensive (0) IS NOT volume dependent
-        // extensive (1) IS volume dependent
-        const bool vol_dep = scaling_property != 0;
-
-        field_vol_dep[varname] = vol_dep;
-
-        currpos += elemlength;
-    }
-
-    // finally we use our map to put information into our fields
-    Node &root_fields = root_node[multimesh_name]["vars"];
-    for (auto const &mapitem : field_vol_dep)
-    {
-        std::string fieldname = mapitem.first;
-        std::string volume_dependent = mapitem.second ? "true" : "false";
-
-        // we only want this information for variables that we have read
-        if (root_fields.has_child(fieldname))
+        if (! DBInqVarExists(dbfile, arr_name.c_str()))
         {
-            root_fields[fieldname]["volume_dependent"] = volume_dependent;
+            // DomainNeighborX is not present. It is optional, so we can skip
+            continue;
         }
+        if (DBInqVarType(dbfile, arr_name.c_str()) != DB_ARRAY)
+        {
+            // DomainNeighborX is the wrong type. It is optional, so we can skip
+            continue;
+        }
+        detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> dom_neighbor_nums_obj{
+            DBGetCompoundarray(dbfile, arr_name.c_str()), 
+            &DBFreeCompoundarray};
+        DBcompoundarray *dom_neighbor_nums = dom_neighbor_nums_obj.getSiloObject();
+        if (! dom_neighbor_nums)
+        {
+            // we failed to read DomainNeighborX. We can skip it.
+            continue;
+        }
+
+        // TODO finish the rest of this
+
     }
 }
 
