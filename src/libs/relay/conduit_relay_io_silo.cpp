@@ -3422,10 +3422,87 @@ void silo_write_field(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 // overlink only
+void silo_write_empty_adjset(DBfile *dbfile)
+{
+    // 
+    // DOMAIN NEIGHBOR NUMS
+    // 
+
+    const int num_neighboring_doms = 0;
+    
+    // our compound array data that we are saving
+    std::vector<int> dom_neighbor_nums;
+
+    // the first entry is the number of neighboring domains
+    dom_neighbor_nums.push_back(num_neighboring_doms);
+
+    std::vector<std::string> elem_name_strings;
+    elem_name_strings.push_back("num_neighbors");
+    elem_name_strings.push_back("neighbor_nums");
+    // package up char ptrs for silo
+    std::vector<const char *> elem_name_ptrs;
+    for (size_t i = 0; i < elem_name_strings.size(); i ++)
+    {
+        elem_name_ptrs.push_back(elem_name_strings[i].c_str());
+    }
+
+    std::vector<int> elemlengths;
+    elemlengths.push_back(1);
+    elemlengths.push_back(num_neighboring_doms);
+
+    const int nelems = 2;
+    const int nvalues = 1;
+
+    DBPutCompoundarray(dbfile, // dbfile
+                       "DOMAIN_NEIGHBOR_NUMS", // name
+                       elem_name_ptrs.data(), // elemnames
+                       elemlengths.data(), // elemlengths
+                       nelems, // nelems
+                       static_cast<void *>(dom_neighbor_nums.data()), // values
+                       nvalues, // nvalues
+                       DB_INT, // datatype
+                       NULL); // optlist
+}
+
+//---------------------------------------------------------------------------//
+// overlink only
 void silo_write_adjset(DBfile *dbfile,
                        const Node &n_adjset)
 {
-    // TODO writing this is unconditional, need to fix logic
+    auto write_dom_neighbor_nums = [&](const int num_neighboring_doms,
+                                       const std::vector<int> &dom_neighbor_nums)
+    {
+        std::vector<std::string> elem_name_strings;
+        elem_name_strings.push_back("num_neighbors");
+        elem_name_strings.push_back("neighbor_nums");
+        // package up char ptrs for silo
+        std::vector<const char *> elem_name_ptrs;
+        for (size_t i = 0; i < elem_name_strings.size(); i ++)
+        {
+            elem_name_ptrs.push_back(elem_name_strings[i].c_str());
+        }
+
+        std::vector<int> elemlengths;
+        elemlengths.push_back(1);
+        elemlengths.push_back(num_neighboring_doms);
+
+        const int nelems = 2;
+        const int nvalues = num_neighboring_doms + 1;
+
+        void *dom_neighbor_nums_ptr = static_cast<void *>(
+                                          const_cast<int *>(
+                                              dom_neighbor_nums.data()));
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           "DOMAIN_NEIGHBOR_NUMS", // name
+                           elem_name_ptrs.data(), // elemnames
+                           elemlengths.data(), // elemlengths
+                           nelems, // nelems
+                           dom_neighbor_nums_ptr, // values
+                           nvalues, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+    };
 
     if (n_adjset["association"].as_string() == "element")
     {
@@ -3457,32 +3534,34 @@ void silo_write_adjset(DBfile *dbfile,
         dom_neighbor_nums.push_back(neighbor);
     }
 
-    std::vector<std::string> elem_name_strings;
-    elem_name_strings.push_back("num_neighbors");
-    elem_name_strings.push_back("neighbor_nums");
-    // package up char ptrs for silo
-    std::vector<const char *> elem_name_ptrs;
-    for (size_t i = 0; i < elem_name_strings.size(); i ++)
-    {
-        elem_name_ptrs.push_back(elem_name_strings[i].c_str());
-    }
+    write_dom_neighbor_nums(num_neighboring_doms, dom_neighbor_nums);
 
-    std::vector<int> elemlengths;
-    elemlengths.push_back(1);
-    elemlengths.push_back(num_neighboring_doms);
+    // std::vector<std::string> elem_name_strings;
+    // elem_name_strings.push_back("num_neighbors");
+    // elem_name_strings.push_back("neighbor_nums");
+    // // package up char ptrs for silo
+    // std::vector<const char *> elem_name_ptrs;
+    // for (size_t i = 0; i < elem_name_strings.size(); i ++)
+    // {
+    //     elem_name_ptrs.push_back(elem_name_strings[i].c_str());
+    // }
 
-    const int nelems = 2;
-    const int nvalues = num_neighboring_doms + 1;
+    // std::vector<int> elemlengths;
+    // elemlengths.push_back(1);
+    // elemlengths.push_back(num_neighboring_doms);
 
-    DBPutCompoundarray(dbfile, // dbfile
-                       "DOMAIN_NEIGHBOR_NUMS", // name
-                       elem_name_ptrs.data(), // elemnames
-                       elemlengths.data(), // elemlengths
-                       nelems, // nelems
-                       static_cast<void *>(dom_neighbor_nums.data()), // values
-                       nvalues, // nvalues
-                       DB_INT, // datatype
-                       NULL); // optlist
+    // const int nelems = 2;
+    // const int nvalues = num_neighboring_doms + 1;
+
+    // DBPutCompoundarray(dbfile, // dbfile
+    //                    "DOMAIN_NEIGHBOR_NUMS", // name
+    //                    elem_name_ptrs.data(), // elemnames
+    //                    elemlengths.data(), // elemlengths
+    //                    nelems, // nelems
+    //                    static_cast<void *>(dom_neighbor_nums.data()), // values
+    //                    nvalues, // nvalues
+    //                    DB_INT, // datatype
+    //                    NULL); // optlist
 
     // 
     // COMMUNICATIONS LISTS FOR NEIGHBORING DOMAINS
@@ -4441,6 +4520,10 @@ void silo_mesh_write(const Node &mesh_domain,
                 }
             }
         }
+        // else
+        // {
+        //     silo_write_empty_adjset(dbfile);
+        // }
     }
 
     if (!silo_obj_path.empty()) 
