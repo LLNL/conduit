@@ -1810,6 +1810,91 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
 }
 
 //-----------------------------------------------------------------------------
+void
+read_adjset(DBfile *dbfile, //TODO
+                    const std::string &multimesh_name,
+                    Node &root_node)
+{
+    if (! root_node[multimesh_name].has_child("vars"))
+    {
+        // nothing to do if there are no vars
+        return;
+    }
+
+    const std::string var_attr_name = "VAR_ATTRIBUTES";
+    if (! DBInqVarExists(dbfile, var_attr_name.c_str()))
+    {
+        // The var attributes are not present. They are optional, so we can return early
+        return;
+    }
+    if (DBInqVarType(dbfile, var_attr_name.c_str()) != DB_ARRAY)
+    {
+        // The var attributes are the wrong type. They are optional, so we can return early
+        return;
+    }
+    detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> var_attr_obj{
+        DBGetCompoundarray(dbfile, var_attr_name.c_str()), 
+        &DBFreeCompoundarray};
+    DBcompoundarray *var_attr = var_attr_obj.getSiloObject();
+    if (! var_attr)
+    {
+        // we failed to read the variable attributes. We can skip them.
+        return;
+    }
+
+    // fetch pointers to elements inside the compound array
+    char **elemnames = var_attr->elemnames;
+    int *elemlengths = var_attr->elemlengths;
+    int nelems       = var_attr->nelems;
+    int *values      = static_cast<int *>(var_attr->values);
+    int datatype     = var_attr->datatype;
+
+    if (datatype != DB_INT)
+    {
+        // for overlink, the var attributes must contain integer data
+        // we don't want to complain however, since we don't know if we are doing overlink
+        // or not at this point.
+        return;
+    }
+
+    // a map from field names (strings) to whether or not it is volume dependent (bools)
+    std::map<std::string, bool> field_vol_dep;
+
+    // next we fill our map
+    int currpos = 0;
+    for (int i = 0; i < nelems; i ++)
+    {
+        const std::string varname = elemnames[i];
+        const int elemlength = elemlengths[i];
+        const int scaling_property = values[currpos + 1]; // + 1 b/c scaling property is stored 
+        // in the 2nd position
+
+        // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
+        // intensive (0) IS NOT volume dependent
+        // extensive (1) IS volume dependent
+        const bool vol_dep = scaling_property != 0;
+
+        field_vol_dep[varname] = vol_dep;
+
+        currpos += elemlength;
+    }
+
+    // finally we use our map to put information into our fields
+    Node &root_fields = root_node[multimesh_name]["vars"];
+    for (auto const &mapitem : field_vol_dep)
+    {
+        std::string fieldname = mapitem.first;
+        std::string volume_dependent = mapitem.second ? "true" : "false";
+
+        // we only want this information for variables that we have read
+        if (root_fields.has_child(fieldname))
+        {
+            root_fields[fieldname]["volume_dependent"] = volume_dependent;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
 read_mesh(const std::string &root_file_path,
           Node &mesh
@@ -2800,6 +2885,12 @@ read_mesh(const std::string &root_file_path,
                     volume_dependent, matset_field_reconstruction, mesh_out);
             }
         }
+
+        //
+        // Read Adjset (overlink only)
+        //
+
+        read_adjset();
     }
 }
 
@@ -3299,8 +3390,7 @@ void silo_write_adjset(DBfile *dbfile,
     // DOMAIN NEIGHBOR NUMS
     // 
 
-    // placeholder
-    int num_neighboring_doms = pairwise_adjset["groups"].number_of_children();
+    const int num_neighboring_doms = pairwise_adjset["groups"].number_of_children();
     
     // our compound array data that we are saving
     std::vector<int> dom_neighbor_nums;
@@ -3314,7 +3404,7 @@ void silo_write_adjset(DBfile *dbfile,
     {
         const Node &group = group_itr.next();
         // since we have forced pairwise, we can assume that there is only one
-        int neighbor = group["neighbors"].as_int();
+        const int neighbor = group["neighbors"].to_int();
         dom_neighbor_nums.push_back(neighbor);
     }
 
@@ -3359,7 +3449,7 @@ void silo_write_adjset(DBfile *dbfile,
     group_itr = pairwise_adjset["groups"].children();
     while (group_itr.has_next())
     {
-        std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(neighbor_index);
+        const std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(neighbor_index);
 
         char const *elemname = "shared_nodes";
         const int nelems_comm = 1;
