@@ -928,6 +928,7 @@ generate_silo_material_names(const Node &n_mesh_state,
 // specific_info: // for vars
 //   comp_type:           only used for meshes and vars (not matsets)
 //   var_data_type:       only used for vars
+//   var_parent:          optionally used for vars
 // specific_info: // omitted for matsets
 // 
 void
@@ -965,6 +966,12 @@ track_local_type_domain_info(const Node &options,
             // we only need to do this once since overlink assumes all domains have
             // the same data type.
             local_type_domain_info_comp[comp_name]["ovl_datatype"] = var_data_type;
+
+            if (options["specific_info"].has_child("var_parent"))
+            {
+                local_type_domain_info_comp[comp_name]["var_parent"] = 
+                    options["specific_info"]["var_parent"].as_string();
+            }
         }
     }
     index_t_array domain_ids = local_type_domain_info_comp[comp_name]["domain_ids"].value();
@@ -1592,11 +1599,15 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
 
     Node &material_map = matset_out["material_map"];
     // if we have material map information from the multimat, we want to use that instead
-    // if the multimat was missing matnames and we have them here, we want to use them
-    // otherwise we will just use the information that is here
-    const std::string multimat_matmap_status = n_matset["material_map_status"].as_string();
-    if (multimat_matmap_status == "not provided")
+    if (n_matset.has_child("material_map"))
     {
+        // ignore what is here and use what was found in the multimat
+        material_map.set(n_matset["material_map"]);
+    }
+    else
+    {
+        CONDUIT_ASSERT(matset_ptr->nmat > 0, "Number of materials is non-positive for material "
+            << matset_name << " for multimesh " << multimesh_name);
         for (int i = 0; i < matset_ptr->nmat; i ++)
         {
             int matno;
@@ -1610,78 +1621,17 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                 // we infer that matnos run from 1 to nmat, inclusive
                 matno = i + 1;
             }
+
             if (matset_ptr->matnames) // may be null
             {
                 material_map[matset_ptr->matnames[i]] = matno;
             }
-            else // matnos should always be there
+            else
             {
                 material_map[std::to_string(matno)] = matno;
             }
         }
     }
-    // TODO do I even want to support this case? It seems unnecessarily complicated
-    else if (multimat_matmap_status == "missing matnames")
-    {
-        // if there are matnames here we can use
-        if (matset_ptr->matnames && matset_ptr->matnos)
-        {
-            // split mat map from multimat into constituent parts
-            int multimat_nmat;
-            std::vector<std::string> multimat_matnames;
-            std::vector<const char *> multimat_matname_ptrs;
-            std::vector<int> multimat_matnos;
-            detail::read_material_map(n_matset["material_map"],
-                                      multimat_nmat,
-                                      multimat_matnames,
-                                      multimat_matname_ptrs,
-                                      multimat_matnos);
-
-            CONDUIT_ASSERT(matset_ptr->nmat == multimat_nmat,
-                "Multimat and material disagree on number of materials.");
-            
-            // map material numbers to names
-            Node mat_intermediate_map;
-            for (int i = 0; i < multimat_nmat; i ++)
-            {
-                const std::string mat_number = std::to_string(matset_ptr->matnos[i]);
-                const std::string mat_name = matset_ptr->matnames[i];
-                mat_intermediate_map[mat_number] = mat_name;
-            }
-
-            // we cannot merge the for loop above with the for loop below because
-            // they are potentially operating on lists in a different order!
-
-            // now, for each material, I want to extract its name and build the real material map
-            // the name could not exist if there is some kind of mismatch, in this case
-            // we will use the number as a name
-            for (int i = 0; i < multimat_nmat; i ++)
-            {
-                const int mat_number = multimat_matnos[i];
-                const std::string mat_number_str = std::to_string(mat_number);
-                std::string mat_name;
-                if (mat_intermediate_map.has_child(mat_number_str))
-                {
-                    mat_name = mat_intermediate_map[mat_number_str].as_string();
-                }
-                else
-                {
-                    mat_name = mat_number_str;
-                }
-                material_map[mat_name] = mat_number;
-            }
-        }
-        else
-        {
-            // ignore what is here and use what was found in the multimat
-            material_map.set(n_matset["material_map"]);
-        }
-    }   
-    else // (multimat_matmap_status == "provided")
-    {
-        // ignore what is here and use what was found in the multimat
-        material_map.set(n_matset["material_map"]);
-    } 
 
     std::vector<double> volume_fractions;
     std::vector<int> material_ids;
@@ -2172,7 +2122,6 @@ read_multimats(DBtoc *toc,
             Node &material_map = material["material_map"];
             if (matnames)
             {
-                material["material_map_status"] = "provided";
                 for (int i = 0; i < nmatnos; i ++)
                 {
                     material_map[matnames[i]] = matnos[i];
@@ -2180,16 +2129,11 @@ read_multimats(DBtoc *toc,
             }
             else
             {
-                material["material_map_status"] = "missing matnames";
                 for (int i = 0; i < nmatnos; i ++)
                 {
                     material_map[std::to_string(matnos[i])] = matnos[i];
                 }
             }
-        }
-        else
-        {
-            material["material_map_status"] = "not provided";
         }
     }
 
@@ -2452,7 +2396,6 @@ read_root_silo_index(const std::string &root_file_path,
     //             - "domain_000000.silo:material"
     //             - "domain_000001.silo:material"
     //               ...
-    //          material_map_status: "not provided", "provided", or "missing matnames"
     //          material_map: // (optional) this can be reconstructed if dboptions are present
     //             a: 1
     //             b: 2    
@@ -3010,8 +2953,13 @@ void silo_write_field(DBfile *dbfile,
     int centering = 0;
     int num_values = 0;
 
-    CONDUIT_ASSERT(n_var.has_path("association"),
-        "Missing association! " << "fields/" << var_name << "/association");
+    if (!n_var.has_path("association"))
+    {
+        CONDUIT_INFO("Skipping this variable because we are "
+                     "missing association: "
+                      << "fields/" << var_name << "/association");
+        return;
+    }
 
     const std::string association = n_var["association"].as_string();
     if (association == "element")
@@ -3052,12 +3000,7 @@ void silo_write_field(DBfile *dbfile,
         nvars = 1;
         silo_vals_type = detail::dtype_to_silo_type(vals_dtype);
     }
-    if (write_overlink && nvars != 1)
-    {
-        CONDUIT_INFO("Overlink requires scalar variables. " << 
-            var_name << " is not a scalar variable. Skipping.");
-        return;
-    }
+
     if (silo_vals_type == DB_NOTYPE)
     {
         // skip the field if we don't support its type
@@ -3124,10 +3067,8 @@ void silo_write_field(DBfile *dbfile,
         // save the var type
         var_type = DB_UCDVAR;
 
-        // TODO do I actually need to do this? Or am I just letting the overlink spec bully me?
-        // TODO does overlink support non scalars?????
-        // use the scalar variant for writing scalars
-        // this will make overlink happy
+        // If I am writing a scalar variable, I can just use the scalar version
+        // of this function.
         if (nvars == 1)
         {
             void *vals_ptr = nullptr;
@@ -3155,18 +3096,42 @@ void silo_write_field(DBfile *dbfile,
         }
         else
         {
-            silo_error = DBPutUcdvar(dbfile, // Database file pointer
-                                     detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                     safe_meshname.c_str(), // mesh name
-                                     nvars, // number of variable components
-                                     comp_name_ptrs.data(), // variable component names
-                                     comp_vals_ptrs.data(), // the data values
-                                     num_values, // number of elements
-                                     mixvars_ptr_ptr, // mixed data arrays
-                                     mixlen, // length of mixed data arrays
-                                     silo_vals_type, // Datatype of the variable
-                                     centering, // centering (nodal or zonal)
-                                     NULL); // optlist
+            // overlink requires that non-scalar data be split into
+            // multiple scalar variables
+            if (write_overlink)
+            {
+                for (int comp_id = 0; comp_id < nvars; comp_id ++)
+                {
+                    void *vals_ptr = const_cast<void *>(comp_vals_ptrs[comp_id]);
+                    void *mixvar_ptr = mixvars_ptrs[comp_id];
+                    const std::string comp_var_name = var_name + "_" + comp_name_strings[comp_id];
+                    silo_error = DBPutUcdvar1(dbfile, // Database file pointer
+                                              detail::sanitize_silo_varname(comp_var_name).c_str(), // variable name
+                                              safe_meshname.c_str(), // mesh name
+                                              vals_ptr, // the data values
+                                              num_values, // number of elements
+                                              mixvar_ptr, // mixed data arrays
+                                              mixlen, // length of mixed data arrays
+                                              silo_vals_type, // Datatype of the variable
+                                              centering, // centering (nodal or zonal)
+                                              NULL); // optlist
+                }
+            }
+            else
+            {
+                silo_error = DBPutUcdvar(dbfile, // Database file pointer
+                                         detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                         safe_meshname.c_str(), // mesh name
+                                         nvars, // number of variable components
+                                         comp_name_ptrs.data(), // variable component names
+                                         comp_vals_ptrs.data(), // the data values
+                                         num_values, // number of elements
+                                         mixvars_ptr_ptr, // mixed data arrays
+                                         mixlen, // length of mixed data arrays
+                                         silo_vals_type, // Datatype of the variable
+                                         centering, // centering (nodal or zonal)
+                                         NULL); // optlist
+            }
         }
     }
     else if (mesh_type == "rectilinear" || 
@@ -3195,9 +3160,8 @@ void silo_write_field(DBfile *dbfile,
         // save the var type
         var_type = DB_QUADVAR;
 
-        // TODO do I actually need to do this? Or am I just letting the overlink spec bully me?
-        // use the scalar variant for writing scalars
-        // this will make overlink happy
+        // If I am writing a scalar variable, I can just use the scalar version
+        // of this function.
         if (nvars == 1)
         {
             void *vals_ptr = nullptr;
@@ -3226,26 +3190,50 @@ void silo_write_field(DBfile *dbfile,
         }
         else
         {
-            silo_error = DBPutQuadvar(dbfile, // Database file pointer
-                                      detail::sanitize_silo_varname(var_name).c_str(), // variable name
-                                      safe_meshname.c_str(), // mesh name
-                                      nvars, // number of variable components
-                                      comp_name_ptrs.data(), // variable component names
-                                      comp_vals_ptrs.data(), // the data values
-                                      dims, // the dimensions of the data
-                                      num_dims, // number of dimensions
-                                      mixvars_ptr_ptr, // mixed data arrays
-                                      mixlen, // length of mixed data arrays
-                                      silo_vals_type, // Datatype of the variable
-                                      centering, // centering (nodal or zonal)
-                                      NULL); // optlist
+            // overlink requires that non-scalar data be split into
+            // multiple scalar variables
+            if (write_overlink)
+            {
+                for (int comp_id = 0; comp_id < nvars; comp_id ++)
+                {
+                    void *vals_ptr = const_cast<void *>(comp_vals_ptrs[comp_id]);
+                    void *mixvar_ptr = mixvars_ptrs[comp_id];
+                    const std::string comp_var_name = var_name + "_" + comp_name_strings[comp_id];
+                    silo_error = DBPutQuadvar1(dbfile, // Database file pointer
+                                               detail::sanitize_silo_varname(comp_var_name).c_str(), // variable name
+                                               safe_meshname.c_str(), // mesh name
+                                               vals_ptr, // the data values
+                                               dims, // the dimensions of the data
+                                               num_dims, // number of dimensions
+                                               mixvar_ptr, // mixed data arrays
+                                               mixlen, // length of mixed data arrays
+                                               silo_vals_type, // Datatype of the variable
+                                               centering, // centering (nodal or zonal)
+                                               NULL); // optlist
+                }
+            }
+            else
+            {
+                silo_error = DBPutQuadvar(dbfile, // Database file pointer
+                                          detail::sanitize_silo_varname(var_name).c_str(), // variable name
+                                          safe_meshname.c_str(), // mesh name
+                                          nvars, // number of variable components
+                                          comp_name_ptrs.data(), // variable component names
+                                          comp_vals_ptrs.data(), // the data values
+                                          dims, // the dimensions of the data
+                                          num_dims, // number of dimensions
+                                          mixvars_ptr_ptr, // mixed data arrays
+                                          mixlen, // length of mixed data arrays
+                                          silo_vals_type, // Datatype of the variable
+                                          centering, // centering (nodal or zonal)
+                                          NULL); // optlist
+            }
         }
     }
     else if (mesh_type == "points")
     {
         if (write_overlink)
         {
-            // TODO what I should probably do is force conversion to a ucd point var
             CONDUIT_ERROR("Cannot write point var " << topo_name << " to overlink."
                           << " Only DB_UCDVAR and DB_QUADVAR are supported.");
         }
@@ -3268,18 +3256,42 @@ void silo_write_field(DBfile *dbfile,
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
-    Node bookkeeping_info;
-    bookkeeping_info["comp_info"]["comp"] = "vars";
-    bookkeeping_info["comp_info"]["comp_name"] = var_name;
-    bookkeeping_info["specific_info"]["comp_type"] = var_type;
-    bookkeeping_info["specific_info"]["var_data_type"] = detail::silo_type_to_ovl_attr_type(silo_vals_type);
-    bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
-    bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
-    bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
-    bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
+    // if we are writing overlink and we have separated variable components into new vars
+    if (write_overlink && nvars != 1)
+    {
+        for (int comp_id = 0; comp_id < nvars; comp_id ++)
+        {
+            // TODO can't this be simplified?
+            Node bookkeeping_info;
+            bookkeeping_info["comp_info"]["comp"] = "vars";
+            bookkeeping_info["comp_info"]["comp_name"] = var_name + "_" + comp_name_strings[comp_id];
+            bookkeeping_info["specific_info"]["comp_type"] = var_type;
+            bookkeeping_info["specific_info"]["var_data_type"] = detail::silo_type_to_ovl_attr_type(silo_vals_type);
+            bookkeeping_info["specific_info"]["var_parent"] = var_name;
+            bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
+            bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
+            bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
+            bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
 
-    // bookkeeping
-    detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
+            // bookkeeping
+            detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
+        }
+    }
+    else
+    {
+        Node bookkeeping_info;
+        bookkeeping_info["comp_info"]["comp"] = "vars";
+        bookkeeping_info["comp_info"]["comp_name"] = var_name;
+        bookkeeping_info["specific_info"]["comp_type"] = var_type;
+        bookkeeping_info["specific_info"]["var_data_type"] = detail::silo_type_to_ovl_attr_type(silo_vals_type);
+        bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
+        bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
+        bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
+        bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
+
+        // bookkeeping
+        detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -3857,7 +3869,6 @@ void silo_write_topo(const Node &mesh_domain,
         {
             if (write_overlink)
             {
-                // TODO what I should probably do is force conversion to a ucd point mesh
                 CONDUIT_ERROR("Cannot write point mesh " << topo_name << " to overlink."
                               << " Only DB_UCDMESH and DB_QUADMESH are supported.");
             }
@@ -4349,75 +4360,116 @@ write_multivars(DBfile *dbfile,
         {
             const Node &n_var = field_itr.next();
             std::string var_name = field_itr.name();
-            
+
             // did we actually write this field to silo?
-            if (! n_type_dom_info.has_path("vars/" + var_name))
+            if (write_overlink)
             {
-                // we skipped this field before so we can skip it now
-                continue;
-            }
-
-            std::string linked_topo_name = n_var["topology"].as_string();
-
-            if (! write_overlink || linked_topo_name == ovl_topo_name)
-            {
-                std::string safe_varname = detail::sanitize_silo_varname(var_name);
-                std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
-                std::string silo_path = root["silo_path"].as_string();
-
-                std::vector<std::string> var_name_strings;
-                std::vector<int> var_types;
-                detail::generate_silo_names(n_mesh["state"],
-                                            silo_path,
-                                            safe_varname,
-                                            num_files,
-                                            global_num_domains,
-                                            root_only,
-                                            root["type_domain_info"]["vars"][var_name],
-                                            DB_QUADVAR, // the default if we have an empty domain
-                                            var_name_strings,
-                                            var_types);
-
-                // package up char ptrs for silo
-                std::vector<const char *> var_name_ptrs;
-                for (size_t i = 0; i < var_name_strings.size(); i ++)
+                if (n_var["number_of_components"].to_int64() != 1)
                 {
-                    var_name_ptrs.push_back(var_name_strings[i].c_str());
-                }
-
-                detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-                    DBMakeOptlist(1),
-                    &DBFreeOptlist,
-                    "Error freeing optlist."};
-                CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
-
-                std::string multimesh_name, multivar_name;
-                if (write_overlink)
-                {
-                    multimesh_name = opts_mesh_name;
-                    multivar_name = safe_varname;
+                    if (! n_type_dom_info.has_path("ovl_var_parents/" + var_name))
+                    {
+                        // we skipped this field before so we can skip it now
+                        continue;
+                    }
                 }
                 else
                 {
-                    multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
-                    multivar_name = opts_mesh_name + "_" + safe_varname;
+                    if (! n_type_dom_info.has_path("vars/" + var_name))
+                    {
+                        // we skipped this field before so we can skip it now
+                        continue;
+                    }
                 }
+            }
+            else
+            {
+                if (! n_type_dom_info.has_path("vars/" + var_name))
+                {
+                    // we skipped this field before so we can skip it now
+                    continue;
+                }
+            }
 
-                // have to const_cast because converting to void *
-                CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-                                                      DBOPT_MMESH_NAME,
-                                                      const_cast<char *>(multimesh_name.c_str())),
-                                          "Error creating options for putting multivar");
+            auto write_multivar = [&](const std::string var_name)
+            {
+                std::string linked_topo_name = n_var["topology"].as_string();
 
-                CONDUIT_CHECK_SILO_ERROR(
-                    DBPutMultivar(
-                        dbfile,
-                        multivar_name.c_str(),
-                        global_num_domains,
-                        var_name_ptrs.data(),
-                        var_types.data(),
-                        optlist.getSiloObject()),
-                    "Error putting multivar corresponding to field: " << var_name);
+                // TODO do we need this check?
+                if (! write_overlink || linked_topo_name == ovl_topo_name)
+                {
+                    std::string safe_varname = detail::sanitize_silo_varname(var_name);
+                    std::string safe_linked_topo_name = detail::sanitize_silo_varname(linked_topo_name);
+                    std::string silo_path = root["silo_path"].as_string();
+
+                    std::vector<std::string> var_name_strings;
+                    std::vector<int> var_types;
+                    detail::generate_silo_names(n_mesh["state"],
+                                                silo_path,
+                                                safe_varname,
+                                                num_files,
+                                                global_num_domains,
+                                                root_only,
+                                                root["type_domain_info"]["vars"][var_name],
+                                                DB_QUADVAR, // the default if we have an empty domain
+                                                var_name_strings,
+                                                var_types);
+
+                    // package up char ptrs for silo
+                    std::vector<const char *> var_name_ptrs;
+                    for (size_t i = 0; i < var_name_strings.size(); i ++)
+                    {
+                        var_name_ptrs.push_back(var_name_strings[i].c_str());
+                    }
+
+                    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+                        DBMakeOptlist(1),
+                        &DBFreeOptlist,
+                        "Error freeing optlist."};
+                    CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
+
+                    std::string multimesh_name, multivar_name;
+                    if (write_overlink)
+                    {
+                        multimesh_name = opts_mesh_name;
+                        multivar_name = safe_varname;
+                    }
+                    else
+                    {
+                        multimesh_name = opts_mesh_name + "_" + safe_linked_topo_name;
+                        multivar_name = opts_mesh_name + "_" + safe_varname;
+                    }
+
+                    // have to const_cast because converting to void *
+                    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
+                                                          DBOPT_MMESH_NAME,
+                                                          const_cast<char *>(multimesh_name.c_str())),
+                                              "Error creating options for putting multivar");
+
+                    CONDUIT_CHECK_SILO_ERROR(
+                        DBPutMultivar(
+                            dbfile,
+                            multivar_name.c_str(),
+                            global_num_domains,
+                            var_name_ptrs.data(),
+                            var_types.data(),
+                            optlist.getSiloObject()),
+                        "Error putting multivar corresponding to field: " << var_name);
+                }
+            };
+            
+            // in this case we have to write multiple multivars, one for each comp
+            if (write_overlink && n_var["number_of_components"].to_int64() != 1)
+            {
+                std::vector<std::string> comp_var_names = 
+                    n_type_dom_info["ovl_var_parents"][var_name].child_names();
+                for (size_t comp_id = 0; comp_id < comp_var_names.size(); comp_id ++)
+                {
+                    write_multivar(comp_var_names[comp_id]);
+                }
+            }
+            else
+            {
+                write_multivar(var_name);
             }
         }
     }
@@ -4549,8 +4601,6 @@ write_pad_dims(DBfile *dbfile,
                const std::string &opts_mesh_name,
                const Node &root)
 {
-    // TODO_PADDIMS add tests for this
-
     const Node &n_mesh = root["blueprint_index"][opts_mesh_name];
     // this only applies to structured topos 
     // (quadmeshes, so rectilinear, uniform, and structured)
@@ -4610,67 +4660,94 @@ write_var_attributes(DBfile *dbfile,
             std::string var_name = field_itr.name();
 
             // did we actually write this field to silo?
-            if (! n_type_dom_info.has_path("vars/" + var_name))
+            if (n_var["number_of_components"].to_int64() != 1)
             {
-                // we skipped this field before so we can skip it now
-                continue;
-            }
-            
-            std::string safe_varname = detail::sanitize_silo_varname(var_name);
-            multivar_name_strings.push_back(safe_varname);
-
-            const int num_attr = 5; // we are writing 5 var attributes for now
-
-            elemlengths.push_back(num_attr);
-            nvalues += num_attr;
-
-            // 
-            // centering: ATTR_NODAL 0, ATTR_ZONAL 1, ATTR_FACE, ATTR_EDGE
-            // 
-            if (n_var["association"].as_string() == "vertex")
-            {
-                var_attr_values.push_back(0); // nodal == vertex
+                if (! n_type_dom_info.has_path("ovl_var_parents/" + var_name))
+                {
+                    // we skipped this field before so we can skip it now
+                    continue;
+                }
             }
             else
             {
-                var_attr_values.push_back(1); // zonal == element
+                if (! n_type_dom_info.has_path("vars/" + var_name))
+                {
+                    // we skipped this field before so we can skip it now
+                    continue;
+                }
             }
 
-            // 
-            // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
-            // 
-            // intensive (0) IS NOT volume dependent
-            // extensive (1) IS volume dependent
-            if (n_var.has_child("volume_dependent") &&
-                n_var["volume_dependent"].as_string() == "true")
+            auto write_var_attr_for_field = [&](const std::string var_name)
             {
-                var_attr_values.push_back(1); // extensive == volume dependent
+                std::string safe_varname = detail::sanitize_silo_varname(var_name);
+                multivar_name_strings.push_back(safe_varname);
+
+                const int num_attr = 5; // we are writing 5 var attributes for now
+
+                elemlengths.push_back(num_attr);
+                nvalues += num_attr;
+
+                // 
+                // centering: ATTR_NODAL 0, ATTR_ZONAL 1, ATTR_FACE, ATTR_EDGE
+                // 
+                if (n_var["association"].as_string() == "vertex")
+                {
+                    var_attr_values.push_back(0); // nodal == vertex
+                }
+                else
+                {
+                    var_attr_values.push_back(1); // zonal == element
+                }
+
+                // 
+                // scaling property: ATTR_INTENSIVE 0, ATTR_EXTENSIVE 1
+                // 
+                // intensive (0) IS NOT volume dependent
+                // extensive (1) IS volume dependent
+                if (n_var.has_child("volume_dependent") &&
+                    n_var["volume_dependent"].as_string() == "true")
+                {
+                    var_attr_values.push_back(1); // extensive == volume dependent
+                }
+                else
+                {
+                    var_attr_values.push_back(0); // intensive == NOT volume dependent
+                }
+
+                // 
+                // linking: ATTR_FIRST ORDER 0, ATTR_SECOND ORDER 1
+                // 
+                // Use ATTR_SECOND_ORDER which means it computes the gradient of the 
+                // field value in each zone for a second order remap of the values.
+                // The first order remap is less accurate since it treats the value 
+                // as constant within the zone.
+                var_attr_values.push_back(1);
+
+                // 
+                // unused: 0
+                // 
+                var_attr_values.push_back(0);
+
+                // 
+                // data type: ATTR_INTEGER, ATTR_FLOAT
+                // 
+                // we cached this info earlier, just need to retrieve it
+                var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
+            };
+
+            if (n_var["number_of_components"].to_int64() != 1)
+            {
+                std::vector<std::string> comp_var_names = 
+                    n_type_dom_info["ovl_var_parents"][var_name].child_names();
+                for (size_t comp_id = 0; comp_id < comp_var_names.size(); comp_id ++)
+                {
+                    write_var_attr_for_field(comp_var_names[comp_id]);
+                }
             }
             else
             {
-                var_attr_values.push_back(0); // intensive == NOT volume dependent
+                write_var_attr_for_field(var_name);
             }
-
-            // 
-            // linking: ATTR_FIRST ORDER 0, ATTR_SECOND ORDER 1
-            // 
-            // Use ATTR_SECOND_ORDER which means it computes the gradient of the 
-            // field value in each zone for a second order remap of the values.
-            // The first order remap is less accurate since it treats the value 
-            // as constant within the zone.
-            // TODO do we want to store any of this info in the state node on read?
-            var_attr_values.push_back(1);
-
-            // 
-            // unused: 0
-            // 
-            var_attr_values.push_back(0);
-
-            // 
-            // data type: ATTR_INTEGER, ATTR_FLOAT
-            // 
-            // we cached this info earlier, just need to retrieve it
-            var_attr_values.push_back(n_type_dom_info["ovl_var_datatypes"][safe_varname].to_index_t());
         }
         // package up char ptrs for silo
         std::vector<const char *> multivar_name_ptrs;
@@ -5834,6 +5911,14 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
                             {
                                 root_type_domain_info["ovl_var_datatypes"][read_comp_name].set(
                                     read_comp_type_domain_info["ovl_datatype"]);
+
+                                // we also want to save the relationship between the var component
+                                // and the original variable.
+                                if (read_comp_type_domain_info.has_child("var_parent"))
+                                {
+                                    const std::string var_parent = read_comp_type_domain_info["var_parent"].as_string();
+                                    root_type_domain_info["ovl_var_parents"][var_parent][read_comp_name];
+                                }
                             }
                         }
                         // this is where we are writing the data to

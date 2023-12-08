@@ -281,7 +281,6 @@ overlink_name_changer(conduit::Node &save_mesh)
 
             // there are only scalar variables for overlink so we do not
             // need to worry about renaming vector components.
-            // we need to rename vector components
             if (n_field["values"].dtype().is_object())
             {
                 CONDUIT_ERROR("Overlink only allows scalar variables. You are doing this wrong.");

@@ -1415,6 +1415,78 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink3)
 }
 
 //-----------------------------------------------------------------------------
+// we are testing vector fields get converted to scalars
+TEST(conduit_relay_io_silo, round_trip_save_option_overlink4)
+{
+    const std::vector<std::pair<std::string, std::string>> mesh_types = {
+        std::make_pair("rectilinear", "2"), std::make_pair("rectilinear", "3"),
+        std::make_pair("structured", "2"), std::make_pair("structured", "3"),
+        std::make_pair("quads", "2"),
+        std::make_pair("hexs", "3"),
+    };
+    for (int i = 0; i < mesh_types.size(); ++i)
+    {
+        std::string dim = mesh_types[i].second;
+        index_t nx = 3;
+        index_t ny = 4;
+        index_t nz = (dim == "2" ? 0 : 2);
+
+        std::string mesh_type = mesh_types[i].first;
+
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
+
+        const std::string basename = "silo_save_option_overlink_braid_" + mesh_type + "_" + dim + "D";
+        const std::string filename = basename + "/OvlTop.silo";
+
+        Node opts;
+        opts["file_style"] = "overlink";
+
+        // remove existing root file, directory and any output files
+        remove_path_if_exists(filename);
+
+        io::silo::save_mesh(save_mesh, basename, opts);
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+        Node &field_vel = save_mesh["fields"]["vel"];
+        Node &field_vel_u = save_mesh["fields"]["vel_u"];
+        Node &field_vel_v = save_mesh["fields"]["vel_v"];
+
+        field_vel_u["topology"].set(field_vel["topology"]);
+        field_vel_u["association"].set(field_vel["association"]);
+        field_vel_u["values"].set(field_vel["values/u"]);
+        field_vel_v["topology"].set(field_vel["topology"]);
+        field_vel_v["association"].set(field_vel["association"]);
+        field_vel_v["values"].set(field_vel["values/v"]);
+
+        if (dim == "3")
+        {
+            Node &field_vel_w = save_mesh["fields"]["vel_w"];
+            field_vel_w["topology"].set(field_vel["topology"]);
+            field_vel_w["association"].set(field_vel["association"]);
+            field_vel_w["values"].set(field_vel["values/w"]);
+        }
+
+        save_mesh["fields"].remove_child("vel");
+
+        // make changes to save mesh so the diff will pass
+        overlink_name_changer(save_mesh);
+        // TODO can't the following be handled in the silo name changer
+        int cycle = save_mesh["state"]["cycle"].as_uint64();
+        save_mesh["state"]["cycle"].reset();
+        save_mesh["state"]["cycle"] = (int64) cycle;
+        
+        // the loaded mesh will be in the multidomain format
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), 1);
+        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info));
+    }
+}
+
+//-----------------------------------------------------------------------------
 
 //
 // read and write Silo and Overlink tests
