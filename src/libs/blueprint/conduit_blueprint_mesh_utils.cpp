@@ -3144,14 +3144,47 @@ foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Fun
                     const Node &n_values = adj.fetch_existing(key);
                     const auto values = n_values.as_index_t_accessor();
                     bputils::topology::TopologyBuilder B(topo);
-                    for(index_t i = 0; i < values.number_of_elements(); i++)
+
+                    std::string akey("adjsets/" + adjsetName + "/association");
+                    std::string association = adj[akey].as_string();
+                    std::string shapeType;
+                    if(association == "vertex")
                     {
-                        index_t ptid = values[i];
-                        B.add(&ptid, 1);
+                        shapeType = "point";
+                        for(index_t i = 0; i < values.number_of_elements(); i++)
+                        {
+                            index_t ptid = values[i];
+                            B.add(&ptid, 1);
+                        }
+                    }
+                    else if(association == "element")
+                    {
+                        size_t minSides = 0, maxSides = 0;
+                        for(index_t i = 0; i < values.number_of_elements(); i++)
+                        {
+                            index_t ei = values[i];
+                            const auto ptids = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
+                            B.add(&ptids[0], ptids.size());
+
+                            minSides = (i == 0) ? ptids.size() : std::min(minSides, ptids.size());
+                            maxSides = (i == 0) ? ptids.size() : std::max(maxSides, ptids.size());
+                        }
+
+                        if(minSides == maxSides)
+                        {
+                            if(minSides == 2)
+                                shapeType = "line";
+                            else if(minSides == 3)
+                                shapeType = "tri";
+                            else if(minSides == 4)
+                                shapeType = "quad";
+                        }
+                        if(shapeType.empty())
+                            shapeType = "polygon";
                     }
 
                     // Make the local point mesh.
-                    B.execute(mesh[mi], "point");
+                    B.execute(mesh[mi], shapeType);
 
                     mi++;
                 }

@@ -202,38 +202,40 @@ main(int argc, char *argv[])
         std::vector<const conduit::Node *> adjsets(GetAdjsets(root));
 
         // Look through the adjsets to see if the points are all good.
-        std::string msg2("Check adjset ");
         bool err = false;
         conduit::Node pointMeshes;
         for(size_t i = 0; i < adjsets.size(); i++)
         {
             std::string adjsetName(adjsets[i]->name());
+
+            // Get the adjset association.
+            std::string association;
+            if(adjsets[i]->has_path("association"))
+                association = adjsets[i]->fetch_existing("association").as_string();
+
             conduit::Node info;
             bool res = conduit::blueprint::mesh::utils::adjset::validate(root, adjsetName, info);
             if(res)
             {
                 // If the adjset is vertex associated then compare the points in
                 // it to make sure that they are the same on each side of the boundary.
-                bool vertex = false;
-                if(adjsets[i]->has_path("association"))
-                    vertex = adjsets[i]->fetch_existing("association").as_string() == "vertex";
-                if(vertex)
+                if(association == "vertex")
                     res = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, adjsetName, info);
 
                 if(res)
                 {
-                    std::cout << msg2 << adjsetName << "... PASS" << std::endl;
+                    std::cout << "Check " << association << " adjset " << adjsetName << "... PASS" << std::endl;
                 }
                 else
                 {
-                    std::cout << msg2 << adjsetName << "... FAIL: The adjset points have different orders" << std::endl;
+                    std::cout << "Check " << association << " adjset " << adjsetName << "... FAIL: The adjset points have different orders" << std::endl;
                     info.print();
                     err = true;
                 }
             }
             else
             {
-                std::cout << msg2 << adjsetName << "... FAIL: The adjsets contain errors." << std::endl;
+                std::cout << "Check " << association << " adjset " << adjsetName << "... FAIL: The adjsets contain errors." << std::endl;
                 info.print();
                 // If we're outputting, make a point mesh of the differences.
                 if(!output.empty())
