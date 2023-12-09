@@ -4491,7 +4491,7 @@ void silo_mesh_write(const Node &mesh_domain,
                     silo_write_adjset(dbfile, n_adjset, false);
                 }
                 // we will give up after writing 1 because we can only have
-                // 1 adjet per topo
+                // 1 adjset per topo
                 break;
             }
         }
