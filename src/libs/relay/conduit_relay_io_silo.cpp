@@ -4485,12 +4485,14 @@ void silo_mesh_write(const Node &mesh_domain,
             auto itr = mesh_domain["adjsets"].children();
             while (itr.has_next())
             {
-                // TODO can't we only write one of these? Otherwise we will overwrite?
                 const Node &n_adjset = itr.next();
                 if (n_adjset["topology"].as_string() == ovl_topo_name)
                 {
                     silo_write_adjset(dbfile, n_adjset, false);
                 }
+                // we will give up after writing 1 because we can only have
+                // 1 adjet per topo
+                break;
             }
         }
         else
