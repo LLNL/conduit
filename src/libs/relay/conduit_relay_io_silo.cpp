@@ -3422,52 +3422,9 @@ void silo_write_field(DBfile *dbfile,
 
 //---------------------------------------------------------------------------//
 // overlink only
-void silo_write_empty_adjset(DBfile *dbfile)
-{
-    // 
-    // DOMAIN NEIGHBOR NUMS
-    // 
-
-    const int num_neighboring_doms = 0;
-    
-    // our compound array data that we are saving
-    std::vector<int> dom_neighbor_nums;
-
-    // the first entry is the number of neighboring domains
-    dom_neighbor_nums.push_back(num_neighboring_doms);
-
-    std::vector<std::string> elem_name_strings;
-    elem_name_strings.push_back("num_neighbors");
-    elem_name_strings.push_back("neighbor_nums");
-    // package up char ptrs for silo
-    std::vector<const char *> elem_name_ptrs;
-    for (size_t i = 0; i < elem_name_strings.size(); i ++)
-    {
-        elem_name_ptrs.push_back(elem_name_strings[i].c_str());
-    }
-
-    std::vector<int> elemlengths;
-    elemlengths.push_back(1);
-    elemlengths.push_back(num_neighboring_doms);
-
-    const int nelems = 2;
-    const int nvalues = 1;
-
-    DBPutCompoundarray(dbfile, // dbfile
-                       "DOMAIN_NEIGHBOR_NUMS", // name
-                       elem_name_ptrs.data(), // elemnames
-                       elemlengths.data(), // elemlengths
-                       nelems, // nelems
-                       static_cast<void *>(dom_neighbor_nums.data()), // values
-                       nvalues, // nvalues
-                       DB_INT, // datatype
-                       NULL); // optlist
-}
-
-//---------------------------------------------------------------------------//
-// overlink only
 void silo_write_adjset(DBfile *dbfile,
-                       const Node &n_adjset)
+                       const Node &n_adjset,
+                       const bool empty)
 {
     auto write_dom_neighbor_nums = [&](const int num_neighboring_doms,
                                        const std::vector<int> &dom_neighbor_nums)
@@ -3504,6 +3461,26 @@ void silo_write_adjset(DBfile *dbfile,
                            NULL); // optlist
     };
 
+    // 
+    // DOMAIN NEIGHBOR NUMS
+    // 
+
+    if (empty)
+    {
+        const int num_neighboring_doms = 0;
+        
+        // our compound array data that we are saving
+        std::vector<int> dom_neighbor_nums;
+
+        // the first entry is the number of neighboring domains
+        dom_neighbor_nums.push_back(num_neighboring_doms);
+
+        write_dom_neighbor_nums(num_neighboring_doms, dom_neighbor_nums);
+
+        // we are done there is nothing else to write
+        return;
+    }
+
     if (n_adjset["association"].as_string() == "element")
     {
         CONDUIT_ERROR("TODO no idea what to do in this case");
@@ -3511,10 +3488,6 @@ void silo_write_adjset(DBfile *dbfile,
 
     Node pairwise_adjset;
     conduit::blueprint::mesh::adjset::to_pairwise(n_adjset, pairwise_adjset);
-
-    // 
-    // DOMAIN NEIGHBOR NUMS
-    // 
 
     const int num_neighboring_doms = pairwise_adjset["groups"].number_of_children();
     
@@ -4516,14 +4489,15 @@ void silo_mesh_write(const Node &mesh_domain,
                 const Node &n_adjset = itr.next();
                 if (n_adjset["topology"].as_string() == ovl_topo_name)
                 {
-                    silo_write_adjset(dbfile, n_adjset);
+                    silo_write_adjset(dbfile, n_adjset, false);
                 }
             }
         }
-        // else
-        // {
-        //     silo_write_empty_adjset(dbfile);
-        // }
+        else
+        {
+            Node temp; // we just need an empty argument
+            silo_write_adjset(dbfile, temp, true);
+        }
     }
 
     if (!silo_obj_path.empty()) 

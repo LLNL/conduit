@@ -1300,13 +1300,13 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
 
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
 
-    // open silo file and do some checks
+    // open silo files and do some checks
 
-    DBfile *dbfile = DBOpen(filename.c_str(), DB_UNKNOWN, DB_READ);
-    EXPECT_TRUE(DBInqVarExists(dbfile, "VAR_ATTRIBUTES"));
-    EXPECT_TRUE(DBInqVarType(dbfile, "VAR_ATTRIBUTES") == DB_ARRAY);
+    DBfile *rootfile = DBOpen(filename.c_str(), DB_UNKNOWN, DB_READ);
+    EXPECT_TRUE(DBInqVarExists(rootfile, "VAR_ATTRIBUTES"));
+    EXPECT_TRUE(DBInqVarType(rootfile, "VAR_ATTRIBUTES") == DB_ARRAY);
 
-    DBcompoundarray *var_attr = DBGetCompoundarray(dbfile, "VAR_ATTRIBUTES");
+    DBcompoundarray *var_attr = DBGetCompoundarray(rootfile, "VAR_ATTRIBUTES");
 
     // fetch pointers to elements inside the compound array
     char **elemnames = var_attr->elemnames;
@@ -1338,10 +1338,10 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
 
     DBFreeCompoundarray(var_attr);
 
-    EXPECT_TRUE(DBInqVarExists(dbfile, "PAD_DIMS"));
-    EXPECT_TRUE(DBInqVarType(dbfile, "PAD_DIMS") == DB_ARRAY);
+    EXPECT_TRUE(DBInqVarExists(rootfile, "PAD_DIMS"));
+    EXPECT_TRUE(DBInqVarType(rootfile, "PAD_DIMS") == DB_ARRAY);
 
-    DBcompoundarray *pad_dims = DBGetCompoundarray(dbfile, "PAD_DIMS");
+    DBcompoundarray *pad_dims = DBGetCompoundarray(rootfile, "PAD_DIMS");
 
     // fetch pointers to elements inside the compound array
     elemnames   = pad_dims->elemnames;
@@ -1365,7 +1365,38 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
 
     DBFreeCompoundarray(pad_dims);
 
-    DBClose(dbfile);
+    DBClose(rootfile);
+
+    // now check domain file
+
+    const std::string dom_filename = basename + "/domain0.silo";
+    DBfile *domfile = DBOpen(dom_filename.c_str(), DB_UNKNOWN, DB_READ);
+
+    EXPECT_TRUE(DBInqVarExists(domfile, "DOMAIN_NEIGHBOR_NUMS"));
+    EXPECT_TRUE(DBInqVarType(domfile, "DOMAIN_NEIGHBOR_NUMS") == DB_ARRAY);
+
+    DBcompoundarray *dom_neighbor_nums = DBGetCompoundarray(domfile, "DOMAIN_NEIGHBOR_NUMS");
+
+    // fetch pointers to elements inside the compound array
+    elemnames   = dom_neighbor_nums->elemnames;
+    elemlengths = dom_neighbor_nums->elemlengths;
+    nelems      = dom_neighbor_nums->nelems;
+    values      = static_cast<int *>(dom_neighbor_nums->values);
+    nvalues     = dom_neighbor_nums->nvalues;
+    datatype    = dom_neighbor_nums->datatype;
+
+    EXPECT_EQ(std::string(elemnames[0]), "num_neighbors");
+    EXPECT_EQ(std::string(elemnames[1]), "neighbor_nums");
+    EXPECT_EQ(elemlengths[0], 1);
+    EXPECT_EQ(elemlengths[1], 0);
+    EXPECT_EQ(nelems, 2);
+    EXPECT_EQ(values[0], 0);
+    EXPECT_EQ(nvalues, 1);
+    EXPECT_EQ(datatype, DB_INT);
+
+    DBFreeCompoundarray(dom_neighbor_nums);
+
+    DBClose(domfile);
 }
 
 //-----------------------------------------------------------------------------
