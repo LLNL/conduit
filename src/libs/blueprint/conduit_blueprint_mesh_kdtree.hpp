@@ -70,6 +70,7 @@ class kdtree
 public:
     static const conduit::index_t NoChild;
     static const conduit::index_t NotFound;
+    static const CoordinateType   DEFAULT_POINT_TOLERANCE;
 
     using IndexableType = Indexable;
     using BoxType = CoordinateType[NDIMS][2];
@@ -181,6 +182,9 @@ const conduit::index_t kdtree<Indexable, CoordinateType, NDIMS>::NoChild = -1;
 template <typename Indexable, typename CoordinateType, int NDIMS>
 const conduit::index_t kdtree<Indexable, CoordinateType, NDIMS>::NotFound = -1;
 
+template <typename Indexable, typename CoordinateType, int NDIMS>
+const CoordinateType kdtree<Indexable, CoordinateType, NDIMS>::DEFAULT_POINT_TOLERANCE = static_cast<CoordinateType>(1.e-9);
+
 //---------------------------------------------------------------------------
 template <typename Indexable, typename CoordinateType, int NDIMS>
 kdtree<Indexable, CoordinateType, NDIMS>::kdtree() : boxes(), index()
@@ -192,7 +196,6 @@ kdtree<Indexable, CoordinateType, NDIMS>::kdtree() : boxes(), index()
         coords[i] = Indexable{};
     }
     coordlen = 0;
-    constexpr auto DEFAULT_POINT_TOLERANCE = static_cast<CoordinateType>(1.e-9);
     setPointTolerance(DEFAULT_POINT_TOLERANCE);
 }
 
@@ -458,10 +461,13 @@ void kdtree<Indexable, CoordinateType, NDIMS>::calculateExtents()
         }
     }
 
-    // Expand the box a little
+    // Expand the box a little. Note that we have a minimum expansion to account
+    // for when a dimension has all the same values.
+    const CoordinateType minExpansion = DEFAULT_POINT_TOLERANCE;
     for(int i = 0; i < dims(); i++)
     {
-        CoordinateType d = (box[i][1] - box[i][0]) / static_cast<CoordinateType>(200.);
+        CoordinateType side = std::max(box[i][1] - box[i][0], minExpansion);
+        CoordinateType d = side / static_cast<CoordinateType>(200.);
         box[i][0] -= d;
         box[i][1] += d;
     }
