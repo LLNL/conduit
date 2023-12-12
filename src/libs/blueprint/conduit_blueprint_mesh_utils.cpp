@@ -2084,6 +2084,47 @@ topology::TopologyBuilder::clear()
     topo_sizes.clear();
 }
 
+//---------------------------------------------------------------------------
+template <typename Body>
+static void topology_iterate_elements(const conduit::Node &topo, Body &&body)
+{
+    const conduit::Node &n_topo_conn = topo["elements/connectivity"];
+    const auto topo_conn = n_topo_conn.as_index_t_accessor();
+    index_t idx = 0;
+    std::vector<index_t> ids;
+    if(topo.has_path("elements/sizes"))
+    {
+        // Variable sized shapes.
+        const conduit::Node &n_topo_size = topo["elements/sizes"];
+        const auto topo_size = n_topo_size.as_index_t_accessor();
+        const index_t nelem = topo_size.dtype().number_of_elements();
+
+        for(index_t i = 0; i < nelem; i++)
+        {
+            ids.clear();
+            index_t s = topo_size[i];
+            for(index_t pi = 0; pi < s; pi++)
+                ids.push_back(topo_conn[idx++]);
+
+            body(i, ids);
+        }
+    }
+    else
+    {
+        // Homogeneous shapes
+        const ShapeType shape(topo);
+        const index_t nelem = topo_conn.dtype().number_of_elements() / shape.indices;
+
+        for(index_t i = 0; i < nelem; i++)
+        {
+            ids.clear();
+            for(index_t pi = 0; pi < shape.indices; pi++)
+                ids.push_back(topo_conn[idx++]);
+
+            body(i, ids);
+        }
+    }
+}
 
 //---------------------------------------------------------------------------
 std::vector<int>
@@ -2123,26 +2164,15 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
     // Do the query.
     P.execute(cset2.name());
 
-    const conduit::Node &n_topo1_conn = topo1["elements/connectivity"];
-    const conduit::Node &n_topo1_size = topo1["elements/sizes"];
-    auto topo1_conn = n_topo1_conn.as_index_t_accessor();
-    auto topo1_size = n_topo1_size.as_index_t_accessor();
-
-    // Iterate over the entities in mesh1 and make hash ids for the entities
+    // Iterate over the entities in topo1 and make hash ids for the entities
     // by hashing their sorted points.
-    index_t nelem = topo1_size.dtype().number_of_elements();
     std::map<uint64, index_t> topo1_entity_ids;
-    index_t idx = 0;
-    for(index_t i = 0; i < nelem; i++)
+    topology_iterate_elements(topo1, [&](index_t i, std::vector<index_t> &ids)
     {
-        std::vector<index_t> ids;
-        index_t s = topo1_size[i];
-        for(index_t pi = 0; pi < s; pi++)
-            ids.push_back(topo1_conn[idx++]);
         std::sort(ids.begin(), ids.end());
         uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
         topo1_entity_ids[h] = i;
-    }
+    });
 
     // Get the query results for each mesh2 point. This is a vector of point
     // ids from mesh 1 or NotFound.
@@ -2151,29 +2181,16 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
     // Iterate over the entities in mesh2 and map their points to mesh 1 points
     // if possible before computing hashids for them. If a mesh2 entity's points
     // can all be defined in mesh1 then the entity exists in both meshes.
-    const conduit::Node &n_topo2_conn = topo2["elements/connectivity"];
-    const conduit::Node &n_topo2_size = topo2["elements/sizes"];
-    auto topo2_conn = n_topo2_conn.as_index_t_accessor();
-    auto topo2_size = n_topo2_size.as_index_t_accessor();
-
-    index_t nelem2 = topo2_size.dtype().number_of_elements();
-    std::map<uint64, index_t> topo2_entity_ids;
-    idx = 0;
     std::vector<int> exists;
-    exists.reserve(nelem2);
-    std::vector<index_t> ids;
-    ids.reserve(10);
-    for(index_t i = 0; i < nelem2; i++)
+    topology_iterate_elements(topo2, [&](index_t /*i*/, const std::vector<index_t> &topo2Ids)
     {
-        index_t s = topo2_size[i];
-
         // Try and map all of the topo2 entity's points to topo1's coordset.
         // If we can do that then the entity may exist.
         bool badEntity = false;
-        ids.clear();
-        for(index_t pi = 0; pi < s; pi++)
+        std::vector<index_t> ids;
+        ids.reserve(topo2Ids.size());
+        for(const index_t &pt : topo2Ids)
         {
-            index_t pt = topo2_conn[idx++];
             // See if the point exists in mesh1.
             badEntity |= (r[pt] == P.NotFound);
             ids.push_back(r[pt]);
@@ -2191,7 +2208,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
             bool found = topo1_entity_ids.find(h) != topo1_entity_ids.end();
             exists.push_back(found ? 1 : 0);
         }
-    }
+    });
 
     return exists;
 }
