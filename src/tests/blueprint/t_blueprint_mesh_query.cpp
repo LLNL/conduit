@@ -14,6 +14,7 @@
 #include "conduit_log.hpp"
 
 #include <cmath>
+#include <cstdlib>
 #include <set>
 #include <vector>
 #include <string>
@@ -279,10 +280,20 @@ TEST(conduit_blueprint_mesh_query, point_query)
         }
     }
 }
+//-----------------------------------------------------------------------------
+template <typename Precision>
+Precision rand_float(Precision scale = Precision{1})
+{
+    Precision num01 = static_cast<Precision>(rand()) / static_cast<Precision>(RAND_MAX);
+    Precision num02 = Precision{2} * num01;
+    Precision num_neg1_pos1 = num02 - Precision{1};
+    Precision retval = scale * num_neg1_pos1;
+    return retval;
+}
 
 //---------------------------------------------------------------------------
 template <typename T>
-void make_coords_3d(T **coords, int dims[3])
+void make_coords_3d(T **coords, int dims[3], int fuzz = -1)
 {
     // Initialization.
     int npts = dims[0] * dims[1] * dims[2];
@@ -290,15 +301,34 @@ void make_coords_3d(T **coords, int dims[3])
         coords[dim] = new T[npts];
 
     // Make coordinates.
-    int idx = 0;
-    for(int k = 0; k < dims[2]; k++)
-    for(int j = 0; j < dims[1]; j++)
-    for(int i = 0; i < dims[0]; i++, idx++)
+    if(fuzz < 0)
     {
-        coords[0][idx] = static_cast<T>(i);
-        coords[1][idx] = static_cast<T>(j);
-        coords[2][idx] = static_cast<T>(k);
-    } 
+        int idx = 0;
+        for(int k = 0; k < dims[2]; k++)
+        for(int j = 0; j < dims[1]; j++)
+        for(int i = 0; i < dims[0]; i++, idx++)
+        {
+            coords[0][idx] = static_cast<T>(i);
+            coords[1][idx] = static_cast<T>(j);
+            coords[2][idx] = static_cast<T>(k);
+        }
+    }
+    else
+    {
+        // Fuzz the coordinate in one of the dimensions.
+        const T maxScale = T{1.e-12};
+        int idx = 0;
+        for(int k = 0; k < dims[2]; k++)
+        for(int j = 0; j < dims[1]; j++)
+        for(int i = 0; i < dims[0]; i++, idx++)
+        {
+            const T f = rand_float<T>(maxScale);
+            const T z = 0;
+            coords[0][idx] = static_cast<T>(i) + ((fuzz == 0) ? f : z);
+            coords[1][idx] = static_cast<T>(j) + ((fuzz == 1) ? f : z);
+            coords[2][idx] = static_cast<T>(k) + ((fuzz == 2) ? f : z);
+        }
+    }
 }
 
 //---------------------------------------------------------------------------
@@ -339,11 +369,12 @@ void free_coords_2d(T **coords)
 
 //---------------------------------------------------------------------------
 template <typename T>
-void kdtree_3d(int dims[3])
+void kdtree_3d(int dims[3], int fuzz = -1)
 {
     // Initialization.
-    T *coords[3];
+    T *coords[3], *query_coords[3];
     make_coords_3d(coords, dims);
+    make_coords_3d(query_coords, dims, fuzz);
     int npts = dims[0] * dims[1] * dims[2];
     
     // Make sure we can identify all of the coordinates.
@@ -353,9 +384,9 @@ void kdtree_3d(int dims[3])
     for(int i = 0; i < npts; i++)
     {
         T pt[3];
-        pt[0] = coords[0][i];
-        pt[1] = coords[1][i];
-        pt[2] = coords[2][i];
+        pt[0] = query_coords[0][i];
+        pt[1] = query_coords[1][i];
+        pt[2] = query_coords[2][i];
 
         found = search.findPoint(pt);
         EXPECT_EQ(found, i);
@@ -370,6 +401,7 @@ void kdtree_3d(int dims[3])
     EXPECT_EQ(found, search.NotFound);
 
     free_coords_3d(coords);
+    free_coords_3d(query_coords);
 }
 
 //---------------------------------------------------------------------------
@@ -407,11 +439,12 @@ void kdtree_2d(int dims[2])
 
 //---------------------------------------------------------------------------
 template <typename T>
-void single_domain_point_query_3d(int dims[3])
+void single_domain_point_query_3d(int dims[3], int fuzz = -1)
 {
     // Initialization.
-    T *coords[3];
+    T *coords[3], *query_coords[3];
     make_coords_3d(coords, dims);
+    make_coords_3d(query_coords, dims, fuzz);
     int npts = dims[0] * dims[1] * dims[2];
 
     // NOTE: We don't need the topology.
@@ -427,9 +460,9 @@ void single_domain_point_query_3d(int dims[3])
     for(int i = 0; i < npts; i++)
     {
         double pt[3];
-        pt[0] = coords[0][i];
-        pt[1] = coords[1][i];
-        pt[2] = coords[2][i];
+        pt[0] = query_coords[0][i];
+        pt[1] = query_coords[1][i];
+        pt[2] = query_coords[2][i];
 
         Q.add(domain0, pt);
     }
@@ -451,6 +484,7 @@ void single_domain_point_query_3d(int dims[3])
     EXPECT_EQ(res[badIdx], Q.NotFound);
 
     free_coords_3d(coords);
+    free_coords_3d(query_coords);
 }
 
 //---------------------------------------------------------------------------
@@ -503,9 +537,27 @@ void single_domain_point_query_2d(int dims[2])
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_query, kdtree_3d)
 {
+    // Large enough to trigger accelerated search.
     int dims[3]={30,30,30};
     kdtree_3d<double>(dims);
     kdtree_3d<float>(dims);
+
+    // 2D in 3D space - large enough that accelerated search should kick in.
+    // This checks that we can locate points in a plane in 3D using the kdtree.
+    // For some of these, fuzz the query points in one of the dimensions to test
+    // the kdtree bounding box fix.
+    for(int fuzz = 0; fuzz < 2; fuzz++)
+    {
+        int dims1[] = {1, 150, 150};
+        kdtree_3d<double>(dims1, fuzz > 0 ? 0 : -1);
+        kdtree_3d<float>(dims1, fuzz > 0 ? 0 : -1);
+        int dims2[] = {150, 1, 150};
+        kdtree_3d<double>(dims2, fuzz > 0 ? 1 : -1);
+        kdtree_3d<float>(dims2, fuzz > 0 ? 1 : -1);
+        int dims3[] = {150, 150, 1};
+        kdtree_3d<double>(dims3, fuzz > 0 ? 2 : -1);
+        kdtree_3d<float>(dims3, fuzz > 0 ? 2 : -1);
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -527,6 +579,21 @@ TEST(conduit_blueprint_mesh_query, point_query_3d)
 
     single_domain_point_query_3d<double>(dims);
     single_domain_point_query_3d<float>(dims);
+
+    // 2D in 3D space - large enough that accelerated search should kick in.
+    // This checks that we can locate points in a plane in 3D using the kdtree.
+    for(int fuzz = 0; fuzz < 2; fuzz++)
+    {
+        int dims1[] = {1, 150, 150};
+        single_domain_point_query_3d<double>(dims1, fuzz > 0 ? 0 : -1);
+        single_domain_point_query_3d<float>(dims1, fuzz > 0 ? 0 : -1);
+        int dims2[] = {150, 1, 150};
+        single_domain_point_query_3d<double>(dims2, fuzz > 0 ? 1 : -1);
+        single_domain_point_query_3d<float>(dims2, fuzz > 0 ? 1 : -1);
+        int dims3[] = {150, 150, 1};
+        single_domain_point_query_3d<double>(dims3, fuzz > 0 ? 2 : -1);
+        single_domain_point_query_3d<float>(dims3, fuzz > 0 ? 2 : -1);
+    }
 }
 
 //-----------------------------------------------------------------------------
