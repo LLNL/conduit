@@ -31,7 +31,7 @@ using namespace conduit::utils;
 using namespace generate;
 
 // Uncomment if we want to write the data files.
-//#define CONDUIT_WRITE_TEST_DATA
+#define CONDUIT_WRITE_TEST_DATA
 
 //---------------------------------------------------------------------------
 #ifdef CONDUIT_WRITE_TEST_DATA
@@ -46,6 +46,42 @@ void save_mesh(const conduit::Node &root, const std::string &filebase)
     conduit::relay::mpi::io::blueprint::save_mesh(root, filebase, protocol, MPI_COMM_WORLD);
 }
 #endif
+
+//-----------------------------------------------------------------------------
+template <typename Func>
+void in_rank_order(MPI_Comm comm, Func &&func)
+{
+    int rank = 0, size = 1, buf = 0, tag = 11223344;
+    MPI_Comm_rank(comm, &rank);
+    MPI_Comm_size(comm, &size);
+
+    if(rank > 0)
+    {
+        MPI_Status status;
+        MPI_Recv(&buf, 1, MPI_INT, rank - 1, tag, comm, &status);
+    }
+
+    func(rank);
+
+    if(rank < size - 1)
+    {
+        buf = rank;
+        MPI_Send(&buf, 1, MPI_INT, rank + 1, tag, comm);
+    }
+
+    MPI_Barrier(comm);
+}
+
+//-----------------------------------------------------------------------------
+template <typename T>
+std::ostream &operator << (std::ostream &os, const std::vector<T> &vec)
+{
+    os << "{";
+    for(const T &value : vec)
+        os << value << ", ";
+    os << "}";
+    return os;
+}
 
 //-----------------------------------------------------------------------------
 /**
@@ -204,18 +240,36 @@ test_tiled_adjsets(const int dims[3], const std::string &testName)
             // Check that its adjset points are the same along the edges.
             conduit::Node info;
             bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "mesh_adjset", info, MPI_COMM_WORLD);
-            if(!same)
-            {
-                mesh.print();
-            }
+            in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+                if(!same)
+                {
+                    if(info.number_of_children() > 0)
+                    {
+                        std::cout << "Rank " << rank << ": mesh_adjset was different."
+                                  << " domainNumbering=" << domainNumbering
+                                  << ", reorder=" << r
+                                  << std::endl;
+                        info.print();
+                    }
+                }
+            });
             EXPECT_TRUE(same);
 
             // Check that its adjset points are the same along the edges.
             same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", info, MPI_COMM_WORLD);
-            if(!same)
-            {
-                mesh.print();
-            }
+            in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+                if(!same)
+                {
+                    if(info.number_of_children() > 0)
+                    {
+                        std::cout << "Rank " << rank << ": corner_pairwise_adjset was different."
+                                  << " domainNumbering=" << domainNumbering
+                                  << ", reorder=" << r
+                                  << std::endl;
+                        info.print();
+                    }
+                }
+            });
             EXPECT_TRUE(same);
         }
     });
@@ -280,6 +334,18 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
         // Check that its adjset points are the same along the edges.
         conduit::Node info;
         bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", info, MPI_COMM_WORLD);
+        in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+            if(!same)
+            {
+                if(info.number_of_children() > 0)
+                {
+                    std::cout << "Rank " << rank << ": corner_pairwise_adjset was different."
+                              << " reorder=" << r
+                              << std::endl;
+                    info.print();
+                }
+            }
+        });
         EXPECT_TRUE(same);
     }
 }
