@@ -2148,6 +2148,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
 
     // Iterate over mesh2's points to see if its points exist in mesh1.
     conduit::blueprint::mesh::utils::query::PointQuery P(*mesh1);
+    const conduit::Node &cset = topology::coordset(topo1);
     const conduit::Node &cset2 = topology::coordset(topo2);
     index_t npts = conduit::blueprint::mesh::utils::coordset::length(cset2);
     for(index_t i = 0; i < npts; i++)
@@ -2162,7 +2163,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
     }
 
     // Do the query.
-    P.execute(cset2.name());
+    P.execute(cset.name());
 
     // Iterate over the entities in topo1 and make hash ids for the entities
     // by hashing their sorted points.
@@ -3832,11 +3833,11 @@ MatchQuery::execute()
         }
 
         // Get both of the topologies.
-        conduit::Node &mesh1 = it->second.query_mesh;
-        conduit::Node &mesh2 = oppit->second.query_mesh;
-        std::string topoKey("topologies/" + m_topoName);
-        conduit::Node &topo1 = mesh1[topoKey];
-        conduit::Node &topo2 = mesh2[topoKey];
+        const conduit::Node &mesh1 = it->second.query_mesh;
+        const conduit::Node &mesh2 = oppit->second.query_mesh;
+        const std::string topoKey("topologies/" + m_topoName);
+        const conduit::Node &topo1 = mesh1[topoKey];
+        const conduit::Node &topo2 = mesh2[topoKey];
 
         // Perform the search and store the results.
         it->second.results = topology::search(topo2, topo1);
