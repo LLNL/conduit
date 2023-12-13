@@ -85,7 +85,8 @@ std::ostream &operator << (std::ostream &os, const std::vector<T> &vec)
 
 //-----------------------------------------------------------------------------
 /**
- @brief Make domains for a tiled mesh.
+ @brief Make domains for a tiled mesh. The way this is being done, it will use
+        the original tiler suitable for weak scaling.
 
  @param mesh The node that will contain the domains.
  @param dims The number of zones in each domain. dims[2] == 0 for 2D meshes.
