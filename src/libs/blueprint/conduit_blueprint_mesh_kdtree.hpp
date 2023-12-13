@@ -463,7 +463,7 @@ void kdtree<Indexable, CoordinateType, NDIMS>::calculateExtents()
 
     // Expand the box a little. Note that we have a minimum expansion to account
     // for when a dimension has all the same values.
-    const CoordinateType minExpansion = DEFAULT_POINT_TOLERANCE;
+    const CoordinateType minExpansion = DEFAULT_POINT_TOLERANCE * 200.;
     for(int i = 0; i < dims(); i++)
     {
         CoordinateType side = std::max(box[i][1] - box[i][0], minExpansion);
