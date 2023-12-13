@@ -87,7 +87,7 @@ public:
     /// Reset the tile. 
     void reset(size_t npts)
     {
-        ptids = std::vector<conduit::index_t>(npts, -1);
+        ptids = std::vector<conduit::index_t>(npts, INVALID_POINT);
     }
 
     /// Return the point ids.
@@ -182,7 +182,7 @@ protected:
     /// Make the adjset name for 2 domains.
     std::string adjset_name(conduit::index_t d0, conduit::index_t d1) const;
 
-    /// Turn a node into an int vector.
+    /// Turn a node into an index_t vector.
     std::vector<conduit::index_t> toIndexVector(const conduit::Node &n) const
     {
         auto acc = n.as_index_t_accessor();
