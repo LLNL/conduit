@@ -155,10 +155,111 @@ contains
     end subroutine t_node_obj_set_float64
 
     !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_and_fetch_path_int32_ptr
+        type(node) n
+        integer(4), dimension(5) :: data
+        integer i
+        integer(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_set_and_fetch_path_int32_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our array
+        do i = 1,5
+            data(i) = i
+        enddo
+        ! create node and set data in the tree
+        n = conduit_node_obj_create()
+        call n%set_path_int32_ptr("sub/path/test",data,5_8)
+
+        ! fetch pointer to the data from comparison 
+        call n%fetch_path_as_int32_ptr("sub/path/test",f_arr)
+        
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+        
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+        ! cleanup
+        call conduit_node_obj_destroy(n)
+    end subroutine t_node_obj_set_and_fetch_path_int32_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_and_fetch_path_int64_ptr
+        type(node) n
+        integer(8), dimension(5) :: data
+        integer i
+        integer(8), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_set_and_fetch_path_int64_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our array
+        do i = 1,5
+            data(i) = i
+        enddo
+        ! create node and set data in the tree
+        n = conduit_node_obj_create()
+        call n%set_path_int64_ptr("sub/path/test",data,5_8)
+
+        ! fetch pointer to the data from comparison 
+        call n%fetch_path_as_int64_ptr("sub/path/test",f_arr)
+        
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+        
+        !=======
+        ! NOTE:  fruit doesn't support assert_equals with integer(8)
+        !=======
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(int(f_arr(i),4),int(data(i),4))
+        enddo
+        ! cleanup
+        call conduit_node_obj_destroy(n)
+    end subroutine t_node_obj_set_and_fetch_path_int64_ptr
+
+    !--------------------------------------------------------------------------
+    subroutine t_node_obj_set_and_fetch_path_float32_ptr
+        type(node) n
+        real(4), dimension(5) :: data
+        integer i
+        real(4), pointer :: f_arr(:)
+        
+        !----------------------------------------------------------------------
+        call set_case_name("t_node_obj_set_and_fetch_path_float32_ptr")
+        !----------------------------------------------------------------------
+        
+        ! fill our array
+        do i = 1,5
+            data(i) = i
+        enddo
+        ! create node and set data in the tree
+        n = conduit_node_obj_create()
+        call n%set_path_float32_ptr("sub/path/test",data,5_8)
+
+        ! fetch pointer to the data from comparison 
+        call n%fetch_path_as_float32_ptr("sub/path/test",f_arr)
+        
+        ! check size of fetched array
+        call assert_equals(size(data),size(f_arr));
+        
+        ! check array value equiv
+        do i = 1,5
+            call assert_equals(f_arr(i),data(i))
+        enddo
+        ! cleanup
+        call conduit_node_obj_destroy(n)
+    end subroutine t_node_obj_set_and_fetch_path_float32_ptr
+
+    !--------------------------------------------------------------------------
     subroutine t_node_obj_set_and_fetch_path_float64_ptr
         type(node) n
         real(8), dimension(5) :: data
-        real(8) res
         integer i
         real(8), pointer :: f_arr(:)
         
@@ -981,6 +1082,9 @@ program fortran_test
   call t_node_obj_set_int32
   call t_node_obj_set_double
   call t_node_obj_set_float64
+  call t_node_obj_set_and_fetch_path_int32_ptr
+  call t_node_obj_set_and_fetch_path_int64_ptr
+  call t_node_obj_set_and_fetch_path_float32_ptr
   call t_node_obj_set_and_fetch_path_float64_ptr
   call t_node_obj_fetch_int32
   call t_node_obj_set_int32_ptr

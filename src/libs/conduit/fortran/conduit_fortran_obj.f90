@@ -107,7 +107,7 @@ module conduit_obj
         procedure :: as_int32_ptr  => conduit_node_obj_as_int32_ptr
         !----------------------------------------------------------------------
         procedure :: fetch_path_as_int32 => conduit_node_obj_fetch_path_as_int32
-        procedure :: fetch_path_as_int32_ptr => conduit_node_obj_fetch_path_as_int32
+        procedure :: fetch_path_as_int32_ptr => conduit_node_obj_fetch_path_as_int32_ptr
         !----------------------------------------------------------------------
         ! end int32 cases
         !----------------------------------------------------------------------
@@ -129,7 +129,7 @@ module conduit_obj
         procedure :: as_int64_ptr  => conduit_node_obj_as_int64_ptr
         !----------------------------------------------------------------------
         procedure :: fetch_path_as_int64 => conduit_node_obj_fetch_path_as_int64
-        procedure :: fetch_path_as_int64_ptr => conduit_node_obj_fetch_path_as_int64
+        procedure :: fetch_path_as_int64_ptr => conduit_node_obj_fetch_path_as_int64_ptr
         !----------------------------------------------------------------------
         ! end int64 cases
         !----------------------------------------------------------------------
