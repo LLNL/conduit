@@ -2804,7 +2804,7 @@ bool adjset::is_canonical(const Node &adjset)
     for(conduit::index_t i = 0; i < groups.number_of_children() && retval; i++)
     {
         auto pos = groups[i].name().find(conduit::blueprint::mesh::adjset::group_prefix());
-        retval |= (pos == 0);
+        retval &= (pos == 0);
     }
     return retval;
 }
@@ -3168,9 +3168,110 @@ void adjset::remove(conduit::Node &doms,
 //-----------------------------------------------------------------------------
 template <typename Func>
 bool
-foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
+foreach_adjset_mesh_pair_impl(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
 {
     namespace bputils = conduit::blueprint::mesh::utils;
+
+    // Determine total number of domains.
+    std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
+    int maxDomains = domains.size();
+
+    // Iterate over each of the possible adjset relationships. Not all of these
+    // will have adjset groups.
+    for(int d0 = 0; d0 < maxDomains; d0++)
+    {
+        for(int d1 = d0 + 1; d1 < maxDomains; d1++)
+        {
+            // make the adjset group name.
+            std::stringstream ss;
+            ss << conduit::blueprint::mesh::adjset::group_prefix() << "_" << d0 << "_" << d1;
+            std::string groupName(ss.str());
+
+            // There are up to 2 meshes for the shared boundary.
+            conduit::Node mesh[2];
+            int mi = 0;
+            for(size_t dom = 0; dom < domains.size(); dom++)
+            {
+                const Node &domain = *domains[dom];
+
+                // If the domain has the adjset, make a point mesh of its points
+                // that we can send to the neighbor.
+                std::string akey("adjsets/" + adjsetName);
+                std::string key(akey + "/groups/" + groupName + "/values");
+                if(domain.has_path(key))
+                {
+                    const Node &adj = domain[akey];
+
+                    // Get the topology that the adjset wants.
+                    std::string topoName = adj.fetch_existing("topology").as_string();
+                    const Node &topo = domain.fetch_existing("topologies/" + topoName);
+
+                    // Get the group values and add them as points to the topo builder
+                    // so we pull out a point mesh.
+                    const Node &n_values = domain.fetch_existing(key);
+                    const auto values = n_values.as_index_t_accessor();
+                    bputils::topology::TopologyBuilder B(topo);
+
+                    std::string association = adj["association"].as_string();
+                    std::string shapeType;
+                    if(association == "vertex")
+                    {
+                        shapeType = "point";
+                        for(index_t i = 0; i < values.number_of_elements(); i++)
+                        {
+                            index_t ptid = values[i];
+                            B.add(&ptid, 1);
+                        }
+                    }
+                    else if(association == "element")
+                    {
+                        size_t minSides = 0, maxSides = 0;
+                        for(index_t i = 0; i < values.number_of_elements(); i++)
+                        {
+                            index_t ei = values[i];
+                            const auto ptids = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
+                            B.add(&ptids[0], ptids.size());
+
+                            minSides = (i == 0) ? ptids.size() : std::min(minSides, ptids.size());
+                            maxSides = (i == 0) ? ptids.size() : std::max(maxSides, ptids.size());
+                        }
+
+                        if(minSides == maxSides)
+                        {
+                            if(minSides == 2)
+                                shapeType = "line";
+                            else if(minSides == 3)
+                                shapeType = "tri";
+                            else if(minSides == 4)
+                                shapeType = "quad";
+                        }
+                        if(shapeType.empty())
+                            shapeType = "polygon";
+                    }
+
+                    // Make the local point mesh.
+                    B.execute(mesh[mi], shapeType);
+
+                    mi++;
+                }
+            }
+
+            // Make sure the nodes are not different.
+            bool keepGoing = func(groupName, d0, mesh[0], d1, mesh[1]);
+            if(!keepGoing)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+template <typename Func>
+bool
+foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
+{
+    bool retval = true;
     const std::string tempAdjsetName("__" + adjsetName + "__");
 
     try
@@ -3178,109 +3279,21 @@ foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Fun
         // Make sure we have a suitable query adjset.
         adjset::to_pairwise_canonical(mesh, adjsetName, tempAdjsetName);
 
-        // Determine total number of domains.
-        std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
-        int maxDomains = domains.size();
+        // Call the real implementation on the temporary adjset.
+        retval = foreach_adjset_mesh_pair_impl(mesh, tempAdjsetName, func);
 
-        // Iterate over each of the possible adjset relationships. Not all of these
-        // will have adjset groups.
-        for(int d0 = 0; d0 < maxDomains; d0++)
-        {
-            for(int d1 = d0 + 1; d1 < maxDomains; d1++)
-            {
-                // make the adjset group name.
-                std::stringstream ss;
-                ss << conduit::blueprint::mesh::adjset::group_prefix() << "_" << d0 << "_" << d1;
-                std::string groupName(ss.str());
-
-                // There are up to 2 meshes for the shared boundary.
-                conduit::Node mesh[2];
-                int mi = 0;
-                for(size_t dom = 0; dom < domains.size(); dom++)
-                {
-                    const Node &domain = *domains[dom];
-
-                    // If the domain has the adjset, make a point mesh of its points
-                    // that we can send to the neighbor.
-                    std::string akey("adjsets/" + tempAdjsetName);
-                    std::string key(akey + "/groups/" + groupName + "/values");
-                    if(domain.has_path(key))
-                    {
-                        const Node &adj = domain[akey];
-
-                        // Get the topology that the adjset wants.
-                        std::string topoName = adj.fetch_existing("topology").as_string();
-                        const Node &topo = domain.fetch_existing("topologies/" + topoName);
-
-                        // Get the group values and add them as points to the topo builder
-                        // so we pull out a point mesh.
-                        const Node &n_values = domain.fetch_existing(key);
-                        const auto values = n_values.as_index_t_accessor();
-                        bputils::topology::TopologyBuilder B(topo);
-
-                        std::string association = adj["association"].as_string();
-                        std::string shapeType;
-                        if(association == "vertex")
-                        {
-                            shapeType = "point";
-                            for(index_t i = 0; i < values.number_of_elements(); i++)
-                            {
-                                index_t ptid = values[i];
-                                B.add(&ptid, 1);
-                            }
-                        }
-                        else if(association == "element")
-                        {
-                            size_t minSides = 0, maxSides = 0;
-                            for(index_t i = 0; i < values.number_of_elements(); i++)
-                            {
-                                index_t ei = values[i];
-                                const auto ptids = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
-                                B.add(&ptids[0], ptids.size());
-
-                                minSides = (i == 0) ? ptids.size() : std::min(minSides, ptids.size());
-                                maxSides = (i == 0) ? ptids.size() : std::max(maxSides, ptids.size());
-                            }
-
-                            if(minSides == maxSides)
-                            {
-                                if(minSides == 2)
-                                    shapeType = "line";
-                                else if(minSides == 3)
-                                    shapeType = "tri";
-                                else if(minSides == 4)
-                                    shapeType = "quad";
-                            }
-                            if(shapeType.empty())
-                                shapeType = "polygon";
-                        }
-
-                        // Make the local point mesh.
-                        B.execute(mesh[mi], shapeType);
-
-                        mi++;
-                    }
-                }
-
-                // Make sure the nodes are not different.
-                bool keepGoing = func(groupName, d0, mesh[0], d1, mesh[1]);
-                if(!keepGoing)
-                    return false;
-            }
-        }
-
-        // Remove any adjset that may have been added.
+        // Remove the adjset that was added.
         adjset::remove(mesh, tempAdjsetName);
     }
     catch(...)
     {
-        // Remove any adjset that may have been added.
+        // Remove the adjset that was added.
         adjset::remove(mesh, tempAdjsetName);
         // Rethrow the exception.
         throw;
     }
 
-    return true;
+    return retval;
 }
 
 //-----------------------------------------------------------------------------

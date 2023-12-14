@@ -636,8 +636,8 @@ adjset::validate(const Node &doms,
 }
 
 //-----------------------------------------------------------------------------
-bool
-adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName,
+static bool
+compare_pointwise_impl(conduit::Node &mesh, const std::string &adjsetName,
     conduit::Node &info, MPI_Comm comm)
 {
     namespace bputils = conduit::blueprint::mesh::utils;
@@ -748,6 +748,36 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName,
         }
     }
     return true;
+}
+
+//-----------------------------------------------------------------------------
+bool
+adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName,
+    conduit::Node &info, MPI_Comm comm)
+{
+    bool retval = true;
+    const std::string tempAdjsetName("__" + adjsetName + "__");
+
+    try
+    {
+        // Make sure we have a suitable adjset.
+        conduit::blueprint::mesh::utils::adjset::to_pairwise_canonical(mesh, adjsetName, tempAdjsetName);
+
+        // Call the real implementation on the temporary adjset.
+        retval = compare_pointwise_impl(mesh, tempAdjsetName, info, comm);
+
+        // Remove the adjset that was added.
+        conduit::blueprint::mesh::utils::adjset::remove(mesh, tempAdjsetName);
+    }
+    catch(...)
+    {
+        // Remove the adjset that was added.
+        conduit::blueprint::mesh::utils::adjset::remove(mesh, tempAdjsetName);
+        // Rethrow the exception.
+        throw;
+    }
+
+    return retval;
 }
 
 //-----------------------------------------------------------------------------

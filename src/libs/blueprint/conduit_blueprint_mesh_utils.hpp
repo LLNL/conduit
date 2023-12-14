@@ -1013,8 +1013,9 @@ namespace adjset
                                                   conduit::Node &info);
 
      /**
-      @brief Converts adjsets for domain boundary pairs into point meshes in
-             the out node. This can aid visualization.
+      @brief Converts adjsets for domain boundary pairs into meshes in
+             the out node. We get point meshes or face meshes, depending on the
+             adjset type. This can aid visualization.
 
       @param mesh A node that contains all domains.
       @param adjsetName The name of the adjset to select.

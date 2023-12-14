@@ -353,3 +353,44 @@ TEST(conduit_blueprint_mesh_utils, copy_fields)
     EXPECT_EQ(fields.number_of_children(), 1);
     EXPECT_EQ(fields[0].name(), "f4");
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, adjset_compare_pointwise_2d)
+{
+    conduit::Node root, info;
+    create_2_domain_2d_mesh(root, 0, 1);
+    save_mesh(root, "adjset_compare_pointwise_2d");
+    auto domains = conduit::blueprint::mesh::domains(root);
+
+    for(const auto &domPtr : domains)
+    {
+        // It's not in canonical form.
+        const conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
+        bool canonical = conduit::blueprint::mesh::utils::adjset::is_canonical(adjset);
+        EXPECT_FALSE(canonical);
+    }
+
+    // Check that we can still run compare_pointwise - it will convert internally.
+    bool eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "pt_adjset", info);
+    if(!eq)
+        info.print();
+    EXPECT_TRUE(eq);
+
+    // Make sure the extra adjset was removed.
+    for(const auto &domPtr : domains)
+    {
+        // It's not in canonical form.
+        bool tmpExists = domPtr->has_path("adjsets/__pt_adjset__");
+        EXPECT_FALSE(tmpExists);
+    }
+
+    // Force it to be canonical
+    for(const auto &domPtr : domains)
+    {
+        // It's not in canonical form.
+        conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
+        conduit::blueprint::mesh::utils::adjset::canonicalize(adjset);
+    }
+    eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "pt_adjset", info);
+    EXPECT_TRUE(eq);
+}
