@@ -919,6 +919,28 @@ namespace adjset
 
     //-------------------------------------------------------------------------
     /**
+     @brief Adds a canonical pairwise adjset to each input domain, converting
+            as needed. If the input adjset is already pairwise then the data
+            in the adjset groups is shallow-copied from the original adjset.
+
+     @param doms A node containing the domains.
+     @param adjsetName The name of the source adjset.
+     @param newAdjsetName The name of the adjset that will be created.
+     */
+    void CONDUIT_BLUEPRINT_API to_pairwise_canonical(conduit::Node &doms,
+                                                     const std::string &adjsetName,
+                                                     const std::string &newAdjsetName);
+
+    //-------------------------------------------------------------------------
+    /**
+      @brief Removes the adjset from each domain in the mesh.
+      @param doms A node containing the domains.
+      @param adjsetName The name of the adjset to remove.
+     */
+    void CONDUIT_BLUEPRINT_API remove(conduit::Node &doms, const std::string &adjsetName);
+
+    //-------------------------------------------------------------------------
+    /**
      @brief Given a set of domains, make sure that the specified adjset in them
             is valid and flag any errors in the info node. This function will
             make sure that each domain's adjset references valid entities in
