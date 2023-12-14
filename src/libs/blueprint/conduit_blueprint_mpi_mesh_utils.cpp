@@ -674,7 +674,7 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName,
         {
             // make the adjset group name.
             std::stringstream ss;
-            ss << "group_" << d0 << "_" << d1;
+            ss << conduit::blueprint::mesh::adjset::group_prefix() << "_" << d0 << "_" << d1;
             std::string groupName(ss.str());
 
             // There are up to 2 local meshes and their corresponding remote mesh.
@@ -708,7 +708,7 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName,
                     }
 
                     // Make the local point mesh.
-                    B.execute(localMesh[mi], "vertex");
+                    B.execute(localMesh[mi], "point");
 
                     // Get the neighbor for this group
                     std::string nkey("adjsets/" + adjsetName + "/groups/" + groupName + "/neighbors");

@@ -911,6 +911,14 @@ namespace adjset
 
     //-------------------------------------------------------------------------
     /**
+      @brief Return whether the adjset appears to be canonical.
+      @param adjset The adjset node.
+      @return True if the groups are named canonically; False otherwise.
+     */
+    bool CONDUIT_BLUEPRINT_API is_canonical(const Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
      @brief Given a set of domains, make sure that the specified adjset in them
             is valid and flag any errors in the info node. This function will
             make sure that each domain's adjset references valid entities in

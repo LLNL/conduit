@@ -2767,7 +2767,7 @@ adjset::canonicalize(Node &adjset)
         std::string new_group_name;
         {
             std::ostringstream oss;
-            oss << "group";
+            oss << conduit::blueprint::mesh::adjset::group_prefix();
 
             Node temp;
             DataType temp_dtype(neighbors_node.dtype().id(), 1);
@@ -2793,6 +2793,19 @@ adjset::canonicalize(Node &adjset)
 
         adjset["groups"].rename_child(old_group_name, new_group_name);
     }
+}
+
+//---------------------------------------------------------------------------
+bool adjset::is_canonical(const Node &adjset)
+{
+    bool retval = true;
+    const conduit::Node &groups = adjset.fetch_existing("groups");
+    for(conduit::index_t i = 0; i < groups.number_of_children() && retval; i++)
+    {
+        auto pos = groups[i].name().find(conduit::blueprint::mesh::adjset::group_prefix());
+        retval |= (pos == 0);
+    }
+    return retval;
 }
 
 //---------------------------------------------------------------------------
@@ -3111,14 +3124,24 @@ foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Fun
             for(conduit::index_t i = 0; i < adj.number_of_children(); i++)
             {
                 const conduit::Node &a = adj[i];
+                conduit::Node &newAdjset = dest_adj[a.name()];
                 if(conduit::blueprint::mesh::adjset::is_pairwise(a))
                 {
-                    // Keep an external reference to adjset a since it is already pairwise.
-                    dest_adj[a.name()].set_external(a);
+                    if(adjset::is_canonical(a))
+                    {
+                        // Keep an external reference to adjset a since it is already pairwise.
+                        newAdjset.set_external(a);
+                    }
+                    else
+                    {
+                        newAdjset.set(a);
+                        conduit::blueprint::mesh::utils::adjset::canonicalize(newAdjset);
+                    }
                 }
                 else
                 {
-                    conduit::blueprint::mesh::adjset::to_pairwise(a, dest_adj[a.name()]);
+                    conduit::blueprint::mesh::adjset::to_pairwise(a, newAdjset);
+                    conduit::blueprint::mesh::utils::adjset::canonicalize(newAdjset);
                 }
             }
         }
@@ -3135,7 +3158,7 @@ foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Fun
         {
             // make the adjset group name.
             std::stringstream ss;
-            ss << "group_" << d0 << "_" << d1;
+            ss << conduit::blueprint::mesh::adjset::group_prefix() << "_" << d0 << "_" << d1;
             std::string groupName(ss.str());
 
             // There are up to 2 meshes for the shared boundary.
