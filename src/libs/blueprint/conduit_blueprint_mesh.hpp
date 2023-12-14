@@ -866,6 +866,10 @@ namespace adjset
                                            conduit::Node &dest);
 
     //-------------------------------------------------------------------------
+    /// Return the canonical adjacency set group prefix used in group names.
+    std::string CONDUIT_BLUEPRINT_API group_prefix();
+
+    //-------------------------------------------------------------------------
     // blueprint::mesh::adjset::index protocol interface
     //-------------------------------------------------------------------------
     namespace index
