@@ -512,7 +512,7 @@ std::string TilerBase::adjset_name(conduit::index_t d0, conduit::index_t d1) con
     if(d0 > d1)
         std::swap(d0, d1);
     std::stringstream ss;
-    ss << "group_" << d0 << "_" << d1;
+    ss << conduit::blueprint::mesh::adjset::group_prefix() << "_" << d0 << "_" << d1;
     return ss.str();
 }
 
