@@ -291,7 +291,7 @@ TEST(conduit_blueprint_mpi_mesh_utils, adjset_compare_pointwise_2d)
 
     // Test that the fails_pointwise adjset actually fails.
     info.reset();
-    eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "fails_pointwise", info);
+    eq = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(root, "fails_pointwise", info, MPI_COMM_WORLD);
     in_rank_order(MPI_COMM_WORLD, [&](int r)
     {
         if(eq)
@@ -304,7 +304,7 @@ TEST(conduit_blueprint_mpi_mesh_utils, adjset_compare_pointwise_2d)
 
     // Test that the notevenclose adjset actually fails.
     info.reset();
-    eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "notevenclose", info);
+    eq = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(root, "notevenclose", info, MPI_COMM_WORLD);
     in_rank_order(MPI_COMM_WORLD, [&](int r)
     {
         if(eq)
