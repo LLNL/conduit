@@ -123,7 +123,7 @@ TEST(conduit_blueprint_mesh_utils, adjset_validate_element_2d)
     save_mesh(root, "adjset_validate_element_2d");
     bool res = conduit::blueprint::mesh::utils::adjset::validate(root, "main_adjset", info);
     EXPECT_TRUE(res);
-    info.print();
+    //info.print();
 
     // Now, adjust the adjset for domain1 so it includes an element not present in domain 0
     root["domain1/adjsets/main_adjset/groups/domain0_1/values"].set(std::vector<int>{0,2,4});
@@ -405,14 +405,140 @@ TEST(conduit_blueprint_mesh_utils, adjset_compare_pointwise_2d)
     // Test that the fails_pointwise adjset actually fails.
     info.reset();
     eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "fails_pointwise", info);
-    if(!eq)
-       info.print();
+    //if(!eq)
+    //   info.print();
     EXPECT_FALSE(eq);
 
     // Test that the notevenclose adjset actually fails.
     info.reset();
     eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "notevenclose", info);
-    if(!eq)
-       info.print();
+    //if(!eq)
+    //   info.print();
     EXPECT_FALSE(eq);
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, topology_search_2d)
+{
+    conduit::Node root, info;
+    create_2_domain_2d_mesh(root, 0, 1);
+    save_mesh(root, "topology_search_2d");
+    auto domains = conduit::blueprint::mesh::domains(root);
+
+    // Look for domain 0 in domain 1. They should intersect by 2 zones.
+    auto res01 = conduit::blueprint::mesh::utils::topology::search(
+                   domains[1]->fetch_existing("topologies/main"),
+                   domains[0]->fetch_existing("topologies/main"));
+    const std::vector<int> answers01{0,0,1,0,0,0,1};
+    EXPECT_EQ(res01.size(), answers01.size());
+    for(size_t i = 0; i < res01.size(); i++)
+    {
+        EXPECT_EQ(res01[i], answers01[i]);
+    }
+
+    // Look for domain 1 in domain 0. They should intersect by 2 zones.
+    auto res10 = conduit::blueprint::mesh::utils::topology::search(
+                   domains[0]->fetch_existing("topologies/main"),
+                   domains[1]->fetch_existing("topologies/main"));
+    const std::vector<int> answers10{1,0,0,0,1,0};
+    EXPECT_EQ(res10.size(), answers10.size());
+    for(size_t i = 0; i < res10.size(); i++)
+    {
+        EXPECT_EQ(res10[i], answers10[i]);
+    }
+
+    // Turn the main_adjset adjset into a topology.
+    conduit::Node main_adjset_topo;
+    conduit::blueprint::mesh::utils::adjset::to_topo(root, "main_adjset", main_adjset_topo);
+    //main_adjset_topo.print();
+
+    // Pull domain 0 adjset zones out as a topology and look for them in domain 1.
+    const conduit::Node &t01 = main_adjset_topo.fetch_existing("topologies/main_adjset_0_group_0_1");
+    EXPECT_EQ(t01["type"].as_string(), "unstructured");
+    EXPECT_EQ(t01["elements/shape"].as_string(), "quad");
+    EXPECT_EQ(conduit::blueprint::mesh::topology::length(t01), 2);
+    auto resT01 = conduit::blueprint::mesh::utils::topology::search(
+                      domains[1]->fetch_existing("topologies/main"),
+                      t01);
+    const std::vector<int> answersT01{1,1};
+    EXPECT_EQ(resT01.size(), answersT01.size());
+    for(size_t i = 0; i < resT01.size(); i++)
+    {
+        EXPECT_EQ(resT01[i], answersT01[i]);
+    }
+
+    // Pull domain 1 adjset zones out as a topology and look for them in domain 0.
+    const conduit::Node &t10 = main_adjset_topo.fetch_existing("topologies/main_adjset_1_group_0_1");
+    EXPECT_EQ(t10["type"].as_string(), "unstructured");
+    EXPECT_EQ(t10["elements/shape"].as_string(), "quad");
+    EXPECT_EQ(conduit::blueprint::mesh::topology::length(t10), 2);
+    auto resT10 = conduit::blueprint::mesh::utils::topology::search(
+                      domains[0]->fetch_existing("topologies/main"),
+                      t10);
+    const std::vector<int> answersT10{1,1};
+    EXPECT_EQ(resT10.size(), answersT10.size());
+    for(size_t i = 0; i < resT10.size(); i++)
+    {
+        EXPECT_EQ(resT10[i], answersT10[i]);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, topology_search_2d_nohit)
+{
+    // A consists of 3 quads in the 1st column
+    // B is a single quad on the right
+    // C consists of 4 tris on the lower left.
+    //
+    // A and B do not overlap.
+    // A and C partially overlap but are different types.
+    const char *example = R"(
+coordsets:
+  coords:
+    type: explicit
+    values:
+      x: [0.,1.,2.,3.,0.,1.,2.,3.,0.,1.,2.,3.,0.,1.,2.,3.]
+      y: [0.,0.,0.,0.,1.,1.,1.,1.,2.,2.,2.,2.,3.,3.,3.,3.]
+topologies:
+  A:
+    type: unstructured
+    coordset: coords
+    elements:
+      shape: quad
+      connectivity: [0,1,5,4,4,5,9,8,8,9,13,12]
+      offsets: [0,4,8]
+  B:
+    type: unstructured
+    coordset: coords
+    elements:
+      shape: quad
+      connectivity: [6,7,11,10]
+      offsets: [0]
+  C:
+    type: unstructured
+    coordset: coords
+    elements:
+      shape: tri
+      connectivity: [0,1,4,1,5,4,1,2,5,2,6,5]
+      offsets: [0,3,6,9]
+)";
+
+    conduit::Node n;
+    n.parse(example, "yaml");
+
+    // Look for B in A
+    auto resBA = conduit::blueprint::mesh::utils::topology::search(
+                   n.fetch_existing("topologies/A"),
+                   n.fetch_existing("topologies/B"));
+    const std::vector<int> answers01{0,0,1,0,0,0,1};
+    EXPECT_EQ(resBA.size(), 1);
+    EXPECT_EQ(resBA[0], 0);
+
+    // Look for C in A
+    auto resCA = conduit::blueprint::mesh::utils::topology::search(
+                   n.fetch_existing("topologies/A"),
+                   n.fetch_existing("topologies/C"));
+    const std::vector<int> answersCA{0,0,0,0};
+    EXPECT_EQ(resCA.size(), 4);
+    EXPECT_EQ(resCA, answersCA);
+};

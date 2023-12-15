@@ -3304,7 +3304,8 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, co
         [&](const std::string &groupName, int /*dom1*/, conduit::Node &mesh1, int /*dom2*/, conduit::Node &mesh2)
     {
         // Make sure the nodes are not different.
-        bool different = mesh1.diff(mesh2, info, 1.e-8);
+        const double eps = 1.e-8;
+        bool different = mesh1.diff(mesh2, info, eps);
 
         // Add some diagnostic info.
         if(different)

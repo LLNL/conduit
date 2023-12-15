@@ -525,8 +525,8 @@ namespace topology
             entities are defined in terms of topo1 coordinates, if possible.
             Then, if that works for an entity, the entity is looked for in topo1.
 
-     @param topo1 A single topology.
-     @param topo2 A single topology.
+     @param topo1 A single topology. (haystack)
+     @param topo2 A single topology. (needle)
 
      @return A vector of ints, sized length(topo2), that contains 1 if the
              entity exists in topo1 and 0 otherwise.
