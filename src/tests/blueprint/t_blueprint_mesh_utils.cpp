@@ -368,6 +368,11 @@ TEST(conduit_blueprint_mesh_utils, adjset_compare_pointwise_2d)
         const conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
         bool canonical = conduit::blueprint::mesh::utils::adjset::is_canonical(adjset);
         EXPECT_FALSE(canonical);
+
+        // The fails_pointwise adjset is in canonical form.
+        const conduit::Node &adjset2 = domPtr->fetch_existing("adjsets/fails_pointwise");
+        canonical = conduit::blueprint::mesh::utils::adjset::is_canonical(adjset2);
+        EXPECT_TRUE(canonical);
     }
 
     // Check that we can still run compare_pointwise - it will convert internally.
@@ -391,6 +396,23 @@ TEST(conduit_blueprint_mesh_utils, adjset_compare_pointwise_2d)
         conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
         conduit::blueprint::mesh::utils::adjset::canonicalize(adjset);
     }
+    info.reset();
     eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "pt_adjset", info);
+    if(!eq)
+       info.print();
     EXPECT_TRUE(eq);
+
+    // Test that the fails_pointwise adjset actually fails.
+    info.reset();
+    eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "fails_pointwise", info);
+    if(!eq)
+       info.print();
+    EXPECT_FALSE(eq);
+
+    // Test that the notevenclose adjset actually fails.
+    info.reset();
+    eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "notevenclose", info);
+    if(!eq)
+       info.print();
+    EXPECT_FALSE(eq);
 }

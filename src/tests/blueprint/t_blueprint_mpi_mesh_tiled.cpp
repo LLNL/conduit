@@ -19,6 +19,7 @@
 #include "conduit_log.hpp"
 
 #include "blueprint_test_helpers.hpp"
+#include "blueprint_mpi_test_helpers.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -46,31 +47,6 @@ void save_mesh(const conduit::Node &root, const std::string &filebase)
     conduit::relay::mpi::io::blueprint::save_mesh(root, filebase, protocol, MPI_COMM_WORLD);
 }
 #endif
-
-//-----------------------------------------------------------------------------
-template <typename Func>
-void in_rank_order(MPI_Comm comm, Func &&func)
-{
-    int rank = 0, size = 1, buf = 0, tag = 11223344;
-    MPI_Comm_rank(comm, &rank);
-    MPI_Comm_size(comm, &size);
-
-    if(rank > 0)
-    {
-        MPI_Status status;
-        MPI_Recv(&buf, 1, MPI_INT, rank - 1, tag, comm, &status);
-    }
-
-    func(rank);
-
-    if(rank < size - 1)
-    {
-        buf = rank;
-        MPI_Send(&buf, 1, MPI_INT, rank + 1, tag, comm);
-    }
-
-    MPI_Barrier(comm);
-}
 
 //-----------------------------------------------------------------------------
 template <typename T>

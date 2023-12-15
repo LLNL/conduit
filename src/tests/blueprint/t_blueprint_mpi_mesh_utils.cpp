@@ -16,6 +16,7 @@
 #include "conduit_log.hpp"
 
 #include "blueprint_test_helpers.hpp"
+#include "blueprint_mpi_test_helpers.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -250,6 +251,11 @@ TEST(conduit_blueprint_mpi_mesh_utils, adjset_compare_pointwise_2d)
         const conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
         bool canonical = conduit::blueprint::mesh::utils::adjset::is_canonical(adjset);
         EXPECT_FALSE(canonical);
+
+        // The fails_pointwise adjset is in canonical form.
+        const conduit::Node &adjset2 = domPtr->fetch_existing("adjsets/fails_pointwise");
+        canonical = conduit::blueprint::mesh::utils::adjset::is_canonical(adjset2);
+        EXPECT_TRUE(canonical);
     }
 
     // Check that we can still run compare_pointwise - it will convert internally.
@@ -271,8 +277,43 @@ TEST(conduit_blueprint_mpi_mesh_utils, adjset_compare_pointwise_2d)
         conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
         conduit::blueprint::mesh::utils::adjset::canonicalize(adjset);
     }
+    info.reset();
     eq = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(root, "pt_adjset", info, MPI_COMM_WORLD);
+    in_rank_order(MPI_COMM_WORLD, [&](int r)
+    {
+        if(!eq)
+        {
+            std::cout << rank << ": pt_adjset eq=" << eq << std::endl;
+            info.print();
+        }
+    });
     EXPECT_TRUE(eq);
+
+    // Test that the fails_pointwise adjset actually fails.
+    info.reset();
+    eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "fails_pointwise", info);
+    in_rank_order(MPI_COMM_WORLD, [&](int r)
+    {
+        if(eq)
+        {
+            std::cout << rank << ": fails_pointwise eq=" << eq << std::endl;
+            info.print();
+        }
+    });
+    EXPECT_FALSE(eq);
+
+    // Test that the notevenclose adjset actually fails.
+    info.reset();
+    eq = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, "notevenclose", info);
+    in_rank_order(MPI_COMM_WORLD, [&](int r)
+    {
+        if(eq)
+        {
+            std::cout << rank << ": notevenclose eq=" << eq << std::endl;
+            info.print();
+        }
+    });
+    EXPECT_FALSE(eq);
 }
 
 //-----------------------------------------------------------------------------
