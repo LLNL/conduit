@@ -1808,7 +1808,6 @@ read_adjset(DBfile *dbfile,
     Node &adjset_out = mesh_out["adjsets"]["adjset"];
     adjset_out["topology"] = multimesh_name;
     adjset_out["association"] = "vertex";
-    // TODO how do I handle element case?
 
     for (int i = 1; i <= num_neighboring_doms; i ++)
     {
@@ -3481,10 +3480,9 @@ void silo_write_adjset(DBfile *dbfile,
         return;
     }
 
-    if (n_adjset["association"].as_string() == "element")
-    {
-        CONDUIT_ERROR("TODO no idea what to do in this case");
-    }
+    CONDUIT_ASSERT(n_adjset["association"].as_string() != "element",
+        "We do not support the element-associated adjset case. "
+        "Please contact a Conduit developer.");
 
     Node pairwise_adjset;
     conduit::blueprint::mesh::adjset::to_pairwise(n_adjset, pairwise_adjset);
