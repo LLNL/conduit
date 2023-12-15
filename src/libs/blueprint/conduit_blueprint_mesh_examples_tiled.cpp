@@ -619,6 +619,7 @@ protected:
                            conduit::index_t nz,
                            conduit::index_t nPtsPerPlane,
                            const bool flags[6],
+                           bool reverseAllowed,
                            Body &&body) const;
 
     /// Compute domain id, if it exists, or return InvalidDomain.
@@ -1014,9 +1015,10 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         // 3D
         bshape = "quad";
         bool anyNonQuads = false;
+        const bool reverseAllowed = true;
         if(doReorder)
         {
-            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
+            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags, reverseAllowed,
                 [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
                 {
                     for(conduit::index_t i = 0; i < npts; i++)
@@ -1028,7 +1030,7 @@ Tiler::generate(conduit::index_t nx, conduit::index_t ny, conduit::index_t nz,
         }
         else
         {
-            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags,
+            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags, reverseAllowed,
                 [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
                 {
                     for(conduit::index_t i = 0; i < npts; i++)
@@ -1185,6 +1187,7 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
     conduit::index_t nz,
     conduit::index_t nPtsPerPlane,
     const bool flags[6],
+    bool reverseAllowed,
     Body &&body) const
 {
     conduit::index_t idlist[4];
@@ -1279,7 +1282,7 @@ Tiler::iterateBoundary3D(const std::vector<Tile> &tiles,
         for(conduit::index_t i = 0; i < nx; i++)
         {
            const Tile &current = tiles[(j*nx + i)];
-           iterateFaces(current.getPointIds(), 0, 0, true, BoundaryBack, body);
+           iterateFaces(current.getPointIds(), 0, 0, reverseAllowed && true, BoundaryBack, body);
         }
     }
     if(flags[BoundaryFront])
@@ -1590,6 +1593,9 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                 neighbor[BoundaryBack]   = domainIndex(0, 0, -1, domain, domains);
                 neighbor[BoundaryFront]  = domainIndex(0, 0, 1, domain, domains);
                 int maxNeighbors = (nz < 1) ? 4 : 6;
+                // NOTE: We call iterateBoundary3D with reverseAllowed == false
+                // so we get the same point order for front/back faces.
+                const bool reverseAllowed = false;
                 for(int ni = 0; ni < maxNeighbors; ni++)
                 {
                     // If this domain has no neighbor in the current direction, skip.
@@ -1604,8 +1610,28 @@ Tiler::addAdjset(const std::vector<Tile> &tiles,
                     if(nz < 1)
                         iterateBoundary2D(tiles, nx, ny, flags, addPoints);
                     else
-                        iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags, addPoints);
-
+                    {
+                        if(ni == BoundaryRight || ni == BoundaryTop)
+                        {
+                            // The point ids are geared towards making good boundary
+                            // faces. We want the order of points for right to match
+                            // left and for top to match bottom. We need to reorder.
+                            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags, reverseAllowed,
+                                [&](const conduit::index_t *ids, conduit::index_t npts, int bnd)
+                                {
+                                    conduit::index_t rids[4];
+                                    rids[0] = ids[0];
+                                    rids[1] = ids[3];
+                                    rids[2] = ids[2];
+                                    rids[3] = ids[1];
+                                    addPoints(rids, npts, bnd);
+                                });
+                        }
+                        else
+                        {
+                            iterateBoundary3D(tiles, nx, ny, nz, ptsPerPlane, flags, reverseAllowed, addPoints);
+                        }
+                    }
                     if(!ptvec.empty())
                     {
                         auto name = adjset_name(thisDom, neighbor[ni]);
