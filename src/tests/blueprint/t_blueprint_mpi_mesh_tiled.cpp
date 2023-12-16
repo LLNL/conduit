@@ -32,7 +32,7 @@ using namespace conduit::utils;
 using namespace generate;
 
 // Uncomment if we want to write the data files.
-#define CONDUIT_WRITE_TEST_DATA
+//#define CONDUIT_WRITE_TEST_DATA
 
 //---------------------------------------------------------------------------
 #ifdef CONDUIT_WRITE_TEST_DATA
