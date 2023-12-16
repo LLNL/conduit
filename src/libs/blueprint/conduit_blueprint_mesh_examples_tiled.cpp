@@ -3723,15 +3723,7 @@ TopDownTiler::addAdjset(const Block &selectedBlock,
                 int nk = 1 + ((offset[2] < 0) ? (-offset[2]) : offset[2]);
                 int nj = 1 + ((offset[1] < 0) ? (-offset[1]) : offset[1]);
                 int ni = 1 + ((offset[0] < 0) ? (-offset[0]) : offset[0]);
-#ifdef DEBUG_PRINT
-if(domainId == 0)
-{
-    std::cout << "n={" << ni << ", " << nj << ", " << nk
-              << "}, index=" << index
-              << ", offset=" << offset
-              << ", ids={";
-}
-#endif
+
                 int n = nk * nj * ni;
                 int count = 0;
                 for(int kk = 0; kk < nk; kk++)
@@ -3747,21 +3739,9 @@ if(domainId == 0)
                     conduit::index_t id = b.image[index];
                     if(id > Block::InvalidDomainId)
                     {
-#ifdef DEBUG_PRINT
-if(domainId == 0)
-{
-    std::cout << id << ", ";
-}
-#endif
                         count++;
                     }
                 }
-#ifdef DEBUG_PRINT
-if(domainId == 0)
-{
-    std::cout << "}, count=" << count << std::endl;
-}
-#endif
                 // The offset zone is a keeper.
                 if(count == 1 || count == n - 1)
                 {
@@ -3778,12 +3758,6 @@ if(domainId == 0)
                         auto it = neighborValues.find(neighborId);
                         if(it == neighborValues.end())
                         {
-#ifdef DEBUG_PRINT
-if(domainId == 0)
-{
-    std::cout << "For offset " << offset << ", found new neighbor " << neighborId << std::endl;
-}
-#endif
                             neighborValues[neighborId] = std::vector<conduit::index_t>();
                             it = neighborValues.find(neighborId);
                             size_t sizeGuess = b.numZones() / 6;
@@ -3824,7 +3798,9 @@ if(domainId == 0)
     };
 
     // NOTE: We make the adjsets in this order so they are compatible with
-    //       generate_corners().
+    //       generate_corners(), although it seems like it would make the
+    //       most sense to add faces first. Revisit this later since for non-planar
+    //       interfaces there is something not 100% right.
     std::map<conduit::index_t, std::vector<conduit::index_t>> neighborValues[3];
 
     // Corners
