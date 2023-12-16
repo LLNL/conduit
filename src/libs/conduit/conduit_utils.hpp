@@ -649,7 +649,7 @@ namespace utils
      \return A vector containing the factors of the number. The product of these
              values will equal the original number.
      */
-    std::vector<conduit::index_t> factor(conduit::index_t num);
+    std::vector<conduit::index_t> CONDUIT_API factor(conduit::index_t num);
 
 }
 //-----------------------------------------------------------------------------
