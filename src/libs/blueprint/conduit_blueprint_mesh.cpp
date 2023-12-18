@@ -3390,7 +3390,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
 
 //-----------------------------------------------------------------------------
-void
+static void
 verify_generate_mesh(const conduit::Node &mesh,
                      const std::string &adjset_name)
 {
@@ -3400,14 +3400,22 @@ verify_generate_mesh(const conduit::Node &mesh,
         const Node &domain = *domains[di];
         Node info;
 
-        if(!domain["adjsets"].has_child(adjset_name))
+        if(!domain.has_path("adjsets"))
+        {
+            CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
+                          "Domain '" << domain.name() << "' lacks adjacency sets.");
+        }
+
+        const Node &n_adjsets = domain.fetch_existing("adjsets");
+
+        if(!n_adjsets.has_child(adjset_name))
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Requested source adjacency set '" << adjset_name << "' " <<
                           "doesn't exist on domain '" << domain.name() << ".'");
         }
 
-        if(domain["adjsets"][adjset_name]["association"].as_string() != "vertex")
+        if(n_adjsets[adjset_name]["association"].as_string() != "vertex")
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Given adjacency set has an unsupported association type 'element.'\n" <<
@@ -3415,7 +3423,7 @@ verify_generate_mesh(const conduit::Node &mesh,
                           "  'vertex'");
         }
 
-        const Node &adjset = domain["adjsets"][adjset_name];
+        const Node &adjset = n_adjsets[adjset_name];
         const Node *topo_ptr = bputils::find_reference_node(adjset, "topology");
         const Node &topo = *topo_ptr;
         if(!conduit::blueprint::mesh::topology::unstructured::verify(topo, info))
@@ -3428,7 +3436,6 @@ verify_generate_mesh(const conduit::Node &mesh,
         }
     }
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -7081,6 +7088,13 @@ mesh::adjset::to_maxshare(const Node &adjset,
     }
 
     bputils::adjset::canonicalize(dest);
+}
+
+//-----------------------------------------------------------------------------
+std::string
+mesh::adjset::group_prefix()
+{
+    return "group";
 }
 
 //-----------------------------------------------------------------------------

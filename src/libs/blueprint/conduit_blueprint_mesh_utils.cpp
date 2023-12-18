@@ -2084,6 +2084,47 @@ topology::TopologyBuilder::clear()
     topo_sizes.clear();
 }
 
+//---------------------------------------------------------------------------
+template <typename Body>
+static void topology_iterate_elements(const conduit::Node &topo, Body &&body)
+{
+    const conduit::Node &n_topo_conn = topo["elements/connectivity"];
+    const auto topo_conn = n_topo_conn.as_index_t_accessor();
+    index_t idx = 0;
+    std::vector<index_t> ids;
+    if(topo.has_path("elements/sizes"))
+    {
+        // Variable sized shapes.
+        const conduit::Node &n_topo_size = topo["elements/sizes"];
+        const auto topo_size = n_topo_size.as_index_t_accessor();
+        const index_t nelem = topo_size.dtype().number_of_elements();
+
+        for(index_t i = 0; i < nelem; i++)
+        {
+            ids.clear();
+            index_t s = topo_size[i];
+            for(index_t pi = 0; pi < s; pi++)
+                ids.push_back(topo_conn[idx++]);
+
+            body(i, ids);
+        }
+    }
+    else
+    {
+        // Homogeneous shapes
+        const ShapeType shape(topo);
+        const index_t nelem = topo_conn.dtype().number_of_elements() / shape.indices;
+
+        for(index_t i = 0; i < nelem; i++)
+        {
+            ids.clear();
+            for(index_t pi = 0; pi < shape.indices; pi++)
+                ids.push_back(topo_conn[idx++]);
+
+            body(i, ids);
+        }
+    }
+}
 
 //---------------------------------------------------------------------------
 std::vector<int>
@@ -2107,6 +2148,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
 
     // Iterate over mesh2's points to see if its points exist in mesh1.
     conduit::blueprint::mesh::utils::query::PointQuery P(*mesh1);
+    const conduit::Node &cset = topology::coordset(topo1);
     const conduit::Node &cset2 = topology::coordset(topo2);
     index_t npts = conduit::blueprint::mesh::utils::coordset::length(cset2);
     for(index_t i = 0; i < npts; i++)
@@ -2121,28 +2163,17 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
     }
 
     // Do the query.
-    P.execute(cset2.name());
+    P.execute(cset.name());
 
-    const conduit::Node &n_topo1_conn = topo1["elements/connectivity"];
-    const conduit::Node &n_topo1_size = topo1["elements/sizes"];
-    auto topo1_conn = n_topo1_conn.as_index_t_accessor();
-    auto topo1_size = n_topo1_size.as_index_t_accessor();
-
-    // Iterate over the entities in mesh1 and make hash ids for the entities
+    // Iterate over the entities in topo1 and make hash ids for the entities
     // by hashing their sorted points.
-    index_t nelem = topo1_size.dtype().number_of_elements();
     std::map<uint64, index_t> topo1_entity_ids;
-    index_t idx = 0;
-    for(index_t i = 0; i < nelem; i++)
+    topology_iterate_elements(topo1, [&](index_t i, std::vector<index_t> &ids)
     {
-        std::vector<index_t> ids;
-        index_t s = topo1_size[i];
-        for(index_t pi = 0; pi < s; pi++)
-            ids.push_back(topo1_conn[idx++]);
         std::sort(ids.begin(), ids.end());
         uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
         topo1_entity_ids[h] = i;
-    }
+    });
 
     // Get the query results for each mesh2 point. This is a vector of point
     // ids from mesh 1 or NotFound.
@@ -2151,29 +2182,16 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
     // Iterate over the entities in mesh2 and map their points to mesh 1 points
     // if possible before computing hashids for them. If a mesh2 entity's points
     // can all be defined in mesh1 then the entity exists in both meshes.
-    const conduit::Node &n_topo2_conn = topo2["elements/connectivity"];
-    const conduit::Node &n_topo2_size = topo2["elements/sizes"];
-    auto topo2_conn = n_topo2_conn.as_index_t_accessor();
-    auto topo2_size = n_topo2_size.as_index_t_accessor();
-
-    index_t nelem2 = topo2_size.dtype().number_of_elements();
-    std::map<uint64, index_t> topo2_entity_ids;
-    idx = 0;
     std::vector<int> exists;
-    exists.reserve(nelem2);
-    std::vector<index_t> ids;
-    ids.reserve(10);
-    for(index_t i = 0; i < nelem2; i++)
+    topology_iterate_elements(topo2, [&](index_t /*i*/, const std::vector<index_t> &topo2Ids)
     {
-        index_t s = topo2_size[i];
-
         // Try and map all of the topo2 entity's points to topo1's coordset.
         // If we can do that then the entity may exist.
         bool badEntity = false;
-        ids.clear();
-        for(index_t pi = 0; pi < s; pi++)
+        std::vector<index_t> ids;
+        ids.reserve(topo2Ids.size());
+        for(const index_t &pt : topo2Ids)
         {
-            index_t pt = topo2_conn[idx++];
             // See if the point exists in mesh1.
             badEntity |= (r[pt] == P.NotFound);
             ids.push_back(r[pt]);
@@ -2191,7 +2209,7 @@ topology::search(const conduit::Node &topo1, const conduit::Node &topo2)
             bool found = topo1_entity_ids.find(h) != topo1_entity_ids.end();
             exists.push_back(found ? 1 : 0);
         }
-    }
+    });
 
     return exists;
 }
@@ -2749,7 +2767,7 @@ adjset::canonicalize(Node &adjset)
         std::string new_group_name;
         {
             std::ostringstream oss;
-            oss << "group";
+            oss << conduit::blueprint::mesh::adjset::group_prefix();
 
             Node temp;
             DataType temp_dtype(neighbors_node.dtype().id(), 1);
@@ -2773,8 +2791,22 @@ adjset::canonicalize(Node &adjset)
             new_group_name = oss.str();
         }
 
-        adjset["groups"].rename_child(old_group_name, new_group_name);
+        if(old_group_name != new_group_name)
+            adjset["groups"].rename_child(old_group_name, new_group_name);
     }
+}
+
+//---------------------------------------------------------------------------
+bool adjset::is_canonical(const Node &adjset)
+{
+    bool retval = true;
+    const conduit::Node &groups = adjset.fetch_existing("groups");
+    for(conduit::index_t i = 0; i < groups.number_of_children() && retval; i++)
+    {
+        auto pos = groups[i].name().find(conduit::blueprint::mesh::adjset::group_prefix());
+        retval &= (pos == 0);
+    }
+    return retval;
 }
 
 //---------------------------------------------------------------------------
@@ -2864,6 +2896,7 @@ adjset::validate(const conduit::Node &doms,
         // Iterate over the domains so we can add their adjset points to the
         // point query.
         std::vector<std::tuple<index_t, index_t, index_t, index_t, size_t, std::string, std::vector<double>>> query_guide;
+        std::map<std::pair<index_t,index_t>, bool> bidirectional;
         for(size_t domIdx = 0; domIdx < domains.size(); domIdx++)
         {
             const auto dom = domains[domIdx];
@@ -2887,6 +2920,14 @@ adjset::validate(const conduit::Node &doms,
                 for(index_t ni = 0; ni < src_neighbors.dtype().number_of_elements(); ni++)
                 {
                     auto nbr = src_neighbors[ni];
+
+                    // Record some information on the bidirectional nature of the interface.
+                    auto domainToNeighbor = std::make_pair(domainId, nbr);
+                    auto neighborToDomain = std::make_pair(nbr, domainId);
+                    bidirectional[domainToNeighbor] = true;
+                    if(bidirectional.find(neighborToDomain) == bidirectional.end())
+                        bidirectional[neighborToDomain] = false; // not yet found
+
                     // Point ids
                     for(index_t pi = 0; pi < src_values.dtype().number_of_elements(); pi++)
                     {
@@ -2906,11 +2947,29 @@ adjset::validate(const conduit::Node &doms,
             }
         }
 
-        // Execut the query.
+        // Detect any non-bidirectional interfaces.
+        retval = true;
+        for(auto it = bidirectional.begin(); it != bidirectional.end(); it++)
+        {
+            if(!it->second)
+            {
+                retval = false;
+
+                auto domain_id = it->first.first;
+                auto neighbor_id = it->first.second;
+                std::stringstream ss;
+                ss << "Domain " << domain_id << " adjset " << adjsetName
+                   << " does not contain a group that references domain " << neighbor_id << ".";
+
+                conduit::Node &vn = info[adjsetName].append();
+                vn.set(ss.str());
+            }
+        }
+
+        // Execute the query.
         PQ.execute(coordsetName);
 
         // Iterate over the query results to flag any problems.
-        retval = true;
         for(const auto &obj : query_guide)
         {
             index_t domain_id = std::get<0>(obj);
@@ -3042,6 +3101,255 @@ adjset::validate(const conduit::Node &doms,
     }
 
     return retval;
+}
+
+//-----------------------------------------------------------------------------
+void adjset::to_pairwise_canonical(conduit::Node &doms,
+                                   const std::string &adjsetName,
+                                   const std::string &newAdjsetName)
+{
+    std::vector<Node *> domains = conduit::blueprint::mesh::domains(doms);
+    for(auto &domPtr : domains)
+    {
+        Node &domain = *domPtr;
+        const std::string src_key("adjsets/" + adjsetName);
+        if(domain.has_path(src_key))
+        {
+            const std::string dest_key("adjsets/" + newAdjsetName);              
+            const conduit::Node &src_adj = domain[src_key];
+            conduit::Node &dest_adj = domain[dest_key];
+            if(conduit::blueprint::mesh::adjset::is_pairwise(src_adj))
+            {
+                if(adjset::is_canonical(src_adj))
+                {
+                    // Keep an external reference to adjset a since it is already pairwise.
+                    dest_adj.set_external(src_adj);
+                }
+                else
+                {
+                    dest_adj["topology"] = src_adj["topology"];
+                    dest_adj["association"] = src_adj["association"];
+                    // Shallow copy the group data into the new adjset.
+                    const conduit::Node &src_groups = src_adj["groups"];
+                    conduit::Node &dest_groups = dest_adj["groups"];
+                    for(conduit::index_t i = 0; i < src_groups.number_of_children(); i++)
+                    {
+                        const conduit::Node &src_group = src_groups[i];
+                        conduit::Node &dest_group = dest_groups[src_group.name()];
+                        dest_group["neighbors"].set_external(src_group["neighbors"]);
+                        dest_group["values"].set_external(src_group["values"]);
+                    }
+                    conduit::blueprint::mesh::utils::adjset::canonicalize(dest_adj);
+                }
+            }
+            else
+            {
+                conduit::blueprint::mesh::adjset::to_pairwise(src_adj, dest_adj);
+                conduit::blueprint::mesh::utils::adjset::canonicalize(dest_adj);
+            }
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+/// Removes the query adjset from each domain.
+void adjset::remove(conduit::Node &doms,
+                    const std::string &adjsetName)
+{
+    std::vector<Node *> domains = conduit::blueprint::mesh::domains(doms);
+    const std::string key("adjsets/" + adjsetName);
+    for(auto &domPtr : domains)
+    {
+        if(domPtr->has_path(key))
+            domPtr->remove(key);
+    }
+}
+
+//-----------------------------------------------------------------------------
+template <typename Func>
+bool
+foreach_adjset_mesh_pair_impl(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
+{
+    namespace bputils = conduit::blueprint::mesh::utils;
+
+    // Determine total number of domains.
+    std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
+    int maxDomains = domains.size();
+
+    // Iterate over each of the possible adjset relationships. Not all of these
+    // will have adjset groups.
+    for(int d0 = 0; d0 < maxDomains; d0++)
+    {
+        for(int d1 = d0 + 1; d1 < maxDomains; d1++)
+        {
+            // make the adjset group name.
+            std::stringstream ss;
+            ss << conduit::blueprint::mesh::adjset::group_prefix() << "_" << d0 << "_" << d1;
+            std::string groupName(ss.str());
+
+            // There are up to 2 meshes for the shared boundary.
+            conduit::Node mesh[2];
+            int mi = 0;
+            for(size_t dom = 0; dom < domains.size(); dom++)
+            {
+                const Node &domain = *domains[dom];
+
+                // If the domain has the adjset, make a point mesh of its points
+                // that we can send to the neighbor.
+                std::string akey("adjsets/" + adjsetName);
+                std::string key(akey + "/groups/" + groupName + "/values");
+                if(domain.has_path(key))
+                {
+                    const Node &adj = domain[akey];
+
+                    // Get the topology that the adjset wants.
+                    std::string topoName = adj.fetch_existing("topology").as_string();
+                    const Node &topo = domain.fetch_existing("topologies/" + topoName);
+
+                    // Get the group values and add them as points to the topo builder
+                    // so we pull out a point mesh.
+                    const Node &n_values = domain.fetch_existing(key);
+                    const auto values = n_values.as_index_t_accessor();
+                    bputils::topology::TopologyBuilder B(topo);
+
+                    std::string association = adj["association"].as_string();
+                    std::string shapeType;
+                    if(association == "vertex")
+                    {
+                        shapeType = "point";
+                        for(index_t i = 0; i < values.number_of_elements(); i++)
+                        {
+                            index_t ptid = values[i];
+                            B.add(&ptid, 1);
+                        }
+                    }
+                    else if(association == "element")
+                    {
+                        size_t minSides = 0, maxSides = 0;
+                        for(index_t i = 0; i < values.number_of_elements(); i++)
+                        {
+                            index_t ei = values[i];
+                            const auto ptids = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
+                            B.add(&ptids[0], ptids.size());
+
+                            minSides = (i == 0) ? ptids.size() : std::min(minSides, ptids.size());
+                            maxSides = (i == 0) ? ptids.size() : std::max(maxSides, ptids.size());
+                        }
+
+                        if(minSides == maxSides)
+                        {
+                            if(minSides == 2)
+                                shapeType = "line";
+                            else if(minSides == 3)
+                                shapeType = "tri";
+                            else if(minSides == 4)
+                                shapeType = "quad";
+                        }
+                        if(shapeType.empty())
+                            shapeType = "polygon";
+                    }
+
+                    // Make the local point mesh.
+                    B.execute(mesh[mi], shapeType);
+
+                    mi++;
+                }
+            }
+
+            // Make sure the nodes are not different.
+            bool keepGoing = func(groupName, d0, mesh[0], d1, mesh[1]);
+            if(!keepGoing)
+                return false;
+        }
+    }
+
+    return true;
+}
+
+//-----------------------------------------------------------------------------
+template <typename Func>
+bool
+foreach_adjset_mesh_pair(conduit::Node &mesh, const std::string &adjsetName, Func &&func)
+{
+    bool retval = true;
+    const std::string tempAdjsetName("__" + adjsetName + "__");
+
+    try
+    {
+        // Make sure we have a suitable query adjset.
+        adjset::to_pairwise_canonical(mesh, adjsetName, tempAdjsetName);
+
+        // Call the real implementation on the temporary adjset.
+        retval = foreach_adjset_mesh_pair_impl(mesh, tempAdjsetName, func);
+
+        // Remove the adjset that was added.
+        adjset::remove(mesh, tempAdjsetName);
+    }
+    catch(...)
+    {
+        // Remove the adjset that was added.
+        adjset::remove(mesh, tempAdjsetName);
+        // Rethrow the exception.
+        throw;
+    }
+
+    return retval;
+}
+
+//-----------------------------------------------------------------------------
+bool
+adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, conduit::Node &info)
+{
+    auto compareMesh =
+        [&](const std::string &groupName, int /*dom1*/, conduit::Node &mesh1, int /*dom2*/, conduit::Node &mesh2)
+    {
+        // Make sure the nodes are not different.
+        const double eps = 1.e-8;
+        bool different = mesh1.diff(mesh2, info, eps);
+
+        // Add some diagnostic info.
+        if(different)
+        {
+            info["adjset"] = adjsetName;
+            info["group"] = groupName;
+        }
+
+        return different ? false : true;
+    };
+
+    return foreach_adjset_mesh_pair(mesh, adjsetName, compareMesh);
+}
+
+//-----------------------------------------------------------------------------
+void
+adjset::to_topo(conduit::Node &mesh, const std::string &adjsetName, conduit::Node &out)
+{
+    auto moveMesh = [&](const std::string &groupName, int dom, conduit::Node &mesh, conduit::Node &out)
+    {
+        if(mesh.has_path("coordsets") && mesh.has_path("topologies"))
+        {
+            // Copy the mesh into out node in a way that preserves its name.
+            std::stringstream ss;
+            ss << adjsetName << "_" << dom << "_" << groupName;
+            std::string meshName(ss.str());
+
+            conduit::Node &coordsets = out["coordsets"];
+            conduit::Node &topologies = out["topologies"];
+            conduit::Node &cset = coordsets[meshName+"_coords"];
+            cset.move(mesh["coordsets"][0]);
+            conduit::Node &topo = topologies[meshName];
+            topo.move(mesh["topologies"][0]);
+            topo["coordset"] = meshName + "_coords";
+        }
+    };
+
+    foreach_adjset_mesh_pair(mesh, adjsetName,
+        [&](const std::string &groupName, int dom1, conduit::Node &mesh1, int dom2, conduit::Node &mesh2)
+    {
+        moveMesh(groupName, dom1, mesh1, out);
+        moveMesh(groupName, dom2, mesh2, out);
+        return true;
+    });
 }
 
 //-----------------------------------------------------------------------------
@@ -3605,11 +3913,11 @@ MatchQuery::execute()
         }
 
         // Get both of the topologies.
-        conduit::Node &mesh1 = it->second.query_mesh;
-        conduit::Node &mesh2 = oppit->second.query_mesh;
-        std::string topoKey("topologies/" + m_topoName);
-        conduit::Node &topo1 = mesh1[topoKey];
-        conduit::Node &topo2 = mesh2[topoKey];
+        const conduit::Node &mesh1 = it->second.query_mesh;
+        const conduit::Node &mesh2 = oppit->second.query_mesh;
+        const std::string topoKey("topologies/" + m_topoName);
+        const conduit::Node &topo1 = mesh1[topoKey];
+        const conduit::Node &topo2 = mesh2[topoKey];
 
         // Perform the search and store the results.
         it->second.results = topology::search(topo2, topo1);

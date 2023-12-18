@@ -28,13 +28,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `conduit::blueprint::mesh::utils::convert()` function that converts a list of nodes to a desired data type.
 - Added a `conduit::blueprint::mesh::generate_boundary_partition_field()` function that can take a topology and a partition field and generate a field for a related boundary topology. This is helpful when partitioning a boundary topology in the same manner as its parent topology.
 - Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
-
+- Added `conduit::blueprint::mesh::utils::adjset::to_topo()` function to make new point mesh topologies for each group of an adjacency set. This permits each group to be visualized as a set of points in VisIt. The groups for each side of the domain interface can be compared since they are separate point meshes.
+- Added `conduit::blueprint::mesh::utils::adjset::is_canonical()` function to check whether the group names in an adjacency set are canonical.
 
 ### Changed
 
 #### General
 - Improved the efficiency of json parsing logic.
 - The `conduit_relay_io_convert` program was enhanced so it can read/write Blueprint root files by passing _"blueprint"_ for the read or write protocols.
+- The `conduit_adjset_validate` program now writes a point mesh for each adjset groups if the _-output_ argument is supplied.
 
 #### Blueprint
 - The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.

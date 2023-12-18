@@ -394,7 +394,8 @@ domain1:
 //---------------------------------------------------------------------------
 void create_2_domain_2d_mesh(conduit::Node &root, int rank, int size)
 {
-    // The adjset is properly set up
+    // The adjset is properly set up. Note we make the vertex adjset a little
+    // weird on purpose.
     const char *example = R"(
 domain0:
   state:
@@ -421,6 +422,27 @@ domain0:
         domain0_1:
           neighbors: 1
           values: [2, 6]
+    pt_adjset:
+      association: vertex
+      topology: main
+      groups:
+        nonsense_name:
+          neighbors: 1
+          values: [15,11,7,3,14,10,6,2]
+    fails_pointwise:
+      association: vertex
+      topology: main
+      groups:
+        group_0_1:
+          neighbors: 1
+          values: [14,3,10,7,6,11,2,15]
+    notevenclose:
+      association: vertex
+      topology: main
+      groups:
+        group_0_1:
+          neighbors: 1
+          values: [12,8,4,0,1,5,9,13]
 domain1:
   state:
     domain_id: 1
@@ -446,6 +468,27 @@ domain1:
         domain0_1:
           neighbors: 0
           values: [0,4]
+    pt_adjset:
+      association: vertex
+      topology: main
+      groups:
+        nonsense_name:
+          neighbors: 0
+          values: [10,7,4,1,9,6,3,0]
+    fails_pointwise:
+      association: vertex
+      topology: main
+      groups:
+        group_0_1:
+          neighbors: 0
+          values: [0,4,3,1,9,7,6,10]
+    notevenclose:
+      association: vertex
+      topology: main
+      groups:
+        group_0_1:
+          neighbors: 0
+          values: [0,2,3,5,4,8,9,11]
 )";
 
     conduit::Node n;
