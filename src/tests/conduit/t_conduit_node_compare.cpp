@@ -139,7 +139,7 @@ TEST(conduit_node_compare, compare_leaf_numeric)
                 Node info;
                 memset(o.element_ptr(0), 1, 1);
                 memset(o.element_ptr(4), 1, 1);
-                bool diff_res =diff_nodes(n, o, info)
+                bool diff_res =diff_nodes(n, o, info);
                 EXPECT_TRUE(diff_res);
                 if(!diff_res)
                 {
