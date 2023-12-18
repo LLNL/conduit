@@ -144,7 +144,7 @@ TEST(conduit_node_compare, compare_leaf_numeric)
                 if(!diff_res)
                 {
                   n.print();
-                  o.print()
+                  o.print();
                   info.print();
                 }
 
