@@ -137,8 +137,8 @@ TEST(conduit_node_compare, compare_leaf_numeric)
 
             { // Leaf Difference Test //
                 Node info;
-                memset(o.element_ptr(0), 1, 1);
-                memset(o.element_ptr(4), 1, 1);
+                memset(o.element_ptr(0), 1, o.dtype().element_bytes());
+                memset(o.element_ptr(4), 1, o.dtype().element_bytes());
                 bool diff_res =diff_nodes(n, o, info);
                 EXPECT_TRUE(diff_res);
                 if(!diff_res)
@@ -158,6 +158,22 @@ TEST(conduit_node_compare, compare_leaf_numeric)
                                                  o.element_ptr(vi),
                                                  (size_t)type_bytes));
                     EXPECT_EQ(are_uneq, should_uneq);
+                    if(are_uneq != should_uneq)
+                    {
+                      unsigned char *n_ele_ptr = (unsigned char *)(n.element_ptr(vi));
+                      unsigned char *o_ele_ptr = (unsigned char *)(o.element_ptr(vi));
+                      for(int ibytes = 0; ibytes <  o.dtype().element_bytes(); ibytes++)
+                      {
+
+                        std::cout << conduit::utils::to_hex_string( n_ele_ptr[ibytes]) << " ";
+                      }
+                      std::cout << " vs ";
+                      for(int ibytes = 0; ibytes <  o.dtype().element_bytes(); ibytes++)
+                      {
+                        std::cout << conduit::utils::to_hex_string( o_ele_ptr[ibytes]) << " ";
+                      }
+                      std::cout << std::endl;
+                    }
                 }
             }
 
