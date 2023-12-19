@@ -1760,6 +1760,125 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
 }
 
 //-----------------------------------------------------------------------------
+void
+read_adjset(DBfile *dbfile,
+            const std::string &multimesh_name,
+            const int domain_id,
+            Node &mesh_out)
+{
+    const std::string dom_neighbor_nums_name = "DOMAIN_NEIGHBOR_NUMS";
+    if (! DBInqVarExists(dbfile, dom_neighbor_nums_name.c_str()))
+    {
+        // The domain neighbor nums are not present. They are optional, so we can return early
+        return;
+    }
+    if (DBInqVarType(dbfile, dom_neighbor_nums_name.c_str()) != DB_ARRAY)
+    {
+        // The domain neighbor nums are the wrong type. They are optional, so we can return early
+        return;
+    }
+    detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> dom_neighbor_nums_obj{
+        DBGetCompoundarray(dbfile, dom_neighbor_nums_name.c_str()), 
+        &DBFreeCompoundarray};
+    DBcompoundarray *dom_neighbor_nums = dom_neighbor_nums_obj.getSiloObject();
+    if (! dom_neighbor_nums)
+    {
+        // we failed to read the domain neighbor nums. We can skip them.
+        return;
+    }
+
+    // fetch pointers to elements inside the compound array
+    const int *dom_neighbor_nums_values  = static_cast<int *>(dom_neighbor_nums->values);
+    const int dom_neighbor_nums_datatype = dom_neighbor_nums->datatype;
+
+    if (dom_neighbor_nums_datatype != DB_INT)
+    {
+        // for overlink, the domain neighbor nums must contain integer data
+        return;
+    }
+
+    const int num_neighboring_doms = dom_neighbor_nums_values[0];
+    if (num_neighboring_doms <= 0)
+    {
+        // there are no neighboring domains, so we cannot create an adjset
+        return;
+    }
+
+    // create the adjset
+    Node &adjset_out = mesh_out["adjsets"]["adjset"];
+    adjset_out["topology"] = multimesh_name;
+    adjset_out["association"] = "vertex";
+
+    for (int i = 1; i <= num_neighboring_doms; i ++)
+    {
+        const int neighbor_domain_id = dom_neighbor_nums_values[i];
+        std::string group_name;
+
+
+        if (domain_id < neighbor_domain_id)
+        {
+            group_name = "group_" + 
+                         std::to_string(domain_id) + "_" + 
+                         std::to_string(neighbor_domain_id);
+        }
+        else
+        {
+            group_name = "group_" + 
+                         std::to_string(neighbor_domain_id) + "_" + 
+                         std::to_string(domain_id);
+        }
+
+        // create the adjset group
+        Node &group_out = adjset_out["groups"][group_name];
+
+        // set the only neighbor
+        group_out["neighbors"].set(static_cast<index_t>(neighbor_domain_id));
+        
+        const int m = i - 1; // overlink index
+        const std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(m);
+
+        if (! DBInqVarExists(dbfile, arr_name.c_str()))
+        {
+            // DomainNeighborX is not present. It is optional, so we can skip
+            continue;
+        }
+        if (DBInqVarType(dbfile, arr_name.c_str()) != DB_ARRAY)
+        {
+            // DomainNeighborX is the wrong type. It is optional, so we can skip
+            continue;
+        }
+        detail::SiloObjectWrapper<DBcompoundarray, decltype(&DBFreeCompoundarray)> dom_neighbor_x_obj{
+            DBGetCompoundarray(dbfile, arr_name.c_str()), 
+            &DBFreeCompoundarray};
+        DBcompoundarray *dom_neighbor_x = dom_neighbor_x_obj.getSiloObject();
+        if (! dom_neighbor_x)
+        {
+            // we failed to read DomainNeighborX. We can skip it.
+            continue;
+        }
+
+        // fetch pointers to elements inside the compound array
+        const int *neighbor_values      = static_cast<int *>(dom_neighbor_x->values);
+        const int neighbor_datatype     = dom_neighbor_x->datatype;
+        const int neighbor_nvalues      = dom_neighbor_x->nvalues;
+
+        if (neighbor_datatype != DB_INT)
+        {
+            // for overlink, DomainNeighborX must contain integer data
+            continue;
+        }
+
+        const int num_shared_nodes = neighbor_nvalues;
+        group_out["values"].set(DataType::index_t(num_shared_nodes));
+        index_t_array shared_nodes = group_out["values"].value();
+        for (int i = 0; i < num_shared_nodes; i ++)
+        {
+            shared_nodes[i] = neighbor_values[i];
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
 read_mesh(const std::string &root_file_path,
           Node &mesh
@@ -2597,7 +2716,7 @@ read_mesh(const std::string &root_file_path,
         // Read State
         //
 
-        mesh_out["state"]["domain_id"] = domain_id;
+        mesh_out["state"]["domain_id"] = static_cast<index_t>(domain_id);
         if (mesh_index.has_path("state/time"))
         {
             mesh_out["state"]["time"] = mesh_index["state"]["time"].as_double();
@@ -2606,6 +2725,12 @@ read_mesh(const std::string &root_file_path,
         {
             mesh_out["state"]["cycle"] = (index_t) mesh_index["state"]["cycle"].as_int();
         }
+
+        //
+        // Read Adjset (overlink only)
+        //
+
+        read_adjset(mesh_domain_file_to_use, multimesh_name, domain_id, mesh_out);
 
         //
         // Read Materials
@@ -3291,6 +3416,166 @@ void silo_write_field(DBfile *dbfile,
 
         // bookkeeping
         detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
+    }
+}
+
+//---------------------------------------------------------------------------//
+// overlink only
+void silo_write_adjset(DBfile *dbfile,
+                       const Node &n_adjset,
+                       const bool empty)
+{
+    auto write_dom_neighbor_nums = [&](const int num_neighboring_doms,
+                                       const std::vector<int> &dom_neighbor_nums)
+    {
+        std::vector<std::string> elem_name_strings;
+        elem_name_strings.push_back("num_neighbors");
+        elem_name_strings.push_back("neighbor_nums");
+        // package up char ptrs for silo
+        std::vector<const char *> elem_name_ptrs;
+        for (size_t i = 0; i < elem_name_strings.size(); i ++)
+        {
+            elem_name_ptrs.push_back(elem_name_strings[i].c_str());
+        }
+
+        std::vector<int> elemlengths;
+        elemlengths.push_back(1);
+        elemlengths.push_back(num_neighboring_doms);
+
+        const int nelems = 2;
+        const int nvalues = num_neighboring_doms + 1;
+
+        void *dom_neighbor_nums_ptr = static_cast<void *>(
+                                          const_cast<int *>(
+                                              dom_neighbor_nums.data()));
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           "DOMAIN_NEIGHBOR_NUMS", // name
+                           elem_name_ptrs.data(), // elemnames
+                           elemlengths.data(), // elemlengths
+                           nelems, // nelems
+                           dom_neighbor_nums_ptr, // values
+                           nvalues, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+    };
+
+    // 
+    // DOMAIN NEIGHBOR NUMS
+    // 
+
+    if (empty)
+    {
+        const int num_neighboring_doms = 0;
+        
+        // our compound array data that we are saving
+        std::vector<int> dom_neighbor_nums;
+
+        // the first entry is the number of neighboring domains
+        dom_neighbor_nums.push_back(num_neighboring_doms);
+
+        write_dom_neighbor_nums(num_neighboring_doms, dom_neighbor_nums);
+
+        // we are done there is nothing else to write
+        return;
+    }
+
+    CONDUIT_ASSERT(n_adjset["association"].as_string() != "element",
+        "We do not support the element-associated adjset case. "
+        "Please contact a Conduit developer.");
+
+    Node pairwise_adjset;
+    conduit::blueprint::mesh::adjset::to_pairwise(n_adjset, pairwise_adjset);
+
+    const int num_neighboring_doms = pairwise_adjset["groups"].number_of_children();
+    
+    // our compound array data that we are saving
+    std::vector<int> dom_neighbor_nums;
+
+    // the first entry is the number of neighboring domains
+    dom_neighbor_nums.push_back(num_neighboring_doms);
+
+    // the following entries are the domain ids of the neighboring domains
+    auto group_itr = pairwise_adjset["groups"].children();
+    while (group_itr.has_next())
+    {
+        const Node &group = group_itr.next();
+        // since we have forced pairwise, we can assume that there is only one
+        const int neighbor = group["neighbors"].to_int();
+        dom_neighbor_nums.push_back(neighbor);
+    }
+
+    write_dom_neighbor_nums(num_neighboring_doms, dom_neighbor_nums);
+
+    // std::vector<std::string> elem_name_strings;
+    // elem_name_strings.push_back("num_neighbors");
+    // elem_name_strings.push_back("neighbor_nums");
+    // // package up char ptrs for silo
+    // std::vector<const char *> elem_name_ptrs;
+    // for (size_t i = 0; i < elem_name_strings.size(); i ++)
+    // {
+    //     elem_name_ptrs.push_back(elem_name_strings[i].c_str());
+    // }
+
+    // std::vector<int> elemlengths;
+    // elemlengths.push_back(1);
+    // elemlengths.push_back(num_neighboring_doms);
+
+    // const int nelems = 2;
+    // const int nvalues = num_neighboring_doms + 1;
+
+    // DBPutCompoundarray(dbfile, // dbfile
+    //                    "DOMAIN_NEIGHBOR_NUMS", // name
+    //                    elem_name_ptrs.data(), // elemnames
+    //                    elemlengths.data(), // elemlengths
+    //                    nelems, // nelems
+    //                    static_cast<void *>(dom_neighbor_nums.data()), // values
+    //                    nvalues, // nvalues
+    //                    DB_INT, // datatype
+    //                    NULL); // optlist
+
+    // 
+    // COMMUNICATIONS LISTS FOR NEIGHBORING DOMAINS
+    // 
+
+    // if there are no domain neighbors then we can return early
+    if (num_neighboring_doms <= 0)
+    {
+        return;
+    }
+
+    int neighbor_index = 0;
+    group_itr = pairwise_adjset["groups"].children();
+    while (group_itr.has_next())
+    {
+        const std::string arr_name = "DOMAIN_NEIGHBOR" + std::to_string(neighbor_index);
+
+        char const *elemname = "shared_nodes";
+        const int nelems_comm = 1;
+
+        std::vector<int> shared_nodes;
+
+        const Node &group = group_itr.next();
+        // since we have forced pairwise, we can assume that there is only one
+        int_accessor group_values = group["values"].value();
+        const int num_shared_nodes = group["values"].dtype().number_of_elements();
+
+        for (int i = 0; i < num_shared_nodes; i ++)
+        {
+            shared_nodes.push_back(group_values[i]);
+        }
+
+        DBPutCompoundarray(dbfile, // dbfile
+                           arr_name.c_str(), // name
+                           &elemname, // elemnames
+                           &num_shared_nodes, // elemlengths
+                           nelems_comm, // nelems
+                           static_cast<void *>(shared_nodes.data()), // values
+                           num_shared_nodes, // nvalues
+                           DB_INT, // datatype
+                           NULL); // optlist
+
+        neighbor_index ++;
     }
 }
 
@@ -4187,6 +4472,31 @@ void silo_mesh_write(const Node &mesh_domain,
                                  local_type_domain_info,
                                  n_mesh_info);
             }
+        }
+    }
+
+    // we only write adjacency set information if we are writing overlink
+    if (write_overlink)
+    {
+        if (mesh_domain.has_path("adjsets"))
+        {
+            auto itr = mesh_domain["adjsets"].children();
+            while (itr.has_next())
+            {
+                const Node &n_adjset = itr.next();
+                if (n_adjset["topology"].as_string() == ovl_topo_name)
+                {
+                    silo_write_adjset(dbfile, n_adjset, false);
+                }
+                // we will give up after writing 1 because we can only have
+                // 1 adjset per topo
+                break;
+            }
+        }
+        else
+        {
+            Node temp; // we just need an empty argument
+            silo_write_adjset(dbfile, temp, true);
         }
     }
 
