@@ -108,6 +108,12 @@ TEST(conduit_blueprint_mesh_utils, shapetype)
         EXPECT_EQ(shape.is_polygonal(), t.is_polygonal);
         EXPECT_EQ(shape.is_polyhedral(), t.is_polyhedral);
     }
+
+    // Initialize with a bad shape name.
+    conduit::blueprint::mesh::utils::ShapeType shape("bogus");
+    EXPECT_FALSE(shape.is_poly());
+    EXPECT_FALSE(shape.is_polygonal());
+    EXPECT_FALSE(shape.is_polyhedral());
 }
 
 //-----------------------------------------------------------------------------
