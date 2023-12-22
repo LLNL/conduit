@@ -42,6 +42,81 @@ void save_mesh(const conduit::Node &root, const std::string &filebase)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, shapetype)
+{
+    struct test_case
+    {
+        std::string meshtype;
+        std::string shapetype;
+        int sdim;
+        // answers
+        int tdim;
+        bool is_poly, is_polygonal, is_polyhedral;
+    };
+    std::vector<test_case> tests{
+        // non-unstructured topo types.
+        {"points", "point", 2, 0, false, false, false},
+        {"points", "point", 3, 0, false, false, false},
+        {"points_implicit", "point", 2, 0, false, false, false},
+        {"points_implicit", "point", 3, 0, false, false, false},
+
+        {"uniform", "line", 1, 1, false, false, false},
+        {"uniform", "quad", 2, 2, false, false, false},
+        {"uniform", "hex", 3, 3, false, false, false},
+
+        {"rectilinear", "line", 1, 1, false, false, false},
+        {"rectilinear", "quad", 2, 2, false, false, false},
+        {"rectilinear", "hex", 3, 3, false, false, false},
+
+        {"structured", "quad", 2, 2, false, false, false},
+        {"structured", "hex", 3, 3, false, false, false},
+
+        // unstructured types
+        {"lines", "line", 2, 1, false, false, false},
+        {"lines", "line", 3, 1, false, false, false},
+
+        {"tris", "tri", 2, 2, false, false, false},
+
+        {"quads", "quad", 2, 2, false, false, false},
+        {"quads_poly", "polygonal", 2, 2, true, true, false},
+
+        {"tets", "tet", 3, 3, false, false, false},
+
+        {"pyramids", "pyramid", 3, 3, false, false, false},
+        {"wedges", "wedge", 3, 3, false, false, false},
+
+        {"hexs", "hex", 3, 3, false, false, false},
+        {"hexs_poly", "polyhedral", 3, 3, true, false, true}
+    };
+
+    for(const auto &t : tests)
+    {
+        const conduit::index_t s = 5;
+        conduit::Node mesh;
+        conduit::blueprint::mesh::examples::braid(t.meshtype,
+            s, t.sdim >= 2 ? s : 0, t.sdim >= 3 ? s : 0,
+            mesh);
+
+        // Make sure we can pass various topology types to ShapeType.
+        const conduit::Node &topo = mesh["topologies/mesh"];
+        conduit::blueprint::mesh::utils::ShapeType shape(topo);
+
+        EXPECT_EQ(conduit::blueprint::mesh::coordset::dims(mesh["coordsets/coords"]), t.sdim);
+        EXPECT_EQ(shape.type, t.shapetype);
+        EXPECT_EQ(shape.dim, t.tdim);
+        EXPECT_EQ(shape.is_poly(), t.is_poly);
+        EXPECT_EQ(shape.is_polygonal(), t.is_polygonal);
+        EXPECT_EQ(shape.is_polyhedral(), t.is_polyhedral);
+    }
+
+    // Initialize with a bad shape name.
+    conduit::blueprint::mesh::utils::ShapeType shape("bogus");
+    EXPECT_FALSE(shape.is_poly());
+    EXPECT_FALSE(shape.is_polygonal());
+    EXPECT_FALSE(shape.is_polyhedral());
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_utils, adjset_validate_element_0d)
 {
     conduit::Node root, info;

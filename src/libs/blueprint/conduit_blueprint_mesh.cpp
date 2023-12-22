@@ -4672,6 +4672,11 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4699,6 +4704,11 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
                                              Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
@@ -4761,7 +4771,12 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    // Retrieve Relevent Coordinate/Topology Metadata //
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
+    // Retrieve Relevant Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
     const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
@@ -5560,6 +5575,11 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo_src.has_path("type") && topo_src["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     std::string field_prefix = "";
     std::vector<std::string> field_names;
     const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
@@ -5661,6 +5681,11 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // Retrieve Relevent Coordinate/Topology Metadata //
 

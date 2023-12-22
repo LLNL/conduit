@@ -86,10 +86,40 @@ ShapeType::ShapeType(const conduit::Node &topology)
 {
     init(-1);
 
-    if(topology["type"].as_string() == "unstructured" &&
-        topology["elements"].has_child("shape"))
+    const std::string type = topology["type"].as_string();
+    if(type == "unstructured" && topology["elements"].has_child("shape"))
     {
         init(topology["elements/shape"].as_string());
+    }
+    else if(type == "points")
+    {
+        // handle points separately.
+        init("point");
+    }
+    else
+    {
+        // Handle other topology types. Using the spatial dimension as a proxy
+        // for the topological dimension.
+        const Node *coordset = find_reference_node(topology, "coordset");
+        conduit::index_t d = coordset::dims(*coordset);
+        switch(d)
+        {
+        case 0:
+            init("point");
+            break;
+        case 1:
+            init("line");
+            break;
+        case 2:
+            init("quad");
+            break;
+        case 3:
+            init("hex");
+            break;
+        default:
+            CONDUIT_ERROR("Unable to determine shape for topology.");
+            break;
+        }
     }
 }
 
@@ -138,7 +168,7 @@ ShapeType::init(const index_t type_id)
 bool
 ShapeType::is_poly() const
 {
-    return embedding == NULL;
+    return embedding == NULL && (dim == 2 || dim == 3);
 }
 
 

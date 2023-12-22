@@ -1828,3 +1828,55 @@ TEST(conduit_blueprint_generate_unstructured, generate_corners)
         }
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate, generate_exceptions)
+{
+    for(int i = 0; i < 4; i++)
+    {
+        conduit::Node out;
+        conduit::blueprint::mesh::examples::braid("uniform", 2, 2, 2, out);
+        const conduit::Node &topologies = out["topologies"];
+        const conduit::Node &n_topo = topologies[0];
+        bool generatedException = false;
+        try
+        {
+            // Pass a uniform topology to a routine that expects unstructured.
+            conduit::Node s2dmap, d2smap;
+            switch(i)
+            {
+            case 0:
+                conduit::blueprint::mesh::topology::unstructured::generate_lines(n_topo,
+                                                                                 out["topologies/line"],
+                                                                                 s2dmap,
+                                                                                 d2smap);
+                break;
+            case 1:
+                conduit::blueprint::mesh::topology::unstructured::generate_faces(n_topo,
+                                                                                 out["topologies/face"],
+                                                                                 s2dmap,
+                                                                                 d2smap);
+                break;
+            case 2:
+                conduit::blueprint::mesh::topology::unstructured::generate_sides(n_topo,
+                                                                                 out["topologies/side"],
+                                                                                 out["coordsets/side_coords"],
+                                                                                 s2dmap,
+                                                                                 d2smap);
+                break;
+            case 3:
+                conduit::blueprint::mesh::topology::unstructured::generate_corners(n_topo,
+                                                                                 out["topologies/corner"],
+                                                                                 out["coordsets/corner_coords"],
+                                                                                 s2dmap,
+                                                                                 d2smap);
+                break;
+            }
+        }
+        catch(conduit::Error &)
+        {
+            generatedException = true;
+        }
+        EXPECT_TRUE(generatedException);
+    }
+}
