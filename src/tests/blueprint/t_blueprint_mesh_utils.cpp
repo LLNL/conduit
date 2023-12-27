@@ -16,6 +16,7 @@
 
 #include "blueprint_test_helpers.hpp"
 
+#include <cstddef>
 #include <algorithm>
 #include <vector>
 #include <string>
@@ -427,6 +428,187 @@ TEST(conduit_blueprint_mesh_utils, copy_fields)
     conduit::blueprint::mesh::utils::copy_fields(n["fields"], fields, opts);
     EXPECT_EQ(fields.number_of_children(), 1);
     EXPECT_EQ(fields[0].name(), "f4");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, slice_array)
+{
+    struct A
+    {
+        double x,y,z;
+        double f1,f2;
+    };
+    A data[] = {{0., 1., 2., 3., 4.},
+                {5., 6., 7., 8., 9.},
+                {10., 11., 12., 13., 14.},
+                {15., 16., 17., 18., 19.},
+                {20., 21., 22., 23., 24.}};
+    index_t nelem = 5;
+    Node n;
+    n["fields/vector/values/x"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, x), sizeof(A));
+    n["fields/vector/values/y"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, y), sizeof(A));
+    n["fields/vector/values/z"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, z), sizeof(A));
+    n["fields/f1/values"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, f1), sizeof(A));
+    n["fields/f2/values"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, f2), sizeof(A));
+
+    // First, a basic check.
+    auto ax = n["fields/vector/values/x"].as_double_array();
+    auto ay = n["fields/vector/values/y"].as_double_array();
+    auto az = n["fields/vector/values/z"].as_double_array();
+    auto af1 = n["fields/f1/values"].as_double_array();
+    auto af2 = n["fields/f2/values"].as_double_array();
+    for(index_t i = 0; i < nelem; i++)
+    {
+        EXPECT_EQ(data[i].x, ax[i]);
+        EXPECT_EQ(data[i].y, ay[i]);
+        EXPECT_EQ(data[i].z, az[i]);
+        EXPECT_EQ(data[i].f1, af1[i]);
+        EXPECT_EQ(data[i].f2, af2[i]);
+    }
+
+    // Check the compacted values.
+    Node ncx, ncy, ncz, ncf1, ncf2;
+    n["fields/vector/values/x"].compact_to(ncx);
+    n["fields/vector/values/y"].compact_to(ncy);
+    n["fields/vector/values/z"].compact_to(ncz);
+    n["fields/f1/values"].compact_to(ncf1);
+    n["fields/f2/values"].compact_to(ncf2);
+    ax = ncx.as_double_array();
+    ay = ncy.as_double_array();
+    az = ncz.as_double_array();
+    af1 = ncf1.as_double_array();
+    af2 = ncf2.as_double_array();
+    for(index_t i = 0; i < nelem; i++)
+    {
+        EXPECT_EQ(data[i].x, ax[i]);
+        EXPECT_EQ(data[i].y, ay[i]);
+        EXPECT_EQ(data[i].z, az[i]);
+        EXPECT_EQ(data[i].f1, af1[i]);
+        EXPECT_EQ(data[i].f2, af2[i]);
+    }
+
+    // Slice the arrays with index_t indices
+    std::vector<index_t> idx1{0, 2, 4};
+    Node nsx, nsy, nsz, nsf1, nsf2;
+    conduit::blueprint::mesh::utils::slice_array(n["fields/vector/values/x"], idx1, nsx);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/vector/values/y"], idx1, nsy);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/vector/values/z"], idx1, nsz);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/f1/values"], idx1, nsf1);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/f2/values"], idx1, nsf2);
+    ax = nsx.as_double_array();
+    ay = nsy.as_double_array();
+    az = nsz.as_double_array();
+    af1 = nsf1.as_double_array();
+    af2 = nsf2.as_double_array();
+    EXPECT_EQ(static_cast<int>(af1.number_of_elements()), static_cast<int>(idx1.size()));
+    EXPECT_EQ(static_cast<int>(ax.number_of_elements()), static_cast<int>(idx1.size()));
+    for(size_t i = 0; i < idx1.size(); i++)
+    {
+        index_t orig = idx1[i];
+        EXPECT_EQ(data[orig].x, ax[i]);
+        EXPECT_EQ(data[orig].y, ay[i]);
+        EXPECT_EQ(data[orig].z, az[i]);
+        EXPECT_EQ(data[orig].f1, af1[i]);
+        EXPECT_EQ(data[orig].f2, af2[i]);
+    }
+
+    // Slice the arrays with int indices
+    std::vector<int> idx2{1, 3};
+    conduit::blueprint::mesh::utils::slice_array(n["fields/vector/values/x"], idx2, nsx);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/vector/values/y"], idx2, nsy);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/vector/values/z"], idx2, nsz);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/f1/values"], idx2, nsf1);
+    conduit::blueprint::mesh::utils::slice_array(n["fields/f2/values"], idx2, nsf2);
+    ax = nsx.as_double_array();
+    ay = nsy.as_double_array();
+    az = nsz.as_double_array();
+    af1 = nsf1.as_double_array();
+    af2 = nsf2.as_double_array();
+    EXPECT_EQ(static_cast<int>(af1.number_of_elements()), static_cast<int>(idx2.size()));
+    EXPECT_EQ(static_cast<int>(ax.number_of_elements()), static_cast<int>(idx2.size()));
+    for(index_t i = 0; i < idx2.size(); i++)
+    {
+        index_t orig = idx2[i];
+        EXPECT_EQ(data[orig].x, ax[i]);
+        EXPECT_EQ(data[orig].y, ay[i]);
+        EXPECT_EQ(data[orig].z, az[i]);
+        EXPECT_EQ(data[orig].f1, af1[i]);
+        EXPECT_EQ(data[orig].f2, af2[i]);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, slice_field)
+{
+    struct A
+    {
+        double x,y,z;
+        int f1;
+        float f2;
+    };
+    A data[] = {{0., 1., 2., 3, 4.f},
+                {5., 6., 7., 8, 9.f},
+                {10., 11., 12., 13, 14.f},
+                {15., 16., 17., 18, 19.f},
+                {20., 21., 22., 23, 24.f}};
+    index_t nelem = 5;
+    Node n;
+    n["fields/vector/association"] = "element";
+    n["fields/vector/topology"] = "ignored";
+    n["fields/vector/values/x"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, x), sizeof(A));
+    n["fields/vector/values/y"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, y), sizeof(A));
+    n["fields/vector/values/z"].set_external(reinterpret_cast<double *>(data), nelem, offsetof(A, z), sizeof(A));
+    n["fields/f1/association"] = "element";
+    n["fields/f1/topology"] = "ignored";
+    n["fields/f1/values"].set_external(reinterpret_cast<int *>(data), nelem, offsetof(A, f1), sizeof(A));
+    n["fields/f2/association"] = "element";
+    n["fields/f2/topology"] = "ignored";
+    n["fields/f2/values"].set_external(reinterpret_cast<float *>(data), nelem, offsetof(A, f2), sizeof(A));
+
+    // Slice the arrays with index_t indices
+    std::vector<index_t> idx1{0, 2, 4};
+    Node nsvector, nsf1, nsf2;
+    conduit::blueprint::mesh::utils::slice_field(n["fields/vector/values"], idx1, nsvector["values"]);
+    conduit::blueprint::mesh::utils::slice_field(n["fields/f1/values"], idx1, nsf1["values"]);
+    conduit::blueprint::mesh::utils::slice_field(n["fields/f2/values"], idx1, nsf2["values"]);
+    auto ax = nsvector["values/x"].as_double_array();
+    auto ay = nsvector["values/y"].as_double_array();
+    auto az = nsvector["values/z"].as_double_array();
+    auto af1 = nsf1["values"].as_int_array();
+    auto af2 = nsf2["values"].as_float_array();
+    EXPECT_EQ(static_cast<int>(af1.number_of_elements()), static_cast<int>(idx1.size()));
+    EXPECT_EQ(static_cast<int>(ax.number_of_elements()), static_cast<int>(idx1.size()));
+    for(size_t i = 0; i < idx1.size(); i++)
+    {
+        index_t orig = idx1[i];
+        EXPECT_EQ(data[orig].x, ax[i]);
+        EXPECT_EQ(data[orig].y, ay[i]);
+        EXPECT_EQ(data[orig].z, az[i]);
+        EXPECT_EQ(data[orig].f1, af1[i]);
+        EXPECT_EQ(data[orig].f2, af2[i]);
+    }
+
+    // Slice the arrays with int indices
+    std::vector<int> idx2{1, 3};
+    conduit::blueprint::mesh::utils::slice_field(n["fields/vector/values"], idx2, nsvector["values"]);
+    conduit::blueprint::mesh::utils::slice_field(n["fields/f1/values"], idx2, nsf1["values"]);
+    conduit::blueprint::mesh::utils::slice_field(n["fields/f2/values"], idx2, nsf2["values"]);
+    auto bx = nsvector["values/x"].as_double_array();
+    auto by = nsvector["values/y"].as_double_array();
+    auto bz = nsvector["values/z"].as_double_array();
+    auto bf1 = nsf1["values"].as_int_array();
+    auto bf2 = nsf2["values"].as_float_array();
+    EXPECT_EQ(static_cast<int>(bf1.number_of_elements()), static_cast<int>(idx2.size()));
+    EXPECT_EQ(static_cast<int>(bx.number_of_elements()), static_cast<int>(idx2.size()));
+    for(size_t i = 0; i < idx2.size(); i++)
+    {
+        index_t orig = idx2[i];
+        EXPECT_EQ(data[orig].x, bx[i]);
+        EXPECT_EQ(data[orig].y, by[i]);
+        EXPECT_EQ(data[orig].z, bz[i]);
+        EXPECT_EQ(data[orig].f1, bf1[i]);
+        EXPECT_EQ(data[orig].f2, bf2[i]);
+    }
 }
 
 //-----------------------------------------------------------------------------
