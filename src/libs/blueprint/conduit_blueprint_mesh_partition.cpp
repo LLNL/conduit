@@ -2767,41 +2767,7 @@ Partitioner::copy_field(const conduit::Node &n_field,
 
     const conduit::Node &n_values = n_field["values"];
     conduit::Node &new_values = n_new_field["values"];
-    if(n_values.dtype().is_compact()) 
-    {
-        if(n_values.number_of_children() > 0)
-        {
-
-// The vel data must be interleaved. We need to use the DataArray element methods for access.
-
-
-            // mcarray.
-            for(index_t i = 0; i < n_values.number_of_children(); i++)
-            {
-                const conduit::Node &n_vals = n_values[i];
-                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
-            }
-        }
-        else
-            conduit::blueprint::mesh::utils::slice_array(n_values, ids, new_values);
-    }
-    else
-    {
-        // otherwise, we need to compact our data first
-        conduit::Node n;
-        n_values.compact_to(n);
-        if(n.number_of_children() > 0)
-        {
-            // mcarray.
-            for(index_t i = 0; i < n.number_of_children(); i++)
-            {
-                const conduit::Node &n_vals = n[i];
-                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
-            }
-        }
-        else
-            conduit::blueprint::mesh::utils::slice_array(n, ids, new_values);
-    }
+    conduit::blueprint::mesh::utils::slice_field(n_values, ids, new_values);
 }
 
 //---------------------------------------------------------------------------
