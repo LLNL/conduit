@@ -253,3 +253,35 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_venn_to_silo_matset_values)
     }
 
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_element)
+{
+    const int nx = 4, ny = 4;
+    const double radius = 0.25;
+
+    Node mesh_full, mesh_sbe, mesh_sbm, info;
+    blueprint::mesh::examples::venn("full", nx, ny, radius, mesh_full);
+    blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh_sbe);
+    blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh_sbm);
+
+
+    CONDUIT_INFO("venn full -> sparse_by_element");
+    {
+        // first we diff full -> sbe with sbe
+
+        // const Node &field = mesh_full["fields/mat_check"];
+        const Node &mset = mesh_full["matsets/matset"];
+        const Node &sbe_mset_baseline = mesh_sbe["matsets/matset"];
+
+        std::cout << mset.to_yaml() << std::endl;
+        // std::cout << field.to_yaml() << std::endl;
+
+        Node mset_sbe;
+        blueprint::mesh::matset::full_to_sparse_by_element(mset,
+                                                           mset_sbe);
+        std::cout << mset_sbe.to_yaml() << std::endl;
+
+        EXPECT_FALSE(mset_sbe.diff(sbe_mset_baseline, info, CONDUIT_EPSILON, true));
+    }
+}

@@ -532,6 +532,67 @@ to_silo(const conduit::Node &matset,
                     epsilon);
 }
 
+//-----------------------------------------------------------------------------
+void
+full_to_sparse_by_element(const conduit::Node &matset,
+                          conduit::Node &dest,
+                          const float64 epsilon)
+{
+    // extra seat belt here
+    if(!matset.dtype().is_object() )
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::full_to_sparse_by_element"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<int, double_array> full_vol_fracs;
+
+    // create the material map
+    auto mat_itr = matset["volume_fractions"].children();
+    int mat_id = 0;
+    while (mat_itr.has_next())
+    {
+        const Node &mat_vol_fracs = mat_itr.next();
+        std::string matname = mat_itr.name();
+        full_vol_fracs[mat_id] = mat_vol_fracs.value();
+        dest["material_map"][matname] = mat_id;
+        mat_id ++;
+    }
+    const int nmats = dest["material_map"].number_of_children();
+
+    std::vector<double> vol_fracs; // TODO support different types
+    std::vector<index_t> mat_ids;
+    std::vector<index_t> sizes;
+    std::vector<index_t> offsets;
+
+    int num_elems = matset["volume_fractions"][0].dtype().number_of_elements();
+    int offset = 0;
+    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    {
+        int size = 0;
+        for (mat_id = 0; mat_id < nmats; mat_id ++)
+        {
+            float64 vol_frac = full_vol_fracs[mat_id][elem_id];
+            if (vol_frac > epsilon)
+            {
+                vol_fracs.push_back(vol_frac);
+                mat_ids.push_back(mat_id);
+                size ++;
+            }
+        }
+        sizes.push_back(size);
+        offsets.push_back(offset);
+        offset += size;
+    }
+
+    dest["volume_fractions"].set(vol_fracs.data(), vol_fracs.size());
+    dest["material_ids"].set(mat_ids.data(), mat_ids.size());
+    dest["sizes"].set(sizes.data(), sizes.size());
+    dest["offsets"].set(offsets.data(), offsets.size());
+}
 
 //-----------------------------------------------------------------------------
 
