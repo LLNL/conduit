@@ -740,6 +740,7 @@ protected:
     std::vector<std::shared_ptr<Selection> > selections;
     std::vector<std::string>                 selected_fields;
     bool                                     mapping;
+    bool                                     build_adjsets;
     double                                   merge_tolerance;
 };
 
