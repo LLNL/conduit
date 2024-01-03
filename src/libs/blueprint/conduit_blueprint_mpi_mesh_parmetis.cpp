@@ -643,7 +643,15 @@ void generate_partition_field(conduit::Node &mesh,
 
             topology::iterate_elements(dom_topo, [&](const topology::entity &e)
             {
-                local_total_ele_to_verts_size += e.element_ids.size();
+                if(e.shape.is_polyhedral())
+                {
+                    for(const auto &faceIds : e.subelement_ids)
+                        local_total_ele_to_verts_size += faceIds.size();
+                }
+                else
+                {
+                    local_total_ele_to_verts_size += e.element_ids.size();
+                }
             });
 
         }
@@ -727,7 +735,15 @@ void generate_partition_field(conduit::Node &mesh,
             topology::iterate_elements(dom_topo, [&](const topology::entity &e)
             {
                 eptr_vals[eptr_idx] = curr_offset;
-                curr_offset += e.element_ids.size();
+                if(e.shape.is_polyhedral())
+                {
+                    for(const auto &faceIds : e.subelement_ids)
+                        curr_offset += faceIds.size();
+                }
+                else
+                {
+                    curr_offset += e.element_ids.size();
+                }
                 eptr_idx++;
             });
 
@@ -739,10 +755,24 @@ void generate_partition_field(conduit::Node &mesh,
 
             blueprint::mesh::utils::topology::iterate_elements(dom_topo, [&](const blueprint::mesh::utils::topology::entity &e)
             {
-                for(size_t i=0;i< e.element_ids.size();i++)
+                if(e.shape.is_polyhedral())
                 {
-                    eind_vals[eind_idx] = (idx_t) global_vert_ids[e.element_ids[i]];
-                    eind_idx++;
+                    for(const auto &faceIds : e.subelement_ids)
+                    {
+                        for(size_t i = 0; i < faceIds.size(); i++)
+                        {
+                            eind_vals[eind_idx] = (idx_t) global_vert_ids[faceIds[i]];
+                            eind_idx++;
+                        }
+                    }
+                }
+                else
+                {
+                    for(size_t i=0;i< e.element_ids.size();i++)
+                    {
+                        eind_vals[eind_idx] = (idx_t) global_vert_ids[e.element_ids[i]];
+                        eind_idx++;
+                    }
                 }
             });
         }
