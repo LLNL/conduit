@@ -2510,7 +2510,8 @@ topology::unstructured::generate_offsets(const Node &topo,
 //-----------------------------------------------------------------------------
 std::vector<index_t>
 topology::unstructured::points(const Node &n,
-                               const index_t ei)
+                               const index_t ei,
+                               bool unique)
 {
     // NOTE(JRC): This is a workaround to ensure offsets are generated up-front
     // if they don't exist and aren't regenerated for each subcall that needs them.
@@ -2520,45 +2521,30 @@ topology::unstructured::points(const Node &n,
 
     const ShapeType topo_shape(ntemp);
 
-    std::set<index_t> pidxs;
-    if(!topo_shape.is_poly())
+    std::vector<index_t> retval;
+    if(topo_shape.is_polyhedral())
     {
-        index_t_accessor poff_vals = ntemp["elements/offsets"].value();
-        const index_t eoff = poff_vals[ei];
-
-        index_t_accessor pidxs_vals = ntemp["elements/connectivity"].value();
-        for(index_t pi = 0; pi < topo_shape.indices; pi++)
-        {
-            pidxs.insert(pidxs_vals[eoff + pi]);
-        }
-    }
-    else // if(topo_shape.is_poly())
-    {
+        // For polyhedra, the points returned will be unique.
         Node enode;
         std::set<index_t> eidxs;
-        if(topo_shape.is_polygonal())
-        {
-            enode.set_external(ntemp["elements"]);
-            eidxs.insert(ei);
-        }
-        else // if(topo_shape.is_polyhedral())
-        {
-            enode.set_external(ntemp["subelements"]);
+        enode.set_external(ntemp["subelements"]);
 
-            index_t_accessor eidxs_vals = ntemp["elements/connectivity"].value();
-            o2mrelation::O2MIterator eiter(ntemp["elements"]);
-            eiter.to(ei, o2mrelation::ONE);
-            eiter.to_front(o2mrelation::MANY);
-            while(eiter.has_next(o2mrelation::MANY))
-            {
-                eiter.next(o2mrelation::MANY);
-                const index_t tmp = eidxs_vals[eiter.index(o2mrelation::DATA)];
-                eidxs.insert(tmp);
-            }
+        // Gather the face ids for the element.
+        index_t_accessor eidxs_vals = ntemp["elements/connectivity"].value();
+        o2mrelation::O2MIterator eiter(ntemp["elements"]);
+        eiter.to(ei, o2mrelation::ONE);
+        eiter.to_front(o2mrelation::MANY);
+        while(eiter.has_next(o2mrelation::MANY))
+        {
+            eiter.next(o2mrelation::MANY);
+            const index_t tmp = eidxs_vals[eiter.index(o2mrelation::DATA)];
+            eidxs.insert(tmp);
         }
 
+        // Iterate over the faces and make unique set of point ids.
         index_t_accessor pidxs_vals = enode["connectivity"].value();
         o2mrelation::O2MIterator piter(enode);
+        std::set<index_t> pidxs;
         for(const index_t eidx : eidxs)
         {
             piter.to(eidx, o2mrelation::ONE);
@@ -2570,9 +2556,52 @@ topology::unstructured::points(const Node &n,
                 pidxs.insert(tmp);
             }
         }
+
+        // Return point ids.
+        retval = std::vector<index_t>(pidxs.begin(), pidxs.end());
+    }
+    else
+    {
+        const index_t_accessor poff_vals = ntemp["elements/offsets"].value();
+        const index_t eoff = poff_vals[ei];
+
+        // Determine the number of points for the shape.
+        index_t npts;
+        if(topo_shape.is_polygonal())
+        {
+            const index_t_accessor psize_vals = ntemp["elements/sizes"].value();
+            npts = psize_vals[ei];
+        }
+        else
+        {
+            npts = topo_shape.indices;
+        }
+
+        // Get the points for the shape.
+        index_t_accessor pidxs_vals = ntemp["elements/connectivity"].value();
+        if(unique)
+        {
+            std::set<index_t> pidxs;
+            for(index_t pi = 0; pi < npts; pi++)
+            {
+                const auto pid = pidxs_vals[eoff + pi];
+                pidxs.insert(pid);
+            }
+            // Return point ids.
+            retval = std::vector<index_t>(pidxs.begin(), pidxs.end());
+        }
+        else
+        {
+            retval.reserve(npts);
+            for(index_t pi = 0; pi < npts; pi++)
+            {
+                const auto pid = pidxs_vals[eoff + pi];
+                retval.push_back(pid);
+            }
+        }
     }
 
-    return std::vector<index_t>(pidxs.begin(), pidxs.end());
+    return retval;
 }
 
 //-----------------------------------------------------------------------------
@@ -3259,7 +3288,9 @@ foreach_adjset_mesh_pair_impl(conduit::Node &mesh, const std::string &adjsetName
                         for(index_t i = 0; i < values.number_of_elements(); i++)
                         {
                             index_t ei = values[i];
-                            const auto ptids = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei);
+                            // Get the element points in their original order.
+                            const bool unique = false;
+                            const auto ptids = conduit::blueprint::mesh::utils::topology::unstructured::points(topo, ei, unique);
                             B.add(&ptids[0], ptids.size());
 
                             minSides = (i == 0) ? ptids.size() : std::min(minSides, ptids.size());

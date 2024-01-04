@@ -555,8 +555,26 @@ namespace topology
         void CONDUIT_BLUEPRINT_API generate_offsets_inline(Node &topo);
 
         //-------------------------------------------------------------------------
+        /**
+         @brief This function returns the points for a specified element index from
+                the given topology. For non-polyhedral element types, the \a unique
+                parameter indicates whether the function will return a unique+sorted
+                vector of point ids. The order can therefore differ from the point
+                order in the connectivity. When \a unique is false, the original
+                cell connectivity is preserved. For polyhedral types, the points
+                are always unique and sorted according to point id.
+
+         @param topo The input topology.
+         @param ei The element index.
+         @param unique Whether points should be unique+sorted. The default is true
+                       to continue earlier behavior.
+
+         @return A vector of point ids for the given element.
+         */
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
-                                                          const index_t i);
+                                                          const index_t ei,
+                                                          bool unique = true);
+
         //-------------------------------------------------------------------------
         /**
          * @brief Rewrite the topology's connectivity in terms of the supplied
