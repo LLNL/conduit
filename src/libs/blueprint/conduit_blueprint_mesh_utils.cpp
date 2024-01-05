@@ -2834,7 +2834,27 @@ bool adjset::is_canonical(const Node &adjset)
     for(conduit::index_t i = 0; i < groups.number_of_children() && retval; i++)
     {
         auto pos = groups[i].name().find(conduit::blueprint::mesh::adjset::group_prefix());
-        retval &= (pos == 0);
+
+        bool canonical = (pos == 0);
+        if(canonical)
+        {
+            std::vector<std::string> tokens;
+            conduit::utils::split_string(groups[i].name(), '_', tokens);
+            canonical = tokens.size() >= 3;
+            if(canonical)
+            {
+                std::vector<int> doms;
+                doms.reserve(tokens.size() - 1);
+                // Start at 1 to skip the groups prefix.
+                for(size_t j = 1; j < tokens.size(); j++)
+                    doms.push_back(atoi(tokens[j].c_str()));
+                // Start at 1 because we'll compare pairs. Make sure domains are sorted.
+                for(size_t j = 1; j < doms.size(); j++)
+                    canonical &= doms[j - 1] < doms[j];
+            }
+        }
+
+        retval &= canonical;
     }
     return retval;
 }

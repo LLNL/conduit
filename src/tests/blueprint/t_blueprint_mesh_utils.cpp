@@ -617,3 +617,54 @@ topologies:
     EXPECT_EQ(resCA.size(), 4);
     EXPECT_EQ(resCA, answersCA);
 };
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, is_canonical)
+{
+    const char *adjsets = R"(
+adjsets:
+  correct:
+    topology: mesh
+    association: vertex
+    groups:
+      group_0_1:
+        neighbors: 1
+        values: [0,1,2]
+  wrong_prefix:
+    topology: mesh
+    association: vertex
+    groups:
+      prefix_0_1:
+        neighbors: 1
+        values: [0,1,2]
+  out_of_order:
+    topology: mesh
+    association: vertex
+    groups:
+      group_1_0:
+        neighbors: 1
+        values: [0,1,2]
+  multi:
+    topology: mesh
+    association: vertex
+    groups:
+      group_0_1_2:
+        neighbors: [1,2]
+        values: [0,1,2]
+  multi_out_of_order:
+    topology: mesh
+    association: vertex
+    groups:
+      group_0_2_1:
+        neighbors: [1,2]
+        values: [0,1,2]
+)";
+
+    conduit::Node n;
+    n.parse(adjsets);
+    EXPECT_TRUE( conduit::blueprint::mesh::utils::adjset::is_canonical(n["adjsets/correct"]));
+    EXPECT_FALSE(conduit::blueprint::mesh::utils::adjset::is_canonical(n["adjsets/wrong_prefix"]));
+    EXPECT_FALSE(conduit::blueprint::mesh::utils::adjset::is_canonical(n["adjsets/out_of_order"]));
+    EXPECT_TRUE( conduit::blueprint::mesh::utils::adjset::is_canonical(n["adjsets/multi"]));
+    EXPECT_FALSE(conduit::blueprint::mesh::utils::adjset::is_canonical(n["adjsets/multi_out_of_order"]));
+}
