@@ -1701,6 +1701,7 @@ Partitioner::Partitioner()
   selections(),
   selected_fields(),
   mapping(true),
+  build_adjsets(true),
   merge_tolerance(1.e-8)
 {
 }
@@ -1978,6 +1979,11 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     // Get whether we want to preserve old numbering of vertices, elements.
     if(options.has_child("mapping"))
         mapping = options["mapping"].to_unsigned_int() != 0;
+
+    // Get whether we want to build adjsets if they are present. This option
+    // lets us ignore them.
+    if(options.has_child("build_adjsets"))
+        build_adjsets = options["build_adjsets"].to_unsigned_int() != 0;
 
     // Get whether we want to preserve old numbering of vertices, elements.
     if(options.has_child("merge_tolerance"))
@@ -2767,41 +2773,7 @@ Partitioner::copy_field(const conduit::Node &n_field,
 
     const conduit::Node &n_values = n_field["values"];
     conduit::Node &new_values = n_new_field["values"];
-    if(n_values.dtype().is_compact()) 
-    {
-        if(n_values.number_of_children() > 0)
-        {
-
-// The vel data must be interleaved. We need to use the DataArray element methods for access.
-
-
-            // mcarray.
-            for(index_t i = 0; i < n_values.number_of_children(); i++)
-            {
-                const conduit::Node &n_vals = n_values[i];
-                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
-            }
-        }
-        else
-            conduit::blueprint::mesh::utils::slice_array(n_values, ids, new_values);
-    }
-    else
-    {
-        // otherwise, we need to compact our data first
-        conduit::Node n;
-        n_values.compact_to(n);
-        if(n.number_of_children() > 0)
-        {
-            // mcarray.
-            for(index_t i = 0; i < n.number_of_children(); i++)
-            {
-                const conduit::Node &n_vals = n[i];
-                conduit::blueprint::mesh::utils::slice_array(n_vals, ids, new_values[n_vals.name()]);
-            }
-        }
-        else
-            conduit::blueprint::mesh::utils::slice_array(n, ids, new_values);
-    }
+    conduit::blueprint::mesh::utils::slice_field(n_values, ids, new_values);
 }
 
 //---------------------------------------------------------------------------
@@ -4324,9 +4296,20 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
 
-    init_chunk_adjsets(chunk_assoc_aset, adjset_data);
-    build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
-    build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
+    // It is possible that this topology has no associated adjset. If that is true
+    // then the adjset_data will all be nullptr. We skip adjset construction in
+    // that case since some of the routines iterate over all adjsets, even when
+    // they may not apply. We also skip adjset creation if the user turned it off
+    // in the options.
+    size_t nullCount = 0;
+    for(const auto &value : adjset_data)
+        nullCount += (value == nullptr) ? 1 : 0;
+    if(build_adjsets && nullCount < adjset_data.size())
+    {
+        init_chunk_adjsets(chunk_assoc_aset, adjset_data);
+        build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
+        build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
+    }
 
     // Communicate chunks to the right destination ranks
     std::vector<Chunk> chunks_to_assemble;

@@ -379,9 +379,9 @@ find_domain_id(const Node &node)
 // @brief Slice the n_src array using the indices stored in ids. We use the
 //        array classes for their [] operators that deal with interleaved
 //        and non-interleaved arrays.
-template <typename T, typename IndexType>
+template <typename ArrayType, typename IndexType>
 inline void
-typed_slice_array(const T &src, const std::vector<IndexType> &ids, T &dest)
+typed_slice_array(const ArrayType &src, const std::vector<IndexType> &ids, ArrayType &dest)
 {
     size_t n = ids.size();
     for(size_t i = 0; i < n; i++)
@@ -402,6 +402,11 @@ slice_array_internal(const conduit::Node &n_src_values,
     // before copying it in so assigning to n_dest_values triggers a memory
     // allocation.
     auto dt = n_src_values.dtype();
+
+    // Make sure the destination node is reset so the node will get the
+    // right dtype when we reinitialize it below.
+    n_dest_values.reset();
+    // Allocate the new data.
     n_dest_values = DataType(n_src_values.dtype().id(), ids.size());
 
     // Do the slice.
@@ -564,7 +569,7 @@ slice_field_internal(const conduit::Node &n_src_values,
 {
     if(n_src_values.number_of_children() > 0)
     {
-        // Reorder an mcarray
+        // Slice an mcarray
         for(conduit::index_t ci = 0; ci < n_src_values.number_of_children(); ci++)
         {
             const conduit::Node &comp = n_src_values[ci];
