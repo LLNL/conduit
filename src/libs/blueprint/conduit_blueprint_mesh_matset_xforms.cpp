@@ -509,13 +509,6 @@ full_to_sparse_by_element(const conduit::Node &matset,
                           conduit::Node &dest,
                           const float64 epsilon)
 {
-    // extra seat belt here
-    if(!matset.dtype().is_object() )
-    {
-        CONDUIT_ERROR("blueprint::mesh::matset::full_to_sparse_by_element"
-                      " passed matset node must be a valid matset tree.");
-    }
-
     // set the topology
     dest["topology"].set(matset["topology"]);
 
@@ -565,6 +558,40 @@ full_to_sparse_by_element(const conduit::Node &matset,
     dest["offsets"].set(offsets.data(), offsets.size());
 }
 
+//-----------------------------------------------------------------------------
+void
+full_to_sparse_by_material(const conduit::Node &matset,
+                           conduit::Node &dest,
+                           const float64 epsilon)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    auto mat_itr = matset["volume_fractions"].children();
+    while (mat_itr.has_next())
+    {
+        const Node &mat_vol_fracs = mat_itr.next();
+        std::string matname = mat_itr.name();
+
+        std::vector<double> vol_fracs;
+        std::vector<int> elem_ids;
+
+        double_accessor full_vol_fracs = mat_vol_fracs.value();
+        int num_elems = full_vol_fracs.dtype().number_of_elements();
+        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+        {
+            if (full_vol_fracs[elem_id] > epsilon)
+            {
+                vol_fracs.push_back(full_vol_fracs[elem_id]);
+                elem_ids.push_back(elem_id);
+            }
+        }
+
+        dest["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+        dest["element_ids"][matname].set(elem_ids.data(), elem_ids.size());
+    }
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::matset::detail --
@@ -602,7 +629,7 @@ convert_matset(const conduit::Node &src_matset,
                const std::string &dest_matset_type)
 {
     // extra seat belt here
-    if (! matset.dtype().is_object())
+    if (! src_matset.dtype().is_object())
     {
         CONDUIT_ERROR("blueprint::mesh::matset::convert_matset"
                       " passed matset node must be a valid matset tree.");
@@ -611,18 +638,17 @@ convert_matset(const conduit::Node &src_matset,
     // nothing to do
     if (src_matset_type == dest_matset_type)
     {
-        return;
+        dest_matset.set(src_matset);
     }
-
-    if (src_matset_type == "full")
+    else if (src_matset_type == "full")
     {
         if (dest_matset_type == "sparse_by_element")
         {
-            detail::full_to_sparse_by_element(src_matset_type, dest_matset, CONDUIT_EPSILON);
+            detail::full_to_sparse_by_element(src_matset, dest_matset, CONDUIT_EPSILON);
         }
         else if (dest_matset_type == "sparse_by_material")
         {
-
+            detail::full_to_sparse_by_material(src_matset, dest_matset, CONDUIT_EPSILON);
         }
         else
         {
