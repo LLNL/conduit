@@ -278,10 +278,9 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_sbe;
-        blueprint::mesh::matset::full_to_sparse_by_element(mset,
-                                                           mset_sbe);
+        blueprint::mesh::matset::convert_matset(mset, mset_sbe, "full", "sparse_by_element");
         std::cout << mset_sbe.to_yaml() << std::endl;
 
-        EXPECT_FALSE(mset_sbe.diff(sbe_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(mset_sbe.diff(sbe_mset_baseline, info));
     }
 }

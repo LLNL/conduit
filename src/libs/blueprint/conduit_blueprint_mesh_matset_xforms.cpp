@@ -503,35 +503,6 @@ to_silo(const conduit::Node &field,
     }
 }
 
-}
-//-----------------------------------------------------------------------------
-// -- end conduit::blueprint::mesh::matset::detail --
-//-----------------------------------------------------------------------------
-
-
-//-----------------------------------------------------------------------------
-void
-to_silo(const conduit::Node &matset,
-        conduit::Node &dest,
-        const float64 epsilon)
-{
-    // extra seat belt here b/c we want to avoid folks entering
-    // the detail version of to_silo with surprising results.
-
-    if(!matset.dtype().is_object() )
-    {
-        CONDUIT_ERROR("blueprint::mesh::matset::to_silo passed matset node"
-                      " must be a valid matset tree.");
-    }
-
-    conduit::Node field;
-
-    detail::to_silo(field,
-                    matset,
-                    dest,
-                    epsilon);
-}
-
 //-----------------------------------------------------------------------------
 void
 full_to_sparse_by_element(const conduit::Node &matset,
@@ -564,9 +535,9 @@ full_to_sparse_by_element(const conduit::Node &matset,
     const int nmats = dest["material_map"].number_of_children();
 
     std::vector<double> vol_fracs; // TODO support different types
-    std::vector<index_t> mat_ids;
-    std::vector<index_t> sizes;
-    std::vector<index_t> offsets;
+    std::vector<int> mat_ids;
+    std::vector<int> sizes;
+    std::vector<int> offsets;
 
     int num_elems = matset["volume_fractions"][0].dtype().number_of_elements();
     int offset = 0;
@@ -592,6 +563,106 @@ full_to_sparse_by_element(const conduit::Node &matset,
     dest["material_ids"].set(mat_ids.data(), mat_ids.size());
     dest["sizes"].set(sizes.data(), sizes.size());
     dest["offsets"].set(offsets.data(), offsets.size());
+}
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::matset::detail --
+//-----------------------------------------------------------------------------
+
+
+//-----------------------------------------------------------------------------
+void
+to_silo(const conduit::Node &matset,
+        conduit::Node &dest,
+        const float64 epsilon)
+{
+    // extra seat belt here b/c we want to avoid folks entering
+    // the detail version of to_silo with surprising results.
+
+    if(!matset.dtype().is_object() )
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::to_silo passed matset node"
+                      " must be a valid matset tree.");
+    }
+
+    conduit::Node field;
+
+    detail::to_silo(field,
+                    matset,
+                    dest,
+                    epsilon);
+}
+
+//-----------------------------------------------------------------------------
+void
+convert_matset(const conduit::Node &src_matset,
+               conduit::Node &dest_matset,
+               const std::string &src_matset_type,
+               const std::string &dest_matset_type)
+{
+    // extra seat belt here
+    if (! matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::convert_matset"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    // nothing to do
+    if (src_matset_type == dest_matset_type)
+    {
+        return;
+    }
+
+    if (src_matset_type == "full")
+    {
+        if (dest_matset_type == "sparse_by_element")
+        {
+            detail::full_to_sparse_by_element(src_matset_type, dest_matset, CONDUIT_EPSILON);
+        }
+        else if (dest_matset_type == "sparse_by_material")
+        {
+
+        }
+        else
+        {
+            CONDUIT_ERROR("Unknown matset type in " << dest_matset_type);
+        }
+    }
+    else if (src_matset_type == "sparse_by_element")
+    {
+        if (dest_matset_type == "full")
+        {
+
+        }
+        else if (dest_matset_type == "sparse_by_material")
+        {
+
+        }
+        else
+        {
+            CONDUIT_ERROR("Unknown matset type in " << dest_matset_type);
+        }
+    }
+    else if (src_matset_type == "sparse_by_material")
+    {
+        if (dest_matset_type == "sparse_by_element")
+        {
+
+        }
+        else if (dest_matset_type == "full")
+        {
+
+        }
+        else
+        {
+            CONDUIT_ERROR("Unknown matset type in " << dest_matset_type);
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown matset type in " << src_matset_type);
+    }
 }
 
 //-----------------------------------------------------------------------------
