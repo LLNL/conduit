@@ -527,7 +527,7 @@ full_to_sparse_by_element(const conduit::Node &matset,
     }
     const int nmats = dest["material_map"].number_of_children();
 
-    std::vector<double> vol_fracs; // TODO support different types
+    std::vector<double> vol_fracs;
     std::vector<int> mat_ids;
     std::vector<int> sizes;
     std::vector<int> offsets;
@@ -777,6 +777,107 @@ sparse_by_material_to_full(const conduit::Node &matset,
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+sparse_by_material_to_sparse_by_element(const conduit::Node &matset,
+                                        conduit::Node &dest)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
+    std::map<std::string, int> matmap;
+
+    int mat_id = 0;
+    auto vf_itr = matset["volume_fractions"].children();
+    while (vf_itr.has_next())
+    {
+        const Node &mat_vol_fracs = vf_itr.next();
+        const std::string matname = vf_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].first = mat_vol_fracs.value();
+        dest["material_map"][matname] = mat_id;
+        matmap[matname] = mat_id;
+        mat_id ++;
+    }
+
+    auto eid_itr = matset["element_ids"].children();
+    while (eid_itr.has_next())
+    {
+        const Node &mat_elem_ids = eid_itr.next();
+        const std::string matname = eid_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].second = mat_elem_ids.value();
+    }
+
+    auto determine_num_elems = [](const conduit::Node &elem_ids)
+    {
+        std::set<int> elem_ids_set;
+
+        auto eid_itr = elem_ids.children();
+        while (eid_itr.has_next())
+        {
+            const Node &mat_elem_ids = eid_itr.next();
+            const std::string matname = eid_itr.name();
+            int_accessor mat_elem_ids_vals = mat_elem_ids.value();
+            int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
+            for (int i = 0; i < num_vf; i ++)
+            {
+                elem_ids_set.insert(mat_elem_ids_vals[i]);
+            }
+        }
+
+        return static_cast<int>(elem_ids_set.size());
+    };
+
+    int num_elems = determine_num_elems(matset["element_ids"]);
+
+    // There is no way to pack the volume fractions correctly without
+    // first knowing the sizes. So we create an intermediate representation
+    // in which volume fractions are packed by element. Later we smooth this out.
+    std::vector<std::vector<double>> intermediate_vol_fracs(num_elems);
+    std::vector<std::vector<int>> intermediate_mat_ids(num_elems);
+
+    for (auto &mapitem : sbm_vol_fracs_and_elem_ids)
+    {
+        const std::string &matname = mapitem.first;
+        int mat_id = matmap[matname];
+        double_array sbm_vfs = mapitem.second.first;
+        int_array sbm_eids = mapitem.second.second;
+        int num_vf = sbm_vfs.dtype().number_of_elements();
+        for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+        {
+            int elem_id = sbm_eids[mat_vf_id];
+            double vol_frac = sbm_vfs[mat_vf_id];
+            intermediate_vol_fracs[elem_id].push_back(vol_frac);
+            intermediate_mat_ids[elem_id].push_back(mat_id);
+        }
+    }
+
+    std::vector<double> vol_fracs;
+    std::vector<int> mat_ids;
+    std::vector<int> sizes;
+    std::vector<int> offsets;
+
+    // final pass
+    int offset = 0;
+    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    {
+        int size = static_cast<int>(intermediate_vol_fracs[elem_id].size());
+        for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+        {
+            vol_fracs.push_back(intermediate_vol_fracs[elem_id][mat_vf_id]);
+            mat_ids.push_back(intermediate_mat_ids[elem_id][mat_vf_id]);
+        }
+        sizes.push_back(size);
+        offsets.push_back(offset);
+        offset += size;
+    }
+
+    dest["volume_fractions"].set(vol_fracs.data(), vol_fracs.size());
+    dest["material_ids"].set(mat_ids.data(), mat_ids.size());
+    dest["sizes"].set(sizes.data(), sizes.size());
+    dest["offsets"].set(offsets.data(), offsets.size());
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::matset::detail --
@@ -860,7 +961,7 @@ convert_matset(const conduit::Node &src_matset,
     {
         if (dest_matset_type == "sparse_by_element")
         {
-
+            detail::sparse_by_material_to_sparse_by_element(src_matset, dest_matset);
         }
         else if (dest_matset_type == "full")
         {
