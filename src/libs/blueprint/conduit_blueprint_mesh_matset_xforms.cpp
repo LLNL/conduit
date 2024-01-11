@@ -592,6 +592,72 @@ full_to_sparse_by_material(const conduit::Node &matset,
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+sparse_by_material_to_full(const conduit::Node &matset,
+                           conduit::Node &dest)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
+
+    auto vf_itr = matset["volume_fractions"].children();
+    while (vf_itr.has_next())
+    {
+        const Node &mat_vol_fracs = vf_itr.next();
+        const std::string matname = vf_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].first = mat_vol_fracs.value();
+    }
+
+    auto eid_itr = matset["element_ids"].children();
+    while (eid_itr.has_next())
+    {
+        const Node &mat_elem_ids = eid_itr.next();
+        const std::string matname = eid_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].second = mat_elem_ids.value();
+    }
+
+    auto determine_num_elems = [](const conduit::Node &elem_ids)
+    {
+        std::set<int> elem_ids_set;
+
+        auto eid_itr = elem_ids.children();
+        while (eid_itr.has_next())
+        {
+            const Node &mat_elem_ids = eid_itr.next();
+            const std::string matname = eid_itr.name();
+            int_accessor mat_elem_ids_vals = mat_elem_ids.value();
+            int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
+            for (int i = 0; i < num_vf; i ++)
+            {
+                elem_ids_set.insert(mat_elem_ids_vals[i]);
+            }
+        }
+
+        return static_cast<int>(elem_ids_set.size());
+    };
+
+    int num_elems = determine_num_elems(matset["element_ids"]);
+
+    for (auto &mapitem : sbm_vol_fracs_and_elem_ids)
+    {
+        std::vector<double> vol_fracs(num_elems, 0.0);
+        const std::string &matname = mapitem.first;
+        double_array sbm_vfs = mapitem.second.first;
+        int_array sbm_eids = mapitem.second.second;
+        int num_vf = sbm_vfs.dtype().number_of_elements();
+        for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+        {
+            int elem_id = sbm_eids[mat_vf_id];
+            double vol_frac = sbm_vfs[mat_vf_id];
+            vol_fracs[elem_id] = vol_frac;
+        }
+
+        dest["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+    }
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::matset::detail --
@@ -626,7 +692,8 @@ void
 convert_matset(const conduit::Node &src_matset,
                conduit::Node &dest_matset,
                const std::string &src_matset_type,
-               const std::string &dest_matset_type)
+               const std::string &dest_matset_type,
+               const float64 epsilon)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())
@@ -644,11 +711,11 @@ convert_matset(const conduit::Node &src_matset,
     {
         if (dest_matset_type == "sparse_by_element")
         {
-            detail::full_to_sparse_by_element(src_matset, dest_matset, CONDUIT_EPSILON);
+            detail::full_to_sparse_by_element(src_matset, dest_matset, epsilon);
         }
         else if (dest_matset_type == "sparse_by_material")
         {
-            detail::full_to_sparse_by_material(src_matset, dest_matset, CONDUIT_EPSILON);
+            detail::full_to_sparse_by_material(src_matset, dest_matset, epsilon);
         }
         else
         {
@@ -678,7 +745,7 @@ convert_matset(const conduit::Node &src_matset,
         }
         else if (dest_matset_type == "full")
         {
-
+            detail::sparse_by_material_to_full(src_matset, dest_matset);
         }
         else
         {

@@ -746,7 +746,8 @@ namespace matset
     void CONDUIT_BLUEPRINT_API convert_matset(const conduit::Node &src_matset,
                                               conduit::Node &dest_matset,
                                               const std::string &src_matset_type,
-                                              const std::string &dest_matset_type);
+                                              const std::string &dest_matset_type,
+                                              const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
     // Converts a blueprint matset to the silo style sparse mixed slot 
