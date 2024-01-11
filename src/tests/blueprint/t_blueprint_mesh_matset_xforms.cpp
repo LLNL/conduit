@@ -277,7 +277,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_full;
-        blueprint::mesh::matset::to_full(mset, mset_full);
+        blueprint::mesh::matset::to_full_by_element(mset, mset_full);
         std::cout << mset_full.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_full.diff(sbe_full_baseline, info));
@@ -331,7 +331,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_full;
-        blueprint::mesh::matset::to_full(mset, mset_full);
+        blueprint::mesh::matset::to_full_by_element(mset, mset_full);
         std::cout << mset_full.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_full.diff(full_mset_baseline, info));
@@ -367,7 +367,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_full;
-        blueprint::mesh::matset::to_full(mset, mset_full);
+        blueprint::mesh::matset::to_full_by_element(mset, mset_full);
         std::cout << mset_full.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_full.diff(full_mset_baseline, info));

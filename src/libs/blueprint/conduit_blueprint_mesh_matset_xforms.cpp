@@ -909,8 +909,8 @@ to_silo(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-to_full(const conduit::Node &src_matset,
-        conduit::Node &dest_matset)
+to_full_by_element(const conduit::Node &src_matset,
+                   conduit::Node &dest_matset)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())
@@ -920,7 +920,7 @@ to_full(const conduit::Node &src_matset,
     }
 
     // full
-    if (is_full(src_matset))
+    if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
     {
         // nothing to do
         dest_matset.set(src_matset);
@@ -955,7 +955,7 @@ to_sparse_by_element(const conduit::Node &src_matset,
     }
 
     // full
-    if (is_full(src_matset))
+    if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
     {
         detail::full_to_sparse_by_element(src_matset, dest_matset, epsilon);
     }
@@ -990,7 +990,7 @@ to_sparse_by_material(const conduit::Node &src_matset,
     }
 
     // full
-    if (is_full(src_matset))
+    if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
     {
         detail::full_to_sparse_by_material(src_matset, dest_matset, epsilon);
     }

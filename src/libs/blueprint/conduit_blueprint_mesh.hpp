@@ -743,11 +743,8 @@ namespace matset
     bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
-    bool CONDUIT_BLUEPRINT_API is_full(const conduit::Node &matset);
-
-    //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API to_full(const conduit::Node &src_matset,
-                                       conduit::Node &dest_matset);
+    void CONDUIT_BLUEPRINT_API to_full_by_element(const conduit::Node &src_matset,
+                                                  conduit::Node &dest_matset);
 
     //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
