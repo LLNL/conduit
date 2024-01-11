@@ -320,6 +320,24 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         EXPECT_FALSE(mset_full.diff(full_mset_baseline, info));
     }
 
+    CONDUIT_INFO("venn sparse_by_element -> sparse_by_material");
+    {
+        // first we diff sbe -> sbm with sbm
+
+        // const Node &field = mesh_sbe["fields/mat_check"];
+        const Node &mset = mesh_sbe["matsets/matset"];
+        const Node &sbm_mset_baseline = mesh_sbm["matsets/matset"];
+
+        std::cout << mset.to_yaml() << std::endl;
+        // std::cout << field.to_yaml() << std::endl;
+
+        Node mset_sbm;
+        blueprint::mesh::matset::convert_matset(mset, mset_sbm, "sparse_by_element", "sparse_by_material");
+        std::cout << mset_sbm.to_yaml() << std::endl;
+
+        EXPECT_FALSE(mset_sbm.diff(sbm_mset_baseline, info));
+    }
+
     CONDUIT_INFO("venn sparse_by_material -> full");
     {
         // first we diff sbm -> full with full

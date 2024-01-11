@@ -609,9 +609,71 @@ sparse_by_element_to_full(const conduit::Node &matset,
     for (auto & mapitem : vol_fracs)
     {
         const std::string &matname = mapitem.first;
-        const std::vector<double> full_vfs = mapitem.second;
+        const std::vector<double> &full_vfs = mapitem.second;
 
         dest["volume_fractions"][matname].set(full_vfs.data(), full_vfs.size());
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+sparse_by_element_to_sparse_by_material(const conduit::Node &matset,
+                                        conduit::Node &dest)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<int, std::string> reverse_matmap;
+
+    auto matmap_itr = matset["material_map"].children();
+    while (matmap_itr.has_next())
+    {
+        const Node &matmap_entry = matmap_itr.next();
+        const std::string matname = matmap_itr.name();
+
+        reverse_matmap[matmap_entry.value()] = matname;
+    }
+
+    double_accessor volume_fractions = matset["volume_fractions"].value();
+    int_accessor material_ids = matset["material_ids"].value();
+    int_accessor sizes = matset["sizes"].value();
+    int_accessor offsets = matset["offsets"].value();
+    int num_elems = sizes.dtype().number_of_elements();
+
+    std::map<std::string, std::vector<double>> vol_fracs;
+    std::map<std::string, std::vector<int>> elem_ids;
+
+    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    {
+        int size = sizes[elem_id];
+        int offset = offsets[elem_id];
+
+        for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+        {
+            int index = offset + mat_vf_id;
+            double vol_frac = volume_fractions[index];
+            int mat_id = material_ids[index];
+            const std::string &matname = reverse_matmap[mat_id];
+
+            vol_fracs[matname].push_back(vol_frac);
+            elem_ids[matname].push_back(elem_id);
+        }
+    }
+
+    for (auto & mapitem : vol_fracs)
+    {
+        const std::string &matname = mapitem.first;
+        const std::vector<double> &sbm_vfs = mapitem.second;
+
+        dest["volume_fractions"][matname].set(sbm_vfs.data(), sbm_vfs.size());
+    }
+
+    for (auto & mapitem : elem_ids)
+    {
+        const std::string &matname = mapitem.first;
+        const std::vector<int> &sbm_eids = mapitem.second;
+
+        dest["element_ids"][matname].set(sbm_eids.data(), sbm_eids.size());
     }
 }
 
@@ -787,7 +849,7 @@ convert_matset(const conduit::Node &src_matset,
         }
         else if (dest_matset_type == "sparse_by_material")
         {
-
+            detail::sparse_by_element_to_sparse_by_material(src_matset, dest_matset);
         }
         else
         {
