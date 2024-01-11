@@ -54,6 +54,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - The `conduit::Node::swap()` and `conduit::Node::move()` functions no longer cause node names to disappear.
 - The `conduit::blueprint::mesh::utils::kdtree` could erroneously return that points were not found when one of the coordset dimensions had a very narrow range of values. This could happen with planar 2D geometries embedded in 3D, such as inside a `MatchQuery` during adjacency set creation.
 - The `conduit::blueprint::mpi::mesh::generate_partition_field()` function was not treating polyhedral topologies correctly, leading to unusable partitioning fields.
+- The point merging algorithm in the Blueprint partitioner was corrected so it should no longer produce occasional duplicate points when merging coordsets.
 
 ## [0.8.8] - Released 2023-05-18
 

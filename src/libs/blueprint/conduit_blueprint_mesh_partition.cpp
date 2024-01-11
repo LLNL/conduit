@@ -4689,9 +4689,6 @@ private:
         const std::vector<coord_system> &systems, index_t dimension,
         double tolerance);
 
-    void truncate_merge(const std::vector<Node> &coordsets,
-        const std::vector<coord_system> &systems, index_t dimension, double tolerance);
-
     static void xyz_to_rtp(double x, double y, double z, double &out_r, double &out_t, double &out_p);
     // TODO
     static void xyz_to_rz (double x, double y, double z, double &out_r, double &out_z);
@@ -4902,14 +4899,19 @@ using vec2  = vector<double,2>;
 using vec3  = vector<double,3>;
 
 /**
- @brief A spatial search structure used to merge points within a given tolerance
+ @brief A spatial search structure used to merge points within a given tolerance.
+
+ @note This class differs from conduit::blueprint::mesh::utils::kdtree in that it
+       is designed to be constructed on the fly as points are inserted into it
+       and it contains the sorted data, which lends itself better to use with
+       multiple coordsets. The two classes were introduced independently and in
+       the future, it may be better to consolidate them.
 */
 template<typename VectorType, typename DataType>
 class kdtree
 {
 private:
     using Float = typename VectorType::value_type;
-    // using IndexType = conduit_index_t;
 public:
     constexpr static auto dimension = std::tuple_size<typename VectorType::data_type>::value;
     using vector_type = VectorType;
@@ -5121,22 +5123,7 @@ private:
         {
             const bool left_contains = current->left->bb.contains(point, tolerance);
             const bool right_contains = current->right->bb.contains(point, tolerance);
-            if(!left_contains && !right_contains)
-            {
-                // ERROR! This shouldn't happen, the tree must've been built improperly
-                retval = nullptr;
-            }
-            else if(left_contains)
-            {
-                // Traverse left
-                retval = find_point(current->left, depth+1, point, tolerance);
-            }
-            else if(right_contains)
-            {
-                // Traverse right
-                retval = find_point(current->right, depth+1, point, tolerance);
-            }
-            else // (left_contains && right_contains)
+            if(left_contains && right_contains)
             {
                 // Rare, but possible due to tolerance.
                 // Check if the left side has the point without tolerance
@@ -5151,6 +5138,21 @@ private:
                         ? find_point(current->right, depth+1, point, tolerance)
                         : find_point(current->left, depth+1, point, tolerance);
                 }
+            }
+            else if(left_contains)
+            {
+                // Traverse left
+                retval = find_point(current->left, depth+1, point, tolerance);
+            }
+            else if(right_contains)
+            {
+                // Traverse right
+                retval = find_point(current->right, depth+1, point, tolerance);
+            }
+            else //if(!left_contains && !right_contains)
+            {
+                // ERROR! This shouldn't happen, the tree must've been built improperly
+                retval = nullptr;
             }
         }
         else
@@ -5699,9 +5701,7 @@ point_merge::merge_data(const std::vector<Node> &coordsets,
         const std::vector<coord_system> &systems, index_t dimension, double tolerance)
 {
 #define USE_SPATIAL_SEARCH_MERGE
-#if   defined(USE_TRUNCATE_PRECISION_MERGE)
-    truncate_merge(coordsets, systems, dimension, tolerance);
-#elif defined(USE_SPATIAL_SEARCH_MERGE)
+#if defined(USE_SPATIAL_SEARCH_MERGE)
     spatial_search_merge(coordsets, systems, dimension, tolerance);
 #else
     simple_merge_data(coordsets, systems, dimension, tolerance);
@@ -5999,7 +5999,7 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
         const auto &coordset = coordsets[i];
 
         // To be invoked on every coordinate
-        const auto merge = [&](float64 *p, index_t) {
+        const auto merge = [&](const float64 *p, index_t) {
             vec3 key;
             key.v[0] = p[0]; key.v[1] = p[1]; key.v[2] = p[2];
             const auto potential_id = new_coords.size() / dimension;
@@ -6022,10 +6022,11 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
             }
         };
 
-        const auto translate_merge = [&](float64 *p, index_t d) {
+        const auto translate_merge = [&](const float64 *p, index_t d) {
+            float64 tp[3];
             translate_system(systems[i], coord_system::cartesian,
-                p[0], p[1], p[2], p[0], p[1], p[2]);
-            merge(p, d);
+                p[0], p[1], p[2], tp[0], tp[1], tp[2]);
+            merge(tp, d);
         };
 
         // Invoke the proper lambda on each coordinate
@@ -6043,90 +6044,6 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
     PM_DEBUG_PRINT("Number of points in tree " << point_records.size()
         << ", depth of tree " << point_records.depth()
         << ", nodes in tree " << point_records.nodes() << std::endl);
-}
-
-//-----------------------------------------------------------------------------
-void
-point_merge::truncate_merge(const std::vector<Node> &coordsets,
-        const std::vector<coord_system> &systems, index_t dimension, double tolerance)
-{
-    PM_DEBUG_PRINT("Truncate merging!" << std::endl);
-    // Determine what to scale each value by
-    // TODO: Be dynamic
-    (void)tolerance;
-    double scale = 0.;
-    {
-        auto decimal_places = 4u;
-        static const std::array<double, 7u> lookup = {
-            1.,
-            (2u << 4),
-            (2u << 7),
-            (2u << 10),
-            (2u << 14),
-            (2u << 17),
-            (2u << 20)
-        };
-        if(decimal_places < lookup.size())
-        {
-            scale = lookup[decimal_places];
-        }
-        else
-        {
-            scale = lookup[6];
-        }
-    }
-
-    /*index_t size = */reserve_vectors(coordsets, dimension);
-
-    // Iterate each of the coordinate sets
-    using fp_type = int64;
-    using tup = std::tuple<fp_type, fp_type, fp_type>;
-    std::map<tup, index_t> point_records;
-
-    for(size_t i = 0u; i < coordsets.size(); i++)
-    {
-        const auto &coordset = coordsets[i];
-
-        // To be invoked on every coordinate
-        const auto merge = [&](float64 *p, index_t) {
-            tup key = std::make_tuple(
-                static_cast<fp_type>(std::round(p[0] * scale)),
-                static_cast<fp_type>(std::round(p[1] * scale)),
-                static_cast<fp_type>(std::round(p[2] * scale)));
-            auto res = point_records.insert({key, {}});
-            if(res.second)
-            {
-                const index_t id = (index_t)(new_coords.size() / dimension);
-                res.first->second = id;
-                old_to_new_ids[i].push_back(id);
-                for(index_t j = 0; j < dimension; j++)
-                {
-                    new_coords.push_back(p[j]);
-                }
-            }
-            else
-            {
-                old_to_new_ids[i].push_back(res.first->second);
-            }
-        };
-
-        const auto translate_merge = [&](float64 *p, index_t d) {
-            translate_system(systems[i], out_system,
-                p[0], p[1], p[2], p[0], p[1], p[2]);
-            merge(p, d);
-        };
-
-        // Invoke the proper lambda on each coordinate
-        if(systems[i] != out_system
-            && systems[i] != coord_system::logical)
-        {
-            iterate_coordinates(coordset, translate_merge);
-        }
-        else
-        {
-            iterate_coordinates(coordset, merge);
-        }
-    }
 }
 
 //-----------------------------------------------------------------------------
