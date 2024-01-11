@@ -743,18 +743,21 @@ namespace matset
     bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API to_full_by_element(const conduit::Node &src_matset,
-                                                  conduit::Node &dest_matset);
+    // to full (in the venn example)
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_by_element(const conduit::Node &src_matset,
+                                                          conduit::Node &dest_matset);
 
     //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
-                                                    conduit::Node &dest_matset,
-                                                    const float64 epsilon = CONDUIT_EPSILON);
+    // to sparse_by_element (in the venn example)
+    void CONDUIT_BLUEPRINT_API to_uni_buffer_by_element(const conduit::Node &src_matset,
+                                                        conduit::Node &dest_matset,
+                                                        const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API to_sparse_by_material(const conduit::Node &src_matset,
-                                                     conduit::Node &dest_matset,
-                                                     const float64 epsilon = CONDUIT_EPSILON);
+    // to sparse_by_material (in the venn example)
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_by_material(const conduit::Node &src_matset,
+                                                           conduit::Node &dest_matset,
+                                                           const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
     // Converts a blueprint matset to the silo style sparse mixed slot 

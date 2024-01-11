@@ -505,9 +505,9 @@ to_silo(const conduit::Node &field,
 
 //-----------------------------------------------------------------------------
 void
-full_to_sparse_by_element(const conduit::Node &matset,
-                          conduit::Node &dest,
-                          const float64 epsilon)
+multi_buffer_by_element_to_uni_buffer_by_element(const conduit::Node &matset,
+                                                 conduit::Node &dest,
+                                                 const float64 epsilon)
 {
     // set the topology
     dest["topology"].set(matset["topology"]);
@@ -560,8 +560,8 @@ full_to_sparse_by_element(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-sparse_by_element_to_full(const conduit::Node &matset,
-                          conduit::Node &dest)
+uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &matset,
+                                                 conduit::Node &dest)
 {
     // set the topology
     dest["topology"].set(matset["topology"]);
@@ -617,8 +617,8 @@ sparse_by_element_to_full(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-sparse_by_element_to_sparse_by_material(const conduit::Node &matset,
-                                        conduit::Node &dest)
+uni_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &matset,
+                                                  conduit::Node &dest)
 {
     // set the topology
     dest["topology"].set(matset["topology"]);
@@ -678,10 +678,11 @@ sparse_by_element_to_sparse_by_material(const conduit::Node &matset,
 }
 
 //-----------------------------------------------------------------------------
+// full -> sparse_by_material
 void
-full_to_sparse_by_material(const conduit::Node &matset,
-                           conduit::Node &dest,
-                           const float64 epsilon)
+multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &matset,
+                                                    conduit::Node &dest,
+                                                    const float64 epsilon)
 {
     // set the topology
     dest["topology"].set(matset["topology"]);
@@ -713,8 +714,8 @@ full_to_sparse_by_material(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-sparse_by_material_to_full(const conduit::Node &matset,
-                           conduit::Node &dest)
+multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &matset,
+                                                    conduit::Node &dest)
 {
     // set the topology
     dest["topology"].set(matset["topology"]);
@@ -779,8 +780,8 @@ sparse_by_material_to_full(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-sparse_by_material_to_sparse_by_element(const conduit::Node &matset,
-                                        conduit::Node &dest)
+multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &matset,
+                                                  conduit::Node &dest)
 {
     // set the topology
     dest["topology"].set(matset["topology"]);
@@ -909,8 +910,8 @@ to_silo(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-to_full_by_element(const conduit::Node &src_matset,
-                   conduit::Node &dest_matset)
+to_multi_buffer_by_element(const conduit::Node &src_matset,
+                           conduit::Node &dest_matset)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())
@@ -928,12 +929,12 @@ to_full_by_element(const conduit::Node &src_matset,
     // sparse_by_element
     else if (is_element_dominant(src_matset))
     {
-        detail::sparse_by_element_to_full(src_matset, dest_matset);
+        detail::uni_buffer_by_element_to_multi_buffer_by_element(src_matset, dest_matset);
     }
     // sparse_by_material
     else if (is_material_dominant(src_matset))
     {
-        detail::sparse_by_material_to_full(src_matset, dest_matset);
+        detail::multi_buffer_by_material_to_multi_buffer_by_element(src_matset, dest_matset);
     }
     else
     {
@@ -943,9 +944,9 @@ to_full_by_element(const conduit::Node &src_matset,
 
 //-----------------------------------------------------------------------------
 void
-to_sparse_by_element(const conduit::Node &src_matset,
-                     conduit::Node &dest_matset,
-                     const float64 epsilon)
+to_uni_buffer_by_element(const conduit::Node &src_matset,
+                         conduit::Node &dest_matset,
+                         const float64 epsilon)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())
@@ -957,7 +958,8 @@ to_sparse_by_element(const conduit::Node &src_matset,
     // full
     if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
     {
-        detail::full_to_sparse_by_element(src_matset, dest_matset, epsilon);
+        detail::multi_buffer_by_element_to_uni_buffer_by_element(
+            src_matset, dest_matset, epsilon);
     }
     // sparse_by_element
     else if (is_element_dominant(src_matset))
@@ -968,7 +970,7 @@ to_sparse_by_element(const conduit::Node &src_matset,
     // sparse_by_material
     else if (is_material_dominant(src_matset))
     {
-        detail::sparse_by_material_to_sparse_by_element(src_matset, dest_matset);
+        detail::multi_buffer_by_material_to_uni_buffer_by_element(src_matset, dest_matset);
     }
     else
     {
@@ -978,9 +980,9 @@ to_sparse_by_element(const conduit::Node &src_matset,
 
 //-----------------------------------------------------------------------------
 void
-to_sparse_by_material(const conduit::Node &src_matset,
-                      conduit::Node &dest_matset,
-                      const float64 epsilon)
+to_multi_buffer_by_material(const conduit::Node &src_matset,
+                            conduit::Node &dest_matset,
+                            const float64 epsilon)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())
@@ -992,12 +994,13 @@ to_sparse_by_material(const conduit::Node &src_matset,
     // full
     if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
     {
-        detail::full_to_sparse_by_material(src_matset, dest_matset, epsilon);
+        detail::multi_buffer_by_element_to_multi_buffer_by_material(
+            src_matset, dest_matset, epsilon);
     }
     // sparse_by_element
     else if (is_element_dominant(src_matset))
     {
-        detail::sparse_by_element_to_sparse_by_material(src_matset, dest_matset);
+        detail::uni_buffer_by_element_to_multi_buffer_by_material(src_matset, dest_matset);
     }
     // sparse_by_material
     else if (is_material_dominant(src_matset))
