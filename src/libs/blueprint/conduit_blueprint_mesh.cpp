@@ -6441,6 +6441,14 @@ mesh::matset::is_material_dominant(const Node &matset)
     return matset.has_child("element_ids");
 }
 
+//-------------------------------------------------------------------------
+bool
+mesh::matset::is_full(const Node &matset)
+{
+    return mesh::matset::is_element_dominant(matset) && 
+        mesh::matset::is_multi_buffer(matset);
+}
+
 //-----------------------------------------------------------------------------
 // blueprint::mesh::matset::index protocol interface
 //-----------------------------------------------------------------------------

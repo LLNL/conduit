@@ -743,11 +743,21 @@ namespace matset
     bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
-    void CONDUIT_BLUEPRINT_API convert_matset(const conduit::Node &src_matset,
-                                              conduit::Node &dest_matset,
-                                              const std::string &src_matset_type,
-                                              const std::string &dest_matset_type,
-                                              const float64 epsilon = CONDUIT_EPSILON);
+    bool CONDUIT_BLUEPRINT_API is_full(const conduit::Node &matset);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_full(const conduit::Node &src_matset,
+                                       conduit::Node &dest_matset);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
+                                                    conduit::Node &dest_matset,
+                                                    const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_sparse_by_material(const conduit::Node &src_matset,
+                                                     conduit::Node &dest_matset,
+                                                     const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
     // Converts a blueprint matset to the silo style sparse mixed slot 

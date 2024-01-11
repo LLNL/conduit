@@ -909,11 +909,8 @@ to_silo(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-convert_matset(const conduit::Node &src_matset,
-               conduit::Node &dest_matset,
-               const std::string &src_matset_type,
-               const std::string &dest_matset_type,
-               const float64 epsilon)
+to_full(const conduit::Node &src_matset,
+        conduit::Node &dest_matset)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())
@@ -922,59 +919,95 @@ convert_matset(const conduit::Node &src_matset,
                       " passed matset node must be a valid matset tree.");
     }
 
-    // nothing to do
-    if (src_matset_type == dest_matset_type)
+    // full
+    if (is_full(src_matset))
     {
+        // nothing to do
         dest_matset.set(src_matset);
     }
-    else if (src_matset_type == "full")
+    // sparse_by_element
+    else if (is_element_dominant(src_matset))
     {
-        if (dest_matset_type == "sparse_by_element")
-        {
-            detail::full_to_sparse_by_element(src_matset, dest_matset, epsilon);
-        }
-        else if (dest_matset_type == "sparse_by_material")
-        {
-            detail::full_to_sparse_by_material(src_matset, dest_matset, epsilon);
-        }
-        else
-        {
-            CONDUIT_ERROR("Unknown matset type in " << dest_matset_type);
-        }
+        detail::sparse_by_element_to_full(src_matset, dest_matset);
     }
-    else if (src_matset_type == "sparse_by_element")
+    // sparse_by_material
+    else if (is_material_dominant(src_matset))
     {
-        if (dest_matset_type == "full")
-        {
-            detail::sparse_by_element_to_full(src_matset, dest_matset);
-        }
-        else if (dest_matset_type == "sparse_by_material")
-        {
-            detail::sparse_by_element_to_sparse_by_material(src_matset, dest_matset);
-        }
-        else
-        {
-            CONDUIT_ERROR("Unknown matset type in " << dest_matset_type);
-        }
-    }
-    else if (src_matset_type == "sparse_by_material")
-    {
-        if (dest_matset_type == "sparse_by_element")
-        {
-            detail::sparse_by_material_to_sparse_by_element(src_matset, dest_matset);
-        }
-        else if (dest_matset_type == "full")
-        {
-            detail::sparse_by_material_to_full(src_matset, dest_matset);
-        }
-        else
-        {
-            CONDUIT_ERROR("Unknown matset type in " << dest_matset_type);
-        }
+        detail::sparse_by_material_to_full(src_matset, dest_matset);
     }
     else
     {
-        CONDUIT_ERROR("Unknown matset type in " << src_matset_type);
+        CONDUIT_ERROR("Unknown matset type.");
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+to_sparse_by_element(const conduit::Node &src_matset,
+                     conduit::Node &dest_matset,
+                     const float64 epsilon)
+{
+    // extra seat belt here
+    if (! src_matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::convert_matset"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    // full
+    if (is_full(src_matset))
+    {
+        detail::full_to_sparse_by_element(src_matset, dest_matset, epsilon);
+    }
+    // sparse_by_element
+    else if (is_element_dominant(src_matset))
+    {
+        // nothing to do
+        dest_matset.set(src_matset);
+    }
+    // sparse_by_material
+    else if (is_material_dominant(src_matset))
+    {
+        detail::sparse_by_material_to_sparse_by_element(src_matset, dest_matset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown matset type.");
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+to_sparse_by_material(const conduit::Node &src_matset,
+                      conduit::Node &dest_matset,
+                      const float64 epsilon)
+{
+    // extra seat belt here
+    if (! src_matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::convert_matset"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    // full
+    if (is_full(src_matset))
+    {
+        detail::full_to_sparse_by_material(src_matset, dest_matset, epsilon);
+    }
+    // sparse_by_element
+    else if (is_element_dominant(src_matset))
+    {
+        detail::sparse_by_element_to_sparse_by_material(src_matset, dest_matset);
+    }
+    // sparse_by_material
+    else if (is_material_dominant(src_matset))
+    {
+        // nothing to do
+        dest_matset.set(src_matset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown matset type.");
     }
 }
 
