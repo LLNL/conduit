@@ -503,6 +503,381 @@ to_silo(const conduit::Node &field,
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+multi_buffer_by_element_to_uni_buffer_by_element(const conduit::Node &matset,
+                                                 conduit::Node &dest,
+                                                 const float64 epsilon)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<int, double_array> full_vol_fracs;
+
+    // create the material map
+    auto mat_itr = matset["volume_fractions"].children();
+    int mat_id = 0;
+    while (mat_itr.has_next())
+    {
+        const Node &mat_vol_fracs = mat_itr.next();
+        std::string matname = mat_itr.name();
+        full_vol_fracs[mat_id] = mat_vol_fracs.value();
+        dest["material_map"][matname] = mat_id;
+        mat_id ++;
+    }
+    const int nmats = dest["material_map"].number_of_children();
+
+    std::vector<double> vol_fracs;
+    std::vector<int> mat_ids;
+    std::vector<int> sizes;
+    std::vector<int> offsets;
+
+    int num_elems = matset["volume_fractions"][0].dtype().number_of_elements();
+    int offset = 0;
+    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    {
+        int size = 0;
+        for (mat_id = 0; mat_id < nmats; mat_id ++)
+        {
+            float64 vol_frac = full_vol_fracs[mat_id][elem_id];
+            if (vol_frac > epsilon)
+            {
+                vol_fracs.push_back(vol_frac);
+                mat_ids.push_back(mat_id);
+                size ++;
+            }
+        }
+        sizes.push_back(size);
+        offsets.push_back(offset);
+        offset += size;
+    }
+
+    dest["volume_fractions"].set(vol_fracs.data(), vol_fracs.size());
+    dest["material_ids"].set(mat_ids.data(), mat_ids.size());
+    dest["sizes"].set(sizes.data(), sizes.size());
+    dest["offsets"].set(offsets.data(), offsets.size());
+}
+
+//-----------------------------------------------------------------------------
+void
+uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &matset,
+                                                 conduit::Node &dest)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<int, std::string> reverse_matmap;
+
+    auto matmap_itr = matset["material_map"].children();
+    while (matmap_itr.has_next())
+    {
+        const Node &matmap_entry = matmap_itr.next();
+        const std::string matname = matmap_itr.name();
+
+        reverse_matmap[matmap_entry.value()] = matname;
+    }
+
+    double_accessor volume_fractions = matset["volume_fractions"].value();
+    int_accessor material_ids = matset["material_ids"].value();
+    o2mrelation::O2MIterator o2m_iter(matset);
+    int num_elems = o2m_iter.elements(o2mrelation::ONE);
+
+    std::map<std::string, std::vector<double>> vol_fracs;
+    for (auto & mapitem : reverse_matmap)
+    {
+        const std::string &matname = mapitem.second;
+        vol_fracs[matname] = std::vector<double>(num_elems);
+    }
+
+    while (o2m_iter.has_next(o2mrelation::DATA))
+    {
+        index_t elem_id = o2m_iter.next(o2mrelation::ONE);
+        o2m_iter.to_front(o2mrelation::MANY);
+        while (o2m_iter.has_next(o2mrelation::MANY))
+        {
+            o2m_iter.next(o2mrelation::MANY);
+            index_t data_index = o2m_iter.index(o2mrelation::DATA);
+
+            double vol_frac = volume_fractions[data_index];
+            int mat_id = material_ids[data_index];
+            const std::string &matname = reverse_matmap[mat_id];
+            vol_fracs[matname][elem_id] = vol_frac;
+            
+        }
+    }
+
+    for (auto & mapitem : vol_fracs)
+    {
+        const std::string &matname = mapitem.first;
+        const std::vector<double> &full_vfs = mapitem.second;
+
+        dest["volume_fractions"][matname].set(full_vfs.data(), full_vfs.size());
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+uni_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &matset,
+                                                  conduit::Node &dest)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<int, std::string> reverse_matmap;
+
+    auto matmap_itr = matset["material_map"].children();
+    while (matmap_itr.has_next())
+    {
+        const Node &matmap_entry = matmap_itr.next();
+        const std::string matname = matmap_itr.name();
+
+        reverse_matmap[matmap_entry.value()] = matname;
+    }
+
+    double_accessor volume_fractions = matset["volume_fractions"].value();
+    int_accessor material_ids = matset["material_ids"].value();
+    std::map<std::string, std::vector<double>> vol_fracs;
+    std::map<std::string, std::vector<int>> elem_ids;
+
+    o2mrelation::O2MIterator o2m_iter(matset);
+    while (o2m_iter.has_next(o2mrelation::DATA))
+    {
+        index_t elem_id = o2m_iter.next(o2mrelation::ONE);
+        o2m_iter.to_front(o2mrelation::MANY);
+        while (o2m_iter.has_next(o2mrelation::MANY))
+        {
+            o2m_iter.next(o2mrelation::MANY);
+            index_t data_index = o2m_iter.index(o2mrelation::DATA);
+
+            double vol_frac = volume_fractions[data_index];
+            int mat_id = material_ids[data_index];
+            const std::string &matname = reverse_matmap[mat_id];
+            
+            vol_fracs[matname].push_back(vol_frac);
+            elem_ids[matname].push_back(elem_id);
+            
+        }
+    }
+
+    for (auto & mapitem : vol_fracs)
+    {
+        const std::string &matname = mapitem.first;
+        const std::vector<double> &sbm_vfs = mapitem.second;
+
+        dest["volume_fractions"][matname].set(sbm_vfs.data(), sbm_vfs.size());
+    }
+
+    for (auto & mapitem : elem_ids)
+    {
+        const std::string &matname = mapitem.first;
+        const std::vector<int> &sbm_eids = mapitem.second;
+
+        dest["element_ids"][matname].set(sbm_eids.data(), sbm_eids.size());
+    }
+}
+
+//-----------------------------------------------------------------------------
+// full -> sparse_by_material
+void
+multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &matset,
+                                                    conduit::Node &dest,
+                                                    const float64 epsilon)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    auto mat_itr = matset["volume_fractions"].children();
+    while (mat_itr.has_next())
+    {
+        const Node &mat_vol_fracs = mat_itr.next();
+        std::string matname = mat_itr.name();
+
+        std::vector<double> vol_fracs;
+        std::vector<int> elem_ids;
+
+        double_accessor full_vol_fracs = mat_vol_fracs.value();
+        int num_elems = full_vol_fracs.dtype().number_of_elements();
+        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+        {
+            if (full_vol_fracs[elem_id] > epsilon)
+            {
+                vol_fracs.push_back(full_vol_fracs[elem_id]);
+                elem_ids.push_back(elem_id);
+            }
+        }
+
+        dest["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+        dest["element_ids"][matname].set(elem_ids.data(), elem_ids.size());
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &matset,
+                                                    conduit::Node &dest)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
+
+    auto vf_itr = matset["volume_fractions"].children();
+    while (vf_itr.has_next())
+    {
+        const Node &mat_vol_fracs = vf_itr.next();
+        const std::string matname = vf_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].first = mat_vol_fracs.value();
+    }
+
+    auto eid_itr = matset["element_ids"].children();
+    while (eid_itr.has_next())
+    {
+        const Node &mat_elem_ids = eid_itr.next();
+        const std::string matname = eid_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].second = mat_elem_ids.value();
+    }
+
+    auto determine_num_elems = [](const conduit::Node &elem_ids)
+    {
+        std::set<int> elem_ids_set;
+
+        auto eid_itr = elem_ids.children();
+        while (eid_itr.has_next())
+        {
+            const Node &mat_elem_ids = eid_itr.next();
+            const std::string matname = eid_itr.name();
+            int_accessor mat_elem_ids_vals = mat_elem_ids.value();
+            int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
+            for (int i = 0; i < num_vf; i ++)
+            {
+                elem_ids_set.insert(mat_elem_ids_vals[i]);
+            }
+        }
+
+        return static_cast<int>(elem_ids_set.size());
+    };
+
+    int num_elems = determine_num_elems(matset["element_ids"]);
+
+    for (auto &mapitem : sbm_vol_fracs_and_elem_ids)
+    {
+        std::vector<double> vol_fracs(num_elems, 0.0);
+        const std::string &matname = mapitem.first;
+        double_array sbm_vfs = mapitem.second.first;
+        int_array sbm_eids = mapitem.second.second;
+        int num_vf = sbm_vfs.dtype().number_of_elements();
+        for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+        {
+            int elem_id = sbm_eids[mat_vf_id];
+            double vol_frac = sbm_vfs[mat_vf_id];
+            vol_fracs[elem_id] = vol_frac;
+        }
+
+        dest["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &matset,
+                                                  conduit::Node &dest)
+{
+    // set the topology
+    dest["topology"].set(matset["topology"]);
+
+    std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
+    std::map<std::string, int> matmap;
+
+    int mat_id = 0;
+    auto vf_itr = matset["volume_fractions"].children();
+    while (vf_itr.has_next())
+    {
+        const Node &mat_vol_fracs = vf_itr.next();
+        const std::string matname = vf_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].first = mat_vol_fracs.value();
+        dest["material_map"][matname] = mat_id;
+        matmap[matname] = mat_id;
+        mat_id ++;
+    }
+
+    auto eid_itr = matset["element_ids"].children();
+    while (eid_itr.has_next())
+    {
+        const Node &mat_elem_ids = eid_itr.next();
+        const std::string matname = eid_itr.name();
+        sbm_vol_fracs_and_elem_ids[matname].second = mat_elem_ids.value();
+    }
+
+    auto determine_num_elems = [](const conduit::Node &elem_ids)
+    {
+        std::set<int> elem_ids_set;
+
+        auto eid_itr = elem_ids.children();
+        while (eid_itr.has_next())
+        {
+            const Node &mat_elem_ids = eid_itr.next();
+            const std::string matname = eid_itr.name();
+            int_accessor mat_elem_ids_vals = mat_elem_ids.value();
+            int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
+            for (int i = 0; i < num_vf; i ++)
+            {
+                elem_ids_set.insert(mat_elem_ids_vals[i]);
+            }
+        }
+
+        return static_cast<int>(elem_ids_set.size());
+    };
+
+    int num_elems = determine_num_elems(matset["element_ids"]);
+
+    // There is no way to pack the volume fractions correctly without
+    // first knowing the sizes. So we create an intermediate representation
+    // in which volume fractions are packed by element. Later we smooth this out.
+    std::vector<std::vector<double>> intermediate_vol_fracs(num_elems);
+    std::vector<std::vector<int>> intermediate_mat_ids(num_elems);
+
+    for (auto &mapitem : sbm_vol_fracs_and_elem_ids)
+    {
+        const std::string &matname = mapitem.first;
+        int mat_id = matmap[matname];
+        double_array sbm_vfs = mapitem.second.first;
+        int_array sbm_eids = mapitem.second.second;
+        int num_vf = sbm_vfs.dtype().number_of_elements();
+        for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+        {
+            int elem_id = sbm_eids[mat_vf_id];
+            double vol_frac = sbm_vfs[mat_vf_id];
+            intermediate_vol_fracs[elem_id].push_back(vol_frac);
+            intermediate_mat_ids[elem_id].push_back(mat_id);
+        }
+    }
+
+    std::vector<double> vol_fracs;
+    std::vector<int> mat_ids;
+    std::vector<int> sizes;
+    std::vector<int> offsets;
+
+    // final pass
+    int offset = 0;
+    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    {
+        int size = static_cast<int>(intermediate_vol_fracs[elem_id].size());
+        for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+        {
+            vol_fracs.push_back(intermediate_vol_fracs[elem_id][mat_vf_id]);
+            mat_ids.push_back(intermediate_mat_ids[elem_id][mat_vf_id]);
+        }
+        sizes.push_back(size);
+        offsets.push_back(offset);
+        offset += size;
+    }
+
+    dest["volume_fractions"].set(vol_fracs.data(), vol_fracs.size());
+    dest["material_ids"].set(mat_ids.data(), mat_ids.size());
+    dest["sizes"].set(sizes.data(), sizes.size());
+    dest["offsets"].set(offsets.data(), offsets.size());
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::matset::detail --
@@ -532,6 +907,111 @@ to_silo(const conduit::Node &matset,
                     epsilon);
 }
 
+//-----------------------------------------------------------------------------
+void
+to_multi_buffer_full(const conduit::Node &src_matset,
+                     conduit::Node &dest_matset)
+{
+    // extra seat belt here
+    if (! src_matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::convert_matset"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    // full
+    if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
+    {
+        // nothing to do
+        dest_matset.set(src_matset);
+    }
+    // sparse_by_element
+    else if (is_element_dominant(src_matset))
+    {
+        detail::uni_buffer_by_element_to_multi_buffer_by_element(src_matset, dest_matset);
+    }
+    // sparse_by_material
+    else if (is_material_dominant(src_matset))
+    {
+        detail::multi_buffer_by_material_to_multi_buffer_by_element(src_matset, dest_matset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown matset type.");
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+to_sparse_by_element(const conduit::Node &src_matset,
+                     conduit::Node &dest_matset,
+                     const float64 epsilon)
+{
+    // extra seat belt here
+    if (! src_matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::convert_matset"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    // full
+    if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
+    {
+        detail::multi_buffer_by_element_to_uni_buffer_by_element(
+            src_matset, dest_matset, epsilon);
+    }
+    // sparse_by_element
+    else if (is_element_dominant(src_matset))
+    {
+        // nothing to do
+        dest_matset.set(src_matset);
+    }
+    // sparse_by_material
+    else if (is_material_dominant(src_matset))
+    {
+        detail::multi_buffer_by_material_to_uni_buffer_by_element(src_matset, dest_matset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown matset type.");
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+to_multi_buffer_by_material(const conduit::Node &src_matset,
+                            conduit::Node &dest_matset,
+                            const float64 epsilon)
+{
+    // extra seat belt here
+    if (! src_matset.dtype().is_object())
+    {
+        CONDUIT_ERROR("blueprint::mesh::matset::convert_matset"
+                      " passed matset node must be a valid matset tree.");
+    }
+
+    // full
+    if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
+    {
+        detail::multi_buffer_by_element_to_multi_buffer_by_material(
+            src_matset, dest_matset, epsilon);
+    }
+    // sparse_by_element
+    else if (is_element_dominant(src_matset))
+    {
+        detail::uni_buffer_by_element_to_multi_buffer_by_material(src_matset, dest_matset);
+    }
+    // sparse_by_material
+    else if (is_material_dominant(src_matset))
+    {
+        // nothing to do
+        dest_matset.set(src_matset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown matset type.");
+    }
+}
 
 //-----------------------------------------------------------------------------
 

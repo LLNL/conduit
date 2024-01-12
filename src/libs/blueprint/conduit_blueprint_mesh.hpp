@@ -743,6 +743,22 @@ namespace matset
     bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_full(const conduit::Node &src_matset,
+                                                    conduit::Node &dest_matset);
+
+    //-------------------------------------------------------------------------
+    // creates a unibuffer case with 1st index into elements
+    void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
+                                                    conduit::Node &dest_matset,
+                                                    const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
+    // covers both the sparse and non sparse case
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_by_material(const conduit::Node &src_matset,
+                                                           conduit::Node &dest_matset,
+                                                           const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
     // Converts a blueprint matset to the silo style sparse mixed slot 
     // representation.
     //
