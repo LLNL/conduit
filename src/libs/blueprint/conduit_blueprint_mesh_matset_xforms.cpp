@@ -579,30 +579,30 @@ uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &matset,
 
     double_accessor volume_fractions = matset["volume_fractions"].value();
     int_accessor material_ids = matset["material_ids"].value();
-    int_accessor sizes = matset["sizes"].value();
-    int_accessor offsets = matset["offsets"].value();
-    int num_elems = sizes.dtype().number_of_elements();
+    o2mrelation::O2MIterator o2m_iter(matset);
+    int num_elems = o2m_iter.elements(o2mrelation::ONE);
 
     std::map<std::string, std::vector<double>> vol_fracs;
-
     for (auto & mapitem : reverse_matmap)
     {
         const std::string &matname = mapitem.second;
         vol_fracs[matname] = std::vector<double>(num_elems);
     }
 
-    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    while (o2m_iter.has_next(o2mrelation::DATA))
     {
-        int size = sizes[elem_id];
-        int offset = offsets[elem_id];
-
-        for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+        index_t elem_id = o2m_iter.next(o2mrelation::ONE);
+        o2m_iter.to_front(o2mrelation::MANY);
+        while (o2m_iter.has_next(o2mrelation::MANY))
         {
-            int index = offset + mat_vf_id;
-            double vol_frac = volume_fractions[index];
-            int mat_id = material_ids[index];
+            o2m_iter.next(o2mrelation::MANY);
+            index_t data_index = o2m_iter.index(o2mrelation::DATA);
+
+            double vol_frac = volume_fractions[data_index];
+            int mat_id = material_ids[data_index];
             const std::string &matname = reverse_matmap[mat_id];
             vol_fracs[matname][elem_id] = vol_frac;
+            
         }
     }
 
