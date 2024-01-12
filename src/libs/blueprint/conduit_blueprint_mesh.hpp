@@ -743,18 +743,17 @@ namespace matset
     bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
-    // to full (in the venn example)
-    void CONDUIT_BLUEPRINT_API to_multi_buffer_by_element(const conduit::Node &src_matset,
-                                                          conduit::Node &dest_matset);
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_full(const conduit::Node &src_matset,
+                                                    conduit::Node &dest_matset);
 
     //-------------------------------------------------------------------------
-    // to sparse_by_element (in the venn example)
-    void CONDUIT_BLUEPRINT_API to_uni_buffer_by_element(const conduit::Node &src_matset,
-                                                        conduit::Node &dest_matset,
-                                                        const float64 epsilon = CONDUIT_EPSILON);
+    // creates a unibuffer case with 1st index into elements
+    void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
+                                                    conduit::Node &dest_matset,
+                                                    const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
-    // to sparse_by_material (in the venn example)
+    // covers both the sparse and non sparse case
     void CONDUIT_BLUEPRINT_API to_multi_buffer_by_material(const conduit::Node &src_matset,
                                                            conduit::Node &dest_matset,
                                                            const float64 epsilon = CONDUIT_EPSILON);

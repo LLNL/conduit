@@ -910,8 +910,8 @@ to_silo(const conduit::Node &matset,
 
 //-----------------------------------------------------------------------------
 void
-to_multi_buffer_by_element(const conduit::Node &src_matset,
-                           conduit::Node &dest_matset)
+to_multi_buffer_full(const conduit::Node &src_matset,
+                     conduit::Node &dest_matset)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())
@@ -944,9 +944,9 @@ to_multi_buffer_by_element(const conduit::Node &src_matset,
 
 //-----------------------------------------------------------------------------
 void
-to_uni_buffer_by_element(const conduit::Node &src_matset,
-                         conduit::Node &dest_matset,
-                         const float64 epsilon)
+to_sparse_by_element(const conduit::Node &src_matset,
+                     conduit::Node &dest_matset,
+                     const float64 epsilon)
 {
     // extra seat belt here
     if (! src_matset.dtype().is_object())

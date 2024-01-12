@@ -277,7 +277,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_full;
-        blueprint::mesh::matset::to_multi_buffer_by_element(mset, mset_full);
+        blueprint::mesh::matset::to_multi_buffer_full(mset, mset_full);
         std::cout << mset_full.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_full.diff(sbe_full_baseline, info));
@@ -295,7 +295,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_sbe;
-        blueprint::mesh::matset::to_uni_buffer_by_element(mset, mset_sbe);
+        blueprint::mesh::matset::to_sparse_by_element(mset, mset_sbe);
         std::cout << mset_sbe.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_sbe.diff(sbe_mset_baseline, info));
@@ -331,7 +331,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_full;
-        blueprint::mesh::matset::to_multi_buffer_by_element(mset, mset_full);
+        blueprint::mesh::matset::to_multi_buffer_full(mset, mset_full);
         std::cout << mset_full.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_full.diff(full_mset_baseline, info));
@@ -367,7 +367,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_full;
-        blueprint::mesh::matset::to_multi_buffer_by_element(mset, mset_full);
+        blueprint::mesh::matset::to_multi_buffer_full(mset, mset_full);
         std::cout << mset_full.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_full.diff(full_mset_baseline, info));
@@ -385,7 +385,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         // std::cout << field.to_yaml() << std::endl;
 
         Node mset_sbe;
-        blueprint::mesh::matset::to_uni_buffer_by_element(mset, mset_sbe);
+        blueprint::mesh::matset::to_sparse_by_element(mset, mset_sbe);
         std::cout << mset_sbe.to_yaml() << std::endl;
 
         EXPECT_FALSE(mset_sbe.diff(sbe_mset_baseline, info));
