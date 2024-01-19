@@ -58,7 +58,7 @@ stages:
     timeoutInMinutes: 0
     strategy:
       matrix:
-        ub_18_shared_minimal_cmake_3_14:
+        ub_18_shared_minimal_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -79,11 +79,11 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: OFF
           ENABLE_PYTHON: OFF
-          CMAKE_VERSION: 3.14.2
+          CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_static_py37_cmake_3_14:
+        ub_18_static_py37_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -105,11 +105,11 @@ stages:
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.7.16
-          CMAKE_VERSION: 3.14.2
+          CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py37_cmake_3_14:
+        ub_18_shared_py37_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -131,7 +131,7 @@ stages:
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.7.16
-          CMAKE_VERSION: 3.14.2
+          CMAKE_VERSION: 3.21.1
           BLT_CXX_STD: c++11
           BLT_ENABLE_FIND_MPI: ON
 

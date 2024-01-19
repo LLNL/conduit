@@ -50,14 +50,14 @@ install:
   # Install MS-MPI SDK
   - ps: Start-FileDownload 'https://download.microsoft.com/download/B/2/E/B2EB83FE-98C2-4156-834A-E1711E6884FB/msmpisdk.msi'
   - msmpisdk.msi /passive
-  - set PATH=C:\Program Files (x86)\Microsoft SDKs\MPI;%PATH% 
+  - set PATH=C:\Program Files (x86)\Microsoft SDKs\MPI;%PATH%
   # install mpi4py
   - pip install mpi4py
   
-  # Install CMake 3.9
+  # Install CMake 3.24.3
   ############################################################################
-  - ps: Start-FileDownload 'http://ascent-dav.org/mirror/cmake-3.9.6-win64-x64.msi'
-  - cmake-3.9.6-win64-x64.msi /passive
+  - ps: Start-FileDownload 'https://github.com/Kitware/CMake/releases/download/v3.24.3/cmake-3.24.3-windows-x86_64.msi'
+  - cmake-3.24.3-windows-x86_64.msi /passive
   - set PATH=C:\Program Files\CMake\bin;%PATH%
   - cmake --version
 
