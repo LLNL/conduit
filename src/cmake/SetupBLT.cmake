@@ -23,33 +23,33 @@ if(NOT ENABLE_FOLDERS)
     set(ENABLE_FOLDERS TRUE CACHE STRING "")
 endif()
 
-################################################################
-#! guard against google test's unconditional hunt for python
-################################################################
-if(DEFINED PYTHON_EXECUTABLE)
-    set(_pyexe_guard ${PYTHON_EXECUTABLE})
-endif()
-
-set(CMAKE_DISABLE_FIND_PACKAGE_PythonInterp TRUE)
-set(CMAKE_DISABLE_FIND_PACKAGE_Python TRUE)
-#!##############################################################
+# ################################################################
+# #! guard against google test's unconditional hunt for python
+# ################################################################
+# if(DEFINED PYTHON_EXECUTABLE)
+#     set(_pyexe_guard ${PYTHON_EXECUTABLE})
+# endif()
+#
+# set(CMAKE_DISABLE_FIND_PACKAGE_PythonInterp TRUE)
+# set(CMAKE_DISABLE_FIND_PACKAGE_Python TRUE)
+# #!##############################################################
 
 ################################################################
 # init blt using BLT_SOURCE_DIR
 ################################################################
 include(${BLT_SOURCE_DIR}/SetupBLT.cmake)
 
-################################################################
-#! guard against google test's unconditional hunt for python
-################################################################
-set(CMAKE_DISABLE_FIND_PACKAGE_PythonInterp FALSE)
-set(CMAKE_DISABLE_FIND_PACKAGE_Python FALSE)
-
-if(DEFINED _pyexe_guard)
-    set(PYTHON_EXECUTABLE ${_pyexe_guard})
-    unset(_pyexe_guard)
-endif()
-#!##############################################################
+# ################################################################
+# #! guard against google test's unconditional hunt for python
+# ################################################################
+# set(CMAKE_DISABLE_FIND_PACKAGE_PythonInterp FALSE)
+# set(CMAKE_DISABLE_FIND_PACKAGE_Python FALSE)
+#
+# if(DEFINED _pyexe_guard)
+#     set(PYTHON_EXECUTABLE ${_pyexe_guard})
+#     unset(_pyexe_guard)
+# endif()
+# #!##############################################################
 
 if(ENABLE_MPI)
     set(CONDUIT_MPI_USES_CMAKE_TARGETS OFF CACHE BOOL "")
