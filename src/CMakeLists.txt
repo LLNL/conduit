@@ -2,7 +2,8 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 
-cmake_minimum_required(VERSION 3.8)
+# BLT >= 0.6.0  requires cmake >= 3.21
+cmake_minimum_required(VERSION 3.21)
 ################################
 # cmake policy selections
 ################################
