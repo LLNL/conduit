@@ -897,10 +897,10 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
 
 //-----------------------------------------------------------------------------
 void
-to_multi_buffer_full_helper(const conduit::Node &src_matset,
-                            const conduit::Node &src_field,
-                            conduit::Node &dest_matset,
-                            conduit::Node &dest_field)
+to_multi_buffer_full(const conduit::Node &src_matset,
+                     const conduit::Node &src_field,
+                     conduit::Node &dest_matset,
+                     conduit::Node &dest_field)
 {
     // full
     if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
@@ -933,11 +933,11 @@ to_multi_buffer_full_helper(const conduit::Node &src_matset,
 
 //-----------------------------------------------------------------------------
 void
-to_sparse_by_element_helper(const conduit::Node &src_matset,
-                            const conduit::Node &src_field,
-                            conduit::Node &dest_matset,
-                            conduit::Node &dest_field,
-                            const float64 epsilon)
+to_sparse_by_element(const conduit::Node &src_matset,
+                     const conduit::Node &src_field,
+                     conduit::Node &dest_matset,
+                     conduit::Node &dest_field,
+                     const float64 epsilon)
 {
     // full
     if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
@@ -971,11 +971,11 @@ to_sparse_by_element_helper(const conduit::Node &src_matset,
 
 //-----------------------------------------------------------------------------
 void
-to_multi_buffer_by_material_helper(const conduit::Node &src_matset,
-                                   const conduit::Node &src_field,
-                                   conduit::Node &dest_matset,
-                                   conduit::Node &dest_field,
-                                   const float64 epsilon)
+to_multi_buffer_by_material(const conduit::Node &src_matset,
+                            const conduit::Node &src_field,
+                            conduit::Node &dest_matset,
+                            conduit::Node &dest_field,
+                            const float64 epsilon)
 {
     // full
     if (is_element_dominant(src_matset) && is_multi_buffer(src_matset))
@@ -1050,10 +1050,10 @@ to_multi_buffer_full(const conduit::Node &src_matset,
 
     conduit::Node src_field, dest_field;
 
-    detail::to_multi_buffer_full_helper(src_matset,
-                                        src_field,
-                                        dest_matset,
-                                        dest_field);
+    detail::to_multi_buffer_full(src_matset,
+                                 src_field,
+                                 dest_matset,
+                                 dest_field);
 }
 
 //-----------------------------------------------------------------------------
@@ -1071,11 +1071,11 @@ to_sparse_by_element(const conduit::Node &src_matset,
 
     conduit::Node src_field, dest_field;
 
-    detail::to_sparse_by_element_helper(src_matset,
-                                        src_field,
-                                        dest_matset,
-                                        dest_field,
-                                        epsilon);
+    detail::to_sparse_by_element(src_matset,
+                                 src_field,
+                                 dest_matset,
+                                 dest_field,
+                                 epsilon);
 }
 
 //-----------------------------------------------------------------------------
@@ -1093,7 +1093,7 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
 
     conduit::Node src_field, dest_field;
 
-    detail::to_sparse_by_element_helper(src_matset,
+    detail::to_multi_buffer_by_material(src_matset,
                                         src_field,
                                         dest_matset,
                                         dest_field,
@@ -1162,10 +1162,10 @@ to_multi_buffer_full(const conduit::Node &src_matset,
                       " passed field node must be a valid matset tree.");
     }
 
-    detail::to_multi_buffer_full_helper(src_matset,
-                                        src_field,
-                                        dest_matset,
-                                        dest_field);
+    conduit::blueprint::mesh::matset::detail::to_multi_buffer_full(src_matset,
+                                                                   src_field,
+                                                                   dest_matset,
+                                                                   dest_field);
 }
 
 //-----------------------------------------------------------------------------
@@ -1189,11 +1189,11 @@ to_sparse_by_element(const conduit::Node &src_matset,
                       " passed field node must be a valid matset tree.");
     }
 
-    detail::to_sparse_by_element_helper(src_matset,
-                                        src_field,
-                                        dest_matset,
-                                        dest_field,
-                                        epsilon);
+    conduit::blueprint::mesh::matset::detail::to_sparse_by_element(src_matset,
+                                                                   src_field,
+                                                                   dest_matset,
+                                                                   dest_field,
+                                                                   epsilon);
 }
 
 //-----------------------------------------------------------------------------
@@ -1217,11 +1217,11 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
                       " passed field node must be a valid matset tree.");
     }
 
-    detail::to_sparse_by_element_helper(src_matset,
-                                        src_field,
-                                        dest_matset,
-                                        dest_field,
-                                        epsilon);
+    conduit::blueprint::mesh::matset::detail::to_multi_buffer_by_material(src_matset,
+                                                                          src_field,
+                                                                          dest_matset,
+                                                                          dest_field,
+                                                                          epsilon);
 }
 
 //-----------------------------------------------------------------------------
