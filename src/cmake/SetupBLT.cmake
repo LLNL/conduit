@@ -42,16 +42,14 @@ if(ENABLE_MPI)
     # if we are using BLT's enable mpi, then we must
     # make sure the MPI targets exist
     if(ENABLE_FIND_MPI)
-        # our import logic needs this info if hdf5 depends
-        # on mpi
         if(TARGET MPI::MPI_CXX)
             set(CONDUIT_USE_CMAKE_MPI_TARGETS TRUE CACHE BOOL "")
             message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
-            # newer cmake we use find mpi targets directly
+            # use cmake mpi targets directly
             set(conduit_blt_mpi_deps MPI::MPI_CXX CACHE STRING "")
         else()
             message(FATAL_ERROR "Cannot use CMake imported targets for MPI."
-                                "(CMake > 3.15, ENABLE_MPI == ON, but "
+                                "(ENABLE_MPI == ON, but "
                                 "MPI::MPI_CXX CMake target is missing.)")
         endif()
     else()
@@ -65,11 +63,11 @@ if(ENABLE_OPENMP)
     if(TARGET OpenMP::OpenMP_CXX)
         set(CONDUIT_USE_CMAKE_OPENMP_TARGETS TRUE CACHE BOOL "")
         message(STATUS "Using OpenMP CMake imported target: OpenMP::OpenMP_CXX")
-        # newer cmake we openmp targets directly
+        # use cmake openmp targets directly
         set(conduit_blt_openmp_deps OpenMP::OpenMP_CXX CACHE STRING "")
     else()
         message(FATAL_ERROR "Cannot use CMake imported targets for OpenMP."
-                            "(CMake > 3.9, ENABLE_OPENMP == ON, but "
+                            "(ENABLE_OPENMP == ON, but "
                             "OpenMP::OpenMP_CXX CMake target is missing.)")
     endif()
 endif()
