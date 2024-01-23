@@ -79,11 +79,16 @@ if(NOT BUILD_SHARED_LIBS)
 endif()
 
 if( BLT_CXX_STD STREQUAL "c++98" )
-    message(FATAL_ERROR "Conduit now requires C++11 support."
-                        "\nPlease set BLT_CXX_STD to c++11 or newer.")
+    message(FATAL_ERROR "Conduit requires C++14 support."
+                        "\nPlease set BLT_CXX_STD to c++14 or newer.")
+elseif( BLT_CXX_STD STREQUAL "c++11" )
+    message(FATAL_ERROR "Conduit requires C++14 support."
+                        "\nPlease set BLT_CXX_STD to c++14 or newer.")
 else()
+    # keep CONDUIT_USE_CXX11 to support old install logic
     set(CONDUIT_USE_CXX11 TRUE)
-    message(STATUS "C++11 support enabled (CONDUIT_USE_CXX11 == TRUE)")
+    set(CONDUIT_USE_CXX14 TRUE)
+    message(STATUS "C++14 support enabled (CONDUIT_USE_CXX14 == TRUE)")
 endif()
 
 if(ENABLE_OPENMP)

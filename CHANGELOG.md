@@ -34,6 +34,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 #### General
+- Conduit now requires C++14 and CMake 3.21 or newer.
 - Improved the efficiency of json parsing logic.
 - The `conduit_relay_io_convert` program was enhanced so it can read/write Blueprint root files by passing _"blueprint"_ for the read or write protocols.
 - The `conduit_adjset_validate` program now writes a point mesh for each adjset groups if the _-output_ argument is supplied.

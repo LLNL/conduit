@@ -80,7 +80,7 @@ stages:
           ENABLE_PARMETIS: OFF
           ENABLE_PYTHON: OFF
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_static_py37_cmake_3_21:
@@ -106,7 +106,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.7.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py37_cmake_3_21:
@@ -132,7 +132,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.7.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py38_cmake_3_21:
@@ -158,7 +158,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py38_cmake_3_21_hdf5_1_10:
@@ -184,7 +184,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py38_cmake_3_21_hdf5_1_12:
@@ -212,7 +212,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py310_cmake_3_24_hdf5_1_14:
@@ -240,7 +240,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.10.10
           CMAKE_VERSION: 3.24.2
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py310_cmake_3_26_hdf5_1_14:
@@ -268,7 +268,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.10.10
           CMAKE_VERSION: 3.26.0
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         # TODO: Need to solve spack mysterty to enable this
@@ -297,7 +297,7 @@ stages:
         #   ENABLE_PYTHON: ON
         #   PYTHON_VERSION: 3.11.2
         #   CMAKE_VERSION: 3.26.0
-        #   BLT_CXX_STD: c++11
+        #   BLT_CXX_STD: c++14
         #   BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_mpi_compilers_direct_cmake_3_21:
@@ -321,7 +321,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: OFF
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: OFF
 
         ub_21_10_shared_py38_cmake_3_21:
@@ -347,7 +347,7 @@ stages:
           ENABLE_PYTHON: ON
           PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
     steps:
