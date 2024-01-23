@@ -659,6 +659,7 @@ uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &src_matset
         dest_field["values"].set(src_field["values"]);
     }
 
+    // map material numbers to material names
     std::map<int, std::string> reverse_matmap;
 
     auto matmap_itr = src_matset["material_map"].children();
@@ -670,41 +671,91 @@ uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &src_matset
         reverse_matmap[matmap_entry.value()] = matname;
     }
 
+    bool mat_dep_field = src_field.has_child("matset_values");
+
+    double_array matset_values;
+    if (mat_dep_field)
+    {
+        matset_values = src_field["matset_values"].value();
+    }
+
     double_accessor volume_fractions = src_matset["volume_fractions"].value();
     int_accessor material_ids = src_matset["material_ids"].value();
     o2mrelation::O2MIterator o2m_iter(src_matset);
     int num_elems = o2m_iter.elements(o2mrelation::ONE);
 
-    std::map<std::string, std::vector<double>> vol_fracs;
-    for (auto & mapitem : reverse_matmap)
+    std::map<std::string, std::vector<double>> new_vol_fracs;
+    std::map<std::string, std::vector<double>> new_matset_vals;
+    if (mat_dep_field)
     {
-        const std::string &matname = mapitem.second;
-        vol_fracs[matname] = std::vector<double>(num_elems);
-    }
-
-    while (o2m_iter.has_next(o2mrelation::DATA))
-    {
-        index_t elem_id = o2m_iter.next(o2mrelation::ONE);
-        o2m_iter.to_front(o2mrelation::MANY);
-        while (o2m_iter.has_next(o2mrelation::MANY))
+        for (auto & mapitem : reverse_matmap)
         {
-            o2m_iter.next(o2mrelation::MANY);
-            index_t data_index = o2m_iter.index(o2mrelation::DATA);
+            const std::string &matname = mapitem.second;
+            new_vol_fracs[matname] = std::vector<double>(num_elems);
+            new_matset_vals[matname] = std::vector<double>(num_elems);
+        }
 
-            double vol_frac = volume_fractions[data_index];
-            int mat_id = material_ids[data_index];
-            const std::string &matname = reverse_matmap[mat_id];
-            vol_fracs[matname][elem_id] = vol_frac;
-            
+        while (o2m_iter.has_next(o2mrelation::DATA))
+        {
+            index_t elem_id = o2m_iter.next(o2mrelation::ONE);
+            o2m_iter.to_front(o2mrelation::MANY);
+            while (o2m_iter.has_next(o2mrelation::MANY))
+            {
+                o2m_iter.next(o2mrelation::MANY);
+                index_t data_index = o2m_iter.index(o2mrelation::DATA);
+
+                double vol_frac = volume_fractions[data_index];
+                double matset_val = matset_values[data_index];
+                int mat_id = material_ids[data_index];
+                const std::string &matname = reverse_matmap[mat_id];
+                new_vol_fracs[matname][elem_id] = vol_frac;
+                new_matset_vals[matname][elem_id] = matset_val;
+            }
+        }
+    }
+    else
+    {
+        for (auto & mapitem : reverse_matmap)
+        {
+            const std::string &matname = mapitem.second;
+            new_vol_fracs[matname] = std::vector<double>(num_elems);
+        }
+
+        while (o2m_iter.has_next(o2mrelation::DATA))
+        {
+            index_t elem_id = o2m_iter.next(o2mrelation::ONE);
+            o2m_iter.to_front(o2mrelation::MANY);
+            while (o2m_iter.has_next(o2mrelation::MANY))
+            {
+                o2m_iter.next(o2mrelation::MANY);
+                index_t data_index = o2m_iter.index(o2mrelation::DATA);
+
+                double vol_frac = volume_fractions[data_index];
+                int mat_id = material_ids[data_index];
+                const std::string &matname = reverse_matmap[mat_id];
+                new_vol_fracs[matname][elem_id] = vol_frac;
+                
+            }
         }
     }
 
-    for (auto & mapitem : vol_fracs)
+    for (auto & mapitem : new_vol_fracs)
     {
         const std::string &matname = mapitem.first;
         const std::vector<double> &full_vfs = mapitem.second;
 
         dest_matset["volume_fractions"][matname].set(full_vfs.data(), full_vfs.size());
+    }
+
+    if (mat_dep_field)
+    {
+        for (auto & mapitem : new_matset_vals)
+        {
+            const std::string &matname = mapitem.first;
+            const std::vector<double> &full_msvs = mapitem.second;
+
+            dest_field["matset_values"][matname].set(full_msvs.data(), full_msvs.size());
+        }
     }
 }
 
@@ -924,7 +975,7 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
 {
     dest_matset.reset();
     dest_field.reset();
-    
+
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
