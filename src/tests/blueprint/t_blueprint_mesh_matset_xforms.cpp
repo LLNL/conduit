@@ -403,21 +403,26 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         EXPECT_FALSE(converted_field.diff(full_field_baseline, info));
     }
 
-    // CONDUIT_INFO("venn sparse_by_material -> sparse_by_element");
-    // {
-    //     // diff sbm -> sbe with sbe
+    CONDUIT_INFO("venn sparse_by_material -> sparse_by_element");
+    {
+        // diff sbm -> sbe with sbe
 
-    //     // const Node &field = mesh_sbm["fields/importance"];
-    //     const Node &mset = mesh_sbm["matsets/matset"];
-    //     const Node &sbe_mset_baseline = mesh_sbe["matsets/matset"];
+        const Node &mset = mesh_sbm["matsets/matset"];
+        const Node &field = mesh_sbm["fields/importance"];
+        const Node &sbe_mset_baseline = mesh_sbe["matsets/matset"];
+        const Node &sbe_field_baseline = mesh_sbe["fields/importance"];
 
-    //     std::cout << mset.to_yaml() << std::endl;
-    //     // std::cout << field.to_yaml() << std::endl;
+        std::cout << mset.to_yaml() << std::endl;
+        std::cout << field.to_yaml() << std::endl;
 
-    //     Node mset_sbe;
-    //     blueprint::mesh::matset::to_sparse_by_element(mset, mset_sbe);
-    //     std::cout << mset_sbe.to_yaml() << std::endl;
+        Node converted_mset, converted_mset2, converted_field;
+        blueprint::mesh::field::to_sparse_by_element(mset, field, converted_mset, converted_field);
+        blueprint::mesh::matset::to_sparse_by_element(mset, converted_mset2);
+        std::cout << converted_mset.to_yaml() << std::endl;
+        std::cout << converted_field.to_yaml() << std::endl;
 
-    //     EXPECT_FALSE(mset_sbe.diff(sbe_mset_baseline, info));
-    // }
+        EXPECT_FALSE(converted_mset.diff(sbe_mset_baseline, info));
+        EXPECT_FALSE(converted_mset2.diff(sbe_mset_baseline, info));
+        EXPECT_FALSE(converted_field.diff(sbe_field_baseline, info));
+    }
 }

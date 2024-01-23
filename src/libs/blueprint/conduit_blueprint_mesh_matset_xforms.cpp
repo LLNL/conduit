@@ -1126,7 +1126,9 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
         dest_field["values"].set(src_field["values"]);
     }
 
-    std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
+    // sparse by material representation
+    // we map material names to volume fractions, element ids, and matset values
+    std::map<std::string, std::tuple<double_array, int_array, double_array>> sbm_rep;
     std::map<std::string, int> matmap;
 
     int mat_id = 0;
@@ -1135,7 +1137,7 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
     {
         const Node &mat_vol_fracs = vf_itr.next();
         const std::string matname = vf_itr.name();
-        sbm_vol_fracs_and_elem_ids[matname].first = mat_vol_fracs.value();
+        std::get<0>(sbm_rep[matname]) = mat_vol_fracs.value();
         dest_matset["material_map"][matname] = mat_id;
         matmap[matname] = mat_id;
         mat_id ++;
@@ -1146,9 +1148,23 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
     {
         const Node &mat_elem_ids = eid_itr.next();
         const std::string matname = eid_itr.name();
-        sbm_vol_fracs_and_elem_ids[matname].second = mat_elem_ids.value();
+        std::get<1>(sbm_rep[matname]) = mat_elem_ids.value();
     }
 
+    bool mat_dep_field = src_field.has_child("matset_values");
+
+    if (mat_dep_field)
+    {
+        auto mvals_itr = src_field["matset_values"].children();
+        while (mvals_itr.has_next())
+        {
+            const Node &matset_vals = mvals_itr.next();
+            const std::string matname = mvals_itr.name();
+            std::get<2>(sbm_rep[matname]) = matset_vals.value();
+        }
+    }
+
+    // load the element ids into a set to find out how many there are
     auto determine_num_elems = [](const conduit::Node &elem_ids)
     {
         std::set<int> elem_ids_set;
@@ -1169,27 +1185,58 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
         return static_cast<int>(elem_ids_set.size());
     };
 
-    int num_elems = determine_num_elems(src_matset["element_ids"]);
+    const int num_elems = determine_num_elems(src_matset["element_ids"]);
 
     // There is no way to pack the volume fractions correctly without
     // first knowing the sizes. So we create an intermediate representation
     // in which volume fractions are packed by element. Later we smooth this out.
     std::vector<std::vector<double>> intermediate_vol_fracs(num_elems);
     std::vector<std::vector<int>> intermediate_mat_ids(num_elems);
+    std::vector<std::vector<double>> intermediate_mset_vals(num_elems);
 
-    for (auto &mapitem : sbm_vol_fracs_and_elem_ids)
+    if (mat_dep_field)
     {
-        const std::string &matname = mapitem.first;
-        int mat_id = matmap[matname];
-        double_array sbm_vfs = mapitem.second.first;
-        int_array sbm_eids = mapitem.second.second;
-        int num_vf = sbm_vfs.dtype().number_of_elements();
-        for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+        for (auto &mapitem : sbm_rep)
         {
-            int elem_id = sbm_eids[mat_vf_id];
-            double vol_frac = sbm_vfs[mat_vf_id];
-            intermediate_vol_fracs[elem_id].push_back(vol_frac);
-            intermediate_mat_ids[elem_id].push_back(mat_id);
+            const std::string &matname = mapitem.first;
+            int mat_id = matmap[matname];
+
+            double_array sbm_vfs = std::get<0>(mapitem.second);
+            int_array sbm_eids = std::get<1>(mapitem.second);
+            double_array sbm_mvals = std::get<2>(mapitem.second);
+            
+            int num_vf = sbm_vfs.dtype().number_of_elements();
+            for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+            {
+                int elem_id = sbm_eids[mat_vf_id];
+                double vol_frac = sbm_vfs[mat_vf_id];
+                double mset_val = sbm_mvals[mat_vf_id];
+
+                intermediate_vol_fracs[elem_id].push_back(vol_frac);
+                intermediate_mset_vals[elem_id].push_back(mset_val);
+                intermediate_mat_ids[elem_id].push_back(mat_id);
+            }
+        }
+    }
+    else
+    {
+        for (auto &mapitem : sbm_rep)
+        {
+            const std::string &matname = mapitem.first;
+            int mat_id = matmap[matname];
+
+            double_array sbm_vfs = std::get<0>(mapitem.second);
+            int_array sbm_eids = std::get<1>(mapitem.second);
+            
+            int num_vf = sbm_vfs.dtype().number_of_elements();
+            for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+            {
+                int elem_id = sbm_eids[mat_vf_id];
+                double vol_frac = sbm_vfs[mat_vf_id];
+
+                intermediate_vol_fracs[elem_id].push_back(vol_frac);
+                intermediate_mat_ids[elem_id].push_back(mat_id);
+            }
         }
     }
 
@@ -1197,26 +1244,53 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
     std::vector<int> mat_ids;
     std::vector<int> sizes;
     std::vector<int> offsets;
+    std::vector<double> mset_vals;
 
-    // final pass
-    int offset = 0;
-    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    if (mat_dep_field)
     {
-        int size = static_cast<int>(intermediate_vol_fracs[elem_id].size());
-        for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+        // final pass
+        int offset = 0;
+        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
         {
-            vol_fracs.push_back(intermediate_vol_fracs[elem_id][mat_vf_id]);
-            mat_ids.push_back(intermediate_mat_ids[elem_id][mat_vf_id]);
+            int size = static_cast<int>(intermediate_vol_fracs[elem_id].size());
+            for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+            {
+                vol_fracs.push_back(intermediate_vol_fracs[elem_id][mat_vf_id]);
+                mset_vals.push_back(intermediate_mset_vals[elem_id][mat_vf_id]);
+                mat_ids.push_back(intermediate_mat_ids[elem_id][mat_vf_id]);
+            }
+            sizes.push_back(size);
+            offsets.push_back(offset);
+            offset += size;
         }
-        sizes.push_back(size);
-        offsets.push_back(offset);
-        offset += size;
+    }
+    else
+    {
+        // final pass
+        int offset = 0;
+        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+        {
+            int size = static_cast<int>(intermediate_vol_fracs[elem_id].size());
+            for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+            {
+                vol_fracs.push_back(intermediate_vol_fracs[elem_id][mat_vf_id]);
+                mat_ids.push_back(intermediate_mat_ids[elem_id][mat_vf_id]);
+            }
+            sizes.push_back(size);
+            offsets.push_back(offset);
+            offset += size;
+        }
     }
 
     dest_matset["volume_fractions"].set(vol_fracs.data(), vol_fracs.size());
     dest_matset["material_ids"].set(mat_ids.data(), mat_ids.size());
     dest_matset["sizes"].set(sizes.data(), sizes.size());
     dest_matset["offsets"].set(offsets.data(), offsets.size());
+
+    if (mat_dep_field)
+    {
+        dest_field["matset_values"].set(mset_vals.data(), mset_vals.size());
+    }
 }
 
 //-----------------------------------------------------------------------------
