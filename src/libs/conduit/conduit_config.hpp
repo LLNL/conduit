@@ -28,7 +28,7 @@
         #if _MSC_VER < 1900
             #error Conduit was built with c++14 support, please use a c++14 compliant compiler
         #endif
-    #elif __cplusplus <= 201402L
+    #elif __cplusplus <= 201103L
         #error Conduit was built with c++14 support, please use a c++14 compliant compiler
     #endif
 #endif
