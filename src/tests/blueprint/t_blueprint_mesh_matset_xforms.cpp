@@ -366,12 +366,12 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
 
         Node converted_mset, converted_mset2, converted_field;
         blueprint::mesh::field::to_multi_buffer_by_material(mset, field, converted_mset, converted_field);
-        // blueprint::mesh::matset::to_multi_buffer_by_material(mset, converted_mset2);
+        blueprint::mesh::matset::to_multi_buffer_by_material(mset, converted_mset2);
         std::cout << converted_mset.to_yaml() << std::endl;
         std::cout << converted_field.to_yaml() << std::endl;
 
-        // EXPECT_FALSE(converted_mset.diff(sbm_mset_baseline, info));
-        // EXPECT_FALSE(converted_mset2.diff(sbm_mset_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(sbm_mset_baseline, info));
+        EXPECT_FALSE(converted_mset2.diff(sbm_mset_baseline, info));
         EXPECT_FALSE(converted_field.diff(sbm_field_baseline, info));
     }
 
