@@ -512,6 +512,9 @@ multi_buffer_by_element_to_uni_buffer_by_element(const conduit::Node &src_matset
                                                  conduit::Node &dest_field,
                                                  const float64 epsilon)
 {
+    dest_matset.reset();
+    dest_field.reset();
+
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
@@ -641,6 +644,9 @@ uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &src_matset
                                                  conduit::Node &dest_matset,
                                                  conduit::Node &dest_field)
 {
+    dest_matset.reset();
+    dest_field.reset();
+
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
@@ -710,6 +716,9 @@ uni_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_matse
                                                   conduit::Node &dest_matset,
                                                   conduit::Node &dest_field)
 {
+    dest_matset.reset();
+    dest_field.reset();
+
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
@@ -784,6 +793,9 @@ multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_mat
                                                     conduit::Node &dest_field,
                                                     const float64 epsilon)
 {
+    dest_matset.reset();
+    dest_field.reset();
+
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
@@ -829,6 +841,9 @@ multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_mat
                                                     conduit::Node &dest_matset,
                                                     conduit::Node &dest_field)
 {
+    dest_matset.reset();
+    dest_field.reset();
+
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
@@ -907,6 +922,9 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
                                                   conduit::Node &dest_matset,
                                                   conduit::Node &dest_field)
 {
+    dest_matset.reset();
+    dest_field.reset();
+    
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
