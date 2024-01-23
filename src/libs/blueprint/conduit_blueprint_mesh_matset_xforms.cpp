@@ -515,50 +515,122 @@ multi_buffer_by_element_to_uni_buffer_by_element(const conduit::Node &src_matset
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
-    std::map<int, double_array> full_vol_fracs;
-
-    // create the material map
-    auto mat_itr = src_matset["volume_fractions"].children();
-    int mat_id = 0;
-    while (mat_itr.has_next())
+    if (src_field.dtype().is_object())
     {
-        const Node &mat_vol_fracs = mat_itr.next();
-        std::string matname = mat_itr.name();
-        full_vol_fracs[mat_id] = mat_vol_fracs.value();
-        dest_matset["material_map"][matname] = mat_id;
-        mat_id ++;
+        // copy over info from the old field
+        dest_field["association"].set(src_field["association"]);
+        dest_field["topology"].set(src_field["topology"]);
+        dest_field["matset"].set(src_field["matset"]);
+        dest_field["values"].set(src_field["values"]);
     }
+
+    std::map<int, double_array> full_vol_fracs;
+    std::map<int, double_array> full_matset_vals;
+
+    bool mat_dep_field = src_field.has_child("matset_values");
+
+    if (mat_dep_field)
+    {
+        // create the material map
+        auto mat_itr = src_matset["volume_fractions"].children();
+        auto fmat_itr = src_field["matset_values"].children();
+        int mat_id = 0;
+        while (mat_itr.has_next() && fmat_itr.has_next())
+        {
+            const Node &mat_vol_fracs = mat_itr.next();
+            std::string matname = mat_itr.name();
+
+            const Node &mat_field_vals = fmat_itr.next();
+            std::string fmatname = fmat_itr.name();
+
+            CONDUIT_ASSERT(matname == fmatname, "Materials must be ordered the same in "
+                "material dependent fields and their matsets.");
+
+
+            full_vol_fracs[mat_id] = mat_vol_fracs.value();
+            full_matset_vals[mat_id] = mat_field_vals.value();
+            dest_matset["material_map"][matname] = mat_id;
+            mat_id ++;
+        }
+    }
+    else
+    {
+        // create the material map
+        auto mat_itr = src_matset["volume_fractions"].children();
+        int mat_id = 0;
+        while (mat_itr.has_next())
+        {
+            const Node &mat_vol_fracs = mat_itr.next();
+            std::string matname = mat_itr.name();
+            full_vol_fracs[mat_id] = mat_vol_fracs.value();
+            dest_matset["material_map"][matname] = mat_id;
+            mat_id ++;
+        }
+    }
+
     const int nmats = dest_matset["material_map"].number_of_children();
 
     std::vector<double> vol_fracs;
     std::vector<int> mat_ids;
     std::vector<int> sizes;
     std::vector<int> offsets;
+    std::vector<double> matset_values;
 
     int num_elems = src_matset["volume_fractions"][0].dtype().number_of_elements();
     int offset = 0;
-    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+
+    if (mat_dep_field)
     {
-        int size = 0;
-        for (mat_id = 0; mat_id < nmats; mat_id ++)
+        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
         {
-            float64 vol_frac = full_vol_fracs[mat_id][elem_id];
-            if (vol_frac > epsilon)
+            int size = 0;
+            for (int mat_id = 0; mat_id < nmats; mat_id ++)
             {
-                vol_fracs.push_back(vol_frac);
-                mat_ids.push_back(mat_id);
-                size ++;
+                float64 vol_frac = full_vol_fracs[mat_id][elem_id];
+                float64 matset_val = full_matset_vals[mat_id][elem_id];
+                if (vol_frac > epsilon)
+                {
+                    vol_fracs.push_back(vol_frac);
+                    matset_values.push_back(matset_val);
+                    mat_ids.push_back(mat_id);
+                    size ++;
+                }
             }
+            sizes.push_back(size);
+            offsets.push_back(offset);
+            offset += size;
         }
-        sizes.push_back(size);
-        offsets.push_back(offset);
-        offset += size;
+    }
+    else
+    {
+        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+        {
+            int size = 0;
+            for (int mat_id = 0; mat_id < nmats; mat_id ++)
+            {
+                float64 vol_frac = full_vol_fracs[mat_id][elem_id];
+                if (vol_frac > epsilon)
+                {
+                    vol_fracs.push_back(vol_frac);
+                    mat_ids.push_back(mat_id);
+                    size ++;
+                }
+            }
+            sizes.push_back(size);
+            offsets.push_back(offset);
+            offset += size;
+        }
     }
 
     dest_matset["volume_fractions"].set(vol_fracs.data(), vol_fracs.size());
     dest_matset["material_ids"].set(mat_ids.data(), mat_ids.size());
     dest_matset["sizes"].set(sizes.data(), sizes.size());
     dest_matset["offsets"].set(offsets.data(), offsets.size());
+
+    if (mat_dep_field)
+    {
+        dest_field["matset_values"].set(matset_values.data(), matset_values.size());
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -571,6 +643,15 @@ uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &src_matset
 {
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
+
+    if (src_field.dtype().is_object())
+    {
+        // copy over info from the old field
+        dest_field["association"].set(src_field["association"]);
+        dest_field["topology"].set(src_field["topology"]);
+        dest_field["matset"].set(src_field["matset"]);
+        dest_field["values"].set(src_field["values"]);
+    }
 
     std::map<int, std::string> reverse_matmap;
 
@@ -631,6 +712,15 @@ uni_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_matse
 {
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
+
+    if (src_field.dtype().is_object())
+    {
+        // copy over info from the old field
+        dest_field["association"].set(src_field["association"]);
+        dest_field["topology"].set(src_field["topology"]);
+        dest_field["matset"].set(src_field["matset"]);
+        dest_field["values"].set(src_field["values"]);
+    }
 
     std::map<int, std::string> reverse_matmap;
 
@@ -697,6 +787,15 @@ multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_mat
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
+    if (src_field.dtype().is_object())
+    {
+        // copy over info from the old field
+        dest_field["association"].set(src_field["association"]);
+        dest_field["topology"].set(src_field["topology"]);
+        dest_field["matset"].set(src_field["matset"]);
+        dest_field["values"].set(src_field["values"]);
+    }
+
     auto mat_itr = src_matset["volume_fractions"].children();
     while (mat_itr.has_next())
     {
@@ -732,6 +831,15 @@ multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_mat
 {
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
+
+    if (src_field.dtype().is_object())
+    {
+        // copy over info from the old field
+        dest_field["association"].set(src_field["association"]);
+        dest_field["topology"].set(src_field["topology"]);
+        dest_field["matset"].set(src_field["matset"]);
+        dest_field["values"].set(src_field["values"]);
+    }
 
     std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
 
@@ -801,6 +909,15 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
 {
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
+
+    if (src_field.dtype().is_object())
+    {
+        // copy over info from the old field
+        dest_field["association"].set(src_field["association"]);
+        dest_field["topology"].set(src_field["topology"]);
+        dest_field["matset"].set(src_field["matset"]);
+        dest_field["values"].set(src_field["values"]);
+    }
 
     std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
     std::map<std::string, int> matmap;
