@@ -996,14 +996,16 @@ multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_mat
         dest_field["values"].set(src_field["values"]);
     }
 
-    std::map<std::string, std::pair<double_array, int_array>> sbm_vol_fracs_and_elem_ids;
+    // sparse by material representation
+    // we map material names to volume fractions, element ids, and matset values
+    std::map<std::string, std::tuple<double_array, int_array, double_array>> sbm_rep;
 
     auto vf_itr = src_matset["volume_fractions"].children();
     while (vf_itr.has_next())
     {
         const Node &mat_vol_fracs = vf_itr.next();
         const std::string matname = vf_itr.name();
-        sbm_vol_fracs_and_elem_ids[matname].first = mat_vol_fracs.value();
+        std::get<0>(sbm_rep[matname]) = mat_vol_fracs.value();
     }
 
     auto eid_itr = src_matset["element_ids"].children();
@@ -1011,9 +1013,23 @@ multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_mat
     {
         const Node &mat_elem_ids = eid_itr.next();
         const std::string matname = eid_itr.name();
-        sbm_vol_fracs_and_elem_ids[matname].second = mat_elem_ids.value();
+        std::get<1>(sbm_rep[matname]) = mat_elem_ids.value();
     }
 
+    bool mat_dep_field = src_field.has_child("matset_values");
+
+    if (mat_dep_field)
+    {
+        auto mvals_itr = src_field["matset_values"].children();
+        while (mvals_itr.has_next())
+        {
+            const Node &matset_vals = mvals_itr.next();
+            const std::string matname = mvals_itr.name();
+            std::get<2>(sbm_rep[matname]) = matset_vals.value();
+        }
+    }
+
+    // load the element ids into a set to find out how many there are
     auto determine_num_elems = [](const conduit::Node &elem_ids)
     {
         std::set<int> elem_ids_set;
@@ -1034,23 +1050,56 @@ multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_mat
         return static_cast<int>(elem_ids_set.size());
     };
 
-    int num_elems = determine_num_elems(src_matset["element_ids"]);
+    const int num_elems = determine_num_elems(src_matset["element_ids"]);
 
-    for (auto &mapitem : sbm_vol_fracs_and_elem_ids)
+    if (mat_dep_field)
     {
-        std::vector<double> vol_fracs(num_elems, 0.0);
-        const std::string &matname = mapitem.first;
-        double_array sbm_vfs = mapitem.second.first;
-        int_array sbm_eids = mapitem.second.second;
-        int num_vf = sbm_vfs.dtype().number_of_elements();
-        for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+        for (auto &mapitem : sbm_rep)
         {
-            int elem_id = sbm_eids[mat_vf_id];
-            double vol_frac = sbm_vfs[mat_vf_id];
-            vol_fracs[elem_id] = vol_frac;
-        }
+            std::vector<double> vol_fracs(num_elems, 0.0);
+            std::vector<double> mset_vals(num_elems, 0.0);
+            
+            const std::string &matname = mapitem.first;
+            double_array sbm_vfs = std::get<0>(mapitem.second);
+            int_array sbm_eids = std::get<1>(mapitem.second);
+            double_array sbm_mvals = std::get<2>(mapitem.second);
+            
+            int num_vf = sbm_vfs.dtype().number_of_elements();
+            for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+            {
+                int elem_id = sbm_eids[mat_vf_id];
+                double vol_frac = sbm_vfs[mat_vf_id];
+                double mset_val = sbm_mvals[mat_vf_id];
 
-        dest_matset["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+                vol_fracs[elem_id] = vol_frac;
+                mset_vals[elem_id] = mset_val;
+            }
+
+            dest_matset["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+            dest_field["matset_values"][matname].set(mset_vals.data(), mset_vals.size());
+        }
+    }
+    else
+    {
+        for (auto &mapitem : sbm_rep)
+        {
+            std::vector<double> vol_fracs(num_elems, 0.0);
+            
+            const std::string &matname = mapitem.first;
+            double_array sbm_vfs = std::get<0>(mapitem.second);
+            int_array sbm_eids = std::get<1>(mapitem.second);
+            
+            int num_vf = sbm_vfs.dtype().number_of_elements();
+            for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
+            {
+                int elem_id = sbm_eids[mat_vf_id];
+                double vol_frac = sbm_vfs[mat_vf_id];
+
+                vol_fracs[elem_id] = vol_frac;
+            }
+
+            dest_matset["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+        }
     }
 }
 
