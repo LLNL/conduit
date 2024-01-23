@@ -906,28 +906,70 @@ multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_mat
         dest_field["values"].set(src_field["values"]);
     }
 
-    auto mat_itr = src_matset["volume_fractions"].children();
-    while (mat_itr.has_next())
+    bool mat_dep_field = src_field.has_child("matset_values");
+
+    if (mat_dep_field)
     {
-        const Node &mat_vol_fracs = mat_itr.next();
-        std::string matname = mat_itr.name();
-
-        std::vector<double> vol_fracs;
-        std::vector<int> elem_ids;
-
-        double_accessor full_vol_fracs = mat_vol_fracs.value();
-        int num_elems = full_vol_fracs.dtype().number_of_elements();
-        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+        auto mat_itr = src_matset["volume_fractions"].children();
+        auto fmat_itr = src_field["matset_values"].children();
+        while (mat_itr.has_next() && fmat_itr.has_next())
         {
-            if (full_vol_fracs[elem_id] > epsilon)
-            {
-                vol_fracs.push_back(full_vol_fracs[elem_id]);
-                elem_ids.push_back(elem_id);
-            }
-        }
+            const Node &mat_vol_fracs = mat_itr.next();
+            std::string matname = mat_itr.name();
+            
+            const Node &mat_vals = fmat_itr.next();
+            std::string fmatname = fmat_itr.name();
 
-        dest_matset["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
-        dest_matset["element_ids"][matname].set(elem_ids.data(), elem_ids.size());
+            CONDUIT_ASSERT(matname == fmatname, "Materials must be ordered the same in "
+                "material dependent fields and their matsets.");
+
+            std::vector<double> vol_fracs;
+            std::vector<int> elem_ids;
+            std::vector<double> mset_vals;
+
+            double_accessor full_vol_fracs = mat_vol_fracs.value();
+            double_accessor full_mset_vals = mat_vals.value();
+            int num_elems = full_vol_fracs.dtype().number_of_elements();
+            for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+            {
+                if (full_vol_fracs[elem_id] > epsilon)
+                {
+                    vol_fracs.push_back(full_vol_fracs[elem_id]);
+                    mset_vals.push_back(full_mset_vals[elem_id]);
+                    elem_ids.push_back(elem_id);
+                }
+            }
+
+            dest_matset["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+            dest_matset["element_ids"][matname].set(elem_ids.data(), elem_ids.size());
+            dest_field["matset_values"][matname].set(mset_vals.data(), mset_vals.size());
+        }
+    }
+    else
+    {
+        auto mat_itr = src_matset["volume_fractions"].children();
+        while (mat_itr.has_next())
+        {
+            const Node &mat_vol_fracs = mat_itr.next();
+            std::string matname = mat_itr.name();
+
+            std::vector<double> vol_fracs;
+            std::vector<int> elem_ids;
+
+            double_accessor full_vol_fracs = mat_vol_fracs.value();
+            int num_elems = full_vol_fracs.dtype().number_of_elements();
+            for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+            {
+                if (full_vol_fracs[elem_id] > epsilon)
+                {
+                    vol_fracs.push_back(full_vol_fracs[elem_id]);
+                    elem_ids.push_back(elem_id);
+                }
+            }
+
+            dest_matset["volume_fractions"][matname].set(vol_fracs.data(), vol_fracs.size());
+            dest_matset["element_ids"][matname].set(elem_ids.data(), elem_ids.size());
+        }
     }
 }
 
