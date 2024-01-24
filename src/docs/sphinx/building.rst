@@ -42,7 +42,7 @@ Configure a build
 ~~~~~~~~~~~~~~~~~~~~
 
 Conduit uses CMake for its build system. These instructions assume ``cmake`` is in your path. 
-We recommend CMake 3.9 or newer, for more details see :ref:`Supported CMake Versions <supported_cmake>`.
+We recommend CMake 3.21 or newer, for more details see :ref:`Supported CMake Versions <supported_cmake>`.
 
 ``config-build.sh`` is a simple wrapper for the cmake call to configure conduit. 
 This creates a new out-of-source build directory ``build-debug`` and a directory for the install ``install-debug``.
@@ -99,6 +99,10 @@ Main CMake Options
      - Controls if Conduit MPI features are built.
      - *(default = ON)*
 
+   * - ``ENABLE_OPENMP``
+     - Controls if Conduit OpenMP features are built.
+     - *(default = OFF)*
+
    * - ``ENABLE_TESTS``
      - Controls if unit tests are built.
      - *(default = ON)*
@@ -136,8 +140,20 @@ CMake Options for Third-party Library Paths
    * - ``HDF5_DIR``
      - Path to a HDF5 install (optional). Controls if HDF5 I/O support is built into *conduit_relay*.
 
+   * - ``ZLIB_DIR``
+     - Path to a Zlib install (optional). (Needed for HDF5 support)
+
    * - ``SILO_DIR``
      - Path to a Silo install (optional). Controls if Silo I/O support is built into *conduit_relay*. Requires HDF5.
+
+   * - ``H5ZZFP_DIR``
+     - Path to a H5ZZFP install (optional). Controls if HDF5 ZFP support is built into *conduit_relay*.
+
+   * - ``ZFP_DIR``
+     - Path to a ZFP install (optional). Controls if ZFP support is built into *conduit_relay*.
+
+   * - ``PARMETIS_DIR``
+     - Path to a Parmetis install (optional). Controls if Parmetis support for *conduit_blueprint* partitioning features is built.
 
    * - ``CALIPER_DIR``
      - Path to a Caliiper install (optional). Controls if Caliper performance annotation support.
@@ -373,7 +389,7 @@ You can specify specific versions of a dependency using ``^``. For Example, to b
 
 Supported CMake Versions
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-We recommend CMake 3.20 or newer. We test building Conduit with CMake 3.14 and 3.2x variants.
+We recommend CMake 3.21 or newer. We test building Conduit with CMake 3.21 and newer 3.2x variants.
 
 
 Using Conduit in Another Project

@@ -20,10 +20,8 @@
 #include <fstream>
 #include <fstream>
 #include <sstream>
-
-#ifdef CONDUIT_USE_CXX11
 #include <initializer_list>
-#endif
+
 
 //-----------------------------------------------------------------------------
 // -- conduit includes --
@@ -561,14 +559,12 @@ public:
 // -- std::initializer_list support --
 //-----------------------------------------------------------------------------
 //
-// When C++11 support is enabled, support std::initializer_lists
+// Support std::initializer_lists
 //
 // Example:
 //   Node n;
 //   n.set({1,2,3,4,5,6});
 //
-//-----------------------------------------------------------------------------
-#ifdef CONDUIT_USE_CXX11
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -657,10 +653,6 @@ public:
     #ifndef CONDUIT_USE_DOUBLE
         void set(const std::initializer_list<double> &data);
     #endif
-
-//-----------------------------------------------------------------------------
-#endif // end CONDUIT_USE_CXX11
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- set via bitwidth style pointers (scalar and array types) --
@@ -2990,14 +2982,14 @@ public:
 // -- std::initializer_list support --
 //-----------------------------------------------------------------------------
 //
-// When C++11 support is enabled, support std::initializer_lists
+// Support std::initializer_lists
 //
 // Example:
 //   Node n;
 //   n = {1,2,3,4,5,6};
 //
 //-----------------------------------------------------------------------------
-#ifdef CONDUIT_USE_CXX11
+
 //-----------------------------------------------------------------------------
 // -- assignment operators for std::initializer_list types ---
 //-----------------------------------------------------------------------------
@@ -3055,11 +3047,6 @@ public:
 #ifndef CONDUIT_USE_DOUBLE
     Node &operator=(const std::initializer_list<double> &data);
 #endif
-
-//-----------------------------------------------------------------------------
-#endif // end CONDUIT_USE_CXX11
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // -- assignment operators for string types --

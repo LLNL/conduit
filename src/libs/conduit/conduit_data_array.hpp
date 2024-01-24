@@ -11,9 +11,7 @@
 #ifndef CONDUIT_DATA_ARRAY_HPP
 #define CONDUIT_DATA_ARRAY_HPP
 
-#ifdef CONDUIT_USE_CXX11
 #include <initializer_list>
-#endif
 
 //-----------------------------------------------------------------------------
 // -- conduit  includes -- 
@@ -162,9 +160,6 @@ public:
                         {set(&values[0],values.size());}
 
     //-------------------------------------------------------------------------
-    #ifdef CONDUIT_USE_CXX11
-    //-------------------------------------------------------------------------
-    //-------------------------------------------------------------------------
     // -- set for std::initializer_list types ---
     //-------------------------------------------------------------------------
 
@@ -280,10 +275,6 @@ public:
     #ifndef CONDUIT_USE_DOUBLE
         DataArray &operator=(const std::initializer_list<double> &values);
     #endif
-
-    //-------------------------------------------------------------------------
-    #endif // end CONDUIT_USE_CXX11
-    //-------------------------------------------------------------------------
 
     /// signed integer arrays via DataArray
     void            set(const DataArray<int8>    &values);
