@@ -46,6 +46,7 @@ setup (name = 'conduit',
                  'conduit.relay',
                  'conduit.relay.io',
                  'conduit.relay.io.blueprint',
+                 'conduit.relay.io.silo',
                  'conduit.relay.mpi',
                  'conduit.relay.web'],
         cmdclass={'install_egg_info': SkipEggInfo})

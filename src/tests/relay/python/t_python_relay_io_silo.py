@@ -31,6 +31,7 @@ class Test_Relay_IO_Silo(unittest.TestCase):
                                       -2.0, 2.0,
                                       0.285, 0.01,
                                       data);
+
         data["state/cycle"] =0
         tbase = "tout_python_relay_io_silo_mesh_t1"
         tout = tbase + ".root"
