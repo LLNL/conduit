@@ -25,6 +25,10 @@ import conduit.relay.io.silo
 
 class Test_Relay_IO_Silo(unittest.TestCase):
     def test_relay_io_silo_write_read_mesh(self):
+        # only run if we have silo
+        if not relay.io.about()["protocols/conduit_silo"] == "enabled":
+            return
+
         data = Node()
         blueprint.mesh.examples.julia(200,200,
                                       -2.0, 2.0,
@@ -59,6 +63,10 @@ class Test_Relay_IO_Silo(unittest.TestCase):
         print(info)
 
     def test_relay_io_silo_save_load_mesh(self):
+        # only run if we have silo
+        if not relay.io.about()["protocols/conduit_silo"] == "enabled":
+            return
+
         data = Node()
         blueprint.mesh.examples.julia(200,200,
                                       -2.0, 2.0,
@@ -90,7 +98,7 @@ class Test_Relay_IO_Silo(unittest.TestCase):
         data["fields"].rename_child("iters", "mesh_iters")
         data["fields"]["mesh_iters"]["topology"] = "mesh_topo"
         data["state"]["domain_id"] = 0
-        
+
         data.diff(n_load[0],info)
         print(info)
 
