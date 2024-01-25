@@ -508,6 +508,7 @@ to_silo(const conduit::Node &field,
 void
 multi_buffer_by_element_to_uni_buffer_by_element(const conduit::Node &src_matset,
                                                  const conduit::Node &src_field,
+                                                 const std::string &dest_matset_name,
                                                  conduit::Node &dest_matset,
                                                  conduit::Node &dest_field,
                                                  const float64 epsilon)
@@ -523,7 +524,7 @@ multi_buffer_by_element_to_uni_buffer_by_element(const conduit::Node &src_matset
         // copy over info from the old field
         dest_field["association"].set(src_field["association"]);
         dest_field["topology"].set(src_field["topology"]);
-        dest_field["matset"].set(src_field["matset"]);
+        dest_field["matset"] = dest_matset_name;
         dest_field["values"].set(src_field["values"]);
     }
 
@@ -641,6 +642,7 @@ multi_buffer_by_element_to_uni_buffer_by_element(const conduit::Node &src_matset
 void
 uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &src_matset,
                                                  const conduit::Node &src_field,
+                                                 const std::string &dest_matset_name,
                                                  conduit::Node &dest_matset,
                                                  conduit::Node &dest_field)
 {
@@ -655,7 +657,7 @@ uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &src_matset
         // copy over info from the old field
         dest_field["association"].set(src_field["association"]);
         dest_field["topology"].set(src_field["topology"]);
-        dest_field["matset"].set(src_field["matset"]);
+        dest_field["matset"] = dest_matset_name;
         dest_field["values"].set(src_field["values"]);
     }
 
@@ -764,6 +766,7 @@ uni_buffer_by_element_to_multi_buffer_by_element(const conduit::Node &src_matset
 void
 uni_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_matset,
                                                   const conduit::Node &src_field,
+                                                  const std::string &dest_matset_name,
                                                   conduit::Node &dest_matset,
                                                   conduit::Node &dest_field)
 {
@@ -779,7 +782,7 @@ uni_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_matse
         // copy over info from the old field
         dest_field["association"].set(src_field["association"]);
         dest_field["topology"].set(src_field["topology"]);
-        dest_field["matset"].set(src_field["matset"]);
+        dest_field["matset"] = dest_matset_name;
         dest_field["values"].set(src_field["values"]);
     }
 
@@ -887,6 +890,7 @@ uni_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_matse
 void
 multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_matset,
                                                     const conduit::Node &src_field,
+                                                    const std::string &dest_matset_name,
                                                     conduit::Node &dest_matset,
                                                     conduit::Node &dest_field,
                                                     const float64 epsilon)
@@ -902,7 +906,7 @@ multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_mat
         // copy over info from the old field
         dest_field["association"].set(src_field["association"]);
         dest_field["topology"].set(src_field["topology"]);
-        dest_field["matset"].set(src_field["matset"]);
+        dest_field["matset"] = dest_matset_name;
         dest_field["values"].set(src_field["values"]);
     }
 
@@ -978,6 +982,7 @@ multi_buffer_by_element_to_multi_buffer_by_material(const conduit::Node &src_mat
 void
 multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_matset,
                                                     const conduit::Node &src_field,
+                                                    const std::string &dest_matset_name,
                                                     conduit::Node &dest_matset,
                                                     conduit::Node &dest_field)
 {
@@ -992,7 +997,7 @@ multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_mat
         // copy over info from the old field
         dest_field["association"].set(src_field["association"]);
         dest_field["topology"].set(src_field["topology"]);
-        dest_field["matset"].set(src_field["matset"]);
+        dest_field["matset"] = dest_matset_name;
         dest_field["values"].set(src_field["values"]);
     }
 
@@ -1108,6 +1113,7 @@ multi_buffer_by_material_to_multi_buffer_by_element(const conduit::Node &src_mat
 void
 multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matset,
                                                   const conduit::Node &src_field,
+                                                  const std::string &dest_matset_name,
                                                   conduit::Node &dest_matset,
                                                   conduit::Node &dest_field)
 {
@@ -1122,7 +1128,7 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
         // copy over info from the old field
         dest_field["association"].set(src_field["association"]);
         dest_field["topology"].set(src_field["topology"]);
-        dest_field["matset"].set(src_field["matset"]);
+        dest_field["matset"] = dest_matset_name;
         dest_field["values"].set(src_field["values"]);
     }
 
@@ -1297,6 +1303,7 @@ multi_buffer_by_material_to_uni_buffer_by_element(const conduit::Node &src_matse
 void
 to_multi_buffer_full(const conduit::Node &src_matset,
                      const conduit::Node &src_field,
+                     const std::string &dest_matset_name,
                      conduit::Node &dest_matset,
                      conduit::Node &dest_field)
 {
@@ -1306,12 +1313,15 @@ to_multi_buffer_full(const conduit::Node &src_matset,
         // nothing to do
         dest_matset.set(src_matset);
         dest_field.set(src_field);
+        dest_field["matset"].reset();
+        dest_field["matset"] = dest_matset_name;
     }
     // sparse_by_element
     else if (is_element_dominant(src_matset))
     {
         detail::uni_buffer_by_element_to_multi_buffer_by_element(src_matset, 
                                                                  src_field, 
+                                                                 dest_matset_name,
                                                                  dest_matset,
                                                                  dest_field);
     }
@@ -1320,6 +1330,7 @@ to_multi_buffer_full(const conduit::Node &src_matset,
     {
         detail::multi_buffer_by_material_to_multi_buffer_by_element(src_matset,
                                                                     src_field,
+                                                                    dest_matset_name,
                                                                     dest_matset,
                                                                     dest_field);
     }
@@ -1333,6 +1344,7 @@ to_multi_buffer_full(const conduit::Node &src_matset,
 void
 to_sparse_by_element(const conduit::Node &src_matset,
                      const conduit::Node &src_field,
+                     const std::string &dest_matset_name,
                      conduit::Node &dest_matset,
                      conduit::Node &dest_field,
                      const float64 epsilon)
@@ -1342,6 +1354,7 @@ to_sparse_by_element(const conduit::Node &src_matset,
     {
         detail::multi_buffer_by_element_to_uni_buffer_by_element(src_matset, 
                                                                  src_field,
+                                                                 dest_matset_name,
                                                                  dest_matset, 
                                                                  dest_field,
                                                                  epsilon);
@@ -1352,12 +1365,15 @@ to_sparse_by_element(const conduit::Node &src_matset,
         // nothing to do
         dest_matset.set(src_matset);
         dest_field.set(src_field);
+        dest_field["matset"].reset();
+        dest_field["matset"] = dest_matset_name;
     }
     // sparse_by_material
     else if (is_material_dominant(src_matset))
     {
         detail::multi_buffer_by_material_to_uni_buffer_by_element(src_matset,
                                                                   src_field,
+                                                                  dest_matset_name,
                                                                   dest_matset,
                                                                   dest_field);
     }
@@ -1371,6 +1387,7 @@ to_sparse_by_element(const conduit::Node &src_matset,
 void
 to_multi_buffer_by_material(const conduit::Node &src_matset,
                             const conduit::Node &src_field,
+                            const std::string &dest_matset_name,
                             conduit::Node &dest_matset,
                             conduit::Node &dest_field,
                             const float64 epsilon)
@@ -1380,6 +1397,7 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
     {
         detail::multi_buffer_by_element_to_multi_buffer_by_material(src_matset, 
                                                                     src_field,
+                                                                    dest_matset_name,
                                                                     dest_matset, 
                                                                     dest_field,
                                                                     epsilon);
@@ -1389,6 +1407,7 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
     {
         detail::uni_buffer_by_element_to_multi_buffer_by_material(src_matset,
                                                                   src_field,
+                                                                  dest_matset_name,
                                                                   dest_matset,
                                                                   dest_field);
     }
@@ -1398,6 +1417,8 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
         // nothing to do
         dest_matset.set(src_matset);
         dest_field.set(src_field);
+        dest_field["matset"].reset();
+        dest_field["matset"] = dest_matset_name;
     }
     else
     {
@@ -1447,9 +1468,11 @@ to_multi_buffer_full(const conduit::Node &src_matset,
     }
 
     conduit::Node src_field, dest_field;
+    std::string dest_matset_name = "";
 
     detail::to_multi_buffer_full(src_matset,
                                  src_field,
+                                 dest_matset_name,
                                  dest_matset,
                                  dest_field);
 }
@@ -1468,9 +1491,11 @@ to_sparse_by_element(const conduit::Node &src_matset,
     }
 
     conduit::Node src_field, dest_field;
+    std::string dest_matset_name = "";
 
     detail::to_sparse_by_element(src_matset,
                                  src_field,
+                                 dest_matset_name,
                                  dest_matset,
                                  dest_field,
                                  epsilon);
@@ -1490,9 +1515,11 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
     }
 
     conduit::Node src_field, dest_field;
+    std::string dest_matset_name = "";
 
     detail::to_multi_buffer_by_material(src_matset,
                                         src_field,
+                                        dest_matset_name,
                                         dest_matset,
                                         dest_field,
                                         epsilon);
@@ -1544,6 +1571,7 @@ to_silo(const conduit::Node &field,
 void
 to_multi_buffer_full(const conduit::Node &src_matset,
                      const conduit::Node &src_field,
+                     const std::string &dest_matset_name,
                      conduit::Node &dest_matset,
                      conduit::Node &dest_field)
 {
@@ -1562,6 +1590,7 @@ to_multi_buffer_full(const conduit::Node &src_matset,
 
     conduit::blueprint::mesh::matset::detail::to_multi_buffer_full(src_matset,
                                                                    src_field,
+                                                                   dest_matset_name,
                                                                    dest_matset,
                                                                    dest_field);
 }
@@ -1570,6 +1599,7 @@ to_multi_buffer_full(const conduit::Node &src_matset,
 void
 to_sparse_by_element(const conduit::Node &src_matset,
                      const conduit::Node &src_field,
+                     const std::string &dest_matset_name,
                      conduit::Node &dest_matset,
                      conduit::Node &dest_field,
                      const float64 epsilon)
@@ -1589,6 +1619,7 @@ to_sparse_by_element(const conduit::Node &src_matset,
 
     conduit::blueprint::mesh::matset::detail::to_sparse_by_element(src_matset,
                                                                    src_field,
+                                                                   dest_matset_name,
                                                                    dest_matset,
                                                                    dest_field,
                                                                    epsilon);
@@ -1598,6 +1629,7 @@ to_sparse_by_element(const conduit::Node &src_matset,
 void
 to_multi_buffer_by_material(const conduit::Node &src_matset,
                             const conduit::Node &src_field,
+                            const std::string &dest_matset_name,
                             conduit::Node &dest_matset,
                             conduit::Node &dest_field,
                             const float64 epsilon)
@@ -1617,6 +1649,7 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
 
     conduit::blueprint::mesh::matset::detail::to_multi_buffer_by_material(src_matset,
                                                                           src_field,
+                                                                          dest_matset_name,
                                                                           dest_matset,
                                                                           dest_field,
                                                                           epsilon);
