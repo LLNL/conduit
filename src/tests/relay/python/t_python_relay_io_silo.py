@@ -34,7 +34,7 @@ class Test_Relay_IO_Silo(unittest.TestCase):
 
         data["state/cycle"] =0
         tbase = "tout_python_relay_io_silo_mesh_t1"
-        tout = tbase + ".root"
+        tout = tbase + ".cycle_000000.root"
         if os.path.isfile(tout):
             os.remove(tout)
         print("saving to {0}".format(tout))
@@ -44,8 +44,18 @@ class Test_Relay_IO_Silo(unittest.TestCase):
         n_load = Node()
         info = Node()
         relay.io.silo.read_mesh(n_load, tout)
-        print(n_load)
-        data.diff(n_load,info)
+
+        print(n_load[0])
+
+        # make changes for clean diff
+        data["coordsets"].rename_child("coords", "mesh_topo")
+        data["topologies"].rename_child("topo", "mesh_topo")
+        data["topologies"]["mesh_topo"]["coordset"] = "mesh_topo"
+        data["fields"].rename_child("iters", "mesh_iters")
+        data["fields"]["mesh_iters"]["topology"] = "mesh_topo"
+        data["state"]["domain_id"] = 0
+
+        data.diff(n_load[0],info)
         print(info)
 
     def test_relay_io_silo_save_load_mesh(self):
@@ -57,7 +67,7 @@ class Test_Relay_IO_Silo(unittest.TestCase):
                                       data);
         data["state/cycle"] =0
         tbase = "tout_python_relay_io_silo_mesh_t1"
-        tout = tbase + ".root"
+        tout = tbase + ".cycle_000000.root"
         if os.path.isfile(tout):
             os.remove(tout)
         print("saving to {0}".format(tout))
@@ -71,8 +81,17 @@ class Test_Relay_IO_Silo(unittest.TestCase):
         # with load sematics, the input node is cleared, so this 
         # child should no longer exist
         self.assertFalse(n_load.has_child("HERE_IS_SOMETHING_BEFORE_WE_LOAD"))
-        print(n_load)
-        data.diff(n_load,info)
+        print(n_load[0])
+
+        # make changes for clean diff
+        data["coordsets"].rename_child("coords", "mesh_topo")
+        data["topologies"].rename_child("topo", "mesh_topo")
+        data["topologies"]["mesh_topo"]["coordset"] = "mesh_topo"
+        data["fields"].rename_child("iters", "mesh_iters")
+        data["fields"]["mesh_iters"]["topology"] = "mesh_topo"
+        data["state"]["domain_id"] = 0
+        
+        data.diff(n_load[0],info)
         print(info)
 
 if __name__ == '__main__':

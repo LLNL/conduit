@@ -36,6 +36,9 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_blueprint_python
                                          ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
                            FOLDER        libs/python)
 
+# link with the proper libs (beyond python)
+target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint conduit_python_build)
+
 # add relay io silo submodule
 PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_silo_python
                            DEST_DIR      python-modules
@@ -45,8 +48,7 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_silo_python
                            FOLDER        libs/python)
 
 # link with the proper libs (beyond python)
-target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint conduit_python_build)
-
+target_link_libraries(conduit_relay_io_silo_python conduit conduit_relay conduit_blueprint conduit_python_build)
 
 if(ENABLE_RELAY_WEBSERVER)
     # add relay web submodule
