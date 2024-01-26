@@ -799,6 +799,31 @@ namespace field
                                               std::map<std::string, std::string>& matset_names);
 
     //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_full(const conduit::Node &src_matset,
+                                                    const conduit::Node &src_field,
+                                                    const std::string &dest_matset_name,
+                                                    conduit::Node &dest_matset,
+                                                    conduit::Node &dest_field);
+
+    //-------------------------------------------------------------------------
+    // creates a unibuffer case with 1st index into elements
+    void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
+                                                    const conduit::Node &src_field,
+                                                    const std::string &dest_matset_name,
+                                                    conduit::Node &dest_matset,
+                                                    conduit::Node &dest_field,
+                                                    const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
+    // covers both the sparse and non sparse case
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_by_material(const conduit::Node &src_matset,
+                                                           const conduit::Node &src_field,
+                                                           const std::string &dest_matset_name,
+                                                           conduit::Node &dest_matset,
+                                                           conduit::Node &dest_field,
+                                                           const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
     // Given a blueprint field and matset, converts the matset and the field
     // values + matset_values to the silo style sparse mixed slot
     // representation.
