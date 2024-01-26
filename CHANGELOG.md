@@ -14,6 +14,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
+- Added `conduit.relay.io.silo` to the Python interface.
 
 #### Blueprint
 - Added a `conduit::blueprint::mesh::examples::tiled()` function that can generate meshes by repeating a tiled pattern.
