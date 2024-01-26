@@ -6,5 +6,13 @@
 # file: __init__.py
 # Purpose: Main init for the conduit relay io module.
 ###############################################################################
-from .conduit_relay_io_silo_python import *
+
+
+
+# silo support is optional, so drive on if we can't import
+try:
+    from .conduit_relay_io_silo_python import *
+except:
+    pass
+
 
