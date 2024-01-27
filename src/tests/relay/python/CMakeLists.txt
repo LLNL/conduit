@@ -8,6 +8,7 @@
 set(PYTHON_MODULE_TESTS t_python_relay_smoke
                         t_python_relay_io
                         t_python_relay_io_blueprint
+                        t_python_relay_io_silo
                         t_python_relay_io_handle)
 
 set(PYTHON_MODULE_RELAY_WEB_TESTS t_python_relay_web)
