@@ -1377,11 +1377,10 @@ bool
 read_variable_domain_helper(const T *var_ptr,
                             const std::string &var_name,
                             const std::string &multimesh_name,
-                            const std::string &multivar_name,
                             const int vartype,
                             const std::string &bottom_level_mesh_name,
                             const std::string &volume_dependent,
-                            Node &mesh_out)
+                            Node &intermediate_field)
 {
     // If we cannot fetch this var we will skip
     if (!var_ptr)
@@ -1416,29 +1415,26 @@ read_variable_domain_helper(const T *var_ptr,
         return false;
     }
 
-    // create an entry for this field in the output
-    Node &field_out = mesh_out["fields"][multivar_name];
-
-    field_out["topology"] = multimesh_name;
+    intermediate_field["topology"] = multimesh_name;
 
     // handle association
     if (vartype == DB_UCDVAR)
     {
-        field_out["association"] = var_ptr->centering == DB_ZONECENT ? "element" : "vertex";
+        intermediate_field["association"] = var_ptr->centering == DB_ZONECENT ? "element" : "vertex";
     }
     else if (vartype == DB_QUADVAR)
     {
-        field_out["association"] = var_ptr->centering == DB_NODECENT ? "vertex" : "element";
+        intermediate_field["association"] = var_ptr->centering == DB_NODECENT ? "vertex" : "element";
     }
     else // if (vartype == DB_POINTVAR)
     {
-        field_out["association"] = "vertex";
+        intermediate_field["association"] = "vertex";
     }
 
     // if we have volume dependence we can track it
     if (! volume_dependent.empty())
     {
-        field_out["volume_dependent"] = volume_dependent;
+        intermediate_field["volume_dependent"] = volume_dependent;
     }
 
     // TODO investigate the dims, major_order, and stride for vars. Should match the mesh;
@@ -1448,7 +1444,7 @@ read_variable_domain_helper(const T *var_ptr,
                           var_ptr->nvals,
                           var_ptr->nels,
                           var_ptr->vals,
-                          field_out["values"]);
+                          intermediate_field["values"]);
 
     return true;
 }
@@ -1462,6 +1458,7 @@ read_variable_domain(const int vartype,
                      const std::string &multivar_name,
                      const std::string &bottom_level_mesh_name,
                      const std::string &volume_dependent,
+                     const std::string &opts_matset_type,
                      const Node &matset_field_reconstruction,
                      Node &mesh_out)
 {
@@ -1476,6 +1473,9 @@ read_variable_domain(const int vartype,
         return false;
     }
 
+    // create an intermediate field, in case we need to transform it later
+    Node intermediate_field;
+
     if (vartype == DB_UCDVAR)
     {
         // create ucd var
@@ -1484,14 +1484,14 @@ read_variable_domain(const int vartype,
             &DBFreeUcdvar};
 
         if (!read_variable_domain_helper<DBucdvar>(
-            ucdvar.getSiloObject(), var_name, multimesh_name, multivar_name,
-            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
+            ucdvar.getSiloObject(), var_name, multimesh_name,
+            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
         
         read_variable_domain_mixvals<DBucdvar>(ucdvar.getSiloObject(), 
-            var_name, mesh_out, mesh_out["fields"][multivar_name],
+            var_name, mesh_out, intermediate_field,
             matset_field_reconstruction);
     }
     else if (vartype == DB_QUADVAR)
@@ -1502,14 +1502,14 @@ read_variable_domain(const int vartype,
             &DBFreeQuadvar};
 
         if (!read_variable_domain_helper<DBquadvar>(
-            quadvar.getSiloObject(), var_name, multimesh_name, multivar_name,
-            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
+            quadvar.getSiloObject(), var_name, multimesh_name,
+            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
 
         read_variable_domain_mixvals<DBquadvar>(quadvar.getSiloObject(), 
-            var_name, mesh_out, mesh_out["fields"][multivar_name],
+            var_name, mesh_out, intermediate_field,
             matset_field_reconstruction);
     }
     else if (vartype == DB_POINTVAR)
@@ -1520,8 +1520,8 @@ read_variable_domain(const int vartype,
             &DBFreeMeshvar};
 
         if (!read_variable_domain_helper<DBmeshvar>(
-            meshvar.getSiloObject(), var_name, multimesh_name, multivar_name,
-            vartype, bottom_level_mesh_name, volume_dependent, mesh_out))
+            meshvar.getSiloObject(), var_name, multimesh_name,
+            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1529,6 +1529,45 @@ read_variable_domain(const int vartype,
     else
     {
         CONDUIT_ERROR("Unsupported variable type " << vartype);
+    }
+
+    // create an entry for this field in the output
+    Node &field_out = mesh_out["fields"][multivar_name];
+
+    if (intermediate_field.has_child("matset"))
+    {
+        std::string matset_name = intermediate_field["matset"].as_string();
+
+        // collect the sparse by element matset we generated
+        const Node &original_matset = matset_field_reconstruction["original_matset"];
+
+        // a throwaway to make the transform happy
+        Node dest_matset;
+
+        if (opts_matset_type == "default" || opts_matset_type == "sparse_by_element")
+        {
+            field_out.set(intermediate_field);
+        }
+        else if (opts_matset_type == "multi_buffer_full")
+        {
+            conduit::blueprint::mesh::field::to_multi_buffer_full(original_matset,
+                                                                  intermediate_field,
+                                                                  matset_name,
+                                                                  dest_matset,
+                                                                  field_out);
+        }
+        else // "multi_buffer_by_material"
+        {
+            conduit::blueprint::mesh::field::to_multi_buffer_by_material(original_matset,
+                                                                         intermediate_field,
+                                                                         matset_name,
+                                                                         dest_matset,
+                                                                         field_out);
+        }
+    }
+    else
+    {
+        field_out.set(intermediate_field);
     }
 
     return true;
@@ -1542,6 +1581,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                    const std::string &multimesh_name,
                    const std::string &multimat_name,
                    const std::string &bottom_level_mesh_name,
+                   const std::string &opts_matset_type,
                    Node &matset_field_reconstruction,
                    Node &mesh_out)
 {
@@ -1589,15 +1629,14 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         "We currently do not support this case. Either contact a Conduit developer" <<
         " or disable DBOPT_ALLOWMAT0 in calls to DBPutMaterial().");
 
-    // create an entry for this matset in the output
-    Node &matset_out = mesh_out["matsets"][multimat_name];
+    // create an intermediate matset, in case we need to transform it later
+    Node intermediate_matset;
 
-    matset_out["topology"] = multimesh_name;
+    intermediate_matset["topology"] = multimesh_name;
 
-    // we are choosing to do sparse by element
-    // TODO later support sparse by material and full
+    // we read into sparse by element, then use transforms to modify later if requested
 
-    Node &material_map = matset_out["material_map"];
+    Node &material_map = intermediate_matset["material_map"];
     // if we have material map information from the multimat, we want to use that instead
     if (n_matset.has_child("material_map"))
     {
@@ -1747,14 +1786,31 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     // TODO find colmajor data to test this
     // TODO are there other places where I'm reading where things could be rowmajor or colmajor
 
-    matset_out["material_ids"].set(material_ids.data(), material_ids.size());
-    matset_out["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
-    matset_out["sizes"].set(sizes.data(), sizes.size());
-    matset_out["offsets"].set(offsets.data(), offsets.size());
+    intermediate_matset["material_ids"].set(material_ids.data(), material_ids.size());
+    intermediate_matset["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
+    intermediate_matset["sizes"].set(sizes.data(), sizes.size());
+    intermediate_matset["offsets"].set(offsets.data(), offsets.size());
 
     matset_field_reconstruction["recipe"].set(field_reconstruction_recipe.data(), 
                                     field_reconstruction_recipe.size());
     matset_field_reconstruction["sizes"].set(sizes.data(), sizes.size());
+    matset_field_reconstruction["original_matset"].set(intermediate_matset);
+
+    // create an entry for this matset in the output
+    Node &matset_out = mesh_out["matsets"][multimat_name];
+
+    if (opts_matset_type == "default" || opts_matset_type == "sparse_by_element")
+    {
+        matset_out.set(intermediate_matset);
+    }
+    else if (opts_matset_type == "multi_buffer_full")
+    {
+        conduit::blueprint::mesh::matset::to_multi_buffer_full(intermediate_matset, matset_out);
+    }
+    else // "multi_buffer_by_material"
+    {
+        conduit::blueprint::mesh::matset::to_multi_buffer_by_material(intermediate_matset, matset_out);
+    }
 
     return true;
 }
@@ -2421,7 +2477,7 @@ read_root_silo_index(const std::string &root_file_path,
     }
 
     // decide what multimesh to extract
-    if(opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
+    if (opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
     {
         multimesh_name = opts["mesh_name"].as_string();
     }
@@ -2484,6 +2540,27 @@ read_root_silo_index(const std::string &root_file_path,
                         multimesh_name,
                         root_node);
 
+    // Get the selected matset flavor
+    if (opts.has_child("matset_type") && opts["matset_type"].dtype().is_string())
+    {
+        std::string opts_matset_type = opts["matset_type"].as_string();
+        if (opts_matset_type != "default" && 
+            opts_matset_type != "multi_buffer_full" &&
+            opts_matset_type != "sparse_by_element" &&
+            opts_matset_type != "multi_buffer_by_material")
+        {
+            CONDUIT_INFO("read_mesh invalid matset_type option: \"" 
+                         << opts_matset_type << "\"\n"
+                         " expected: \"default\", \"multi_buffer_full\", "
+                         "\"sparse_by_element\", or \"multi_buffer_by_material\"");
+        }
+        else
+        {
+            root_node[multimesh_name]["matset_type"] = opts_matset_type;
+        }
+
+    }
+
     // our silo index should look like this:
 
     // mesh:
@@ -2521,6 +2598,7 @@ read_root_silo_index(const std::string &root_file_path,
     //             c: 0
     //             ...
     //       ...
+    //    matset_type: "default", OR "multi_buffer_full", OR "sparse_by_element", OR "multi_buffer_by_material"
 
     return true;
 }
@@ -2531,6 +2609,10 @@ read_root_silo_index(const std::string &root_file_path,
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
+///
+///      matset_type: "default", "multi_buffer_full", "sparse_by_element", 
+///            "multi_buffer_by_material"
+///            "default"   ==> "sparse_by_element"
 ///
 /// note: we have made the choice to read ONLY the multimesh with the name
 /// mesh_name. We also read all multivariables which are associated with the
@@ -2643,6 +2725,12 @@ read_mesh(const std::string &root_file_path,
     domain_start = rank_offset;
     domain_end = rank_offset + read_size;
 #endif
+
+    std::string opts_matset_type = "default";
+    if (mesh_index.has_child("matset_type"))
+    {
+        opts_matset_type = mesh_index["matset_type"].as_string();
+    }
 
     bool mesh_nameschemes = false;
     if (mesh_index.has_child("nameschemes") &&
@@ -2797,7 +2885,7 @@ read_mesh(const std::string &root_file_path,
                 // be one matset in our newly created blueprint mesh.
                 if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
                                        multimesh_name, multimat_name, bottom_level_mesh_name,
-                                       matset_field_reconstruction, mesh_out))
+                                       opts_matset_type, matset_field_reconstruction, mesh_out))
                 {
                     break;
                 }
@@ -2865,7 +2953,8 @@ read_mesh(const std::string &root_file_path,
                 // last thing in the loop iteration
                 read_variable_domain(vartype, var_domain_file_to_use, var_name,
                     multimesh_name, multivar_name, bottom_level_mesh_name,
-                    volume_dependent, matset_field_reconstruction, mesh_out);
+                    volume_dependent, opts_matset_type,
+                    matset_field_reconstruction, mesh_out);
             }
         }
     }
@@ -2898,6 +2987,10 @@ void load_mesh(const std::string &root_file_path,
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
+///
+///      matset_type: "default", "multi_buffer_full", "sparse_by_element", 
+///            "multi_buffer_by_material"
+///            "default"   ==> "sparse_by_element"
 ///
 /// note: we have made the choice to read ONLY the multimesh with the name
 /// mesh_name. We also read all multivariables which are associated with the

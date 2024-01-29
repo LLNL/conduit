@@ -978,6 +978,10 @@ TEST(conduit_relay_io_silo, unstructured_points)
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
+///
+///      matset_type: "default", "multi_buffer_full", "sparse_by_element", 
+///            "multi_buffer_by_material"
+///            "default"   ==> "sparse_by_element"
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
