@@ -1458,7 +1458,7 @@ read_variable_domain(const int vartype,
                      const std::string &multivar_name,
                      const std::string &bottom_level_mesh_name,
                      const std::string &volume_dependent,
-                     const std::string &opts_matset_type,
+                     const std::string &opts_matset_style,
                      const Node &matset_field_reconstruction,
                      Node &mesh_out)
 {
@@ -1544,11 +1544,11 @@ read_variable_domain(const int vartype,
         // a throwaway to make the transform happy
         Node dest_matset;
 
-        if (opts_matset_type == "default" || opts_matset_type == "sparse_by_element")
+        if (opts_matset_style == "default" || opts_matset_style == "sparse_by_element")
         {
             field_out.set(intermediate_field);
         }
-        else if (opts_matset_type == "multi_buffer_full")
+        else if (opts_matset_style == "multi_buffer_full")
         {
             conduit::blueprint::mesh::field::to_multi_buffer_full(original_matset,
                                                                   intermediate_field,
@@ -1581,7 +1581,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                    const std::string &multimesh_name,
                    const std::string &multimat_name,
                    const std::string &bottom_level_mesh_name,
-                   const std::string &opts_matset_type,
+                   const std::string &opts_matset_style,
                    Node &matset_field_reconstruction,
                    Node &mesh_out)
 {
@@ -1799,11 +1799,11 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     // create an entry for this matset in the output
     Node &matset_out = mesh_out["matsets"][multimat_name];
 
-    if (opts_matset_type == "default" || opts_matset_type == "sparse_by_element")
+    if (opts_matset_style == "default" || opts_matset_style == "sparse_by_element")
     {
         matset_out.set(intermediate_matset);
     }
-    else if (opts_matset_type == "multi_buffer_full")
+    else if (opts_matset_style == "multi_buffer_full")
     {
         conduit::blueprint::mesh::matset::to_multi_buffer_full(intermediate_matset, matset_out);
     }
@@ -2541,22 +2541,22 @@ read_root_silo_index(const std::string &root_file_path,
                         root_node);
 
     // Get the selected matset flavor
-    if (opts.has_child("matset_type") && opts["matset_type"].dtype().is_string())
+    if (opts.has_child("matset_style") && opts["matset_style"].dtype().is_string())
     {
-        std::string opts_matset_type = opts["matset_type"].as_string();
-        if (opts_matset_type != "default" && 
-            opts_matset_type != "multi_buffer_full" &&
-            opts_matset_type != "sparse_by_element" &&
-            opts_matset_type != "multi_buffer_by_material")
+        std::string opts_matset_style = opts["matset_style"].as_string();
+        if (opts_matset_style != "default" && 
+            opts_matset_style != "multi_buffer_full" &&
+            opts_matset_style != "sparse_by_element" &&
+            opts_matset_style != "multi_buffer_by_material")
         {
-            CONDUIT_INFO("read_mesh invalid matset_type option: \"" 
-                         << opts_matset_type << "\"\n"
+            CONDUIT_INFO("read_mesh invalid matset_style option: \"" 
+                         << opts_matset_style << "\"\n"
                          " expected: \"default\", \"multi_buffer_full\", "
                          "\"sparse_by_element\", or \"multi_buffer_by_material\"");
         }
         else
         {
-            root_node[multimesh_name]["matset_type"] = opts_matset_type;
+            root_node[multimesh_name]["matset_style"] = opts_matset_style;
         }
 
     }
@@ -2598,7 +2598,7 @@ read_root_silo_index(const std::string &root_file_path,
     //             c: 0
     //             ...
     //       ...
-    //    matset_type: "default", OR "multi_buffer_full", OR "sparse_by_element", OR "multi_buffer_by_material"
+    //    matset_style: "default", OR "multi_buffer_full", OR "sparse_by_element", OR "multi_buffer_by_material"
 
     return true;
 }
@@ -2610,7 +2610,7 @@ read_root_silo_index(const std::string &root_file_path,
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
 ///
-///      matset_type: "default", "multi_buffer_full", "sparse_by_element", 
+///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
 ///
@@ -2726,10 +2726,10 @@ read_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
-    std::string opts_matset_type = "default";
-    if (mesh_index.has_child("matset_type"))
+    std::string opts_matset_style = "default";
+    if (mesh_index.has_child("matset_style"))
     {
-        opts_matset_type = mesh_index["matset_type"].as_string();
+        opts_matset_style = mesh_index["matset_style"].as_string();
     }
 
     bool mesh_nameschemes = false;
@@ -2885,7 +2885,7 @@ read_mesh(const std::string &root_file_path,
                 // be one matset in our newly created blueprint mesh.
                 if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
                                        multimesh_name, multimat_name, bottom_level_mesh_name,
-                                       opts_matset_type, matset_field_reconstruction, mesh_out))
+                                       opts_matset_style, matset_field_reconstruction, mesh_out))
                 {
                     break;
                 }
@@ -2953,7 +2953,7 @@ read_mesh(const std::string &root_file_path,
                 // last thing in the loop iteration
                 read_variable_domain(vartype, var_domain_file_to_use, var_name,
                     multimesh_name, multivar_name, bottom_level_mesh_name,
-                    volume_dependent, opts_matset_type,
+                    volume_dependent, opts_matset_style,
                     matset_field_reconstruction, mesh_out);
             }
         }
@@ -2988,7 +2988,7 @@ void load_mesh(const std::string &root_file_path,
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
 ///
-///      matset_type: "default", "multi_buffer_full", "sparse_by_element", 
+///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
 ///
