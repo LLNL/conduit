@@ -14,6 +14,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Relay
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
+- Added `conduit.relay.io.silo` to the Python interface.
 
 #### Blueprint
 - Added a `conduit::blueprint::mesh::examples::tiled()` function that can generate meshes by repeating a tiled pattern.
@@ -28,23 +29,35 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `conduit::blueprint::mesh::utils::convert()` function that converts a list of nodes to a desired data type.
 - Added a `conduit::blueprint::mesh::generate_boundary_partition_field()` function that can take a topology and a partition field and generate a field for a related boundary topology. This is helpful when partitioning a boundary topology in the same manner as its parent topology.
 - Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
-
+- Added `conduit::blueprint::mesh::utils::adjset::to_topo()` function to make new point mesh topologies for each group of an adjacency set. This permits each group to be visualized as a set of points in VisIt. The groups for each side of the domain interface can be compared since they are separate point meshes.
+- Added `conduit::blueprint::mesh::utils::adjset::is_canonical()` function to check whether the group names in an adjacency set are canonical.
 
 ### Changed
 
 #### General
+- Conduit now requires C++14 and CMake 3.21 or newer.
 - Improved the efficiency of json parsing logic.
 - The `conduit_relay_io_convert` program was enhanced so it can read/write Blueprint root files by passing _"blueprint"_ for the read or write protocols.
+- The `conduit_adjset_validate` program now writes a point mesh for each adjset groups if the _-output_ argument is supplied.
+- Updated to BLT 0.6.1
 
 #### Blueprint
 - The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
+- The `conduit::blueprint::mesh::utils::ShapeType` class was enhanced so it can take topologies other than unstructured.
+- The `conduit::blueprint::mesh::utils::topology::unstructured::points()` function was changed so it takes an optional argument that can turn off point uniqueness and sorting so the method can return points for an element as they appear in the connectivity, for non-polyhedral shapes.
 
 ### Fixed
+
+#### General
+- The Fortran `node` procedures for fetching integer pointers are now associated with the correct routines.
 
 #### Blueprint
 - The `conduit::blueprint::mesh::partition()` function no longer issues an error when it receives a "maxshare" adjset.
 - The partitioner is better about outputting a "material_map" node for matsets. The "material_map" node is optional for some varieties of matset but they can also help the `conduit::blueprint::mesh::matset::to_silo()` function generate the right material numbers when a domain does not contain all materials.
 - The `conduit::Node::swap()` and `conduit::Node::move()` functions no longer cause node names to disappear.
+- The `conduit::blueprint::mesh::utils::kdtree` could erroneously return that points were not found when one of the coordset dimensions had a very narrow range of values. This could happen with planar 2D geometries embedded in 3D, such as inside a `MatchQuery` during adjacency set creation.
+- The `conduit::blueprint::mpi::mesh::generate_partition_field()` function was not treating polyhedral topologies correctly, leading to unusable partitioning fields.
+- The point merging algorithm in the Blueprint partitioner was corrected so it should no longer produce occasional duplicate points when merging coordsets.
 
 ## [0.8.8] - Released 2023-05-18
 

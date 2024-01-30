@@ -15,7 +15,6 @@
 #include "conduit_utils.hpp"
 #include "conduit_schema.hpp"
 
-#ifdef CONDUIT_USE_CXX11
 //-----------------------------------------------------------------------------
 // Sanity checks of conduit types vs C++11 Types
 //-----------------------------------------------------------------------------
@@ -51,8 +50,6 @@ static_assert(std::is_same<conduit_uint32, std::uint32_t>::value,
 
 static_assert(std::is_same<conduit_uint64, std::uint64_t>::value,
               "error: conduit_uint64 != std::uint64_t");
-
-#endif
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

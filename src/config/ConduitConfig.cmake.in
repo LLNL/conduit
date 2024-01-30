@@ -12,7 +12,7 @@
 ###############################################################################
 
 
-cmake_minimum_required(VERSION 3.0 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.8 FATAL_ERROR)
 
 @PACKAGE_INIT@
 
@@ -27,7 +27,9 @@ if(NOT CONDUIT_FOUND)
     endif()
 
     set(CONDUIT_VERSION "@PROJECT_VERSION@")
+    # keep CONDUIT_USE_CXX11 to support old install logic
     set(CONDUIT_USE_CXX11   "@CONDUIT_USE_CXX11@")
+    set(CONDUIT_USE_CXX14   "@CONDUIT_USE_CXX14@")
     set(CONDUIT_USE_FMT     "@CONDUIT_USE_FMT@")
     set(CONDUIT_USE_CALIPER "@CONDUIT_USE_CALIPER@")
     set(CONDUIT_USE_OPENMP  "@ENABLE_OPENMP@")

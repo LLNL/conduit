@@ -66,7 +66,7 @@ silo_name_changer(const std::string &mmesh_name,
     if (! save_mesh.has_path("state/cycle"))
     {
         // this is to pass the diff, as silo will add cycle in if it is not there
-        save_mesh["state/cycle"] = (int64) 0;
+        save_mesh["state/cycle"] = 0;
     }
 
     if (save_mesh.has_child("topologies"))
@@ -217,7 +217,7 @@ overlink_name_changer(conduit::Node &save_mesh)
     }
     if (! save_mesh.has_path("state/cycle"))
     {
-        save_mesh["state/cycle"] = (int64) 0;
+        save_mesh["state/cycle"] = 0;
     }
 
     // we assume 1 coordset and 1 topo
@@ -236,6 +236,24 @@ overlink_name_changer(conduit::Node &save_mesh)
 
     // rename the topo
     topologies.rename_child(topo_name, "MMESH");
+
+    if (save_mesh.has_child("adjsets"))
+    {
+        // we assume 1 adjset
+        Node &n_adjset = save_mesh["adjsets"].children().next();
+        std::string adjset_name = n_adjset.name();
+
+        // use new topo name
+        n_adjset["topology"].reset();
+        n_adjset["topology"] = "MMESH";
+
+
+        if (adjset_name != "adjset")
+        {
+            // rename the adjset
+            save_mesh["adjsets"].rename_child(adjset_name, "adjset");
+        }
+    }
 
     if (save_mesh.has_child("matsets"))
     {
@@ -281,7 +299,6 @@ overlink_name_changer(conduit::Node &save_mesh)
 
             // there are only scalar variables for overlink so we do not
             // need to worry about renaming vector components.
-            // we need to rename vector components
             if (n_field["values"].dtype().is_object())
             {
                 CONDUIT_ERROR("Overlink only allows scalar variables. You are doing this wrong.");

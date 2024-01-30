@@ -52,14 +52,10 @@ find_package(Conduit REQUIRED
 include(SetupPython.cmake)
 
 ######
-# If Conduit was built with c++11 support, make sure we enable it
-# for our project.
+# Conduit requires c++14 support
 ######
-if(CONDUIT_USE_CXX11)
-    set(CMAKE_CXX_STANDARD 11)
-    set(CMAKE_CXX_STANDARD_REQUIRED ON)
-endif()
-
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 ##############################################################################
 # cpp to and from fortran example

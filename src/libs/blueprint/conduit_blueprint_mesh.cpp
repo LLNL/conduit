@@ -3390,7 +3390,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
 
 //-----------------------------------------------------------------------------
-void
+static void
 verify_generate_mesh(const conduit::Node &mesh,
                      const std::string &adjset_name)
 {
@@ -3400,14 +3400,22 @@ verify_generate_mesh(const conduit::Node &mesh,
         const Node &domain = *domains[di];
         Node info;
 
-        if(!domain["adjsets"].has_child(adjset_name))
+        if(!domain.has_path("adjsets"))
+        {
+            CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
+                          "Domain '" << domain.name() << "' lacks adjacency sets.");
+        }
+
+        const Node &n_adjsets = domain.fetch_existing("adjsets");
+
+        if(!n_adjsets.has_child(adjset_name))
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Requested source adjacency set '" << adjset_name << "' " <<
                           "doesn't exist on domain '" << domain.name() << ".'");
         }
 
-        if(domain["adjsets"][adjset_name]["association"].as_string() != "vertex")
+        if(n_adjsets[adjset_name]["association"].as_string() != "vertex")
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Given adjacency set has an unsupported association type 'element.'\n" <<
@@ -3415,7 +3423,7 @@ verify_generate_mesh(const conduit::Node &mesh,
                           "  'vertex'");
         }
 
-        const Node &adjset = domain["adjsets"][adjset_name];
+        const Node &adjset = n_adjsets[adjset_name];
         const Node *topo_ptr = bputils::find_reference_node(adjset, "topology");
         const Node &topo = *topo_ptr;
         if(!conduit::blueprint::mesh::topology::unstructured::verify(topo, info))
@@ -3428,7 +3436,6 @@ verify_generate_mesh(const conduit::Node &mesh,
         }
     }
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -4665,6 +4672,11 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4692,6 +4704,11 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
                                              Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
@@ -4754,7 +4771,12 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    // Retrieve Relevent Coordinate/Topology Metadata //
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
+    // Retrieve Relevant Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
     const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
@@ -5553,6 +5575,11 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo_src.has_path("type") && topo_src["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     std::string field_prefix = "";
     std::vector<std::string> field_names;
     const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
@@ -5654,6 +5681,11 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // Retrieve Relevent Coordinate/Topology Metadata //
 
@@ -7081,6 +7113,13 @@ mesh::adjset::to_maxshare(const Node &adjset,
     }
 
     bputils::adjset::canonicalize(dest);
+}
+
+//-----------------------------------------------------------------------------
+std::string
+mesh::adjset::group_prefix()
+{
+    return "group";
 }
 
 //-----------------------------------------------------------------------------

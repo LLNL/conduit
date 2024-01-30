@@ -636,8 +636,9 @@ adjset::validate(const Node &doms,
 }
 
 //-----------------------------------------------------------------------------
-bool
-adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MPI_Comm comm)
+static bool
+compare_pointwise_impl(conduit::Node &mesh, const std::string &adjsetName,
+    conduit::Node &info, MPI_Comm comm)
 {
     namespace bputils = conduit::blueprint::mesh::utils;
     std::vector<Node *> domains = conduit::blueprint::mesh::domains(mesh);
@@ -673,7 +674,7 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MP
         {
             // make the adjset group name.
             std::stringstream ss;
-            ss << "group_" << d0 << "_" << d1;
+            ss << conduit::blueprint::mesh::adjset::group_prefix() << "_" << d0 << "_" << d1;
             std::string groupName(ss.str());
 
             // There are up to 2 local meshes and their corresponding remote mesh.
@@ -707,7 +708,7 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MP
                     }
 
                     // Make the local point mesh.
-                    B.execute(localMesh[mi], "vertex");
+                    B.execute(localMesh[mi], "point");
 
                     // Get the neighbor for this group
                     std::string nkey("adjsets/" + adjsetName + "/groups/" + groupName + "/neighbors");
@@ -730,9 +731,16 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MP
             different = 0;
             for(int i = 0; i < mi; i++)
             {
-                Node info;
                 bool d = localMesh[i].diff(remoteMesh[i], info, 1.e-8);
                 different = different.to_int() + (d ? 1 : 0);
+
+                // Add some diagnostic info.
+                if(d)
+                {
+                    info["adjset"] = adjsetName;
+                    info["group"] = groupName;
+                    break;
+                }
             }
             relay::mpi::sum_all_reduce(different, reducedDiff, comm);
             if(reducedDiff.to_int() > 0)
@@ -740,6 +748,36 @@ adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName, MP
         }
     }
     return true;
+}
+
+//-----------------------------------------------------------------------------
+bool
+adjset::compare_pointwise(conduit::Node &mesh, const std::string &adjsetName,
+    conduit::Node &info, MPI_Comm comm)
+{
+    bool retval = true;
+    const std::string tempAdjsetName("__" + adjsetName + "__");
+
+    try
+    {
+        // Make sure we have a suitable adjset.
+        conduit::blueprint::mesh::utils::adjset::to_pairwise_canonical(mesh, adjsetName, tempAdjsetName);
+
+        // Call the real implementation on the temporary adjset.
+        retval = compare_pointwise_impl(mesh, tempAdjsetName, info, comm);
+
+        // Remove the adjset that was added.
+        conduit::blueprint::mesh::utils::adjset::remove(mesh, tempAdjsetName);
+    }
+    catch(...)
+    {
+        // Remove the adjset that was added.
+        conduit::blueprint::mesh::utils::adjset::remove(mesh, tempAdjsetName);
+        // Rethrow the exception.
+        throw;
+    }
+
+    return retval;
 }
 
 //-----------------------------------------------------------------------------

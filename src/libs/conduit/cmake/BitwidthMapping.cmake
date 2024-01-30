@@ -787,17 +787,14 @@ endmacro()
 # over `long`.
 #-----------------------------------------------------------------------------
 
-if(CONDUIT_USE_CXX11)
-    # note: this call assumes this file included from libs/conduit/CMakeLists.txt
-    try_compile( bitwidth_prefer_long_long   # result var
-                 ${CMAKE_CURRENT_BINARY_DIR}/cmake  # build dir
-                 SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_cxx11_check_if_long_long_is_std_int64.cpp
-                 OUTPUT_VARIABLE bitwidth_prefer_long_long_out
-                 CXX_STANDARD 11
-                 CXX_STANDARD_REQUIRED TRUE)
-else()
-    set(bitwidth_prefer_long_long FALSE)
-endif()
+# note: this call assumes this file included from libs/conduit/CMakeLists.txt
+try_compile( bitwidth_prefer_long_long   # result var
+             ${CMAKE_CURRENT_BINARY_DIR}/cmake  # build dir
+             SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/cmake/cmake_cxx11_check_if_long_long_is_std_int64.cpp
+             OUTPUT_VARIABLE bitwidth_prefer_long_long_out
+             CXX_STANDARD 11
+             CXX_STANDARD_REQUIRED TRUE)
+
 
 
 # map our types using the macros above
