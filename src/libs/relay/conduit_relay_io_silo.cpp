@@ -1546,7 +1546,7 @@ read_variable_domain(const int vartype,
 
         if (opts_matset_style == "default" || opts_matset_style == "sparse_by_element")
         {
-            field_out.set(intermediate_field);
+            field_out.move(intermediate_field);
         }
         else if (opts_matset_style == "multi_buffer_full")
         {
@@ -1567,7 +1567,7 @@ read_variable_domain(const int vartype,
     }
     else
     {
-        field_out.set(intermediate_field);
+        field_out.move(intermediate_field);
     }
 
     return true;
