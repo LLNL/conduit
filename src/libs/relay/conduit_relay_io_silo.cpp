@@ -2549,10 +2549,10 @@ read_root_silo_index(const std::string &root_file_path,
             opts_matset_style != "sparse_by_element" &&
             opts_matset_style != "multi_buffer_by_material")
         {
-            CONDUIT_INFO("read_mesh invalid matset_style option: \"" 
-                         << opts_matset_style << "\"\n"
-                         " expected: \"default\", \"multi_buffer_full\", "
-                         "\"sparse_by_element\", or \"multi_buffer_by_material\"");
+            CONDUIT_ERROR("read_mesh invalid matset_style option: \"" 
+                          << opts_matset_style << "\"\n"
+                          " expected: \"default\", \"multi_buffer_full\", "
+                          "\"sparse_by_element\", or \"multi_buffer_by_material\"");
         }
         else
         {
