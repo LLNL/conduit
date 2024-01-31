@@ -1794,22 +1794,32 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     matset_field_reconstruction["recipe"].set(field_reconstruction_recipe.data(), 
                                     field_reconstruction_recipe.size());
     matset_field_reconstruction["sizes"].set(sizes.data(), sizes.size());
-    matset_field_reconstruction["original_matset"].set(intermediate_matset);
 
     // create an entry for this matset in the output
     Node &matset_out = mesh_out["matsets"][multimat_name];
 
     if (opts_matset_style == "default" || opts_matset_style == "sparse_by_element")
     {
-        matset_out.set(intermediate_matset);
+        matset_out.move(intermediate_matset);
+
+        // matset out will live forever, so we can point to it
+        matset_field_reconstruction["original_matset"].set_external(matset_out);
     }
     else if (opts_matset_style == "multi_buffer_full")
     {
         conduit::blueprint::mesh::matset::to_multi_buffer_full(intermediate_matset, matset_out);
+        
+        // we only need to stash the matset for use in converters later if we need
+        // a different flavor of matset
+        matset_field_reconstruction["original_matset"].move(intermediate_matset);
     }
     else // "multi_buffer_by_material"
     {
         conduit::blueprint::mesh::matset::to_multi_buffer_by_material(intermediate_matset, matset_out);
+        
+        // we only need to stash the matset for use in converters later if we need
+        // a different flavor of matset
+        matset_field_reconstruction["original_matset"].move(intermediate_matset);
     }
 
     return true;
