@@ -1541,9 +1541,6 @@ read_variable_domain(const int vartype,
         // collect the sparse by element matset we generated
         const Node &original_matset = matset_field_reconstruction["original_matset"];
 
-        // a throwaway to make the transform happy
-        Node dest_matset;
-
         if (opts_matset_style == "default" || opts_matset_style == "sparse_by_element")
         {
             field_out.move(intermediate_field);
@@ -1553,7 +1550,6 @@ read_variable_domain(const int vartype,
             conduit::blueprint::mesh::field::to_multi_buffer_full(original_matset,
                                                                   intermediate_field,
                                                                   matset_name,
-                                                                  dest_matset,
                                                                   field_out);
         }
         else // "multi_buffer_by_material"
@@ -1561,7 +1557,6 @@ read_variable_domain(const int vartype,
             conduit::blueprint::mesh::field::to_multi_buffer_by_material(original_matset,
                                                                          intermediate_field,
                                                                          matset_name,
-                                                                         dest_matset,
                                                                          field_out);
         }
     }
