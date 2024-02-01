@@ -426,6 +426,9 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
                                SOURCES       ${args_SOURCES}
                                FOLDER        ${args_FOLDER})
 
+    # args_NAME depends on "${args_NAME}_py_setup"
+    add_dependencies( ${args_NAME} "${args_NAME}_py_setup")
+
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
 
