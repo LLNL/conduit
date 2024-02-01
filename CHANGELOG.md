@@ -11,8 +11,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### General
 - Added `conduit_json_external` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to `set_external()`.
 - Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
+- Added helpers that support enhanced debugging of Conduit Node objects in several debuggers.
 
 #### Relay
+- An extensive effort add Mesh Blueprint Silo I/O support including, including options for Overlink Silo conventions. This capability allows Silo files to be used as a close peer to the Blueprint HDF5 I/O options. 
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 - Added `conduit.relay.io.silo` to the Python interface.
 
@@ -31,6 +33,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
 - Added `conduit::blueprint::mesh::utils::adjset::to_topo()` function to make new point mesh topologies for each group of an adjacency set. This permits each group to be visualized as a set of points in VisIt. The groups for each side of the domain interface can be compared since they are separate point meshes.
 - Added `conduit::blueprint::mesh::utils::adjset::is_canonical()` function to check whether the group names in an adjacency set are canonical.
+- Added more Mesh Blueprint docs.
 
 ### Changed
 
