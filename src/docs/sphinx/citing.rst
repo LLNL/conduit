@@ -13,7 +13,7 @@ Conduit is supported by the Department of Energy with funding from the `Advanced
 
 If you would like to cite Conduit, please cite the 2022 Conduit ISAV Workshop Paper:
 
-`Conduit: A Successful Strategy for Describing and Sharing Data In Situ <https://doi.ieeecomputersociety.org/10.1109/ISAV56555.2022.00006>`_.
+`Conduit: A Successful Strategy for Describing and Sharing Data In Situ <https://doi.ieeecomputersociety.org/10.1109/ISAV56555.2022.00006>`_
 
 .. code::
 
