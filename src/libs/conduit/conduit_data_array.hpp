@@ -388,9 +388,8 @@ public:
 // -- stdout print methods ---
 //-----------------------------------------------------------------------------
     /// print a simplified json representation of the this node to std out
-    // TODO: change to to_summary_string?
     void            print() const
-                      {std::cout << to_json() << std::endl;}
+                      {std::cout << to_summary_string() << std::endl;}
 
 
 private:
