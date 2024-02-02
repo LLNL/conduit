@@ -43,6 +43,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - The `conduit_relay_io_convert` program was enhanced so it can read/write Blueprint root files by passing _"blueprint"_ for the read or write protocols.
 - The `conduit_adjset_validate` program now writes a point mesh for each adjset groups if the _-output_ argument is supplied.
 - Updated to BLT 0.6.1
+- Updated Python logic hybrid module build logic to use pip and setuptools. Removed use of distutils.
 
 #### Blueprint
 - The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
