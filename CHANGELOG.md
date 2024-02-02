@@ -12,9 +12,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `conduit_json_external` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to `set_external()`.
 - Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
 - Added helpers that support enhanced debugging of Conduit Node objects in several debuggers.
+- Added the ability to set values via a DataAccessor and DataAccessor to string methods.
+- Added explicit set methods to DataArray, and the ability to set DataArray values from a DataAccessor.
+
 
 #### Relay
-- An extensive effort add Mesh Blueprint Silo I/O support including, including options for Overlink Silo conventions. This capability allows Silo files to be used as a close peer to the Blueprint HDF5 I/O options. 
+- Added extensive Mesh Blueprint Silo I/O support including, including options for Overlink Silo conventions. This capability allows Silo files to be used as a close peer to the Blueprint HDF5 I/O options.
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 - Added `conduit.relay.io.silo` to the Python interface.
 
@@ -50,6 +53,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - The `conduit::blueprint::mesh::utils::ShapeType` class was enhanced so it can take topologies other than unstructured.
 - The `conduit::blueprint::mesh::utils::topology::unstructured::points()` function was changed so it takes an optional argument that can turn off point uniqueness and sorting so the method can return points for an element as they appear in the connectivity, for non-polyhedral shapes.
 - Removed deprecated use of `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. These cases now issue a `CONDUIT_ERROR`.
+- Removed `volume_dependent` entry in `specsets`. Species ratios and mass fractions are innately volume independent. 
 
 #### Relay
 - Relay Mesh Blueprint I/O methods (`conduit::relay::io::blueprint::{save,write}_mesh()``) now default to `hdf5` protocol if Conduit is built with `hdf5` support.
@@ -859,7 +863,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.8...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/llnl/conduit/compare/v0.8.8...v0.9.0
 [0.8.8]: https://github.com/llnl/conduit/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/llnl/conduit/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/llnl/conduit/compare/v0.8.5...v0.8.6
