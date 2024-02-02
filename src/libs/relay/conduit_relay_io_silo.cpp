@@ -4356,6 +4356,10 @@ void silo_write_matset(DBfile *dbfile,
                               matname_ptrs,
                               matnos);
 
+    // TODO put matset into mesh info so specset can use it...
+    // but what info do we need to save?
+    n_mesh_info["matsets"][matset_name]["nmat"] = nmat;
+
     // calculate dims
     int dims[] = {0,0,0};
     int ndims = 1;
@@ -4443,6 +4447,161 @@ void silo_write_matset(DBfile *dbfile,
 
     // bookkeeping
     detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
+}
+
+//---------------------------------------------------------------------------//
+void silo_write_specset(DBfile *dbfile,
+                        const std::string &specset_name,
+                        const Node &n_specset,
+                        const bool write_overlink,
+                        const int local_num_domains,
+                        const int local_domain_index,
+                        const uint64 global_domain_id,
+                        Node &local_type_domain_info,
+                        Node &n_mesh_info)
+{
+    // TODO we only handle the fully blown out case
+    // what to do for the others?
+
+    Node n_specset_compact;
+    detail::conditional_compact(n_specset, n_specset_compact);
+
+    if (!n_specset.has_path("matset"))
+    {
+        CONDUIT_INFO("Skipping this specset because we are "
+                     "missing a linked matset: "
+                      << "specsets/" << specset_name << "/matset");
+        return;
+    }
+
+    const std::string matset_name = n_specset_compact["matset"].as_string();
+    // TODO
+    // what? why would the matset live out here? why does the topo live out here? see silo_write_matset
+    if (!n_mesh_info.has_path("matsets/" + matset_name))
+    {
+        CONDUIT_INFO("Skipping this specset because the linked "
+                     "matset is invalid: "
+                      << "specsets/" << specset_name
+                      << "/matset: " << matset_name);
+        return;
+    }
+    // TODO different option needed for overlink?
+    const std::string safe_matset_name = detail::sanitize_silo_varname(matset_name);
+
+
+    int nmat = n_mesh_info["matsets"][matset_name]["nmat"].as_int();
+
+    std::vector<int> nmatspec;
+    auto matset_vals_itr = n_specset_compact["matset_values"].children();
+    while (matset_vals_itr.has_next())
+    {
+        const Node &individual_mat_spec = matset_vals_itr.next();
+        const std::string mat_name = matset_vals_itr.name();
+
+        int num_species_for_this_material = individual_mat_spec.number_of_children();
+
+        nmatspec.push_back(num_species_for_this_material);
+    }
+
+    // // extract data from material map
+    // int nmat;
+    // std::vector<std::string> matnames;
+    // std::vector<const char *> matname_ptrs;
+    // std::vector<int> matnos;
+    // detail::read_material_map(silo_matset_compact["material_map"],
+    //                           nmat,
+    //                           matnames,
+    //                           matname_ptrs,
+    //                           matnos);
+
+    // // calculate dims
+    // int dims[] = {0,0,0};
+    // int ndims = 1;
+    // const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
+    // const int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
+    // if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
+    // {
+    //     ndims = n_mesh_info[topo_name]["ndims"].as_int();
+    //     dims[0] = n_mesh_info[topo_name]["elements"]["i"].as_int();
+    //     dims[1] = n_mesh_info[topo_name]["elements"]["j"].as_int();
+    //     if (ndims == 3)
+    //     {
+    //         dims[2] = n_mesh_info[topo_name]["elements"]["k"].as_int();
+    //     }
+    // }
+    // else
+    // {
+    //     dims[0] = num_elems;
+    // }
+
+    // // get the length of the mixed data arrays
+    // const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
+
+    // // get the datatype of the volume fractions
+    // const int mat_type = detail::dtype_to_silo_type(silo_matset_compact["mix_vf"].dtype());
+    // CONDUIT_ASSERT(mat_type == DB_FLOAT || mat_type == DB_DOUBLE,
+    //     "Invalid matset volume fraction type: " << silo_matset_compact["mix_vf"].dtype().to_string());
+
+    // create optlist and add to it
+    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+        DBMakeOptlist(1),
+        &DBFreeOptlist,
+        "Error freeing optlist."};
+    CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
+    // CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+    //                                      DBOPT_MATNAMES,
+    //                                      matname_ptrs.data()),
+    //                          "error adding matnames option");
+
+    // auto convert_to_c_int_array = [](const Node &n_src, Node &n_dest)
+    // {
+    //     if (n_src.dtype().is_int())
+    //     {
+    //         n_dest.set_external(n_src);
+    //     }
+    //     else
+    //     {
+    //         n_src.to_int_array(n_dest);
+    //     }
+    // };
+
+    // Node int_arrays;
+    // convert_to_c_int_array(silo_matset_compact["mix_mat"], int_arrays["mix_mat"]);
+    // convert_to_c_int_array(silo_matset_compact["mix_next"], int_arrays["mix_next"]);
+    // convert_to_c_int_array(silo_matset_compact["matlist"], int_arrays["matlist"]);
+
+    // TODO different approach needed for overlink?
+    const std::string safe_specset_name = detail::sanitize_silo_varname(specset_name);
+
+
+    int silo_error =
+        DBPutMatspecies(/*[x]*/ dbfile, // Database file pointer
+                        /*[x]*/ safe_specset_name.c_str(), // specset name
+                        /*[x]*/ safe_matset_name.c_str(), // matset name
+                        /*[x]*/ nmat, // number of materials
+                        /*[x]*/ nmatspec.data(), // number of species associated with each material
+                        /*[ ]*/ speclist, // ?
+                        /*[ ]*/ dims, // array of length ndims that defines the shape of the speclist array
+                        /*[ ]*/ ndims, // number of dimensions in the speclist array
+                        /*[ ]*/ nspecies_mf, // length of the species_mf array
+                        /*[ ]*/ species_mf, // mass fractions of the matspecies in an array of length nspecies_mf
+                        /*[ ]*/ mix_spec, // array of length mixlen containing indices into the species_mf array
+                        /*[ ]*/ mixlen, // length of mix_spec array
+                        /*[ ]*/ datatype, // datatype of mass fraction data in species_mf
+                        /*[x]*/ optlist.getSiloObject()); // optlist
+
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
+
+    // Node bookkeeping_info;
+    // bookkeeping_info["comp_info"]["comp"] = "matsets";
+    // bookkeeping_info["comp_info"]["comp_name"] = matset_name;
+    // bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
+    // bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
+    // bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
+    // bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
+
+    // // bookkeeping
+    // detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
 }
 
 //---------------------------------------------------------------------------//
@@ -4547,6 +4706,43 @@ void silo_mesh_write(const Node &mesh_domain,
                                   local_type_domain_info,
                                   n_mesh_info);
             }
+        }
+    }
+
+    if (mesh_domain.has_path("specsets")) 
+    {
+        // We want to enforce that there is only one specset per topo
+        // that we save out to silo. Multiple specsets for a topo is 
+        // supported in blueprint, but in silo it is ambiguous, as
+        // silo provides no link from fields back to specsets. Therefore
+        // we enforce one specset per topo.
+
+        // the names of the matsets the specsets are associated with
+        std::set<std::string> matset_names;
+        auto itr = mesh_domain["specsets"].children();
+        while (itr.has_next())
+        {
+            const Node &n_specset = itr.next();
+            const std::string specset_name = itr.name();
+            
+            const std::string matset_name = n_specset["matset"].as_string();
+            CONDUIT_ASSERT(specset_names.find(matset_name) == specset_names.end(),
+                "There are multiple specsets that belong to the same matset. "
+                << "For matset " << matset_name << ". This is ambiguous in silo.");
+            specset_names.insert(matset_name);
+            
+            // TODO I need a way to check that the linked matset actually got written
+            // also would be good to check for matsets if the linked topo got written?
+
+            silo_write_specset(dbfile,
+                               specset_name,
+                               n_specset,
+                               write_overlink,
+                               local_num_domains,
+                               local_domain_index,
+                               global_domain_id,
+                               local_type_domain_info,
+                               n_mesh_info);
         }
     }
 
