@@ -13,6 +13,9 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_python
                                          ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
                            FOLDER        libs/python)
 
+# compiled modules depend on output dir structure created by main module setup
+add_dependencies( conduit_relay_python conduit_python_py_setup)
+
 # link with the proper libs
 target_link_libraries(conduit_relay_python conduit conduit_relay conduit_python_build)
 
@@ -24,6 +27,8 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_python
                                          ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
                            FOLDER        libs/python)
 
+# compiled modules depend on output dir structure created by main module setup
+add_dependencies( conduit_relay_io_python conduit_python_py_setup)
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_relay_io_python conduit conduit_relay conduit_python_build)
@@ -35,6 +40,9 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_relay_io_blueprint_python
                            SOURCES       conduit_relay_io_blueprint_python.cpp
                                          ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
                            FOLDER        libs/python)
+
+# compiled modules depend on output dir structure created by main module setup
+add_dependencies( conduit_relay_io_blueprint_python conduit_python_py_setup)
 
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_relay_io_blueprint_python conduit conduit_relay conduit_blueprint conduit_python_build)
@@ -49,6 +57,9 @@ if(SILO_FOUND)
                                              ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
                                FOLDER        libs/python)
 
+    # compiled modules depend on output dir structure created by main module setup
+    add_dependencies( conduit_relay_io_silo_python conduit_python_py_setup)
+
     # link with the proper libs (beyond python)
     target_link_libraries(conduit_relay_io_silo_python conduit conduit_relay conduit_blueprint conduit_python_build)
 
@@ -62,6 +73,9 @@ if(ENABLE_RELAY_WEBSERVER)
                                SOURCES       conduit_relay_web_python.cpp
                                              ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
                                FOLDER        libs/python)
+
+    # compiled modules depend on output dir structure created by main module setup
+    add_dependencies( conduit_relay_web_python conduit_python_py_setup)
 
     # link with the proper libs (beyond python)
     target_link_libraries(conduit_relay_web_python conduit conduit_relay conduit_python_build)
@@ -80,6 +94,9 @@ if(MPI_FOUND)
                                SOURCES       conduit_relay_mpi_python.cpp
                                              ${CMAKE_CURRENT_BINARY_DIR}/conduit_relay_python_exports.h
                                FOLDER        libs/python)
+
+    # compiled modules depend on output dir structure created by main module setup
+    add_dependencies( conduit_relay_mpi_python conduit_python_py_setup)
 
     # link with the proper libs (beyond python)
     target_link_libraries(conduit_relay_mpi_python conduit conduit_relay_mpi conduit_python_build)
