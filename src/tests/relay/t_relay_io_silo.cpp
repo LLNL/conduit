@@ -1674,11 +1674,14 @@ TEST(conduit_relay_io_silo, read_silo)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = meshname;
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        // overlink doesn't have pointmeshes
+        if (basename != "galaxy0000")
+        {
+            remove_path_if_exists(out_name + "_write_overlink");
+            write_opts["file_style"] = "overlink";
+            write_opts["ovl_topo_name"] = meshname;
+            io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        }
     }
 }
 
@@ -1728,11 +1731,10 @@ TEST(conduit_relay_io_silo, read_fake_overlink)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = "MMESH";
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
@@ -1787,11 +1789,10 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = "MMESH";
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
@@ -1845,11 +1846,10 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = "MMESH";
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
