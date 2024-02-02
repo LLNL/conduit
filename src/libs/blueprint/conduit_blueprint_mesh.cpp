@@ -6691,9 +6691,6 @@ mesh::specset::verify(const Node &specset,
     bool res = true;
     info.reset();
 
-    // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
-    // entry for specsets.
-    // res &= verify_enum_field(protocol, specset, info, "volume_dependent", bputils::BOOLEANS);
     res &= verify_string_field(protocol, specset, info, "matset");
     if(!verify_object_field(protocol, specset, info, "matset_values"))
     {

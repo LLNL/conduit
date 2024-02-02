@@ -825,10 +825,8 @@ Species Sets are a means of representing multi-dimensional per-material quantiti
 
 Individual Species Sets are entries in the ``specsets`` section of the Blueprint hierarchy, and these entries are formatted in much the same way as ``fields`` entries that describe per-material, multi-dimensional fields.
 Just as with this class of ``fields`` entries, each ``specsets`` entry must specify the material set over which it is defined and enumerate its values within an **mcarray** that's organized first by materials (shallower level of nesting) and then by species components (deeper level of nesting).
-Additionally, like ``field`` entries, each ``specsets`` item must indicate a volumetric scaling type (e.g. volume-dependent, volume-independent).
 To put it in short, each entry in the ``specsets`` section of the Blueprint hierarchy must be an *Object* that follows this template:
 
- * specsets/specset/volume_dependent: "true" | "false"
  * specsets/specset/matset: "matset"
  * specsets/specset/matset_values: (mcarray)
 
