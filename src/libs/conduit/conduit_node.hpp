@@ -20,10 +20,8 @@
 #include <fstream>
 #include <fstream>
 #include <sstream>
-
-#ifdef CONDUIT_USE_CXX11
 #include <initializer_list>
-#endif
+
 
 //-----------------------------------------------------------------------------
 // -- conduit includes --
@@ -37,6 +35,11 @@
 #include "conduit_generator.hpp"
 #include "conduit_node_iterator.hpp"
 #include "conduit_utils.hpp"
+
+#if defined(CONDUIT_USE_TOTALVIEW)
+// forward declaration of debugger visualizer function
+int TV_ttf_display_type ( const conduit::Node *n );
+#endif
 
 
 //-----------------------------------------------------------------------------
@@ -83,6 +86,10 @@ public:
     friend class NodeIterator;
     friend class NodeConstIterator;
     friend class Generator;
+
+#if defined(CONDUIT_USE_TOTALVIEW)
+    friend int ::TV_ttf_display_type ( const conduit::Node *n );
+#endif
 
 //-----------------------------------------------------------------------------
 //
@@ -552,14 +559,12 @@ public:
 // -- std::initializer_list support --
 //-----------------------------------------------------------------------------
 //
-// When C++11 support is enabled, support std::initializer_lists
+// Support std::initializer_lists
 //
 // Example:
 //   Node n;
 //   n.set({1,2,3,4,5,6});
 //
-//-----------------------------------------------------------------------------
-#ifdef CONDUIT_USE_CXX11
 //-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
@@ -648,10 +653,6 @@ public:
     #ifndef CONDUIT_USE_DOUBLE
         void set(const std::initializer_list<double> &data);
     #endif
-
-//-----------------------------------------------------------------------------
-#endif // end CONDUIT_USE_CXX11
-//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- set via bitwidth style pointers (scalar and array types) --
@@ -2981,14 +2982,14 @@ public:
 // -- std::initializer_list support --
 //-----------------------------------------------------------------------------
 //
-// When C++11 support is enabled, support std::initializer_lists
+// Support std::initializer_lists
 //
 // Example:
 //   Node n;
 //   n = {1,2,3,4,5,6};
 //
 //-----------------------------------------------------------------------------
-#ifdef CONDUIT_USE_CXX11
+
 //-----------------------------------------------------------------------------
 // -- assignment operators for std::initializer_list types ---
 //-----------------------------------------------------------------------------
@@ -3046,11 +3047,6 @@ public:
 #ifndef CONDUIT_USE_DOUBLE
     Node &operator=(const std::initializer_list<double> &data);
 #endif
-
-//-----------------------------------------------------------------------------
-#endif // end CONDUIT_USE_CXX11
-//-----------------------------------------------------------------------------
-
 
 //-----------------------------------------------------------------------------
 // -- assignment operators for string types --
@@ -3243,11 +3239,19 @@ public:
     void    to_signed_int_array(Node &res)   const;
     void    to_signed_long_array(Node &res)  const;
 
+#ifdef CONDUIT_HAS_LONG_LONG
+    void    to_signed_long_long_array(Node &res)  const;
+#endif
+
     /// convert to c unsigned integer types
     void    to_unsigned_char_array(Node &res)  const;
     void    to_unsigned_short_array(Node &res) const;
     void    to_unsigned_int_array(Node &res)   const;
     void    to_unsigned_long_array(Node &res)  const;
+
+#ifdef CONDUIT_HAS_LONG_LONG
+    void    to_unsigned_long_long_array(Node &res)  const;
+#endif
 
     /// convert to c floating point types
     void    to_float_array(Node &res) const;
@@ -4568,12 +4572,14 @@ private:
     // the generic to_json methods are used by the specialized cases
     //-------------------------------------------------------------------------
     std::string         to_json_generic(bool detailed,
+                                        bool address,
                                         index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
                                         const std::string &eoe="\n") const;
 
     void                to_json_generic(const std::string &stream_path,
+                                        bool address,
                                         bool detailed,
                                         index_t indent=2,
                                         index_t depth=0,
@@ -4582,6 +4588,7 @@ private:
 
     void                to_json_generic(std::ostream &os,
                                         bool detailed,
+                                        bool address,
                                         index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
@@ -4626,6 +4633,26 @@ private:
                                       index_t depth=0,
                                       const std::string &pad=" ",
                                       const std::string &eoe="\n") const;
+
+    //-------------------------------------------------------------------------
+    // transforms the node to detailed json with address entry
+    //-------------------------------------------------------------------------
+    std::string      to_detailed_json_external(index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
+
+    void             to_detailed_json_external(const std::string &stream_path,
+                                               index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
+
+    void             to_detailed_json_external(std::ostream &os,
+                                               index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
 
     //-------------------------------------------------------------------------
     // transforms the node to json with data payload encoded using base64

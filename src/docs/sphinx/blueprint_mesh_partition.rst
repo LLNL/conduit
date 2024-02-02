@@ -113,6 +113,11 @@ count domains are combined first.
 |                  | value turns it on and a zero value turns|                                          |
 |                  | it off.                                 |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
+| build_adjsets    | An integer that determines whether      | .. code:: yaml                           |
+|                  | the partitioner should build adjsets,   |                                          |
+|                  | if they are present in the selected     |    build_adjsets: 1                      |
+|                  | topology.                               |                                          |
++------------------+-----------------------------------------+------------------------------------------+
 | merge_tolerance  | A double value that indicates the max   | .. code:: yaml                           |
 |                  | allowable distance between 2 points     |                                          |
 |                  | before they are considered to be        |    merge_tolerance: 0.000001             |

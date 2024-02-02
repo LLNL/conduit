@@ -778,8 +778,8 @@ TEST(conduit_blueprint_mesh_relay, sparse_topos)
     dom0["coordsets/coords/dims/j"] = 3;
     dom0["coordsets/coords/origin/x"] = -1;
     dom0["coordsets/coords/origin/y"] = -2;
-    dom0["coordsets/coords/spacing/x"] = 1;
-    dom0["coordsets/coords/spacing/y"] = 1;
+    dom0["coordsets/coords/spacing/dx"] = 1;
+    dom0["coordsets/coords/spacing/dy"] = 1;
     dom0["topologies/topo/type"] = "uniform";
     dom0["topologies/topo/coordset"] = "coords";
     dom0["fields/topo_field/association"] = "element";
@@ -804,8 +804,8 @@ TEST(conduit_blueprint_mesh_relay, sparse_topos)
     dom1["coordsets/coords/dims/j"] = 3;
     dom1["coordsets/coords/origin/x"] = -1;
     dom1["coordsets/coords/origin/y"] = 0;
-    dom1["coordsets/coords/spacing/x"] = 1;
-    dom1["coordsets/coords/spacing/y"] = 1;
+    dom1["coordsets/coords/spacing/dx"] = 1;
+    dom1["coordsets/coords/spacing/dy"] = 1;
     dom1["topologies/topo/type"] = "uniform";
     dom1["topologies/topo/coordset"] = "coords";
     dom1["fields/topo_field/association"] = "element";

@@ -596,7 +596,22 @@ module conduit
         integer(4), intent (IN), dimension (*) :: data
         integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine conduit_node_set_external_int32_ptr
-    
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_int32_ptr_detailed(cnode, data, num_elements, &
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_external_int32_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine conduit_node_set_external_int32_ptr_detailed
+
     !--------------------------------------------------------------------------
     ! int32 set_path
     !--------------------------------------------------------------------------
@@ -633,7 +648,23 @@ module conduit
         integer(4), intent (IN), dimension (*) :: data
         integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine c_conduit_node_set_path_external_int32_ptr
-    
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_int32_ptr_detailed(cnode, path, data, num_elements, &
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_path_external_int32_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine c_conduit_node_set_path_external_int32_ptr_detailed
+
 
     !--------------------------------------------------------------------------
     ! int32 as
@@ -725,7 +756,22 @@ module conduit
         integer(8), intent (IN), dimension (*) :: data
         integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine conduit_node_set_external_int64_ptr
-    
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_int64_ptr_detailed(cnode, data, num_elements, &
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_external_int64_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine conduit_node_set_external_int64_ptr_detailed
+
     !--------------------------------------------------------------------------
     ! int64 set_path
     !--------------------------------------------------------------------------
@@ -764,6 +810,21 @@ module conduit
     end subroutine c_conduit_node_set_path_external_int64_ptr
     
 
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_int64_ptr_detailed(cnode, path, data, num_elements, &
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_path_external_int64_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine c_conduit_node_set_path_external_int64_ptr_detailed
     !--------------------------------------------------------------------------
     ! int64 as
     !--------------------------------------------------------------------------
@@ -855,7 +916,22 @@ module conduit
         real(4), intent (IN), dimension (*) :: data
         integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine conduit_node_set_external_float32_ptr
-    
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_float32_ptr_detailed(cnode, data, num_elements, &
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_external_float32_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine conduit_node_set_external_float32_ptr_detailed
+
     !--------------------------------------------------------------------------
     ! float32 set_path
     !--------------------------------------------------------------------------
@@ -894,6 +970,21 @@ module conduit
     end subroutine c_conduit_node_set_path_external_float32_ptr
     
 
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_float32_ptr_detailed(cnode, path, data, num_elements, &
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_path_external_float32_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine c_conduit_node_set_path_external_float32_ptr_detailed
     !--------------------------------------------------------------------------
     ! float32 as
     !--------------------------------------------------------------------------
@@ -985,7 +1076,22 @@ module conduit
         real(8), intent (IN), dimension (*) :: data
         integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine conduit_node_set_external_float64_ptr
-    
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_external_float64_ptr_detailed(cnode, data, num_elements,&
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_external_float64_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine conduit_node_set_external_float64_ptr_detailed
+
     !--------------------------------------------------------------------------
     ! float64 set_path
     !--------------------------------------------------------------------------
@@ -1022,7 +1128,24 @@ module conduit
         real(8), intent (IN), dimension (*) :: data
         integer(C_SIZE_T), value, intent(in) :: num_elements
     end subroutine c_conduit_node_set_path_external_float64_ptr
-    
+
+
+    !--------------------------------------------------------------------------
+    subroutine c_conduit_node_set_path_external_float64_ptr_detailed(cnode, path, data, num_elements, &
+                   offset, stride, element_bytes,endianness) &
+                   bind(C, name="conduit_node_set_path_external_float64_ptr_detailed")
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(kind=C_CHAR), intent(IN) :: path(*)
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+    end subroutine c_conduit_node_set_path_external_float64_ptr_detailed
+
 
     !--------------------------------------------------------------------------
     ! float64 as
@@ -1945,6 +2068,24 @@ contains
     end subroutine conduit_node_set_path_external_int32_ptr
 
     !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_external_int32_ptr_detailed(cnode, path, data, num_elements, &
+                   offset, stride, element_bytes,endianness)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+        !---
+        call c_conduit_node_set_path_external_int32_ptr_detailed(cnode, trim(path) // C_NULL_CHAR, data, &
+        num_elements, offset, stride, element_bytes, endianness)
+    end subroutine conduit_node_set_path_external_int32_ptr_detailed
+
+    !--------------------------------------------------------------------------
     function conduit_node_fetch_path_as_int32(cnode, path) result(res)
         use iso_c_binding
         implicit none
@@ -2018,7 +2159,26 @@ contains
         !---
         call c_conduit_node_set_path_external_int64_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
     end subroutine conduit_node_set_path_external_int64_ptr
-    
+
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_external_int64_ptr_detailed(cnode, path, data, num_elements,&
+                   offset, stride, element_bytes,endianness)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        integer(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+        !---
+        call c_conduit_node_set_path_external_int64_ptr_detailed(cnode, trim(path) // C_NULL_CHAR, data,&
+        num_elements, offset, stride, element_bytes,endianness)
+    end subroutine conduit_node_set_path_external_int64_ptr_detailed
+
 
     !--------------------------------------------------------------------------
     function conduit_node_fetch_path_as_int64(cnode, path) result(res)
@@ -2095,7 +2255,25 @@ contains
         !---
         call c_conduit_node_set_path_external_float32_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
     end subroutine conduit_node_set_path_external_float32_ptr
-    
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_external_float32_ptr_detailed(cnode, path, data, num_elements,&
+                   offset, stride, element_bytes,endianness)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(4), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+        !---
+        call c_conduit_node_set_path_external_float32_ptr_detailed(cnode, trim(path) // C_NULL_CHAR, data, &
+        num_elements, offset, stride, element_bytes,endianness)
+    end subroutine conduit_node_set_path_external_float32_ptr_detailed
+
 
     !--------------------------------------------------------------------------
     function conduit_node_fetch_path_as_float32(cnode, path) result(res)
@@ -2173,7 +2351,26 @@ contains
         !---
         call c_conduit_node_set_path_external_float64_ptr(cnode, trim(path) // C_NULL_CHAR, data, num_elements)
     end subroutine conduit_node_set_path_external_float64_ptr
-    
+
+
+    !--------------------------------------------------------------------------
+    subroutine conduit_node_set_path_external_float64_ptr_detailed(cnode, path, data, num_elements,&
+                   offset, stride, element_bytes,endianness)
+        use iso_c_binding
+        implicit none
+        type(C_PTR), value, intent(IN) :: cnode
+        character(*), intent(IN) :: path
+        real(8), intent (IN), dimension (*) :: data
+        integer(C_SIZE_T), value, intent(in) :: num_elements
+        integer(C_SIZE_T), value, intent(in) :: offset
+        integer(C_SIZE_T), value, intent(in) :: stride
+        integer(C_SIZE_T), value, intent(in) :: element_bytes
+        integer(C_SIZE_T), value, intent(in) :: endianness
+        !---
+        call c_conduit_node_set_path_external_float64_ptr_detailed(cnode, trim(path) // C_NULL_CHAR, data, &
+        num_elements, offset, stride, element_bytes,endianness)
+    end subroutine conduit_node_set_path_external_float64_ptr_detailed
+
 
     !--------------------------------------------------------------------------
     function conduit_node_fetch_path_as_float64(cnode, path) result(res)

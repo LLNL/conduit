@@ -58,7 +58,7 @@ stages:
     timeoutInMinutes: 0
     strategy:
       matrix:
-        ub_18_shared_minimal_cmake_3_14:
+        ub_18_shared_minimal_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -79,40 +79,11 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: OFF
           ENABLE_PYTHON: OFF
-          ENABLE_PYTHON2: OFF
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py27_cmake_3_14:
-          containerImage: ${{ variables.ubuntu_18_tag }}
-          COMPILER_CC: gcc
-          COMPILER_CXX: g++
-          COMPILER_FC: gfortran
-          COMPILER_SPEC: gcc
-          FORCE_COMPILERS: OFF
-          BUILD_SHARED_LIBS: ON
-          CMAKE_BUILD_TYPE: Debug
-          ENABLE_COVERAGE: ON
-          ENABLE_MPI: ON
-          ENABLE_DOCS: OFF
-          ENABLE_RELAY_WEBSERVER: ON
-          ENABLE_OPENMP: ON
-          ENABLE_HDF5: ON
-          ENABLE_HDF5_COMPAT: ON
-          HDF5_SPEC: "hdf5~mpi"
-          ENABLE_SILO: ON
-          ENABLE_ADIOS: OFF
-          ENABLE_PYTHON: ON
-          ENABLE_PARMETIS: ON
-          ENABLE_PYTHON2: ON
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
-          PYTHON_VERSION: 2.7.18
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
-          BLT_ENABLE_FIND_MPI: ON
-
-        ub_18_static_py27_cmake_3_14:
+        ub_18_static_py37_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -133,14 +104,12 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: ON
-          PYTHON2_CONSTRAINTS: " ^py-setuptools@44.1.0 ^py-numpy@1.16.5"
-          PYTHON_VERSION: 2.7.18
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
+          PYTHON_VERSION: 3.7.16
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py37_cmake_3_14:
+        ub_18_shared_py37_cmake_3_21:
           containerImage: ${{ variables.ubuntu_18_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
@@ -161,10 +130,9 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.7.6
-          CMAKE_VERSION: 3.14.2
-          BLT_CXX_STD: c++11
+          PYTHON_VERSION: 3.7.16
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py38_cmake_3_21:
@@ -188,10 +156,9 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
+          PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py38_cmake_3_21_hdf5_1_10:
@@ -215,10 +182,9 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
+          PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py38_cmake_3_21_hdf5_1_12:
@@ -244,10 +210,9 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
-          CMAKE_VERSION: 3.20.0
-          BLT_CXX_STD: c++11
+          PYTHON_VERSION: 3.8.16
+          CMAKE_VERSION: 3.21.1
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py310_cmake_3_24_hdf5_1_14:
@@ -273,10 +238,9 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.10.6
+          PYTHON_VERSION: 3.10.10
           CMAKE_VERSION: 3.24.2
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_py310_cmake_3_26_hdf5_1_14:
@@ -302,10 +266,9 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.10.6
+          PYTHON_VERSION: 3.10.10
           CMAKE_VERSION: 3.26.0
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
         # TODO: Need to solve spack mysterty to enable this
@@ -332,10 +295,9 @@ stages:
         #   ENABLE_ADIOS: OFF
         #   ENABLE_PARMETIS: ON
         #   ENABLE_PYTHON: ON
-        #   ENABLE_PYTHON2: OFF
         #   PYTHON_VERSION: 3.11.2
         #   CMAKE_VERSION: 3.26.0
-        #   BLT_CXX_STD: c++11
+        #   BLT_CXX_STD: c++14
         #   BLT_ENABLE_FIND_MPI: ON
 
         ub_18_shared_mpi_compilers_direct_cmake_3_21:
@@ -359,7 +321,7 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PYTHON: OFF
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: OFF
 
         ub_21_10_shared_py38_cmake_3_21:
@@ -383,10 +345,9 @@ stages:
           ENABLE_ADIOS: OFF
           ENABLE_PARMETIS: ON
           ENABLE_PYTHON: ON
-          ENABLE_PYTHON2: OFF
-          PYTHON_VERSION: 3.8.8
+          PYTHON_VERSION: 3.8.16
           CMAKE_VERSION: 3.21.1
-          BLT_CXX_STD: c++11
+          BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
     steps:
@@ -443,7 +404,6 @@ stages:
            export SPACK_SPEC="${SPACK_SPEC} ^cmake@${CMAKE_VERSION}"
            # python constraints
            if [ $ENABLE_PYTHON = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^python@${PYTHON_VERSION}"; fi
-           if [ $ENABLE_PYTHON2 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ${PYTHON2_CONSTRAINTS}"; fi
            # hdf5 constraints
            if [ $ENABLE_HDF5 = 'ON' ]; then export SPACK_SPEC="${SPACK_SPEC} ^${HDF5_SPEC}"; fi
            # silo constraints
@@ -452,7 +412,7 @@ stages:
            echo "SPACK SPEC:"
            echo $SPACK_SPEC
            # run uber to build tpls
-           python3 scripts/uberenv/uberenv.py -k --spack-allow-deprecated --spec "${SPACK_SPEC}" --spack-config-dir=scripts/uberenv_configs/spack_configs/configs/alpinedav/ubuntu_18.04_devel/
+           python3 scripts/uberenv/uberenv.py -k --spec "${SPACK_SPEC}" --spack-env-file=scripts/uberenv_configs/spack_configs/envs/alpinedav-ubuntu_18.04_devel/spack.yaml
         displayName: 'Spack Build Tpls'
 
       - script: |
@@ -467,7 +427,7 @@ stages:
            # capture current path
            export ROOT_DIR=`pwd`
            # find spack generated host config file
-           export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*.cmake`
+           export HOST_CONFIG=`ls ${ROOT_DIR}/uberenv_libs/*-patch.cmake`
            echo $HOST_CONFIG
            # find spack installed cmake
            export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
@@ -475,9 +435,6 @@ stages:
            echo $PATH
            which cmake
            cmake --version
-           # prepare build dir
-           mkdir build
-           cd build
            # setup cmake options
            export CMAKE_OPTS="-C ${HOST_CONFIG}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_BUILD_TYPE=${CMAKE_BUILD_TYPE}"
@@ -485,7 +442,7 @@ stages:
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_COVERAGE=${ENABLE_COVERAGE}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DBLT_CXX_STD=${BLT_CXX_STD}"
            export CMAKE_OPTS="${CMAKE_OPTS} -DENABLE_FIND_MPI=${BLT_ENABLE_FIND_MPI}"
-           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=../install"
+           export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_INSTALL_PREFIX=${ROOT_DIR}/install"
            # this is now getting set to the uberenv-pkg loc by spack, ignore for ci
            export CMAKE_OPTS="${CMAKE_OPTS} -DPYTHON_MODULE_INSTALL_PREFIX=IGNORE"
            if [ $FORCE_COMPILERS = 'ON' ]; then export CMAKE_OPTS="${CMAKE_OPTS} -DCMAKE_C_COMPILER=${COMPILER_CC}"; fi
@@ -495,7 +452,7 @@ stages:
            # configure
            echo "CMAKE OPTIONS:"
            echo ${CMAKE_OPTS}
-           cmake ${CMAKE_OPTS} ../src
+           cmake ${CMAKE_OPTS} -B build -S src
         displayName: 'Configure with CMake'
 
       - script: |
@@ -648,13 +605,20 @@ stages:
           ls -l
           # find spack installed cmake
           export ROOT_DIR=`pwd`
-          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin`
+          export CMAKE_BIN_DIR=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/cmake*/bin/`
           export PATH=${CMAKE_BIN_DIR}:$PATH
           echo $PATH
-          # find spack installed python
-          export PYTHON_EXE=`ls -d ${ROOT_DIR}/uberenv_libs/spack/opt/spack/*/*/python*/bin/python`
+          # find spack installed python (use spack view dir)
+          export PYTHON_EXE=`ls ${ROOT_DIR}/uberenv_libs/spack_view/bin/python3` 
           # add conduit module to python path
           export PYTHONPATH=${ROOT_DIR}/install/python-modules/
+          # NOTE:
+          #  also add spack's python view dir to python path env var
+          #  this wasn't needed with older spack. 
+          #  I think embedded linking logic is resolving symlinks and therefore
+          #  not using view layout that wires up dependent python modules
+          py_site_pkgs_dir=`ls -d ${ROOT_DIR}/uberenv_libs/spack_view/lib/python*/site-packages`
+          export PYTHONPATH=${PYTHONPATH}:${py_site_pkgs_dir}
           echo $PYTHONPATH
           # CI LD_LIB FIX
           # NOTE: 

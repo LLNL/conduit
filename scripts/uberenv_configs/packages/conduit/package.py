@@ -14,7 +14,7 @@ import llnl.util.tty as tty
 from spack.package import *
 
 
-def cmake_cache_entry(name, value, vtype=None):
+def cmake_cache_entry(name, value, vtype=None, description=""):
     """
     Helper that creates CMake cache entry strings used in
     'host-config' files.
@@ -24,7 +24,7 @@ def cmake_cache_entry(name, value, vtype=None):
             vtype = "BOOL"
         else:
             vtype = "PATH"
-    return 'set({0} "{1}" CACHE {2} "")\n\n'.format(name, value, vtype)
+    return 'set({0} "{1}" CACHE {2} "{3}")\n\n'.format(name, value, vtype,description)
 
 
 class Conduit(CMakePackage):
@@ -128,6 +128,7 @@ class Conduit(CMakePackage):
     #######################
     depends_on("python", when="+python")
     extends("python", when="+python")
+    depends_on("py-pip", when="+python", type=("build", "run"))
     depends_on("py-numpy", when="+python", type=("build", "run"))
     depends_on("py-mpi4py", when="+python+mpi", type=("build", "run"))
 
@@ -185,8 +186,21 @@ class Conduit(CMakePackage):
     #######################
     # Documentation related
     #######################
-    depends_on("py-sphinx", when="+python+doc", type="build")
-    depends_on("py-sphinx-rtd-theme", when="+python+doc", type="build")
+    #
+    # NOTE: Why aren't these tagged `build`?
+    #
+    # Removed `build` as the simplest way to get sphinx
+    # to be added to the spack view.
+    #
+    # Also tried adding py-sphinx to the env, however
+    # that caused the concertizer to flip  uberenv-package python variant
+    # to ~python, undermining python completely.
+    #
+    #depends_on("py-sphinx", when="+python+doc", type="build")
+    #depends_on("py-sphinx-rtd-theme", when="+python+doc", type="build")
+    # NOTE: sphinx 7.0.0 is not compatible with sphinx-rtd-theme
+    depends_on("py-sphinx@:6.99.99", when="+python+doc")
+    depends_on("py-sphinx-rtd-theme", when="+python+doc")
     depends_on("doxygen", when="+doc+doxygen")
 
     # Tentative patch for fj compiler
@@ -461,6 +475,10 @@ class Conduit(CMakePackage):
         if cxxflags:
             cfg.write(cmake_cache_entry("CMAKE_CXX_FLAGS", cxxflags))
         fflags = " ".join(spec.compiler_flags["fflags"])
+        ldflags = " ".join(spec.compiler_flags["ldflags"])
+
+        if ldflags:
+            cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", ldflags))
         if self.spec.satisfies("%cce"):
             fflags += " -ef"
         if fflags:
@@ -472,9 +490,14 @@ class Conduit(CMakePackage):
             for _libpath in [libdir, libdir + "64"]:
                 if os.path.exists(_libpath):
                     flags += " -Wl,-rpath,{0}".format(_libpath)
+            # macOS needs this for widely used gfortran installer
+            # (ideally if in the spack.yaml,
+            #  we can inspect spack's extra_rpaths compiler setting for all cases)
+            if os.path.exists("/usr/local/gfortran/lib/"):
+                flags += " -Wl,-rpath,/usr/local/gfortran/lib/"
             description = "Adds a missing libstdc++ rpath"
             if flags:
-                cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", flags, description))
+                cfg.write(cmake_cache_entry("BLT_EXE_LINKER_FLAGS", flags, "PATH", description))
 
         #######################
         # Unit Tests

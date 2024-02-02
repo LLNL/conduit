@@ -70,6 +70,13 @@ if(ENABLE_RELAY_WEBSERVER)
     include_directories(thirdparty_builtin/civetweb-0a95342/include)
 endif()
 
+################################
+# Setup ZLib if available
+################################
+if(ZLIB_DIR)
+    include(cmake/thirdparty/SetupZlib.cmake)
+endif()
+
 if(ENABLE_PYTHON)
     ################################
     # Setup includes for Python & Numpy
@@ -162,6 +169,9 @@ endif()
 # Setup Parmetis if available
 ################################
 if(PARMETIS_DIR)
+    if(NOT ENABLE_MPI)
+        message(FATAL_ERROR "PARMETIS_DIR is set while ENABLE_MPI is OFF. Parmetis support requires MPI.")
+    endif()
     include(cmake/thirdparty/SetupParmetis.cmake)
     include_directories(${PARMETIS_INCLUDE_DIR})
     # if we don't find it, throw a fatal error
@@ -178,5 +188,16 @@ if(CALIPER_DIR)
     include(cmake/thirdparty/SetupCaliper.cmake)
     if(NOT CALIPER_FOUND)
         message(FATAL_ERROR "CALIPER_DIR is set, but Caliper wasn't found.")
+    endif()
+endif()
+
+################################
+# Setup Totalview if available
+################################
+# Search for Totalview.
+if(TOTALVIEW_DIR)
+    include(cmake/thirdparty/SetupTotalview.cmake)
+    if(NOT TOTALVIEW_FOUND)
+        message(WARNING "TOTALVIEW_DIR is set, but Totalview wasn't found.")
     endif()
 endif()

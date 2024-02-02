@@ -812,6 +812,17 @@ SelectionExplicit::determine_is_whole(const conduit::Node &n_mesh) const
             for(index_t i = 0; i < n; i++)
                 unique.insert(indices[i]);
             is_whole = static_cast<index_t>(unique.size()) == num_elem_in_mesh;
+
+            // If the mesh is whole, check that the indices are all in ascending
+            // order. If not, we're reordering and we should not consider the
+            // chunk available for passing through whole.
+            if(n > 1)
+            {
+                for(index_t i = 1; i < n && is_whole; i++)
+                {
+                    is_whole &= (indices[i - 1] < indices[i]);
+                }
+            }
         }
     }
     catch(conduit::Error &)
@@ -1690,6 +1701,7 @@ Partitioner::Partitioner()
   selections(),
   selected_fields(),
   mapping(true),
+  build_adjsets(true),
   merge_tolerance(1.e-8)
 {
 }
@@ -1967,6 +1979,11 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     // Get whether we want to preserve old numbering of vertices, elements.
     if(options.has_child("mapping"))
         mapping = options["mapping"].to_unsigned_int() != 0;
+
+    // Get whether we want to build adjsets if they are present. This option
+    // lets us ignore them.
+    if(options.has_child("build_adjsets"))
+        build_adjsets = options["build_adjsets"].to_unsigned_int() != 0;
 
     // Get whether we want to preserve old numbering of vertices, elements.
     if(options.has_child("merge_tolerance"))
@@ -2756,160 +2773,7 @@ Partitioner::copy_field(const conduit::Node &n_field,
 
     const conduit::Node &n_values = n_field["values"];
     conduit::Node &new_values = n_new_field["values"];
-    if(n_values.dtype().is_compact()) 
-    {
-        if(n_values.number_of_children() > 0)
-        {
-
-// The vel data must be interleaved. We need to use the DataArray element methods for access.
-
-
-            // mcarray.
-            for(index_t i = 0; i < n_values.number_of_children(); i++)
-            {
-                const conduit::Node &n_vals = n_values[i];
-                slice_array(n_vals, ids, new_values[n_vals.name()]);
-            }
-        }
-        else
-            slice_array(n_values, ids, new_values);
-    }
-    else
-    {
-        // otherwise, we need to compact our data first
-        conduit::Node n;
-        n_values.compact_to(n);
-        if(n.number_of_children() > 0)
-        {
-            // mcarray.
-            for(index_t i = 0; i < n.number_of_children(); i++)
-            {
-                const conduit::Node &n_vals = n[i];
-                slice_array(n_vals, ids, new_values[n_vals.name()]);
-            }
-        }
-        else
-            slice_array(n, ids, new_values);
-    }
-}
-
-//---------------------------------------------------------------------------
-// @brief Slice the n_src array using the indices stored in ids. We use the
-//        array classes for their [] operators that deal with interleaved
-//        and non-interleaved arrays.
-template <typename T>
-inline void
-typed_slice_array(const T &src, const std::vector<index_t> &ids, T &dest)
-{
-    size_t n = ids.size();
-    for(size_t i = 0; i < n; i++)
-        dest[i] = src[ids[i]];
-}
-
-//---------------------------------------------------------------------------
-// @note Should this be part of conduit::Node or DataArray somehow. The number
-//       of times I've had to slice an array...
-void
-Partitioner::slice_array(const conduit::Node &n_src_values,
-    const std::vector<index_t> &ids, Node &n_dest_values) const
-{
-    // Copy the DataType of the input conduit::Node but override the number of elements
-    // before copying it in so assigning to n_dest_values triggers a memory
-    // allocation.
-    auto dt = n_src_values.dtype();
-    n_dest_values = DataType(n_src_values.dtype().id(), ids.size());
-
-    // Do the slice.
-    if(dt.is_int8())
-    {
-        auto dest(n_dest_values.as_int8_array());
-        typed_slice_array(n_src_values.as_int8_array(), ids, dest);
-    }
-    else if(dt.is_int16())
-    {
-        auto dest(n_dest_values.as_int16_array());
-        typed_slice_array(n_src_values.as_int16_array(), ids, dest);
-    }
-    else if(dt.is_int32())
-    {
-        auto dest(n_dest_values.as_int32_array());
-        typed_slice_array(n_src_values.as_int32_array(), ids, dest);
-    }
-    else if(dt.is_int64())
-    {
-        auto dest(n_dest_values.as_int64_array());
-        typed_slice_array(n_src_values.as_int64_array(), ids, dest);
-    }
-    else if(dt.is_uint8())
-    {
-        auto dest(n_dest_values.as_uint8_array());
-        typed_slice_array(n_src_values.as_uint8_array(), ids, dest);
-    }
-    else if(dt.is_uint16())
-    {
-        auto dest(n_dest_values.as_uint16_array());
-        typed_slice_array(n_src_values.as_uint16_array(), ids, dest);
-    }
-    else if(dt.is_uint32())
-    {
-        auto dest(n_dest_values.as_uint32_array());
-        typed_slice_array(n_src_values.as_uint32_array(), ids, dest);
-    }
-    else if(dt.is_uint64())
-    {
-        auto dest(n_dest_values.as_uint64_array());
-        typed_slice_array(n_src_values.as_uint64_array(), ids, dest);
-    }
-    else if(dt.is_char())
-    {
-        auto dest(n_dest_values.as_char_array());
-        typed_slice_array(n_src_values.as_char_array(), ids, dest);
-    }
-    else if(dt.is_short())
-    {
-        auto dest(n_dest_values.as_short_array());
-        typed_slice_array(n_src_values.as_short_array(), ids, dest);
-    }
-    else if(dt.is_int())
-    {
-        auto dest(n_dest_values.as_int_array());
-        typed_slice_array(n_src_values.as_int_array(), ids, dest);
-    }
-    else if(dt.is_long())
-    {
-        auto dest(n_dest_values.as_long_array());
-        typed_slice_array(n_src_values.as_long_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_char())
-    {
-        auto dest(n_dest_values.as_unsigned_char_array());
-        typed_slice_array(n_src_values.as_unsigned_char_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_short())
-    {
-        auto dest(n_dest_values.as_unsigned_short_array());
-        typed_slice_array(n_src_values.as_unsigned_short_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_int())
-    {
-        auto dest(n_dest_values.as_unsigned_int_array());
-        typed_slice_array(n_src_values.as_unsigned_int_array(), ids, dest);
-    }
-    else if(dt.is_unsigned_long())
-    {
-        auto dest(n_dest_values.as_unsigned_long_array());
-        typed_slice_array(n_src_values.as_unsigned_long_array(), ids, dest);
-    }
-    else if(dt.is_float())
-    {
-        auto dest(n_dest_values.as_float_array());
-        typed_slice_array(n_src_values.as_float_array(), ids, dest);
-    }
-    else if(dt.is_double())
-    {
-        auto dest(n_dest_values.as_double_array());
-        typed_slice_array(n_src_values.as_double_array(), ids, dest);
-    }
+    conduit::blueprint::mesh::utils::slice_field(n_values, ids, new_values);
 }
 
 //---------------------------------------------------------------------------
@@ -3077,7 +2941,7 @@ Partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
 
             // Compute some size,offsets into the stream to help
             std::vector<index_t> sizes, offsets;
-            index_t offset = 0, elemid = 0;
+            index_t offset = 0;
             for(index_t j = 0; j < stream_ids.number_of_elements(); j++)
             {
                 auto n = static_cast<index_t>(element_counts[j]);
@@ -3087,7 +2951,6 @@ Partitioner::get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
                     sizes.push_back(npts);
                     offsets.push_back(offset);
                     offset += npts;
-                    elemid++;
                 }
             }
 
@@ -3270,7 +3133,7 @@ Partitioner::create_new_rectilinear_coordset(const conduit::Node &n_coordset,
             indices.push_back(i);
 
         const conduit::Node &src = n_values[d];
-        slice_array(src, indices, n_new_values[src.name()]);
+        conduit::blueprint::mesh::utils::slice_array(src, indices, n_new_values[src.name()]);
     }
 }
 
@@ -3292,7 +3155,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
     else if(n_coordset["type"].as_string() == "rectilinear")
@@ -3306,7 +3169,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
     else if(n_coordset["type"].as_string() == "explicit")
@@ -3318,7 +3181,7 @@ Partitioner::create_new_explicit_coordset(const conduit::Node &n_coordset,
         {
             const conduit::Node &n_axis_values = n_values[axes[i]];
             conduit::Node &n_new_axis_values = n_new_values[axes[i]];
-            slice_array(n_axis_values, vertex_ids, n_new_axis_values);
+            conduit::blueprint::mesh::utils::slice_array(n_axis_values, vertex_ids, n_new_axis_values);
         }
     }
 }
@@ -3607,7 +3470,7 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
 
             // Compute some size,offsets into the stream to help
             std::vector<index_t> stream_ids_expanded, offsets;
-            index_t offset = 0, elemid = 0;
+            index_t offset = 0;
             for(index_t j = 0; j < stream_ids.number_of_elements(); j++)
             {
                 auto n = static_cast<index_t>(element_counts[j]);
@@ -3617,7 +3480,6 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
                     stream_ids_expanded.push_back(stream_ids[j]);
                     offsets.push_back(offset);
                     offset += npts;
-                    elemid++;
                 }
             }
 
@@ -4434,9 +4296,20 @@ Partitioner::execute(conduit::Node &output)
     std::vector<int> dest_rank, dest_domain, offsets;
     map_chunks(chunks, dest_rank, dest_domain, offsets);
 
-    init_chunk_adjsets(chunk_assoc_aset, adjset_data);
-    build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
-    build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
+    // It is possible that this topology has no associated adjset. If that is true
+    // then the adjset_data will all be nullptr. We skip adjset construction in
+    // that case since some of the routines iterate over all adjsets, even when
+    // they may not apply. We also skip adjset creation if the user turned it off
+    // in the options.
+    size_t nullCount = 0;
+    for(const auto &value : adjset_data)
+        nullCount += (value == nullptr) ? 1 : 0;
+    if(build_adjsets && nullCount < adjset_data.size())
+    {
+        init_chunk_adjsets(chunk_assoc_aset, adjset_data);
+        build_interdomain_adjsets(offsets, domain_to_chunk_map, domain_id_to_node, adjset_data);
+        build_intradomain_adjsets(offsets, domain_to_chunk_map, adjset_data);
+    }
 
     // Communicate chunks to the right destination ranks
     std::vector<Chunk> chunks_to_assemble;
@@ -4816,9 +4689,6 @@ private:
         const std::vector<coord_system> &systems, index_t dimension,
         double tolerance);
 
-    void truncate_merge(const std::vector<Node> &coordsets,
-        const std::vector<coord_system> &systems, index_t dimension, double tolerance);
-
     static void xyz_to_rtp(double x, double y, double z, double &out_r, double &out_t, double &out_p);
     // TODO
     static void xyz_to_rz (double x, double y, double z, double &out_r, double &out_z);
@@ -5029,14 +4899,19 @@ using vec2  = vector<double,2>;
 using vec3  = vector<double,3>;
 
 /**
- @brief A spatial search structure used to merge points within a given tolerance
+ @brief A spatial search structure used to merge points within a given tolerance.
+
+ @note This class differs from conduit::blueprint::mesh::utils::kdtree in that it
+       is designed to be constructed on the fly as points are inserted into it
+       and it contains the sorted data, which lends itself better to use with
+       multiple coordsets. The two classes were introduced independently and in
+       the future, it may be better to consolidate them.
 */
 template<typename VectorType, typename DataType>
 class kdtree
 {
 private:
     using Float = typename VectorType::value_type;
-    // using IndexType = conduit_index_t;
 public:
     constexpr static auto dimension = std::tuple_size<typename VectorType::data_type>::value;
     using vector_type = VectorType;
@@ -5248,22 +5123,7 @@ private:
         {
             const bool left_contains = current->left->bb.contains(point, tolerance);
             const bool right_contains = current->right->bb.contains(point, tolerance);
-            if(!left_contains && !right_contains)
-            {
-                // ERROR! This shouldn't happen, the tree must've been built improperly
-                retval = nullptr;
-            }
-            else if(left_contains)
-            {
-                // Traverse left
-                retval = find_point(current->left, depth+1, point, tolerance);
-            }
-            else if(right_contains)
-            {
-                // Traverse right
-                retval = find_point(current->right, depth+1, point, tolerance);
-            }
-            else // (left_contains && right_contains)
+            if(left_contains && right_contains)
             {
                 // Rare, but possible due to tolerance.
                 // Check if the left side has the point without tolerance
@@ -5278,6 +5138,21 @@ private:
                         ? find_point(current->right, depth+1, point, tolerance)
                         : find_point(current->left, depth+1, point, tolerance);
                 }
+            }
+            else if(left_contains)
+            {
+                // Traverse left
+                retval = find_point(current->left, depth+1, point, tolerance);
+            }
+            else if(right_contains)
+            {
+                // Traverse right
+                retval = find_point(current->right, depth+1, point, tolerance);
+            }
+            else //if(!left_contains && !right_contains)
+            {
+                // ERROR! This shouldn't happen, the tree must've been built improperly
+                retval = nullptr;
             }
         }
         else
@@ -5639,7 +5514,7 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
     std::vector<Node> working_sets;
     std::vector<coord_system> systems;
     std::vector<std::vector<float64>> extents;
-    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0, nlogical = 0;
+    index_t ncartesian = 0, ncylindrical = 0, nspherical = 0;
     index_t dimension = 0;
     for(size_t i = 0u; i < coordsets.size(); i++)
     {
@@ -5675,7 +5550,6 @@ point_merge::execute(const std::vector<const Node *> &coordsets,
         }
         else if(system == "logical")
         {
-            nlogical++;
             systems.push_back(coord_system::logical);
         }
         else // system == cartesian
@@ -5827,9 +5701,7 @@ point_merge::merge_data(const std::vector<Node> &coordsets,
         const std::vector<coord_system> &systems, index_t dimension, double tolerance)
 {
 #define USE_SPATIAL_SEARCH_MERGE
-#if   defined(USE_TRUNCATE_PRECISION_MERGE)
-    truncate_merge(coordsets, systems, dimension, tolerance);
-#elif defined(USE_SPATIAL_SEARCH_MERGE)
+#if defined(USE_SPATIAL_SEARCH_MERGE)
     spatial_search_merge(coordsets, systems, dimension, tolerance);
 #else
     simple_merge_data(coordsets, systems, dimension, tolerance);
@@ -6127,7 +5999,7 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
         const auto &coordset = coordsets[i];
 
         // To be invoked on every coordinate
-        const auto merge = [&](float64 *p, index_t) {
+        const auto merge = [&](const float64 *p, index_t) {
             vec3 key;
             key.v[0] = p[0]; key.v[1] = p[1]; key.v[2] = p[2];
             const auto potential_id = new_coords.size() / dimension;
@@ -6150,10 +6022,11 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
             }
         };
 
-        const auto translate_merge = [&](float64 *p, index_t d) {
+        const auto translate_merge = [&](const float64 *p, index_t d) {
+            float64 tp[3];
             translate_system(systems[i], coord_system::cartesian,
-                p[0], p[1], p[2], p[0], p[1], p[2]);
-            merge(p, d);
+                p[0], p[1], p[2], tp[0], tp[1], tp[2]);
+            merge(tp, d);
         };
 
         // Invoke the proper lambda on each coordinate
@@ -6171,90 +6044,6 @@ point_merge::spatial_search_merge(const std::vector<Node> &coordsets,
     PM_DEBUG_PRINT("Number of points in tree " << point_records.size()
         << ", depth of tree " << point_records.depth()
         << ", nodes in tree " << point_records.nodes() << std::endl);
-}
-
-//-----------------------------------------------------------------------------
-void
-point_merge::truncate_merge(const std::vector<Node> &coordsets,
-        const std::vector<coord_system> &systems, index_t dimension, double tolerance)
-{
-    PM_DEBUG_PRINT("Truncate merging!" << std::endl);
-    // Determine what to scale each value by
-    // TODO: Be dynamic
-    (void)tolerance;
-    double scale = 0.;
-    {
-        auto decimal_places = 4u;
-        static const std::array<double, 7u> lookup = {
-            1.,
-            (2u << 4),
-            (2u << 7),
-            (2u << 10),
-            (2u << 14),
-            (2u << 17),
-            (2u << 20)
-        };
-        if(decimal_places < lookup.size())
-        {
-            scale = lookup[decimal_places];
-        }
-        else
-        {
-            scale = lookup[6];
-        }
-    }
-
-    /*index_t size = */reserve_vectors(coordsets, dimension);
-
-    // Iterate each of the coordinate sets
-    using fp_type = int64;
-    using tup = std::tuple<fp_type, fp_type, fp_type>;
-    std::map<tup, index_t> point_records;
-
-    for(size_t i = 0u; i < coordsets.size(); i++)
-    {
-        const auto &coordset = coordsets[i];
-
-        // To be invoked on every coordinate
-        const auto merge = [&](float64 *p, index_t) {
-            tup key = std::make_tuple(
-                static_cast<fp_type>(std::round(p[0] * scale)),
-                static_cast<fp_type>(std::round(p[1] * scale)),
-                static_cast<fp_type>(std::round(p[2] * scale)));
-            auto res = point_records.insert({key, {}});
-            if(res.second)
-            {
-                const index_t id = (index_t)(new_coords.size() / dimension);
-                res.first->second = id;
-                old_to_new_ids[i].push_back(id);
-                for(index_t j = 0; j < dimension; j++)
-                {
-                    new_coords.push_back(p[j]);
-                }
-            }
-            else
-            {
-                old_to_new_ids[i].push_back(res.first->second);
-            }
-        };
-
-        const auto translate_merge = [&](float64 *p, index_t d) {
-            translate_system(systems[i], out_system,
-                p[0], p[1], p[2], p[0], p[1], p[2]);
-            merge(p, d);
-        };
-
-        // Invoke the proper lambda on each coordinate
-        if(systems[i] != out_system
-            && systems[i] != coord_system::logical)
-        {
-            iterate_coordinates(coordset, translate_merge);
-        }
-        else
-        {
-            iterate_coordinates(coordset, merge);
-        }
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -7734,6 +7523,7 @@ private:
             }
             std::cout << std::endl;
         #else
+            (void)iteration;
         #endif
             iteration++;
 
@@ -9337,6 +9127,16 @@ combine(const std::vector<Node> &inputs,
         out_matset["volume_fractions"][name].set(volume_fractions);
         out_matset["element_ids"][name].set(element_ids);
     }
+
+    // If the material_map does not exist, add it since it supplies the entire
+    // list of materials, which can be important when a domain does not have
+    // all materials.
+    if(!out_matset.has_child("material_map") && !material_map.empty())
+    {
+        Node &mm = out_matset["material_map"];
+        for(auto it = material_map.begin(); it != material_map.end(); it++)
+            mm[it->second] = it->first;
+    }
 }
 
 }
@@ -9993,6 +9793,12 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         }
     }
 
+    // Get a field prefix. Some of the mapping fields used here may have
+    // used a field_prefix when they were generated.
+    std::string field_prefix;
+    if(options.has_child("field_prefix"))
+       field_prefix = options.fetch_existing("field_prefix").as_string();
+
     // map repart domid -> orig domids
     vector<vector<index_t>> map_tgt_domains(repart_doms.size());
     // map repart domid -> orig domid -> original elem/vertex ids
@@ -10034,16 +9840,19 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // first.
     if (has_vert_fields)
     {
+        std::string global_vertex_ids(field_prefix + "global_vertex_ids");
+
         // map of orig domid -> global vert ids
         map<index_t, vector<index_t>> orig_dom_gvids;
         for (const auto& dom_ent : gid_to_orig_dom)
         {
             index_t orig_idx = dom_ent.first;
             const Node& orig_dom = *dom_ent.second;
+            const Node& orig_dom_fields = orig_dom.fetch_existing("fields");
             vector<index_t>& orig_gvids = orig_dom_gvids[orig_idx];
-            if (orig_dom["fields"].has_child("global_vertex_ids"))
+            if (orig_dom_fields.has_child(global_vertex_ids))
             {
-                const index_t_accessor gvids = orig_dom["fields/global_vertex_ids/values"].value();
+                const index_t_accessor gvids = orig_dom_fields[global_vertex_ids + "/values"].value();
                 orig_gvids.resize(gvids.number_of_elements());
                 for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
                 {
@@ -10063,12 +9872,13 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
 
         for (index_t repart_idx = 0; repart_idx < static_cast<index_t>(repart_doms.size()); repart_idx++)
         {
-            const conduit::Node& dom = *repart_doms[repart_idx];
+            const Node& dom = *repart_doms[repart_idx];
+            const Node& dom_fields = dom.fetch_existing("fields");
 
             std::unordered_map<index_t, index_t> gvid_to_repart_vid;
-            if (dom["fields"].has_child("global_vertex_ids"))
+            if (dom_fields.has_child(global_vertex_ids))
             {
-                const Node& global_vid_node = dom["fields/global_vertex_ids/values"];
+                const Node& global_vid_node = dom_fields[global_vertex_ids + "/values"];
                 const index_t_accessor gvids = global_vid_node.value();
                 for (index_t ivert = 0; ivert < gvids.number_of_elements(); ivert++)
                 {

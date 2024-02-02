@@ -28,6 +28,11 @@ add_cpp_test(TEST t_fmt_smoke
 # Optional TPL Unit Tests
 ################################
 
+if(ZLIB_FOUND)
+    message(STATUS "Adding zlib smoke test")
+    add_cpp_test(TEST t_zlib_smoke DEPENDS_ON ZLIB::ZLIB)
+endif()
+
 if(ENABLE_RELAY_WEBSERVER)
     message(STATUS "Relay Web Server enabled: Added related third party unit tests")
     set(civet_test_deps ${CIVETWEB_LIB_DEPENDS})

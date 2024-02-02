@@ -150,7 +150,7 @@ std::vector<index_t> intersect_sets(const Container1 &v1,
         }
     }
 
-    return std::vector<index_t>(std::move(res));
+    return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -182,7 +182,7 @@ std::vector<index_t> subtract_sets(const std::vector<index_t> &v1,
             res.push_back(v1[i1]);
         }
     }
-    return std::vector<index_t>(std::move(res));
+    return res;
 }
 
 //-----------------------------------------------------------------------------
@@ -847,7 +847,7 @@ verify_single_domain(const Node &n,
                     chld, chld_info, "topology", "topologies");
             }
 
-            log::validation(info["nestets"],nset_res);
+            log::validation(info["nestsets"],nset_res);
             res &= nset_res;
         }
     }
@@ -2008,7 +2008,7 @@ mesh::domains(conduit::Node &n)
         }
     }
 
-    return std::vector<conduit::Node *>(std::move(doms));
+    return doms;
 }
 
 
@@ -2035,7 +2035,7 @@ mesh::domains(const conduit::Node &mesh)
         }
     }
 
-    return std::vector<const conduit::Node *>(std::move(doms));
+    return doms;
 }
 
 //-------------------------------------------------------------------------
@@ -2413,6 +2413,10 @@ mesh::generate_index_for_single_domain(const Node &mesh,
             {
                 idx_fld["matset"] = fld["matset"].as_string();
             }
+            if(fld.has_child("volume_dependent"))
+            {
+                idx_fld["volume_dependent"] = fld["volume_dependent"].as_string();
+            }
 
             if(fld.has_child("association"))
             {
@@ -2744,7 +2748,7 @@ group_domains_and_maps(conduit::Node &mesh, conduit::Node &s2dmap, conduit::Node
         }
     }
 
-    return std::vector<DomMapsTuple>(std::move(doms_and_maps));
+    return doms_and_maps;
 }
 
 //-----------------------------------------------------------------------------
@@ -3386,7 +3390,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
 
 //-----------------------------------------------------------------------------
-void
+static void
 verify_generate_mesh(const conduit::Node &mesh,
                      const std::string &adjset_name)
 {
@@ -3396,14 +3400,22 @@ verify_generate_mesh(const conduit::Node &mesh,
         const Node &domain = *domains[di];
         Node info;
 
-        if(!domain["adjsets"].has_child(adjset_name))
+        if(!domain.has_path("adjsets"))
+        {
+            CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
+                          "Domain '" << domain.name() << "' lacks adjacency sets.");
+        }
+
+        const Node &n_adjsets = domain.fetch_existing("adjsets");
+
+        if(!n_adjsets.has_child(adjset_name))
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Requested source adjacency set '" << adjset_name << "' " <<
                           "doesn't exist on domain '" << domain.name() << ".'");
         }
 
-        if(domain["adjsets"][adjset_name]["association"].as_string() != "vertex")
+        if(n_adjsets[adjset_name]["association"].as_string() != "vertex")
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Given adjacency set has an unsupported association type 'element.'\n" <<
@@ -3411,7 +3423,7 @@ verify_generate_mesh(const conduit::Node &mesh,
                           "  'vertex'");
         }
 
-        const Node &adjset = domain["adjsets"][adjset_name];
+        const Node &adjset = n_adjsets[adjset_name];
         const Node *topo_ptr = bputils::find_reference_node(adjset, "topology");
         const Node &topo = *topo_ptr;
         if(!conduit::blueprint::mesh::topology::unstructured::verify(topo, info))
@@ -3424,7 +3436,6 @@ verify_generate_mesh(const conduit::Node &mesh,
         }
     }
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -3596,7 +3607,7 @@ mesh::generate_sides(conduit::Node& mesh,
             side_dims.push_back(2);
         }
 
-        return std::vector<index_t>(std::move(side_dims));
+        return side_dims;
     };
 
     verify_generate_mesh(mesh, src_adjset_name);
@@ -3644,7 +3655,7 @@ mesh::generate_corners(conduit::Node& mesh,
             corner_dims.push_back(di);
         }
 
-        return std::vector<index_t>(std::move(corner_dims));
+        return corner_dims;
     };
 
     verify_generate_mesh(mesh, src_adjset_name);
@@ -3966,8 +3977,22 @@ mesh::coordset::generate_strip(const Node& coordset,
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+mesh::coordset::to_explicit(const conduit::Node& coordset,
+                            conduit::Node& coordset_dest)
+{
+    std::string type = coordset.fetch_existing("type").as_string();
 
-//-------------------------------------------------------------------------
+    if(type == "uniform")
+        mesh::coordset::uniform::to_explicit(coordset, coordset_dest);
+    else if(type == "rectilinear")
+        mesh::coordset::rectilinear::to_explicit(coordset, coordset_dest);
+    else if(type == "explicit")
+        coordset_dest.set_external(coordset);
+}
+
+//-----------------------------------------------------------------------------
 void
 mesh::coordset::uniform::to_rectilinear(const conduit::Node &coordset,
                                         conduit::Node &dest)
@@ -3976,7 +4001,7 @@ mesh::coordset::uniform::to_rectilinear(const conduit::Node &coordset,
 }
 
 
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void
 mesh::coordset::uniform::to_explicit(const conduit::Node &coordset,
                                      conduit::Node &dest)
@@ -3985,7 +4010,7 @@ mesh::coordset::uniform::to_explicit(const conduit::Node &coordset,
 }
 
 
-//-------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
 void
 mesh::coordset::rectilinear::to_explicit(const conduit::Node &coordset,
                                          conduit::Node &dest)
@@ -4647,6 +4672,11 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4674,6 +4704,11 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
                                              Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
@@ -4736,7 +4771,12 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    // Retrieve Relevent Coordinate/Topology Metadata //
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
+    // Retrieve Relevant Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
     const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
@@ -5535,6 +5575,11 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo_src.has_path("type") && topo_src["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     std::string field_prefix = "";
     std::vector<std::string> field_names;
     const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
@@ -5636,6 +5681,11 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // Retrieve Relevent Coordinate/Topology Metadata //
 
@@ -7066,6 +7116,13 @@ mesh::adjset::to_maxshare(const Node &adjset,
 }
 
 //-----------------------------------------------------------------------------
+std::string
+mesh::adjset::group_prefix()
+{
+    return "group";
+}
+
+//-----------------------------------------------------------------------------
 // blueprint::mesh::adjset::index protocol interface
 //-----------------------------------------------------------------------------
 
@@ -7493,12 +7550,85 @@ mesh::partition(const conduit::Node &n_mesh,
     }
 }
 
+//-------------------------------------------------------------------------
 void mesh::partition_map_back(const Node& repart_mesh,
                               const Node& options,
                               Node& orig_mesh)
 {
     mesh::Partitioner p;
     p.map_back_fields(repart_mesh, options, orig_mesh);
+}
+
+//-------------------------------------------------------------------------
+void mesh::generate_boundary_partition_field(const conduit::Node &topo,
+                                             const conduit::Node &partField,
+                                             const conduit::Node &btopo,
+                                             conduit::Node &bpartField)
+{
+    // Basic checks.
+    if(topo.has_child("coordset") && btopo.has_child("coordset"))
+    {
+        if(topo.fetch_existing("coordset").as_string() != btopo.fetch_existing("coordset").as_string())
+        {
+            CONDUIT_ERROR("Input topologies must use the same coordset.");
+        }
+    }
+    if(partField.has_child("topology") && (partField.fetch_existing("topology").as_string() != topo.name()))
+    {
+        CONDUIT_ERROR("The partition field must be associated with the " << topo.name() << " topology.");
+    }
+
+    const Node *coordset = bputils::find_reference_node(topo, "coordset");
+
+    // Produce the external "faces" of the domain and for each "face", hash
+    // its node ids and associate that hash with the parent zone for the face.
+    auto d = static_cast<size_t>(conduit::blueprint::mesh::utils::topology::dims(btopo));
+    std::vector<std::pair<size_t, size_t>> desired_maps{{d, d + 1}};
+    bputils::TopologyMetadata md(topo, *coordset, d, desired_maps);
+    const conduit::Node &dtopo = md.get_topology(d);
+    auto nent = md.get_topology_length(d);
+    std::map<conduit::uint64, int> hashToZone;
+    for (conduit::index_t ei = 0; ei < nent; ei++)
+    {
+        // The global associatino for this "face" tells us how many elements
+        // it belongs to. If there is just one parent, it is external and can
+        // belong to the boundary.
+        const auto vv = md.get_global_association(ei, d, d + 1);
+        if (vv.size() == 1)
+        {
+            // Get the ids that make up the entity and hash them.
+            auto ids = conduit::blueprint::mesh::utils::topology::unstructured::points(dtopo, ei);
+            std::sort(ids.begin(), ids.end());
+            conduit::uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+
+            // Save hash to parent zone.
+            hashToZone[h] = vv[0];
+        }
+    }
+
+    // Get the partition field.
+    const auto f = partField.fetch_existing("values").as_int32_accessor();
+
+    // Now, iterate through the boundary topology, hash each entity's ids
+    // and try to look up the parent zone. The hashToZone map should contain
+    // all possible external faces for the domain so the boundary should be
+    // a subset of that.
+    auto blen = conduit::blueprint::mesh::topology::length(btopo);
+    bpartField.reset();
+    bpartField["association"] = "element";
+    bpartField["topology"] = btopo.name();
+    bpartField["values"].set(conduit::DataType::int32(blen));
+    auto bndPartition = bpartField["values"].as_int32_ptr();
+    for (conduit::index_t ei = 0; ei < blen; ei++)
+    {
+        // Get the ids that make up the entity and hash them.
+        auto ids = conduit::blueprint::mesh::utils::topology::unstructured::points(btopo, ei);
+        std::sort(ids.begin(), ids.end());
+        conduit::uint64 h = conduit::utils::hash(&ids[0], static_cast<unsigned int>(ids.size()));
+
+        auto it = hashToZone.find(h);
+        bndPartition[ei] = (it != hashToZone.end()) ? f[it->second] : 0;
+    }
 }
 
 //-------------------------------------------------------------------------

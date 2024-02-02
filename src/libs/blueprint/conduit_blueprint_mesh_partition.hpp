@@ -431,10 +431,6 @@ protected:
                     const std::vector<index_t> &ids,
                     Node &n_output_fields) const;
 
-    void slice_array(const conduit::Node &n_src_values,
-                     const std::vector<index_t> &ids,
-                     Node &n_dest_values) const;
-
     void get_vertex_ids_for_element_ids(const conduit::Node &n_topo,
              const std::vector<index_t> &element_ids,
              std::set<index_t> &vertex_ids) const;
@@ -744,6 +740,7 @@ protected:
     std::vector<std::shared_ptr<Selection> > selections;
     std::vector<std::string>                 selected_fields;
     bool                                     mapping;
+    bool                                     build_adjsets;
     double                                   merge_tolerance;
 };
 

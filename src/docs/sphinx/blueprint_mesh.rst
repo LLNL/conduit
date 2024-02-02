@@ -172,6 +172,8 @@ tri         triangle          indices to 3 coordinate tuples
 quad        quadrilateral     indices to 4 coordinate tuples
 tet         tetrahedron       indices to 4 coordinate tuples
 hex         hexahedron        indices to 8 coordinate tuples
+pyramid     pyramid           indices to 5 coordinate tuples
+wedge       wedge             indices to 6 coordinate tuples
 polygonal   polygon           indices to N end-to-end coordinate tuples
 polyhedral  polyhedron        indices to M polygonal faces
 mixed       mixed             indices to coordinate tuples and/or polygonal faces
@@ -238,6 +240,105 @@ The mesh blueprint protocol accepts four implicit ways to define a topology on a
   * topologies/topo/elements/dims/{i,j,k}
   * topologies/topo/elements/origin/{i0,j0,k0} (optional, default = {0,0,0})
 
+  Additional optional fields for *"strided"* structured:
+
+  * topologies/topo/elements/dims/offsets: [0,0,0] (integer list 2-3 elements)
+  * topologies/topo/elements/dims/strides: [i,j,k] (optional list 2-3 elements)
+
+
+
+Structured Topology
+********************
+
+A structured topology creates an implicitly defined topology consisting of lines, quads, or hexs,
+depending on the dimension of the mesh as given by the ``dims/i``, ``dims/j``, ``dims/k`` values.
+If the topology is part of a larger dataset containing multiple domains, ``origin`` values may be
+provided to indicate the domain's position in the global indexing.
+
+2D example:
+
+  .. code:: yaml
+
+    coordsets:
+      coords:
+        type: "explicit"
+        values:
+          x: [0., 1., 2., 3.,
+              0.1, 1.1, 2.1., 3.1,
+              0.2, 1.2, 2.2, 3.2]
+          y: [0., 0.1, 0., 0.1,
+              1.1, 1., 1.1, 1.,
+              2., 2.2, 2., 2.2]
+    topologies: 
+      mesh: 
+        type: "structured"
+        coordset: "coords"
+        elements:
+          dims:
+            i: 3
+            j: 2
+
+
+Strided Structured Topology
+****************************
+
+The elements of a structured topology will by default span all coordinates in the supplied coordset.
+The structured topology also supports selecting a sub-block of IJK coordinates, to create a smaller
+mesh without requiring the coordset's size to be adjusted. This facilitates using existing data
+without having to reallocate and rearrange. This use case comes up when a host code's
+data contains extra layers of elements around the mesh, which it may not be appropriate to include
+in the Blueprint dataset. For example, the surrounding nodes might not be initialized with sensible
+coordinate values.
+
+Selecting a subset of the coordset is done by adding the ``elements/dims/offsets``
+and ``elements/dims/strides`` vectors to the topology. These represent offset and stride into the supplied
+coordset data arrays. Both vectors contain *ndims* integers where ndims is the number of dimensions
+of the topology. Viewing the coordset data as a multi-dimensional array of size i,j(,k), the offset
+represents i,j(,k) indices where the selected data begin. The strides supply the number of array
+elements to add to the current element to move one element in I, J, or K.
+
+The following example shows how to make a strided structured 3x2 element topology using a coordset
+containing 7x7 nodes.
+
+  .. code:: yaml
+
+    coordsets:
+      coords:
+        type: "explicit"
+        values:
+          x: [-10.0, -6.6, -3.3, 0.0, 3.3, 6.6, 10.0,
+              -10.0, -6.6, -3.3, 0.0, 3.3, 6.6, 10.0,
+              -10.0, -6.6, -3.3, 0.0, 3.3, 6.6, 10.0,
+              -10.0, -6.6, -3.3, 0.0, 3.3, 6.6, 10.0,
+              -10.0, -6.6, -3.3, 0.0, 3.3, 6.6, 10.0,
+              -10.0, -6.6, -3.3, 0.0, 3.3, 6.6, 10.0]
+          y: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0,
+               -6.0, -6.0, -6.0,  -6.0,  -6.0,  -6.0, -6.0,
+               -2.0, -2.0, -2.0, -2.0, -2.0, -2.0, -2.0,
+                2.0, 2.0, 2.0, 2.0, 2.0, 2.0, 2.0,
+                6.0, 6.0, 6.0, 6.0, 6.0, 6.0, 6.0,
+                10.0, 10.0, 10.0, 10.0, 10.0, 10.0, 10.0]
+    topologies: 
+      mesh: 
+        type: "structured"
+        coordset: "coords"
+        elements: 
+          dims: 
+            i: 3
+            j: 2
+            # Select a subset of the coordinates
+            offsets: [2, 2]  # Start at x[2][2],y[2][2]
+            strides: [1, 7]  # Add 1 to move right 1
+                             # Add 7 to move up 1
+
+.. figure:: strided_structured_2d.png
+    :width: 600px
+    :align: center
+
+    Plot of strided structured topology with coordset points shown.
+
+When using the "strided" form of the structured topology, it may also be necessary to provide the
+*offset*, and *stride* values to select a subset of data from fields.
 
 
 Explicit (Unstructured) Topology
@@ -477,7 +578,23 @@ To conform to protocol, each ``matsets`` child of this type must be an *Object* 
    * matsets/matset/material_ids: (integer array)
    * matsets/matset/volume_fractions: (floating-point array)
 
-The following diagram illustrates a simple **uni-buffer** material set example:
+As an **o2mrelation**, the following values must also be present:
+
+   * matsets/matset/sizes: (integer array)
+   * matsets/matset/offsets: (integer array)
+   * matsets/matset/indices: (integer array)
+
+.. note::
+  It can help to think of how the data are traversed when understanding this structure. An
+  element's size and offset can be obtained by indexing the ``sizes`` and ``offsets`` with the
+  element id. These are used to look up a tuple of data from ``indices``. The resulting
+  indices for the element are array indices into the ``material_ids`` and ``volume_fractions``
+  arrays for the current element.
+
+The following diagram illustrates a simple **uni-buffer** material set example.
+Note that the ``material_ids`` and ``volume_fractions`` data arrays in this example contain
+some elements that are not referenced by the ``indices`` array. This shows how the format
+can selectively pull from data arrays that may contain other information.
 
   .. code:: yaml
 
@@ -501,6 +618,8 @@ The following diagram illustrates a simple **uni-buffer** material set example:
           sizes: [2, 2, 1]
           offsets: [0, 2, 4]
           indices: [1, 4, 6, 3, 2]
+
+
 
 
 Multi-Buffer Material Sets
@@ -639,6 +758,8 @@ Thus, to conform to protocol, each entry under the ``fields`` section must be an
    * fields/field/volume_dependent: "true" | "false"
    * fields/field/topology: "topo"
    * fields/field/values: (mcarray)
+   * fields/field/offsets: (integer array) (optional - for strided structured topology)
+   * fields/field/strides: (integer array) (optional - for strided structured topology)
 
  * Material-Dependent Fields:
 
@@ -658,15 +779,43 @@ Thus, to conform to protocol, each entry under the ``fields`` section must be an
    * fields/field/matset: "matset"
    * fields/field/matset_values: (mcarray)
 
-
-
-
 Topology Association for Field Values
 ======================================
 
 For implicit topologies, the field values are associated with the topology by fast varying logical dimensions starting with ``i``, then ``j``, then ``k``.
 
 For explicit topologies, the field values are associated with the topology by assuming the order of the field values matches the order the elements are defined in the topology.
+
+Strided Structured Fields
+==========================
+
+When creating structured topologies for mesh data that is surrounded by unwanted extra layers, a
+structured topology can provide ``offsets`` and ``strides`` to indicate that Blueprint should ignore
+the extra layers of data. This lets the topology be represented without having to rearrange any of
+the coordset data. The same issue arises for fields so Blueprint allows fields to supply ``offsets``
+and ``strides`` to select a subset of a larger array.
+
+The following example is for a mesh that supplied 7x7 actual nodes in the coordset but only defined
+a 3x2 element, or 4x3 node topology defined over a subset of the nodes. The ``offsets`` and ``strides``
+values in the field are used to select a subset of the field values, which in reality would be supplied
+in-memory from a host code's data structures. For readability, the values selected using 
+`offsets`` and ``strides`` are non-zero while unselected values are zero.
+
+
+  .. code:: yaml
+
+    fields:
+      vert_vals:
+        association: "vertex"
+        topology: "mesh"
+        offsets: [2, 2]
+        strides: [1, 7]
+        values: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0,
+                 0.0, 0.0, 1.0, 2.0, 3.0, 4.0, 0.0,
+                 0.0, 0.0, 5.0, 6.0, 7.0, 8.0, 0.0,
+                 0.0, 0.0, 9.0, 10.0, 11.0, 12.0, 0.0,
+                 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
 
 
 Species Sets
@@ -888,6 +1037,114 @@ To conform, the ``state`` entry must be an *Object* and can have the following o
 
 .. _examples:
 
+
+Mesh Index Protocol
+~~~~~~~~~~~~~~~~~~~~
+
+It is common for Blueprint data files to represent meshes that have been partitioned and must later be treated as a whole. Blueprint root files contain an index that facilitates reading in many individual Blueprint files. Blueprint root files contain metadata about the overall contents of individual files as well as hints for constructing filenames that make up the whole Blueprint dataset. An analysis tool can load the root file and know which individual files comprise the dataset and information about the data contained therein. While Blueprint provides high level functions for saving and loading files, some of which automatically create the root file, it is sometimes necessary to know the structure.
+
+   * blueprint_index/<meshname>/coordsets
+   * blueprint_index/<meshname>/topologies
+   * blueprint_index/<meshname>/fields
+   * blueprint_index/<meshname>/state
+
+The root file is a hierarchical index dataset created with Conduit that has been saved to a file using Relay. The root file must contain a ``blueprint_index`` node under which multiple named mesh nodes can be created. There must be at least one mesh node. The contents under the mesh node consist of metadata that mirror the structure of a typical Blueprint dataset, with "coordsets", "topologies", "fields", and "state" nodes. Rather than providing actual data in these nodes, they include "path" nodes that specify the path to their corresponding structures in the individual Blueprint data files. Fields can supply an optional "display_name" string that can rename the field in VisIt, which can be used to group related fields. Mesh index metadata can be created using the ``conduit::blueprint::mpi::mesh::generate_index()`` function when passed a valid Blueprint dataset.
+
+   * blueprint_index/<meshname>/fields/<fieldname>/number_of_components: {number 1 or 3)
+   * blueprint_index/<meshname>/fields/<fieldname>/topology: (string)
+   * blueprint_index/<meshname>/fields/<fieldname>/association: vertex|element
+   * blueprint_index/<meshname>/fields/<fieldname>/path: (string)
+   * blueprint_index/<meshname>/fields/<fieldname>/display_name: (optional string)
+
+Finally, the Blueprint index contains several nodes that provide the information needed to generate filenames and locate data within other files. The "file_pattern" value provides a filename template with wildcards that is used to generate filenames. Wildcards follow  C-Language ``printf()`` format string conventions for integers (e.g. "%05d"). Wildcards are substituted with integers in the range of [0, number_of_files] where `number_of_files` is provided by the "number_of_files" node. In addition, metadata about the protocol used for  individual Blueprint data files is provided using "protocol/name" and "protocol/version".
+
+   * number_of_files: (number)
+   * file_pattern: (string)
+   * number_of_trees: (number)
+   * tree_pattern: (string, default = "/")
+   * protocol/name: (string)
+   * protocol/version: (string)
+
+**Example of a Basic Root File:**
+
+  .. code:: yaml
+
+    blueprint_index: 
+      mesh: # Most entries under here were generated using generate_index()
+        state: 
+          cycle: 100
+          time: 3.1415
+          path: "state"
+          number_of_domains: 4
+        coordsets: 
+          coords: 
+            type: "uniform"
+            coord_system: 
+              axes: 
+                x: 
+                y: 
+                z: 
+              type: "cartesian"
+            path: "coordsets/coords"
+        topologies: 
+          mesh: 
+            type: "uniform"
+            coordset: "coords"
+            path: "topologies/mesh"
+        fields: 
+          density_000: 
+            number_of_components: 1
+            topology: "mesh"
+            association: "vertex"
+            path: "fields/density_000"
+            display_name: "density/mat0" # NOTE: This renames the field in VisIt
+          density_001: 
+            number_of_components: 1
+            topology: "mesh"
+            association: "vertex"
+            path: "fields/density_001"
+            display_name: "density/mat1"
+    # These entries specify the number and names of the files that make up the dataset.
+    number_of_files: 4
+    file_pattern: "bp/bp_%05d.hdf5"
+    number_of_trees: 4
+    tree_pattern: "/"
+    protocol: 
+      name: "hdf5"
+      version: "0.4.0"
+
+
+**Example code:**
+
+  .. code:: cpp
+
+    // Call on each of 4 MPI ranks.
+    conduit::Node mesh, bp_index;
+    conduit::blueprint::mesh::examples::braid("uniform", 10, 10, 10, mesh);
+    char domainFile[1024];
+    sprintf(domainFile, "./bp/bp_%04d.hdf5", rank);
+    conduit::relay::io::save(mesh, domainFile, "hdf5");
+
+    conduit::blueprint::mpi::mesh::generate_index(mesh,
+                                                  "",
+                                                  bp_index["blueprint_index/mesh"],
+                                                  MPI_COMM_WORLD);
+    bp_index["file_pattern"] = "./bp/bp_%04d.hdf5";
+    bp_index["number_of_files"] = 4;
+    bp_index["number_of_trees"] = 4;
+    bp_index["protocol/name"] = "hdf5";
+    bp_index["protocol/version"] = "0.4.0";
+    bp_index["tree_pattern"] = "/";
+    if(rank == 0)
+        conduit::relay::io::save(bp_index, "bp.root", "hdf5");
+
+
+Root files are needed to read Blueprint data into tools such as VisIt. At present, VisIt imposes a few caveats when reading Blueprint data:
+
+ * A root file is always required.
+ * The root file must be saved to hdf5, json, or yaml protocols.
+ * Individual Blueprint files that contain actual data may use hdf5, json, or yaml protocols as long as the protocol matches the index's "protocol/name" value.
+ * If fields supply a ``display_name`` string then that name will be used instead of the field name. (e.g. display_name: "menu1/menu2/fieldname")
 
 Mesh Blueprint Examples
 ~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -1277,7 +1534,7 @@ Here is a list of valid strings for the ``mesh_type`` argument:
 | points          | 2d or 3d unstructured mesh of point elements  |
 |                 | (explicit coords, explicit topology)          |
 +-----------------+-----------------------------------------------+
-| points_implicit | 2d or 3d unstructured mesh of point elements  |
+| points_implicit | 2d or 3d point mesh                           |
 |                 | (explicit coords, implicit topology)          |
 +-----------------+-----------------------------------------------+
 | lines           | 2d or 3d unstructured mesh of line elements   |
@@ -1577,6 +1834,98 @@ equal to half the number of prisms.
 
 The resulting data is placed the Node ``res``, which is passed in via reference.
 
+
+tiled
++++++++++
+
+The ``tiled()`` function repeats a tile (given as a 2D Blueprint topology) into a larger mesh composed of
+a regular square tiling of the supplied tile. If no topology is given, a default pattern consisting of quads
+is used. The output mesh can be either 2D or 3D. For 3D, supply a ``nz`` parameter greater than zero. Note
+that the input tile must consist of a homogeneous set of triangles or quads to extrude the tile into 3D since
+polyhedral output is not yet supported. The ``tiled()`` function produces a single domain comprised of a
+main mesh, a boundary mesh, and adjacency sets if the output mesh is to be part of a multi-domain dataset.
+
+.. code:: cpp
+
+    conduit::blueprint::mesh::examples::tiled(index_t nx,                   // number of tiles along x
+                                              index_t ny,                   // number of tiles along y
+                                              index_t nz,                   // number of elements along z (0 for 2D)
+                                              conduit::Node &res,           // result container
+                                              const conduit::Node &options);// options node
+
+The ``tiled()`` function accepts a Conduit node containing options that influence how the mesh is generated.
+If the options contain a ``tile`` node that contains a 2D blueprint topology, the first supplied topology will
+be used to override the default tile pattern. The ``tile`` node may contain additional options.
+An important set of options define the left, right, bottom, and top sets of points within the supplied tile
+pattern. The values in the ``left`` option identify the list of points that define the left edge of the tile.
+These are indices into the coordset and the values should be in consecutive order along the edge. Opposite point
+sets must match. In other words, the left and right point sets must contain the same number of points and
+they need to proceed along their edges in the same order. The same is true of the bottom and top point sets.
+The optional ``translate/x`` and ``translate/y`` options determine the tile spacing. If the translation
+values are not given, they will be determined from the coordset extents.
+
+The remaining options described are not part of the ``tile`` node. The ``reorder`` option indicates the
+type of point and element reordering that will be done. Reordering can improve cache-friendliness. The
+default is to reorder points and elements, using "kdtree" method. Passing "none" or an empty string will
+prevent reordering. The name of the mesh can be given by passing a ``meshname`` option string. Likewise,
+the name of the boundary mesh can be supplied using the ``boundarymeshname`` option. The output mesh
+topology will store its integer connectivity information as index_t by default. The precision of the
+integer output can turned to int32 by passing a ``datatype`` option containing the "int", "int32",
+"integer" strings.
+
+The ``tiled()`` function also accepts options that simplify the task of generating
+mesh domains for a multi-domain dataset. The coordinate extents of the current mesh domain are given using
+the ``extents`` option, which contains 6 double values: {xmin, xmax, ymin, ymax, zmin, zmax}. The ``domains``
+option contains a triple of {domainsI, domainsJ, domainsK} values that indicate how many divisions there are
+of the extents in the I,J,K dimensions. The product of these numbers determines the total number of domains.
+The ``domain`` option specifies a triple indicating the I,J,K domain id within the overall set of domains.
+This is used to help construct adjacency sets.
+
+.. code:: yaml
+
+    tile:
+      # Define the tile
+      coordsets:
+        coords:
+          type: explicit
+          values:
+            x: [0., 1., 2., 0., 1., 2., 0., 1., 2.]
+            y: [0., 0.5, 0., 1., 1.5, 1., 2., 2.5, 2.]
+      topologies:
+        tile:
+          type: unstructured
+          coordset: coords
+          elements:
+            shape: tri
+            connectivity: [0,1,4, 0,4,3, 1,2,5, 1,5,4, 3,4,7, 3,7,6, 4,5,8, 4,8,7]
+      # Define the tile edges
+      left: [0,3,6]
+      right: [2,5,8]
+      bottom: [0,1,2]
+      top: [6,7,8]
+      # Optional tile translation
+      translate:
+        x: 2.
+        y: 2.
+    # Set some options that aid tiling.
+    reorder: kdtree
+    domain: [0,0,0]
+    domains: [2,2,2]
+    extents: [0., 0.5, 0., 0.5, 0., 0.5]
+
+.. figure:: tiled_single.png
+    :width: 400px
+    :align: center
+
+    Pseudocolor plot of zoneid for default tile mesh that has been reordered.
+
+.. figure:: tiled.png
+    :width: 600px
+    :align: center
+
+    Subset plots of multi-domain datasets created using the ``tiled()`` function.
+
+
 miscellaneous
 ++++++++++++++
 
@@ -1708,16 +2057,18 @@ them in ``<`` and ``>`` characters. An example expressions entry in the index is
 
   .. code:: json
 
+      {
       "fields":
       {
         "braid":
         {
-          // ...
+
         },
         "radial":
         {
-          // ...
-        },
+
+        }
+      },
       "expressions":
       {
         "scalar_expr":

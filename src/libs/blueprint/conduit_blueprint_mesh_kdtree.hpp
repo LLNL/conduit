@@ -61,19 +61,20 @@ namespace utils
 
  @tparam Indexable The container that contains elements of type T. This can be
                    raw pointers, a vector, a data_array, data_accessor, etc.
- @tparam T The storage type of the coordinates.
+ @tparam CoordinateType The storage type of the coordinates.
  @tparam NDIMS The number of dimensions in a coordinate.
  */
-template <typename Indexable, typename T, int NDIMS>
+template <typename Indexable, typename CoordinateType, int NDIMS>
 class kdtree
 {
 public:
-    static const int NoChild;
-    static const int NotFound;
+    static const conduit::index_t NoChild;
+    static const conduit::index_t NotFound;
+    static const CoordinateType   DEFAULT_POINT_TOLERANCE;
 
     using IndexableType = Indexable;
-    using BoxType = T[NDIMS][2];
-    using PointType = T[NDIMS];
+    using BoxType = CoordinateType[NDIMS][2];
+    using PointType = CoordinateType[NDIMS];
 
     /// Constructor
     kdtree();
@@ -82,7 +83,7 @@ public:
      @brief Set the point tolerance, a distance under which points are the same.
      @param tolerance The point tolerance distance.
      */
-    void setPointTolerance(T tolerance);
+    void setPointTolerance(CoordinateType tolerance);
 
     /**
      @brief Initialize the tree so it can look up points.
@@ -98,13 +99,25 @@ public:
 
      @return The point id of the point or NotFound if the point was not found.
      */
-    int findPoint(const PointType &pt) const;
+    conduit::index_t findPoint(const PointType &pt) const;
 
     /**
      @brief Return the number of dimensions.
      @return The number of dimensions.
      */
     inline int dims() const { return NDIMS; }
+
+    /**
+     @brief Return the sorted index order.
+     @return A vector sorted spatially. The elements contain the original indices.
+     */
+    std::vector<conduit::index_t> &getIndices() { return index; }
+
+    /**
+     @brief Return the sorted index order.
+     @return A vector sorted spatially. The elements contain the original indices.
+     */
+    const std::vector<conduit::index_t> &getIndices() const { return index; }
 
     /**
      @brief Print the tree to a stream.
@@ -115,8 +128,8 @@ private:
     /// Represents ranges of the index vector.
     struct RangeType
     {
-        int offset;
-        int size;
+        conduit::index_t offset;
+        conduit::index_t size;
     };
 
     /// Represents a box in the tree hierarchy.
@@ -133,68 +146,70 @@ private:
 
     // Internal helpers.
     void cutBox(const BoxType &input, int dimension, BoxType &A, BoxType &B) const;
-    void cutRange(const RangeType &input, int dimension, T maxValue, RangeType &A, RangeType &B) const;
+    void cutRange(const RangeType &input, int dimension, CoordinateType maxValue, RangeType &A, RangeType &B) const;
     void calculateExtents();
     void construct();
-    void constructBox(int bp, const RangeType &range, const BoxType &b, int level, int maxlevel);
+    void constructBox(conduit::index_t bp, const RangeType &range, const BoxType &b, int level, int maxlevel);
 
     int longest(const BoxType &b) const;
     void sortIndexRange(const RangeType &range, int dimension);
     bool pointInBox(const PointType &pt, const BoxType &b) const;
-    bool pointEqual(const PointType &pt, int index) const;
+    bool pointEqual(const PointType &pt, conduit::index_t index) const;
     void printBox(std::ostream &os, const BoxType &b, const std::string &indent) const;
 private:
-    std::vector<BoxInfo> boxes; //!< Describes boxes
-    std::vector<int>     index; //!< Contains sorted coordinate indices
-    BoxType              box;   //!< Overall bounding box
-    Indexable coords[NDIMS];    //!< Coordinate arrays
-    size_t    coordlen;         //!< Length of a coordinate array.
-    T         pointTolerance;   //!< Distance to a point before it is same.
-    T         pointTolerance2;  //!< pointTolerance^2.
+    std::vector<BoxInfo> boxes;          //!< Describes boxes
+    std::vector<conduit::index_t> index; //!< Contains sorted coordinate indices
+    BoxType box;                         //!< Overall bounding box
+    Indexable coords[NDIMS];             //!< Coordinate arrays
+    size_t coordlen;                     //!< Length of a coordinate array.
+    CoordinateType pointTolerance;       //!< Distance to a point before it is same.
+    CoordinateType pointTolerance2;      //!< pointTolerance^2.
 };
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
+template <typename Indexable, typename CoordinateType, int NDIMS>
 std::ostream &
-operator << (std::ostream &os, const kdtree<Indexable, T, NDIMS> &obj)
+operator << (std::ostream &os, const kdtree<Indexable, CoordinateType, NDIMS> &obj)
 {
     obj.print(os);
     return os;
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-const int kdtree<Indexable, T, NDIMS>::NoChild = -1;
+template <typename Indexable, typename CoordinateType, int NDIMS>
+const conduit::index_t kdtree<Indexable, CoordinateType, NDIMS>::NoChild = -1;
 
-template <typename Indexable, typename T, int NDIMS>
-const int kdtree<Indexable, T, NDIMS>::NotFound = -1;
+template <typename Indexable, typename CoordinateType, int NDIMS>
+const conduit::index_t kdtree<Indexable, CoordinateType, NDIMS>::NotFound = -1;
+
+template <typename Indexable, typename CoordinateType, int NDIMS>
+const CoordinateType kdtree<Indexable, CoordinateType, NDIMS>::DEFAULT_POINT_TOLERANCE = static_cast<CoordinateType>(1.e-9);
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-kdtree<Indexable, T, NDIMS>::kdtree() : boxes(), index()
+template <typename Indexable, typename CoordinateType, int NDIMS>
+kdtree<Indexable, CoordinateType, NDIMS>::kdtree() : boxes(), index()
 {
     for(int i = 0; i < dims(); i++)
     {
-        box[i][0] = T{};
-        box[i][1] = T{};
+        box[i][0] = CoordinateType{};
+        box[i][1] = CoordinateType{};
         coords[i] = Indexable{};
     }
     coordlen = 0;
-    constexpr T DEFAULT_POINT_TOLERANCE = (T)(1.e-9);
     setPointTolerance(DEFAULT_POINT_TOLERANCE);
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::setPointTolerance(T tolerance)
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::setPointTolerance(CoordinateType tolerance)
 {
     pointTolerance = tolerance;
     pointTolerance2 = pointTolerance * pointTolerance;
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::initialize(Indexable c[NDIMS], size_t len)
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::initialize(Indexable c[NDIMS], size_t len)
 {
     boxes.clear();
     index.clear();
@@ -209,9 +224,9 @@ void kdtree<Indexable, T, NDIMS>::initialize(Indexable c[NDIMS], size_t len)
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::printBox(std::ostream &os,
-    const kdtree<Indexable, T, NDIMS>::BoxType &b, const std::string &indent) const
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::printBox(std::ostream &os,
+    const kdtree<Indexable, CoordinateType, NDIMS>::BoxType &b, const std::string &indent) const
 {
     os << indent << "box: [";
     for(int i = 0; i < dims(); i++)
@@ -223,8 +238,8 @@ void kdtree<Indexable, T, NDIMS>::printBox(std::ostream &os,
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::print(std::ostream &os) const
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::print(std::ostream &os) const
 {
     os << "boxesSize: " << boxes.size() << std::endl;
     os << "boxes:" << std::endl;
@@ -270,33 +285,33 @@ void kdtree<Indexable, T, NDIMS>::print(std::ostream &os) const
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::cutBox(const BoxType &input, int dimension,
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::cutBox(const BoxType &input, int dimension,
     BoxType &A, BoxType &B) const
 {
     // NOTE: This just does uniform splitting for now. It could sample the
     //       coordinates to get an idea of their center and store a t value
     //       to lerp the dimension min/max. This would help with long dimensions
     //       where points are clustered unevenly.
-    constexpr T two = 2.;
+    constexpr CoordinateType two = 2.;
     memcpy(A, input, sizeof(BoxType));
     memcpy(B, input, sizeof(BoxType));
-    T mid = (input[dimension][0] + input[dimension][1]) / two;
+    CoordinateType mid = (input[dimension][0] + input[dimension][1]) / two;
     A[dimension][1] = mid;
     B[dimension][0] = mid;
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::cutRange(const RangeType &input, int dimension,
-    T maxValue, RangeType &A, RangeType &B) const
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::cutRange(const RangeType &input, int dimension,
+    CoordinateType maxValue, RangeType &A, RangeType &B) const
 {
     // We can't just partition the range in half because it might mean leaving
     // coordinate data with the same value on either side of the split.
     // That doesn't work spatially. Instead, partition the range such that A
     // contains all indices less than maxValue and B contains the rest.
-    int sizeA = 0;
-    for(int idx = 0; idx < input.size; idx++)
+    conduit::index_t sizeA = 0;
+    for(conduit::index_t idx = 0; idx < input.size; idx++)
     {
         if(coords[dimension][index[input.offset + idx]] < maxValue)
         {
@@ -307,7 +322,7 @@ void kdtree<Indexable, T, NDIMS>::cutRange(const RangeType &input, int dimension
             break;
         }
     }
-    int sizeB = input.size - sizeA;
+    conduit::index_t sizeB = input.size - sizeA;
     A.offset = input.offset;
     A.size = sizeA;
 
@@ -322,14 +337,14 @@ void kdtree<Indexable, T, NDIMS>::cutRange(const RangeType &input, int dimension
               << ", maxValue=" << maxValue
               << std::endl;
     std::cout << "\tA={";
-    for(int idx = 0; idx < A.size; idx++)
+    for(conduit::index_t idx = 0; idx < A.size; idx++)
     {
         if(idx > 0) std::cout << ", ";
         std::cout << coords[dimension][index[A.offset + idx]];
     }
     std::cout << "}" << std::endl;
     std::cout << "\tB={";
-    for(int idx = 0; idx < B.size; idx++)
+    for(conduit::index_t idx = 0; idx < B.size; idx++)
     {
         if(idx > 0) std::cout << ", ";
         std::cout << coords[dimension][index[B.offset + idx]];
@@ -339,11 +354,11 @@ void kdtree<Indexable, T, NDIMS>::cutRange(const RangeType &input, int dimension
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-int
-kdtree<Indexable, T, NDIMS>::findPoint(const kdtree<Indexable, T, NDIMS>::PointType &pt) const
+template <typename Indexable, typename CoordinateType, int NDIMS>
+conduit::index_t
+kdtree<Indexable, CoordinateType, NDIMS>::findPoint(const kdtree<Indexable, CoordinateType, NDIMS>::PointType &pt) const
 {
-    int foundIndex = NotFound;
+    conduit::index_t foundIndex = NotFound;
 #ifdef CONDUIT_DEBUG_KDTREE
     std::cout << "findPoint(";
     for(int i = 0; i < dims(); i++)
@@ -358,7 +373,7 @@ kdtree<Indexable, T, NDIMS>::findPoint(const kdtree<Indexable, T, NDIMS>::PointT
         // Iterate until we find a box that contains the point.
         BoxType currentBox;
         memcpy(currentBox, box, sizeof(BoxType));
-        int bp = 0, prevbp = 0;
+        conduit::index_t bp = 0, prevbp = 0;
         while(boxes[bp].childOffset != NoChild)
         {
             // Cut the box to make 2 child boxes.
@@ -390,12 +405,12 @@ kdtree<Indexable, T, NDIMS>::findPoint(const kdtree<Indexable, T, NDIMS>::PointT
         std::cout << "    Search box: bp=" << prevbp << std::endl;
 #endif
         // Check prevbp box for the points of interest.
-        int offset = boxes[prevbp].range.offset;
-        int size = boxes[prevbp].range.size;
-        for(int i = 0; i < size && (foundIndex == NotFound); i++)
+        conduit::index_t offset = boxes[prevbp].range.offset;
+        conduit::index_t size = boxes[prevbp].range.size;
+        for(conduit::index_t i = 0; i < size && (foundIndex == NotFound); i++)
         {
             // This the index of the point we want to look at.
-            int ptIdx = index[offset + i];
+            conduit::index_t ptIdx = index[offset + i];
 
             // See if the point is "equal".
             if(pointEqual(pt, ptIdx))
@@ -418,27 +433,27 @@ kdtree<Indexable, T, NDIMS>::findPoint(const kdtree<Indexable, T, NDIMS>::PointT
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
+template <typename Indexable, typename CoordinateType, int NDIMS>
 bool
-kdtree<Indexable, T, NDIMS>::pointEqual(const kdtree<Indexable, T, NDIMS>::PointType &pt, int ptIdx) const
+kdtree<Indexable, CoordinateType, NDIMS>::pointEqual(const kdtree<Indexable, CoordinateType, NDIMS>::PointType &pt, conduit::index_t ptIdx) const
 {
-    T dist2 = 0.;
+    CoordinateType dist2 = 0.;
     for(int i = 0; i < dims(); i++)
     {
-        T delta = pt[i] - coords[i][ptIdx];
+        CoordinateType delta = pt[i] - coords[i][ptIdx];
         dist2 += delta * delta;
     }
     return dist2 < pointTolerance2;
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::calculateExtents()
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::calculateExtents()
 {
     for(int i = 0; i < dims(); i++)
     {
-        box[i][0] = std::numeric_limits<T>::max();
-        box[i][1] = std::numeric_limits<T>::min();
+        box[i][0] = std::numeric_limits<CoordinateType>::max();
+        box[i][1] = std::numeric_limits<CoordinateType>::min();
         for(size_t j = 0; j < coordlen; j++)
         {
             box[i][0] = std::min(box[i][0], coords[i][j]);
@@ -446,18 +461,21 @@ void kdtree<Indexable, T, NDIMS>::calculateExtents()
         }
     }
 
-    // Expand the box a little
+    // Expand the box a little. Note that we have a minimum expansion to account
+    // for when a dimension has all the same values.
+    const CoordinateType minExpansion = DEFAULT_POINT_TOLERANCE * 200.;
     for(int i = 0; i < dims(); i++)
     {
-        T d = (box[i][1] - box[i][0]) / static_cast<T>(200.);
+        CoordinateType side = std::max(box[i][1] - box[i][0], minExpansion);
+        CoordinateType d = side / static_cast<CoordinateType>(200.);
         box[i][0] -= d;
         box[i][1] += d;
     }
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::construct()
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::construct()
 {
     // Fill the index with 0,1,2,3,...
     index.resize(coordlen);
@@ -481,15 +499,15 @@ void kdtree<Indexable, T, NDIMS>::construct()
     // Build the box for level 0.
     RangeType range;
     range.offset = 0;
-    range.size = static_cast<int>(coordlen);
+    range.size = static_cast<conduit::index_t>(coordlen);
     constructBox(0, range, box, 0, maxLevels);
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::constructBox(int bp,
-    const kdtree<Indexable, T, NDIMS>::RangeType &range,
-    const kdtree<Indexable, T, NDIMS>::BoxType &b,
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::constructBox(conduit::index_t bp,
+    const kdtree<Indexable, CoordinateType, NDIMS>::RangeType &range,
+    const kdtree<Indexable, CoordinateType, NDIMS>::BoxType &b,
     int level,
     int maxLevels)
 {
@@ -504,14 +522,14 @@ void kdtree<Indexable, T, NDIMS>::constructBox(int bp,
 
         BoxType A, B;
         cutBox(b, boxes[bp].splitDimension, A, B);
-        T maxValue = A[boxes[bp].splitDimension][1];
+        CoordinateType maxValue = A[boxes[bp].splitDimension][1];
         RangeType rangeA, rangeB;
         cutRange(range, boxes[bp].splitDimension, maxValue, rangeA, rangeB);
 
         if(level < maxLevels)
         {
-            int child0 = boxes[bp].childOffset;
-            int child1 = boxes[bp].childOffset + 1;
+            conduit::index_t child0 = boxes[bp].childOffset;
+            conduit::index_t child1 = boxes[bp].childOffset + 1;
             constructBox(child0, rangeA, A, level + 1, maxLevels);
             constructBox(child1, rangeB, B, level + 1, maxLevels);
         }
@@ -527,14 +545,14 @@ void kdtree<Indexable, T, NDIMS>::constructBox(int bp,
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-int kdtree<Indexable, T, NDIMS>::longest(const kdtree<Indexable, T, NDIMS>::BoxType &b) const
+template <typename Indexable, typename CoordinateType, int NDIMS>
+int kdtree<Indexable, CoordinateType, NDIMS>::longest(const kdtree<Indexable, CoordinateType, NDIMS>::BoxType &b) const
 {
     int rv = 0;
-    T len = b[0][1] - b[0][0];
+    CoordinateType len = b[0][1] - b[0][0];
     for(int i = 1; i < dims(); i++)
     {
-        T newlen = b[i][1] - b[i][0];
+        CoordinateType newlen = b[i][1] - b[i][0];
         if(newlen > len)
             rv = i;
     } 
@@ -542,9 +560,9 @@ int kdtree<Indexable, T, NDIMS>::longest(const kdtree<Indexable, T, NDIMS>::BoxT
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-void kdtree<Indexable, T, NDIMS>::sortIndexRange(
-    const kdtree<Indexable, T, NDIMS>::RangeType &range, int dimension)
+template <typename Indexable, typename CoordinateType, int NDIMS>
+void kdtree<Indexable, CoordinateType, NDIMS>::sortIndexRange(
+    const kdtree<Indexable, CoordinateType, NDIMS>::RangeType &range, int dimension)
 {
     if(range.size > 1)
     {
@@ -552,7 +570,7 @@ void kdtree<Indexable, T, NDIMS>::sortIndexRange(
         const Indexable &data = coords[dimension];
         std::sort(index.begin() + range.offset,
                   index.begin() + range.offset + range.size,
-                  [&data](int idx1, int idx2)
+                  [&data](conduit::index_t idx1, conduit::index_t idx2)
                   {
                       return data[idx1] < data[idx2];
                   });
@@ -560,9 +578,9 @@ void kdtree<Indexable, T, NDIMS>::sortIndexRange(
 }
 
 //---------------------------------------------------------------------------
-template <typename Indexable, typename T, int NDIMS>
-bool kdtree<Indexable, T, NDIMS>::pointInBox(
-    const kdtree<Indexable, T, NDIMS>::PointType &pt, const BoxType &b) const
+template <typename Indexable, typename CoordinateType, int NDIMS>
+bool kdtree<Indexable, CoordinateType, NDIMS>::pointInBox(
+    const kdtree<Indexable, CoordinateType, NDIMS>::PointType &pt, const BoxType &b) const
 {
     bool retval = true;
     for(int i = 0; i < dims(); i++)

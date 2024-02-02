@@ -63,11 +63,9 @@ namespace examples
 {
 
 //---------------------------------------------------------------------------//
-void venn_full_matset(Node &res)
+void venn_full_matset(Node &res, index_t nx, index_t ny)
 {
     // create the material sets
-    index_t nx = res["coordsets/coords/params/nx"].value();
-    index_t ny = res["coordsets/coords/params/ny"].value();
 
     index_t elements = nx * ny;
 
@@ -211,10 +209,10 @@ void build_material_sparse(Node & src, index_t len,
 
 //---------------------------------------------------------------------------//
 void compute_material_sparse_matset_field(Node &res,
-                                          const std::string & field_name)
+                                          const std::string & field_name,
+                                          index_t nx,
+                                          index_t ny)
 {
-    index_t nx = res["coordsets/coords/params/nx"].value();
-    index_t ny = res["coordsets/coords/params/ny"].value();
     index_t elements = nx * ny;
 
     Node & n = res["fields/" + field_name + "/values"];
@@ -247,11 +245,9 @@ void compute_material_sparse_matset_field(Node &res,
 }
 
 //---------------------------------------------------------------------------//
-void venn_sparse_by_material_matset(Node &res)
+void venn_sparse_by_material_matset(Node &res, index_t nx, index_t ny)
 {    
     // create the materials
-    index_t nx = res["coordsets/coords/params/nx"].value();
-    index_t ny = res["coordsets/coords/params/ny"].value();
     
     // make sure our materials appear in the correct order,
     // by pre-creating the nodes.
@@ -410,15 +406,13 @@ void venn_sparse_by_material_matset(Node &res)
     // importance, sum the product of the volume fraction and the matset
     // value for each element to compute the field itself.
 
-    compute_material_sparse_matset_field(res, "area");
-    compute_material_sparse_matset_field(res, "importance");
+    compute_material_sparse_matset_field(res, "area", nx, ny);
+    compute_material_sparse_matset_field(res, "importance", nx, ny);
 }
 
-void venn_sparse_by_element_matset(Node &res)
+void venn_sparse_by_element_matset(Node &res, index_t nx, index_t ny)
 {
     // create the materials
-    index_t nx = res["coordsets/coords/params/nx"].value();
-    index_t ny = res["coordsets/coords/params/ny"].value();
 
     float64_array cir_a = res["fields/circle_a/values"].value();
     float64_array cir_b = res["fields/circle_b/values"].value();
@@ -546,10 +540,6 @@ void venn(const std::string &matset_type,
     res["coordsets/coords/type"] = "rectilinear";
     res["coordsets/coords/values/x"] = DataType::float64(nx+1);
     res["coordsets/coords/values/y"] = DataType::float64(ny+1);
-
-    // Not part of the blueprint, but I want these values handy
-    res["coordsets/coords/params/nx"] = nx;
-    res["coordsets/coords/params/ny"] = ny;
     
     float64_array x_coords = res["coordsets/coords/values/x"].value();
     float64_array y_coords = res["coordsets/coords/values/y"].value(); 
@@ -793,15 +783,15 @@ void venn(const std::string &matset_type,
 
     if (matset_type == "full")
     {
-        venn_full_matset(res);
+        venn_full_matset(res, nx, ny);
     }
     else if (matset_type == "sparse_by_material")
     {
-        venn_sparse_by_material_matset(res);
+        venn_sparse_by_material_matset(res, nx, ny);
     }
     else if (matset_type == "sparse_by_element")
     {
-        venn_sparse_by_element_matset(res);
+        venn_sparse_by_element_matset(res, nx, ny);
     }
     else
     {

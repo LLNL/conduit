@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <sstream>
 #include <chrono>
+#include <cstdlib>
 
 //-----------------------------------------------------------------------------
 // -- conduit includes --
@@ -521,9 +522,9 @@ namespace utils
      template< typename T >
      std::string to_hex_string(T value)
      {
-           std::stringstream oss;
-           oss << std::hex << value;
-           return  oss.str();
+        std::stringstream oss;
+        oss << std::hex << value;
+        return oss.str();
      }
 
 //-----------------------------------------------------------------------------
@@ -565,7 +566,20 @@ namespace utils
         T res;
         std::istringstream iss(s);
         iss >> res;
-        return  res;
+        return res;
+    }
+
+    // declare then define to avoid icc warnings
+    template< typename T >
+    T hex_string_to_value(const std::string &s);
+
+    template< typename T >
+    T hex_string_to_value(const std::string &s)
+    {
+        T res;
+        std::istringstream iss(s);
+        iss >> std::hex >> res;
+        return res;
     }
 
 
@@ -622,6 +636,20 @@ namespace utils
                                    unsigned int length);
      uint64       CONDUIT_API hash(const uint64 *k,
                                    unsigned int length);
+
+//-----------------------------------------------------------------------------
+// Math utility functions
+//-----------------------------------------------------------------------------
+    /**
+     \brief Factor an integer and return a vector of its factors. If the number
+            is not prime, we omit 1, num from the vector.
+
+     \param num The number to factor.
+
+     \return A vector containing the factors of the number. The product of these
+             values will equal the original number.
+     */
+    std::vector<conduit::index_t> CONDUIT_API factor(conduit::index_t num);
 
 }
 //-----------------------------------------------------------------------------

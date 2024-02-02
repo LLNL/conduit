@@ -17,6 +17,7 @@
 #include <map>
 #include <set>
 #include <string>
+#include <tuple>
 #include <vector>
 #include <memory>
 
@@ -216,6 +217,66 @@ CONDUIT_BLUEPRINT_API const Node * find_reference_node(const Node &node, const s
 //-----------------------------------------------------------------------------
 index_t CONDUIT_BLUEPRINT_API find_domain_id(const Node &node);
 
+//-----------------------------------------------------------------------------
+/**
+ @brief Slice a node containing array data and copy data for the supplied ids
+        to a new node.
+
+ @param n_src_values The node containing the source values.
+ @param ids The ids that will be extracted from the source values.
+ @param dest The new node that will contain the sliced data.
+ */
+void CONDUIT_BLUEPRINT_API slice_array(const conduit::Node &n_src_values,
+                                       const std::vector<int> &ids,
+                                       Node &n_dest_values);
+
+/// Same as above.
+void CONDUIT_BLUEPRINT_API slice_array(const conduit::Node &n_src_values,
+                                       const std::vector<conduit::index_t> &ids,
+                                       Node &n_dest_values);
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Slice a values node for a field where values may be an mcarray. The new
+        node will contain the data for the supplied indices.
+
+ @param n_src_values The node containing the source values.
+ @param ids The ids that will be extracted from the source values.
+ @param dest The new node that will contain the sliced data.
+ */
+void CONDUIT_BLUEPRINT_API slice_field(const conduit::Node &n_src_values,
+                                       const std::vector<int> &ids,
+                                       conduit::Node &dest);
+
+/// Same as above.
+void CONDUIT_BLUEPRINT_API slice_field(const conduit::Node &n_src_values,
+                                       const std::vector<conduit::index_t> &ids,
+                                       conduit::Node &n_dest_values);
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Copy fields from one node to another, making full copies.
+
+ @param srcFields The node containing the source fields.
+ @param destFields The node that will contain the copied fields.
+ @param options A node that contains options. Currently, it supports an "exclusions"
+                node. The names under the exclusions node will not be copied. 
+ */
+void CONDUIT_BLUEPRINT_API copy_fields(const conduit::Node &srcFields,
+                                       conduit::Node &destFields,
+                                       const conduit::Node &options);
+
+//-----------------------------------------------------------------------------
+/**
+ @brief Convert a list of nodes to the desired type if they are not already that type.
+
+ @param root The root node that contains the keys.
+ @param desired_type The desired data type.
+ @param keys A vector of paths in the root node that will be converted to desired type.
+ */
+void CONDUIT_BLUEPRINT_API convert(conduit::Node &root,
+                                   const conduit::DataType &desired_type,
+                                   const std::vector<std::string> &keys);
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::utils::connectivity --
@@ -312,6 +373,18 @@ namespace coordset
     */
     std::vector<float64> CONDUIT_BLUEPRINT_API extents(const Node &n);
 
+    //-----------------------------------------------------------------------------
+    /**
+     @brief Check whether all component types match and are compact, making it
+            suitable for pointer access.
+
+     @param cset The coordset we're checking.
+
+     @return A tuple containing 1) whether the components are suitable for pointer
+             access and 2) the data type.
+     */
+    std::tuple<bool, conduit::DataType> CONDUIT_BLUEPRINT_API supports_pointer_access(const conduit::Node &coordset);
+
     namespace uniform
     {
         /**
@@ -369,6 +442,29 @@ namespace topology
                                               const conduit::Node& old_gvids,
                                               const conduit::Node& new_gvids,
                                               conduit::Node& out_topo);
+    //-------------------------------------------------------------------------
+    /**
+     * @brief Applies a spatial sorting algorithm (based on a kdtree) to the
+     *        topology's centroids and returns a vector containing the sorted
+     *        order.
+     *
+     * @param topo The topology whose elements are being sorted.
+     *
+     * @return A vector containing the new element order.
+     */
+    std::vector<conduit::index_t> CONDUIT_BLUEPRINT_API spatial_ordering(const conduit::Node &topo);
+
+    //-------------------------------------------------------------------------
+    /**
+     * @brief Applies a spatial sorting algorithm (based on a Hilbert curve) to
+     *        the topology's centroids and returns a vector containing the sorted
+     *        order.
+     *
+     * @param topo The topology whose elements are being sorted.
+     *
+     * @return A vector containing the new element order.
+     */
+    std::vector<conduit::index_t> CONDUIT_BLUEPRINT_API hilbert_ordering(const conduit::Node &topo);
 
     //-------------------------------------------------------------------------
     /**
@@ -429,8 +525,8 @@ namespace topology
             entities are defined in terms of topo1 coordinates, if possible.
             Then, if that works for an entity, the entity is looked for in topo1.
 
-     @param topo1 A single topology.
-     @param topo2 A single topology.
+     @param topo1 A single topology. (haystack)
+     @param topo2 A single topology. (needle)
 
      @return A vector of ints, sized length(topo2), that contains 1 if the
              entity exists in topo1 and 0 otherwise.
@@ -459,8 +555,70 @@ namespace topology
         void CONDUIT_BLUEPRINT_API generate_offsets_inline(Node &topo);
 
         //-------------------------------------------------------------------------
+        /**
+         @brief This function returns the points for a specified element index from
+                the given topology. For non-polyhedral element types, the \a unique
+                parameter indicates whether the function will return a unique+sorted
+                vector of point ids. The order can therefore differ from the point
+                order in the connectivity. When \a unique is false, the original
+                cell connectivity is preserved. For polyhedral types, the points
+                are always unique and sorted according to point id.
+
+         @param topo The input topology.
+         @param ei The element index.
+         @param unique Whether points should be unique+sorted. The default is true
+                       to continue earlier behavior.
+
+         @return A vector of point ids for the given element.
+         */
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
-                                                          const index_t i);
+                                                          const index_t ei,
+                                                          bool unique = true);
+
+        //-------------------------------------------------------------------------
+        /**
+         * @brief Rewrite the topology's connectivity in terms of the supplied
+         *        coordset, using point queries to look up the new node ids.
+         *
+         * @param topo The input topology to be modified.
+         * @param cset The new coordinate set to use for the topology.
+         */
+        void CONDUIT_BLUEPRINT_API rewrite_connectivity(conduit::Node &topo,
+                                                        const conduit::Node &cset);
+
+        //-------------------------------------------------------------------------
+        /**
+         * @brief Reorder the topology's elements and nodes, according to the new
+         *        element \order vector.
+         *
+         * @param topo     A node containing the topo to be reordered.
+         * @param coordset A node containing the coordset to be reordered.
+         * @param fields   A node containing the fields to be reordered. Only fields
+         *                 that match the topology node name will be modified.
+         * @param order    A vector containing element indices in their new order.
+         * @param dest_topo A node that will contain reordered topo. It can
+         *                  be the same node as topo.
+         * @param dest_coordset A node that will contain reordered coordset. It can
+         *                  be the same node as coordset.
+         * @param dest_fields A node that will contain the reordered fields. It can
+         *                  be the same node as fields.
+         * @param[out] old2NewPoints A vector that contains new point indices for
+         *                           old point indices, which can be used for mapping
+         *                           data from the original order to the new order.
+         *
+         * @note This reorder function is similar to calling partition with an explicit
+         *       index selection if the indices are provided in a new order. This
+         *       function will also reorder the nodes in their order of use by elements
+         *       in the new order and partition does not currently do that.
+         */
+        void CONDUIT_BLUEPRINT_API reorder(const conduit::Node &topo,
+                                           const conduit::Node &coordset,
+                                           const conduit::Node &fields,
+                                           const std::vector<conduit::index_t> &order,
+                                           conduit::Node &dest_topo,
+                                           conduit::Node &dest_coordset,
+                                           conduit::Node &dest_fields,
+                                           std::vector<conduit::index_t> &old2NewPoints);
     }
     //-------------------------------------------------------------------------
     // -- end conduit::blueprint::mesh::utils::topology::unstructured --
@@ -761,7 +919,43 @@ protected:
 namespace adjset
 {
     //-------------------------------------------------------------------------
+    /**
+     @brief Makes sure the adjset is in canonical form. This means renaming all
+            groups so they begin with "group_" followed by a sorted list of the
+            neighbors.
+     @param adjset The adjset to be modified.
+     */
     void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
+      @brief Return whether the adjset appears to be canonical.
+      @param adjset The adjset node.
+      @return True if the groups are named canonically; False otherwise.
+     */
+    bool CONDUIT_BLUEPRINT_API is_canonical(const Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Adds a canonical pairwise adjset to each input domain, converting
+            as needed. If the input adjset is already pairwise then the data
+            in the adjset groups is shallow-copied from the original adjset.
+
+     @param doms A node containing the domains.
+     @param adjsetName The name of the source adjset.
+     @param newAdjsetName The name of the adjset that will be created.
+     */
+    void CONDUIT_BLUEPRINT_API to_pairwise_canonical(conduit::Node &doms,
+                                                     const std::string &adjsetName,
+                                                     const std::string &newAdjsetName);
+
+    //-------------------------------------------------------------------------
+    /**
+      @brief Removes the adjset from each domain in the mesh.
+      @param doms A node containing the domains.
+      @param adjsetName The name of the adjset to remove.
+     */
+    void CONDUIT_BLUEPRINT_API remove(conduit::Node &doms, const std::string &adjsetName);
 
     //-------------------------------------------------------------------------
     /**
@@ -818,6 +1012,37 @@ namespace adjset
                                         query::PointQuery &PQ,
                                         query::MatchQuery &MQ,
                                         bool checkMultiDomain);
+
+    /**
+     @brief Traverse the adjset groups and make sure that the points are the same
+            on both sides of the interface. This is more restrictive than just
+            checking whether they exist on the other domain. Now, they have to be
+            the same point.
+
+     @param mesh A node that contains one or more mesh domains.
+     @param adjsetName The name of the adjset to check. This must be a pairwise adjset.
+     @param[out] info Information about the failed adjset comparison.
+
+     @return True if the adjset are the same pointwise across each interface;
+             False otherwise.
+     */
+     bool CONDUIT_BLUEPRINT_API compare_pointwise(conduit::Node &mesh,
+                                                  const std::string &adjsetName,
+                                                  conduit::Node &info);
+
+     /**
+      @brief Converts adjsets for domain boundary pairs into meshes in
+             the out node. We get point meshes or face meshes, depending on the
+             adjset type. This can aid visualization.
+
+      @param mesh A node that contains all domains.
+      @param adjsetName The name of the adjset to select.
+      @param[out] out A node to contain the resulting mesh domains that represent
+                      the adjsets as point meshes.
+      */
+     void CONDUIT_BLUEPRINT_API to_topo(conduit::Node &mesh,
+                                        const std::string &adjsetName,
+                                        conduit::Node &out);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --

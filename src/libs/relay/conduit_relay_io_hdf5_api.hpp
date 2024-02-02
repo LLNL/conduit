@@ -232,6 +232,51 @@ void CONDUIT_RELAY_API hdf5_write(const Node &node,
 hid_t CONDUIT_RELAY_API hdf5_open_file_for_read(const std::string &file_path);
 hid_t CONDUIT_RELAY_API hdf5_open_file_for_read_write(const std::string &file_path);
 
+
+//-----------------------------------------------------------------------------
+//
+/// A user can specify options to read a subset or "hyperslab" from an HDF5
+/// multidimensional numeric array into a Conduit node.  See
+/// https://portal.hdfgroup.org/display/HDF5/Reading+From+or+Writing+To+a+Subset+of+a+Dataset
+/// for reference.
+/// 
+/// Hyperslab Options:
+/// - "sizes" (or "size"): number of elements to read
+/// - "offsets" (or "offset"): where in the array to start reading
+/// - "strides" (or "stride"): distance between elements to read
+/// 
+/// Conduit doesn't support an option for data blocks.
+/// 
+/// No hyperslab option is mandatory.  If "offset" is not specified, Conduit
+/// starts reading at the first value in the array.  If "stride" is not
+/// specified, Conduit reads each value, skipping none.  If "size" is not
+/// specified, Conduit reads from the offset to the end of the array.
+/// 
+/// If the dataset is a one-dimensional array, assign scalar values to
+/// opts["size"], opts["offset"], and opts["stride"].  To read a hyperslab
+/// from an N-dimensional array, set each desired option to a length-N array.
+/// 
+/// Please be aware that HDF5 requires its parameter arrays to be ordered like
+/// indices to C++ multidimensional arrays.  The first element indexes the
+/// slowest-varying dimension, while the last element indexes the fastest-
+/// varying dimension.  Thus, to specify a 3D offset of level 2, row 4,
+/// column 3, a user could write the following:
+/// 
+/// \code{c++}
+/// int constexpr rank = 3;
+/// int p_offset[rank] {2, 4, 3};
+/// Node opts;
+/// opts["offset"].set_external(p_offset, rank);
+/// \endcode
+/// 
+/// When working with paper and pencil, and in other areas of Conduit, we
+/// often use the opposite formulation.  We write (3, 4, 2) to indicate a
+/// point at x=3, y=4, z=2.  Exercise care to distinguish HDF5's convention
+/// (C++ multidimensional arrays, "fastest varying rightmost") from other
+/// conventions of notation.
+//
+//-----------------------------------------------------------------------------
+
 //-----------------------------------------------------------------------------
 /// Read hdf5 data from given path into the output node
 ///
@@ -369,6 +414,12 @@ void  CONDUIT_RELAY_API    conduit_dtype_to_hdf5_dtype_cleanup(
 //-----------------------------------------------------------------------------
 DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
                                                        index_t num_elems,
+                                                const std::string &ref_path="");
+
+//-----------------------------------------------------------------------------
+DataType CONDUIT_RELAY_API hdf5_dtype_to_conduit_dtype(hid_t hdf5_dtype_id,
+                                                       hsize_t * num_elems_array,
+                                                       index_t rank,
                                                 const std::string &ref_path="");
 
 //-----------------------------------------------------------------------------

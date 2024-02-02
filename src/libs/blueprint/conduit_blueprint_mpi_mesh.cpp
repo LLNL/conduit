@@ -2349,6 +2349,7 @@ void to_polyhedral(const Node &n,
                             } 
                             else
                             {
+                                (void)kstride;
                                 assert(stride == kstride);
                                 edge_ratio = ratio[2];
                             }
@@ -2464,7 +2465,6 @@ void to_polyhedral(const Node &n,
                             }
                             else
                             {
-                                index_t ctr = 0; 
                                 for (auto vi = subelem.begin(); vi != subelem.end();
                                      ++vi)
                                 {
@@ -2474,7 +2474,6 @@ void to_polyhedral(const Node &n,
                                             add_verts.begin(), add_verts.end());
                                         break;
                                     }
-                                    ++ctr;
                                 }
                             }
                         }

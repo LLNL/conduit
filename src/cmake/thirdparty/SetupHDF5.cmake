@@ -11,23 +11,6 @@ if(NOT HDF5_DIR)
     MESSAGE(FATAL_ERROR "HDF5 support needs explicit HDF5_DIR")
 endif()
 
-#
-# HDF5 1.8.x and 1.10.x when built static 
-# with cmake are not reporting zlib as a dep in libhdf5.settings,
-# so we need find it and add it
-#
-
-# next check for ZLIB_DIR
-# TODO: Decide if we want to be strict about this
-# if(NOT ZLIB_DIR)
-#     MESSAGE(FATAL_ERROR "HDF5 support needs explicit ZLIB_DIR")
-# endif()
-
-if(ZLIB_DIR)
-    set(ZLIB_ROOT ${ZLIB_DIR})
-    find_package(ZLIB REQUIRED)
-endif()
-
 # find the absolute path w/ symlinks resolved of the passed HDF5_DIR, 
 # since sanity checks later need to compare against the real path
 get_filename_component(HDF5_DIR_REAL "${HDF5_DIR}" REALPATH)
