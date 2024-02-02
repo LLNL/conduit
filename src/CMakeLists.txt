@@ -45,6 +45,16 @@ option(ENABLE_OPENMP      "Build OpenMP Support"        OFF)
 # conduit is brought in as a submodule
 option(CONDUIT_ENABLE_TESTS "Build conduit tests" ON)
 
+######################
+# CMake Policy Selections
+######################
+
+# allow FindPythonInterp and FindPythonLibs
+# https://cmake.org/cmake/help/latest/policy/CMP0148.html
+if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+endif()
+
 ################################
 # Invoke CMake Fortran setup
 # if ENABLE_FORTRAN == ON
