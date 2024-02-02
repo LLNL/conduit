@@ -49,6 +49,10 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
 - The `conduit::blueprint::mesh::utils::ShapeType` class was enhanced so it can take topologies other than unstructured.
 - The `conduit::blueprint::mesh::utils::topology::unstructured::points()` function was changed so it takes an optional argument that can turn off point uniqueness and sorting so the method can return points for an element as they appear in the connectivity, for non-polyhedral shapes.
+- Removed deprecated use of `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. These cases now issue a `CONDUIT_ERROR`.
+
+#### Relay
+- Relay Mesh Blueprint I/O methods (`conduit::relay::io::blueprint::{save,write}_mesh()``) now default to `hdf5` protocol if Conduit is built with `hdf5` support.
 
 ### Fixed
 
