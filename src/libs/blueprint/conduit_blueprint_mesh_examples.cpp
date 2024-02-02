@@ -691,7 +691,6 @@ void braid_init_example_specset(index_t nele_x,
     index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
 
     res["matset"] = "mesh";
-    res["volume_dependent"] = "false";
 
     Node &mfs = res["matset_values"];
     mfs["mat1/spec1"].set(DataType::float64(nele));

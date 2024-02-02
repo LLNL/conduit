@@ -19,6 +19,7 @@
 #include "conduit_core.hpp"
 #include "conduit_data_type.hpp"
 #include "conduit_utils.hpp"
+#include "conduit_data_accessor.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -117,6 +118,22 @@ public:
 //-----------------------------------------------------------------------------
 // Setters
 //-----------------------------------------------------------------------------
+    /// signed integer single element
+    void            set(index_t elem_idx, int8  value);
+    void            set(index_t elem_idx, int16 value);
+    void            set(index_t elem_idx, int32 value);
+    void            set(index_t elem_idx, int64 value);
+
+    // unsigned integer single element
+    void            set(index_t elem_idx, uint8  value);
+    void            set(index_t elem_idx, uint16 value);
+    void            set(index_t elem_idx, uint32 value);
+    void            set(index_t elem_idx, uint64 value);
+
+    /// floating point single element
+    void            set(index_t elem_idx, float32 value);
+    void            set(index_t elem_idx, float64 value);
+
     /// signed integer arrays
     void            set(const int8  *values, index_t num_elements);
     void            set(const int16 *values, index_t num_elements);
@@ -292,6 +309,22 @@ public:
     void            set(const DataArray<float32>  &values);
     void            set(const DataArray<float64>  &values);
 
+    /// signed integer arrays via DataAccessor
+    void            set(const DataAccessor<int8>    &values);
+    void            set(const DataAccessor<int16>   &values);
+    void            set(const DataAccessor<int32>   &values);
+    void            set(const DataAccessor<int64>   &values);
+
+    /// unsigned integer arrays via DataAccessor
+    void            set(const DataAccessor<uint8>   &values);
+    void            set(const DataAccessor<uint16>  &values);
+    void            set(const DataAccessor<uint32>  &values);
+    void            set(const DataAccessor<uint64>  &values);
+    
+    /// floating point arrays via DataAccessor
+    void            set(const DataAccessor<float32>  &values);
+    void            set(const DataAccessor<float64>  &values);
+
 //-----------------------------------------------------------------------------
 // fill
 //-----------------------------------------------------------------------------
@@ -347,7 +380,7 @@ public:
 //-----------------------------------------------------------------------------
     /// print a simplified json representation of the this node to std out
     void            print() const
-                      {std::cout << to_json() << std::endl;}
+                      {std::cout << to_summary_string() << std::endl;}
 
 
 private:
