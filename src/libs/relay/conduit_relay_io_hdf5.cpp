@@ -1086,7 +1086,7 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
         {
             // we have a group, check if the id is actually a file as well
             H5F_info_t h5_file_info;
-            h5_status = H5Fget_info(hdf5_id, &h5_file_info)
+            h5_status = H5Fget_info(hdf5_id, &h5_file_info);
             // dest is root group of a hdf5 file
             if( CONDUIT_HDF5_STATUS_OK(h5_status) )
             {
