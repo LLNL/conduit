@@ -8,8 +8,8 @@
 # TO USE A NEW CONTAINER, UPDATE TAG NAME HERE AS PART OF YOUR PR!
 #####
 variables:
-  ubuntu_18_tag: alpinedav/ascent-ci:ubuntu-18-devel
-  ubuntu_21_10_tag: alpinedav/ascent-ci:ubuntu-21.10-devel
+  ubuntu_20_04_tag: alpinedav/ascent-devel:ubuntu-20.04-x86_64
+  ubuntu_21_10_tag: alpinedav/ascent-devel:ubuntu-21.10-devel
 
 # only build merge target pr to develop
 trigger: none
@@ -54,12 +54,12 @@ stages:
   - job: Ubuntu
     pool:
       vmImage: 'ubuntu-latest'
-    container: ${{ variables.ubuntu_18_tag }}
+    container: ${{ variables.ubuntu_20_04_tag }}
     timeoutInMinutes: 0
     strategy:
       matrix:
-        ub_18_shared_minimal_cmake_3_21:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_minimal_cmake_3_21:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -83,8 +83,8 @@ stages:
           BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_static_py37_cmake_3_21:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_static_py37_cmake_3_21:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -109,8 +109,8 @@ stages:
           BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py37_cmake_3_21:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_py37_cmake_3_21:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -135,8 +135,8 @@ stages:
           BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py38_cmake_3_21:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_py38_cmake_3_21:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -161,8 +161,8 @@ stages:
           BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py38_cmake_3_21_hdf5_1_10:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_py38_cmake_3_21_hdf5_1_10:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -187,8 +187,8 @@ stages:
           BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py38_cmake_3_21_hdf5_1_12:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_py38_cmake_3_21_hdf5_1_12:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -215,8 +215,8 @@ stages:
           BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py310_cmake_3_24_hdf5_1_14:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_py310_cmake_3_24_hdf5_1_14:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -243,8 +243,8 @@ stages:
           BLT_CXX_STD: c++14
           BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_py310_cmake_3_26_hdf5_1_14:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_py310_cmake_3_26_hdf5_1_14:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: gcc
           COMPILER_CXX: g++
           COMPILER_FC: gfortran
@@ -272,8 +272,8 @@ stages:
           BLT_ENABLE_FIND_MPI: ON
 
         # TODO: Need to solve spack mysterty to enable this
-        # ub_18_shared_py311_cmake_3_26_hdf5_1_14:
-        #   containerImage: ${{ variables.ubuntu_18_tag }}
+        # ub_20_04_shared_py311_cmake_3_26_hdf5_1_14:
+        #   containerImage: ${{ variables.ubuntu_20_04_tag }}
         #   COMPILER_CC: gcc
         #   COMPILER_CXX: g++
         #   COMPILER_FC: gfortran
@@ -300,8 +300,8 @@ stages:
         #   BLT_CXX_STD: c++14
         #   BLT_ENABLE_FIND_MPI: ON
 
-        ub_18_shared_mpi_compilers_direct_cmake_3_21:
-          containerImage: ${{ variables.ubuntu_18_tag }}
+        ub_20_04_shared_mpi_compilers_direct_cmake_3_21:
+          containerImage: ${{ variables.ubuntu_20_04_tag }}
           COMPILER_CC: mpicc
           COMPILER_CXX: mpic++
           COMPILER_FC: mpif90
