@@ -520,17 +520,42 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
     Node save_mesh, load_mesh, info;
     blueprint::mesh::examples::grid("structured", 3, 3, 1, 2, 2, 1, save_mesh);
 
+    // we need a material in order for this to be valid overlink
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        Node &n_matset = save_mesh[child]["matsets"]["matset"];
+        n_matset["topology"] = "mesh";
+        n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
+        n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
+
+        double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
+        double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
+
+        a_vfs[0] = 1.0;
+        a_vfs[1] = 0.0;
+        a_vfs[2] = 1.0;
+        a_vfs[3] = 0.0;
+
+        b_vfs[0] = 0.0;
+        b_vfs[1] = 1.0;
+        b_vfs[2] = 0.0;
+        b_vfs[3] = 1.0;
+    }
+
     const std::string basename = "silo_grid_adjset";
     const std::string filename = basename + "/OvlTop.silo";
 
-    Node opts;
-    opts["file_style"] = "overlink";
-    opts["ovl_topo_name"] = "mesh";
+    Node write_opts;
+    write_opts["file_style"] = "overlink";
+    write_opts["ovl_topo_name"] = "mesh";
+
+    Node read_opts;
+    read_opts["matset_style"] = "multi_buffer_full";
 
     remove_path_if_exists(filename);
-    io::silo::save_mesh(save_mesh, basename, opts);
+    io::silo::save_mesh(save_mesh, basename, write_opts);
     io::blueprint::save_mesh(save_mesh, basename, "hdf5");
-    io::silo::load_mesh(filename, load_mesh);
+    io::silo::load_mesh(filename, read_opts, load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
