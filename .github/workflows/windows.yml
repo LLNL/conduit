@@ -38,10 +38,11 @@ jobs:
         submodules: 'recursive'
     - name: Build & Test
       run: |
-        cmake -S src -B build            `
-              -DBLT_CXX_STD=c++14        `
-              -DCMAKE_BUILD_TYPE=Release `
-              -DENABLE_PYTHON=ON         `
+        cmake -S src -B build                       `
+              -DBLT_CXX_STD=c++14                   `
+              -DCMAKE_BUILD_TYPE=Release            `
+              -DCMAKE_CXX_FLAGS="-Wno-c++98-compat" `
+              -DENABLE_PYTHON=ON                    `
               -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Release --target RUN_TESTS --parallel 1
