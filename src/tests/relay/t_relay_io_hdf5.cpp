@@ -2260,3 +2260,23 @@ TEST(conduit_relay_io_hdf5, wrong_proto_message)
         std::cout << e.message() << std::endl;
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_error_writing_leaf_to_root)
+{
+    Node n;
+    n.set(42);
+ 
+    std::string test_file_name = "tout_cant_write_to_root.hdf5:/";
+    try
+    {
+        conduit::relay::io::save(test_file_name,n);
+    }
+    catch(conduit::Error &e)
+    {
+        std::string emsg = e.message();
+        std::size_t found = emsg.find("Attempt to write Conduit leaf dataset to HDF5 file root.");
+        EXPECT_TRUE(found!=std::string::npos)
+        std::cout << emsg << std::endl;
+    }
+}
