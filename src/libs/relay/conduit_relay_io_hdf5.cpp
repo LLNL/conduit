@@ -1092,7 +1092,7 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
             {
                 oss << "\nAttempt to write Conduit leaf dataset to HDF5 file root."
                     << "\nThe root of a HDF5 file is always a HDF5 Group and only"
-                    << " supports Conduit `Object` or `List` Nodes."
+                    << " supports Conduit `Object` or `List` Nodes.";
             }
         }
 
