@@ -41,7 +41,6 @@ jobs:
         cmake -S src -B build                       `
               -DBLT_CXX_STD=c++14                   `
               -DCMAKE_BUILD_TYPE=Release            `
-              -DCMAKE_CXX_FLAGS="-Wno-c++98-compat" `
               -DENABLE_PYTHON=ON                    `
               -DENABLE_MPI=ON
         cmake --build build --config Release --parallel 2
@@ -116,6 +115,7 @@ jobs:
                 -G "Ninja"                    ^
                 -DCMAKE_C_COMPILER=clang-cl   ^
                 -DCMAKE_CXX_COMPILER=clang-cl ^
+                -DCMAKE_CXX_FLAGS="-Wno-c++98-compat" ^
                 -DCMAKE_BUILD_TYPE=Debug
         cmake --build build --config Debug --parallel 2
         cmake -E env CTEST_OUTPUT_ON_FAILURE=1 cmake --build build --config Debug --target test --parallel 1
