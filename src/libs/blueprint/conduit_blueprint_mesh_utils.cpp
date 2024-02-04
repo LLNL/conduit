@@ -1600,7 +1600,15 @@ topology::logical_dims(const Node &n, index_t *d, index_t maxdims)
 
         for(index_t i = 0; i < (index_t)dims.number_of_children(); i++)
         {
-            d[i] = dims[LOGICAL_AXES[i]].to_index_t();
+            // Be more careful about looking up the axis names in case there are
+            // extra children in the dims node, as can happen when we have a
+            // strided structured topo.
+            auto it = std::find(LOGICAL_AXES.cbegin(), LOGICAL_AXES.cend(), dims[i].name());
+            if(it != LOGICAL_AXES.cend())
+            {
+                auto idx = it - LOGICAL_AXES.cbegin();
+                d[idx] = std::max(static_cast<index_t>(1), dims[i].to_index_t());
+            }
         }
     }
     else if(type == "points")
