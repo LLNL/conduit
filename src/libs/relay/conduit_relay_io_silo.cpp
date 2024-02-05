@@ -4526,6 +4526,11 @@ void silo_mesh_write(const Node &mesh_domain,
         }
     }
 
+    // either we are not writing overlink, or there is a matset present
+    // overlink requires a matset
+    CONDUIT_ASSERT(! write_overlink || mesh_domain.has_path("matsets"),
+        "Writing to Overlink requires a matset.");
+
     if (mesh_domain.has_path("matsets")) 
     {
         // We want to enforce that there is only one matset per topo
