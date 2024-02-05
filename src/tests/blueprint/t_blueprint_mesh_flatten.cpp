@@ -241,7 +241,7 @@ TEST(blueprint_mesh_flatten, basic)
             // Field on basic mesh is too large if you give it 3D dims
             //  and a 2D shape.
             Node mesh;
-            blueprint::mesh::examples::basic(mesh_type, 4, 3, 1, mesh);
+            blueprint::mesh::examples::basic(mesh_type, 4, 3, 0, mesh);
             test_mesh_single_domain(mesh, "basic_" + mesh_type);
         }
         else if(mesh_type == "uniform" || mesh_type == "rectilinear"
@@ -251,7 +251,7 @@ TEST(blueprint_mesh_flatten, basic)
             {
                 // 2D
                 Node mesh;
-                blueprint::mesh::examples::basic(mesh_type, 4, 3, 1, mesh);
+                blueprint::mesh::examples::basic(mesh_type, 4, 3, 0, mesh);
                 test_mesh_single_domain(mesh, "basic_" + mesh_type + "_2D");
             }
             {
@@ -316,7 +316,7 @@ TEST(blueprint_mesh_flatten, braid)
             {
                 // 2D
                 Node mesh;
-                blueprint::mesh::examples::braid(mesh_type, x, y, 1, mesh);
+                blueprint::mesh::examples::braid(mesh_type, x, y, 0, mesh);
                 test_mesh_single_domain(mesh, "braid_" + mesh_type + "_2D");
             }
             {
@@ -334,7 +334,7 @@ TEST(blueprint_mesh_flatten, braid)
         {
             // 2D celltypes
             Node mesh;
-            blueprint::mesh::examples::braid(mesh_type, x, y, 1, mesh);
+            blueprint::mesh::examples::braid(mesh_type, x, y, 0, mesh);
             test_mesh_single_domain(mesh, "braid_" + mesh_type);
         }
         else

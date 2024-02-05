@@ -4,15 +4,20 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.0] - Released 2024-02-05
 
 ### Added
 
 #### General
 - Added `conduit_json_external` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to `set_external()`.
 - Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
+- Added helpers that support enhanced debugging of Conduit Node objects in several debuggers.
+- Added the ability to set values via a DataAccessor and DataAccessor to string methods.
+- Added explicit set methods to DataArray, and the ability to set DataArray values from a DataAccessor.
+
 
 #### Relay
+- Added extensive Mesh Blueprint Silo I/O support including, including options for Overlink Silo conventions. This capability allows Silo files to be used as a close peer to the Blueprint HDF5 I/O options.
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
 - Added `conduit.relay.io.silo` to the Python interface.
 
@@ -31,6 +36,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
 - Added `conduit::blueprint::mesh::utils::adjset::to_topo()` function to make new point mesh topologies for each group of an adjacency set. This permits each group to be visualized as a set of points in VisIt. The groups for each side of the domain interface can be compared since they are separate point meshes.
 - Added `conduit::blueprint::mesh::utils::adjset::is_canonical()` function to check whether the group names in an adjacency set are canonical.
+- Added more Mesh Blueprint docs.
 
 ### Changed
 
@@ -38,13 +44,19 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Conduit now requires C++14 and CMake 3.21 or newer.
 - Improved the efficiency of json parsing logic.
 - The `conduit_relay_io_convert` program was enhanced so it can read/write Blueprint root files by passing _"blueprint"_ for the read or write protocols.
-- The `conduit_adjset_validate` program now writes a point mesh for each adjset groups if the _-output_ argument is supplied.
+- The `conduit_adjset_validate` program now writes a point mesh for each adjset groups if the `-output` argument is supplied.
 - Updated to BLT 0.6.1
+- Updated Python logic hybrid module build logic to use pip and setuptools. Removed use of distutils.
 
 #### Blueprint
 - The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
 - The `conduit::blueprint::mesh::utils::ShapeType` class was enhanced so it can take topologies other than unstructured.
 - The `conduit::blueprint::mesh::utils::topology::unstructured::points()` function was changed so it takes an optional argument that can turn off point uniqueness and sorting so the method can return points for an element as they appear in the connectivity, for non-polyhedral shapes.
+- Removed deprecated use of `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. These cases now issue a `CONDUIT_ERROR`.
+- Removed `volume_dependent` entry in `specsets`. Species ratios and mass fractions are innately volume independent. 
+
+#### Relay
+- Relay Mesh Blueprint I/O methods (`conduit::relay::io::blueprint::{save,write}_mesh()``) now default to `hdf5` protocol if Conduit is built with `hdf5` support.
 
 ### Fixed
 
@@ -851,7 +863,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.8...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.0...HEAD
+[0.9.0]: https://github.com/llnl/conduit/compare/v0.8.8...v0.9.0
 [0.8.8]: https://github.com/llnl/conduit/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/llnl/conduit/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/llnl/conduit/compare/v0.8.5...v0.8.6
