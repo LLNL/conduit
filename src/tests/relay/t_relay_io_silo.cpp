@@ -1377,13 +1377,28 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        add_matset_to_spiral(save_mesh, ndomains);
         remove_path_if_exists(filename);
         io::silo::save_mesh(save_mesh, basename, opts);
         io::silo::load_mesh(filename, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
+        // make changes to save mesh so the diff will pass
         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
         {
+            // get the matset for this domain
+            Node &n_matset = save_mesh[child]["matsets"]["matset"];
+
+            // clean up volume fractions
+            Node vf_arr;
+            n_matset["volume_fractions"].to_float64_array(vf_arr);
+            n_matset["volume_fractions"].reset();
+            n_matset["volume_fractions"].set(vf_arr);
+            
+            // cheat a little bit - we don't have these to start
+            n_matset["sizes"].set_external(load_mesh[child]["matsets"]["MMATERIAL"]["sizes"]);
+            n_matset["offsets"].set_external(load_mesh[child]["matsets"]["MMATERIAL"]["offsets"]);
+
             overlink_name_changer(save_mesh[child]);
         }
 
