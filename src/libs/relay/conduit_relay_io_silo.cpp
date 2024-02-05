@@ -5412,9 +5412,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     // more will happen for this case later
     if (write_overlink)
     {
-        CONDUIT_INFO("Overlink is not yet fully supported. Outputted files "
-                     "with this option will be missing several components "
-                     "that Overlink requires.")
         opts_suffix = "none"; // force no suffix for overlink case
         opts_root_file_ext = "silo"; // force .silo file extension for root file
     }

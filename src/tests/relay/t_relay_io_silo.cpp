@@ -1422,8 +1422,9 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     const std::string basename = "silo_save_option_overlink_basic";
     const std::string filename = basename + "/OvlTop.silo";
 
-    Node opts;
-    opts["file_style"] = "overlink";
+    Node write_opts, read_opts;
+    write_opts["file_style"] = "overlink";
+    read_opts["matset_style"] = "multi_buffer_full";
 
     Node save_mesh, load_mesh, info;
     blueprint::mesh::examples::basic("structured", 3, 3, 1, save_mesh);
@@ -1435,9 +1436,21 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     field2["volume_dependent"] = "true";
     field2["values"].set_external(save_mesh["fields"]["field"]["values"]);
 
+    // add a matset to make overlink happy
+    Node &n_matset = save_mesh["matsets"]["matset"];
+    n_matset["topology"] = "mesh";
+    n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
+    n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
+    double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
+    double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
+    a_vfs[0] = 1.0; b_vfs[0] = 0.0;
+    a_vfs[1] = 0.0; b_vfs[1] = 1.0;
+    a_vfs[2] = 1.0; b_vfs[2] = 0.0;
+    a_vfs[3] = 0.0; b_vfs[3] = 1.0;
+
     remove_path_if_exists(filename);
-    io::silo::save_mesh(save_mesh, basename, opts);
-    io::silo::load_mesh(filename, load_mesh);
+    io::silo::save_mesh(save_mesh, basename, write_opts);
+    io::silo::load_mesh(filename, read_opts, load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
     // make changes to save mesh so the diff will pass
