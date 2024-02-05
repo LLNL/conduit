@@ -1715,9 +1715,9 @@ TEST(conduit_relay_io_silo, read_silo)
     const std::vector<std::vector<std::string>> file_info = {
         {".",                  "multi_curv3d", ".silo", ""            }, // test default case
         {".",                  "multi_curv3d", ".silo", "mesh1"       },
-        {".",                  "multi_curv3d", ".silo", "mesh1_back"  },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_back"  }, // this multimesh points to paths that do not exist
         {".",                  "multi_curv3d", ".silo", "mesh1_dup"   },
-        {".",                  "multi_curv3d", ".silo", "mesh1_front" },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_front" }, // same here
         {".",                  "multi_curv3d", ".silo", "mesh1_hidden"},
         {".",                  "tire",         ".silo", ""            }, // test default case
         {".",                  "tire",         ".silo", "tire"        },
@@ -1728,6 +1728,9 @@ TEST(conduit_relay_io_silo, read_silo)
         {"multidir_test_data", "multidir0000", ".root", ""            }, // test default case
         {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
     };
+
+    // TODO what to do in the case where a multimesh points to no data? (mesh1_back)
+    // fail silently, as we do now?
 
     for (int i = 0; i < file_info.size(); i ++) 
     {
@@ -1759,8 +1762,8 @@ TEST(conduit_relay_io_silo, read_silo)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // overlink doesn't have pointmeshes
-        if (basename != "galaxy0000")
+        // overlink requires matsets and does not support point meshes
+        if (load_mesh[0].has_child("matsets") && basename != "galaxy0000")
         {
             remove_path_if_exists(out_name + "_write_overlink");
             write_opts["file_style"] = "overlink";
