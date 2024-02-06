@@ -573,14 +573,21 @@ void convert_to_double_array(const Node &n_src,
     }
     else
     {
-        // if it's already a double array, we just need to compact it
-        if (n_src.dtype().is_double())
+        if (n_src.dtype().is_number())
         {
-            conditional_compact(n_src, n_dest);
+            // if it's already a double array, we just need to compact it
+            if (n_src.dtype().is_double())
+            {
+                conditional_compact(n_src, n_dest);
+            }
+            else
+            {
+                n_src.to_double_array(n_dest);
+            }
         }
         else
         {
-            n_src.to_double_array(n_dest);
+            n_dest.set_external(n_src);
         }
     }
 }
@@ -3027,7 +3034,6 @@ void** prepare_mixed_field_for_write(const Node &n_var,
                                      const DataType &vals_dtype,
                                      const int &nvars,
                                      bool &convert_to_double_array,
-                                     int &silo_vals_type,
                                      Node &silo_matset,
                                      Node &silo_mixvar_vals_compact,
                                      std::vector<void *> &mixvars_ptrs,
@@ -3044,15 +3050,19 @@ void** prepare_mixed_field_for_write(const Node &n_var,
         conduit::blueprint::mesh::field::to_silo(n_var, n_matset, silo_matset);
 
         DataType mixvar_vals_dtype = silo_matset["field_mixvar_values"].dtype();
-        
-        // if the field is mixed (has both vals and matset vals) and the types
-        // of vals and matset vals DO NOT match, we must convert both to 
-        // double arrays.
-        convert_to_double_array = vals_dtype.id() != mixvar_vals_dtype.id();
+
+        // if we are not already converting to double array, we can do an
+        // additional check to see if we need to
+        if (! convert_to_double_array)
+        {
+            // if the field is mixed (has both vals and matset vals) and the types
+            // of vals and matset vals DO NOT match, we must convert both to 
+            // double arrays.
+            convert_to_double_array = vals_dtype.id() != mixvar_vals_dtype.id();
+        }
         
         if (convert_to_double_array)
         {
-            silo_vals_type = DB_DOUBLE;
             detail::convert_to_double_array(silo_matset["field_mixvar_values"],
                                             silo_mixvar_vals_compact);
         }
@@ -3238,6 +3248,12 @@ void silo_write_field(DBfile *dbfile,
     // matset_values then we want to convert both to double arrays
     bool convert_to_double_array = false;
 
+    // overlink requires doubles
+    if (write_overlink)
+    {
+        convert_to_double_array = true;
+    }
+
     //
     // Prepare Matset Values (if they exist)
     //
@@ -3257,11 +3273,15 @@ void silo_write_field(DBfile *dbfile,
                                       vals_dtype,
                                       nvars,
                                       convert_to_double_array,
-                                      silo_vals_type,
                                       silo_matset,
                                       silo_mixvar_vals_compact,
                                       mixvars_ptrs,
                                       mixlen);
+
+    if (convert_to_double_array)
+    {
+        silo_vals_type = DB_DOUBLE;
+    }
 
     //
     // Prepare Field Values
@@ -3604,33 +3624,6 @@ void silo_write_adjset(DBfile *dbfile,
     }
 
     write_dom_neighbor_nums(num_neighboring_doms, dom_neighbor_nums);
-
-    // std::vector<std::string> elem_name_strings;
-    // elem_name_strings.push_back("num_neighbors");
-    // elem_name_strings.push_back("neighbor_nums");
-    // // package up char ptrs for silo
-    // std::vector<const char *> elem_name_ptrs;
-    // for (size_t i = 0; i < elem_name_strings.size(); i ++)
-    // {
-    //     elem_name_ptrs.push_back(elem_name_strings[i].c_str());
-    // }
-
-    // std::vector<int> elemlengths;
-    // elemlengths.push_back(1);
-    // elemlengths.push_back(num_neighboring_doms);
-
-    // const int nelems = 2;
-    // const int nvalues = num_neighboring_doms + 1;
-
-    // DBPutCompoundarray(dbfile, // dbfile
-    //                    "DOMAIN_NEIGHBOR_NUMS", // name
-    //                    elem_name_ptrs.data(), // elemnames
-    //                    elemlengths.data(), // elemlengths
-    //                    nelems, // nelems
-    //                    static_cast<void *>(dom_neighbor_nums.data()), // values
-    //                    nvalues, // nvalues
-    //                    DB_INT, // datatype
-    //                    NULL); // optlist
 
     // 
     // COMMUNICATIONS LISTS FOR NEIGHBORING DOMAINS
@@ -4176,7 +4169,7 @@ void silo_write_topo(const Node &mesh_domain,
             << " mesh " << topo_name)
 
         // compact arrays
-        Node n_coords_compact, new_coords;
+        Node n_coords_compact, n_coords_compact_final, new_coords;
         
         // here we handle the unstructured points case:
         if (unstructured_points)
@@ -4219,15 +4212,25 @@ void silo_write_topo(const Node &mesh_domain,
             detail::conditional_compact(n_coords["values"], n_coords_compact);
         }
 
+        // overlink requires doubles
+        if (write_overlink)
+        {
+            detail::convert_to_double_array(n_coords_compact, n_coords_compact_final);
+        }
+        else
+        {
+            n_coords_compact_final.set_external(n_coords_compact);
+        }
+
         // get num pts
-        const int num_pts = get_explicit_num_pts(n_coords_compact);
+        const int num_pts = get_explicit_num_pts(n_coords_compact_final);
         n_mesh_info[topo_name]["num_pts"].set(num_pts);
 
         // get coords ptrs
         void *coords_ptrs[3] = {NULL, NULL, NULL};
         int coords_dtype = assign_coords_ptrs(coords_ptrs,
                                               ndims,
-                                              n_coords_compact,
+                                              n_coords_compact_final,
                                               silo_coordset_axis_labels.data());
 
         if (topo_type == "unstructured")
@@ -4321,11 +4324,21 @@ void silo_write_matset(DBfile *dbfile,
                        Node &n_mesh_info)
 {
     // use to_silo utility to create the needed silo arrays
-    Node silo_matset, silo_matset_compact;
+    Node silo_matset, silo_matset_compact, silo_mix_vfs_final;
     conduit::blueprint::mesh::matset::to_silo(n_matset, silo_matset);
 
     // compact the arrays if necessary
     detail::conditional_compact(silo_matset, silo_matset_compact);
+
+    // mix vfs must be doubles for overlink
+    if (write_overlink)
+    {
+        detail::convert_to_double_array(silo_matset_compact["mix_vf"], silo_mix_vfs_final);
+    }
+    else
+    {
+        silo_mix_vfs_final.set_external(silo_matset_compact["mix_vf"]);
+    }
 
     if (!n_matset.has_path("topology"))
     {
@@ -4384,9 +4397,9 @@ void silo_write_matset(DBfile *dbfile,
     const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
 
     // get the datatype of the volume fractions
-    const int mat_type = detail::dtype_to_silo_type(silo_matset_compact["mix_vf"].dtype());
+    const int mat_type = detail::dtype_to_silo_type(silo_mix_vfs_final.dtype());
     CONDUIT_ASSERT(mat_type == DB_FLOAT || mat_type == DB_DOUBLE,
-        "Invalid matset volume fraction type: " << silo_matset_compact["mix_vf"].dtype().to_string());
+        "Invalid matset volume fraction type: " << silo_mix_vfs_final.dtype().to_string());
 
     // create optlist and add to it
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
@@ -4430,7 +4443,7 @@ void silo_write_matset(DBfile *dbfile,
                       int_arrays["mix_next"].value(),
                       int_arrays["mix_mat"].value(),
                       NULL, // mix zone is optional
-                      silo_matset_compact["mix_vf"].data_ptr(), // volume fractions
+                      silo_mix_vfs_final.data_ptr(), // volume fractions
                       mixlen, // length of mixed data arrays
                       mat_type, // data type of volume fractions
                       optlist.getSiloObject()); // optlist
@@ -4671,6 +4684,11 @@ void silo_mesh_write(const Node &mesh_domain,
                             dbfile);
         }
     }
+
+    // either we are not writing overlink, or there is a matset present
+    // overlink requires a matset
+    CONDUIT_ASSERT(! write_overlink || mesh_domain.has_path("matsets"),
+        "Writing to Overlink requires a matset.");
 
     if (mesh_domain.has_path("matsets")) 
     {
@@ -5590,9 +5608,6 @@ void CONDUIT_RELAY_API write_mesh(const Node &mesh,
     // more will happen for this case later
     if (write_overlink)
     {
-        CONDUIT_INFO("Overlink is not yet fully supported. Outputted files "
-                     "with this option will be missing several components "
-                     "that Overlink requires.")
         opts_suffix = "none"; // force no suffix for overlink case
         opts_root_file_ext = "silo"; // force .silo file extension for root file
     }

@@ -20,7 +20,7 @@ endif()
 # Conduit
 ################################
 
-project(conduit VERSION "0.8.9")
+project(conduit VERSION "0.9.0")
 
 ################################ 
 # Build Options
@@ -44,6 +44,16 @@ option(ENABLE_OPENMP      "Build OpenMP Support"        OFF)
 # control over conduit tests for cases where 
 # conduit is brought in as a submodule
 option(CONDUIT_ENABLE_TESTS "Build conduit tests" ON)
+
+######################
+# CMake Policy Selections
+######################
+
+# allow FindPythonInterp and FindPythonLibs
+# https://cmake.org/cmake/help/latest/policy/CMP0148.html
+if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+endif()
 
 ################################
 # Invoke CMake Fortran setup

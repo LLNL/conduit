@@ -683,8 +683,100 @@ DataArray<T>::to_yaml_stream(std::ostream &os) const
 }
 
 //---------------------------------------------------------------------------//
+// DataArray::set() signed integers single element
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
 template <typename T> 
-void            
+void
+DataArray<T>::set(index_t ele_idx, int8 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, int16 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, int32 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, int64 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+// DataArray::set() unsigned integers single element
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, uint8 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, uint16 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, uint32 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, uint64 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+// DataArray::set() floating point single element
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, float32 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(index_t ele_idx, float64 value)
+{ 
+    this->element(ele_idx) = (T)value;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
 DataArray<T>::set(const int8 *values, index_t num_elements)
 { 
     for(index_t i=0;i<num_elements;i++)
@@ -695,7 +787,7 @@ DataArray<T>::set(const int8 *values, index_t num_elements)
 
 //---------------------------------------------------------------------------//
 template <typename T> 
-void            
+void
 DataArray<T>::set(const  int16 *values, index_t num_elements)
 { 
     for(index_t i=0;i<num_elements;i++)
@@ -1657,18 +1749,20 @@ DataArray<T>::operator=(const std::initializer_list<double> &values)
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
+//***************************************************************************//
 // Set from DataArray
+//***************************************************************************//
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-// signed
+// Set from DataArray signed integers
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<int8> &values)
-{ 
+{
     index_t num_elems = m_dtype.number_of_elements();
     for(index_t i=0; i <num_elems; i++)
     {
@@ -1677,8 +1771,8 @@ DataArray<T>::set(const DataArray<int8> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<int16> &values)
 { 
     index_t num_elems = m_dtype.number_of_elements();
@@ -1689,8 +1783,8 @@ DataArray<T>::set(const DataArray<int16> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<int32> &values)
 { 
     index_t num_elems = m_dtype.number_of_elements();
@@ -1701,8 +1795,8 @@ DataArray<T>::set(const DataArray<int32> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<int64> &values)
 { 
     index_t num_elems = m_dtype.number_of_elements();
@@ -1713,14 +1807,14 @@ DataArray<T>::set(const DataArray<int64> &values)
 }
 
 //---------------------------------------------------------------------------//
-// unsigned
+// Set from DataArray unsigned integers
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<uint8> &values)
-{ 
+{
     index_t num_elems = m_dtype.number_of_elements();
     for(index_t i=0; i <num_elems; i++)
     {
@@ -1729,8 +1823,8 @@ DataArray<T>::set(const DataArray<uint8> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<uint16> &values)
 { 
     index_t num_elems = m_dtype.number_of_elements();
@@ -1741,10 +1835,10 @@ DataArray<T>::set(const DataArray<uint16> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<uint32> &values)
-{ 
+{
     index_t num_elems = m_dtype.number_of_elements();
     for(index_t i=0; i <num_elems; i++)
     {
@@ -1753,10 +1847,10 @@ DataArray<T>::set(const DataArray<uint32> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<uint64> &values)
-{ 
+{
     index_t num_elems = m_dtype.number_of_elements();
     for(index_t i=0; i <num_elems; i++)
     {
@@ -1765,14 +1859,14 @@ DataArray<T>::set(const DataArray<uint64> &values)
 }
 
 //---------------------------------------------------------------------------//
-// floating point
+// Set from DataArray floating point
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<float32> &values)
-{ 
+{
     index_t num_elems = m_dtype.number_of_elements();
     for(index_t i=0; i <num_elems; i++)
     {
@@ -1781,9 +1875,43 @@ DataArray<T>::set(const DataArray<float32> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
-void            
+template <typename T>
+void
 DataArray<T>::set(const DataArray<float64> &values)
+{
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+//***************************************************************************//
+// Set from DataAccessor
+//***************************************************************************//
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// Set from DataAccessor signed integers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const DataAccessor<int8> &values)
+{
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void            
+DataArray<T>::set(const DataAccessor<int16> &values)
 { 
     index_t num_elems = m_dtype.number_of_elements();
     for(index_t i=0; i <num_elems; i++)
@@ -1792,13 +1920,115 @@ DataArray<T>::set(const DataArray<float64> &values)
     }
 }
 
+//---------------------------------------------------------------------------//
+template <typename T>
+void            
+DataArray<T>::set(const DataAccessor<int32> &values)
+{ 
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
 
+//---------------------------------------------------------------------------//
+template <typename T>
+void            
+DataArray<T>::set(const DataAccessor<int64> &values)
+{ 
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Set from DataAccessor unsigned integers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const DataAccessor<uint8> &values)
+{
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const DataAccessor<uint16> &values)
+{ 
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const DataAccessor<uint32> &values)
+{
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataArray<T>::set(const DataAccessor<uint64> &values)
+{
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Set from DataAccessor floating point
+//---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
 template <typename T> 
-void            
+void
+DataArray<T>::set(const DataAccessor<float32> &values)
+{
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
+DataArray<T>::set(const DataAccessor<float64> &values)
+{
+    index_t num_elems = m_dtype.number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+void
 DataArray<T>::compact_elements_to(uint8 *data) const
-{ 
+{
     // copy all elements 
     index_t ele_bytes = DataType::default_bytes(dtype().id());
 
@@ -1809,7 +2039,6 @@ DataArray<T>::compact_elements_to(uint8 *data) const
                     element_ptr(0),             // src
                     (size_t)dtype().stride());  // src stride per ele
 }
-
 
 //---------------------------------------------------------------------------//
 template <typename T> 
@@ -1858,7 +2087,10 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
             bottom++;
         }
 
-        if(nele > 1)
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
             os << "[";
 
         bool done  = (nele == 0);
@@ -1931,7 +2163,10 @@ DataArray<T>::to_summary_string_stream(std::ostream &os,
             }
         }
 
-        if(nele > 1)
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
             os << "]";
     }
 }

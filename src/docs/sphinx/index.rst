@@ -162,6 +162,7 @@ Conduit Documentation
    :hidden:
 
    releases
+   citing
    presentations
    licenses
 

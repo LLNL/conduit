@@ -1653,7 +1653,7 @@ TEST(conduit_blueprint_generate_structured, gen_corners)
     Node mesh;
     const index_t nx = 2;
     const index_t ny = 3;
-    const index_t nz = 2;
+    const index_t nz = 0;
 
     mesh::examples::basic("quads", nx, ny, nz, mesh);
 

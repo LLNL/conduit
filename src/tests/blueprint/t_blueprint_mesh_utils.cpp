@@ -43,6 +43,50 @@ void save_mesh(const conduit::Node &root, const std::string &filebase)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, topology_length)
+{
+    // Test with a strided structured topo. the topology::length function used
+    // to crash with it.
+    conduit::Node n;
+    conduit::Node &coords = n["coordsets/coarse_coords"];
+    coords["type"] = "explicit";
+    coords["values/x"] = std::vector<double>{
+        0., 1.,
+        0., 1.,
+        0., 1.,
+        0., 1.,
+        0., 1.,
+        0., 1.,
+        0., 1.};
+    coords["values/y"] = std::vector<double>{
+        0., 0.,
+        1., 1.,
+        2., 2.,
+        3., 3.,
+        4., 4.,
+        5., 5.,
+        6., 6.};
+
+    conduit::Node &topo = n["topologies/coarse"];
+    topo["type"] = "structured";
+    topo["coordset"] = "coarse_coords";
+    topo["elements/dims/i"] = 1;
+    topo["elements/dims/j"] = 6;
+    topo["elements/dims/k"] = 0;
+    topo["elements/dims/offsets"] = std::vector<int>{2,2};
+    topo["elements/dims/strides"] = std::vector<int>{1,5};
+
+    conduit::Node info;
+    bool ok = conduit::blueprint::mesh::verify(n, info);
+    if(!ok)
+        info.print();
+    EXPECT_TRUE(ok);
+
+    conduit::index_t len = conduit::blueprint::mesh::topology::length(topo);
+    EXPECT_EQ(len, 6);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_utils, shapetype)
 {
     struct test_case

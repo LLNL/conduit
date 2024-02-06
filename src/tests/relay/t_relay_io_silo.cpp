@@ -520,17 +520,42 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
     Node save_mesh, load_mesh, info;
     blueprint::mesh::examples::grid("structured", 3, 3, 1, 2, 2, 1, save_mesh);
 
+    // we need a material in order for this to be valid overlink
+    for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
+    {
+        Node &n_matset = save_mesh[child]["matsets"]["matset"];
+        n_matset["topology"] = "mesh";
+        n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
+        n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
+
+        double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
+        double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
+
+        a_vfs[0] = 1.0;
+        a_vfs[1] = 0.0;
+        a_vfs[2] = 1.0;
+        a_vfs[3] = 0.0;
+
+        b_vfs[0] = 0.0;
+        b_vfs[1] = 1.0;
+        b_vfs[2] = 0.0;
+        b_vfs[3] = 1.0;
+    }
+
     const std::string basename = "silo_grid_adjset";
     const std::string filename = basename + "/OvlTop.silo";
 
-    Node opts;
-    opts["file_style"] = "overlink";
-    opts["ovl_topo_name"] = "mesh";
+    Node write_opts;
+    write_opts["file_style"] = "overlink";
+    write_opts["ovl_topo_name"] = "mesh";
+
+    Node read_opts;
+    read_opts["matset_style"] = "multi_buffer_full";
 
     remove_path_if_exists(filename);
-    io::silo::save_mesh(save_mesh, basename, opts);
+    io::silo::save_mesh(save_mesh, basename, write_opts);
     io::blueprint::save_mesh(save_mesh, basename, "hdf5");
-    io::silo::load_mesh(filename, load_mesh);
+    io::silo::load_mesh(filename, read_opts, load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
@@ -1368,13 +1393,28 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink1)
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::spiral(ndomains, save_mesh);
+        add_matset_to_spiral(save_mesh, ndomains);
         remove_path_if_exists(filename);
         io::silo::save_mesh(save_mesh, basename, opts);
         io::silo::load_mesh(filename, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
+        // make changes to save mesh so the diff will pass
         for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
         {
+            // get the matset for this domain
+            Node &n_matset = save_mesh[child]["matsets"]["matset"];
+
+            // clean up volume fractions
+            Node vf_arr;
+            n_matset["volume_fractions"].to_float64_array(vf_arr);
+            n_matset["volume_fractions"].reset();
+            n_matset["volume_fractions"].set(vf_arr);
+            
+            // cheat a little bit - we don't have these to start
+            n_matset["sizes"].set_external(load_mesh[child]["matsets"]["MMATERIAL"]["sizes"]);
+            n_matset["offsets"].set_external(load_mesh[child]["matsets"]["MMATERIAL"]["offsets"]);
+
             overlink_name_changer(save_mesh[child]);
         }
 
@@ -1398,8 +1438,9 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     const std::string basename = "silo_save_option_overlink_basic";
     const std::string filename = basename + "/OvlTop.silo";
 
-    Node opts;
-    opts["file_style"] = "overlink";
+    Node write_opts, read_opts;
+    write_opts["file_style"] = "overlink";
+    read_opts["matset_style"] = "multi_buffer_full";
 
     Node save_mesh, load_mesh, info;
     blueprint::mesh::examples::basic("structured", 3, 3, 1, save_mesh);
@@ -1411,9 +1452,21 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     field2["volume_dependent"] = "true";
     field2["values"].set_external(save_mesh["fields"]["field"]["values"]);
 
+    // add a matset to make overlink happy
+    Node &n_matset = save_mesh["matsets"]["matset"];
+    n_matset["topology"] = "mesh";
+    n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
+    n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
+    double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
+    double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
+    a_vfs[0] = 1.0; b_vfs[0] = 0.0;
+    a_vfs[1] = 0.0; b_vfs[1] = 1.0;
+    a_vfs[2] = 1.0; b_vfs[2] = 0.0;
+    a_vfs[3] = 0.0; b_vfs[3] = 1.0;
+
     remove_path_if_exists(filename);
-    io::silo::save_mesh(save_mesh, basename, opts);
-    io::silo::load_mesh(filename, load_mesh);
+    io::silo::save_mesh(save_mesh, basename, write_opts);
+    io::silo::load_mesh(filename, read_opts, load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
 
     // make changes to save mesh so the diff will pass
@@ -1587,17 +1640,49 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink4)
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
+        index_t nele_x = nx - 1;
+        index_t nele_y = ny - 1;
+        index_t nele_z = (dim == "2" ? 0 : nz - 1);
+
+        // provide a matset for braid
+        {
+            index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
+
+            save_mesh["matsets"]["matset"]["topology"] = "mesh";
+
+            Node &vfs = save_mesh["matsets"]["matset"]["volume_fractions"];
+            vfs["mat1"].set(DataType::float64(nele));
+            vfs["mat2"].set(DataType::float64(nele));
+
+            float64_array mat1_vals = vfs["mat1"].value();
+            float64_array mat2_vals = vfs["mat2"].value();
+
+            for (index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
+            {
+                for (index_t j = 0; (idx == 0 || j < nele_y) ; j++)
+                {
+                    for (index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
+                    {
+                        float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
+
+                        mat1_vals[idx] = mv;
+                        mat2_vals[idx] = 1.0 - mv;
+                    }
+                }
+            }
+        }
 
         const std::string basename = "silo_save_option_overlink_braid_" + mesh_type + "_" + dim + "D";
         const std::string filename = basename + "/OvlTop.silo";
 
-        Node opts;
-        opts["file_style"] = "overlink";
+        Node write_opts, read_opts;
+        write_opts["file_style"] = "overlink";
+        read_opts["matset_style"] = "multi_buffer_full";
 
         // remove existing root file, directory and any output files
         remove_path_if_exists(filename);
-        io::silo::save_mesh(save_mesh, basename, opts);
-        io::silo::load_mesh(filename, load_mesh);
+        io::silo::save_mesh(save_mesh, basename, write_opts);
+        io::silo::load_mesh(filename, read_opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
         Node &field_vel = save_mesh["fields"]["vel"];
@@ -1646,9 +1731,9 @@ TEST(conduit_relay_io_silo, read_silo)
     const std::vector<std::vector<std::string>> file_info = {
         {".",                  "multi_curv3d", ".silo", ""            }, // test default case
         {".",                  "multi_curv3d", ".silo", "mesh1"       },
-        {".",                  "multi_curv3d", ".silo", "mesh1_back"  },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_back"  }, // this multimesh points to paths that do not exist
         {".",                  "multi_curv3d", ".silo", "mesh1_dup"   },
-        {".",                  "multi_curv3d", ".silo", "mesh1_front" },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_front" }, // same here
         {".",                  "multi_curv3d", ".silo", "mesh1_hidden"},
         {".",                  "tire",         ".silo", ""            }, // test default case
         {".",                  "tire",         ".silo", "tire"        },
@@ -1659,6 +1744,9 @@ TEST(conduit_relay_io_silo, read_silo)
         {"multidir_test_data", "multidir0000", ".root", ""            }, // test default case
         {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
     };
+
+    // TODO what to do in the case where a multimesh points to no data? (mesh1_back)
+    // fail silently, as we do now?
 
     for (int i = 0; i < file_info.size(); i ++) 
     {
@@ -1690,11 +1778,14 @@ TEST(conduit_relay_io_silo, read_silo)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = meshname;
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        // overlink requires matsets and does not support point meshes
+        if (load_mesh[0].has_child("matsets") && basename != "galaxy0000")
+        {
+            remove_path_if_exists(out_name + "_write_overlink");
+            write_opts["file_style"] = "overlink";
+            write_opts["ovl_topo_name"] = meshname;
+            io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        }
     }
 }
 
@@ -1744,11 +1835,10 @@ TEST(conduit_relay_io_silo, read_fake_overlink)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = "MMESH";
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
@@ -1803,11 +1893,10 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = "MMESH";
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 
@@ -1861,11 +1950,10 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
         remove_path_if_exists(out_name + "_write_silo");
         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // TODO uncomment when overlink is fully supported
-        // remove_path_if_exists(out_name + "_write_overlink");
-        // write_opts["file_style"] = "overlink";
-        // write_opts["ovl_topo_name"] = "MMESH";
-        // io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
 }
 

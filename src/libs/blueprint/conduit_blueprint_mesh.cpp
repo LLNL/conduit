@@ -766,7 +766,7 @@ verify_single_domain(const Node &n,
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
-        if(!verify_object_field(protocol, n, info, "fields"))
+        if(!verify_object_field(protocol + "::fields", n, info, "fields"))
         {
             res = false;
         }
@@ -783,12 +783,12 @@ verify_single_domain(const Node &n,
                 field_res &= blueprint::mesh::field::verify(chld, chld_info);
                 if(chld.has_child("topology"))
                 {
-                    field_res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol + "::field", n, info,
                         chld, chld_info, "topology", "topologies");
                 }
                 if(chld.has_child("matset"))
                 {
-                    field_res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol + "::field", n, info,
                         chld, chld_info, "matset", "matsets");
                 }
             }
@@ -6691,9 +6691,6 @@ mesh::specset::verify(const Node &specset,
     bool res = true;
     info.reset();
 
-    // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
-    // entry for specsets.
-    // res &= verify_enum_field(protocol, specset, info, "volume_dependent", bputils::BOOLEANS);
     res &= verify_string_field(protocol, specset, info, "matset");
     if(!verify_object_field(protocol, specset, info, "matset_values"))
     {
