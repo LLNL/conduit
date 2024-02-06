@@ -4718,7 +4718,7 @@ void silo_mesh_write(const Node &mesh_domain,
         // we enforce one specset per topo.
 
         // the names of the matsets the specsets are associated with
-        std::set<std::string> matset_names;
+        std::set<std::string> specset_names;
         auto itr = mesh_domain["specsets"].children();
         while (itr.has_next())
         {
