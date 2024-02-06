@@ -1604,32 +1604,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink4)
         index_t nele_z = (dim == "2" ? 0 : nz - 1);
 
         // provide a matset for braid
-        {
-            index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
-
-            save_mesh["matsets"]["matset"]["topology"] = "mesh";
-
-            Node &vfs = save_mesh["matsets"]["matset"]["volume_fractions"];
-            vfs["mat1"].set(DataType::float64(nele));
-            vfs["mat2"].set(DataType::float64(nele));
-
-            float64_array mat1_vals = vfs["mat1"].value();
-            float64_array mat2_vals = vfs["mat2"].value();
-
-            for (index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
-            {
-                for (index_t j = 0; (idx == 0 || j < nele_y) ; j++)
-                {
-                    for (index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
-                    {
-                        float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
-
-                        mat1_vals[idx] = mv;
-                        mat2_vals[idx] = 1.0 - mv;
-                    }
-                }
-            }
-        }
+        braid_init_example_matset(nele_x, nele_y, nele_z, save_mesh["matsets"]["matset"]);
 
         const std::string basename = "silo_save_option_overlink_braid_" + mesh_type + "_" + dim + "D";
         const std::string filename = basename + "/OvlTop.silo";

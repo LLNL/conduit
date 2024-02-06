@@ -366,4 +366,36 @@ add_multi_buffer_full_matset(Node &n_mesh,
     }
 }
 
+//---------------------------------------------------------------------------//
+void braid_init_example_matset(index_t nele_x,
+                               index_t nele_y,
+                               index_t nele_z,
+                               Node &res)
+{
+    index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
+
+    res["topology"] = "mesh";
+
+    Node &vfs = res["volume_fractions"];
+    vfs["mat1"].set(DataType::float64(nele));
+    vfs["mat2"].set(DataType::float64(nele));
+
+    float64_array mat1_vals = vfs["mat1"].value();
+    float64_array mat2_vals = vfs["mat2"].value();
+
+    for(index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
+    {
+        for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
+        {
+            for(index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
+            {
+                float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
+
+                mat1_vals[idx] = mv;
+                mat2_vals[idx] = 1.0 - mv;
+            }
+        }
+    }
+}
+
 #endif
