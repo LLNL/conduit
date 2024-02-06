@@ -3499,38 +3499,34 @@ void silo_write_field(DBfile *dbfile,
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after creating field " << var_name);
 
+    Node bookkeeping_info;
+    bookkeeping_info["comp_info"]["comp"] = "vars";
+    bookkeeping_info["specific_info"]["comp_type"] = var_type;
+    bookkeeping_info["specific_info"]["var_data_type"] = detail::silo_type_to_ovl_attr_type(silo_vals_type);
+    bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
+    bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
+    bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
+    bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
+
     // if we are writing overlink and we have separated variable components into new vars
     if (write_overlink && nvars != 1)
     {
+        bookkeeping_info["specific_info"]["var_parent"] = var_name;
         for (int comp_id = 0; comp_id < nvars; comp_id ++)
         {
-            // TODO can't this be simplified?
-            Node bookkeeping_info;
-            bookkeeping_info["comp_info"]["comp"] = "vars";
+            if (bookkeeping_info.has_path("comp_info/comp_name"))
+            {
+                bookkeeping_info["comp_info"]["comp_name"].reset();
+            }
             bookkeeping_info["comp_info"]["comp_name"] = var_name + "_" + comp_name_strings[comp_id];
-            bookkeeping_info["specific_info"]["comp_type"] = var_type;
-            bookkeeping_info["specific_info"]["var_data_type"] = detail::silo_type_to_ovl_attr_type(silo_vals_type);
-            bookkeeping_info["specific_info"]["var_parent"] = var_name;
-            bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
-            bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
-            bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
-            bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
-
+            
             // bookkeeping
             detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
         }
     }
     else
     {
-        Node bookkeeping_info;
-        bookkeeping_info["comp_info"]["comp"] = "vars";
         bookkeeping_info["comp_info"]["comp_name"] = var_name;
-        bookkeeping_info["specific_info"]["comp_type"] = var_type;
-        bookkeeping_info["specific_info"]["var_data_type"] = detail::silo_type_to_ovl_attr_type(silo_vals_type);
-        bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
-        bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
-        bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
-        bookkeeping_info["write_overlink"] = (write_overlink ? "yes" : "no");
 
         // bookkeeping
         detail::track_local_type_domain_info(bookkeeping_info, local_type_domain_info);
