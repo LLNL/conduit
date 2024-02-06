@@ -523,23 +523,7 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
     // we need a material in order for this to be valid overlink
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
     {
-        Node &n_matset = save_mesh[child]["matsets"]["matset"];
-        n_matset["topology"] = "mesh";
-        n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
-        n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
-
-        double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
-        double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
-
-        a_vfs[0] = 1.0;
-        a_vfs[1] = 0.0;
-        a_vfs[2] = 1.0;
-        a_vfs[3] = 0.0;
-
-        b_vfs[0] = 0.0;
-        b_vfs[1] = 1.0;
-        b_vfs[2] = 0.0;
-        b_vfs[3] = 1.0;
+        add_multi_buffer_full_matset(save_mesh[child], 4, "mesh");
     }
 
     const std::string basename = "silo_grid_adjset";
@@ -1437,16 +1421,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     field2["values"].set_external(save_mesh["fields"]["field"]["values"]);
 
     // add a matset to make overlink happy
-    Node &n_matset = save_mesh["matsets"]["matset"];
-    n_matset["topology"] = "mesh";
-    n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
-    n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
-    double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
-    double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
-    a_vfs[0] = 1.0; b_vfs[0] = 0.0;
-    a_vfs[1] = 0.0; b_vfs[1] = 1.0;
-    a_vfs[2] = 1.0; b_vfs[2] = 0.0;
-    a_vfs[3] = 0.0; b_vfs[3] = 1.0;
+    add_multi_buffer_full_matset(save_mesh, 4, "mesh");
 
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename, write_opts);

@@ -345,4 +345,25 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+add_multi_buffer_full_matset(Node &n_mesh,
+                             const int num_elements,
+                             const std::string &topo_name)
+{
+    Node &n_matset = n_mesh["matsets"]["matset"];
+    n_matset["topology"] = topo_name;
+    n_matset["volume_fractions"]["mat_a"].set(DataType::float64(num_elements));
+    n_matset["volume_fractions"]["mat_b"].set(DataType::float64(num_elements));
+
+    double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
+    double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
+
+    for (int i = 0; i < num_elements; i ++)
+    {
+        a_vfs[i] = (i % 2 ? 1.0 : 0.0);
+        b_vfs[i] = (i % 2 ? 0.0 : 1.0);
+    }
+}
+
 #endif
