@@ -666,6 +666,10 @@ add_shape_info(DBzonelist *zonelist_ptr,
                            << zonelist_ptr->shapetype[i]);
     }
 
+    // TODO you can have a list of different shapetypes, so querying
+    // zonelist_ptr->shapetype[0] and guessing that the rest are the same
+    // is wrong.
+
     n_elements["shape"] = shapetype_to_string(zonelist_ptr->shapetype[0]);
     n_elements["connectivity"].set(zonelist_ptr->nodelist, zonelist_ptr->lnodelist);
     if (zonelist_ptr->shapetype[0] == DB_ZONETYPE_PRISM)
@@ -3797,6 +3801,10 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         total_num_elems += num_elems;
     };
 
+    // TODO should we allow people to write tris, wedges, and pyramids to overlink?
+    // I don't think overlink supports those shape types
+    // but we still produce valid silo
+
     if (topo_shape == "quad")
     {
         set_up_single_shape_type(4, DB_ZONETYPE_QUAD);
@@ -3843,15 +3851,15 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
     else
     {
-        // TODO add polygons and polyhedra and mixed
+        // TODO add polyhedra and mixed
         CONDUIT_ERROR("Unsupported topo shape " << topo_shape);
     }
 
     Node n_conn_compact;
     detail::conditional_compact(n_conn, n_conn_compact);
 
-    int conn_len = n_conn_compact.total_bytes_compact() / sizeof(int);
-    int *conn_ptr = (int *)n_conn_compact.data_ptr();
+    const int conn_len = n_conn_compact.dtype().number_of_elements();
+    int *conn_ptr = n_conn_compact.value();
 
     n_mesh_info[topo_name]["num_elems"].set(total_num_elems);
 
