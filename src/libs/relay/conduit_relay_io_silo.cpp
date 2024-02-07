@@ -312,7 +312,7 @@ public:
 std::string sanitize_silo_varname(const std::string &varname)
 {
     std::stringstream newvarname;
-    for (uint i = 0; i < varname.size(); i ++)
+    for (size_t i = 0; i < varname.size(); i ++)
     {
         if (std::isalnum(varname[i]))
             newvarname << varname[i];
