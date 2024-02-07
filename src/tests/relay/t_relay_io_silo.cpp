@@ -88,12 +88,12 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     std::vector<std::string> filename_vec = {
         "box2d.silo",
         "box3d.silo",
-        // "diamond.silo", <--- this one fails because polytopal is not yet supported
+        // "diamond.silo", <--- TODO this one fails because polytopal is not yet supported
         // TODO: rename these files to be more descriptive.
         // would also require modifying the paths stored within the files,
         // and re-symlinking
         "testDisk2D_a.silo",
-        // "donordiv.s2_materials2.silo", <--- this one fails because polytopal is not yet supported
+        // "donordiv.s2_materials2.silo", <--- TODO this one fails because polytopal is not yet supported
         "donordiv.s2_materials3.silo"
     };
     std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};

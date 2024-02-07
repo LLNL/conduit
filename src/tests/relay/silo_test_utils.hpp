@@ -367,6 +367,7 @@ add_multi_buffer_full_matset(Node &n_mesh,
 }
 
 //---------------------------------------------------------------------------//
+// (mostly) copied from conduit_blueprint_mesh_examples.hpp
 void braid_init_example_matset(index_t nele_x,
                                index_t nele_y,
                                index_t nele_z,
