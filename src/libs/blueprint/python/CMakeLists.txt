@@ -113,5 +113,8 @@ PYTHON_ADD_COMPILED_MODULE(NAME          conduit_blueprint_table_examples_python
                                          ${CMAKE_CURRENT_BINARY_DIR}/conduit_blueprint_python_exports.h
                            FOLDER        libs/python)
 
+# compiled modules depend on output dir structure created by main module setup
+add_dependencies( conduit_blueprint_table_examples_python conduit_python_py_setup)
+
 # link with the proper libs (beyond python)
 target_link_libraries(conduit_blueprint_table_examples_python conduit conduit_blueprint conduit_python_build)
