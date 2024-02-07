@@ -12,6 +12,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Relaxed strict header check for C++14 back to C++11. A downstream consumer of Conduit has C++11 hardcoded into their build system and patching for related deployments is intractable.
 
 
+#### Blueprint
+- Fixed missing build dependency relationship with the python conduit blueprint table examples module.
+
 ## [0.9.0] - Released 2024-02-05
 
 ### Added
