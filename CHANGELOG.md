@@ -10,7 +10,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Conduit
 - Relaxed strict header check for C++14 back to C++11. A downstream consumer of Conduit has C++11 hardcoded into their build system and patching for related deployments is intractable.
-
+- Restore logic to avoid fused mpi c++ and fortran flags that can undermine blt's mpi smoke test.
 
 #### Blueprint
 - Fixed missing build dependency relationship with the python conduit blueprint table examples module.
