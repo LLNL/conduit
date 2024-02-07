@@ -3730,6 +3730,7 @@ int get_explicit_num_pts(const Node &n_vals)
 void silo_write_ucd_zonelist(DBfile *dbfile,
                              const std::string &topo_name,
                              const Node &n_topo,
+                             const bool &write_overlink,
                              Node &n_mesh_info) 
 {
     const Node &n_elements = n_topo["elements"];
@@ -3854,7 +3855,7 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 
     n_mesh_info[topo_name]["num_elems"].set(total_num_elems);
 
-    std::string zlist_name = topo_name + "_connectivity";
+    const std::string zlist_name = (write_overlink ? "zonelist" : topo_name + "_connectivity");
 
     int silo_error =
         DBPutZonelist2(dbfile,             // silo file
@@ -3959,7 +3960,8 @@ void silo_write_ucd_mesh(DBfile *dbfile,
     int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
     // TODO there is a different approach for polyhedral zone lists
-    const std::string zlist_name = topo_name + "_connectivity";
+    // TODO cache zlist_name in the n_mesh_info so that I don't have to do this twice
+    const std::string zlist_name = (write_overlink ? "zonelist" : topo_name + "_connectivity");
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
     int silo_error = DBPutUcdmesh(dbfile,                      // silo file ptr
@@ -4101,6 +4103,7 @@ void silo_write_topo(const Node &mesh_domain,
             silo_write_ucd_zonelist(dbfile,
                                     topo_name,
                                     n_topo,
+                                    write_overlink,
                                     n_mesh_info);
         }
         else
