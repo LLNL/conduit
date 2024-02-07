@@ -631,56 +631,65 @@ copy_point_coords(const int datatype,
 
 //-----------------------------------------------------------------------------
 void
-add_offsets(DBzonelist *zones,
-            Node &elements)
+add_sizes_and_offsets(DBzonelist *zones,
+                      Node &n_elements)
 {
+    std::vector<int> sizes;
+    std::vector<int> offsets;
     int offset = 0;
-    int *offset_arr = new int[zones->nzones];
-    for (int i = 0; i < zones->nzones; ++i)
+    for (int i = 0; i < zones->nshapes; ++i)
     {
-        offset_arr[i] = offset;
-        offset += zones->shapesize[i];
+        int shapecnt = zones->shapecnt[i];
+        // there could be more than one shape
+        for (int j = 0; j < shapecnt; j ++)
+        {
+            const int size = zones->shapesize[i];
+            sizes.push_back(size);
+            offsets.push_back(offset);
+            offset += size;
+        }
     }
-    elements["offsets"].set(offset_arr, zones->nzones);
+    n_elements["sizes"].set(sizes.data(), sizes.size());
+    n_elements["offsets"].set(offsets.data(), offsets.size());
 }
 
 //-----------------------------------------------------------------------------
 void
-add_shape_info(DBzonelist *zones,
-               Node &elements)
+add_shape_info(DBzonelist *zonelist_ptr,
+               Node &n_elements)
 {
-    for (int i = 0; i < zones->nshapes; ++i)
+    for (int i = 0; i < zonelist_ptr->nshapes; ++i)
     {
-        CONDUIT_ASSERT(zones->shapetype[0] == zones->shapetype[i],
+        CONDUIT_ASSERT(zonelist_ptr->shapetype[0] == zonelist_ptr->shapetype[i],
                        "Expected a single shape type, got "
-                           << zones->shapetype[0] << " and "
-                           << zones->shapetype[i]);
+                           << zonelist_ptr->shapetype[0] << " and "
+                           << zonelist_ptr->shapetype[i]);
     }
 
-    elements["shape"] = shapetype_to_string(zones->shapetype[0]);
-    elements["connectivity"].set(zones->nodelist, zones->lnodelist);
-    if (zones->shapetype[0] == DB_ZONETYPE_PRISM)
+    n_elements["shape"] = shapetype_to_string(zonelist_ptr->shapetype[0]);
+    n_elements["connectivity"].set(zonelist_ptr->nodelist, zonelist_ptr->lnodelist);
+    if (zonelist_ptr->shapetype[0] == DB_ZONETYPE_PRISM)
     {
         // we must reorder the wedge connectivity b/c conduit uses the 
         // vtk ordering, NOT the silo ordering
-        DataType dtype = elements["connectivity"].dtype();
+        DataType dtype = n_elements["connectivity"].dtype();
 
         // swizzle the connectivity
         if (dtype.is_uint64())
         {
-            silo_wedge_connectivity_to_conduit<uint64>(elements["connectivity"]);
+            silo_wedge_connectivity_to_conduit<uint64>(n_elements["connectivity"]);
         }
         else if (dtype.is_uint32())
         {
-            silo_wedge_connectivity_to_conduit<uint32>(elements["connectivity"]);
+            silo_wedge_connectivity_to_conduit<uint32>(n_elements["connectivity"]);
         }
         else if (dtype.is_int64())
         {
-            silo_wedge_connectivity_to_conduit<int64>(elements["connectivity"]);
+            silo_wedge_connectivity_to_conduit<int64>(n_elements["connectivity"]);
         }
         else if (dtype.is_int32())
         {
-            silo_wedge_connectivity_to_conduit<int32>(elements["connectivity"]);
+            silo_wedge_connectivity_to_conduit<int32>(n_elements["connectivity"]);
         }
         else
         {
@@ -689,20 +698,16 @@ add_shape_info(DBzonelist *zones,
     }
 
     // TODO polytopal support
-    if (zones->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
+    if (zonelist_ptr->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
         CONDUIT_ERROR("Polyhedra not yet supported");
-        elements["sizes"].set(zones->shapesize, zones->nzones);
+        // n_elements["sizes"].set(zonelist_ptr->shapesize, zonelist_ptr->nzones);
         // TODO double check this approach
-        add_offsets(zones, elements["subelements"]); 
+        add_sizes_and_offsets(zonelist_ptr, n_elements["subelements"]); 
     }
-    if (zones->shapetype[0] == DB_ZONETYPE_POLYGON)
+    if (zonelist_ptr->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
-        CONDUIT_ERROR("Polygons not yet supported");
-        // TODO zones->shapesize is NOT zones->nzones elements long; see docs
-        // TODO need to loop over the shapes array and expand it out to resemble the blueprint approach
-        elements["sizes"].set(zones->shapesize, zones->nzones);
-        add_offsets(zones, elements);
+        add_sizes_and_offsets(zonelist_ptr, n_elements);
     }
 }
 
