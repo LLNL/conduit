@@ -23,8 +23,6 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
-// #include "conduit.hpp"
-// #include "conduit_blueprint_exports.h"
 #include "conduit_blueprint_o2mrelation_index.hpp"
 
 using namespace conduit;
