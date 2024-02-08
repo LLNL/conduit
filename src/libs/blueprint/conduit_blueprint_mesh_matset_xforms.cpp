@@ -601,6 +601,21 @@ walk_uni_buffer_by_element_to_multi_buffer_by_element(
 }
 
 //-----------------------------------------------------------------------------
+template<typename T>
+void
+read_from_map_write_out(std::map<std::string, std::vector<T>> &datamap,
+                        conduit::Node &destination)
+{
+    for (auto & mapitem : datamap)
+    {
+        const std::string &matname = mapitem.first;
+        const std::vector<T> &data_vector = mapitem.second;
+
+        destination[matname].set(data_vector.data(), data_vector.size());
+    }
+}
+
+//-----------------------------------------------------------------------------
 // venn full -> sparse by element
 void
 multi_buffer_by_element_to_uni_buffer_by_element_matset(const conduit::Node &src_matset,
@@ -754,18 +769,12 @@ uni_buffer_by_element_to_multi_buffer_by_element_matset(const conduit::Node &src
     std::map<std::string, std::vector<double>> new_vol_fracs;
 
     walk_uni_buffer_by_element_to_multi_buffer_by_element(src_matset,
-                               reverse_matmap,
-                               volume_fractions,
-                               material_ids,
-                               new_vol_fracs);
+                                                          reverse_matmap,
+                                                          volume_fractions,
+                                                          material_ids,
+                                                          new_vol_fracs);
 
-    for (auto & mapitem : new_vol_fracs)
-    {
-        const std::string &matname = mapitem.first;
-        const std::vector<double> &full_vfs = mapitem.second;
-
-        dest_matset["volume_fractions"][matname].set(full_vfs.data(), full_vfs.size());
-    }
+    read_from_map_write_out(new_vol_fracs, dest_matset["volume_fractions"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -797,18 +806,12 @@ uni_buffer_by_element_to_multi_buffer_by_element_field(const conduit::Node &src_
         std::map<std::string, std::vector<double>> new_matset_vals;
 
         walk_uni_buffer_by_element_to_multi_buffer_by_element(src_matset,
-                                   reverse_matmap,
-                                   matset_values,
-                                   material_ids,
-                                   new_matset_vals);
+                                                              reverse_matmap,
+                                                              matset_values,
+                                                              material_ids,
+                                                              new_matset_vals);
 
-        for (auto & mapitem : new_matset_vals)
-        {
-            const std::string &matname = mapitem.first;
-            const std::vector<double> &full_msvs = mapitem.second;
-
-            dest_field["matset_values"][matname].set(full_msvs.data(), full_msvs.size());
-        }
+        read_from_map_write_out(new_matset_vals, dest_field["matset_values"]);
     }
     else
     {
@@ -856,21 +859,8 @@ uni_buffer_by_element_to_multi_buffer_by_material_matset(const conduit::Node &sr
         }
     }
 
-    for (auto & mapitem : new_vol_fracs)
-    {
-        const std::string &matname = mapitem.first;
-        const std::vector<double> &sbm_vfs = mapitem.second;
-
-        dest_matset["volume_fractions"][matname].set(sbm_vfs.data(), sbm_vfs.size());
-    }
-
-    for (auto & mapitem : new_elem_ids)
-    {
-        const std::string &matname = mapitem.first;
-        const std::vector<int> &sbm_eids = mapitem.second;
-
-        dest_matset["element_ids"][matname].set(sbm_eids.data(), sbm_eids.size());
-    }
+    read_from_map_write_out(new_vol_fracs, dest_matset["volume_fractions"]);
+    read_from_map_write_out(new_elem_ids, dest_matset["element_ids"]);
 }
 
 //-----------------------------------------------------------------------------
@@ -916,13 +906,7 @@ uni_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &src
             }
         }
 
-        for (auto & mapitem : new_mset_vals)
-        {
-            const std::string &matname = mapitem.first;
-            const std::vector<double> &sbm_msvs = mapitem.second;
-
-            dest_field["matset_values"][matname].set(sbm_msvs.data(), sbm_msvs.size());
-        }
+        read_from_map_write_out(new_mset_vals, dest_field["matset_values"]);
     }
     else
     {
