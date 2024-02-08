@@ -4550,10 +4550,12 @@ void silo_write_specset(DBfile *dbfile,
     // // get the length of the mixed data arrays
     // const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
 
-    // // get the datatype of the volume fractions
-    // const int mat_type = detail::dtype_to_silo_type(silo_matset_compact["mix_vf"].dtype());
-    // CONDUIT_ASSERT(mat_type == DB_FLOAT || mat_type == DB_DOUBLE,
-    //     "Invalid matset volume fraction type: " << silo_matset_compact["mix_vf"].dtype().to_string());
+    // get the datatype of the volume fractions
+    const int datatype = detail::dtype_to_silo_type(TODO["species_mf"].dtype());
+    CONDUIT_ASSERT(datatype == DB_FLOAT || datatype == DB_DOUBLE,
+        "Invalid matset volume fraction type: " << TODO["species_mf"].dtype().to_string());
+
+    // TODO if datatype is float and we are doing overlink, we must convert data
 
     // create optlist and add to it
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
@@ -4600,7 +4602,7 @@ void silo_write_specset(DBfile *dbfile,
                         /*[ ]*/ species_mf, // mass fractions of the matspecies in an array of length nspecies_mf
                         /*[ ]*/ mix_spec, // array of length mixlen containing indices into the species_mf array
                         /*[ ]*/ mixlen, // length of mix_spec array
-                        /*[ ]*/ datatype, // datatype of mass fraction data in species_mf
+                        /*[x]*/ datatype, // datatype of mass fraction data in species_mf
                         /*[x]*/ optlist.getSiloObject()); // optlist
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
