@@ -3801,10 +3801,6 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         total_num_elems += num_elems;
     };
 
-    // TODO should we allow people to write tris, wedges, and pyramids to overlink?
-    // I don't think overlink supports those shape types
-    // but we still produce valid silo
-
     if (topo_shape == "quad")
     {
         set_up_single_shape_type(4, DB_ZONETYPE_QUAD);
@@ -3871,17 +3867,18 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     const int conn_len = n_conn_compact.dtype().number_of_elements();
     int *conn_ptr = n_conn_compact.value();
 
-    n_mesh_info[topo_name]["num_elems"].set(total_num_elems);
+    n_mesh_info[topo_name]["num_elems"] = total_num_elems;
 
-    const std::string zlist_name = (write_overlink ? "zonelist" : topo_name + "_connectivity");
-
+    const std::string zlist_name = detail::sanitize_silo_varname(write_overlink ? "zonelist" : topo_name + "_connectivity");
     n_mesh_info[topo_name]["zonelist_name"] = zlist_name;
+
+    const int ndims = n_mesh_info[topo_name]["ndims"].as_int();
 
     int silo_error =
         DBPutZonelist2(dbfile,             // silo file
-                       detail::sanitize_silo_varname(zlist_name).c_str(), // silo obj name
+                       zlist_name.c_str(), // silo obj name
                        total_num_elems,    // number of elements
-                       2,                  // spatial dims - TODO ?????
+                       ndims,              // spatial dims
                        conn_ptr,           // connectivity array
                        conn_len,           // len of connectivity array
                        0,                  // base offset
@@ -4109,8 +4106,29 @@ void silo_write_topo(const Node &mesh_domain,
 {
     const Node &n_topo = mesh_domain["topologies"][topo_name];
     std::string topo_type = n_topo["type"].as_string();
-
     n_mesh_info[topo_name]["type"].set(topo_type);
+
+    // make sure we have coordsets
+    CONDUIT_ASSERT(mesh_domain.has_path("coordsets"), "mesh missing: coordsets");
+
+    // get this topo's coordset name
+    std::string coordset_name = n_topo["coordset"].as_string();
+
+    n_mesh_info[topo_name]["coordset"].set(coordset_name);
+
+    // obtain the coordset with the name
+    CONDUIT_ASSERT(mesh_domain["coordsets"].has_path(coordset_name),
+        "mesh is missing coordset named "
+        << coordset_name << " for topology named "
+        << topo_name);
+
+    const Node &n_coords = mesh_domain["coordsets"][coordset_name];
+
+    // check dims
+    int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
+    CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
+    // I need ndims before we write the zonelist
+    n_mesh_info[topo_name]["ndims"].set(ndims);
 
     bool unstructured_points = false;
     if (topo_type == "unstructured")
@@ -4132,27 +4150,6 @@ void silo_write_topo(const Node &mesh_domain,
             n_mesh_info[topo_name]["type"].set(topo_type);
         }
     }
-
-    // make sure we have coordsets
-    CONDUIT_ASSERT(mesh_domain.has_path("coordsets"), "mesh missing: coordsets");
-
-    // get this topo's coordset name
-    std::string coordset_name = n_topo["coordset"].as_string();
-
-    n_mesh_info[topo_name]["coordset"].set(coordset_name);
-
-    // obtain the coordset with the name
-    CONDUIT_ASSERT(mesh_domain["coordsets"].has_path(coordset_name),
-        "mesh is missing coordset named "
-        << coordset_name << " for topology named "
-        << topo_name);
-
-    const Node &n_coords = mesh_domain["coordsets"][coordset_name];
-
-    // check dims
-    int ndims = conduit::blueprint::mesh::utils::coordset::dims(n_coords);
-    CONDUIT_ASSERT(2 <= ndims && ndims <= 3, "Dimension count not accepted: " << ndims);
-    n_mesh_info[topo_name]["ndims"].set(ndims);
 
     // get coordsys info
     std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
