@@ -36,6 +36,15 @@ Changed
 
  * Fixed missing build dependency relationship with the python conduit blueprint table examples module.
 
+Added
+~~~~~
+
+
+* **Relay**
+
+ * Added polygonal support to Blueprint Silo I/O.
+
+
 
 v0.9.0
 ---------------------------------
