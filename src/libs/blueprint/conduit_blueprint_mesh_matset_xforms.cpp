@@ -1182,7 +1182,7 @@ multi_buffer_by_material_to_uni_buffer_by_element_matset(const conduit::Node &sr
     for (int elem_id = 0; elem_id < num_elems; elem_id ++)
     {
         int64 size = static_cast<int64>(intermediate_vol_fracs[elem_id].size());
-        for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
+        for (int64 mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
         {
             vol_fracs.push_back(intermediate_vol_fracs[elem_id][mat_vf_id]);
             mat_ids.push_back(intermediate_mat_ids[elem_id][mat_vf_id]);
