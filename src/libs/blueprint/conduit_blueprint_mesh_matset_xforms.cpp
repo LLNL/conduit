@@ -555,7 +555,7 @@ determine_num_elems_in_multi_buffer_by_material(const conduit::Node &elem_ids)
     {
         const Node &mat_elem_ids = eid_itr.next();
         const std::string matname = eid_itr.name();
-        int_accessor mat_elem_ids_vals = mat_elem_ids.value();
+        int64_accessor mat_elem_ids_vals = mat_elem_ids.value();
         int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
         for (int i = 0; i < num_vf; i ++)
         {
@@ -571,9 +571,9 @@ void
 walk_uni_buffer_by_element_to_multi_buffer_by_element(
     const conduit::Node &src_matset,
     std::map<int, std::string> &reverse_matmap,
-    double_accessor &values, // can be either vol fracs or matset vals
-    int_accessor &material_ids,
-    std::map<std::string, std::vector<double>> &new_vals)
+    float64_accessor &values, // can be either vol fracs or matset vals
+    int64_accessor &material_ids,
+    std::map<std::string, std::vector<float64>> &new_vals)
 {
     auto o2m_idx = o2mrelation::O2MIndex(src_matset);
     int num_elems = o2m_idx.size();
@@ -582,7 +582,7 @@ walk_uni_buffer_by_element_to_multi_buffer_by_element(
     for (auto & mapitem : reverse_matmap)
     {
         const std::string &matname = mapitem.second;
-        new_vals[matname] = std::vector<double>(num_elems);
+        new_vals[matname] = std::vector<float64>(num_elems);
     }
 
     // iterate through matset
@@ -592,7 +592,7 @@ walk_uni_buffer_by_element_to_multi_buffer_by_element(
         {
             index_t data_index = o2m_idx.index(elem_id, many_id);
 
-            double val = values[data_index];
+            float64 val = values[data_index];
             int mat_id = material_ids[data_index];
             const std::string &matname = reverse_matmap[mat_id];
             new_vals[matname][elem_id] = val;
@@ -619,7 +619,7 @@ read_from_map_write_out(std::map<std::string, std::vector<T>> &datamap,
 void
 create_sbm_rep(const conduit::Node &elem_id_src,
                const conduit::Node &values_src,
-               std::map<std::string, std::pair<int_accessor, double_accessor>> &sbm_rep)
+               std::map<std::string, std::pair<int64_accessor, float64_accessor>> &sbm_rep)
 {
     auto eid_itr = elem_id_src.children();
     while (eid_itr.has_next())
@@ -640,7 +640,7 @@ create_sbm_rep(const conduit::Node &elem_id_src,
 
 //-----------------------------------------------------------------------------
 void
-sbm_rep_to_full(const std::map<std::string, std::pair<int_accessor, double_accessor>> &sbm_rep,
+sbm_rep_to_full(const std::map<std::string, std::pair<int64_accessor, float64_accessor>> &sbm_rep,
                 const int num_elems,
                 conduit::Node &destination)
 {
@@ -649,8 +649,8 @@ sbm_rep_to_full(const std::map<std::string, std::pair<int_accessor, double_acces
         std::vector<double> values(num_elems, 0.0);
         
         const std::string &matname = mapitem.first;
-        const int_accessor sbm_eids = mapitem.second.first;
-        const double_accessor sbm_vals = mapitem.second.second;
+        const int64_accessor sbm_eids = mapitem.second.first;
+        const float64_accessor sbm_vals = mapitem.second.second;
         
         const int num_vf = sbm_vals.dtype().number_of_elements();
         for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
@@ -677,7 +677,7 @@ multi_buffer_by_element_to_uni_buffer_by_element_matset(const conduit::Node &src
     // set the topology
     dest_matset["topology"].set(src_matset["topology"]);
 
-    std::map<int, double_array> full_vol_fracs;
+    std::map<int, float64_accessor> full_vol_fracs;
     // create the material map
     auto mat_itr = src_matset["volume_fractions"].children();
     int mat_id = 0;
@@ -743,8 +743,8 @@ multi_buffer_by_element_to_uni_buffer_by_element_field(const conduit::Node &src_
                                                dest_field);
 
         // map material ids to matset values and volume fractions
-        std::map<int, double_array> full_vol_fracs;
-        std::map<int, double_array> full_matset_vals;
+        std::map<int, float64_accessor> full_vol_fracs;
+        std::map<int, float64_accessor> full_matset_vals;
         std::set<int> mat_ids;
 
         // create the material map
@@ -768,7 +768,7 @@ multi_buffer_by_element_to_uni_buffer_by_element_field(const conduit::Node &src_
             mat_id ++;
         }
 
-        std::vector<double> matset_values;
+        std::vector<float64> matset_values;
 
         const int nmats = static_cast<int>(mat_ids.size());
         int num_elems = src_matset["volume_fractions"][0].dtype().number_of_elements();
@@ -812,11 +812,11 @@ uni_buffer_by_element_to_multi_buffer_by_element_matset(const conduit::Node &src
     create_reverse_matmap(src_matset, reverse_matmap);
 
     // get ptr to vol fracs and mat ids
-    double_accessor volume_fractions = src_matset["volume_fractions"].value();
-    int_accessor material_ids = src_matset["material_ids"].value();
+    float64_accessor volume_fractions = src_matset["volume_fractions"].value();
+    int64_accessor material_ids = src_matset["material_ids"].value();
     
     // create container for new matset vals
-    std::map<std::string, std::vector<double>> new_vol_fracs;
+    std::map<std::string, std::vector<float64>> new_vol_fracs;
 
     walk_uni_buffer_by_element_to_multi_buffer_by_element(src_matset,
                                                           reverse_matmap,
@@ -849,11 +849,11 @@ uni_buffer_by_element_to_multi_buffer_by_element_field(const conduit::Node &src_
         create_reverse_matmap(src_matset, reverse_matmap);
 
         // get ptr to matset values and mat ids
-        double_accessor matset_values = src_field["matset_values"].value();
-        int_accessor material_ids = src_matset["material_ids"].value();
+        float64_accessor matset_values = src_field["matset_values"].value();
+        int64_accessor material_ids = src_matset["material_ids"].value();
 
         // create container for new matset vals and initialize sizes
-        std::map<std::string, std::vector<double>> new_matset_vals;
+        std::map<std::string, std::vector<float64>> new_matset_vals;
 
         walk_uni_buffer_by_element_to_multi_buffer_by_element(src_matset,
                                                               reverse_matmap,
@@ -885,12 +885,12 @@ uni_buffer_by_element_to_multi_buffer_by_material_matset(const conduit::Node &sr
     create_reverse_matmap(src_matset, reverse_matmap);
 
     // get ptr to vol fracs and mat ids
-    double_accessor volume_fractions = src_matset["volume_fractions"].value();
-    int_accessor material_ids = src_matset["material_ids"].value();
+    float64_accessor volume_fractions = src_matset["volume_fractions"].value();
+    int64_accessor material_ids = src_matset["material_ids"].value();
     
     // create containers for new vol fracs and elem ids
-    std::map<std::string, std::vector<double>> new_vol_fracs;
-    std::map<std::string, std::vector<int>> new_elem_ids;
+    std::map<std::string, std::vector<float64>> new_vol_fracs;
+    std::map<std::string, std::vector<int64>> new_elem_ids;
 
     // iterate through matset
     auto o2m_idx = o2mrelation::O2MIndex(src_matset);
@@ -900,8 +900,8 @@ uni_buffer_by_element_to_multi_buffer_by_material_matset(const conduit::Node &sr
         {
             index_t data_index = o2m_idx.index(elem_id, many_id);
 
-            double vol_frac = volume_fractions[data_index];
-            int mat_id = material_ids[data_index];
+            float64 vol_frac = volume_fractions[data_index];
+            int64 mat_id = material_ids[data_index];
             const std::string &matname = reverse_matmap[mat_id];
             
             new_vol_fracs[matname].push_back(vol_frac);
@@ -935,11 +935,11 @@ uni_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &src
         create_reverse_matmap(src_matset, reverse_matmap);
 
         // get ptr to matset values and mat ids
-        double_array matset_values = src_field["matset_values"].value();
-        int_accessor material_ids = src_matset["material_ids"].value();
+        float64_accessor matset_values = src_field["matset_values"].value();
+        int64_accessor material_ids = src_matset["material_ids"].value();
 
         // create container for new matset vals
-        std::map<std::string, std::vector<double>> new_mset_vals;
+        std::map<std::string, std::vector<float64>> new_mset_vals;
 
         auto o2m_idx = o2mrelation::O2MIndex(src_matset);
         for (int elem_id = 0; elem_id < o2m_idx.size(); elem_id ++)
@@ -948,8 +948,8 @@ uni_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &src
             {
                 index_t data_index = o2m_idx.index(elem_id, many_id);
 
-                double mset_val = matset_values[data_index];
-                int mat_id = material_ids[data_index];
+                float64 mset_val = matset_values[data_index];
+                int64 mat_id = material_ids[data_index];
                 const std::string &matname = reverse_matmap[mat_id];
                 
                 new_mset_vals[matname].push_back(mset_val);
@@ -982,10 +982,10 @@ multi_buffer_by_element_to_multi_buffer_by_material_matset(const conduit::Node &
         const Node &mat_vol_fracs = mat_itr.next();
         std::string matname = mat_itr.name();
 
-        std::vector<double> vol_fracs;
-        std::vector<int> elem_ids;
+        std::vector<float64> vol_fracs;
+        std::vector<int64> elem_ids;
 
-        double_accessor full_vol_fracs = mat_vol_fracs.value();
+        float64_accessor full_vol_fracs = mat_vol_fracs.value();
         int num_elems = full_vol_fracs.dtype().number_of_elements();
         for (int elem_id = 0; elem_id < num_elems; elem_id ++)
         {
@@ -1032,10 +1032,10 @@ multi_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &s
             CONDUIT_ASSERT(matname == fmatname, "Materials must be ordered the same in "
                 "material dependent fields and their matsets.");
 
-            std::vector<double> mset_vals;
+            std::vector<float64> mset_vals;
 
-            double_accessor full_vol_fracs = mat_vol_fracs.value();
-            double_accessor full_mset_vals = mat_vals.value();
+            float64_accessor full_vol_fracs = mat_vol_fracs.value();
+            float64_accessor full_mset_vals = mat_vals.value();
             int num_elems = full_vol_fracs.dtype().number_of_elements();
             for (int elem_id = 0; elem_id < num_elems; elem_id ++)
             {
@@ -1067,7 +1067,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_matset(const conduit::Node &
 
     // sparse by material representation
     // we map material names to volume fractions and element ids
-    std::map<std::string, std::pair<int_accessor, double_accessor>> sbm_rep;
+    std::map<std::string, std::pair<int64_accessor, float64_accessor>> sbm_rep;
 
     create_sbm_rep(src_matset["element_ids"], src_matset["volume_fractions"], sbm_rep);
 
@@ -1095,7 +1095,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_field(const conduit::Node &s
 
         // sparse by material representation
         // we map material names to element ids and matset values
-        std::map<std::string, std::pair<int_accessor, double_accessor>> sbm_rep;
+        std::map<std::string, std::pair<int64_accessor, float64_accessor>> sbm_rep;
 
         create_sbm_rep(src_matset["element_ids"], src_field["matset_values"], sbm_rep);
 
@@ -1122,10 +1122,10 @@ multi_buffer_by_material_to_uni_buffer_by_element_matset(const conduit::Node &sr
 
     // sparse by material representation
     // we map material names to volume fractions and element ids
-    std::map<std::string, std::pair<double_array, int_array>> sbm_rep;
-    std::map<std::string, int> matmap;
+    std::map<std::string, std::pair<float64_accessor, int64_accessor>> sbm_rep;
+    std::map<std::string, int64> matmap;
 
-    int mat_id = 0;
+    int64 mat_id = 0;
     auto vf_itr = src_matset["volume_fractions"].children();
     while (vf_itr.has_next())
     {
@@ -1150,38 +1150,38 @@ multi_buffer_by_material_to_uni_buffer_by_element_matset(const conduit::Node &sr
     // There is no way to pack the volume fractions correctly without
     // first knowing the sizes. So we create an intermediate representation
     // in which volume fractions are packed by element. Later we smooth this out.
-    std::vector<std::vector<double>> intermediate_vol_fracs(num_elems);
-    std::vector<std::vector<int>> intermediate_mat_ids(num_elems);
+    std::vector<std::vector<float64>> intermediate_vol_fracs(num_elems);
+    std::vector<std::vector<int64>> intermediate_mat_ids(num_elems);
 
     for (auto &mapitem : sbm_rep)
     {
         const std::string &matname = mapitem.first;
-        int mat_id = matmap[matname];
+        int64 mat_id = matmap[matname];
 
-        double_array sbm_vfs = std::get<0>(mapitem.second);
-        int_array sbm_eids = std::get<1>(mapitem.second);
+        float64_accessor sbm_vfs = std::get<0>(mapitem.second);
+        int64_accessor sbm_eids = std::get<1>(mapitem.second);
         
         int num_vf = sbm_vfs.dtype().number_of_elements();
         for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
         {
             int elem_id = sbm_eids[mat_vf_id];
-            double vol_frac = sbm_vfs[mat_vf_id];
+            float64 vol_frac = sbm_vfs[mat_vf_id];
 
             intermediate_vol_fracs[elem_id].push_back(vol_frac);
             intermediate_mat_ids[elem_id].push_back(mat_id);
         }
     }
 
-    std::vector<double> vol_fracs;
-    std::vector<int> mat_ids;
-    std::vector<int> sizes;
-    std::vector<int> offsets;
+    std::vector<float64> vol_fracs;
+    std::vector<int64> mat_ids;
+    std::vector<int64> sizes;
+    std::vector<int64> offsets;
 
     // final pass
-    int offset = 0;
+    int64 offset = 0;
     for (int elem_id = 0; elem_id < num_elems; elem_id ++)
     {
-        int size = static_cast<int>(intermediate_vol_fracs[elem_id].size());
+        int64 size = static_cast<int64>(intermediate_vol_fracs[elem_id].size());
         for (int mat_vf_id = 0; mat_vf_id < size; mat_vf_id ++)
         {
             vol_fracs.push_back(intermediate_vol_fracs[elem_id][mat_vf_id]);
@@ -1191,7 +1191,6 @@ multi_buffer_by_material_to_uni_buffer_by_element_matset(const conduit::Node &sr
         offsets.push_back(offset);
         offset += size;
     }
-
 
     dest_matset["volume_fractions"].set(vol_fracs.data(), vol_fracs.size());
     dest_matset["material_ids"].set(mat_ids.data(), mat_ids.size());
@@ -1218,7 +1217,7 @@ multi_buffer_by_material_to_uni_buffer_by_element_field(const conduit::Node &src
 
         // sparse by material representation
         // we map material names to element ids and matset values
-        std::map<std::string, std::pair<int_array, double_array>> sbm_rep;
+        std::map<std::string, std::pair<int64_accessor, float64_accessor>> sbm_rep;
 
         auto eid_itr = src_matset["element_ids"].children();
         while (eid_itr.has_next())
@@ -1241,24 +1240,24 @@ multi_buffer_by_material_to_uni_buffer_by_element_field(const conduit::Node &src
         // There is no way to pack the matset values correctly without
         // first knowing the sizes. So we create an intermediate representation
         // in which matset values are packed by element. Later we smooth this out.
-        std::vector<std::vector<double>> intermediate_mset_vals(num_elems);
+        std::vector<std::vector<float64>> intermediate_mset_vals(num_elems);
 
         for (auto &mapitem : sbm_rep)
         {
-            int_array sbm_eids = mapitem.second.first;
-            double_array sbm_mvals = mapitem.second.second;
+            int64_accessor sbm_eids = mapitem.second.first;
+            float64_accessor sbm_mvals = mapitem.second.second;
             
             int num_vf = sbm_mvals.dtype().number_of_elements();
             for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
             {
-                int elem_id = sbm_eids[mat_vf_id];
-                double mset_val = sbm_mvals[mat_vf_id];
+                int64 elem_id = sbm_eids[mat_vf_id];
+                float64 mset_val = sbm_mvals[mat_vf_id];
 
                 intermediate_mset_vals[elem_id].push_back(mset_val);
             }
         }
 
-        std::vector<double> mset_vals;
+        std::vector<float64> mset_vals;
 
         // final pass
         for (int elem_id = 0; elem_id < num_elems; elem_id ++)
