@@ -619,7 +619,7 @@ read_from_map_write_out(std::map<std::string, std::vector<T>> &datamap,
 void
 create_sbm_rep(const conduit::Node &elem_id_src,
                const conduit::Node &values_src,
-               std::map<std::string, std::pair<int_array, double_array>> &sbm_rep)
+               std::map<std::string, std::pair<int_accessor, double_accessor>> &sbm_rep)
 {
     auto eid_itr = elem_id_src.children();
     while (eid_itr.has_next())
@@ -640,7 +640,7 @@ create_sbm_rep(const conduit::Node &elem_id_src,
 
 //-----------------------------------------------------------------------------
 void
-sbm_rep_to_full(const std::map<std::string, std::pair<int_array, double_array>> &sbm_rep,
+sbm_rep_to_full(const std::map<std::string, std::pair<int_accessor, double_accessor>> &sbm_rep,
                 const int num_elems,
                 conduit::Node &destination)
 {
@@ -649,8 +649,8 @@ sbm_rep_to_full(const std::map<std::string, std::pair<int_array, double_array>> 
         std::vector<double> values(num_elems, 0.0);
         
         const std::string &matname = mapitem.first;
-        const int_array sbm_eids = mapitem.second.first;
-        const double_array sbm_vals = mapitem.second.second;
+        const int_accessor sbm_eids = mapitem.second.first;
+        const double_accessor sbm_vals = mapitem.second.second;
         
         const int num_vf = sbm_vals.dtype().number_of_elements();
         for (int mat_vf_id = 0; mat_vf_id < num_vf; mat_vf_id ++)
@@ -1067,7 +1067,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_matset(const conduit::Node &
 
     // sparse by material representation
     // we map material names to volume fractions and element ids
-    std::map<std::string, std::pair<int_array, double_array>> sbm_rep;
+    std::map<std::string, std::pair<int_accessor, double_accessor>> sbm_rep;
 
     create_sbm_rep(src_matset["element_ids"], src_matset["volume_fractions"], sbm_rep);
 
@@ -1095,7 +1095,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_field(const conduit::Node &s
 
         // sparse by material representation
         // we map material names to element ids and matset values
-        std::map<std::string, std::pair<int_array, double_array>> sbm_rep;
+        std::map<std::string, std::pair<int_accessor, double_accessor>> sbm_rep;
 
         create_sbm_rep(src_matset["element_ids"], src_field["matset_values"], sbm_rep);
 
