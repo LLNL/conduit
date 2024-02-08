@@ -566,6 +566,29 @@ multi_buffer_by_element_to_uni_buffer_by_element_matset(const conduit::Node &src
 }
 
 //-----------------------------------------------------------------------------
+// field copy
+void
+copy_matset_independent_parts_of_field(const conduit::Node &src_field,
+                                       const std::string &dest_matset_name,
+                                       conduit::Node &dest_field)
+{
+    // copy over everything except the matset values and matset name
+    auto field_child_itr = src_field.children();
+    while (field_child_itr.has_next())
+    {
+        const Node &n_field_info = field_child_itr.next();
+        std::string field_child_name = field_child_itr.name();
+
+        if (field_child_name != "matset_values" &&
+            field_child_name != "matset")
+        {
+            dest_field[field_child_name].set(n_field_info);
+        }
+    }
+    dest_field["matset"] = dest_matset_name;
+}
+
+//-----------------------------------------------------------------------------
 // venn full -> sparse by element
 void
 multi_buffer_by_element_to_uni_buffer_by_element_field(const conduit::Node &src_matset,
@@ -579,20 +602,9 @@ multi_buffer_by_element_to_uni_buffer_by_element_field(const conduit::Node &src_
     // if this field is material dependent
     if (src_field.has_child("matset_values"))
     {
-        // copy over everything except the matset values and matset name
-        auto field_child_itr = src_field.children();
-        while (field_child_itr.has_next())
-        {
-            const Node &n_field_info = field_child_itr.next();
-            std::string field_child_name = field_child_itr.name();
-
-            if (field_child_name != "matset_values" &&
-                field_child_name != "matset")
-            {
-                dest_field[field_child_name].set(n_field_info);
-            }
-        }
-        dest_field["matset"] = dest_matset_name;
+        copy_matset_independent_parts_of_field(src_field,
+                                               dest_matset_name,
+                                               dest_field);
 
         // map material ids to matset values and volume fractions
         std::map<int, double_array> full_vol_fracs;
@@ -723,20 +735,9 @@ uni_buffer_by_element_to_multi_buffer_by_element_field(const conduit::Node &src_
     // if this field is material dependent
     if (src_field.has_child("matset_values"))
     {
-        // copy over everything except the matset values and matset name
-        auto field_child_itr = src_field.children();
-        while (field_child_itr.has_next())
-        {
-            const Node &n_field_info = field_child_itr.next();
-            std::string field_child_name = field_child_itr.name();
-
-            if (field_child_name != "matset_values" &&
-                field_child_name != "matset")
-            {
-                dest_field[field_child_name].set(n_field_info);
-            }
-        }
-        dest_field["matset"] = dest_matset_name;
+        copy_matset_independent_parts_of_field(src_field,
+                                               dest_matset_name,
+                                               dest_field);
 
         // map material numbers to material names
         std::map<int, std::string> reverse_matmap;
@@ -873,20 +874,9 @@ uni_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &src
     // if this field is material dependent
     if (src_field.has_child("matset_values"))
     {
-        // copy over everything except the matset values and matset name
-        auto field_child_itr = src_field.children();
-        while (field_child_itr.has_next())
-        {
-            const Node &n_field_info = field_child_itr.next();
-            std::string field_child_name = field_child_itr.name();
-
-            if (field_child_name != "matset_values" &&
-                field_child_name != "matset")
-            {
-                dest_field[field_child_name].set(n_field_info);
-            }
-        }
-        dest_field["matset"] = dest_matset_name;
+        copy_matset_independent_parts_of_field(src_field,
+                                               dest_matset_name,
+                                               dest_field);
 
         // map material numbers to material names
         std::map<int, std::string> reverse_matmap;
@@ -988,20 +978,9 @@ multi_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &s
     // if this field is material dependent
     if (src_field.has_child("matset_values"))
     {
-        // copy over everything except the matset values and matset name
-        auto field_child_itr = src_field.children();
-        while (field_child_itr.has_next())
-        {
-            const Node &n_field_info = field_child_itr.next();
-            std::string field_child_name = field_child_itr.name();
-
-            if (field_child_name != "matset_values" &&
-                field_child_name != "matset")
-            {
-                dest_field[field_child_name].set(n_field_info);
-            }
-        }
-        dest_field["matset"] = dest_matset_name;
+        copy_matset_independent_parts_of_field(src_field,
+                                               dest_matset_name,
+                                               dest_field);
 
         auto mat_itr = src_matset["volume_fractions"].children();
         auto fmat_itr = src_field["matset_values"].children();
@@ -1126,20 +1105,9 @@ multi_buffer_by_material_to_multi_buffer_by_element_field(const conduit::Node &s
     // if this field is material dependent
     if (src_field.has_child("matset_values"))
     {
-        // copy over everything except the matset values and matset name
-        auto field_child_itr = src_field.children();
-        while (field_child_itr.has_next())
-        {
-            const Node &n_field_info = field_child_itr.next();
-            std::string field_child_name = field_child_itr.name();
-
-            if (field_child_name != "matset_values" &&
-                field_child_name != "matset")
-            {
-                dest_field[field_child_name].set(n_field_info);
-            }
-        }
-        dest_field["matset"] = dest_matset_name;
+        copy_matset_independent_parts_of_field(src_field,
+                                               dest_matset_name,
+                                               dest_field);
 
         // sparse by material representation
         // we map material names to element ids and matset values
@@ -1334,20 +1302,9 @@ multi_buffer_by_material_to_uni_buffer_by_element_field(const conduit::Node &src
     // if this field is material dependent
     if (src_field.has_child("matset_values"))
     {
-        // copy over everything except the matset values and matset name
-        auto field_child_itr = src_field.children();
-        while (field_child_itr.has_next())
-        {
-            const Node &n_field_info = field_child_itr.next();
-            std::string field_child_name = field_child_itr.name();
-
-            if (field_child_name != "matset_values" &&
-                field_child_name != "matset")
-            {
-                dest_field[field_child_name].set(n_field_info);
-            }
-        }
-        dest_field["matset"] = dest_matset_name;
+        copy_matset_independent_parts_of_field(src_field,
+                                               dest_matset_name,
+                                               dest_field);
 
         // sparse by material representation
         // we map material names to element ids and matset values
