@@ -12,6 +12,31 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.9.1
+---------------------------------
+
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.9.1/conduit-v0.9.1-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Changed
+~~~~~~~
+
+
+* **Conduit**
+
+ * Relaxed strict header check for C++14 back to C++11. A downstream consumer of Conduit has C++11 hardcoded into their build system and patching for related deployments is intractable.
+ * Restore logic to avoid fused mpi c++ and fortran flags that can undermine blt's mpi smoke test.
+
+* **Blueprint**
+
+ * Fixed missing build dependency relationship with the python conduit blueprint table examples module.
+
+
 v0.9.0
 ---------------------------------
 
