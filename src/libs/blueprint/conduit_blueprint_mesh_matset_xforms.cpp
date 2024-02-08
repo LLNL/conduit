@@ -568,6 +568,40 @@ int determine_num_elems_in_multi_buffer_by_material(const conduit::Node &elem_id
 };
 
 //-----------------------------------------------------------------------------
+void
+walk_uni_buffer_by_element_to_multi_buffer_by_element(
+    const conduit::Node &src_matset,
+    std::map<int, std::string> &reverse_matmap,
+    double_accessor &values, // can be either vol fracs or matset vals
+    int_accessor &material_ids,
+    std::map<std::string, std::vector<double>> &new_vals)
+{
+    auto o2m_idx = o2mrelation::O2MIndex(src_matset);
+    int num_elems = o2m_idx.size();
+
+    // initialize sizes
+    for (auto & mapitem : reverse_matmap)
+    {
+        const std::string &matname = mapitem.second;
+        new_vals[matname] = std::vector<double>(num_elems);
+    }
+
+    // iterate through matset
+    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
+    {
+        for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
+        {
+            index_t data_index = o2m_idx.index(elem_id, many_id);
+
+            double val = values[data_index];
+            int mat_id = material_ids[data_index];
+            const std::string &matname = reverse_matmap[mat_id];
+            new_vals[matname][elem_id] = val;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
 // venn full -> sparse by element
 void
 multi_buffer_by_element_to_uni_buffer_by_element_matset(const conduit::Node &src_matset,
@@ -717,30 +751,14 @@ uni_buffer_by_element_to_multi_buffer_by_element_matset(const conduit::Node &src
     double_accessor volume_fractions = src_matset["volume_fractions"].value();
     int_accessor material_ids = src_matset["material_ids"].value();
     
-    auto o2m_idx = o2mrelation::O2MIndex(src_matset);
-    int num_elems = o2m_idx.size();
-
-    // create container for new vol fracs and initialize sizes
+    // create container for new matset vals
     std::map<std::string, std::vector<double>> new_vol_fracs;
-    for (auto & mapitem : reverse_matmap)
-    {
-        const std::string &matname = mapitem.second;
-        new_vol_fracs[matname] = std::vector<double>(num_elems);
-    }
 
-    // iterate through matset
-    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
-    {
-        for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
-        {
-            index_t data_index = o2m_idx.index(elem_id, many_id);
-
-            double vol_frac = volume_fractions[data_index];
-            int mat_id = material_ids[data_index];
-            const std::string &matname = reverse_matmap[mat_id];
-            new_vol_fracs[matname][elem_id] = vol_frac;
-        }
-    }
+    walk_uni_buffer_by_element_to_multi_buffer_by_element(src_matset,
+                               reverse_matmap,
+                               volume_fractions,
+                               material_ids,
+                               new_vol_fracs);
 
     for (auto & mapitem : new_vol_fracs)
     {
@@ -773,33 +791,17 @@ uni_buffer_by_element_to_multi_buffer_by_element_field(const conduit::Node &src_
         create_reverse_matmap(src_matset, reverse_matmap);
 
         // get ptr to matset values and mat ids
-        double_array matset_values = src_field["matset_values"].value();
+        double_accessor matset_values = src_field["matset_values"].value();
         int_accessor material_ids = src_matset["material_ids"].value();
-
-        auto o2m_idx = o2mrelation::O2MIndex(src_matset);
-        int num_elems = o2m_idx.size();
 
         // create container for new matset vals and initialize sizes
         std::map<std::string, std::vector<double>> new_matset_vals;
-        for (auto & mapitem : reverse_matmap)
-        {
-            const std::string &matname = mapitem.second;
-            new_matset_vals[matname] = std::vector<double>(num_elems);
-        }
 
-        // iterate through matset
-        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
-        {
-            for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
-            {
-                index_t data_index = o2m_idx.index(elem_id, many_id);
-
-                double matset_val = matset_values[data_index];
-                int mat_id = material_ids[data_index];
-                const std::string &matname = reverse_matmap[mat_id];
-                new_matset_vals[matname][elem_id] = matset_val;
-            }
-        }
+        walk_uni_buffer_by_element_to_multi_buffer_by_element(src_matset,
+                                   reverse_matmap,
+                                   matset_values,
+                                   material_ids,
+                                   new_matset_vals);
 
         for (auto & mapitem : new_matset_vals)
         {
