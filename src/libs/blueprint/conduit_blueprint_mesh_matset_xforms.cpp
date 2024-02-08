@@ -547,7 +547,8 @@ create_reverse_matmap(const conduit::Node &src_matset,
 
 //-----------------------------------------------------------------------------
 // load the element ids into a set to find out how many there are
-int determine_num_elems_in_multi_buffer_by_material(const conduit::Node &elem_ids)
+int
+determine_num_elems_in_multi_buffer_by_material(const conduit::Node &elem_ids)
 {
     std::set<int> elem_ids_set;
 
