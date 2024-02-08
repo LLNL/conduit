@@ -617,6 +617,29 @@ read_from_map_write_out(std::map<std::string, std::vector<T>> &datamap,
 
 //-----------------------------------------------------------------------------
 void
+create_sbm_rep(const conduit::Node &elem_id_src,
+               const conduit::Node &values_src,
+               std::map<std::string, std::pair<int_array, double_array>> &sbm_rep)
+{
+    auto eid_itr = elem_id_src.children();
+    while (eid_itr.has_next())
+    {
+        const Node &mat_elem_ids = eid_itr.next();
+        const std::string matname = eid_itr.name();
+        sbm_rep[matname].first = mat_elem_ids.value();
+    }
+
+    auto val_itr = values_src.children();
+    while (val_itr.has_next())
+    {
+        const Node &values = val_itr.next();
+        const std::string matname = val_itr.name();
+        sbm_rep[matname].second = values.value();
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
 sbm_rep_to_full(const std::map<std::string, std::pair<int_array, double_array>> &sbm_rep,
                 const int num_elems,
                 conduit::Node &destination)
@@ -1046,21 +1069,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_matset(const conduit::Node &
     // we map material names to volume fractions and element ids
     std::map<std::string, std::pair<int_array, double_array>> sbm_rep;
 
-    auto eid_itr = src_matset["element_ids"].children();
-    while (eid_itr.has_next())
-    {
-        const Node &mat_elem_ids = eid_itr.next();
-        const std::string matname = eid_itr.name();
-        sbm_rep[matname].first = mat_elem_ids.value();
-    }
-
-    auto vf_itr = src_matset["volume_fractions"].children();
-    while (vf_itr.has_next())
-    {
-        const Node &mat_vol_fracs = vf_itr.next();
-        const std::string matname = vf_itr.name();
-        sbm_rep[matname].second = mat_vol_fracs.value();
-    }
+    create_sbm_rep(src_matset["element_ids"], src_matset["volume_fractions"], sbm_rep);
 
     const int num_elems = determine_num_elems_in_multi_buffer_by_material(src_matset["element_ids"]);
 
@@ -1088,21 +1097,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_field(const conduit::Node &s
         // we map material names to element ids and matset values
         std::map<std::string, std::pair<int_array, double_array>> sbm_rep;
 
-        auto eid_itr = src_matset["element_ids"].children();
-        while (eid_itr.has_next())
-        {
-            const Node &mat_elem_ids = eid_itr.next();
-            const std::string matname = eid_itr.name();
-            sbm_rep[matname].first = mat_elem_ids.value();
-        }
-
-        auto mvals_itr = src_field["matset_values"].children();
-        while (mvals_itr.has_next())
-        {
-            const Node &matset_vals = mvals_itr.next();
-            const std::string matname = mvals_itr.name();
-            sbm_rep[matname].second = matset_vals.value();
-        }
+        create_sbm_rep(src_matset["element_ids"], src_field["matset_values"], sbm_rep);
 
         const int num_elems = determine_num_elems_in_multi_buffer_by_material(src_matset["element_ids"]);
 
