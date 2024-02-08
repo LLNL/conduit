@@ -507,6 +507,45 @@ to_silo(const conduit::Node &field,
 }
 
 //-----------------------------------------------------------------------------
+// field copy
+void
+copy_matset_independent_parts_of_field(const conduit::Node &src_field,
+                                       const std::string &dest_matset_name,
+                                       conduit::Node &dest_field)
+{
+    // copy over everything except the matset values and matset name
+    auto field_child_itr = src_field.children();
+    while (field_child_itr.has_next())
+    {
+        const Node &n_field_info = field_child_itr.next();
+        std::string field_child_name = field_child_itr.name();
+
+        if (field_child_name != "matset_values" &&
+            field_child_name != "matset")
+        {
+            dest_field[field_child_name].set(n_field_info);
+        }
+    }
+    dest_field["matset"] = dest_matset_name;
+}
+
+//-----------------------------------------------------------------------------
+void
+create_reverse_matmap(const conduit::Node &src_matset,
+                      std::map<int, std::string> &reverse_matmap)
+{
+    // fill out map
+    auto matmap_itr = src_matset["material_map"].children();
+    while (matmap_itr.has_next())
+    {
+        const Node &matmap_entry = matmap_itr.next();
+        const std::string matname = matmap_itr.name();
+
+        reverse_matmap[matmap_entry.as_int()] = matname;
+    }
+}
+
+//-----------------------------------------------------------------------------
 // venn full -> sparse by element
 void
 multi_buffer_by_element_to_uni_buffer_by_element_matset(const conduit::Node &src_matset,
@@ -563,29 +602,6 @@ multi_buffer_by_element_to_uni_buffer_by_element_matset(const conduit::Node &src
     dest_matset["material_ids"].set(mat_ids.data(), mat_ids.size());
     dest_matset["sizes"].set(sizes.data(), sizes.size());
     dest_matset["offsets"].set(offsets.data(), offsets.size());
-}
-
-//-----------------------------------------------------------------------------
-// field copy
-void
-copy_matset_independent_parts_of_field(const conduit::Node &src_field,
-                                       const std::string &dest_matset_name,
-                                       conduit::Node &dest_field)
-{
-    // copy over everything except the matset values and matset name
-    auto field_child_itr = src_field.children();
-    while (field_child_itr.has_next())
-    {
-        const Node &n_field_info = field_child_itr.next();
-        std::string field_child_name = field_child_itr.name();
-
-        if (field_child_name != "matset_values" &&
-            field_child_name != "matset")
-        {
-            dest_field[field_child_name].set(n_field_info);
-        }
-    }
-    dest_field["matset"] = dest_matset_name;
 }
 
 //-----------------------------------------------------------------------------
@@ -673,16 +689,7 @@ uni_buffer_by_element_to_multi_buffer_by_element_matset(const conduit::Node &src
 
     // map material numbers to material names
     std::map<int, std::string> reverse_matmap;
-
-    // fill out map
-    auto matmap_itr = src_matset["material_map"].children();
-    while (matmap_itr.has_next())
-    {
-        const Node &matmap_entry = matmap_itr.next();
-        const std::string matname = matmap_itr.name();
-
-        reverse_matmap[matmap_entry.value()] = matname;
-    }
+    create_reverse_matmap(src_matset, reverse_matmap);
 
     // get ptr to vol fracs and mat ids
     double_accessor volume_fractions = src_matset["volume_fractions"].value();
@@ -741,16 +748,7 @@ uni_buffer_by_element_to_multi_buffer_by_element_field(const conduit::Node &src_
 
         // map material numbers to material names
         std::map<int, std::string> reverse_matmap;
-
-        // fill out map
-        auto matmap_itr = src_matset["material_map"].children();
-        while (matmap_itr.has_next())
-        {
-            const Node &matmap_entry = matmap_itr.next();
-            const std::string matname = matmap_itr.name();
-
-            reverse_matmap[matmap_entry.value()] = matname;
-        }
+        create_reverse_matmap(src_matset, reverse_matmap);
 
         // get ptr to matset values and mat ids
         double_array matset_values = src_field["matset_values"].value();
