@@ -23,6 +23,9 @@
 #include "conduit_blueprint_mesh_utils.hpp"
 #include "conduit_blueprint_o2mrelation.hpp"
 #include "conduit_blueprint_o2mrelation_iterator.hpp"
+#include "conduit.hpp"
+#include "conduit_blueprint_exports.h"
+#include "conduit_blueprint_o2mrelation_index.hpp"
 
 using namespace conduit;
 // access conduit blueprint mesh utilities
@@ -673,8 +676,8 @@ uni_buffer_by_element_to_multi_buffer_by_element_matset(const conduit::Node &src
     double_accessor volume_fractions = src_matset["volume_fractions"].value();
     int_accessor material_ids = src_matset["material_ids"].value();
     
-    o2mrelation::O2MIterator o2m_iter(src_matset);
-    int num_elems = o2m_iter.elements(o2mrelation::ONE);
+    auto o2m_idx = o2mrelation::O2MIndex(src_matset);
+    int num_elems = o2m_idx.size();
 
     // create container for new vol fracs and initialize sizes
     std::map<std::string, std::vector<double>> new_vol_fracs;
@@ -685,20 +688,16 @@ uni_buffer_by_element_to_multi_buffer_by_element_matset(const conduit::Node &src
     }
 
     // iterate through matset
-    while (o2m_iter.has_next(o2mrelation::DATA))
+    for (int elem_id = 0; elem_id < num_elems; elem_id ++)
     {
-        index_t elem_id = o2m_iter.next(o2mrelation::ONE);
-        o2m_iter.to_front(o2mrelation::MANY);
-        while (o2m_iter.has_next(o2mrelation::MANY))
+        for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
         {
-            o2m_iter.next(o2mrelation::MANY);
-            index_t data_index = o2m_iter.index(o2mrelation::DATA);
+            index_t data_index = o2m_idx.index(elem_id, many_id);
 
             double vol_frac = volume_fractions[data_index];
             int mat_id = material_ids[data_index];
             const std::string &matname = reverse_matmap[mat_id];
             new_vol_fracs[matname][elem_id] = vol_frac;
-            
         }
     }
 
@@ -756,8 +755,8 @@ uni_buffer_by_element_to_multi_buffer_by_element_field(const conduit::Node &src_
         double_array matset_values = src_field["matset_values"].value();
         int_accessor material_ids = src_matset["material_ids"].value();
 
-        o2mrelation::O2MIterator o2m_iter(src_matset);
-        int num_elems = o2m_iter.elements(o2mrelation::ONE);
+        auto o2m_idx = o2mrelation::O2MIndex(src_matset);
+        int num_elems = o2m_idx.size();
 
         // create container for new matset vals and initialize sizes
         std::map<std::string, std::vector<double>> new_matset_vals;
@@ -768,14 +767,11 @@ uni_buffer_by_element_to_multi_buffer_by_element_field(const conduit::Node &src_
         }
 
         // iterate through matset
-        while (o2m_iter.has_next(o2mrelation::DATA))
+        for (int elem_id = 0; elem_id < num_elems; elem_id ++)
         {
-            index_t elem_id = o2m_iter.next(o2mrelation::ONE);
-            o2m_iter.to_front(o2mrelation::MANY);
-            while (o2m_iter.has_next(o2mrelation::MANY))
+            for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
             {
-                o2m_iter.next(o2mrelation::MANY);
-                index_t data_index = o2m_iter.index(o2mrelation::DATA);
+                index_t data_index = o2m_idx.index(elem_id, many_id);
 
                 double matset_val = matset_values[data_index];
                 int mat_id = material_ids[data_index];
@@ -831,15 +827,12 @@ uni_buffer_by_element_to_multi_buffer_by_material_matset(const conduit::Node &sr
     std::map<std::string, std::vector<int>> new_elem_ids;
 
     // iterate through matset
-    o2mrelation::O2MIterator o2m_iter(src_matset);
-    while (o2m_iter.has_next(o2mrelation::DATA))
+    auto o2m_idx = o2mrelation::O2MIndex(src_matset);
+    for (int elem_id = 0; elem_id < o2m_idx.size(); elem_id ++)
     {
-        index_t elem_id = o2m_iter.next(o2mrelation::ONE);
-        o2m_iter.to_front(o2mrelation::MANY);
-        while (o2m_iter.has_next(o2mrelation::MANY))
+        for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
         {
-            o2m_iter.next(o2mrelation::MANY);
-            index_t data_index = o2m_iter.index(o2mrelation::DATA);
+            index_t data_index = o2m_idx.index(elem_id, many_id);
 
             double vol_frac = volume_fractions[data_index];
             int mat_id = material_ids[data_index];
@@ -847,7 +840,6 @@ uni_buffer_by_element_to_multi_buffer_by_material_matset(const conduit::Node &sr
             
             new_vol_fracs[matname].push_back(vol_frac);
             new_elem_ids[matname].push_back(elem_id);
-            
         }
     }
 
@@ -916,16 +908,12 @@ uni_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &src
         // create container for new matset vals
         std::map<std::string, std::vector<double>> new_mset_vals;
 
-        // iterate through matset
-        o2mrelation::O2MIterator o2m_iter(src_matset);
-        while (o2m_iter.has_next(o2mrelation::DATA))
+        auto o2m_idx = o2mrelation::O2MIndex(src_matset);
+        for (int elem_id = 0; elem_id < o2m_idx.size(); elem_id ++)
         {
-            o2m_iter.next(o2mrelation::ONE);
-            o2m_iter.to_front(o2mrelation::MANY);
-            while (o2m_iter.has_next(o2mrelation::MANY))
+            for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
             {
-                o2m_iter.next(o2mrelation::MANY);
-                index_t data_index = o2m_iter.index(o2mrelation::DATA);
+                index_t data_index = o2m_idx.index(elem_id, many_id);
 
                 double mset_val = matset_values[data_index];
                 int mat_id = material_ids[data_index];
