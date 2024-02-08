@@ -152,7 +152,8 @@ static const index_t TOPO_PYRAMID_EMBEDDING[6][3] = {
     {1, 2, 4}, {2, 3, 4}, {3, 0, 4}};
 
 // Express the faces of the wedge and pyramid shapes without breaking the faces
-// into triangles. (npts, points, ...) unused points are -1.
+// into triangles. (npts, points, ...) unused points are -1. For the rest of
+// the shapes, the embeddings may be used.
 static const index_t TOPO_WEDGE_FACES[5][5] = {
     {3, 0, 2, 1, -1}, {4, 0, 1, 4, 3}, {4, 1, 2, 5, 4}, {4, 2, 0, 3, 5}, {3, 3, 4, 5, -1}};
 static const index_t TOPO_PYRAMID_FACES[5][5] = {
