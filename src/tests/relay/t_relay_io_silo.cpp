@@ -1662,10 +1662,9 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink5)
         std::make_pair("structured", "2"), std::make_pair("structured", "3"),
         std::make_pair("quads", "2"),
         std::make_pair("polygons", "2"),
-        // std::make_pair("tets", "3"), // <-- TODO why does this fail? Does overlink support tets?
         std::make_pair("hexs", "3"),
         // std::make_pair("polyhedra", "3")
-        // I don't think overlink supports tris, wedges, or pyramids
+        // Overlink does not support tris, wedges, pyramids, or tets
     };
     for (int i = 0; i < mesh_types.size(); ++i)
     {

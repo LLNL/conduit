@@ -3811,6 +3811,8 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
     else if (topo_shape == "tri")
     {
+        CONDUIT_ASSERT(! write_overlink, "Triangle topologies are not supported in Overlink, "
+                       "use general Silo instead.");
         set_up_single_shape_type(3, DB_ZONETYPE_TRIANGLE);
     }
     else if (topo_shape == "hex")
@@ -3819,18 +3821,26 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     }
     else if (topo_shape == "tet")
     {
+        CONDUIT_ASSERT(! write_overlink, "Tetrahedral topologies are not supported in Overlink, "
+                       "use general Silo instead.");
         set_up_single_shape_type(4, DB_ZONETYPE_TET);
     }
     else if( topo_shape == "wedge")
     {
+        CONDUIT_ASSERT(! write_overlink, "Wedge topologies are not supported in Overlink, "
+                       "use general Silo instead.");
         set_up_single_shape_type(6, DB_ZONETYPE_PRISM);
     }
     else if( topo_shape == "pyramid")
     {
+        CONDUIT_ASSERT(! write_overlink, "Pyramid topologies are not supported in Overlink, "
+                       "use general Silo instead.");
         set_up_single_shape_type(5, DB_ZONETYPE_PYRAMID);
     }
     else if (topo_shape == "line")
     {
+        CONDUIT_ASSERT(! write_overlink, "Line topologies are not supported in Overlink, "
+                       "use general Silo instead.");
         set_up_single_shape_type(2, DB_ZONETYPE_BEAM);
     }
     else if (topo_shape == "polygonal")
