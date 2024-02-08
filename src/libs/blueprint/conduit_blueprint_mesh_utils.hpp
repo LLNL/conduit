@@ -150,6 +150,14 @@ static const index_t TOPO_WEDGE_EMBEDDING[8][3] = {
 static const index_t TOPO_PYRAMID_EMBEDDING[6][3] = {
     {0, 1, 2}, {3, 2, 0}, {0, 1, 4},
     {1, 2, 4}, {2, 3, 4}, {3, 0, 4}};
+
+// Express the faces of the wedge and pyramid shapes without breaking the faces
+// into triangles. (npts, points, ...) unused points are -1.
+static const index_t TOPO_WEDGE_FACES[5][5] = {
+    {3, 0, 2, 1, -1}, {4, 0, 1, 4, 3}, {4, 1, 2, 5, 4}, {4, 2, 0, 3, 5}, {3, 3, 4, 5, -1}};
+static const index_t TOPO_PYRAMID_FACES[5][5] = {
+    {4, 0, 3, 2, 1}, {3, 0, 1, 4, -1}, {3, 1, 2, 4, -1}, {3, 2, 3, 4, -1}, {3, 3, 0, 4, -1}};
+
 static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
     &TOPO_POINT_EMBEDDING[0][0], &TOPO_LINE_EMBEDDING[0][0],
     &TOPO_TRI_EMBEDDING[0][0], &TOPO_QUAD_EMBEDDING[0][0],
@@ -175,6 +183,12 @@ public:
     bool is_polyhedral() const;
     bool is_valid() const;
 
+    /// Return the number of actual faces (not triangulated)
+    index_t num_faces() const;
+
+    /// Return the ids and number of ids for the requested face.
+    const index_t *get_face(index_t face, index_t &nIds) const;
+
     std::string type;
     index_t id, dim, indices;
     index_t embed_id, embed_count, *embedding;
@@ -182,6 +196,9 @@ public:
 private:
     void init(const index_t type_id);
     void init(const std::string &type_name);
+
+    static index_t wedge_id;
+    static index_t pyramid_id;
 };
 
 //---------------------------------------------------------------------------//
