@@ -546,6 +546,28 @@ create_reverse_matmap(const conduit::Node &src_matset,
 }
 
 //-----------------------------------------------------------------------------
+// load the element ids into a set to find out how many there are
+int determine_num_elems_in_multi_buffer_by_material(const conduit::Node &elem_ids)
+{
+    std::set<int> elem_ids_set;
+
+    auto eid_itr = elem_ids.children();
+    while (eid_itr.has_next())
+    {
+        const Node &mat_elem_ids = eid_itr.next();
+        const std::string matname = eid_itr.name();
+        int_accessor mat_elem_ids_vals = mat_elem_ids.value();
+        int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
+        for (int i = 0; i < num_vf; i ++)
+        {
+            elem_ids_set.insert(mat_elem_ids_vals[i]);
+        }
+    }
+
+    return static_cast<int>(elem_ids_set.size());
+};
+
+//-----------------------------------------------------------------------------
 // venn full -> sparse by element
 void
 multi_buffer_by_element_to_uni_buffer_by_element_matset(const conduit::Node &src_matset,
@@ -806,16 +828,7 @@ uni_buffer_by_element_to_multi_buffer_by_material_matset(const conduit::Node &sr
 
     // map material numbers to material names
     std::map<int, std::string> reverse_matmap;
-
-    // fill out map
-    auto matmap_itr = src_matset["material_map"].children();
-    while (matmap_itr.has_next())
-    {
-        const Node &matmap_entry = matmap_itr.next();
-        const std::string matname = matmap_itr.name();
-
-        reverse_matmap[matmap_entry.value()] = matname;
-    }
+    create_reverse_matmap(src_matset, reverse_matmap);
 
     // get ptr to vol fracs and mat ids
     double_accessor volume_fractions = src_matset["volume_fractions"].value();
@@ -878,16 +891,7 @@ uni_buffer_by_element_to_multi_buffer_by_material_field(const conduit::Node &src
 
         // map material numbers to material names
         std::map<int, std::string> reverse_matmap;
-
-        // fill out map
-        auto matmap_itr = src_matset["material_map"].children();
-        while (matmap_itr.has_next())
-        {
-            const Node &matmap_entry = matmap_itr.next();
-            const std::string matname = matmap_itr.name();
-
-            reverse_matmap[matmap_entry.value()] = matname;
-        }
+        create_reverse_matmap(src_matset, reverse_matmap);
 
         // get ptr to matset values and mat ids
         double_array matset_values = src_field["matset_values"].value();
@@ -1046,28 +1050,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_matset(const conduit::Node &
         sbm_rep[matname].second = mat_elem_ids.value();
     }
 
-    // load the element ids into a set to find out how many there are
-    auto determine_num_elems = [](const conduit::Node &elem_ids)
-    {
-        std::set<int> elem_ids_set;
-
-        auto eid_itr = elem_ids.children();
-        while (eid_itr.has_next())
-        {
-            const Node &mat_elem_ids = eid_itr.next();
-            const std::string matname = eid_itr.name();
-            int_accessor mat_elem_ids_vals = mat_elem_ids.value();
-            int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
-            for (int i = 0; i < num_vf; i ++)
-            {
-                elem_ids_set.insert(mat_elem_ids_vals[i]);
-            }
-        }
-
-        return static_cast<int>(elem_ids_set.size());
-    };
-
-    const int num_elems = determine_num_elems(src_matset["element_ids"]);
+    const int num_elems = determine_num_elems_in_multi_buffer_by_material(src_matset["element_ids"]);
 
     for (auto &mapitem : sbm_rep)
     {
@@ -1127,28 +1110,7 @@ multi_buffer_by_material_to_multi_buffer_by_element_field(const conduit::Node &s
             sbm_rep[matname].second = matset_vals.value();
         }
 
-        // load the element ids into a set to find out how many there are
-        auto determine_num_elems = [](const conduit::Node &elem_ids)
-        {
-            std::set<int> elem_ids_set;
-
-            auto eid_itr = elem_ids.children();
-            while (eid_itr.has_next())
-            {
-                const Node &mat_elem_ids = eid_itr.next();
-                const std::string matname = eid_itr.name();
-                int_accessor mat_elem_ids_vals = mat_elem_ids.value();
-                int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
-                for (int i = 0; i < num_vf; i ++)
-                {
-                    elem_ids_set.insert(mat_elem_ids_vals[i]);
-                }
-            }
-
-            return static_cast<int>(elem_ids_set.size());
-        };
-
-        const int num_elems = determine_num_elems(src_matset["element_ids"]);
+        const int num_elems = determine_num_elems_in_multi_buffer_by_material(src_matset["element_ids"]);
 
         for (auto &mapitem : sbm_rep)
         {
@@ -1212,28 +1174,7 @@ multi_buffer_by_material_to_uni_buffer_by_element_matset(const conduit::Node &sr
         sbm_rep[matname].second = mat_elem_ids.value();
     }
 
-    // load the element ids into a set to find out how many there are
-    auto determine_num_elems = [](const conduit::Node &elem_ids)
-    {
-        std::set<int> elem_ids_set;
-
-        auto eid_itr = elem_ids.children();
-        while (eid_itr.has_next())
-        {
-            const Node &mat_elem_ids = eid_itr.next();
-            const std::string matname = eid_itr.name();
-            int_accessor mat_elem_ids_vals = mat_elem_ids.value();
-            int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
-            for (int i = 0; i < num_vf; i ++)
-            {
-                elem_ids_set.insert(mat_elem_ids_vals[i]);
-            }
-        }
-
-        return static_cast<int>(elem_ids_set.size());
-    };
-
-    const int num_elems = determine_num_elems(src_matset["element_ids"]);
+    const int num_elems = determine_num_elems_in_multi_buffer_by_material(src_matset["element_ids"]);
 
     // There is no way to pack the volume fractions correctly without
     // first knowing the sizes. So we create an intermediate representation
@@ -1324,28 +1265,7 @@ multi_buffer_by_material_to_uni_buffer_by_element_field(const conduit::Node &src
             sbm_rep[matname].second = matset_vals.value();
         }
 
-        // load the element ids into a set to find out how many there are
-        auto determine_num_elems = [](const conduit::Node &elem_ids)
-        {
-            std::set<int> elem_ids_set;
-
-            auto eid_itr = elem_ids.children();
-            while (eid_itr.has_next())
-            {
-                const Node &mat_elem_ids = eid_itr.next();
-                const std::string matname = eid_itr.name();
-                int_accessor mat_elem_ids_vals = mat_elem_ids.value();
-                int num_vf = mat_elem_ids_vals.dtype().number_of_elements();
-                for (int i = 0; i < num_vf; i ++)
-                {
-                    elem_ids_set.insert(mat_elem_ids_vals[i]);
-                }
-            }
-
-            return static_cast<int>(elem_ids_set.size());
-        };
-
-        const int num_elems = determine_num_elems(src_matset["element_ids"]);
+        const int num_elems = determine_num_elems_in_multi_buffer_by_material(src_matset["element_ids"]);
 
         // There is no way to pack the matset values correctly without
         // first knowing the sizes. So we create an intermediate representation
