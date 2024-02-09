@@ -20,6 +20,8 @@
 #include <iostream>
 #include <array>
 #include <cmath>
+#include <set>
+
 #include "gtest/gtest.h"
 
 #include "blueprint_test_helpers.hpp"
@@ -969,6 +971,38 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
 //-----------------------------------------------------------------------------
 //-- Combine topology --
 //-----------------------------------------------------------------------------
+static bool ph_faces_unique(const conduit::Node &topo)
+{
+    bool unique = true;
+    const auto sizes = topo["subelements/sizes"].as_int_accessor();
+    const auto connectivity = topo["subelements/connectivity"].as_index_t_accessor();
+    std::vector<conduit::index_t> zids;
+
+    // Iterate over the face definitions and make ids for them.
+    std::set<conduit::uint64> uniqueFaces;
+    conduit::index_t offset = 0;
+    for(conduit::index_t fi = 0; fi < sizes.number_of_elements(); fi++)
+    {
+        const auto npts = sizes[fi];
+
+        zids.clear();
+        zids.reserve(npts);
+        for(conduit::index_t i = 0; i < npts; i++)
+            zids.push_back(connectivity[offset + i]);
+
+        auto faceId = conduit::utils::hash(&zids[0], npts);
+        auto it = uniqueFaces.find(faceId);
+        bool notFound = it == uniqueFaces.end();
+        if(notFound)
+            uniqueFaces.insert(faceId);
+        unique &= notFound;
+        offset += npts;
+    }
+    return unique;
+}
+
+//-----------------------------------------------------------------------------
+// #define DEBUG_RECOMBINE_BRAID
 TEST(conduit_blueprint_mesh_combine, recombine_braid)
 {
     const auto recombine_braid_case = [](const std::string &case_name, const conduit::index_t *vdims)
@@ -1028,6 +1062,15 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
                 verify_info.print();
             }
             EXPECT_TRUE(is_valid);
+
+            // If the combined mesh is polyhedral then make sure all the face
+            // definitions are unique.
+            if(combine.has_path("topologies/mesh/elements/shape") &&
+               combine["topologies/mesh/elements/shape"].as_string() == "polyhedral")
+            {
+                bool unique = ph_faces_unique(combine["topologies/mesh"]);
+                EXPECT_TRUE(unique);
+            }
         }
 
         // Compare combined mesh to baselines

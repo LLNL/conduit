@@ -6367,6 +6367,45 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
     std::vector<index_t> out_subsizes;
     std::vector<index_t> out_suboffsets;
     std::vector<index_t> out_elem_map;
+
+    // Variables to help with face uniqueness.
+    std::vector<index_t> tmp_subconn, new_subconn;
+    std::map<conduit::uint64, index_t> faceHashToId;
+
+    // Adds a face to faceHashToId and the subelement information if the face has
+    // not been seen before. If the face has been seen before then the previous
+    // face id is returned.
+    auto addFace = [&](std::vector<index_t> &tmp_conn, const std::vector<index_t> &conn)
+    {
+        index_t nextFaceId = 0;
+
+        // Make a hash that identifies the face.
+        std::sort(tmp_conn.begin(), tmp_conn.end());
+        auto faceHash = conduit::utils::hash(&tmp_conn[0], tmp_conn.size());
+
+        // Insert the face if it does not exist.
+        auto it = faceHashToId.find(faceHash);
+        if(it == faceHashToId.end())
+        {
+            // Put the faceHash,nextFaceId in the map.
+            nextFaceId = static_cast<index_t>(out_subsizes.size());
+            faceHashToId[faceHash] = nextFaceId;
+
+            // We need to insert the new face into the subconn info.
+            out_suboffsets.push_back(static_cast<index_t>(out_subconn.size()));
+            out_subsizes.push_back(static_cast<index_t>(conn.size()));
+            for(const auto &ptid : conn)
+                out_subconn.push_back(ptid);
+        }
+        else
+        {
+            nextFaceId = it->second;
+        }
+
+        return nextFaceId;
+    };
+
+    // Handle all of the topologies.
     const index_t ntopos = (index_t)topologies.size();
     for(index_t i = 0; i < ntopos; i++)
     {
@@ -6377,70 +6416,99 @@ build_polyhedral_output(const std::vector<const Node*> &topologies,
             CONDUIT_WARN("Could not merge topology " << i <<  ", no associated pointmap.");
             continue;
         }
-        DataArray<index_t> pmap_da = pointmap->value();
+        const DataArray<index_t> pmap_da = pointmap->value();
 
-        iterate_elements(topo, [&](const entity &e) {
+        iterate_elements(topo, [&](const entity &e)
+        {
             out_elem_map.push_back(i);
             out_elem_map.push_back(e.entity_id);
             if(e.shape.is_polyhedral())
             {
                 // Copy the subelements to their new offsets
-                const index_t sz = e.element_ids.size();
-                const index_t offset = out_conn.size();
-                out_offsets.push_back(offset);
+                const index_t sz = static_cast<index_t>(e.element_ids.size());
+                out_offsets.push_back(static_cast<index_t>(out_conn.size()));
                 out_sizes.push_back(sz);
                 for(index_t ii = 0; ii < sz; ii++)
                 {
-                    const index_t subidx = out_subsizes.size();
-                    const index_t subsz = e.subelement_ids[ii].size();
-                    const index_t suboffset = out_subconn.size();
-                    out_conn.push_back(subidx);
-                    out_suboffsets.push_back(suboffset);
-                    out_subsizes.push_back(subsz);
+                    const index_t subsz = static_cast<index_t>(e.subelement_ids[ii].size());
+
+                    // Gather up the face point ids in the new coordset.
+                    tmp_subconn.clear();
+                    new_subconn.clear();
+                    tmp_subconn.reserve(subsz);
+                    new_subconn.reserve(subsz);
                     for(index_t j = 0; j < subsz; j++)
                     {
-                        out_subconn.push_back(pmap_da[e.subelement_ids[ii][j]]);
+                        const auto new_ptid = pmap_da[e.subelement_ids[ii][j]];
+                        tmp_subconn.push_back(new_ptid);
+                        new_subconn.push_back(new_ptid);
                     }
+
+                    // Get the id of this face (adding it if needed)
+                    index_t nextFaceId = addFace(tmp_subconn, new_subconn);
+
+                    // Store the face id in the connectivity.
+                    out_conn.push_back(nextFaceId);
                 }
             }
             else if(utils::TOPO_SHAPE_IDS[e.shape.id] == "f" || utils::TOPO_SHAPE_IDS[e.shape.id] == "l")
             {
                 // 2D faces / 1D lines: Line, Tri, Quad
                 // Add the shape to the sub elements
-                const index_t subidx = out_subsizes.size();
-                const index_t suboffset = out_subconn.size();
-                out_suboffsets.push_back(suboffset);
-                const index_t subsz = e.element_ids.size();
-                out_subsizes.push_back(subsz);
+                const index_t subsz = static_cast<index_t>(e.element_ids.size());
+
+                // Gather up the face point ids in the new coordset.
+                tmp_subconn.clear();
+                new_subconn.clear();
+                tmp_subconn.reserve(subsz);
+                new_subconn.reserve(subsz);
                 for(index_t j = 0; j < subsz; j++)
                 {
-                    out_subconn.push_back(pmap_da[e.element_ids[j]]);
+                    const auto new_ptid = pmap_da[e.element_ids[j]];
+                    tmp_subconn.push_back(new_ptid);
+                    new_subconn.push_back(new_ptid);
                 }
+
+                // Get the id of this face (adding it if needed)
+                index_t nextFaceId = addFace(tmp_subconn, new_subconn);
+
                 // Then create a polyhedron with only 1 subelement
-                out_offsets.push_back(out_conn.size());
+                out_offsets.push_back(static_cast<index_t>(out_conn.size()));
                 out_sizes.push_back(1);
-                out_conn.push_back(subidx);
+                out_conn.push_back(nextFaceId);
             }
             else if(utils::TOPO_SHAPE_IDS[e.shape.id] == "c")
             {
-                // 3D cells: Tet, Hex
-                const index_t nfaces = e.shape.embed_count;
-                const index_t embeded_sz = mesh::utils::TOPO_SHAPE_INDEX_COUNTS[e.shape.embed_id];
-                out_offsets.push_back(out_conn.size());
+                // 3D cells. We use ShapeType's face functions since we want to ensure
+                // we do not end up splitting faces into triangles. That could make them
+                // not match in this context.
+
+                const index_t nfaces = e.shape.num_faces();
+                out_offsets.push_back(static_cast<index_t>(out_conn.size()));
                 out_sizes.push_back(nfaces);
-                index_t ei = 0;
                 for(index_t j = 0; j < nfaces; j++)
                 {
-                    out_conn.push_back(out_subsizes.size());
-                    out_suboffsets.push_back(out_subconn.size());
-                    out_subsizes.push_back(embeded_sz);
-                    for(index_t k = 0; k < embeded_sz; k++)
+                    // Get the points for the face
+                    index_t nids = 0;
+                    const index_t *ids = e.shape.get_face(j, nids);
+
+                    // Gather up the face point ids in the new coordset.
+                    tmp_subconn.clear();
+                    new_subconn.clear();
+                    tmp_subconn.reserve(nids);
+                    new_subconn.reserve(nids);
+                    for(index_t k = 0; k < nids; k++)
                     {
-                        // Use the embedding table to find the correct index into the element_ids
-                        //  array. Then map the element_id through the pointmap to get the new id.
-                        out_subconn.push_back(pmap_da[e.element_ids[e.shape.embedding[ei]]]);
-                        ei++;
+                        const auto new_ptid = pmap_da[e.element_ids[ids[k]]];
+                        tmp_subconn.push_back(new_ptid);
+                        new_subconn.push_back(new_ptid);
                     }
+
+                    // Get the id of this face (adding it if needed)
+                    index_t nextFaceId = addFace(tmp_subconn, new_subconn);
+
+                    // Store the face id in the connectivity.
+                    out_conn.push_back(nextFaceId);
                 }
             }
             else // (utils::TOPO_SHAPE_IDS[e.shape.id] == "p" || !e.shape.is_valid()) Q: Any other cases caught in here?
