@@ -881,7 +881,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/llnl/conduit/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/llnl/conduit/compare/v0.8.8...v0.9.0
 [0.8.8]: https://github.com/llnl/conduit/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/llnl/conduit/compare/v0.8.6...v0.8.7

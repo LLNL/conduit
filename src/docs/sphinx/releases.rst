@@ -15,6 +15,7 @@ https://github.com/LLNL/conduit/releases
 v0.9.1
 ---------------------------------
 
+* Released 2024-02-09
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.9.1/conduit-v0.9.1-src-with-blt.tar.gz>`__
 
 Highlights
@@ -35,6 +36,7 @@ Changed
 * **Blueprint**
 
  * Fixed missing build dependency relationship with the python conduit blueprint table examples module.
+ * Fixed partitioner so it does not duplicate faces when combining polyhedral meshes.
 
 Added
 ~~~~~
@@ -45,10 +47,10 @@ Added
  * Added polygonal support to Blueprint Silo I/O.
 
 
-
 v0.9.0
 ---------------------------------
 
+* Released 2024-02-04
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.9.0/conduit-v0.9.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -139,6 +141,7 @@ Fixed
 v0.8.8
 ---------------------------------
 
+* Released 2023-05-18
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.8/conduit-v0.8.8-src-with-blt.tar.gz>`__
 
 Highlights
@@ -178,6 +181,7 @@ Fixed
 v0.8.7
 ---------------------------------
 
+* Released 2023-03-23
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.7/conduit-v0.8.7-src-with-blt.tar.gz>`__
 
 Highlights
@@ -239,6 +243,7 @@ Changed
 v0.8.6
 ---------------------------------
 
+* Released 2023-01-11
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.6/conduit-v0.8.6-src-with-blt.tar.gz>`__
 
 Highlights
@@ -273,6 +278,7 @@ Fixed
 v0.8.5
 ---------------------------------
 
+* Released 2022-12-22
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.5/conduit-v0.8.5-src-with-blt.tar.gz>`__
 
 Highlights
@@ -338,6 +344,7 @@ Fixed
 v0.8.4
 ---------------------------------
 
+* Released 2022-08-22
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.4/conduit-v0.8.4-src-with-blt.tar.gz>`__
 
 Highlights
@@ -408,6 +415,7 @@ Fixed
 v0.8.3
 ---------------------------------
 
+* Released 2022-04-14
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.3/conduit-v0.8.3-src-with-blt.tar.gz>`__
 
 Highlights
@@ -455,6 +463,7 @@ Changed
 v0.8.2
 ---------------------------------
 
+* Released 2022-02-01
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.2/conduit-v0.8.2-src-with-blt.tar.gz>`__
 
 Highlights
@@ -474,6 +483,7 @@ Fixed
 v0.8.1
 ---------------------------------
 
+* Released 2022-01-25
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.1/conduit-v0.8.1-src-with-blt.tar.gz>`__
 
 Highlights
@@ -515,6 +525,7 @@ Fixed
 v0.8.0
 ---------------------------------
 
+* Released 2021-12-20
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.0/conduit-v0.8.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -603,6 +614,7 @@ Fixed
 v0.7.2
 ---------------------------------
 
+* Released 2021-05-19
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.2/conduit-v0.7.2-src-with-blt.tar.gz>`__
 
 Highlights
@@ -663,6 +675,7 @@ Fixed
 v0.7.1
 ---------------------------------
 
+* Released 2021-02-11
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.1/conduit-v0.7.1-src-with-blt.tar.gz>`__
 
 Highlights
@@ -687,6 +700,7 @@ Fixed
 v0.7.0
 ---------------------------------
 
+* Released 2021-02-08
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.0/conduit-v0.7.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -762,6 +776,7 @@ Removed
 v0.6.0
 ---------------------------------
 
+* Released 2020-11-02
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.6.0/conduit-v0.6.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -861,6 +876,8 @@ Changed
 
 v0.5.1
 -----------------
+
+* Released 2020-01-18
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.5.1/conduit-v0.5.1-src-with-blt.tar.gz>`__
 
 Highlights
@@ -900,6 +917,8 @@ Fixed
 
 v0.5.0
 -----------------
+
+* Released 2019-10-25
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.5.0/conduit-v0.5.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -960,6 +979,8 @@ Fixed
 
 v0.4.0
 -----------------
+
+* Released 2019-03-01
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.4.0/conduit-v0.4.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -1047,6 +1068,7 @@ Fixed
 v0.3.1
 -----------------
 
+* Released 2018-02-26
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.1/conduit-v0.3.1-src-with-blt.tar.gz>`__
 
 
@@ -1079,6 +1101,7 @@ Highlights
 v0.3.0
 -----------------
 
+* Released 2017-08-21
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -1119,6 +1142,7 @@ Highlights
 v0.2.1
 -----------------
 
+* Released 2017-01-06
 * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz>`__
 
 
@@ -1147,6 +1171,7 @@ Highlights
 v0.2.0
 -----------------
 
+* Released 2016-11-03
 * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`__
     
 Highlights 
@@ -1176,5 +1201,11 @@ Highlights
  * Refactored the ``relay::WebServer`` and the Conduit Node Viewer application
  * Added entangle, a python script ssh tunneling solution
 
+v0.1.0
+-----------------
+
+* Released 2016-03-30
+* Initial Open Source Release on GitHub
+* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.1.0.tar.gz>`__
 
 
