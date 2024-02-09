@@ -88,12 +88,12 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     std::vector<std::string> filename_vec = {
         "box2d.silo",
         "box3d.silo",
-        // "diamond.silo", <--- this one fails because polytopal is not yet supported
+        // "diamond.silo", <--- TODO this one fails because polytopal is not yet supported
         // TODO: rename these files to be more descriptive.
         // would also require modifying the paths stored within the files,
         // and re-symlinking
         "testDisk2D_a.silo",
-        // "donordiv.s2_materials2.silo", <--- this one fails because polytopal is not yet supported
+        // "donordiv.s2_materials2.silo", <--- TODO this one fails because polytopal is not yet supported
         "donordiv.s2_materials3.silo"
     };
     std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
@@ -140,7 +140,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
         std::make_pair("structured", "2"), std::make_pair("structured", "3"),
         std::make_pair("tris", "2"),
         std::make_pair("quads", "2"),
-        // std::make_pair("polygons", "2"),
+        std::make_pair("polygons", "2"),
         std::make_pair("tets", "3"),
         std::make_pair("hexs", "3"),
         std::make_pair("wedges", "3"),
@@ -154,7 +154,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
         index_t ny = 4;
         index_t nz = (dim == "2" ? 0 : 2);
 
-        std::string mesh_type = mesh_types[i].first;
+        const std::string mesh_type = mesh_types[i].first;
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
@@ -523,23 +523,7 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
     // we need a material in order for this to be valid overlink
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
     {
-        Node &n_matset = save_mesh[child]["matsets"]["matset"];
-        n_matset["topology"] = "mesh";
-        n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
-        n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
-
-        double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
-        double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
-
-        a_vfs[0] = 1.0;
-        a_vfs[1] = 0.0;
-        a_vfs[2] = 1.0;
-        a_vfs[3] = 0.0;
-
-        b_vfs[0] = 0.0;
-        b_vfs[1] = 1.0;
-        b_vfs[2] = 0.0;
-        b_vfs[3] = 1.0;
+        add_multi_buffer_full_matset(save_mesh[child], 4, "mesh");
     }
 
     const std::string basename = "silo_grid_adjset";
@@ -1437,16 +1421,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink2)
     field2["values"].set_external(save_mesh["fields"]["field"]["values"]);
 
     // add a matset to make overlink happy
-    Node &n_matset = save_mesh["matsets"]["matset"];
-    n_matset["topology"] = "mesh";
-    n_matset["volume_fractions"]["mat_a"].set(DataType::float64(4));
-    n_matset["volume_fractions"]["mat_b"].set(DataType::float64(4));
-    double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
-    double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
-    a_vfs[0] = 1.0; b_vfs[0] = 0.0;
-    a_vfs[1] = 0.0; b_vfs[1] = 1.0;
-    a_vfs[2] = 1.0; b_vfs[2] = 0.0;
-    a_vfs[3] = 0.0; b_vfs[3] = 1.0;
+    add_multi_buffer_full_matset(save_mesh, 4, "mesh");
 
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename, write_opts);
@@ -1629,32 +1604,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink4)
         index_t nele_z = (dim == "2" ? 0 : nz - 1);
 
         // provide a matset for braid
-        {
-            index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
-
-            save_mesh["matsets"]["matset"]["topology"] = "mesh";
-
-            Node &vfs = save_mesh["matsets"]["matset"]["volume_fractions"];
-            vfs["mat1"].set(DataType::float64(nele));
-            vfs["mat2"].set(DataType::float64(nele));
-
-            float64_array mat1_vals = vfs["mat1"].value();
-            float64_array mat2_vals = vfs["mat2"].value();
-
-            for (index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
-            {
-                for (index_t j = 0; (idx == 0 || j < nele_y) ; j++)
-                {
-                    for (index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
-                    {
-                        float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
-
-                        mat1_vals[idx] = mv;
-                        mat2_vals[idx] = 1.0 - mv;
-                    }
-                }
-            }
-        }
+        braid_init_example_matset(nele_x, nele_y, nele_z, save_mesh["matsets"]["matset"]);
 
         const std::string basename = "silo_save_option_overlink_braid_" + mesh_type + "_" + dim + "D";
         const std::string filename = basename + "/OvlTop.silo";
@@ -1692,7 +1642,71 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink4)
 
         // make changes to save mesh so the diff will pass
         overlink_name_changer(save_mesh);
-        
+
+        // the loaded mesh will be in the multidomain format
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), 1);
+        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
+    }
+}
+
+//-----------------------------------------------------------------------------
+// check that all the shape types work (specifically polytopal ones)
+TEST(conduit_relay_io_silo, round_trip_save_option_overlink5)
+{
+    const std::vector<std::pair<std::string, std::string>> mesh_types = {
+        std::make_pair("uniform", "2"), std::make_pair("uniform", "3"),
+        std::make_pair("rectilinear", "2"), std::make_pair("rectilinear", "3"),
+        std::make_pair("structured", "2"), std::make_pair("structured", "3"),
+        std::make_pair("quads", "2"),
+        std::make_pair("polygons", "2"),
+        std::make_pair("hexs", "3"),
+        // std::make_pair("polyhedra", "3")
+        // Overlink does not support tris, wedges, pyramids, or tets
+    };
+    for (int i = 0; i < mesh_types.size(); ++i)
+    {
+        const std::string dim = mesh_types[i].second;
+        index_t nx = 3;
+        index_t ny = 4;
+        index_t nz = (dim == "2" ? 0 : 2);
+
+        const std::string mesh_type = mesh_types[i].first;
+
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::basic(mesh_type, nx, ny, nz, save_mesh);
+
+        const std::string basename = "silo_save_option_overlink_basic_" + mesh_type + "_" + dim + "D";
+        const std::string filename = basename + "/OvlTop.silo";
+        const std::string domfile = basename + "/domain0.silo";
+
+        Node write_opts, read_opts;
+        write_opts["file_style"] = "overlink";
+        read_opts["matset_style"] = "multi_buffer_full";
+
+        // add a matset to make overlink happy
+        int num_elems = (nx - 1) * (ny - 1);
+        if (mesh_type == "tets")
+        {
+            num_elems *= 6;
+        }
+        add_multi_buffer_full_matset(save_mesh, num_elems, "mesh");
+
+        remove_path_if_exists(filename);
+        remove_path_if_exists(domfile);
+        io::silo::save_mesh(save_mesh, basename, write_opts);
+        io::silo::load_mesh(filename, read_opts, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh,info));
+
+        // make changes to save mesh so the diff will pass
+        if (mesh_type == "uniform")
+        {
+            silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
+        }
+        overlink_name_changer(save_mesh);
+
         // the loaded mesh will be in the multidomain format
         // but the saved mesh is in the single domain format
         EXPECT_EQ(load_mesh.number_of_children(), 1);
