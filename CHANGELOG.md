@@ -4,17 +4,23 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.9.1] - Released 2024-02-09
 
 ### Changed
 
 #### Conduit
 - Relaxed strict header check for C++14 back to C++11. A downstream consumer of Conduit has C++11 hardcoded into their build system and patching for related deployments is intractable.
+- Restore logic to avoid fused mpi c++ and fortran flags that can undermine blt's mpi smoke test.
 
 
 #### Blueprint
 - Fixed missing build dependency relationship with the python conduit blueprint table examples module.
 - Fixed partitioner so it does not duplicate faces when combining polyhedral meshes.
+
+### Added
+
+#### Relay
+- Added polygonal support to Blueprint Silo I/O.
 
 ## [0.9.0] - Released 2024-02-05
 
@@ -875,7 +881,8 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/llnl/conduit/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/llnl/conduit/compare/v0.8.8...v0.9.0
 [0.8.8]: https://github.com/llnl/conduit/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/llnl/conduit/compare/v0.8.6...v0.8.7
