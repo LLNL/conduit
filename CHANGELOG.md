@@ -15,6 +15,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Blueprint
 - Fixed missing build dependency relationship with the python conduit blueprint table examples module.
+- Fixed partitioner so it does not duplicate faces when combining polyhedral meshes.
 
 ### Added
 
