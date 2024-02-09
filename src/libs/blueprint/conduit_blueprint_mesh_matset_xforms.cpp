@@ -539,7 +539,7 @@ create_reverse_matmap(const conduit::Node &src_matset,
         const Node &matmap_entry = matmap_itr.next();
         const std::string matname = matmap_itr.name();
 
-        reverse_matmap[matmap_entry.as_int()] = matname;
+        reverse_matmap[matmap_entry.to_int()] = matname;
     }
 }
 
