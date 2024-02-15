@@ -5115,20 +5115,19 @@ namespace detail
         }
     }
 
-    template<typename T> // T is the type of the new field values
     void
     vertex_associated_field(const Node &topo_dest,
                             float64_accessor poly_field_data,
                             int orig_num_points,
                             int new_num_points,
                             int dimensions,
-                            T *values_array)
+                            float64_accessor field_values)
     {
         // copy field values from the original field over to the
         // points that are in both the old and new topologies
         for (int i = 0; i < orig_num_points; i ++)
         {
-            values_array[i] = static_cast<T>(poly_field_data[i]);
+            field_values.set(i, poly_field_data[i]);
         }
 
         // this map will record for each new point (represented by
@@ -5186,7 +5185,7 @@ namespace detail
                 {
                     if (*it < orig_num_points)
                     {
-                        sum += values_array[*it];
+                        sum += field_values[*it];
                         num_neighbors += 1.0;
                     }
                 }
@@ -5195,17 +5194,16 @@ namespace detail
                 // the size of the set, since there are neighbors which
                 // may go unused, since they are not from the original
                 // coordset
-                values_array[i] = static_cast<T>(sum / num_neighbors);
+                field_values.set(i, sum / num_neighbors);
             }
             // if the points go unused in the topology, we assign them 0
             else
             {
-                values_array[i] = static_cast<T>(0.0);
+                field_values.set(i, 0.0);
             }
         }
     }
 
-    template<typename T> // T is the type of the new field values
     void
     map_field_to_generated_sides(Node &field_out,
                                  const Node &field_src,
@@ -5220,7 +5218,7 @@ namespace detail
                                  const Node &topo_dest)
     {
         // a pointer to the destination for field values
-        T *values_array = field_out["values"].value();
+        float64_accessor field_values = field_out["values"].value();
 
         // a pointer to the original field values
         float64_accessor poly_field_data = field_src["values"].value();
@@ -5228,12 +5226,12 @@ namespace detail
         // if our field is vertex associated
         if (vert_assoc)
         {
-            vertex_associated_field<T>(topo_dest,
-                                       poly_field_data,
-                                       orig_num_points,
-                                       new_num_points,
-                                       dimensions,
-                                       values_array);
+            vertex_associated_field(topo_dest,
+                                    poly_field_data,
+                                    orig_num_points,
+                                    new_num_points,
+                                    dimensions,
+                                    field_values);
         }
         else
         {
@@ -5248,11 +5246,11 @@ namespace detail
                 // if our field is volume dependent
                 if (vol_dep)
                 {
-                    values_array[i] = static_cast<T>(poly_field_data[tri_to_poly[i]] * volume_ratio[i]);
+                    field_values.set(i, poly_field_data[tri_to_poly[i]] * volume_ratio[i]);
                 }
                 else
                 {
-                    values_array[i] = static_cast<T>(poly_field_data[tri_to_poly[i]]);
+                    field_values.set(i, poly_field_data[tri_to_poly[i]]);
                 }
             }
         }
@@ -5429,17 +5427,6 @@ namespace detail
                 if (vol_dep || vert_assoc)
                 {
                     field_out["values"].set(conduit::DataType::float64(field_out_size));
-                    map_field_to_generated_sides<float64>(field_out,
-                                                          field,
-                                                          new_num_shapes,
-                                                          tri_to_poly,
-                                                          volume_ratio,
-                                                          vol_dep,
-                                                          vert_assoc,
-                                                          orig_num_points,
-                                                          new_num_points,
-                                                          dimensions,
-                                                          topo_dest);
                 }
                 // If we are neither volume dependent nor vertex associated, we can go
                 // ahead and honor the original field type.
@@ -5448,98 +5435,44 @@ namespace detail
                     if (field["values"].dtype().is_uint64())
                     {
                         field_out["values"].set(conduit::DataType::uint64(field_out_size));
-                        map_field_to_generated_sides<uint64>(field_out,
-                                                             field,
-                                                             new_num_shapes,
-                                                             tri_to_poly,
-                                                             volume_ratio,
-                                                             vol_dep,
-                                                             vert_assoc,
-                                                             orig_num_points,
-                                                             new_num_points,
-                                                             dimensions,
-                                                             topo_dest);
                     }
                     else if (field["values"].dtype().is_uint32())
                     {
                         field_out["values"].set(conduit::DataType::uint32(field_out_size));
-                        map_field_to_generated_sides<uint32>(field_out,
-                                                             field,
-                                                             new_num_shapes,
-                                                             tri_to_poly,
-                                                             volume_ratio,
-                                                             vol_dep,
-                                                             vert_assoc,
-                                                             orig_num_points,
-                                                             new_num_points,
-                                                             dimensions,
-                                                             topo_dest);
                     }
                     else if (field["values"].dtype().is_int64())
                     {
                         field_out["values"].set(conduit::DataType::int64(field_out_size));
-                        map_field_to_generated_sides<int64>(field_out,
-                                                            field,
-                                                            new_num_shapes,
-                                                            tri_to_poly,
-                                                            volume_ratio,
-                                                            vol_dep,
-                                                            vert_assoc,
-                                                            orig_num_points,
-                                                            new_num_points,
-                                                            dimensions,
-                                                            topo_dest);
                     }
                     else if (field["values"].dtype().is_int32())
                     {
                         field_out["values"].set(conduit::DataType::int32(field_out_size));
-                        map_field_to_generated_sides<int32>(field_out,
-                                                            field,
-                                                            new_num_shapes,
-                                                            tri_to_poly,
-                                                            volume_ratio,
-                                                            vol_dep,
-                                                            vert_assoc,
-                                                            orig_num_points,
-                                                            new_num_points,
-                                                            dimensions,
-                                                            topo_dest);
                     }
                     else if (field["values"].dtype().is_float64())
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<float64>(field_out,
-                                                              field,
-                                                              new_num_shapes,
-                                                              tri_to_poly,
-                                                              volume_ratio,
-                                                              vol_dep,
-                                                              vert_assoc,
-                                                              orig_num_points,
-                                                              new_num_points,
-                                                              dimensions,
-                                                              topo_dest);
                     }
                     else if (field["values"].dtype().is_float32())
                     {
                         field_out["values"].set(conduit::DataType::float32(field_out_size));
-                        map_field_to_generated_sides<float32>(field_out,
-                                                              field,
-                                                              new_num_shapes,
-                                                              tri_to_poly,
-                                                              volume_ratio,
-                                                              vol_dep,
-                                                              vert_assoc,
-                                                              orig_num_points,
-                                                              new_num_points,
-                                                              dimensions,
-                                                              topo_dest);
                     }
                     else
                     {
                         CONDUIT_ERROR("Unsupported field type in " << field["values"].dtype().to_yaml());
                     }
                 }
+
+                map_field_to_generated_sides(field_out,
+                                             field,
+                                             new_num_shapes,
+                                             tri_to_poly,
+                                             volume_ratio,
+                                             vol_dep,
+                                             vert_assoc,
+                                             orig_num_points,
+                                             new_num_points,
+                                             dimensions,
+                                             topo_dest);
 
                 if (vol_dep)
                 {
