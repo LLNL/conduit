@@ -24,13 +24,13 @@ if(PYTHONINTERP_FOUND)
         set(EXTRA_PYTHON_MODULE_DIRS "")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                        "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
+                        "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
                         OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
                         ERROR_VARIABLE  ERROR_FINDING_PYTHON_VERSION)
         MESSAGE(STATUS "PYTHON_CONFIG_VERSION ${PYTHON_CONFIG_VERSION}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                "import sys;from distutils.sysconfig import get_python_inc;sys.stdout.write(get_python_inc())"
+                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('include'))"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
@@ -40,7 +40,7 @@ if(PYTHONINTERP_FOUND)
         endif()
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
+                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('platlib'))"
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
                         ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
         MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
@@ -69,7 +69,7 @@ if(PYTHONINTERP_FOUND)
         endif()
 
         # our goal is to find the specific python lib, based on info
-        # we extract from distutils.sysconfig from the python executable
+        # we extract from sysconfig from the python executable
         #
         # check for python libs differs for windows python installs
         if(NOT WIN32)
@@ -85,22 +85,22 @@ if(PYTHONINTERP_FOUND)
             #  LIBPL + LIBRARY
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBDIR
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBDIR)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBPL
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPL)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LDLIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LDLIBRARY)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBRARY)
 
@@ -184,7 +184,7 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 
 
 ##############################################################################
-# Macro to use a pure python distutils setup script
+# Macro to use a pure python pip setup script
 ##############################################################################
 FUNCTION(PYTHON_ADD_PIP_SETUP)
     set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
