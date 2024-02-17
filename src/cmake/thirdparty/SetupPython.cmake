@@ -39,15 +39,10 @@ if(PYTHONINTERP_FOUND)
             MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
         endif()
 
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+        # TODO: replacing distutils.get_python_lib() isn't straight forward
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR_OLD
-                        ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
-        MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR_OLD ${PYTHON_SITE_PACKAGES_DIR_OLD}")
-
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('purelib'))"
-                        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
                         ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
         MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
 
