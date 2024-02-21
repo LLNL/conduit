@@ -30,7 +30,7 @@ if(PYTHONINTERP_FOUND)
         MESSAGE(STATUS "PYTHON_CONFIG_VERSION ${PYTHON_CONFIG_VERSION}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                "import sys;from sysconfig import get_python_inc;sys.stdout.write(get_path('include'))"
+                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('include'))"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
@@ -40,7 +40,7 @@ if(PYTHONINTERP_FOUND)
         endif()
 
         # TODO: replacing distutils.get_python_lib() isn't straight forward
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
+        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
                         OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
                         ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
@@ -70,7 +70,7 @@ if(PYTHONINTERP_FOUND)
         endif()
 
         # our goal is to find the specific python lib, based on info
-        # we extract from distutils.sysconfig from the python executable
+        # we extract from sysconfig from the python executable
         #
         # check for python libs differs for windows python installs
         if(NOT WIN32)
@@ -185,7 +185,7 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 
 
 ##############################################################################
-# Macro to use a pure python module setup script
+# Macro to use a pure python pip setup script
 ##############################################################################
 FUNCTION(PYTHON_ADD_PIP_SETUP)
     set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
@@ -426,6 +426,9 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
                                PY_MODULE_DIR ${args_PY_MODULE_DIR}
                                SOURCES       ${args_SOURCES}
                                FOLDER        ${args_FOLDER})
+
+    # args_NAME depends on "${args_NAME}_py_setup"
+    add_dependencies( ${args_NAME} "${args_NAME}_py_setup")
 
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
