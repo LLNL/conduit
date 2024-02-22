@@ -3352,24 +3352,27 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
     }
     else if(shape.is_polyhedral())
     {
-        conduit::Node n_indices;
-        as_index_t(n_topo["elements/connectivity"], n_indices);
-        auto iptr = as_index_t_array(n_indices);
+        const auto conn = n_topo["elements/connectivity"].as_index_t_accessor();
 
         // NOTE: I'm assuming that offsets are built already.
-        conduit::Node n_offsets, n_sizes;
-        as_index_t(n_topo["elements/offsets"], n_offsets);
-        as_index_t(n_topo["elements/sizes"], n_sizes);
-        auto offsets = as_index_t_array(n_offsets);
-        auto sizes = as_index_t_array(n_sizes);
+        const auto offsets = n_topo["elements/offsets"].as_index_t_accessor();
+        const auto sizes = n_topo["elements/sizes"].as_index_t_accessor();
 
-        conduit::Node n_se_conn, n_se_offsets, n_se_sizes;
-        as_index_t(n_topo["subelements/connectivity"], n_se_conn);
-        as_index_t(n_topo["subelements/offsets"], n_se_offsets);
-        as_index_t(n_topo["subelements/sizes"], n_se_sizes);
-        auto se_conn = as_index_t_array(n_se_conn);
-        auto se_offsets = as_index_t_array(n_se_offsets);
-        auto se_sizes = as_index_t_array(n_se_sizes);
+        const auto se_conn = n_topo["subelements/connectivity"].as_index_t_accessor();
+        const auto se_offsets = n_topo["subelements/offsets"].as_index_t_accessor();
+        const auto se_sizes = n_topo["subelements/sizes"].as_index_t_accessor();
+
+        // Figure out the index of each face being used. The first use of a face
+        // will put 0 in faceOrientation, the second use will be 1.
+        const auto maxFace = conn.max() + 1;
+        const auto connlen = conn.number_of_elements();
+        std::vector<uint8> faceCount(maxFace, 0);
+        std::vector<uint8> faceOrientation(connlen, 0);
+        for(index_t i = 0; i < connlen; i++)
+        {
+            const auto faceId = conn[i];
+            faceOrientation[i] = faceCount[faceId]++;
+        }
 
         std::map<index_t,index_t> old2new_faces;
         std::vector<index_t> new_sizes, new_offsets, new_se_conn, new_se_sizes, new_se_offsets;
@@ -3377,30 +3380,58 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
         index_t new_offset = 0, new_se_offset = 0;
         for(auto eid : element_ids)
         {
-            auto offset = static_cast<index_t>(offsets[eid]);
-            auto nfaces = static_cast<index_t>(sizes[eid]);
+            const auto offset = offsets[eid];
+            const auto nfaces = sizes[eid];
             for(index_t fi = 0; fi < nfaces; fi++)
             {
-                auto face_id = iptr[offset + fi];
-                auto it = old2new_faces.find(face_id);
+                const auto face_id = conn[offset + fi];
+                const auto it = old2new_faces.find(face_id);
                 if(it == old2new_faces.end())
                 {
                     // We have not seen the face before. Add it.
-                    auto new_face_id = static_cast<index_t>(old2new_faces.size());
+                    const auto new_face_id = static_cast<index_t>(old2new_faces.size());
                     old2new_faces[face_id] = new_face_id;
                     new_conn.push_back(new_face_id);
 
-                    auto face_offset = se_offsets[face_id];
-                    auto face_nverts = static_cast<index_t>(se_sizes[face_id]);
-                    for(index_t vi = 0; vi < face_nverts; vi++)
+                    const auto face_offset = se_offsets[face_id];
+                    const auto face_nverts = se_sizes[face_id];
+
+                    // Get the orientation for the face. If it is 0 then the source
+                    // PH element was the first to define the face so we can add it in
+                    // the same order as the new PH mesh should be the first to see it.
+                    // If orientation is not zero then the source PH mesh was not the
+                    // first to define it. We assume the face was defined relative to
+                    // a different element and we must flip vertex ordering to make the
+                    // normals point the right way.
+                    const auto orientation = faceOrientation[offset + fi];
+                    if(orientation == 0)
                     {
-                        auto vid = se_conn[face_offset + vi];
-#if 1
-                        if(old2new.find(vid) == old2new.end())
-                            cout << " ERROR - no vertex " << vid << " in old2new." << endl;
-#endif
-                        auto nvid = old2new[vid];
-                        new_se_conn.push_back(nvid);
+                        // Add vertices in normal order
+                        for(index_t vi = 0; vi < face_nverts; vi++)
+                        {
+                            const auto vid = se_conn[face_offset + vi];
+
+                            if(old2new.find(vid) == old2new.end())
+                                CONDUIT_ERROR("No vertex " << vid << " in old2new.");
+
+                            const auto nvid = old2new[vid];
+                            new_se_conn.push_back(nvid);
+                        }
+                    }
+                    else
+                    {
+                        // Add vertices in reverse order so the new face is
+                        // defined relative to this element.
+                        for(index_t vi = face_nverts-1; vi >= 0; vi--)
+                        {
+                            const auto vid = se_conn[face_offset + vi];
+
+                            if(old2new.find(vid) == old2new.end())
+                                CONDUIT_ERROR("No vertex " << vid << " in old2new.");
+
+                            const auto nvid = old2new[vid];
+                            new_se_conn.push_back(nvid);
+                        }
                     }
 
                     new_se_sizes.push_back(face_nverts);
