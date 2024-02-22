@@ -3366,8 +3366,8 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
         // will put 0 in faceOrientation, the second use will be 1.
         const auto maxFace = conn.max() + 1;
         const auto connlen = conn.number_of_elements();
-        std::vector<int> faceCount(maxFace, 0);
-        std::vector<int> faceOrientation(connlen, 0);
+        std::vector<uint8> faceCount(maxFace, 0);
+        std::vector<uint8> faceOrientation(connlen, 0);
         for(index_t i = 0; i < connlen; i++)
         {
             const auto faceId = conn[i];
@@ -3380,8 +3380,8 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
         index_t new_offset = 0, new_se_offset = 0;
         for(auto eid : element_ids)
         {
-            const auto offset = static_cast<index_t>(offsets[eid]);
-            const auto nfaces = static_cast<index_t>(sizes[eid]);
+            const auto offset = offsets[eid];
+            const auto nfaces = sizes[eid];
             for(index_t fi = 0; fi < nfaces; fi++)
             {
                 const auto face_id = conn[offset + fi];
@@ -3394,7 +3394,7 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
                     new_conn.push_back(new_face_id);
 
                     const auto face_offset = se_offsets[face_id];
-                    const auto face_nverts = static_cast<index_t>(se_sizes[face_id]);
+                    const auto face_nverts = se_sizes[face_id];
 
                     // Get the orientation for the face. If it is 0 then the source
                     // PH element was the first to define the face so we can add it in
@@ -3410,10 +3410,10 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
                         for(index_t vi = 0; vi < face_nverts; vi++)
                         {
                             const auto vid = se_conn[face_offset + vi];
-#if 1
+
                             if(old2new.find(vid) == old2new.end())
-                                cout << " ERROR - no vertex " << vid << " in old2new." << endl;
-#endif
+                                CONDUIT_ERROR("No vertex " << vid << " in old2new.");
+
                             const auto nvid = old2new[vid];
                             new_se_conn.push_back(nvid);
                         }
@@ -3425,10 +3425,10 @@ Partitioner::unstructured_topo_from_unstructured(const conduit::Node &n_topo,
                         for(index_t vi = face_nverts-1; vi >= 0; vi--)
                         {
                             const auto vid = se_conn[face_offset + vi];
-#if 1
+
                             if(old2new.find(vid) == old2new.end())
-                                cout << " ERROR - no vertex " << vid << " in old2new." << endl;
-#endif
+                                CONDUIT_ERROR("No vertex " << vid << " in old2new.");
+
                             const auto nvid = old2new[vid];
                             new_se_conn.push_back(nvid);
                         }
