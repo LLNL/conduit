@@ -20,9 +20,6 @@ find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
 
-        # clear extra python module dirs
-        set(EXTRA_PYTHON_MODULE_DIRS "")
-
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
                         "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
                         OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
@@ -39,19 +36,30 @@ if(PYTHONINTERP_FOUND)
             MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
         endif()
 
-        # TODO: replacing distutils.get_python_lib() isn't straight forward
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
-                                "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
-                        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
-                        ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
-        MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
+        #######################################################################
+        # Find main python package dirs for embedded use cases
+        # (used in Ascent, not Conduit)
+        #######################################################################
+        # #
+        # # TODO: replacing distutils.get_python_lib() isn't straight forward
+        # #       distutils had special logic for some platforms (ubuntu)
+        # #       which is not 1:1 using sysconfig. 
+        # #       We may need several queries and a list of paths to replace
+        # #       get_python_lib()
+        # #
+        # execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
+        #                         "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
+        #                 OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
+        #                 ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
+        # MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
 
-        if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
-            MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
-        endif()
-
-        # for embedded python, we need to know where the site packages dir is
-        list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
+        # if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
+        #     MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
+        # endif()
+        # # for embedded python, we need to know where the site packages dir is
+        # set(EXTRA_PYTHON_MODULE_DIRS "")
+        # list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
+        #######################################################################
 
         # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
