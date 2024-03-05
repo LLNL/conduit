@@ -11,6 +11,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Conduit
 - Removed cmake use of distutils for python introspection.
 
+#### Blueprint
+- Fixed partitioner so it reverses vertex order as needed in polyhedral face definitions when extracting mesh elements.
+
+#### Relay
+
+
 ## [0.9.1] - Released 2024-02-09
 
 ### Changed
