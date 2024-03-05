@@ -63,6 +63,11 @@ namespace utils
 /// blueprint mesh utility structures
 //-----------------------------------------------------------------------------
 
+// Set the ids of these shape ids based on their current position in TOPO_SHAPES
+// They are set in init() too.
+index_t ShapeType::wedge_id = 6;
+index_t ShapeType::pyramid_id = 7;
+
 //---------------------------------------------------------------------------//
 ShapeType::ShapeType()
 {
@@ -161,6 +166,15 @@ ShapeType::init(const index_t type_id)
         embed_count = TOPO_SHAPE_EMBED_COUNTS[type_id];
         embedding = const_cast<index_t*>(TOPO_SHAPE_EMBEDDINGS[type_id]);
     }
+
+    // Set these static class members so we can avoid string comparisons later.
+    for(index_t i = 0; i < (index_t)TOPO_SHAPES.size(); i++)
+    {
+        if("wedge" == TOPO_SHAPES[i])
+            wedge_id = i;
+        if("pyramid" == TOPO_SHAPES[i])
+            pyramid_id = i;
+    }
 }
 
 
@@ -195,6 +209,38 @@ ShapeType::is_valid() const
     return id >= 0;
 }
 
+//---------------------------------------------------------------------------//
+index_t ShapeType::num_faces() const
+{
+    // wedge and pyramid are special cases.
+    return (id == wedge_id || id == pyramid_id) ? 5 : embed_count;
+}
+
+//---------------------------------------------------------------------------//
+const index_t *
+ShapeType::get_face(index_t face, index_t &nIds) const
+{
+    const index_t *ids = nullptr;
+
+    // wedge and pyramid are special cases.
+    if(id == wedge_id)
+    {
+        nIds = TOPO_WEDGE_FACES[face][0];
+        ids = &TOPO_WEDGE_FACES[face][1];
+    }
+    else if(id == pyramid_id)
+    {
+        nIds = TOPO_PYRAMID_FACES[face][0];
+        ids = &TOPO_PYRAMID_FACES[face][1];
+    }
+    else
+    {
+        // For all other shapes, their embedded type works.
+        nIds = TOPO_SHAPE_INDEX_COUNTS[TOPO_SHAPE_EMBED_TYPES[id]];
+        ids = embedding + face * nIds;
+    }
+    return ids;
+}
 
 //---------------------------------------------------------------------------//
 ShapeCascade::ShapeCascade(const conduit::Node &topology)

@@ -291,8 +291,8 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         full_field_baseline["matset"].reset();
         full_field_baseline["matset"] = "matset2";
 
-        EXPECT_FALSE(converted_mset.diff(full_mset_baseline, info));
-        EXPECT_FALSE(converted_field.diff(full_field_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(full_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(converted_field.diff(full_field_baseline, info, CONDUIT_EPSILON, true));
     }
 
     CONDUIT_INFO("venn full -> sparse_by_element");
@@ -321,8 +321,8 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         sbe_field_baseline["matset"].reset();
         sbe_field_baseline["matset"] = "matset2";
 
-        EXPECT_FALSE(converted_mset.diff(sbe_mset_baseline, info));
-        EXPECT_FALSE(converted_field.diff(sbe_field_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(sbe_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(converted_field.diff(sbe_field_baseline, info, CONDUIT_EPSILON, true));
     }
 
     CONDUIT_INFO("venn full -> sparse_by_material");
@@ -351,8 +351,8 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         sbm_field_baseline["matset"].reset();
         sbm_field_baseline["matset"] = "matset2";
 
-        EXPECT_FALSE(converted_mset.diff(sbm_mset_baseline, info));
-        EXPECT_FALSE(converted_field.diff(sbm_field_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(sbm_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(converted_field.diff(sbm_field_baseline, info, CONDUIT_EPSILON, true));
     }
 
     CONDUIT_INFO("venn sparse_by_element -> full");
@@ -381,8 +381,8 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         full_field_baseline["matset"].reset();
         full_field_baseline["matset"] = "matset2";
 
-        EXPECT_FALSE(converted_mset.diff(full_mset_baseline, info));
-        EXPECT_FALSE(converted_field.diff(full_field_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(full_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(converted_field.diff(full_field_baseline, info, CONDUIT_EPSILON, true));
     }
 
     CONDUIT_INFO("venn sparse_by_element -> sparse_by_material");
@@ -411,8 +411,8 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         sbm_field_baseline["matset"].reset();
         sbm_field_baseline["matset"] = "matset2";
 
-        EXPECT_FALSE(converted_mset.diff(sbm_mset_baseline, info));
-        EXPECT_FALSE(converted_field.diff(sbm_field_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(sbm_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(converted_field.diff(sbm_field_baseline, info, CONDUIT_EPSILON, true));
     }
 
     CONDUIT_INFO("venn sparse_by_material -> full");
@@ -441,8 +441,8 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         full_field_baseline["matset"].reset();
         full_field_baseline["matset"] = "matset2";
 
-        EXPECT_FALSE(converted_mset.diff(full_mset_baseline, info));
-        EXPECT_FALSE(converted_field.diff(full_field_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(full_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(converted_field.diff(full_field_baseline, info, CONDUIT_EPSILON, true));
     }
 
     CONDUIT_INFO("venn sparse_by_material -> sparse_by_element");
@@ -471,7 +471,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         sbe_field_baseline["matset"].reset();
         sbe_field_baseline["matset"] = "matset2";
 
-        EXPECT_FALSE(converted_mset.diff(sbe_mset_baseline, info));
-        EXPECT_FALSE(converted_field.diff(sbe_field_baseline, info));
+        EXPECT_FALSE(converted_mset.diff(sbe_mset_baseline, info, CONDUIT_EPSILON, true));
+        EXPECT_FALSE(converted_field.diff(sbe_field_baseline, info, CONDUIT_EPSILON, true));
     }
 }

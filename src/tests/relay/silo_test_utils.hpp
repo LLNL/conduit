@@ -345,4 +345,58 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
     }
 }
 
+//-----------------------------------------------------------------------------
+void
+add_multi_buffer_full_matset(Node &n_mesh,
+                             const int num_elements,
+                             const std::string &topo_name)
+{
+    Node &n_matset = n_mesh["matsets"]["matset"];
+    n_matset["topology"] = topo_name;
+    n_matset["volume_fractions"]["mat_a"].set(DataType::float64(num_elements));
+    n_matset["volume_fractions"]["mat_b"].set(DataType::float64(num_elements));
+
+    double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
+    double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
+
+    for (int i = 0; i < num_elements; i ++)
+    {
+        a_vfs[i] = (i % 2 ? 1.0 : 0.0);
+        b_vfs[i] = (i % 2 ? 0.0 : 1.0);
+    }
+}
+
+//---------------------------------------------------------------------------//
+// (mostly) copied from conduit_blueprint_mesh_examples.hpp
+void braid_init_example_matset(index_t nele_x,
+                               index_t nele_y,
+                               index_t nele_z,
+                               Node &res)
+{
+    index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
+
+    res["topology"] = "mesh";
+
+    Node &vfs = res["volume_fractions"];
+    vfs["mat1"].set(DataType::float64(nele));
+    vfs["mat2"].set(DataType::float64(nele));
+
+    float64_array mat1_vals = vfs["mat1"].value();
+    float64_array mat2_vals = vfs["mat2"].value();
+
+    for(index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
+    {
+        for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
+        {
+            for(index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
+            {
+                float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
+
+                mat1_vals[idx] = mv;
+                mat2_vals[idx] = 1.0 - mv;
+            }
+        }
+    }
+}
+
 #endif
