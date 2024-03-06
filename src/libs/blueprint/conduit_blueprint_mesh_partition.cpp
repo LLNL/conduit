@@ -49,6 +49,9 @@
 // Uncomment to enable some debugging output from partitioner.
 // #define CONDUIT_DEBUG_PARTITIONER
 
+// #define CONDUIT_DEBUG_PARTITIONER_MAPBACK
+// #define CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE
+
 // Toggles debug prints for point merge
 // #define DEBUG_POINT_MERGE
 #ifndef DEBUG_POINT_MERGE
@@ -8635,33 +8638,104 @@ determine_schema(const Node &in,
     if(num_children)
     {
         out_ncomps = num_children;
-        index_t offset = 0;
-        // TODO: Keep track of whether the original field was interleaved
-        //  and preserve the interleaved-ness
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+        std::cout << "========================================================" << std::endl;
+        std::cout << "determine_schema:" << std::endl;
         for(index_t i = 0; i < num_children; i++)
         {
-            const DataType dt(in[i].dtype().id(), ntuples, offset,
-                in[i].dtype().element_bytes(), in[i].dtype().element_bytes(),
-                in[i].dtype().endianness());
-            out_schema[in[i].name()].set(dt);
-            offset += dt.number_of_elements() * dt.element_bytes();
+            std::cout << "  -" << std::endl;
+            std::cout << "    name: " << in[i].name() << std::endl;
+            in[i].dtype().to_string_stream(std::cout, "yaml", 4, 1);
+        }
+        std::cout << "========================================================" << std::endl;
+#endif
+
+        // Check that all children are the same type.
+        bool same_types = true;
+        for(index_t i = 1; i < num_children; i++)
+            same_types = (in[i].dtype().id() == in[0].dtype().id());
+
+        // Check whether components appear interleaved.
+        bool interleaved = true;
+        for(index_t i = 1; i < num_children; i++)
+        {
+            const auto dI = in[i].dtype().element_index(0) - in[i - 1].dtype().element_index(0);
+            interleaved &= (dI == in[i].dtype().element_bytes());
+        }
+
+        if(same_types && interleaved)
+        {
+            // NOTE: In practice, we don't seem to get here yet from partition_map_back.
+            //       The reason is that the mapback routine ends up calling copy_field
+            //       to make an extracted field with certain ids. That method calls
+            //       slice_field and that function does not preserve interleaving at
+            //       this time.
+
+            // Make interleaved data.
+            for(index_t i = 0; i < num_children; i++)
+            {
+                auto offset = i * in[i].dtype().element_bytes();
+                auto stride = num_children * in[i].dtype().element_bytes();
+                const DataType dt(in[i].dtype().id(),
+                                  ntuples,
+                                  offset,
+                                  stride,
+                                  in[i].dtype().element_bytes(),
+                                  in[i].dtype().endianness());
+                out_schema[in[i].name()].set(dt);
+            }
+        }
+        else
+        {
+            // All component 0, All component 1, ...
+            index_t offset = 0;
+            for(index_t i = 0; i < num_children; i++)
+            {
+                const auto stride = in[i].dtype().element_bytes();
+                const DataType dt(in[i].dtype().id(),
+                                  ntuples,
+                                  offset,
+                                  stride,
+                                  in[i].dtype().element_bytes(),
+                                  in[i].dtype().endianness());
+                out_schema[in[i].name()].set(dt);
+                offset += dt.number_of_elements() * dt.element_bytes();
+            }
         }
     }
     else
     {
-        out_ncomps = 0;
+        out_ncomps = 1;
         out_schema.set(DataType(in.dtype().id(), ntuples));
     }
+}
+
+//-------------------------------------------------------------------------
+static index_t
+total_storage_size(const Node &in)
+{
+    index_t size = 0;
+    const index_t num_children = in.number_of_children();
+    if(num_children > 0)
+    {
+        for(index_t i = 0; i < num_children; i++)
+            size += in[i].dtype().number_of_elements();
+    }
+    else
+    {
+        size = in.dtype().number_of_elements();
+    }
+    return size;
 }
 
 //-------------------------------------------------------------------------
 static void
 map_vertex_field(const std::vector<const Node*> &in_nodes,
         const std::vector<DataArray<index_t>> &pointmaps,
-        const index_t num_verticies,
+        const index_t num_vertices,
         Node &out_node)
 {
-    out_node.reset();
     if(in_nodes.empty() || pointmaps.empty())
     {
         return;
@@ -8675,14 +8749,45 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // Figure out num components and out dtype
     index_t ncomps = 0;
     Schema out_schema;
-    determine_schema((*in_nodes[0])["values"], num_verticies, ncomps, out_schema);
-    out_node.set(out_schema);
+    determine_schema((*in_nodes[0])["values"], num_vertices, ncomps, out_schema);
 
-    // out_schema.print();
-    // out_node.print();
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+    conduit::Node top;
+    conduit::Node &p = top["map_vertex_field"];
+    for(auto &val : in_nodes)
+        p["in_nodes"].append().set_external_node(*val);
+    for(auto &val : pointmaps)
+        p["pointmaps"].append().set_external((index_t*)val.data_ptr(), val.number_of_elements());
+    p["num_vertices"] = num_vertices;
+    p["ncomps"] = ncomps;
+    p["out_node"].set_external_node(out_node);
+    top.print();
+#endif
+
+    // Only reset the node if its current storage cannot contain the new field.
+    // Most likely, if we're mapping back, the original mesh contained the
+    // field we're mapping in the first place. We don't want to totally reset in
+    // case that field points to external data.
+    if(total_storage_size(out_node) != (num_vertices * ncomps))
+    {
+        out_node.reset();
+        out_node.set(out_schema);
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << ncomps << " values." << std::endl;
+        //out_schema.print();
+        //out_node.print();
+#endif
+    }
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+    else
+    {
+        std::cout << out_node.path() << ": use existing field memory." << std::endl;
+    }
+#endif
 
     const index_t npmaps = (index_t)pointmaps.size();
-    if(ncomps > 0)
+    if(ncomps > 1)
     {
         for(index_t fi = 0; fi < npmaps; fi++)
         {
@@ -8729,25 +8834,55 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
         const DataArray<index_t> &orig_ids,
         Node &out_node)
 {
-    out_node.reset();
     if(in_nodes.empty())
     {
         return;
     }
 
     // Figure out num components and out dtype
-    const index_t num_verticies = orig_domains.number_of_elements();
+    const index_t num_vertices = orig_domains.number_of_elements();
     index_t ncomps = 0;
     Schema out_schema;
-    determine_schema((*in_nodes[0])["values"], num_verticies, ncomps, out_schema);
-    out_node.set(out_schema);
+    determine_schema((*in_nodes[0])["values"], num_vertices, ncomps, out_schema);
 
-    // out_schema.print();
-    // out_node.print();
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+    conduit::Node top;
+    conduit::Node &p = top["map_vertex_field"];
+    for(auto &val : in_nodes)
+        p["in_nodes"].append().set_external_node(*val);
+    p["orig_domains"].append().set_external((index_t*)orig_domains.data_ptr(), orig_domains.number_of_elements());
+    p["orig_ids"].append().set_external((index_t*)orig_ids.data_ptr(), orig_ids.number_of_elements());
+    p["num_vertices"] = num_vertices;
+    p["ncomps"] = ncomps;
+    p["out_node"].set_external_node(out_node);
+    top.print();
+#endif
 
-    if(ncomps > 0)
+    // Only reset the node if its current storage cannot contain the new field.
+    // Most likely, if we're mapping back, the original mesh contained the
+    // field we're mapping in the first place. We don't want to totally reset in
+    // case that field points to external data.
+    if(total_storage_size(out_node) != (num_vertices * ncomps))
     {
-        for(index_t i = 0; i < num_verticies; i++)
+        out_node.reset();
+        out_node.set(out_schema);
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << ncomps << " values." << std::endl;
+        //out_schema.print();
+        //out_node.print();
+#endif
+    }
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+    else
+    {
+        std::cout << out_node.path() << ": use existing field memory." << std::endl;
+    }
+#endif
+
+    if(ncomps > 1)
+    {
+        for(index_t i = 0; i < num_vertices; i++)
         {
             const index_t orig_dom = orig_domains[i];
             const index_t orig_id  = orig_ids[i];
@@ -8764,7 +8899,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     else
     {
         const auto bytes = out_node.dtype().element_bytes();
-        for(index_t i = 0; i < num_verticies; i++)
+        for(index_t i = 0; i < num_vertices; i++)
         {
             const index_t orig_dom = orig_domains[i];
             const index_t orig_id  = orig_ids[i];
@@ -8781,19 +8916,62 @@ map_element_field(const std::vector<const Node*> &in_nodes,
         const DataArray<index_t> &elemmap,
         Node &out_node)
 {
-    out_node.reset();
     if(in_nodes.empty())
     {
         return;
     }
 
+    // Determine the number of elements and components needed to store the field
     const index_t nelements = elemmap.number_of_elements() / 2;
-
     index_t ncomps = 0;
     Schema out_schema;
     determine_schema(in_nodes[0]->child("values"), nelements, ncomps, out_schema);
-    out_node.set(out_schema);
-    if(ncomps > 0)
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+    conduit::Node top;
+    conduit::Node &p = top["map_element_field"];
+    for(auto &val : in_nodes)
+        p["in_nodes"].append().set_external_node(*val);
+    p["elemmap"].set_external((index_t*)elemmap.data_ptr(), elemmap.number_of_elements());
+    p["nelements"] = nelements;
+    p["ncomps"] = ncomps;
+    p["out_node"].set_external_node(out_node);
+    conduit::Node &oni = p["out_node_info"];
+    oni["number_of_children"] = out_node.number_of_children();
+    for(int i = 0; i < out_node.number_of_children(); i++)
+    {
+        const conduit::Node &src = out_node[i];
+        conduit::Node &n = oni[src.name()];
+        n["type"] = src.dtype().name();
+        n["number_of_elements"] = src.dtype().number_of_elements();
+    }
+    oni["storage_size"] = total_storage_size(out_node);
+    top.print();
+#endif
+
+    // Only reset the node if its current storage cannot contain the new field.
+    // Most likely, if we're mapping back, the original mesh contained the
+    // field we're mapping in the first place. We don't want to totally reset in
+    // case that field points to external data.
+    if(total_storage_size(out_node) != (nelements * ncomps))
+    {
+        out_node.reset();
+        out_node.set(out_schema);
+
+#ifdef CONDUIT_DEBUG_PARTITIONER_MAPBACK
+        std::cout << out_node.path() << ": resetting to hold " << nelements << "*" << ncomps << " values." << std::endl;
+        //out_schema.print();
+        //out_node.print();
+#endif
+    }
+#ifdef CONDUIT_DEBUG_PARTITIONER_MAPBACK
+    else
+    {
+        std::cout << out_node.path() << ": use existing field memory." << std::endl;
+    }
+#endif
+
+    if(ncomps > 1)
     {
         for(index_t out_idx = 0; out_idx < nelements; out_idx++)
         {
@@ -10064,7 +10242,6 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // domain homes
     communicate_mapback(packed_fields);
 
-    // bool first_warn = true; // unused
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
@@ -10129,7 +10306,6 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 fields::map_element_field(src_fields, elem_map_arr, output["values"]);
             }
         }
-        // first_warn = false; // unused
     }
 }
 
