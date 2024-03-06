@@ -8656,15 +8656,7 @@ determine_schema(const Node &in,
         for(index_t i = 1; i < num_children; i++)
             same_types = (in[i].dtype().id() == in[0].dtype().id());
 
-        // Check whether components appear interleaved.
-        bool interleaved = true;
-        for(index_t i = 1; i < num_children; i++)
-        {
-            const auto dI = in[i].dtype().element_index(0) - in[i - 1].dtype().element_index(0);
-            interleaved &= (dI == in[i].dtype().element_bytes());
-        }
-
-        if(same_types && interleaved)
+        if(same_types && conduit::blueprint::mcarray::is_interleaved(in))
         {
             // NOTE: In practice, we don't seem to get here yet from partition_map_back.
             //       The reason is that the mapback routine ends up calling copy_field
