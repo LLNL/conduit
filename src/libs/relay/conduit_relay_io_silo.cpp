@@ -4333,7 +4333,10 @@ void silo_write_matset(DBfile *dbfile,
                        Node &n_mesh_info)
 {
     // use to_silo utility to create the needed silo arrays
-    Node silo_matset, silo_matset_compact, silo_mix_vfs_final;
+    // cache all of these for later (in case we are writing specsets. If not, it doesn't hurt)
+    Node &silo_matset = n_mesh_info["matsets"][matset_name]["silo_matset"];
+    Node &silo_matset_compact = n_mesh_info["matsets"][matset_name]["silo_matset_compact"];
+    Node &silo_mix_vfs_final = n_mesh_info["matsets"][matset_name]["silo_mix_vfs_final"];
     conduit::blueprint::mesh::matset::to_silo(n_matset, silo_matset);
 
     // compact the arrays if necessary
@@ -4511,13 +4514,9 @@ void silo_write_specset(DBfile *dbfile,
     // TODO different option needed for overlink?
     const std::string safe_matset_name = detail::sanitize_silo_varname(matset_name);
 
-
-    const int nmat = n_mesh_info["matsets"][matset_name]["nmat"].as_int();
-
-    
+    const int nmat = n_mesh_info["matsets"][matset_name]["nmat"].to_value();
 
     std::vector<int> nmatspec;
-    
     auto matset_vals_itr = n_specset_compact["matset_values"].children();
     while (matset_vals_itr.has_next())
     {
@@ -4525,27 +4524,16 @@ void silo_write_specset(DBfile *dbfile,
         // const std::string mat_name = matset_vals_itr.name();
         const int num_species_for_this_material = individual_mat_spec.number_of_children();
         nmatspec.push_back(num_species_for_this_material);
-
-        // need to iterate across all species at once
-        for (int i = 0; i < nzones; i ++)
-        {
-            auto spec_itr = individual_mat_spec.children();
-            while (spec_itr.has_next())
-            {
-                const Node &spec = spec_itr.next();
-                const std::string spec_name = spec_itr.name();
-                float64_accessor species_mass_fractions = spec.value();
-                species_mf.push_back(species_mass_fractions[i]);
-            }
-        }
     }
 
     // we have to go in order by zones as they appear
     
     // first we need number of zones
     const std::string topo_name = n_mesh_info["matsets"][matset_name]["topo_name"].as_string();
-    const int nzones = n_mesh_info[topo_name]["num_elems"].as_int();
+    const int nzones = n_mesh_info[topo_name]["num_elems"].to_value();
 
+    // get the datatype of the species_mf
+    const int datatype = DB_DOUBLE; // make sure these data types match
     std::vector<float64> species_mf;
     // need to iterate across all species for all materials at once
     for (int i = 0; i < nzones; i ++)
@@ -4584,7 +4572,6 @@ void silo_write_specset(DBfile *dbfile,
     int dims[] = {0,0,0};
     int ndims = 1;
     const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
-    const int nzones = n_mesh_info[topo_name]["num_elems"].to_value();
     if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
     {
         ndims = n_mesh_info[topo_name]["ndims"].as_int();
@@ -4600,22 +4587,26 @@ void silo_write_specset(DBfile *dbfile,
         dims[0] = nzones;
     }
 
+    std::cout << n_mesh_info.to_yaml() << std::endl;
+
+    int_accessor silo_matlist = n_mesh_info["matsets"][matset_name]["silo_matset_compact"]["matlist"].value();
     std::vector<int> speclist;
     for (int i = 0; i < nzones; i ++)
     {
-        
+        // is this zone clean?
+        if (silo_matlist[i] >= 0)
+        {
+            // clean
+        }
+        else
+        {
+            // mixed
+        }
     }
 
 
     // // get the length of the mixed data arrays
     // const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
-
-    // get the datatype of the volume fractions
-    const int datatype = detail::dtype_to_silo_type(TODO["species_mf"].dtype());
-    CONDUIT_ASSERT(datatype == DB_FLOAT || datatype == DB_DOUBLE,
-        "Invalid matset volume fraction type: " << TODO["species_mf"].dtype().to_string());
-
-    // TODO if datatype is float and we are doing overlink, we must convert data
 
     // create optlist and add to it
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
@@ -4665,7 +4656,7 @@ void silo_write_specset(DBfile *dbfile,
                         /*[x]*/ datatype, // datatype of mass fraction data in species_mf
                         /*[x]*/ optlist.getSiloObject()); // optlist
 
-    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
+    // CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
 
     // Node bookkeeping_info;
     // bookkeeping_info["comp_info"]["comp"] = "matsets";

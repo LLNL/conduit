@@ -588,11 +588,16 @@ TEST(conduit_relay_io_silo, round_trip_specsets)
 
     std::cout << save_mesh.to_yaml() << std::endl;
 
-    // const std::string basename = "silo_save_option_overlink_specsets";
-    // const std::string filename = basename + "/OvlTop.silo";
+    const std::string basename = "silo_save_option_overlink_specsets";
+    const std::string filename = basename + "/OvlTop.silo";
 
     // Node opts;
     // opts["file_style"] = "overlink";
+
+    remove_path_if_exists(filename);
+    io::silo::save_mesh(save_mesh, basename);
+
+
 }
 
 // matsets: 
@@ -611,6 +616,39 @@ TEST(conduit_relay_io_silo, round_trip_specsets)
 //       mat2: 
 //         spec1: [0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0]
 //         spec2: [1.0, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, 0.0]
+
+// n_mesh_info
+
+// mesh: 
+//   type: "unstructured"
+//   coordset: "coords"
+//   ndims: 2
+//   num_elems: 9
+//   zonelist_name: "mesh_connectivity"
+//   num_pts: 16
+// matsets: 
+//   mesh: 
+//     silo_matset: 
+//       topology: "mesh"
+//       material_map: 
+//         mat1: 0
+//         mat2: 1
+//       matlist: [1, -1, 0, 1, -3, 0, 1, -5, 0]
+//       mix_next: [2, 0, 4, 0, 6, 0]
+//       mix_mat: [0, 1, 0, 1, 0, 1]
+//       mix_vf: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+//     silo_matset_compact: 
+//       topology: "mesh"
+//       material_map: 
+//         mat1: 0
+//         mat2: 1
+//       matlist: [1, -1, 0, 1, -3, 0, 1, -5, 0]
+//       mix_next: [2, 0, 4, 0, 6, 0]
+//       mix_mat: [0, 1, 0, 1, 0, 1]
+//       mix_vf: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+//     silo_mix_vfs_final: [0.5, 0.5, 0.5, 0.5, 0.5, 0.5]
+//     nmat: 2
+//     topo_name: "mesh"
 
 //-----------------------------------------------------------------------------
 // 
