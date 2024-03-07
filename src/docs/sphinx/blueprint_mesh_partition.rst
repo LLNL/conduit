@@ -125,6 +125,18 @@ count domains are combined first.
 |                  | this distance will be merged when       |                                          |
 |                  | explicit coordsets are combined.        |                                          |
 +------------------+-----------------------------------------+------------------------------------------+
+| original_element_ids | A string value that provides desired   | .. code::yaml                            |
+|                      | field name used to contain original    |                                          |
+|                      | element ids created from partitioning. |    original_element_ids: elem_name       |
+|                      | The default value is                   |                                          |
+|                      | original_element_ids.                  |                                          |
++----------------------+----------------------------------------+------------------------------------------+
+| original_vertex_ids  | A string value that provides desired   | .. code::yaml                            |
+|                      | field name used to contain original    |                                          |
+|                      | vertex ids created from partitioning.  |    original_vertex_ids: vert_name        |
+|                      | The default value is                   |                                          |
+|                      | original_vertex_ids.                   |                                          |
++----------------------+----------------------------------------+------------------------------------------+
 
 
 Selections
@@ -283,3 +295,47 @@ integer values to limit the set of domains over which the selection will be appl
      domain_id: any
      field: fieldname
      topology: main
+
+Multiple Topologies
+~~~~~~~~~~~~~~~~~~~~
+The ``partition()`` function is flexible but it is currently limited to partitioning a single topology at
+a time. To handle multiple topologies (volume mesh, boundary mesh, corner mesh, etc.) the partitioner must
+be applied in succession to each input mesh. The output node for the ``partition()`` function should
+contain a new Conduit node since it will be reset. After executing, the new partitioned topology can be
+moved into a different node if all topologies must remain together. This also provides an opportunity to
+use Blueprint functionality such as ``rewrite_connectivity()``, which can rewrite a topology's connectivity
+in terms of a different coordset. This can be used, for example, to change a partitioned boundary mesh so
+it uses the same coordset as its associated partitioned volume mesh.
+
+=============
+Mapping Back
+=============
+After using the ``partition()`` function to create a partitioned mesh, it is common that
+updates will be made to fields on the partitioned mesh. These updates can be propagated
+back to the original mesh using the ``partition_map_back()`` function.
+
+.. code:: cpp
+
+    // Serial
+    void conduit::blueprint::mesh::partition_map_back(const Node &part_mesh,
+                                                      const Node &options,
+                                                      Node &orig_mesh);
+
+    // Parallel
+    void conduit::blueprint::mpi::mesh::partition_map_back(const Node &part_mesh,
+                                                           const Node &options,
+                                                           Node &orig_mesh,
+                                                           MPI_Comm comm);
+
+The function accepts the same options as the ``partition()`` function but it will use only
+the "fields", "original_element_ids", and "original_vertex_ids" options. The "fields" option
+contains a list of fields that will be mapped back to the original mesh. The fields can be
+element-associated or vertex-associated, though in the latter case, a global node ids field
+must be present. The fields are mapped back with the help of the "original_element_ids" and
+"original_vertex_ids" fields, though the names of the fields can be changed via options. Since
+these fields indicate the original domain and id for each field value, Blueprint can use them
+to copy data back onto the original mesh. If the original mesh's field can accommodate the
+data then the values are copied back into the existing field memory, which can be useful if
+the field was exposed to Conduit using a ``Node::set_external()`` method call. If the
+destination field cannot fit the copied data then new storage will be allocated.
+
