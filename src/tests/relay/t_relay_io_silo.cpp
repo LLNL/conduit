@@ -584,7 +584,7 @@ TEST(conduit_relay_io_silo, round_trip_specsets)
 {
     Node save_mesh, load_mesh, info;
     // TODO do 10 x 10
-    blueprint::mesh::examples::misc("specsets", 3, 3, 1, save_mesh);
+    blueprint::mesh::examples::misc("specsets", 4, 4, 1, save_mesh);
 
     std::cout << save_mesh.to_yaml() << std::endl;
 
@@ -594,6 +594,23 @@ TEST(conduit_relay_io_silo, round_trip_specsets)
     // Node opts;
     // opts["file_style"] = "overlink";
 }
+
+// matsets: 
+//   mesh: 
+//     topology: "mesh"
+//     volume_fractions: 
+//       mat1: [0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0]
+//       mat2: [1.0, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, 0.0]
+// specsets: 
+//   mesh: 
+//     matset: "mesh"
+//     matset_values: 
+//       mat1: 
+//         spec1: [0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0]
+//         spec2: [1.0, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, 0.0]
+//       mat2: 
+//         spec1: [0.0, 0.5, 1.0, 0.0, 0.5, 1.0, 0.0, 0.5, 1.0]
+//         spec2: [1.0, 0.5, 0.0, 1.0, 0.5, 0.0, 1.0, 0.5, 0.0]
 
 //-----------------------------------------------------------------------------
 // 

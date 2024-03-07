@@ -3974,7 +3974,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
                          const bool write_overlink,
                          Node &n_mesh_info)
 {
-    int num_elems = n_mesh_info[topo_name]["num_elems"].value();
+    const int num_elems = n_mesh_info[topo_name]["num_elems"].value();
 
     // TODO polyhedral zone lists are named differently
     const std::string zlist_name = n_mesh_info[topo_name]["zonelist_name"].as_string();
@@ -4381,6 +4381,7 @@ void silo_write_matset(DBfile *dbfile,
     // TODO put matset into mesh info so specset can use it...
     // but what info do we need to save?
     n_mesh_info["matsets"][matset_name]["nmat"] = nmat;
+    n_mesh_info["matsets"][matset_name]["topo_name"] = topo_name;
 
     // calculate dims
     int dims[] = {0,0,0};
@@ -4511,19 +4512,62 @@ void silo_write_specset(DBfile *dbfile,
     const std::string safe_matset_name = detail::sanitize_silo_varname(matset_name);
 
 
-    int nmat = n_mesh_info["matsets"][matset_name]["nmat"].as_int();
+    const int nmat = n_mesh_info["matsets"][matset_name]["nmat"].as_int();
+
+    
 
     std::vector<int> nmatspec;
+    
     auto matset_vals_itr = n_specset_compact["matset_values"].children();
     while (matset_vals_itr.has_next())
     {
         const Node &individual_mat_spec = matset_vals_itr.next();
-        const std::string mat_name = matset_vals_itr.name();
-
-        int num_species_for_this_material = individual_mat_spec.number_of_children();
-
+        // const std::string mat_name = matset_vals_itr.name();
+        const int num_species_for_this_material = individual_mat_spec.number_of_children();
         nmatspec.push_back(num_species_for_this_material);
+
+        // need to iterate across all species at once
+        for (int i = 0; i < nzones; i ++)
+        {
+            auto spec_itr = individual_mat_spec.children();
+            while (spec_itr.has_next())
+            {
+                const Node &spec = spec_itr.next();
+                const std::string spec_name = spec_itr.name();
+                float64_accessor species_mass_fractions = spec.value();
+                species_mf.push_back(species_mass_fractions[i]);
+            }
+        }
     }
+
+    // we have to go in order by zones as they appear
+    
+    // first we need number of zones
+    const std::string topo_name = n_mesh_info["matsets"][matset_name]["topo_name"].as_string();
+    const int nzones = n_mesh_info[topo_name]["num_elems"].as_int();
+
+    std::vector<float64> species_mf;
+    // need to iterate across all species for all materials at once
+    for (int i = 0; i < nzones; i ++)
+    {
+        matset_vals_itr.to_front();
+        // TODO pray that these materials are in the same order as in the matset?
+        while (matset_vals_itr.has_next())
+        {
+            const Node &individual_mat_spec = matset_vals_itr.next();
+            // const std::string mat_name = matset_vals_itr.name();
+            auto spec_itr = individual_mat_spec.children();
+            while (spec_itr.has_next())
+            {
+                const Node &spec = spec_itr.next();
+                // const std::string spec_name = spec_itr.name();
+                float64_accessor species_mass_fractions = spec.value();
+                species_mf.push_back(species_mass_fractions[i]);
+            }
+        }
+    }
+
+    const int nspecies_mf = static_cast<int>(species_mf.size());
 
     // // extract data from material map
     // int nmat;
@@ -4607,8 +4651,8 @@ void silo_write_specset(DBfile *dbfile,
                         /*[ ]*/ speclist, // ?
                         /*[ ]*/ dims, // array of length ndims that defines the shape of the speclist array
                         /*[ ]*/ ndims, // number of dimensions in the speclist array
-                        /*[ ]*/ nspecies_mf, // length of the species_mf array
-                        /*[ ]*/ species_mf, // mass fractions of the matspecies in an array of length nspecies_mf
+                        /*[x]*/ nspecies_mf, // length of the species_mf array
+                        /*[x]*/ species_mf.data(), // mass fractions of the matspecies in an array of length nspecies_mf
                         /*[ ]*/ mix_spec, // array of length mixlen containing indices into the species_mf array
                         /*[ ]*/ mixlen, // length of mix_spec array
                         /*[x]*/ datatype, // datatype of mass fraction data in species_mf
