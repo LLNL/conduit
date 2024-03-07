@@ -4580,25 +4580,32 @@ void silo_write_specset(DBfile *dbfile,
     //                           matname_ptrs,
     //                           matnos);
 
-    // // calculate dims
-    // int dims[] = {0,0,0};
-    // int ndims = 1;
-    // const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
-    // const int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
-    // if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
-    // {
-    //     ndims = n_mesh_info[topo_name]["ndims"].as_int();
-    //     dims[0] = n_mesh_info[topo_name]["elements"]["i"].as_int();
-    //     dims[1] = n_mesh_info[topo_name]["elements"]["j"].as_int();
-    //     if (ndims == 3)
-    //     {
-    //         dims[2] = n_mesh_info[topo_name]["elements"]["k"].as_int();
-    //     }
-    // }
-    // else
-    // {
-    //     dims[0] = num_elems;
-    // }
+    // calculate dims
+    int dims[] = {0,0,0};
+    int ndims = 1;
+    const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
+    const int nzones = n_mesh_info[topo_name]["num_elems"].to_value();
+    if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
+    {
+        ndims = n_mesh_info[topo_name]["ndims"].as_int();
+        dims[0] = n_mesh_info[topo_name]["elements"]["i"].as_int();
+        dims[1] = n_mesh_info[topo_name]["elements"]["j"].as_int();
+        if (ndims == 3)
+        {
+            dims[2] = n_mesh_info[topo_name]["elements"]["k"].as_int();
+        }
+    }
+    else
+    {
+        dims[0] = nzones;
+    }
+
+    std::vector<int> speclist;
+    for (int i = 0; i < nzones; i ++)
+    {
+        
+    }
+
 
     // // get the length of the mixed data arrays
     // const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
@@ -4648,9 +4655,9 @@ void silo_write_specset(DBfile *dbfile,
                         /*[x]*/ safe_matset_name.c_str(), // matset name
                         /*[x]*/ nmat, // number of materials
                         /*[x]*/ nmatspec.data(), // number of species associated with each material
-                        /*[ ]*/ speclist, // ?
-                        /*[ ]*/ dims, // array of length ndims that defines the shape of the speclist array
-                        /*[ ]*/ ndims, // number of dimensions in the speclist array
+                        /*[ ]*/ speclist, // indices into species_mf and mix_spec
+                        /*[x]*/ dims, // array of length ndims that defines the shape of the speclist array
+                        /*[x]*/ ndims, // number of dimensions in the speclist array
                         /*[x]*/ nspecies_mf, // length of the species_mf array
                         /*[x]*/ species_mf.data(), // mass fractions of the matspecies in an array of length nspecies_mf
                         /*[ ]*/ mix_spec, // array of length mixlen containing indices into the species_mf array
