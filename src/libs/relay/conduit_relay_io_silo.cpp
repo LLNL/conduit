@@ -4502,8 +4502,6 @@ void silo_write_specset(DBfile *dbfile,
     }
 
     const std::string matset_name = n_specset_compact["matset"].as_string();
-    // TODO
-    // what? why would the matset live out here? why does the topo live out here? see silo_write_matset
     if (!n_mesh_info.has_path("matsets/" + matset_name))
     {
         CONDUIT_INFO("Skipping this specset because the linked "
@@ -4546,6 +4544,7 @@ void silo_write_specset(DBfile *dbfile,
     // get the datatype of the species_mf
     const int datatype = DB_DOUBLE; // make sure these data types match
     std::vector<float64> species_mf;
+    std::vector<std::string> specnames;
     // need to iterate across all species for all materials at once
     for (int i = 0; i < nzones; i ++)
     {
@@ -4559,7 +4558,8 @@ void silo_write_specset(DBfile *dbfile,
             while (spec_itr.has_next())
             {
                 const Node &spec = spec_itr.next();
-                // const std::string spec_name = spec_itr.name();
+                const std::string spec_name = spec_itr.name();
+                specnames.push_back(spec_name);
                 float64_accessor species_mass_fractions = spec.value();
                 species_mf.push_back(species_mass_fractions[i]);
             }
@@ -4567,17 +4567,6 @@ void silo_write_specset(DBfile *dbfile,
     }
 
     const int nspecies_mf = static_cast<int>(species_mf.size());
-
-    // // extract data from material map
-    // int nmat;
-    // std::vector<std::string> matnames;
-    // std::vector<const char *> matname_ptrs;
-    // std::vector<int> matnos;
-    // detail::read_material_map(silo_matset_compact["material_map"],
-    //                           nmat,
-    //                           matnames,
-    //                           matname_ptrs,
-    //                           matnos);
 
     // calculate dims
     int dims[] = {0,0,0};
@@ -4704,16 +4693,23 @@ void silo_write_specset(DBfile *dbfile,
     // get the length of the mixed data arrays
     const int mixlen = static_cast<int>(mix_spec.size());
 
+    // package up char ptrs for silo
+    std::vector<const char *> specname_ptrs;
+    for (size_t i = 0; i < specnames.size(); i ++)
+    {
+        specname_ptrs.push_back(specnames[i].c_str());
+    }
+
     // create optlist and add to it
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
         DBMakeOptlist(1),
         &DBFreeOptlist,
         "Error freeing optlist."};
     CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
-    // CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
-    //                                      DBOPT_MATNAMES,
-    //                                      matname_ptrs.data()),
-    //                          "error adding matnames option");
+    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                         DBOPT_SPECNAMES,
+                                         specname_ptrs.data()),
+                             "error adding matnames option");
 
     // auto convert_to_c_int_array = [](const Node &n_src, Node &n_dest)
     // {
@@ -4849,11 +4845,11 @@ void silo_mesh_write(const Node &mesh_domain,
 
         // the names of the topos the matsets are associated with
         std::set<std::string> topo_names;
-        auto itr = mesh_domain["matsets"].children();
-        while (itr.has_next())
+        auto matset_itr = mesh_domain["matsets"].children();
+        while (matset_itr.has_next())
         {
-            const Node &n_matset = itr.next();
-            const std::string matset_name = itr.name();
+            const Node &n_matset = matset_itr.next();
+            const std::string matset_name = matset_itr.name();
             
             const std::string topo_name = n_matset["topology"].as_string();
             CONDUIT_ASSERT(topo_names.find(topo_name) == topo_names.end(),
@@ -4878,25 +4874,27 @@ void silo_mesh_write(const Node &mesh_domain,
 
     if (mesh_domain.has_path("specsets")) 
     {
-        // We want to enforce that there is only one specset per topo
-        // that we save out to silo. Multiple specsets for a topo is 
+        // We want to enforce that there is only one specset per matset
+        // that we save out to silo. Multiple specsets for a matset is 
         // supported in blueprint, but in silo it is ambiguous, as
         // silo provides no link from fields back to specsets. Therefore
-        // we enforce one specset per topo.
+        // we enforce one specset per matset.
+
+        // TODO actually do we care if there are multiple specsets for a given matset?
 
         // the names of the matsets the specsets are associated with
-        std::set<std::string> specset_names;
-        auto itr = mesh_domain["specsets"].children();
-        while (itr.has_next())
+        std::set<std::string> matset_names;
+        auto specset_itr = mesh_domain["specsets"].children();
+        while (specset_itr.has_next())
         {
-            const Node &n_specset = itr.next();
-            const std::string specset_name = itr.name();
+            const Node &n_specset = specset_itr.next();
+            const std::string specset_name = specset_itr.name();
             
             const std::string matset_name = n_specset["matset"].as_string();
-            CONDUIT_ASSERT(specset_names.find(matset_name) == specset_names.end(),
+            CONDUIT_ASSERT(matset_names.find(matset_name) == matset_names.end(),
                 "There are multiple specsets that belong to the same matset. "
                 << "For matset " << matset_name << ". This is ambiguous in silo.");
-            specset_names.insert(matset_name);
+            matset_names.insert(matset_name);
             
             // TODO I need a way to check that the linked matset actually got written
             // also would be good to check for matsets if the linked topo got written?
