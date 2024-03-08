@@ -19,6 +19,7 @@
 //-----------------------------------------------------------------------------
 #include <iostream>
 #include <string.h>
+#include <numeric>
 #include <memory>
 #include <map>
 
@@ -4695,21 +4696,21 @@ void silo_write_specset(DBfile *dbfile,
     const std::string safe_specset_name = detail::sanitize_silo_varname(specset_name);
 
 
-    int silo_error =
-        DBPutMatspecies(/*[x]*/ dbfile, // Database file pointer
-                        /*[x]*/ safe_specset_name.c_str(), // specset name
-                        /*[x]*/ safe_matset_name.c_str(), // matset name
-                        /*[x]*/ nmat, // number of materials
-                        /*[x]*/ nmatspec.data(), // number of species associated with each material
-                        /*[ ]*/ speclist, // indices into species_mf and mix_spec
-                        /*[x]*/ dims, // array of length ndims that defines the shape of the speclist array
-                        /*[x]*/ ndims, // number of dimensions in the speclist array
-                        /*[x]*/ nspecies_mf, // length of the species_mf array
-                        /*[x]*/ species_mf.data(), // mass fractions of the matspecies in an array of length nspecies_mf
-                        /*[ ]*/ mix_spec.data(), // array of length mixlen containing indices into the species_mf array
-                        /*[x]*/ mixlen, // length of mix_spec array
-                        /*[x]*/ datatype, // datatype of mass fraction data in species_mf
-                        /*[x]*/ optlist.getSiloObject()); // optlist
+    // int silo_error =
+    //     DBPutMatspecies(/*[x]*/ dbfile, // Database file pointer
+    //                     /*[x]*/ safe_specset_name.c_str(), // specset name
+    //                     /*[x]*/ safe_matset_name.c_str(), // matset name
+    //                     /*[x]*/ nmat, // number of materials
+    //                     /*[x]*/ nmatspec.data(), // number of species associated with each material
+    //                     /*[ ]*/ speclist, // indices into species_mf and mix_spec
+    //                     /*[x]*/ dims, // array of length ndims that defines the shape of the speclist array
+    //                     /*[x]*/ ndims, // number of dimensions in the speclist array
+    //                     /*[x]*/ nspecies_mf, // length of the species_mf array
+    //                     /*[x]*/ species_mf.data(), // mass fractions of the matspecies in an array of length nspecies_mf
+    //                     /*[ ]*/ mix_spec.data(), // array of length mixlen containing indices into the species_mf array
+    //                     /*[x]*/ mixlen, // length of mix_spec array
+    //                     /*[x]*/ datatype, // datatype of mass fraction data in species_mf
+    //                     /*[x]*/ optlist.getSiloObject()); // optlist
 
     // CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
 
