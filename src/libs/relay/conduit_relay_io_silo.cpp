@@ -1720,7 +1720,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
             int mix_id = -1 * (matlist_entry + 1);
             int curr_size = 0;
 
-            // when mix_id is 0, we are on the last one
+            // when matset_ptr->mix_next[mix_id] is 0, we are on the last one
             while (mix_id >= 0)
             {
                 material_ids.push_back(matset_ptr->mix_mat[mix_id]);
@@ -4598,68 +4598,98 @@ void silo_write_specset(DBfile *dbfile,
         dims[0] = nzones;
     }
 
-    std::cout << n_mesh_info.to_yaml() << std::endl;
+    // get pointers to the silo material representation data
+    Node &silo_matset_compact = n_mesh_info["matsets"][matset_name]["silo_matset_compact"];
+    const int_accessor silo_matlist = silo_matset_compact["matlist"].value();
+    const int_accessor silo_mix_mat = silo_matset_compact["mix_mat"].value();
+    const int_accessor silo_mix_next = silo_matset_compact["mix_next"].value();
 
-    int_accessor silo_matlist = n_mesh_info["matsets"][matset_name]["silo_matset_compact"]["matlist"].value();
     std::vector<int> speclist;
     std::vector<int> mix_spec;
 
+    auto calculate_species_index = [&](const int zoneId, const int matno)
+    {
+        // To get the value for the speclist for this zone, we must determine
+        // the correct 1-index in the species_mf array that corresponds to the 
+        // material in this zone. We have organized the species_mf array such 
+        // that there are entries for each material's species for each zone,
+        // even if those materials are not present in that zone. Thus there are
+        // the same number of species entries for each zone in the species_mf
+        // array. So we need to determine what I am calling an "outer_index" 
+        // that tells us the starting index of the current zone in the species_mf
+        // array.
+
+        // how many entries per zone? Use the calculated num_species_across_mats
+        const int outer_index = zoneId * num_species_across_mats;
+
+        // Next we need the inner or "local_index", which corresponds to the 
+        // starting 1-index of the relevant material's species within this zone.
+        // We can use the nmatspec array to determine where that starts for our
+        // given material, which we fetch via material number.
+
+        // We wish to offset this index by 1, hence starting from 1 in our call
+        // to std::accumulate.
+
+        // local index is the number of species for each material
+        // BEFORE this material plus 1, since it is 1 indexed.
+        // So if mat0 has 2 species and mat1 has 3 species, then
+        // the 1-index start of mat2 will be 2 + 3 + 1 = 6.
+        const int local_index = std::accumulate(nmatspec.begin(),
+                                                nmatspec.begin() + matno,
+                                                decltype(nmatspec)::value_type(1));
+
+        // we save the final index for this zone
+        const int final_index = outer_index + local_index;
+        return final_index;
+
+        // TODO return a zero here if the material in the zone contains only 1 species.
+        // This is a further optimization. It doesn't matter for now since we are
+        // treating our output like we have all species and all materials in all zones.
+        // I think the point of this optimization is to also leave stuff out of the 
+        // species_mf array. If I want to do this then I should explore that as well.
+    };
 
     for (int zoneId = 0; zoneId < nzones; zoneId ++)
     {
+        const int matlist_entry = silo_matlist[zoneId];
         // is this zone clean?
-        if (silo_matlist[zoneId] >= 0)
+        if (matlist_entry >= 0) // this relies on matset_ptr->allowmat0 == 0
         {
             // clean
 
-            // To get the value for the speclist for this zone, we must determine
-            // the correct 1-index in the species_mf array that corresponds to the 
-            // material in this zone. We have organized the species_mf array such 
-            // that there are entries for each material's species for each zone,
-            // even if those materials are not present in that zone. Thus there are
-            // the same number of species entries for each zone in the species_mf
-            // array. So we need to determine what I am calling an "outer_index" 
-            // that tells us the starting index of the current zone in the species_mf
-            // array.
-
-            // how many entries per zone? Use the calculated num_species_across_mats
-            const int outer_index = zoneId * num_species_across_mats;
-
-            // Next we need the inner or "local_index", which corresponds to the 
-            // starting 1-index of the relevant material's species within this zone.
-            // We can use the nmatspec array to determine where that starts for our
-            // given material, which we fetch via material number.
-            
             // I can use the material number to determine which part of the speclist to index into
-            const int matno = silo_matlist[zoneId];
-
-            // We wish to offset this index by 1, hence starting from 1 in our call
-            // to std::accumulate.
-
-            // local index is the number of species for each material
-            // BEFORE this material plus 1, since it is 1 indexed.
-            // So if mat0 has 2 species and mat1 has 3 species, then
-            // the 1-index start of mat2 will be 2 + 3 + 1 = 6.
-            const int local_index = std::accumulate(nmatspec.begin(),
-                                                    nmatspec.begin() + matno,
-                                                    decltype(nmatspec)::value_type(1));
-
-            // we save the final index for this zone
-            const int final_index = outer_index + local_index;
-            speclist.push_back(final_index);
-
-            // TODO write a zero here if the material in the zone contains only 1 species.
-            // This is a further optimization. It doesn't matter for now since we are
-            // treating our output like we have all species and all materials in all zones.
-            // I think the point of this optimization is to also leave stuff out of the 
-            // species_mf array. If I want to do this then I should explore that as well.
+            const int &matno = matlist_entry;
+            speclist.push_back(calculate_species_index(zoneId, matno));
         }
         else
         {
             // mixed
+
+            // for mixed zones, the numbers in the matlist are negated 1-indices into
+            // the silo mixed data arrays. To turn them into zero-indices, we must add
+            // 1 and negate the result. Example:
+            // indices: -1 -2 -3 -4 ...
+            // become:   0  1  2  3 ...
+
+            int mix_id = -1 * (matlist_entry + 1);
+
+            // when silo_mix_next[mix_id] is 0, we are on the last one
+            while (mix_id >= 0)
+            {                
+                // I can use the material number to determine which part of the speclist to index into
+                const int matno = silo_mix_mat[mix_id];
+                mix_spec.push_back(calculate_species_index(zoneId, matno));
+
+                // since mix_id is a 1-index, we must subtract one
+                // this makes sure that mix_id = 0 is the last case,
+                // since it will make our mix_id == -1, which ends
+                // the while loop.
+                mix_id = silo_mix_next[mix_id] - 1;
+            }
         }
     }
 
+    // TODO what happens to all this machinery when the material numbers do not go from 0 to n - 1?
 
     // get the length of the mixed data arrays
     const int mixlen = static_cast<int>(mix_spec.size());
@@ -4696,21 +4726,21 @@ void silo_write_specset(DBfile *dbfile,
     const std::string safe_specset_name = detail::sanitize_silo_varname(specset_name);
 
 
-    // int silo_error =
-    //     DBPutMatspecies(/*[x]*/ dbfile, // Database file pointer
-    //                     /*[x]*/ safe_specset_name.c_str(), // specset name
-    //                     /*[x]*/ safe_matset_name.c_str(), // matset name
-    //                     /*[x]*/ nmat, // number of materials
-    //                     /*[x]*/ nmatspec.data(), // number of species associated with each material
-    //                     /*[ ]*/ speclist, // indices into species_mf and mix_spec
-    //                     /*[x]*/ dims, // array of length ndims that defines the shape of the speclist array
-    //                     /*[x]*/ ndims, // number of dimensions in the speclist array
-    //                     /*[x]*/ nspecies_mf, // length of the species_mf array
-    //                     /*[x]*/ species_mf.data(), // mass fractions of the matspecies in an array of length nspecies_mf
-    //                     /*[ ]*/ mix_spec.data(), // array of length mixlen containing indices into the species_mf array
-    //                     /*[x]*/ mixlen, // length of mix_spec array
-    //                     /*[x]*/ datatype, // datatype of mass fraction data in species_mf
-    //                     /*[x]*/ optlist.getSiloObject()); // optlist
+    int silo_error =
+        DBPutMatspecies(/*[x]*/ dbfile, // Database file pointer
+                        /*[x]*/ safe_specset_name.c_str(), // specset name
+                        /*[x]*/ safe_matset_name.c_str(), // matset name
+                        /*[x]*/ nmat, // number of materials
+                        /*[x]*/ nmatspec.data(), // number of species associated with each material
+                        /*[ ]*/ speclist, // indices into species_mf and mix_spec
+                        /*[x]*/ dims, // array of length ndims that defines the shape of the speclist array
+                        /*[x]*/ ndims, // number of dimensions in the speclist array
+                        /*[x]*/ nspecies_mf, // length of the species_mf array
+                        /*[x]*/ species_mf.data(), // mass fractions of the matspecies in an array of length nspecies_mf
+                        /*[ ]*/ mix_spec.data(), // array of length mixlen containing indices into the species_mf array
+                        /*[x]*/ mixlen, // length of mix_spec array
+                        /*[x]*/ datatype, // datatype of mass fraction data in species_mf
+                        /*[x]*/ optlist.getSiloObject()); // optlist
 
     // CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
 
