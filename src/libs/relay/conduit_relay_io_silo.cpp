@@ -4742,7 +4742,7 @@ void silo_write_specset(DBfile *dbfile,
                         safe_matset_name.c_str(), // matset name
                         nmat, // number of materials
                         nmatspec.data(), // number of species associated with each material
-                        speclist, // indices into species_mf and mix_spec
+                        speclist.data(), // indices into species_mf and mix_spec
                         dims, // array of length ndims that defines the shape of the speclist array
                         ndims, // number of dimensions in the speclist array
                         nspecies_mf, // length of the species_mf array
@@ -4752,7 +4752,7 @@ void silo_write_specset(DBfile *dbfile,
                         datatype, // datatype of mass fraction data in species_mf
                         optlist.getSiloObject()); // optlist
 
-    // CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
+    CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutMatspecies");
 
     // Node bookkeeping_info;
     // bookkeeping_info["comp_info"]["comp"] = "matsets";
