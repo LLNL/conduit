@@ -4443,7 +4443,9 @@ void silo_write_matset(DBfile *dbfile,
     convert_to_c_int_array(silo_matset_compact["mix_next"], int_arrays["mix_next"]);
     convert_to_c_int_array(silo_matset_compact["matlist"], int_arrays["matlist"]);
 
-    const std::string safe_matset_name = (write_overlink ? "MATERIAL" : detail::sanitize_silo_varname(matset_name));
+    // TODO this name collision prevention is a bandaid.
+    const std::string safe_matset_name = (write_overlink ? "MATERIAL" : 
+        detail::sanitize_silo_varname(topo_name == matset_name ? matset_name + "_mat" : matset_name));
 
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
@@ -4729,8 +4731,9 @@ void silo_write_specset(DBfile *dbfile,
     // convert_to_c_int_array(silo_matset_compact["matlist"], int_arrays["matlist"]);
 
     // TODO different approach needed for overlink?
-    const std::string safe_specset_name = detail::sanitize_silo_varname(specset_name);
-
+    // TODO this name collision prevention is a bandaid.
+    const std::string safe_specset_name = detail::sanitize_silo_varname(
+        matset_name == specset_name ? specset_name + "_spec" : specset_name);
 
     int silo_error =
         DBPutMatspecies(dbfile, // Database file pointer
@@ -4829,6 +4832,12 @@ void silo_mesh_write(const Node &mesh_domain,
                             dbfile);
         }
     }
+
+    // TODO I need to do a better job preventing name collisions
+    // misc example has a topo, matset, and specset with the same names
+    // they all overwrite each other
+    // I should think how to do it without bandaids
+    // I have marked the bandaids with TODOs
 
     // either we are not writing overlink, or there is a matset present
     // overlink requires a matset
