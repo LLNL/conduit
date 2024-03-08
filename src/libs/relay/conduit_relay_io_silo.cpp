@@ -4526,11 +4526,21 @@ void silo_write_specset(DBfile *dbfile,
         nmatspec.push_back(num_species_for_this_material);
     }
 
+    // we sum up the nmatspec to get the number of species across all materials
+    const int num_species_across_mats = std::accumulate(nmatspec.begin(), 
+                                                        nmatspec.end(),
+                                                        decltype(nmatspec)::value_type(0));
+
     // we have to go in order by zones as they appear
     
     // first we need number of zones
     const std::string topo_name = n_mesh_info["matsets"][matset_name]["topo_name"].as_string();
     const int nzones = n_mesh_info[topo_name]["num_elems"].to_value();
+
+    // TODO
+    // I may wish to go through and check if the material is even in the zone
+    // to avoid writing unneeded data
+    // that could be expensive though
 
     // get the datatype of the species_mf
     const int datatype = DB_DOUBLE; // make sure these data types match
@@ -4591,12 +4601,57 @@ void silo_write_specset(DBfile *dbfile,
 
     int_accessor silo_matlist = n_mesh_info["matsets"][matset_name]["silo_matset_compact"]["matlist"].value();
     std::vector<int> speclist;
-    for (int i = 0; i < nzones; i ++)
+    std::vector<int> mix_spec;
+
+
+    for (int zoneId = 0; zoneId < nzones; zoneId ++)
     {
         // is this zone clean?
-        if (silo_matlist[i] >= 0)
+        if (silo_matlist[zoneId] >= 0)
         {
             // clean
+
+            // To get the value for the speclist for this zone, we must determine
+            // the correct 1-index in the species_mf array that corresponds to the 
+            // material in this zone. We have organized the species_mf array such 
+            // that there are entries for each material's species for each zone,
+            // even if those materials are not present in that zone. Thus there are
+            // the same number of species entries for each zone in the species_mf
+            // array. So we need to determine what I am calling an "outer_index" 
+            // that tells us the starting index of the current zone in the species_mf
+            // array.
+
+            // how many entries per zone? Use the calculated num_species_across_mats
+            const int outer_index = zoneId * num_species_across_mats;
+
+            // Next we need the inner or "local_index", which corresponds to the 
+            // starting 1-index of the relevant material's species within this zone.
+            // We can use the nmatspec array to determine where that starts for our
+            // given material, which we fetch via material number.
+            
+            // I can use the material number to determine which part of the speclist to index into
+            const int matno = silo_matlist[zoneId];
+
+            // We wish to offset this index by 1, hence starting from 1 in our call
+            // to std::accumulate.
+
+            // local index is the number of species for each material
+            // BEFORE this material plus 1, since it is 1 indexed.
+            // So if mat0 has 2 species and mat1 has 3 species, then
+            // the 1-index start of mat2 will be 2 + 3 + 1 = 6.
+            const int local_index = std::accumulate(nmatspec.begin(),
+                                                    nmatspec.begin() + matno,
+                                                    decltype(nmatspec)::value_type(1));
+
+            // we save the final index for this zone
+            const int final_index = outer_index + local_index;
+            speclist.push_back(final_index);
+
+            // TODO write a zero here if the material in the zone contains only 1 species.
+            // This is a further optimization. It doesn't matter for now since we are
+            // treating our output like we have all species and all materials in all zones.
+            // I think the point of this optimization is to also leave stuff out of the 
+            // species_mf array. If I want to do this then I should explore that as well.
         }
         else
         {
@@ -4605,8 +4660,8 @@ void silo_write_specset(DBfile *dbfile,
     }
 
 
-    // // get the length of the mixed data arrays
-    // const int mixlen = silo_matset_compact["mix_mat"].dtype().number_of_elements();
+    // get the length of the mixed data arrays
+    const int mixlen = static_cast<int>(mix_spec.size());
 
     // create optlist and add to it
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
@@ -4651,8 +4706,8 @@ void silo_write_specset(DBfile *dbfile,
                         /*[x]*/ ndims, // number of dimensions in the speclist array
                         /*[x]*/ nspecies_mf, // length of the species_mf array
                         /*[x]*/ species_mf.data(), // mass fractions of the matspecies in an array of length nspecies_mf
-                        /*[ ]*/ mix_spec, // array of length mixlen containing indices into the species_mf array
-                        /*[ ]*/ mixlen, // length of mix_spec array
+                        /*[ ]*/ mix_spec.data(), // array of length mixlen containing indices into the species_mf array
+                        /*[x]*/ mixlen, // length of mix_spec array
                         /*[x]*/ datatype, // datatype of mass fraction data in species_mf
                         /*[x]*/ optlist.getSiloObject()); // optlist
 
