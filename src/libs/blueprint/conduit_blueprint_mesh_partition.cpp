@@ -10120,15 +10120,12 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 map_tgt_domains[idom].emplace_back(slice_map.first);
             }
         }
-#if 0
-// Or, the domain just does not have the field.
         else
         {
             CONDUIT_ERROR(
                 "Map-back requires that mesh repartitioning is performed with "
                 "the mapping option enabled. (missing " << original_element_ids_name() << ")");
         }
-#endif
     }
 
     // TODO: this is a lot of bookkeeping to do if we aren't mapping back a
@@ -10234,8 +10231,6 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
             const vector<index_t>& sel_verts = map_sel_verts[idom][tgt_dom];
             for (const std::string& field_name : field_names)
             {
-if(dom["fields"].has_child(field_name))
-{
                 const Node& field = dom["fields"][field_name];
                 const std::string& assoc = field["association"].as_string();
                 if (assoc == "vertex")
@@ -10252,11 +10247,6 @@ if(dom["fields"].has_child(field_name))
                         conduit_fmt::format("Encountered field with unsupported association."
                                             " (field: {} association: {}", field_name, assoc));
                 }
-}
-else
-{
-    std::cout << "!! Skipping " << field_name << " because it is not in this domain."  << std::endl;
-}
             }
             // Add target element indices to the node
             remap_dom_ent["elem_map"].set(map_tgt_elems[idom][tgt_dom]);
@@ -10266,9 +10256,7 @@ else
 
     // If we're multi-process, redistribute target field chunks to original
     // domain homes
-std::cout << "!! Before communicate_mapback\n";
     communicate_mapback(packed_fields);
-std::cout << "!! After communicate_mapback\n";
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
@@ -10315,7 +10303,6 @@ std::cout << "!! After communicate_mapback\n";
         {
             const vector<const Node*>& src_fields = fg.second;
             const string& field_name = fg.first;
-std::cout << "!! Reassemble " << field_name << "\n";
 
             const string& assoc = src_fields[0]->child("association").as_string();
             const string& assoc_topo = src_fields[0]->child("topology").as_string();

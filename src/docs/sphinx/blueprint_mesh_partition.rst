@@ -72,71 +72,71 @@ count domains are combined first.
 
 .. tabularcolumns:: |p{1.5cm}|p{4cm}|L|
 
-+------------------+-----------------------------------------+------------------------------------------+
-| **Option**       | **Description**                         | **Example**                              |
-+------------------+-----------------------------------------+------------------------------------------+
-| selections       | A list of selection objects that        | .. code:: yaml                           |
-|                  | identify regions of interest from the   |                                          |
-|                  | input domains. Selections can be        |    selections:                           |
-|                  | different on each MPI rank.             |      -                                   |
-|                  |                                         |       type: logical                      |
-|                  |                                         |       start: [0,0,0]                     |
-|                  |                                         |       end: [9,9,9]                       |
-|                  |                                         |       domain_id: 10                      |                     
-+------------------+-----------------------------------------+------------------------------------------+
-| target           | An optional integer that determines the | .. code:: yaml                           |
-|                  | fields containing original domains and  |                                          |
-|                  | number of domains in the output. If     |    target: 4                             |
-|                  | given, the value must be greater than 0.|                                          |
-|                  | Values larger than the number of        |                                          |
-|                  | selections cause domains to be split.   |                                          |
-|                  | Values smaller than the number of       |                                          |
-|                  | selections cause domains to be combined.|                                          |
-|                  | Invalid values are ignored.             |                                          |
-|                  |                                         |                                          |
-|                  | If not given, the output will contain   |                                          |
-|                  | the number of selections. In parallel,  |                                          |
-|                  | the largest target value from the ranks |                                          |
-|                  | will be used for all ranks.             |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| fields           | An list of strings that indicate the    | .. code:: yaml                           |
-|                  | names of the fields to extract in the   |                                          |
-|                  | output. If this option is not provided, |    fields: ["dist", "pressure"]          |
-|                  | all fields will be extracted.           |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| mapping          | An integer that determines whether      | .. code:: yaml                           |
-|                  | fields containing original domains and  |                                          |
-|                  | ids will be added in the output. These  |    mapping: 0                            |
-|                  | fields enable one to know where each    |                                          |
-|                  | vertex and element came from originally.|                                          |
-|                  | Mapping is on by default. A non-zero    |                                          |
-|                  | value turns it on and a zero value turns|                                          |
-|                  | it off.                                 |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| build_adjsets    | An integer that determines whether      | .. code:: yaml                           |
-|                  | the partitioner should build adjsets,   |                                          |
-|                  | if they are present in the selected     |    build_adjsets: 1                      |
-|                  | topology.                               |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| merge_tolerance  | A double value that indicates the max   | .. code:: yaml                           |
-|                  | allowable distance between 2 points     |                                          |
-|                  | before they are considered to be        |    merge_tolerance: 0.000001             |
-|                  | separate. 2 points spaced smaller than  |                                          |
-|                  | this distance will be merged when       |                                          |
-|                  | explicit coordsets are combined.        |                                          |
-+------------------+-----------------------------------------+------------------------------------------+
-| original_element_ids | A string value that provides desired   | .. code::yaml                            |
-|                      | field name used to contain original    |                                          |
-|                      | element ids created from partitioning. |    original_element_ids: elem_name       |
-|                      | The default value is                   |                                          |
-|                      | original_element_ids.                  |                                          |
-+----------------------+----------------------------------------+------------------------------------------+
-| original_vertex_ids  | A string value that provides desired   | .. code::yaml                            |
-|                      | field name used to contain original    |                                          |
-|                      | vertex ids created from partitioning.  |    original_vertex_ids: vert_name        |
-|                      | The default value is                   |                                          |
-|                      | original_vertex_ids.                   |                                          |
-+----------------------+----------------------------------------+------------------------------------------+
++---------------------+-----------------------------------------+------------------------------------------+
+| **Option**          | **Description**                         | **Example**                              |
++---------------------+-----------------------------------------+------------------------------------------+
+| selections          | A list of selection objects that        | .. code:: yaml                           |
+|                     | identify regions of interest from the   |                                          |
+|                     | input domains. Selections can be        |    selections:                           |
+|                     | different on each MPI rank.             |      -                                   |
+|                     |                                         |       type: logical                      |
+|                     |                                         |       start: [0,0,0]                     |
+|                     |                                         |       end: [9,9,9]                       |
+|                     |                                         |       domain_id: 10                      |
++---------------------+-----------------------------------------+------------------------------------------+
+| target              | An optional integer that determines the | .. code:: yaml                           |
+|                     | fields containing original domains and  |                                          |
+|                     | number of domains in the output. If     |    target: 4                             |
+|                     | given, the value must be greater than 0.|                                          |
+|                     | Values larger than the number of        |                                          |
+|                     | selections cause domains to be split.   |                                          |
+|                     | Values smaller than the number of       |                                          |
+|                     | selections cause domains to be combined.|                                          |
+|                     | Invalid values are ignored.             |                                          |
+|                     |                                         |                                          |
+|                     | If not given, the output will contain   |                                          |
+|                     | the number of selections. In parallel,  |                                          |
+|                     | the largest target value from the ranks |                                          |
+|                     | will be used for all ranks.             |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| fields              | An list of strings that indicate the    | .. code:: yaml                           |
+|                     | names of the fields to extract in the   |                                          |
+|                     | output. If this option is not provided, |    fields: ["dist", "pressure"]          |
+|                     | all fields will be extracted.           |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| mapping             | An integer that determines whether      | .. code:: yaml                           |
+|                     | fields containing original domains and  |                                          |
+|                     | ids will be added in the output. These  |    mapping: 0                            |
+|                     | fields enable one to know where each    |                                          |
+|                     | vertex and element came from originally.|                                          |
+|                     | Mapping is on by default. A non-zero    |                                          |
+|                     | value turns it on and a zero value turns|                                          |
+|                     | it off.                                 |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| build_adjsets       | An integer that determines whether      | .. code:: yaml                           |
+|                     | the partitioner should build adjsets,   |                                          |
+|                     | if they are present in the selected     |    build_adjsets: 1                      |
+|                     | topology.                               |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| merge_tolerance     | A double value that indicates the max   | .. code:: yaml                           |
+|                     | allowable distance between 2 points     |                                          |
+|                     | before they are considered to be        |    merge_tolerance: 0.000001             |
+|                     | separate. 2 points spaced smaller than  |                                          |
+|                     | this distance will be merged when       |                                          |
+|                     | explicit coordsets are combined.        |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| original_element_ids| A string value that provides desired    | .. code::yaml                            |
+|                     | field name used to contain original     |                                          |
+|                     | element ids created from partitioning.  |    original_element_ids: elem_name       |
+|                     | The default value is                    |                                          |
+|                     | original_element_ids.                   |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
+| original_vertex_ids | A string value that provides desired    | .. code::yaml                            |
+|                     | field name used to contain original     |                                          |
+|                     | vertex ids created from partitioning.   |    original_vertex_ids: vert_name        |
+|                     | The default value is                    |                                          |
+|                     | original_vertex_ids.                    |                                          |
++---------------------+-----------------------------------------+------------------------------------------+
 
 
 Selections
