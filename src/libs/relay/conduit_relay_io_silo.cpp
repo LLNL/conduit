@@ -4330,6 +4330,7 @@ void silo_write_matset(DBfile *dbfile,
                        const int local_num_domains,
                        const int local_domain_index,
                        const uint64 global_domain_id,
+                       std::set<std::string> &used_names,
                        Node &local_type_domain_info,
                        Node &n_mesh_info)
 {
@@ -4443,9 +4444,30 @@ void silo_write_matset(DBfile *dbfile,
     convert_to_c_int_array(silo_matset_compact["mix_next"], int_arrays["mix_next"]);
     convert_to_c_int_array(silo_matset_compact["matlist"], int_arrays["matlist"]);
 
-    // TODO this name collision prevention is a bandaid.
-    const std::string safe_matset_name = (write_overlink ? "MATERIAL" : 
-        detail::sanitize_silo_varname(topo_name == matset_name ? matset_name + "_mat" : matset_name));
+    std::string safe_matset_name;
+    if (write_overlink)
+    {
+        safe_matset_name = "MATERIAL";
+    }
+    else
+    {
+        // if this name is already used
+        if (used_names.find(matset_name) != used_names.end())
+        {
+            std::string new_matset_name = matset_name + "_mat";
+            int i = 0;
+            while (used_names.find(new_matset_name) != used_names.end())
+            {
+                new_matset_name = matset_name + "_mat" + std::to_string(i);
+                i ++;
+            }
+            safe_matset_name = detail::sanitize_silo_varname(new_matset_name);
+        }
+        else
+        {
+            safe_matset_name = detail::sanitize_silo_varname(matset_name);
+        }
+    }
 
     int silo_error = 
         DBPutMaterial(dbfile, // Database file pointer
@@ -4468,7 +4490,16 @@ void silo_write_matset(DBfile *dbfile,
 
     Node bookkeeping_info;
     bookkeeping_info["comp_info"]["comp"] = "matsets";
-    bookkeeping_info["comp_info"]["comp_name"] = matset_name;
+    // TODO what are the consequences of using the safe_matset_name here instead
+    // of matset_name?
+
+    // TODO JUSTIN I left off here last time. Trying to understand the above.
+    // I have yet to properly prevent name collisions for specsets and fields.
+    // hoping to use the same approach for those, by comparing to the map and
+    // generating new names as needed. See above.
+
+
+    bookkeeping_info["comp_info"]["comp_name"] = safe_matset_name;
     bookkeeping_info["domain_info"]["local_num_domains"] = local_num_domains;
     bookkeeping_info["domain_info"]["local_domain_index"] = local_domain_index;
     bookkeeping_info["domain_info"]["global_domain_id"] = global_domain_id;
@@ -4795,6 +4826,10 @@ void silo_mesh_write(const Node &mesh_domain,
                                  << silo_obj_path);
     }
 
+    // In blueprint, you can have a topo, field, matset, and specset that all have the
+    // same name. In silo, that will break things. They will overwrite each other.
+    // So we need to keep track of the names we have used.
+    std::set<std::string> used_names;
     Node n_mesh_info;
 
     if (write_overlink)
@@ -4820,7 +4855,8 @@ void silo_mesh_write(const Node &mesh_domain,
         while (topo_itr.has_next())
         {
             topo_itr.next();
-            std::string topo_name = topo_itr.name();
+            const std::string topo_name = topo_itr.name();
+            used_names.insert(topo_name);
             silo_write_topo(mesh_domain,
                             topo_name,
                             n_mesh_info,
