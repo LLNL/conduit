@@ -2859,13 +2859,21 @@ TEST(conduit_blueprint_mesh_partition, map_back_set_external)
     conduit::Node part, options;
     options["target"] = 2;
     options["mapping"] = 1;
+    options["original_element_ids"] = "eids";
+    options["original_vertex_ids"] = "vids";
     //std::cout << "Calling partition" << std::endl;
     //options.print();
     conduit::blueprint::mesh::partition(mesh, options, part);
 
-    // Compute the fields on the part mesh.
     auto domains = conduit::blueprint::mesh::domains(part);
     EXPECT_EQ(domains.size(), 2);
+    for(auto &dom : domains)
+    {
+        EXPECT_TRUE(dom->has_path("fields/eids/values"));
+        EXPECT_TRUE(dom->has_path("fields/vids/values"));
+    }
+
+    // Compute the fields on the part mesh.
     for(auto &dom : domains)
     {
         compute_nodal_field(*dom, dom->fetch_existing("fields/nodal"));
@@ -2881,6 +2889,8 @@ TEST(conduit_blueprint_mesh_partition, map_back_set_external)
     mbopts["fields"].append().set("zonal");
     mbopts["fields"].append().set("nodalvec");
     mbopts["fields"].append().set("zonalvec");
+    mbopts["original_element_ids"] = "eids";
+    mbopts["original_vertex_ids"] = "vids";
     //std::cout << "Calling partition_map_back" << std::endl;
     //mbopts.print();
     conduit::blueprint::mesh::partition_map_back(part, mbopts, mesh);

@@ -1705,7 +1705,9 @@ Partitioner::Partitioner()
   selected_fields(),
   mapping(true),
   build_adjsets(true),
-  merge_tolerance(1.e-8)
+  merge_tolerance(1.e-8),
+  original_vertex_ids("original_vertex_ids"),
+  original_element_ids("original_element_ids")
 {
 }
 
@@ -1982,6 +1984,14 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     // Get whether we want to preserve old numbering of vertices, elements.
     if(options.has_child("mapping"))
         mapping = options["mapping"].to_unsigned_int() != 0;
+
+    // Get the name of the original_vertex_ids field.
+    if(options.has_child("original_vertex_ids"))
+        original_vertex_ids = options["original_vertex_ids"].as_string();
+
+    // Get the name of the original_element_ids field.
+    if(options.has_child("original_element_ids"))
+        original_element_ids = options["original_element_ids"].as_string();
 
     // Get whether we want to build adjsets if they are present. This option
     // lets us ignore them.
@@ -2701,7 +2711,7 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
             if(mapping)
             {
                 // Save the vertex_ids as a new MC field.
-                conduit::Node &n_field = n_output_fields["original_vertex_ids"];
+                conduit::Node &n_field = n_output_fields[original_vertex_ids_name()];
                 n_field["association"] = "vertex";
                 if(!topology.empty())
                     n_field["topology"] = topology;
@@ -2732,7 +2742,7 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
             if(mapping)
             {
                 // Save the element_ids as a new MC field.
-                conduit::Node &n_field = n_output_fields["original_element_ids"];
+                conduit::Node &n_field = n_output_fields[original_element_ids_name()];
                 n_field["association"] = "element";
                 if(!topology.empty())
                     n_field["topology"] = topology;
@@ -3676,7 +3686,7 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
     // Save the vertex_ids as a new MC field.
     if(nvertices > 0)
     {
-        conduit::Node &n_field = n_new_fields["original_vertex_ids"];
+        conduit::Node &n_field = n_new_fields[original_vertex_ids_name()];
         n_field["association"] = "vertex";
         if(!toponame.empty())
             n_field["topology"] = toponame;
@@ -3691,7 +3701,7 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
     // Save the element_ids as a new MC field.
     if(nelements > 0)
     {
-        conduit::Node &n_field = n_new_fields["original_element_ids"];
+        conduit::Node &n_field = n_new_fields[original_element_ids_name()];
         n_field["association"] = "element";
         if(!toponame.empty())
             n_field["topology"] = toponame;
@@ -6582,6 +6592,8 @@ public:
     bool execute(const std::string &topo_name,
         const std::string &rt,
         const std::vector<const Node *> &n_inputs,
+        const std::string &original_element_ids,
+        const std::string &original_vertex_ids,
         Node &output,
         double merge_tolerance = CONDUIT_EPSILON)
     {
@@ -6769,7 +6781,7 @@ public:
         
         if(mode == CombineImplicitMode::Structured)
         {
-            retval = combine_structured_impl(n_meshes, output);
+            retval = combine_structured_impl(n_meshes, original_element_ids, original_vertex_ids, output);
         }
         else
         {
@@ -7853,6 +7865,8 @@ private:
     bool
     combine_structured_impl(
             const std::vector<const Node *> &n_meshes,
+            const std::string &original_element_ids,
+            const std::string &original_vertex_ids,
             Node &output) const
     {
         // Cannot use axis-aligned bounding boxes for structured grids
@@ -7879,18 +7893,20 @@ private:
                     Node &out_mesh = temp[(i < 10) ? "domain_0000" + std::to_string(i) : "domain_000" + std::to_string(i)];
                     out_mesh.set_external(mesh);
 
-                    out_mesh["fields/original_element_ids/association"] = "element";
-                    out_mesh["fields/original_element_ids/topology"] = "mesh";
+                    Node &oeid = out_mesh["fields/" + original_element_ids];
+                    oeid["association"] = "element";
+                    oeid["topology"] = "mesh";
                     Schema s;
                     const auto N = mesh["topologies/mesh/element_map"].dtype().number_of_elements() / 2;
                     const void *ptr = mesh["topologies/mesh/element_map"].element_ptr(0);
                     s["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
                     s["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
-                    out_mesh["fields/original_element_ids/values"].set_external(s, const_cast<void*>(ptr));
+                    oeid["values"].set_external(s, const_cast<void*>(ptr));
 
-                    out_mesh["fields/original_vertex_ids/association"] = "vertex";
-                    out_mesh["fields/original_vertex_ids/topology"] = "mesh";
-                    out_mesh["fields/original_vertex_ids/values"].set_external(mesh["coordsets/coords/pointmaps"]);
+                    Node &ovid = out_mesh["fields/" + original_vertex_ids];
+                    ovid["association"] = "vertex";
+                    ovid["topology"] = "mesh";
+                    ovid["values"].set_external(mesh["coordsets/coords/pointmaps"]);
                 }
                 std::ofstream f_out("combine_structured_iteration." + 
                     ((iteration < 10) ? ("0000" + std::to_string(iteration)) : ("000" + std::to_string(iteration)))
@@ -9895,11 +9911,11 @@ Partitioner::combine(int domain,
     }
 
     // Cleanup the output node, add original cells/verticies in needed
-    if(!output_fields.has_child("original_element_ids"))
+    if(!output_fields.has_child(original_element_ids_name()))
     {
         // Q: What happens in the case of multiple topologies?
         const Node &n_elem_map = output_topologies[0]["element_map"];
-        Node &out_field = output_fields["original_element_ids"];
+        Node &out_field = output_fields[original_element_ids_name()];
         out_field["topology"].set(output_topologies[0].name());
         // utils::ASSOCIATIONS[1]
         out_field["association"].set("element");
@@ -9950,7 +9966,7 @@ Partitioner::combine(int domain,
         output_topologies[i].remove("element_map");
     }
 
-    if(!output_fields.has_child("original_vertex_ids"))
+    if(!output_fields.has_child(original_vertex_ids_name()))
     {
         // Get the pointmaps
         const std::string &coordset_name = output_topologies[0]["coordset"].as_string();
@@ -9966,7 +9982,7 @@ Partitioner::combine(int domain,
             pointmaps.emplace_back(n_pointmaps[i].value());
         }
 
-        Node &out_field = output_fields["original_vertex_ids"];
+        Node &out_field = output_fields[original_vertex_ids_name()];
         out_field["topology"].set(output_topologies[0].name());
         // utils::ASSOCIATIONS[0]
         out_field["association"].set("vertex");
@@ -10031,6 +10047,14 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // the below should also init dom_to_rank_map in mpi partitioner
     auto orig_dom_ids = get_global_domids(orig_mesh);
 
+    // Get the name of the original_vertex_ids field.
+    if(options.has_child("original_vertex_ids"))
+        original_vertex_ids = options["original_vertex_ids"].as_string();
+
+    // Get the name of the original_element_ids field.
+    if(options.has_child("original_element_ids"))
+        original_element_ids = options["original_element_ids"].as_string();
+
     unordered_map<index_t, Node*> gid_to_orig_dom;
     for (size_t idom = 0; idom < orig_doms.size(); idom++)
     {
@@ -10080,9 +10104,9 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     {
         const conduit::Node& dom = *repart_doms[idom];
 
-        if (dom["fields"].has_child("original_element_ids"))
+        if (dom["fields"].has_child(original_element_ids_name()))
         {
-            const Node& orig_v_node = dom["fields/original_element_ids/values"];
+            const Node& orig_v_node = dom["fields/" + original_element_ids_name() + "/values"];
             const index_t_accessor orig_elems_vals = orig_v_node["ids"].value();
             const index_t_accessor orig_doms_vals = orig_v_node["domains"].value();
             for (index_t ielem = 0; ielem < orig_elems_vals.number_of_elements(); ielem++)
@@ -10100,7 +10124,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         {
             CONDUIT_ERROR(
                 "Map-back requires that mesh repartitioning is performed with "
-                "the mapping option enabled. (missing original_element_ids)");
+                "the mapping option enabled. (missing " << original_element_ids_name() << ")");
         }
     }
 
@@ -10233,7 +10257,6 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // If we're multi-process, redistribute target field chunks to original
     // domain homes
     communicate_mapback(packed_fields);
-
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
@@ -10280,6 +10303,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         {
             const vector<const Node*>& src_fields = fg.second;
             const string& field_name = fg.first;
+
             const string& assoc = src_fields[0]->child("association").as_string();
             const string& assoc_topo = src_fields[0]->child("topology").as_string();
 
@@ -10309,7 +10333,7 @@ Partitioner::combine_as_structured(const std::string &topo_name,
     Node &output)
 {
     mesh::utils::combine_implicit_topologies combine;
-    return combine.execute(topo_name, rt, n_inputs, output);
+    return combine.execute(topo_name, rt, n_inputs, original_element_ids_name(), original_vertex_ids_name(), output);
 }
 
 //-------------------------------------------------------------------------
