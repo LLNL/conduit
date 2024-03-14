@@ -2706,19 +2706,20 @@ TEST(conduit_blueprint_mesh_partition, generate_boundary_partition)
 }
 
 //-----------------------------------------------------------------------------
+std::vector<double> blend(double x0, double x1, int n)
+{
+    std::vector<double> values(n);
+    for(int i = 0; i < n; i++)
+    {
+        double t = static_cast<double>(i) / static_cast<double>(n - 1);
+        values[i] = (1. - t) * x0 + t * x1;
+    }
+    return values;
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_partition, map_back_set_external)
 {
-    auto blend = [](double x0, double x1, int n)
-    {
-        std::vector<double> values(n);
-        for(int i = 0; i < n; i++)
-        {
-            double t = static_cast<double>(i) / static_cast<double>(n - 1);
-            values[i] = (1. - t) * x0 + t * x1;
-        }
-        return values;
-    };
-
 #define F_XYC(X,Y,C) (static_cast<double>((C) + 1) * sqrt((X)*(X) + (Y)*(Y)))
 
     auto compute_nodal_field = [](conduit::Node &mesh, conduit::Node &f)
@@ -2937,4 +2938,58 @@ TEST(conduit_blueprint_mesh_partition, map_back_set_external)
         EXPECT_FALSE(different);
     }
 #undef F_XYC
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, partition_single_group)
+{
+    // This test is designed to make sure that we can send an mcarray with a single
+    // component through partitioning when the partitioner causes domain recombining.
+    // There was a problem where this was not quite working due to the mcarray being
+    // treated as a scalar (had the wrong schema).
+    const double extents[3][4] = {{0.,1., 0., 1.},{1.,2., 0., 1.},{0.,2., 1., 2.}};
+    constexpr int dims[3][2] = {{5,5}, {5,5}, {9,5}};
+
+    conduit::Node mesh;
+    for(int d = 0; d < 3; d++)
+    {
+        char name[32];
+        sprintf(name, "domain_%05d", d);
+        conduit::Node &dom = mesh[name];
+        const int nnodes = dims[d][0] * dims[d][1];
+
+        dom["coordsets/coords/type"] = "rectilinear";
+        dom["coordsets/coords/values/x"].set(blend(extents[d][0], extents[d][1], dims[d][0]));
+        dom["coordsets/coords/values/y"].set(blend(extents[d][2], extents[d][3], dims[d][1]));
+
+        dom["topologies/main/type"] = "rectilinear";
+        dom["topologies/main/coordset"] = "coords";
+
+        dom["state/cycle"] = 123;
+        dom["state/domain_id"] = d;
+
+        // Make a mcarray with 1 component. We'll send this through partition to the part mesh
+        // where it won't exist but will need to be created, testing the partitioner's vector vs
+        // scalar logic for 1 component.
+        dom["fields/single_group/topology"] = "main";
+        dom["fields/single_group/association"] = "vertex";
+        dom["fields/single_group/values/group0"].set(conduit::DataType::int32(nnodes));
+        int *sg = dom["fields/single_group/values/group0"].as_int_ptr();
+        std::iota(sg, sg + nnodes, 0);
+    }  
+
+    // Repartition the mesh from 3 domains into 2 domains.
+    conduit::Node part, options;
+    options["target"] = 2;
+    options["mapping"] = 1;
+    conduit::blueprint::mesh::partition(mesh, options, part);
+
+    // Check the part mesh.
+    EXPECT_EQ(part.number_of_children(), 2);
+    for(conduit::index_t d = 0; d < part.number_of_children(); d++)
+    {
+        conduit::Node &dom = part[d];
+        EXPECT_TRUE(dom.has_path("fields/single_group/values/group0"));
+        EXPECT_EQ(dom.fetch_existing("fields/single_group/values").number_of_children(), 1);
+    }
 }

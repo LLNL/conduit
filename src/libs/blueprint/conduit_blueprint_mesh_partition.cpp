@@ -8642,6 +8642,18 @@ namespace fields
 {
 
 //-------------------------------------------------------------------------
+/**
+ @brief Determine an appropriate schema to hold data based on the input.
+
+ @param in The input node, which should be field "values" node.
+ @param ntuples The number of tuples in the input node.
+ @param[out] out_ncomps The number of components detected in the input field.
+ @param[out] out_schema The schema to use when creating the output node, if
+                        that needs to be done.
+
+ @note The out_ncomps parameter is 0 for scalars and 1 or more for vectors.
+       This way we can tell scalars from vectors down the line.
+ */
 static void
 determine_schema(const Node &in,
         const index_t ntuples, index_t &out_ncomps,
@@ -8714,7 +8726,7 @@ determine_schema(const Node &in,
     }
     else
     {
-        out_ncomps = 1;
+        out_ncomps = 0;
         out_schema.set(DataType(in.dtype().id(), ntuples));
     }
 }
@@ -8776,13 +8788,16 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // Most likely, if we're mapping back, the original mesh contained the
     // field we're mapping in the first place. We don't want to totally reset in
     // case that field points to external data.
-    if(total_storage_size(out_node) != (num_vertices * ncomps))
+    const index_t detected_size = total_storage_size(out_node);
+    const index_t actual_ncomps = std::max(ncomps, static_cast<index_t>(1));
+    const index_t expected_size = num_vertices * actual_ncomps;
+    if(detected_size != expected_size)
     {
         out_node.reset();
         out_node.set(out_schema);
 
 #if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
-        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << ncomps << " values." << std::endl;
+        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << actual_ncomps << " values." << std::endl;
         //out_schema.print();
         //out_node.print();
 #endif
@@ -8795,7 +8810,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
 #endif
 
     const index_t npmaps = (index_t)pointmaps.size();
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t fi = 0; fi < npmaps; fi++)
         {
@@ -8870,13 +8885,16 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // Most likely, if we're mapping back, the original mesh contained the
     // field we're mapping in the first place. We don't want to totally reset in
     // case that field points to external data.
-    if(total_storage_size(out_node) != (num_vertices * ncomps))
+    const index_t detected_size = total_storage_size(out_node);
+    const index_t actual_ncomps = std::max(ncomps, static_cast<index_t>(1));
+    const index_t expected_size = num_vertices * actual_ncomps;
+    if(detected_size != expected_size)
     {
         out_node.reset();
         out_node.set(out_schema);
 
 #if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
-        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << ncomps << " values." << std::endl;
+        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << actual_ncomps << " values." << std::endl;
         //out_schema.print();
         //out_node.print();
 #endif
@@ -8888,7 +8906,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     }
 #endif
 
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t i = 0; i < num_vertices; i++)
         {
@@ -8961,13 +8979,16 @@ map_element_field(const std::vector<const Node*> &in_nodes,
     // Most likely, if we're mapping back, the original mesh contained the
     // field we're mapping in the first place. We don't want to totally reset in
     // case that field points to external data.
-    if(total_storage_size(out_node) != (nelements * ncomps))
+    const index_t detected_size = total_storage_size(out_node);
+    const index_t actual_ncomps = std::max(ncomps, static_cast<index_t>(1));
+    const index_t expected_size = nelements * actual_ncomps;
+    if(detected_size != expected_size)
     {
         out_node.reset();
         out_node.set(out_schema);
 
 #ifdef CONDUIT_DEBUG_PARTITIONER_MAPBACK
-        std::cout << out_node.path() << ": resetting to hold " << nelements << "*" << ncomps << " values." << std::endl;
+        std::cout << out_node.path() << ": resetting to hold " << nelements << "*" << actual_ncomps << " values." << std::endl;
         //out_schema.print();
         //out_node.print();
 #endif
@@ -8979,7 +9000,7 @@ map_element_field(const std::vector<const Node*> &in_nodes,
     }
 #endif
 
-    if(ncomps > 1)
+    if(ncomps > 0)
     {
         for(index_t out_idx = 0; out_idx < nelements; out_idx++)
         {
