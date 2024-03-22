@@ -2364,15 +2364,21 @@ mesh::generate_index_for_single_domain(const Node &mesh,
             Node &idx_specset = index_out["specsets"][specset_name];
 
             idx_specset["matset"] = specset["matset"].as_string();
-            // TODO(JRC): Is the 'materials' entry necessary given that it will
-            // always match the 'materials' entry in the 'matset' list?
-            NodeConstIterator specs_itr = specset["matset_values"].child(0).children();
-            while(specs_itr.has_next())
-            {
-                specs_itr.next();
-                idx_specset["species"][specs_itr.name()];
-            }
 
+            NodeConstIterator matset_vals_itr = specset["matset_values"].children();
+            while(matset_vals_itr.has_next())
+            {
+                const Node &matset_val = matset_vals_itr.next();
+                const std::string matname = matset_vals_itr.name();
+
+                NodeConstIterator specs_itr = matset_val.children();
+                while(specs_itr.has_next())
+                {
+                    specs_itr.next();
+                    const std::string specname = specs_itr.name();
+                    idx_specset["matset_values"][matname][specname];
+                }
+            }
             std::string ms_ref_path = join_path(ref_path, "specsets");
             ms_ref_path = join_path(ms_ref_path, specset_name);
             idx_specset["path"] = ms_ref_path;
