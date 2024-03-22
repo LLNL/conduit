@@ -1425,6 +1425,69 @@ to_multi_buffer_by_material(const conduit::Node &src_matset,
 // -- end conduit::blueprint::mesh::matset --
 //-----------------------------------------------------------------------------
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::blueprint::mesh::specset --
+//-----------------------------------------------------------------------------
+namespace specset
+{
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+void
+to_silo(const conduit::Node &specset,
+        const conduit::Node &matset,
+        conduit::Node &dest,
+        const float64 epsilon)
+{
+    // extra seat belts here b/c we want to avoid folks entering
+    // the detail version of to_silo with surprising results.
+
+    if(!specset.dtype().is_object() )
+    {
+        CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed specset node"
+                      " must be a valid specset tree.");
+    }
+
+    if(!matset.dtype().is_object() )
+    {
+        CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed matset node"
+                      " must be a valid matset tree.");
+    }
+
+    // need to check if passed matset is already in the silo rep
+    Node silo_matset;
+
+    if (! (matset.has_child("topology") && 
+           matset.has_child("material_map") &&
+           matset.has_child("mix_vf") && 
+           matset.has_child("mix_mat") &&
+           matset.has_child("mix_next") &&
+           matset.has_child("matlist")))
+    {
+        // if not, create a silo rep
+        conduit::blueprint::mesh::matset::to_silo(matset, silo_matset);
+    }
+    else
+    {
+        // if it is, use it and continue
+        silo_matset.set_external(matset);
+    }
+
+    
+
+///////////////////////////////
+
+    conduit::blueprint::mesh::specset::detail::to_silo(specset,
+                                                       matset,
+                                                       dest,
+                                                       epsilon);
+}
+
+//-----------------------------------------------------------------------------
+
+}
+//-----------------------------------------------------------------------------
+// -- end conduit::blueprint::mesh::specset --
+//-----------------------------------------------------------------------------
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::blueprint::mesh::field --

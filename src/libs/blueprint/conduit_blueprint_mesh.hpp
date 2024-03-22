@@ -764,7 +764,7 @@ namespace matset
     //
     // For details about the silo format, see documentation for 
     // 'DBPutMaterial' at:
-    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
+    // https://silo.readthedocs.io/en/latest/
     void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &matset,
                                        conduit::Node &dest,
                                        const float64 epsilon = CONDUIT_EPSILON);
@@ -827,7 +827,7 @@ namespace field
     //
     // For details about the silo format, see documentation for 
     // 'DBPutZZZVar' methods `mixvar` / `mixlen` params at:
-    // https://wci.llnl.gov/content/assets/docs/simulation/computer-codes/silo/LLNL-SM-654357.pdf
+    // https://silo.readthedocs.io/en/latest/
     void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &field,
                                        const conduit::Node &matset,
                                        conduit::Node &dest,
@@ -865,6 +865,17 @@ namespace specset
     //-------------------------------------------------------------------------
     bool CONDUIT_BLUEPRINT_API verify(const conduit::Node &specset,
                                       conduit::Node &info);
+
+    //-------------------------------------------------------------------------
+    // Converts a blueprint specset to the silo style sparse mixed slot 
+    // representation.
+    //
+    // For details about the silo format, see documentation for 
+    // 'DBPutMatspecies' at:
+    // https://silo.readthedocs.io/en/latest/
+    void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &specset,
+                                       conduit::Node &dest,
+                                       const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::specset::index protocol interface
