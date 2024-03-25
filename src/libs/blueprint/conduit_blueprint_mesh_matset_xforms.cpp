@@ -1438,9 +1438,6 @@ to_silo(const conduit::Node &specset,
         const conduit::Node &matset,
         conduit::Node &dest)
 {
-    // extra seat belts here b/c we want to avoid folks entering
-    // the detail version of to_silo with surprising results.
-
     if(!specset.dtype().is_object() )
     {
         CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed specset node"
