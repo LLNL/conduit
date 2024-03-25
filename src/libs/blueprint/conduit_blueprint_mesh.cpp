@@ -2376,7 +2376,7 @@ mesh::generate_index_for_single_domain(const Node &mesh,
                 {
                     specs_itr.next();
                     const std::string specname = specs_itr.name();
-                    idx_specset["matset_values"][matname][specname];
+                    idx_specset["species"][matname][specname];
                 }
             }
             std::string ms_ref_path = join_path(ref_path, "specsets");

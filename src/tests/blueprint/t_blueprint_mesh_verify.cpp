@@ -1943,16 +1943,21 @@ TEST(conduit_blueprint_mesh_verify, index_specset)
             CHECK_MESH(verify_specset_index,mindex,info,true);
         }
 
-        { // Spcies Field Tests //
+        { // Species Field Tests //
             mindex.remove("species");
             CHECK_MESH(verify_specset_index,mindex,info,false);
 
             mindex["species"];
             CHECK_MESH(verify_specset_index,mindex,info,false);
 
-            mindex["species/spec1"].set(1);
+            mindex["species/mat1/spec1"].set(1);
             CHECK_MESH(verify_specset_index,mindex,info,true);
-            mindex["species/spec2"].set(2);
+            mindex["species/mat1/spec2"].set(2);
+            CHECK_MESH(verify_specset_index,mindex,info,true);
+
+            mindex["species/mat2/spec1"].set(1);
+            CHECK_MESH(verify_specset_index,mindex,info,true);
+            mindex["species/mat2/spec2"].set(2);
             CHECK_MESH(verify_specset_index,mindex,info,true);
         }
 
