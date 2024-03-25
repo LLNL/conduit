@@ -1476,7 +1476,8 @@ to_silo(const conduit::Node &specset,
 
     const int nmat = silo_matset["material_map"].number_of_children();
     CONDUIT_ASSERT(nmat == specset["matset_values"].number_of_children(),
-        "TODO");
+        "blueprint::mesh::specset::to_silo number of materials must match "
+        "between passed specset and passed matset.");
 
     auto matset_vals_itr = specset["matset_values"].children();
     auto matmap_itr = silo_matset["material_map"].children();
@@ -1491,7 +1492,9 @@ to_silo(const conduit::Node &specset,
         matset_vals_itr.next();
         const Node &matmap_entry = matmap_itr.next();
         // Make sure that materials are in the same order across the specset and matset
-        CONDUIT_ASSERT(matset_vals_itr.name() == matmap_itr.name(), "TODO");
+        CONDUIT_ASSERT(matset_vals_itr.name() == matmap_itr.name(), 
+            "blueprint::mesh::specset::to_silo materials must be in the same order "
+            "between passed specset and passed matset.");
         matmap_map[matmap_entry.as_int()] = matmap_index;
         matmap_index ++;
     }
