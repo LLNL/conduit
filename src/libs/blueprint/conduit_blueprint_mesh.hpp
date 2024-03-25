@@ -874,8 +874,8 @@ namespace specset
     // 'DBPutMatspecies' at:
     // https://silo.readthedocs.io/en/latest/
     void CONDUIT_BLUEPRINT_API to_silo(const conduit::Node &specset,
-                                       conduit::Node &dest,
-                                       const float64 epsilon = CONDUIT_EPSILON);
+                                       const conduit::Node &matset,
+                                       conduit::Node &dest);
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::specset::index protocol interface

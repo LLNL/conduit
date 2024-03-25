@@ -1436,8 +1436,7 @@ namespace specset
 void
 to_silo(const conduit::Node &specset,
         const conduit::Node &matset,
-        conduit::Node &dest,
-        const float64 epsilon)
+        conduit::Node &dest)
 {
     // extra seat belts here b/c we want to avoid folks entering
     // the detail version of to_silo with surprising results.
@@ -1500,12 +1499,12 @@ to_silo(const conduit::Node &specset,
     }
 
     std::vector<int> nmatspec;
-    std::vector<std::string> specnames;
     matset_vals_itr.to_front();
     while (matset_vals_itr.has_next())
     {
         // get the number of species for this material
         const Node &individual_mat_spec = matset_vals_itr.next();
+        const std::string matname = matset_vals_itr.name();
         const int num_species_for_this_material = individual_mat_spec.number_of_children();
         nmatspec.push_back(num_species_for_this_material);
 
@@ -1514,8 +1513,9 @@ to_silo(const conduit::Node &specset,
         while (spec_itr.has_next())
         {
             spec_itr.next();
-            const std::string spec_name = spec_itr.name();
-            specnames.push_back(spec_name);
+            const std::string specname = spec_itr.name();
+            Node &specname_entry = dest["specnames"].append();
+            specname_entry.set(specname);
         }
     }
 
@@ -1677,11 +1677,7 @@ to_silo(const conduit::Node &specset,
     dest["mix_spec"].set(mix_spec.data(), mix_spec.size());
     // length of mix_spec array
     dest["mixlen"] = mixlen;
-    // species names
-    for (size_t i = 0; i < specnames.size(); i ++)
-    {
-        dest["specnames"][specnames[i]];
-    }
+    // we already saved species names
 }
 
 //-----------------------------------------------------------------------------
