@@ -15,6 +15,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <numeric>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -1473,23 +1474,46 @@ to_silo(const conduit::Node &specset,
         silo_matset.set_external(matset);
     }
 
-    if (!n_specset.has_path("matset"))
-    {
-        CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed specset node"
-                      " is missing a linked matset.");
-    }
-    const std::string matset_name = specset["matset"].as_string();
-
     const int nmat = silo_matset["material_map"].number_of_children();
+    CONDUIT_ASSERT(nmat == specset["matset_values"].number_of_children(),
+        "TODO");
+
+    auto matset_vals_itr = specset["matset_values"].children();
+    auto matmap_itr = silo_matset["material_map"].children();
+    int matmap_index = 0;
+    // Map actual material numbers to indicies into the material map
+    // We need this map so that, no matter what material numbers we get thrown at us,
+    // we can figure out their order in the material map for when we calculate
+    // species indices.
+    std::map<int, int> matmap_map;
+    while (matset_vals_itr.has_next() && matmap_itr.has_next())
+    {
+        matset_vals_itr.next();
+        const Node &matmap_entry = matmap_itr.next();
+        // Make sure that materials are in the same order across the specset and matset
+        CONDUIT_ASSERT(matset_vals_itr.name() == matmap_itr.name(), "TODO");
+        matmap_map[matmap_entry.as_int()] = matmap_index;
+        matmap_index ++;
+    }
 
     std::vector<int> nmatspec;
-    auto matset_vals_itr = specset["matset_values"].children();
+    std::vector<std::string> specnames;
+    matset_vals_itr.to_front();
     while (matset_vals_itr.has_next())
     {
+        // get the number of species for this material
         const Node &individual_mat_spec = matset_vals_itr.next();
-        // const std::string mat_name = matset_vals_itr.name();
         const int num_species_for_this_material = individual_mat_spec.number_of_children();
         nmatspec.push_back(num_species_for_this_material);
+
+        // get the specie names for this material
+        auto spec_itr = individual_mat_spec.children();
+        while (spec_itr.has_next())
+        {
+            spec_itr.next();
+            const std::string spec_name = spec_itr.name();
+            specnames.push_back(spec_name);
+        }
     }
 
     // we sum up the nmatspec to get the number of species across all materials
@@ -1500,70 +1524,46 @@ to_silo(const conduit::Node &specset,
     // we have to go in order by zones as they appear
 
     // first we need number of zones
-    const std::string topo_name = n_mesh_info["matsets"][matset_name]["topo_name"].as_string();
-    const int nzones = n_mesh_info[topo_name]["num_elems"].to_value();
+    const int nzones = silo_matset["matlist"].dtype().number_of_elements();
 
     // TODO
     // I may wish to go through and check if the material is even in the zone
     // to avoid writing unneeded data
     // that could be expensive though
 
-    // get the datatype of the species_mf
-    const int datatype = DB_DOUBLE; // make sure these data types match
     std::vector<float64> species_mf;
-    std::vector<std::string> specnames;
+    
     // need to iterate across all species for all materials at once
-    for (int i = 0; i < nzones; i ++)
+    for (int zoneId = 0; zoneId < nzones; zoneId ++)
     {
+        // iterate through each material
         matset_vals_itr.to_front();
-        // TODO pray that these materials are in the same order as in the matset?
         while (matset_vals_itr.has_next())
         {
             const Node &individual_mat_spec = matset_vals_itr.next();
-            // const std::string mat_name = matset_vals_itr.name();
+            // iterate through each specie
             auto spec_itr = individual_mat_spec.children();
             while (spec_itr.has_next())
             {
                 const Node &spec = spec_itr.next();
-                const std::string spec_name = spec_itr.name();
-                specnames.push_back(spec_name);
                 float64_accessor species_mass_fractions = spec.value();
-                species_mf.push_back(species_mass_fractions[i]);
+                // grab the specie mass fraction for this zone id
+                species_mf.push_back(species_mass_fractions[zoneId]);
             }
         }
     }
 
     const int nspecies_mf = static_cast<int>(species_mf.size());
 
-    // calculate dims
-    int dims[] = {0,0,0};
-    int ndims = 1;
-    const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
-    if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
-    {
-        ndims = n_mesh_info[topo_name]["ndims"].as_int();
-        dims[0] = n_mesh_info[topo_name]["elements"]["i"].as_int();
-        dims[1] = n_mesh_info[topo_name]["elements"]["j"].as_int();
-        if (ndims == 3)
-        {
-            dims[2] = n_mesh_info[topo_name]["elements"]["k"].as_int();
-        }
-    }
-    else
-    {
-        dims[0] = nzones;
-    }
-
     // get pointers to the silo material representation data
-    Node &silo_matset_compact = n_mesh_info["matsets"][matset_name]["silo_matset_compact"];
-    const int_accessor silo_matlist = silo_matset_compact["matlist"].value();
-    const int_accessor silo_mix_mat = silo_matset_compact["mix_mat"].value();
-    const int_accessor silo_mix_next = silo_matset_compact["mix_next"].value();
+    const int_accessor silo_matlist = silo_matset["matlist"].value();
+    const int_accessor silo_mix_mat = silo_matset["mix_mat"].value();
+    const int_accessor silo_mix_next = silo_matset["mix_next"].value();
 
     std::vector<int> speclist;
     std::vector<int> mix_spec;
 
-    auto calculate_species_index = [&](const int zoneId, const int matno)
+    auto calculate_species_index = [&](const int zoneId, const int mat_index)
     {
         // To get the value for the speclist for this zone, we must determine
         // the correct 1-index in the species_mf array that corresponds to the 
@@ -1581,9 +1581,10 @@ to_silo(const conduit::Node &specset,
         // Next we need the inner or "local_index", which corresponds to the 
         // starting 1-index of the relevant material's species within this zone.
         // We can use the nmatspec array to determine where that starts for our
-        // given material, which we fetch via material number.
+        // given material, which we fetch via material number, which we have used
+        // to get an index into the nmatspec array.
 
-        // We wish to offset this index by 1, hence starting from 1 in our call
+        // We wish to offset the local index by 1, hence starting from 1 in our call
         // to std::accumulate.
 
         // local index is the number of species for each material
@@ -1591,12 +1592,11 @@ to_silo(const conduit::Node &specset,
         // So if mat0 has 2 species and mat1 has 3 species, then
         // the 1-index start of mat2 will be 2 + 3 + 1 = 6.
         const int local_index = std::accumulate(nmatspec.begin(),
-                                                nmatspec.begin() + matno,
+                                                nmatspec.begin() + mat_index,
                                                 decltype(nmatspec)::value_type(1));
 
         // we save the final index for this zone
-        const int final_index = outer_index + local_index;
-        return final_index;
+        return outer_index + local_index;
 
         // TODO return a zero here if the material in the zone contains only 1 species.
         // This is a further optimization. It doesn't matter for now since we are
@@ -1619,7 +1619,8 @@ to_silo(const conduit::Node &specset,
 
             // I can use the material number to determine which part of the speclist to index into
             const int &matno = matlist_entry;
-            speclist.push_back(calculate_species_index(zoneId, matno));
+            const int mat_index = matmap_map[matno];
+            speclist.push_back(calculate_species_index(zoneId, mat_index));
         }
         else
         {
@@ -1641,7 +1642,8 @@ to_silo(const conduit::Node &specset,
             {                
                 // I can use the material number to determine which part of the speclist to index into
                 const int matno = silo_mix_mat[mix_id];
-                mix_spec.push_back(calculate_species_index(zoneId, matno));
+                const int mat_index = matmap_map[matno];
+                mix_spec.push_back(calculate_species_index(zoneId, mat_index));
 
                 // since mix_id is a 1-index, we must subtract one
                 // this makes sure that mix_id = 0 is the last case,
@@ -1655,8 +1657,6 @@ to_silo(const conduit::Node &specset,
         }
     }
 
-    // TODO what happens to all this machinery when the material numbers do not go from 0 to n - 1?
-
     // get the length of the mixed data arrays
     const int mixlen = static_cast<int>(mix_spec.size());
 
@@ -1666,20 +1666,14 @@ to_silo(const conduit::Node &specset,
     dest["nmatspec"].set(nmatspec.data(), nmatspec.size());
     // indices into species_mf and mix_spec
     dest["speclist"].set(speclist.data(), speclist.size());
-    // array of length ndims that defines the shape of the speclist array
-    dest["dims"].set(dims.data(), dims.size());
-    // number of dimensions in the speclist array
-    dest["ndims"] = ndims;
     // length of the species_mf array
-    dest["nspecies_mf"] = nspecies_mf,;
+    dest["nspecies_mf"] = nspecies_mf;
     // mass fractions of the matspecies in an array of length nspecies_mf
     dest["species_mf"].set(species_mf.data(), species_mf.size());
     // array of length mixlen containing indices into the species_mf array
     dest["mix_spec"].set(mix_spec.data(), mix_spec.size());
     // length of mix_spec array
     dest["mixlen"] = mixlen;
-    // datatype of mass fraction data in species_mf
-    dest["datatype"] = datatype;
     // species names
     for (size_t i = 0; i < specnames.size(); i ++)
     {
