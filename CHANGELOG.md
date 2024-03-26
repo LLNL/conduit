@@ -9,9 +9,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Changed
 
 #### Conduit
+- Removed cmake use of distutils for python introspection.
 
 #### Blueprint
 - Fixed partitioner so it reverses vertex order as needed in polyhedral face definitions when extracting mesh elements.
+- Changed `conduit::blueprint::mesh::partition_map_back()` function so it will attempt to reuse existing field memory when mapping fields back. This permits `partition_map_back()` to send data from a partitioned mesh into the original mesh where fields were provided from a host code using `Node::set_external()`.
 
 #### Relay
 

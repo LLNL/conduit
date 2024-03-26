@@ -49,6 +49,9 @@
 // Uncomment to enable some debugging output from partitioner.
 // #define CONDUIT_DEBUG_PARTITIONER
 
+// #define CONDUIT_DEBUG_PARTITIONER_MAPBACK
+// #define CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE
+
 // Toggles debug prints for point merge
 // #define DEBUG_POINT_MERGE
 #ifndef DEBUG_POINT_MERGE
@@ -1702,7 +1705,9 @@ Partitioner::Partitioner()
   selected_fields(),
   mapping(true),
   build_adjsets(true),
-  merge_tolerance(1.e-8)
+  merge_tolerance(1.e-8),
+  original_vertex_ids("original_vertex_ids"),
+  original_element_ids("original_element_ids")
 {
 }
 
@@ -1979,6 +1984,14 @@ Partitioner::initialize(const conduit::Node &n_mesh,
     // Get whether we want to preserve old numbering of vertices, elements.
     if(options.has_child("mapping"))
         mapping = options["mapping"].to_unsigned_int() != 0;
+
+    // Get the name of the original_vertex_ids field.
+    if(options.has_child("original_vertex_ids"))
+        original_vertex_ids = options["original_vertex_ids"].as_string();
+
+    // Get the name of the original_element_ids field.
+    if(options.has_child("original_element_ids"))
+        original_element_ids = options["original_element_ids"].as_string();
 
     // Get whether we want to build adjsets if they are present. This option
     // lets us ignore them.
@@ -2698,7 +2711,7 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
             if(mapping)
             {
                 // Save the vertex_ids as a new MC field.
-                conduit::Node &n_field = n_output_fields["original_vertex_ids"];
+                conduit::Node &n_field = n_output_fields[original_vertex_ids_name()];
                 n_field["association"] = "vertex";
                 if(!topology.empty())
                     n_field["topology"] = topology;
@@ -2729,7 +2742,7 @@ Partitioner::copy_fields(index_t domain, const std::string &topology,
             if(mapping)
             {
                 // Save the element_ids as a new MC field.
-                conduit::Node &n_field = n_output_fields["original_element_ids"];
+                conduit::Node &n_field = n_output_fields[original_element_ids_name()];
                 n_field["association"] = "element";
                 if(!topology.empty())
                     n_field["topology"] = topology;
@@ -3673,7 +3686,7 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
     // Save the vertex_ids as a new MC field.
     if(nvertices > 0)
     {
-        conduit::Node &n_field = n_new_fields["original_vertex_ids"];
+        conduit::Node &n_field = n_new_fields[original_vertex_ids_name()];
         n_field["association"] = "vertex";
         if(!toponame.empty())
             n_field["topology"] = toponame;
@@ -3688,7 +3701,7 @@ Partitioner::wrap(size_t idx, const conduit::Node &n_mesh) const
     // Save the element_ids as a new MC field.
     if(nelements > 0)
     {
-        conduit::Node &n_field = n_new_fields["original_element_ids"];
+        conduit::Node &n_field = n_new_fields[original_element_ids_name()];
         n_field["association"] = "element";
         if(!toponame.empty())
             n_field["topology"] = toponame;
@@ -6579,6 +6592,8 @@ public:
     bool execute(const std::string &topo_name,
         const std::string &rt,
         const std::vector<const Node *> &n_inputs,
+        const std::string &original_element_ids,
+        const std::string &original_vertex_ids,
         Node &output,
         double merge_tolerance = CONDUIT_EPSILON)
     {
@@ -6766,7 +6781,7 @@ public:
         
         if(mode == CombineImplicitMode::Structured)
         {
-            retval = combine_structured_impl(n_meshes, output);
+            retval = combine_structured_impl(n_meshes, original_element_ids, original_vertex_ids, output);
         }
         else
         {
@@ -7850,6 +7865,8 @@ private:
     bool
     combine_structured_impl(
             const std::vector<const Node *> &n_meshes,
+            const std::string &original_element_ids,
+            const std::string &original_vertex_ids,
             Node &output) const
     {
         // Cannot use axis-aligned bounding boxes for structured grids
@@ -7876,18 +7893,20 @@ private:
                     Node &out_mesh = temp[(i < 10) ? "domain_0000" + std::to_string(i) : "domain_000" + std::to_string(i)];
                     out_mesh.set_external(mesh);
 
-                    out_mesh["fields/original_element_ids/association"] = "element";
-                    out_mesh["fields/original_element_ids/topology"] = "mesh";
+                    Node &oeid = out_mesh["fields/" + original_element_ids];
+                    oeid["association"] = "element";
+                    oeid["topology"] = "mesh";
                     Schema s;
                     const auto N = mesh["topologies/mesh/element_map"].dtype().number_of_elements() / 2;
                     const void *ptr = mesh["topologies/mesh/element_map"].element_ptr(0);
                     s["domains"].set(DataType::index_t(N, 0, 2*sizeof(index_t)));
                     s["ids"].set(DataType::index_t(N, sizeof(index_t), 2*sizeof(index_t)));
-                    out_mesh["fields/original_element_ids/values"].set_external(s, const_cast<void*>(ptr));
+                    oeid["values"].set_external(s, const_cast<void*>(ptr));
 
-                    out_mesh["fields/original_vertex_ids/association"] = "vertex";
-                    out_mesh["fields/original_vertex_ids/topology"] = "mesh";
-                    out_mesh["fields/original_vertex_ids/values"].set_external(mesh["coordsets/coords/pointmaps"]);
+                    Node &ovid = out_mesh["fields/" + original_vertex_ids];
+                    ovid["association"] = "vertex";
+                    ovid["topology"] = "mesh";
+                    ovid["values"].set_external(mesh["coordsets/coords/pointmaps"]);
                 }
                 std::ofstream f_out("combine_structured_iteration." + 
                     ((iteration < 10) ? ("0000" + std::to_string(iteration)) : ("000" + std::to_string(iteration)))
@@ -8623,6 +8642,18 @@ namespace fields
 {
 
 //-------------------------------------------------------------------------
+/**
+ @brief Determine an appropriate schema to hold data based on the input.
+
+ @param in The input node, which should be field "values" node.
+ @param ntuples The number of tuples in the input node.
+ @param[out] out_ncomps The number of components detected in the input field.
+ @param[out] out_schema The schema to use when creating the output node, if
+                        that needs to be done.
+
+ @note The out_ncomps parameter is 0 for scalars and 1 or more for vectors.
+       This way we can tell scalars from vectors down the line.
+ */
 static void
 determine_schema(const Node &in,
         const index_t ntuples, index_t &out_ncomps,
@@ -8635,16 +8666,62 @@ determine_schema(const Node &in,
     if(num_children)
     {
         out_ncomps = num_children;
-        index_t offset = 0;
-        // TODO: Keep track of whether the original field was interleaved
-        //  and preserve the interleaved-ness
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+        std::cout << "========================================================" << std::endl;
+        std::cout << "determine_schema:" << std::endl;
         for(index_t i = 0; i < num_children; i++)
         {
-            const DataType dt(in[i].dtype().id(), ntuples, offset,
-                in[i].dtype().element_bytes(), in[i].dtype().element_bytes(),
-                in[i].dtype().endianness());
-            out_schema[in[i].name()].set(dt);
-            offset += dt.number_of_elements() * dt.element_bytes();
+            std::cout << "  -" << std::endl;
+            std::cout << "    name: " << in[i].name() << std::endl;
+            in[i].dtype().to_string_stream(std::cout, "yaml", 4, 1);
+        }
+        std::cout << "========================================================" << std::endl;
+#endif
+
+        // Check that all children are the same type.
+        bool same_types = true;
+        for(index_t i = 1; i < num_children; i++)
+            same_types = (in[i].dtype().id() == in[0].dtype().id());
+
+        if(same_types && conduit::blueprint::mcarray::is_interleaved(in))
+        {
+            // NOTE: In practice, we don't seem to get here yet from partition_map_back.
+            //       The reason is that the mapback routine ends up calling copy_field
+            //       to make an extracted field with certain ids. That method calls
+            //       slice_field and that function does not preserve interleaving at
+            //       this time.
+
+            // Make interleaved data.
+            for(index_t i = 0; i < num_children; i++)
+            {
+                auto offset = i * in[i].dtype().element_bytes();
+                auto stride = num_children * in[i].dtype().element_bytes();
+                const DataType dt(in[i].dtype().id(),
+                                  ntuples,
+                                  offset,
+                                  stride,
+                                  in[i].dtype().element_bytes(),
+                                  in[i].dtype().endianness());
+                out_schema[in[i].name()].set(dt);
+            }
+        }
+        else
+        {
+            // All component 0, All component 1, ...
+            index_t offset = 0;
+            for(index_t i = 0; i < num_children; i++)
+            {
+                const auto stride = in[i].dtype().element_bytes();
+                const DataType dt(in[i].dtype().id(),
+                                  ntuples,
+                                  offset,
+                                  stride,
+                                  in[i].dtype().element_bytes(),
+                                  in[i].dtype().endianness());
+                out_schema[in[i].name()].set(dt);
+                offset += dt.number_of_elements() * dt.element_bytes();
+            }
         }
     }
     else
@@ -8655,13 +8732,30 @@ determine_schema(const Node &in,
 }
 
 //-------------------------------------------------------------------------
+static index_t
+total_storage_size(const Node &in)
+{
+    index_t size = 0;
+    const index_t num_children = in.number_of_children();
+    if(num_children > 0)
+    {
+        for(index_t i = 0; i < num_children; i++)
+            size += in[i].dtype().number_of_elements();
+    }
+    else
+    {
+        size = in.dtype().number_of_elements();
+    }
+    return size;
+}
+
+//-------------------------------------------------------------------------
 static void
 map_vertex_field(const std::vector<const Node*> &in_nodes,
         const std::vector<DataArray<index_t>> &pointmaps,
-        const index_t num_verticies,
+        const index_t num_vertices,
         Node &out_node)
 {
-    out_node.reset();
     if(in_nodes.empty() || pointmaps.empty())
     {
         return;
@@ -8675,11 +8769,45 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     // Figure out num components and out dtype
     index_t ncomps = 0;
     Schema out_schema;
-    determine_schema((*in_nodes[0])["values"], num_verticies, ncomps, out_schema);
-    out_node.set(out_schema);
+    determine_schema((*in_nodes[0])["values"], num_vertices, ncomps, out_schema);
 
-    // out_schema.print();
-    // out_node.print();
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+    conduit::Node top;
+    conduit::Node &p = top["map_vertex_field"];
+    for(auto &val : in_nodes)
+        p["in_nodes"].append().set_external_node(*val);
+    for(auto &val : pointmaps)
+        p["pointmaps"].append().set_external((index_t*)val.data_ptr(), val.number_of_elements());
+    p["num_vertices"] = num_vertices;
+    p["ncomps"] = ncomps;
+    p["out_node"].set_external_node(out_node);
+    top.print();
+#endif
+
+    // Only reset the node if its current storage cannot contain the new field.
+    // Most likely, if we're mapping back, the original mesh contained the
+    // field we're mapping in the first place. We don't want to totally reset in
+    // case that field points to external data.
+    const index_t detected_size = total_storage_size(out_node);
+    const index_t actual_ncomps = std::max(ncomps, static_cast<index_t>(1));
+    const index_t expected_size = num_vertices * actual_ncomps;
+    if(detected_size != expected_size)
+    {
+        out_node.reset();
+        out_node.set(out_schema);
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << actual_ncomps << " values." << std::endl;
+        //out_schema.print();
+        //out_node.print();
+#endif
+    }
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+    else
+    {
+        std::cout << out_node.path() << ": use existing field memory." << std::endl;
+    }
+#endif
 
     const index_t npmaps = (index_t)pointmaps.size();
     if(ncomps > 0)
@@ -8729,25 +8857,58 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
         const DataArray<index_t> &orig_ids,
         Node &out_node)
 {
-    out_node.reset();
     if(in_nodes.empty())
     {
         return;
     }
 
     // Figure out num components and out dtype
-    const index_t num_verticies = orig_domains.number_of_elements();
+    const index_t num_vertices = orig_domains.number_of_elements();
     index_t ncomps = 0;
     Schema out_schema;
-    determine_schema((*in_nodes[0])["values"], num_verticies, ncomps, out_schema);
-    out_node.set(out_schema);
+    determine_schema((*in_nodes[0])["values"], num_vertices, ncomps, out_schema);
 
-    // out_schema.print();
-    // out_node.print();
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+    conduit::Node top;
+    conduit::Node &p = top["map_vertex_field"];
+    for(auto &val : in_nodes)
+        p["in_nodes"].append().set_external_node(*val);
+    p["orig_domains"].append().set_external((index_t*)orig_domains.data_ptr(), orig_domains.number_of_elements());
+    p["orig_ids"].append().set_external((index_t*)orig_ids.data_ptr(), orig_ids.number_of_elements());
+    p["num_vertices"] = num_vertices;
+    p["ncomps"] = ncomps;
+    p["out_node"].set_external_node(out_node);
+    top.print();
+#endif
+
+    // Only reset the node if its current storage cannot contain the new field.
+    // Most likely, if we're mapping back, the original mesh contained the
+    // field we're mapping in the first place. We don't want to totally reset in
+    // case that field points to external data.
+    const index_t detected_size = total_storage_size(out_node);
+    const index_t actual_ncomps = std::max(ncomps, static_cast<index_t>(1));
+    const index_t expected_size = num_vertices * actual_ncomps;
+    if(detected_size != expected_size)
+    {
+        out_node.reset();
+        out_node.set(out_schema);
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+        std::cout << out_node.path() << ": resetting to hold " << num_vertices << "*" << actual_ncomps << " values." << std::endl;
+        //out_schema.print();
+        //out_node.print();
+#endif
+    }
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK)
+    else
+    {
+        std::cout << out_node.path() << ": use existing field memory." << std::endl;
+    }
+#endif
 
     if(ncomps > 0)
     {
-        for(index_t i = 0; i < num_verticies; i++)
+        for(index_t i = 0; i < num_vertices; i++)
         {
             const index_t orig_dom = orig_domains[i];
             const index_t orig_id  = orig_ids[i];
@@ -8764,7 +8925,7 @@ map_vertex_field(const std::vector<const Node*> &in_nodes,
     else
     {
         const auto bytes = out_node.dtype().element_bytes();
-        for(index_t i = 0; i < num_verticies; i++)
+        for(index_t i = 0; i < num_vertices; i++)
         {
             const index_t orig_dom = orig_domains[i];
             const index_t orig_id  = orig_ids[i];
@@ -8781,18 +8942,64 @@ map_element_field(const std::vector<const Node*> &in_nodes,
         const DataArray<index_t> &elemmap,
         Node &out_node)
 {
-    out_node.reset();
     if(in_nodes.empty())
     {
         return;
     }
 
+    // Determine the number of elements and components needed to store the field
     const index_t nelements = elemmap.number_of_elements() / 2;
-
     index_t ncomps = 0;
     Schema out_schema;
     determine_schema(in_nodes[0]->child("values"), nelements, ncomps, out_schema);
-    out_node.set(out_schema);
+
+#if defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK) && defined(CONDUIT_DEBUG_PARTITIONER_MAPBACK_VERBOSE)
+    conduit::Node top;
+    conduit::Node &p = top["map_element_field"];
+    for(auto &val : in_nodes)
+        p["in_nodes"].append().set_external_node(*val);
+    p["elemmap"].set_external((index_t*)elemmap.data_ptr(), elemmap.number_of_elements());
+    p["nelements"] = nelements;
+    p["ncomps"] = ncomps;
+    p["out_node"].set_external_node(out_node);
+    conduit::Node &oni = p["out_node_info"];
+    oni["number_of_children"] = out_node.number_of_children();
+    for(int i = 0; i < out_node.number_of_children(); i++)
+    {
+        const conduit::Node &src = out_node[i];
+        conduit::Node &n = oni[src.name()];
+        n["type"] = src.dtype().name();
+        n["number_of_elements"] = src.dtype().number_of_elements();
+    }
+    oni["storage_size"] = total_storage_size(out_node);
+    top.print();
+#endif
+
+    // Only reset the node if its current storage cannot contain the new field.
+    // Most likely, if we're mapping back, the original mesh contained the
+    // field we're mapping in the first place. We don't want to totally reset in
+    // case that field points to external data.
+    const index_t detected_size = total_storage_size(out_node);
+    const index_t actual_ncomps = std::max(ncomps, static_cast<index_t>(1));
+    const index_t expected_size = nelements * actual_ncomps;
+    if(detected_size != expected_size)
+    {
+        out_node.reset();
+        out_node.set(out_schema);
+
+#ifdef CONDUIT_DEBUG_PARTITIONER_MAPBACK
+        std::cout << out_node.path() << ": resetting to hold " << nelements << "*" << actual_ncomps << " values." << std::endl;
+        //out_schema.print();
+        //out_node.print();
+#endif
+    }
+#ifdef CONDUIT_DEBUG_PARTITIONER_MAPBACK
+    else
+    {
+        std::cout << out_node.path() << ": use existing field memory." << std::endl;
+    }
+#endif
+
     if(ncomps > 0)
     {
         for(index_t out_idx = 0; out_idx < nelements; out_idx++)
@@ -9725,11 +9932,11 @@ Partitioner::combine(int domain,
     }
 
     // Cleanup the output node, add original cells/verticies in needed
-    if(!output_fields.has_child("original_element_ids"))
+    if(!output_fields.has_child(original_element_ids_name()))
     {
         // Q: What happens in the case of multiple topologies?
         const Node &n_elem_map = output_topologies[0]["element_map"];
-        Node &out_field = output_fields["original_element_ids"];
+        Node &out_field = output_fields[original_element_ids_name()];
         out_field["topology"].set(output_topologies[0].name());
         // utils::ASSOCIATIONS[1]
         out_field["association"].set("element");
@@ -9780,7 +9987,7 @@ Partitioner::combine(int domain,
         output_topologies[i].remove("element_map");
     }
 
-    if(!output_fields.has_child("original_vertex_ids"))
+    if(!output_fields.has_child(original_vertex_ids_name()))
     {
         // Get the pointmaps
         const std::string &coordset_name = output_topologies[0]["coordset"].as_string();
@@ -9796,7 +10003,7 @@ Partitioner::combine(int domain,
             pointmaps.emplace_back(n_pointmaps[i].value());
         }
 
-        Node &out_field = output_fields["original_vertex_ids"];
+        Node &out_field = output_fields[original_vertex_ids_name()];
         out_field["topology"].set(output_topologies[0].name());
         // utils::ASSOCIATIONS[0]
         out_field["association"].set("vertex");
@@ -9861,6 +10068,14 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // the below should also init dom_to_rank_map in mpi partitioner
     auto orig_dom_ids = get_global_domids(orig_mesh);
 
+    // Get the name of the original_vertex_ids field.
+    if(options.has_child("original_vertex_ids"))
+        original_vertex_ids = options["original_vertex_ids"].as_string();
+
+    // Get the name of the original_element_ids field.
+    if(options.has_child("original_element_ids"))
+        original_element_ids = options["original_element_ids"].as_string();
+
     unordered_map<index_t, Node*> gid_to_orig_dom;
     for (size_t idom = 0; idom < orig_doms.size(); idom++)
     {
@@ -9910,9 +10125,9 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     {
         const conduit::Node& dom = *repart_doms[idom];
 
-        if (dom["fields"].has_child("original_element_ids"))
+        if (dom["fields"].has_child(original_element_ids_name()))
         {
-            const Node& orig_v_node = dom["fields/original_element_ids/values"];
+            const Node& orig_v_node = dom["fields/" + original_element_ids_name() + "/values"];
             const index_t_accessor orig_elems_vals = orig_v_node["ids"].value();
             const index_t_accessor orig_doms_vals = orig_v_node["domains"].value();
             for (index_t ielem = 0; ielem < orig_elems_vals.number_of_elements(); ielem++)
@@ -9930,7 +10145,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         {
             CONDUIT_ERROR(
                 "Map-back requires that mesh repartitioning is performed with "
-                "the mapping option enabled. (missing original_element_ids)");
+                "the mapping option enabled. (missing " << original_element_ids_name() << ")");
         }
     }
 
@@ -10063,8 +10278,6 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
     // If we're multi-process, redistribute target field chunks to original
     // domain homes
     communicate_mapback(packed_fields);
-
-    // bool first_warn = true; // unused
     for (const auto& orig_dom : packed_fields)
     {
         // Precompute final element count
@@ -10111,6 +10324,7 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
         {
             const vector<const Node*>& src_fields = fg.second;
             const string& field_name = fg.first;
+
             const string& assoc = src_fields[0]->child("association").as_string();
             const string& assoc_topo = src_fields[0]->child("topology").as_string();
 
@@ -10129,7 +10343,6 @@ Partitioner::map_back_fields(const conduit::Node& repart_mesh,
                 fields::map_element_field(src_fields, elem_map_arr, output["values"]);
             }
         }
-        // first_warn = false; // unused
     }
 }
 
@@ -10141,7 +10354,7 @@ Partitioner::combine_as_structured(const std::string &topo_name,
     Node &output)
 {
     mesh::utils::combine_implicit_topologies combine;
-    return combine.execute(topo_name, rt, n_inputs, output);
+    return combine.execute(topo_name, rt, n_inputs, original_element_ids_name(), original_vertex_ids_name(), output);
 }
 
 //-------------------------------------------------------------------------
