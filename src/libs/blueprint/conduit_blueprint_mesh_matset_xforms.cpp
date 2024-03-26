@@ -1561,9 +1561,6 @@ to_silo(const conduit::Node &specset,
     const int_accessor silo_mix_mat = silo_matset["mix_mat"].value();
     const int_accessor silo_mix_next = silo_matset["mix_next"].value();
 
-    std::vector<int> speclist;
-    std::vector<int> mix_spec;
-
     auto calculate_species_index = [&](const int zoneId, const int mat_index)
     {
         // To get the value for the speclist for this zone, we must determine
@@ -1612,6 +1609,10 @@ to_silo(const conduit::Node &specset,
     // our negative 1-index into the mix_spec array
     int mix_start_index = -1;
 
+    dest["speclist"].set(DataType::int64(nzones));
+    int64_array speclist = dest["speclist"].value();
+    std::vector<int> mix_spec;
+
     // now we create the speclist and mix_spec arrays, traversing through the zones
     for (int zoneId = 0; zoneId < nzones; zoneId ++)
     {
@@ -1624,14 +1625,14 @@ to_silo(const conduit::Node &specset,
             // I can use the material number to determine which part of the speclist to index into
             const int &matno = matlist_entry;
             const int mat_index = matmap_map[matno];
-            speclist.push_back(calculate_species_index(zoneId, mat_index));
+            speclist[zoneId] = calculate_species_index(zoneId, mat_index);
         }
         else
         {
             // mixed
 
             // we save the negated 1-index into the mix_spec array
-            speclist.push_back(mix_start_index);
+            speclist[zoneId] = mix_start_index;
 
             // for mixed zones, the numbers in the matlist are negated 1-indices into
             // the silo mixed data arrays. To turn them into zero-indices, we must add
@@ -1666,18 +1667,26 @@ to_silo(const conduit::Node &specset,
 
     // number of materials
     dest["nmat"] = nmat;
+    
     // number of species associated with each material
     // we already saved nmatspec
+    
     // indices into species_mf and mix_spec
-    dest["speclist"].set(speclist.data(), speclist.size());
+    // we already saved speclist
+    
     // length of the species_mf array
     dest["nspecies_mf"] = nspecies_mf;
+    
     // mass fractions of the matspecies in an array of length nspecies_mf
     dest["species_mf"].set(species_mf.data(), species_mf.size());
+    
     // array of length mixlen containing indices into the species_mf array
     dest["mix_spec"].set(mix_spec.data(), mix_spec.size());
+    
     // length of mix_spec array
     dest["mixlen"] = mixlen;
+    
+    // species names
     // we already saved species names
 }
 
