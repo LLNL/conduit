@@ -15,7 +15,6 @@
 #include <string>
 #include <map>
 #include <vector>
-#include <numeric>
 
 //-----------------------------------------------------------------------------
 // conduit includes
@@ -1495,15 +1494,17 @@ to_silo(const conduit::Node &specset,
         matmap_index ++;
     }
 
-    std::vector<int> nmatspec;
+    dest["nmatspec"].set(DataType::index_t(nmat));
+    index_t_array nmatspec = dest["nmatspec"].value();
     matset_vals_itr.to_front();
+    int material_index = 0;
     while (matset_vals_itr.has_next())
     {
         // get the number of species for this material
         const Node &individual_mat_spec = matset_vals_itr.next();
         const std::string matname = matset_vals_itr.name();
         const int num_species_for_this_material = individual_mat_spec.number_of_children();
-        nmatspec.push_back(num_species_for_this_material);
+        nmatspec[material_index] = num_species_for_this_material;
 
         // get the specie names for this material
         auto spec_itr = individual_mat_spec.children();
@@ -1514,12 +1515,12 @@ to_silo(const conduit::Node &specset,
             Node &specname_entry = dest["specnames"].append();
             specname_entry.set(specname);
         }
+
+        material_index ++;
     }
 
     // we sum up the nmatspec to get the number of species across all materials
-    const int num_species_across_mats = std::accumulate(nmatspec.begin(), 
-                                                        nmatspec.end(),
-                                                        decltype(nmatspec)::value_type(0));
+    const int num_species_across_mats = nmatspec.sum();
 
     // we have to go in order by zones as they appear
 
@@ -1584,16 +1585,19 @@ to_silo(const conduit::Node &specset,
         // given material, which we fetch via material number, which we have used
         // to get an index into the nmatspec array.
 
-        // We wish to offset the local index by 1, hence starting from 1 in our call
-        // to std::accumulate.
+        // We wish to offset the local index by 1, hence starting from 1 when we take the sum.
 
         // local index is the number of species for each material
         // BEFORE this material plus 1, since it is 1 indexed.
         // So if mat0 has 2 species and mat1 has 3 species, then
         // the 1-index start of mat2 will be 2 + 3 + 1 = 6.
-        const int local_index = std::accumulate(nmatspec.begin(),
-                                                nmatspec.begin() + mat_index,
-                                                decltype(nmatspec)::value_type(1));
+
+        int sum = 1;
+        for (index_t i = 0; i < mat_index; i ++)
+        {
+            sum += nmatspec[i];
+        }
+        const int &local_index = sum;
 
         // we save the final index for this zone
         return outer_index + local_index;
@@ -1663,7 +1667,7 @@ to_silo(const conduit::Node &specset,
     // number of materials
     dest["nmat"] = nmat;
     // number of species associated with each material
-    dest["nmatspec"].set(nmatspec.data(), nmatspec.size());
+    // we already saved nmatspec
     // indices into species_mf and mix_spec
     dest["speclist"].set(speclist.data(), speclist.size());
     // length of the species_mf array
