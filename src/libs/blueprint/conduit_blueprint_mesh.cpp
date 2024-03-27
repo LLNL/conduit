@@ -5515,73 +5515,80 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
 
     std::string field_prefix = "";
     std::vector<std::string> field_names;
-    const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
+
     const Node &coordset_src = (*(topo_src.parent()->parent()))["coordsets/" + topo_src["coordset"].as_string()];
-
-    // check for existence of field prefix
-    if (options.has_child("field_prefix"))
-    {
-        if (options["field_prefix"].dtype().is_string())
-        {
-            field_prefix = options["field_prefix"].as_string();
-        }
-        else
-        {
-            CONDUIT_ERROR("field_prefix must be a string.");
-        }
-    }
-
-    // check for target field names
-    if (options.has_child("field_names"))
-    {
-        if (options["field_names"].dtype().is_string())
-        {
-            field_names.push_back(options["field_names"].as_string());
-        }
-        else if (options["field_names"].dtype().is_list())
-        {
-            NodeConstIterator itr = options["field_names"].children();
-            while (itr.has_next())
-            {
-                const Node &cld = itr.next();
-                if (cld.dtype().is_string())
-                {
-                    field_names.push_back(cld.as_string());
-                }
-                else
-                {
-                    CONDUIT_ERROR("field_names must be a string or a list of strings.");
-                }
-            }
-        }
-        else
-        {
-            CONDUIT_ERROR("field_names must be a string or a list of strings.");
-        }
-    }
-
-    // check that the discovered field names exist in the target fields
-    for (uint64 i = 0; i < field_names.size(); i ++)
-    {
-        if (! fields_src.has_child(field_names[i]))
-        {
-            CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
-        }
-    }
 
     // generate sides as usual
     generate_sides(topo_src, topo_dest, coordset_dest, s2dmap, d2smap);
 
-    // now map fields
-    detail::map_fields_to_generated_sides(topo_src,
-                                          coordset_src,
-                                          fields_src,
-                                          d2smap,
-                                          topo_dest,
-                                          coordset_dest,
-                                          fields_dest,
-                                          field_names,
-                                          field_prefix);
+    if (topo_src.parent() &&
+        topo_src.parent()->parent() &&
+        (*(topo_src.parent()->parent())).has_child("fields"))
+    {
+        const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
+
+        // check for existence of field prefix
+        if (options.has_child("field_prefix"))
+        {
+            if (options["field_prefix"].dtype().is_string())
+            {
+                field_prefix = options["field_prefix"].as_string();
+            }
+            else
+            {
+                CONDUIT_ERROR("field_prefix must be a string.");
+            }
+        }
+
+        // check for target field names
+        if (options.has_child("field_names"))
+        {
+            if (options["field_names"].dtype().is_string())
+            {
+                field_names.push_back(options["field_names"].as_string());
+            }
+            else if (options["field_names"].dtype().is_list())
+            {
+                NodeConstIterator itr = options["field_names"].children();
+                while (itr.has_next())
+                {
+                    const Node &cld = itr.next();
+                    if (cld.dtype().is_string())
+                    {
+                        field_names.push_back(cld.as_string());
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("field_names must be a string or a list of strings.");
+                    }
+                }
+            }
+            else
+            {
+                CONDUIT_ERROR("field_names must be a string or a list of strings.");
+            }
+        }
+
+        // check that the discovered field names exist in the target fields
+        for (uint64 i = 0; i < field_names.size(); i ++)
+        {
+            if (! fields_src.has_child(field_names[i]))
+            {
+                CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
+            }
+        }
+
+        // now map fields
+        detail::map_fields_to_generated_sides(topo_src,
+                                              coordset_src,
+                                              fields_src,
+                                              d2smap,
+                                              topo_dest,
+                                              coordset_dest,
+                                              fields_dest,
+                                              field_names,
+                                              field_prefix);
+    }
 }
 
 // this variant of the function same as generate sides and map fields
