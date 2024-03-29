@@ -261,6 +261,8 @@ public:
     }
 };
 
+//-----------------------------------------------------------------------------
+
 template <class T, class Deleter>
 class SiloObjectWrapperCheckError
 {
@@ -282,6 +284,8 @@ public:
         CONDUIT_ASSERT(!(obj && del(obj) != 0 && !errmsg.empty()), errmsg);
     }
 };
+
+//-----------------------------------------------------------------------------
 
 class SiloTreePathGenerator
 {
@@ -306,6 +310,19 @@ public:
             file_path = conduit::utils::join_file_path(relative_dir, file_path);
         }
     }
+};
+
+//-----------------------------------------------------------------------------
+
+class SiloReadBookkeeping
+{
+private:
+    bool read_all;
+    bool read_none;
+
+public:
+    SiloReadBookkeeping(bool do_read_all, bool do_read_none) : 
+        read_all(do_read_all), read_none(do_read_none) {}
 };
 
 //-----------------------------------------------------------------------------
@@ -2490,6 +2507,82 @@ read_root_silo_index(const std::string &root_file_path,
         error_oss << "Table of contents could not be extracted from file: " << root_file_path;
         return false;
     }
+
+    std::map<std::string, SiloReadBookkeeping> reading_info;
+
+    // read all is turned on, and read none is turned off
+    reading_info["multimesh_names"] = SiloReadBookkeeping(true, false);
+    reading_info["multivar_names"] = SiloReadBookkeeping(true, false);
+    reading_info["multimat_names"] = SiloReadBookkeeping(true, false);
+    reading_info["multimatspecies_names"] = SiloReadBookkeeping(true, false);
+    reading_info["qmesh_names"] = SiloReadBookkeeping(true, false);
+    reading_info["qvar_names"] = SiloReadBookkeeping(true, false);
+    reading_info["ucdmesh_names"] = SiloReadBookkeeping(true, false);
+    reading_info["ucdvar_names"] = SiloReadBookkeeping(true, false);
+    reading_info["ptmesh_names"] = SiloReadBookkeeping(true, false);
+    reading_info["ptvar_names"] = SiloReadBookkeeping(true, false);
+    reading_info["mat_names"] = SiloReadBookkeeping(true, false);
+    reading_info["matspecies_names"] = SiloReadBookkeeping(true, false);
+
+    if (opts.has_child("silo_names"))
+    {
+        read_everything = false;
+        auto silo_names_itr = opts["silo_names"].children();
+        while (silo_names_itr.has_next())
+        {
+            const Node &silo_object_type = silo_names_itr.next();
+            const std::string silo_object_type_name = silo_names_itr.name();
+
+            if (silo_object_type.number_of_children() > 0)
+            {
+                if (silo_object_type.has_child("all"))
+                {
+                    if (silo_object_type.number_of_children() > 1)
+                    {
+                        error_oss << "TODO this is bad";
+                        return false;
+                    }
+                    reading_info[silo_object_type_name].read_all = true;
+                    reading_info[silo_object_type_name].read_none = false;
+                }
+                else if (silo_object_type.has_child("none"))
+                {
+                    if (silo_object_type.number_of_children() > 1)
+                    {
+                        error_oss << "TODO this is bad";
+                        return false;
+                    }
+                    reading_info[silo_object_type_name].read_all = false;
+                    reading_info[silo_object_type_name].read_none = true;
+                }
+                else
+                {
+                    // we must have named some specific items we want to read
+                    reading_info[silo_object_type_name].read_all = false;
+                    reading_info[silo_object_type_name].read_none = false;
+                }
+            }
+            else
+            {
+                // no children were specified so we want to read everything of this kind
+                reading_info[silo_object_type_name].read_all = true;
+                reading_info[silo_object_type_name].read_none = false;
+            }
+        }
+    }
+
+    // if we are not reading no multimeshes --> we are reading multimeshes
+    if (! reading_info["multimeshes"].read_none)
+    {
+        // check for multimeshes
+        if (toc->nmultimesh <= 0)
+        {
+            error_oss << "No multimesh found in file: " << root_file_path;
+            return false;
+        }
+    }
+
+
     // check for multimeshes
     if (toc->nmultimesh <= 0)
     {
@@ -2694,9 +2787,27 @@ read_root_silo_index(const std::string &root_file_path,
 //-----------------------------------------------------------------------------
 ///
 /// opts:
-///      mesh_name: "{name}"
-///          provide explicit mesh name, for cases where silo data includes
-///           more than one mesh.
+///      silo_names:
+///         multimesh_names:
+///               "{name1}" - multimeshes with this name will be read if they exist
+///               "{name2}"
+///               ...
+///               or
+///               "{all}" - all multimeshes will be read.
+///               or
+///               "{none}" - no multimeshes will be read.
+///         multivar_names: similar to multimesh_names.
+///         multimat_names: similar to multimesh_names.
+///         multimatspecies_names: similar to multimesh_names. TODO
+///         qmesh_names: similar to multimesh_names.
+///         qvar_names: similar to multimesh_names.
+///         ucdmesh_names: similar to multimesh_names.
+///         ucdvar_names: similar to multimesh_names.
+///         ptmesh_names: similar to multimesh_names.
+///         ptvar_names: similar to multimesh_names.
+///         mat_names: similar to multimesh_names.
+///         matspecies_names: similar to multimesh_names. TODO
+///            By default, everything in the file will be read unless manually turned off.
 ///
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
