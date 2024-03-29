@@ -2126,7 +2126,7 @@ bool
 read_multivars(DBtoc *toc,
                DBfile *dbfile,
                const std::string &multimesh_name,
-               const int nblocks,
+               const int &nblocks,
                Node &root_node,
                std::ostringstream &error_oss)
 {
@@ -2493,8 +2493,74 @@ read_root_silo_index(const std::string &root_file_path,
     // check for multimeshes
     if (toc->nmultimesh <= 0)
     {
-        error_oss << "No multimesh found in file: " << root_file_path;
-        return false;
+        std::string meshname;
+        if (toc->nqmesh > 0)
+        {
+            meshname = toc->qmesh_names[0];
+            root_node[meshname]["nblocks"] = 1;
+            root_node[meshname]["nameschemes"] = "no";
+            root_node[meshname]["mesh_types"].set(DB_QUADMESH);
+            Node &mesh_path = root_node[meshname]["mesh_paths"].append();
+            mesh_path.set(meshname);
+        }
+
+        multimesh_name = meshname;
+
+        if (toc->nqvar > 0 && !meshname.empty())
+        {
+            for (int var_id = 0; var_id < toc->nqvar; var_id ++)
+            {
+                const std::string varname = toc->qvar_names[var_id];
+                Node &var = root_node[meshname]["vars"][varname];
+                var["nameschemes"] = "no";
+                var["var_types"].set(DB_QUADVAR);
+                Node &var_path = var["var_paths"].append();
+                var_path.set(varname);
+            }
+        }
+
+        if (toc->nmat > 0 && !meshname.empty())
+        {
+            const std::string matname = toc->mat_names[0];
+            Node &material = root_node[meshname]["matsets"][matname];
+            material["nameschemes"] = "no";
+            Node &matset_path = material["matset_paths"].append();
+            matset_path.set(matname);
+        }
+
+        read_state(dbfile.getSiloObject(), root_node, meshname);
+
+        // overlink-specific
+        read_var_attributes(dbfile.getSiloObject(),
+                            meshname,
+                            root_node);
+
+        // Get the selected matset flavor
+        if (opts.has_child("matset_style") && opts["matset_style"].dtype().is_string())
+        {
+            std::string opts_matset_style = opts["matset_style"].as_string();
+            if (opts_matset_style != "default" && 
+                opts_matset_style != "multi_buffer_full" &&
+                opts_matset_style != "sparse_by_element" &&
+                opts_matset_style != "multi_buffer_by_material")
+            {
+                CONDUIT_ERROR("read_mesh invalid matset_style option: \"" 
+                              << opts_matset_style << "\"\n"
+                              " expected: \"default\", \"multi_buffer_full\", "
+                              "\"sparse_by_element\", or \"multi_buffer_by_material\"");
+            }
+            else
+            {
+                root_node[meshname]["matset_style"] = opts_matset_style;
+            }
+        }
+
+        std::cout << root_node.to_yaml() << std::endl;
+
+        return true;
+
+        // error_oss << "No multimesh found in file: " << root_file_path;
+        // return false;
     }
 
     // decide what multimesh to extract
@@ -2579,8 +2645,9 @@ read_root_silo_index(const std::string &root_file_path,
         {
             root_node[multimesh_name]["matset_style"] = opts_matset_style;
         }
-
     }
+
+    // TODO why not have an option to read multiple multimeshes?
 
     // our silo index should look like this:
 
@@ -2768,11 +2835,7 @@ read_mesh(const std::string &root_file_path,
     // If the root file is named OvlTop.silo, then there is a very good chance that
     // this file is valid overlink. Therefore, we must modify the paths we get from
     // the root node to reflect this.
-    bool ovltop_case = false;
-    if (root_file_name == "OvlTop.silo")
-    {
-        ovltop_case = true;
-    }
+    bool ovltop_case = root_file_name == "OvlTop.silo";
 
     for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
     {
@@ -2780,9 +2843,9 @@ read_mesh(const std::string &root_file_path,
         // Read Mesh
         //
 
-        std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
-        int_accessor meshtypes = mesh_index["mesh_types"].value();
-        int meshtype = meshtypes[domain_id];
+        const std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
+        const int_accessor meshtypes = mesh_index["mesh_types"].value();
+        const int meshtype = meshtypes[domain_id];
 
         std::string mesh_name, mesh_domain_filename;
         mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
