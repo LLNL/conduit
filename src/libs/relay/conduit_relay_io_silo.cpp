@@ -319,6 +319,7 @@ class SiloReadBookkeeping
 private:
     bool read_all;
     bool read_none;
+    std::vector<std::string> names_to_read;
 
 public:
     SiloReadBookkeeping(bool do_read_all, bool do_read_none) : 
@@ -2514,7 +2515,7 @@ read_root_silo_index(const std::string &root_file_path,
     reading_info["multimesh_names"] = SiloReadBookkeeping(true, false);
     reading_info["multivar_names"] = SiloReadBookkeeping(true, false);
     reading_info["multimat_names"] = SiloReadBookkeeping(true, false);
-    reading_info["multimatspecies_names"] = SiloReadBookkeeping(true, false);
+    // reading_info["multimatspecies_names"] = SiloReadBookkeeping(true, false);
     reading_info["qmesh_names"] = SiloReadBookkeeping(true, false);
     reading_info["qvar_names"] = SiloReadBookkeeping(true, false);
     reading_info["ucdmesh_names"] = SiloReadBookkeeping(true, false);
@@ -2522,7 +2523,7 @@ read_root_silo_index(const std::string &root_file_path,
     reading_info["ptmesh_names"] = SiloReadBookkeeping(true, false);
     reading_info["ptvar_names"] = SiloReadBookkeeping(true, false);
     reading_info["mat_names"] = SiloReadBookkeeping(true, false);
-    reading_info["matspecies_names"] = SiloReadBookkeeping(true, false);
+    // reading_info["matspecies_names"] = SiloReadBookkeeping(true, false);
 
     if (opts.has_child("silo_names"))
     {
@@ -2571,16 +2572,77 @@ read_root_silo_index(const std::string &root_file_path,
         }
     }
 
-    // if we are not reading no multimeshes --> we are reading multimeshes
-    if (! reading_info["multimeshes"].read_none)
+    // names to read get stored in reading_info["multimesh_names"].names_to_read
+    auto generate_read_list = [&](const std::string silo_obj_name, // e.g. "multimesh_names"
+                                  const std::string obj_name, // e.g. "multimesh" - just for errors
+                                  const int num_silo_objects_in_toc,
+                                  const char** toc_names)
     {
-        // check for multimeshes
-        if (toc->nmultimesh <= 0)
+        // if we are not reading no multimeshes --> we are reading multimeshes
+        if (! reading_info[silo_obj_name].read_none)
         {
-            error_oss << "No multimesh found in file: " << root_file_path;
-            return false;
+            // check for multimeshes
+            if (num_silo_objects_in_toc <= 0)
+            {
+                error_oss << "No " << obj_name << " found in file: " << root_file_path;
+                return false;
+            }
+
+            if (reading_info[silo_obj_name].read_all)
+            {
+                for (int toc_id = 0; toc_id < num_silo_objects_in_toc; toc_id ++)
+                {
+                    reading_info["multimesh_names"].names_to_read.push_back(toc_names[toc_id])
+                }
+            }
+            else
+            {
+                reading_info["multimesh_names"].names_to_read = opts["silo_names"][silo_obj_name].child_names();
+                for (size_t list_id = 0; list_id < reading_info["multimesh_names"].names_to_read.size(); list_id ++)
+                {
+                    bool found = false;
+                    for (int toc_id = 0; toc_id < num_silo_objects_in_toc; toc_id ++)
+                    {
+                        if (toc_names[toc_id] == reading_info["multimesh_names"].names_to_read[list_id])
+                        {
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found)
+                    {
+                        error_oss << "No " << obj_name << " found matching " << reading_info["multimesh_names"].names_to_read[list_id];
+                        return false;
+                    }
+                }
+            }
         }
-    }
+
+        return true;
+    };
+
+    generate_read_list("multimesh_names", "multimesh", toc->nmultimesh, toc->multimesh_names);
+    generate_read_list("multivar_names", "multivar", toc->nmultivar, toc->multivar_names);
+    generate_read_list("multimat_names", "multimat", toc->nmultimat, toc->multimat_names);
+    // generate_read_list("multimatspecies_names", "multimatspecies", toc->nmultimatspecies, toc->multimatspecies_names);
+    generate_read_list("qmesh_names", "qmesh", toc->nqmesh, toc->qmesh_names);
+    generate_read_list("qvar_names", "qvar", toc->nqvar, toc->qvar_names);
+    generate_read_list("ucdmesh_names", "ucdmesh", toc->nucdmesh, toc->ucdmesh_names);
+    generate_read_list("ucdvar_names", "ucdvar", toc->nucdvar, toc->ucdvar_names);
+    generate_read_list("ptmesh_names", "ptmesh", toc->nptmesh, toc->ptmesh_names);
+    generate_read_list("ptvar_names", "ptvar", toc->nptvar, toc->ptvar_names);
+    generate_read_list("mat_names", "mat", toc->nmat, toc->mat_names);
+    // generate_read_list("matspecies_names", "matspecies", toc->nmatspecies, toc->matspecies_names);
+
+    // TODO JUSTIN I left off here
+
+// I now have a list of names for each silo type of things to read from the root file
+    // next step is to read them
+    // I know for sure that each one is in the root file
+    // so should be easy
+    // for mvars and mmats, assume that they are in all mmeshes if they do not say
+    // then my logic in main read function should just work
+
 
 
     // check for multimeshes
