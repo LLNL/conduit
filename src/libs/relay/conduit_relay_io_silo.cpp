@@ -2617,13 +2617,6 @@ read_root_silo_index(const std::string &root_file_path,
         // if we are not reading no multimeshes --> we are reading multimeshes
         if (! reading_info[silo_obj_name].read_none)
         {
-            // check for multimeshes
-            if (num_silo_objects_in_toc <= 0)
-            {
-                error_oss << "No " << obj_name << " found in file: " << root_file_path;
-                return false;
-            }
-
             if (reading_info[silo_obj_name].read_all)
             {
                 for (int toc_id = 0; toc_id < num_silo_objects_in_toc; toc_id ++)
@@ -2747,13 +2740,13 @@ read_root_silo_index(const std::string &root_file_path,
         // TODO should I do a check here then?
         for (const std::string &qvar_name : reading_info["qvar_names"].names_to_read)
         {
-            prepare_simple_var_metadata(qvar_name, qmesh_name, DB_QUADVAR, root_node);
+            prepare_simple_var_metadata(qmesh_name, qvar_name, DB_QUADVAR, root_node);
         }
         // same is true for materials
         // TODO ugh I don't like this
         for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
         {
-            prepare_simple_mat_metadata(mat_name, qmesh_name, root_node);
+            prepare_simple_mat_metadata(qmesh_name, mat_name, root_node);
         }
 
         // TODO I love rereading state for every mesh. This is so silly
@@ -2774,13 +2767,13 @@ read_root_silo_index(const std::string &root_file_path,
         // TODO should I do a check here then?
         for (const std::string &ucdvar_name : reading_info["ucdvar_names"].names_to_read)
         {
-            prepare_simple_var_metadata(ucdvar_name, ucdmesh_name, DB_UCDVAR, root_node);
+            prepare_simple_var_metadata(ucdmesh_name, ucdvar_name, DB_UCDVAR, root_node);
         }
         // same is true for materials
         // TODO ugh I don't like this
         for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
         {
-            prepare_simple_mat_metadata(mat_name, ucdmesh_name, root_node);
+            prepare_simple_mat_metadata(ucdmesh_name, mat_name, root_node);
         }
 
         // TODO I love rereading state for every mesh. This is so silly
@@ -2801,13 +2794,13 @@ read_root_silo_index(const std::string &root_file_path,
         // TODO should I do a check here then?
         for (const std::string &ptvar_name : reading_info["ptvar_names"].names_to_read)
         {
-            prepare_simple_var_metadata(ptvar_name, ptmesh_name, DB_POINTVAR, root_node);
+            prepare_simple_var_metadata(ptmesh_name, ptvar_name, DB_POINTVAR, root_node);
         }
         // same is true for materials
         // TODO ugh I don't like this
         for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
         {
-            prepare_simple_mat_metadata(mat_name, ptmesh_name, root_node);
+            prepare_simple_mat_metadata(ptmesh_name, mat_name, root_node);
         }
 
         // TODO I love rereading state for every mesh. This is so silly
