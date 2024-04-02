@@ -316,14 +316,10 @@ public:
 
 class SiloReadBookkeeping
 {
-private:
-    bool read_all;
-    bool read_none;
-    std::vector<std::string> names_to_read;
-
 public:
-    SiloReadBookkeeping(bool do_read_all, bool do_read_none) : 
-        read_all(do_read_all), read_none(do_read_none) {}
+    bool read_all = true;
+    bool read_none = false;
+    std::vector<std::string> names_to_read;
 };
 
 //-----------------------------------------------------------------------------
@@ -2122,7 +2118,7 @@ prepare_simple_mat_metadata(const std::string &mesh_name,
 {
     Node &material = root_node[mesh_name]["matsets"][mat_name];
     material["nameschemes"] = "no";
-    Node &matset_path = material["matset_paths"].append().set(mat_name);
+    material["matset_paths"].append().set(mat_name);
 }
 
 //-----------------------------------------------------------------------------
@@ -2544,21 +2540,21 @@ read_root_silo_index(const std::string &root_file_path,
         return false;
     }
 
-    std::map<std::string, SiloReadBookkeeping> reading_info;
+    std::map<std::string, detail::SiloReadBookkeeping> reading_info;
 
     // read all is turned on, and read none is turned off
-    reading_info["multimesh_names"] = SiloReadBookkeeping(true, false);
-    reading_info["multivar_names"] = SiloReadBookkeeping(true, false);
-    reading_info["multimat_names"] = SiloReadBookkeeping(true, false);
-    // reading_info["multimatspecies_names"] = SiloReadBookkeeping(true, false);
-    reading_info["qmesh_names"] = SiloReadBookkeeping(true, false);
-    reading_info["qvar_names"] = SiloReadBookkeeping(true, false);
-    reading_info["ucdmesh_names"] = SiloReadBookkeeping(true, false);
-    reading_info["ucdvar_names"] = SiloReadBookkeeping(true, false);
-    reading_info["ptmesh_names"] = SiloReadBookkeeping(true, false);
-    reading_info["ptvar_names"] = SiloReadBookkeeping(true, false);
-    reading_info["mat_names"] = SiloReadBookkeeping(true, false);
-    // reading_info["matspecies_names"] = SiloReadBookkeeping(true, false);
+    reading_info["multimesh_names"] = detail::SiloReadBookkeeping();
+    reading_info["multivar_names"] = detail::SiloReadBookkeeping();
+    reading_info["multimat_names"] = detail::SiloReadBookkeeping();
+    // reading_info["multimatspecies_names"] = detail::SiloReadBookkeeping();
+    reading_info["qmesh_names"] = detail::SiloReadBookkeeping();
+    reading_info["qvar_names"] = detail::SiloReadBookkeeping();
+    reading_info["ucdmesh_names"] = detail::SiloReadBookkeeping();
+    reading_info["ucdvar_names"] = detail::SiloReadBookkeeping();
+    reading_info["ptmesh_names"] = detail::SiloReadBookkeeping();
+    reading_info["ptvar_names"] = detail::SiloReadBookkeeping();
+    reading_info["mat_names"] = detail::SiloReadBookkeeping();
+    // reading_info["matspecies_names"] = detail::SiloReadBookkeeping();
 
     if (opts.has_child("silo_names"))
     {
@@ -2616,7 +2612,7 @@ read_root_silo_index(const std::string &root_file_path,
     auto generate_read_list = [&](const std::string silo_obj_name, // e.g. "multimesh_names"
                                   const std::string obj_name, // e.g. "multimesh" - just for errors
                                   const int num_silo_objects_in_toc,
-                                  const char** toc_names)
+                                  char** toc_names)
     {
         // if we are not reading no multimeshes --> we are reading multimeshes
         if (! reading_info[silo_obj_name].read_none)
@@ -2632,18 +2628,18 @@ read_root_silo_index(const std::string &root_file_path,
             {
                 for (int toc_id = 0; toc_id < num_silo_objects_in_toc; toc_id ++)
                 {
-                    reading_info["multimesh_names"].names_to_read.push_back(toc_names[toc_id])
+                    reading_info[silo_obj_name].names_to_read.push_back(toc_names[toc_id]);
                 }
             }
             else
             {
-                reading_info["multimesh_names"].names_to_read = opts["silo_names"][silo_obj_name].child_names();
-                for (size_t list_id = 0; list_id < reading_info["multimesh_names"].names_to_read.size(); list_id ++)
+                reading_info[silo_obj_name].names_to_read = opts["silo_names"][silo_obj_name].child_names();
+                for (size_t list_id = 0; list_id < reading_info[silo_obj_name].names_to_read.size(); list_id ++)
                 {
                     bool found = false;
                     for (int toc_id = 0; toc_id < num_silo_objects_in_toc; toc_id ++)
                     {
-                        if (toc_names[toc_id] == reading_info["multimesh_names"].names_to_read[list_id])
+                        if (toc_names[toc_id] == reading_info[silo_obj_name].names_to_read[list_id])
                         {
                             found = true;
                             break;
