@@ -2090,6 +2090,42 @@ open_or_reuse_file(const bool ovltop_case,
 }
 
 //-----------------------------------------------------------------------------
+void
+prepare_simple_mesh_metadata(const std::string &mesh_name,
+                             const int mesh_type,
+                             Node &root_node)
+{
+    root_node[mesh_name]["nblocks"] = 1;
+    root_node[mesh_name]["nameschemes"] = "no";
+    root_node[mesh_name]["mesh_types"].set(mesh_type);
+    root_node[mesh_name]["mesh_paths"].append().set(mesh_name);
+}
+
+//-----------------------------------------------------------------------------
+void
+prepare_simple_var_metadata(const std::string &mesh_name,
+                            const std::string &var_name,
+                            const int var_type,
+                            Node &root_node)
+{
+    Node &var = root_node[mesh_name]["vars"][var_name];
+    var["nameschemes"] = "no";
+    var["var_types"].set(var_type);
+    var["var_paths"].append().set(var_name);
+}
+
+//-----------------------------------------------------------------------------
+void
+prepare_simple_mat_metadata(const std::string &mesh_name,
+                            const std::string &mat_name,
+                            Node &root_node)
+{
+    Node &material = root_node[mesh_name]["matsets"][mat_name];
+    material["nameschemes"] = "no";
+    Node &matset_path = material["matset_paths"].append().set(mat_name);
+}
+
+//-----------------------------------------------------------------------------
 bool
 read_multimesh(DBfile *dbfile,
                const std::string &multimesh_name,
@@ -2527,12 +2563,17 @@ read_root_silo_index(const std::string &root_file_path,
 
     if (opts.has_child("silo_names"))
     {
-        read_everything = false;
         auto silo_names_itr = opts["silo_names"].children();
         while (silo_names_itr.has_next())
         {
             const Node &silo_object_type = silo_names_itr.next();
             const std::string silo_object_type_name = silo_names_itr.name();
+
+            if (reading_info.count(silo_object_type_name) == 0)
+            {
+                error_oss << "TODO unknown option";
+                return false;
+            }
 
             if (silo_object_type.number_of_children() > 0)
             {
@@ -2621,188 +2662,167 @@ read_root_silo_index(const std::string &root_file_path,
         return true;
     };
 
-    generate_read_list("multimesh_names", "multimesh", toc->nmultimesh, toc->multimesh_names);
-    generate_read_list("multivar_names", "multivar", toc->nmultivar, toc->multivar_names);
-    generate_read_list("multimat_names", "multimat", toc->nmultimat, toc->multimat_names);
-    // generate_read_list("multimatspecies_names", "multimatspecies", toc->nmultimatspecies, toc->multimatspecies_names);
-    generate_read_list("qmesh_names", "qmesh", toc->nqmesh, toc->qmesh_names);
-    generate_read_list("qvar_names", "qvar", toc->nqvar, toc->qvar_names);
-    generate_read_list("ucdmesh_names", "ucdmesh", toc->nucdmesh, toc->ucdmesh_names);
-    generate_read_list("ucdvar_names", "ucdvar", toc->nucdvar, toc->ucdvar_names);
-    generate_read_list("ptmesh_names", "ptmesh", toc->nptmesh, toc->ptmesh_names);
-    generate_read_list("ptvar_names", "ptvar", toc->nptvar, toc->ptvar_names);
-    generate_read_list("mat_names", "mat", toc->nmat, toc->mat_names);
-    // generate_read_list("matspecies_names", "matspecies", toc->nmatspecies, toc->matspecies_names);
-
-    // TODO JUSTIN I left off here
-
-// I now have a list of names for each silo type of things to read from the root file
-    // next step is to read them
-    // I know for sure that each one is in the root file
-    // so should be easy
-    // for mvars and mmats, assume that they are in all mmeshes if they do not say
-    // then my logic in main read function should just work
-
-
-
-    // check for multimeshes
-    if (toc->nmultimesh <= 0)
+    // silo doesn't let us have any names that are the same in the same directory,
+    // even if they are different types. So we don't have to worry about name collisions.
+    if (! (generate_read_list("multimesh_names", "multimesh", toc->nmultimesh, toc->multimesh_names) &&
+           generate_read_list("multivar_names", "multivar", toc->nmultivar, toc->multivar_names) &&
+           generate_read_list("multimat_names", "multimat", toc->nmultimat, toc->multimat_names) &&
+           // generate_read_list("multimatspecies_names", "multimatspecies", toc->nmultimatspecies, toc->multimatspecies_names) &&
+           generate_read_list("qmesh_names", "qmesh", toc->nqmesh, toc->qmesh_names) &&
+           generate_read_list("qvar_names", "qvar", toc->nqvar, toc->qvar_names) &&
+           generate_read_list("ucdmesh_names", "ucdmesh", toc->nucdmesh, toc->ucdmesh_names) &&
+           generate_read_list("ucdvar_names", "ucdvar", toc->nucdvar, toc->ucdvar_names) &&
+           generate_read_list("ptmesh_names", "ptmesh", toc->nptmesh, toc->ptmesh_names) &&
+           generate_read_list("ptvar_names", "ptvar", toc->nptvar, toc->ptvar_names) &&
+           generate_read_list("mat_names", "mat", toc->nmat, toc->mat_names)))
+           // generate_read_list("matspecies_names", "matspecies", toc->nmatspecies, toc->matspecies_names)
     {
-        std::string meshname;
-        if (toc->nqmesh > 0)
-        {
-            meshname = toc->qmesh_names[0];
-            root_node[meshname]["nblocks"] = 1;
-            root_node[meshname]["nameschemes"] = "no";
-            root_node[meshname]["mesh_types"].set(DB_QUADMESH);
-            Node &mesh_path = root_node[meshname]["mesh_paths"].append();
-            mesh_path.set(meshname);
-        }
-
-        multimesh_name = meshname;
-
-        if (toc->nqvar > 0 && !meshname.empty())
-        {
-            for (int var_id = 0; var_id < toc->nqvar; var_id ++)
-            {
-                const std::string varname = toc->qvar_names[var_id];
-                Node &var = root_node[meshname]["vars"][varname];
-                var["nameschemes"] = "no";
-                var["var_types"].set(DB_QUADVAR);
-                Node &var_path = var["var_paths"].append();
-                var_path.set(varname);
-            }
-        }
-
-        if (toc->nmat > 0 && !meshname.empty())
-        {
-            const std::string matname = toc->mat_names[0];
-            Node &material = root_node[meshname]["matsets"][matname];
-            material["nameschemes"] = "no";
-            Node &matset_path = material["matset_paths"].append();
-            matset_path.set(matname);
-        }
-
-        read_state(dbfile.getSiloObject(), root_node, meshname);
-
-        // overlink-specific
-        read_var_attributes(dbfile.getSiloObject(),
-                            meshname,
-                            root_node);
-
-        // Get the selected matset flavor
-        if (opts.has_child("matset_style") && opts["matset_style"].dtype().is_string())
-        {
-            std::string opts_matset_style = opts["matset_style"].as_string();
-            if (opts_matset_style != "default" && 
-                opts_matset_style != "multi_buffer_full" &&
-                opts_matset_style != "sparse_by_element" &&
-                opts_matset_style != "multi_buffer_by_material")
-            {
-                CONDUIT_ERROR("read_mesh invalid matset_style option: \"" 
-                              << opts_matset_style << "\"\n"
-                              " expected: \"default\", \"multi_buffer_full\", "
-                              "\"sparse_by_element\", or \"multi_buffer_by_material\"");
-            }
-            else
-            {
-                root_node[meshname]["matset_style"] = opts_matset_style;
-            }
-        }
-
-        std::cout << root_node.to_yaml() << std::endl;
-
-        return true;
-
-        // error_oss << "No multimesh found in file: " << root_file_path;
-        // return false;
-    }
-
-    // decide what multimesh to extract
-    if (opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
-    {
-        multimesh_name = opts["mesh_name"].as_string();
-    }
-
-    // check multimesh name
-    if (multimesh_name.empty())
-    {
-        multimesh_name = toc->multimesh_names[0];
-    }
-    else
-    {
-        bool found = false;
-        for (int i = 0; i < toc->nmultimesh; i ++)
-        {
-            if (toc->multimesh_names[i] == multimesh_name)
-            {
-                found = true;
-                break;
-            }
-        }
-        if (!found)
-        {
-            error_oss << "No multimesh found matching " << multimesh_name;
-            return false;
-        }
-    }
-
-    int nblocks;
-    if (! read_multimesh(dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
+        // error msg should already be populated
         return false;
     }
-    if (! read_multivars(toc,
-                         dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
-        return false;
-    }
-    if (! read_multimats(toc,
-                         dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
-        return false;
-    }
-
-    read_state(dbfile.getSiloObject(), root_node, multimesh_name);
-
-    // overlink-specific
-    read_var_attributes(dbfile.getSiloObject(),
-                        multimesh_name,
-                        root_node);
 
     // Get the selected matset flavor
+    std::string opts_matset_style = "";
     if (opts.has_child("matset_style") && opts["matset_style"].dtype().is_string())
     {
-        std::string opts_matset_style = opts["matset_style"].as_string();
+        opts_matset_style = opts["matset_style"].as_string();
         if (opts_matset_style != "default" && 
             opts_matset_style != "multi_buffer_full" &&
             opts_matset_style != "sparse_by_element" &&
             opts_matset_style != "multi_buffer_by_material")
         {
-            CONDUIT_ERROR("read_mesh invalid matset_style option: \"" 
-                          << opts_matset_style << "\"\n"
-                          " expected: \"default\", \"multi_buffer_full\", "
-                          "\"sparse_by_element\", or \"multi_buffer_by_material\"");
+            error_oss << "read_mesh invalid matset_style option: \"" 
+                         << opts_matset_style << "\"\n"
+                         " expected: \"default\", \"multi_buffer_full\", "
+                         "\"sparse_by_element\", or \"multi_buffer_by_material\"";
+            return false;
         }
-        else
+    }
+
+    // start with multimeshes, multivars, and multimats (and someday multimatspecies)
+    for (const std::string &multimesh_name : reading_info["multimesh_names"].names_to_read)
+    {
+        int nblocks;
+        if (! read_multimesh(dbfile.getSiloObject(),
+                             multimesh_name,
+                             nblocks,
+                             root_node,
+                             error_oss))
+        {
+            return false;
+        }
+        if (! read_multivars(toc,
+                             dbfile.getSiloObject(),
+                             multimesh_name,
+                             nblocks,
+                             root_node,
+                             error_oss))
+        {
+            return false;
+        }
+        if (! read_multimats(toc,
+                             dbfile.getSiloObject(),
+                             multimesh_name,
+                             nblocks,
+                             root_node,
+                             error_oss))
+        {
+            return false;
+        }
+
+        read_state(dbfile.getSiloObject(), root_node, multimesh_name);
+
+        // overlink-specific
+        read_var_attributes(dbfile.getSiloObject(),
+                            multimesh_name,
+                            root_node);
+
+        if (! opts_matset_style.empty())
         {
             root_node[multimesh_name]["matset_style"] = opts_matset_style;
         }
     }
 
-    // TODO why not have an option to read multiple multimeshes?
+    // next quadmeshes and quadvars
+    for (const std::string &qmesh_name : reading_info["qmesh_names"].names_to_read)
+    {
+        prepare_simple_mesh_metadata(qmesh_name, DB_QUADMESH, root_node);
+
+        // at this stage we assume that all qvars could be associated with this qmesh
+        // TODO should I do a check here then?
+        for (const std::string &qvar_name : reading_info["qvar_names"].names_to_read)
+        {
+            prepare_simple_var_metadata(qvar_name, qmesh_name, DB_QUADVAR, root_node);
+        }
+        // same is true for materials
+        // TODO ugh I don't like this
+        for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
+        {
+            prepare_simple_mat_metadata(mat_name, qmesh_name, root_node);
+        }
+
+        // TODO I love rereading state for every mesh. This is so silly
+        read_state(dbfile.getSiloObject(), root_node, qmesh_name);
+
+        if (! opts_matset_style.empty())
+        {
+            root_node[qmesh_name]["matset_style"] = opts_matset_style;
+        }
+    }
+
+    // next ucdmeshes and ucdvars
+    for (const std::string &ucdmesh_name : reading_info["ucdmesh_names"].names_to_read)
+    {
+        prepare_simple_mesh_metadata(ucdmesh_name, DB_UCDMESH, root_node);
+
+        // at this stage we assume that all ucdvars could be associated with this ucdmesh
+        // TODO should I do a check here then?
+        for (const std::string &ucdvar_name : reading_info["ucdvar_names"].names_to_read)
+        {
+            prepare_simple_var_metadata(ucdvar_name, ucdmesh_name, DB_UCDVAR, root_node);
+        }
+        // same is true for materials
+        // TODO ugh I don't like this
+        for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
+        {
+            prepare_simple_mat_metadata(mat_name, ucdmesh_name, root_node);
+        }
+
+        // TODO I love rereading state for every mesh. This is so silly
+        read_state(dbfile.getSiloObject(), root_node, ucdmesh_name);
+
+        if (! opts_matset_style.empty())
+        {
+            root_node[ucdmesh_name]["matset_style"] = opts_matset_style;
+        }
+    }
+
+    // next ptmeshes and ptvars
+    for (const std::string &ptmesh_name : reading_info["ptmesh_names"].names_to_read)
+    {
+        prepare_simple_mesh_metadata(ptmesh_name, DB_POINTMESH, root_node);
+
+        // at this stage we assume that all ptvars could be associated with this ptmesh
+        // TODO should I do a check here then?
+        for (const std::string &ptvar_name : reading_info["ptvar_names"].names_to_read)
+        {
+            prepare_simple_var_metadata(ptvar_name, ptmesh_name, DB_POINTVAR, root_node);
+        }
+        // same is true for materials
+        // TODO ugh I don't like this
+        for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
+        {
+            prepare_simple_mat_metadata(mat_name, ptmesh_name, root_node);
+        }
+
+        // TODO I love rereading state for every mesh. This is so silly
+        read_state(dbfile.getSiloObject(), root_node, ptmesh_name);
+
+        if (! opts_matset_style.empty())
+        {
+            root_node[ptmesh_name]["matset_style"] = opts_matset_style;
+        }
+    }
 
     // our silo index should look like this:
 
@@ -2842,6 +2862,9 @@ read_root_silo_index(const std::string &root_file_path,
     //             ...
     //       ...
     //    matset_style: "default", OR "multi_buffer_full", OR "sparse_by_element", OR "multi_buffer_by_material"
+    // mesh2:
+    //    ...
+    // ...
 
     return true;
 }
@@ -2987,11 +3010,8 @@ read_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
-    std::string opts_matset_style = "default";
-    if (mesh_index.has_child("matset_style"))
-    {
-        opts_matset_style = mesh_index["matset_style"].as_string();
-    }
+    const std::string opts_matset_style = (mesh_index.has_child("matset_style") ? 
+        mesh_index["matset_style"].as_string() : "default");
 
     bool mesh_nameschemes = false;
     if (mesh_index.has_child("nameschemes") &&
