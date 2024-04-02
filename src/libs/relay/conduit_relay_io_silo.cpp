@@ -2508,12 +2508,11 @@ bool
 read_root_silo_index(const std::string &root_file_path,
                      const Node &opts,
                      Node &root_node, // output
-                     std::string &multimesh_name, // output
                      std::ostringstream &error_oss) // output
 {
     // clear output vars
     root_node.reset();
-    multimesh_name = "";
+    std::string multimesh_name = ""; // TODO preserve legacy functionality somehow
     error_oss.str("");
 
     // first, make sure we can open the root file
@@ -2916,17 +2915,15 @@ read_mesh(const std::string &root_file_path,
 
     int error = 0;
     std::ostringstream error_oss;
-    std::string multimesh_name;
     Node root_node;
 
     // only read bp index on rank 0
-    if(par_rank == 0)
+    if (par_rank == 0)
     {
-        if(!read_root_silo_index(root_file_path,
-                                 opts,
-                                 root_node,
-                                 multimesh_name,
-                                 error_oss))
+        if (!read_root_silo_index(root_file_path,
+                                  opts,
+                                  root_node,
+                                  error_oss))
         {
             error = 1;
         }
@@ -2954,13 +2951,8 @@ read_mesh(const std::string &root_file_path,
     }
     else
     {
-        // broadcast the mesh name and the bp index
+        // broadcast the root node
         // from rank 0 to all ranks
-        n_global.set(multimesh_name);
-        conduit::relay::mpi::broadcast_using_schema(n_global,
-                                                    0,
-                                                    mpi_comm);
-        multimesh_name = n_global.as_string();
         conduit::relay::mpi::broadcast_using_schema(root_node,
                                                     0,
                                                     mpi_comm);
@@ -2972,266 +2964,274 @@ read_mesh(const std::string &root_file_path,
         CONDUIT_ERROR(error_oss.str());
     }
 #endif
-    const Node &mesh_index = root_node[multimesh_name];
 
-    // read all domains for given mesh
-    int num_domains = mesh_index["nblocks"].to_int();
+    auto root_itr = root_node.children();
+    while (root_itr.has_next())
+    {
+        const Node &mesh_index = root_itr.next();
+        const std::string mesh_index_name = root_itr.name();
 
-    std::ostringstream oss;
-    int domain_start = 0;
-    int domain_end = num_domains;
+        // read all domains for given mesh
+        int num_domains = mesh_index["nblocks"].to_int();
+
+        std::ostringstream oss;
+        int domain_start = 0;
+        int domain_end = num_domains;
 
 #if CONDUIT_RELAY_IO_MPI_ENABLED
 
-    int read_size = num_domains / par_size;
-    int rem = num_domains % par_size;
-    if(par_rank < rem)
-    {
-        read_size++;
-    }
+        int read_size = num_domains / par_size;
+        int rem = num_domains % par_size;
+        if(par_rank < rem)
+        {
+            read_size++;
+        }
 
-    Node n_read_size;
-    Node n_doms_per_rank;
+        Node n_read_size;
+        Node n_doms_per_rank;
 
-    n_read_size.set_int32(read_size);
+        n_read_size.set_int32(read_size);
 
-    relay::mpi::all_gather_using_schema(n_read_size,
-                                        n_doms_per_rank,
-                                        mpi_comm);
-    int *counts = (int*)n_doms_per_rank.data_ptr();
+        relay::mpi::all_gather_using_schema(n_read_size,
+                                            n_doms_per_rank,
+                                            mpi_comm);
+        int *counts = (int*)n_doms_per_rank.data_ptr();
 
-    int rank_offset = 0;
-    for(int i = 0; i < par_rank; ++i)
-    {
-        rank_offset += counts[i];
-    }
+        int rank_offset = 0;
+        for(int i = 0; i < par_rank; ++i)
+        {
+            rank_offset += counts[i];
+        }
 
-    domain_start = rank_offset;
-    domain_end = rank_offset + read_size;
+        domain_start = rank_offset;
+        domain_end = rank_offset + read_size;
 #endif
 
-    const std::string opts_matset_style = (mesh_index.has_child("matset_style") ? 
-        mesh_index["matset_style"].as_string() : "default");
+        // TODO there's no reason for this to live inside each mesh index
+        // but I don't know where else to stash it
+        const std::string opts_matset_style = (mesh_index.has_child("matset_style") ? 
+            mesh_index["matset_style"].as_string() : "default");
 
-    bool mesh_nameschemes = false;
-    if (mesh_index.has_child("nameschemes") &&
-        mesh_index["nameschemes"].as_string() == "yes")
-    {
-        mesh_nameschemes = true;
-        CONDUIT_ERROR("TODO no support for nameschemes yet");
-    }
-    detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
-
-    std::string root_file_name, relative_dir;
-    utils::rsplit_file_path(root_file_path, root_file_name, relative_dir);
-
-    // If the root file is named OvlTop.silo, then there is a very good chance that
-    // this file is valid overlink. Therefore, we must modify the paths we get from
-    // the root node to reflect this.
-    bool ovltop_case = root_file_name == "OvlTop.silo";
-
-    for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
-    {
-        //
-        // Read Mesh
-        //
-
-        const std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
-        const int_accessor meshtypes = mesh_index["mesh_types"].value();
-        const int meshtype = meshtypes[domain_id];
-
-        std::string mesh_name, mesh_domain_filename;
-        mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
-
-        if (mesh_name == "EMPTY")
+        bool mesh_nameschemes = false;
+        if (mesh_index.has_child("nameschemes") &&
+            mesh_index["nameschemes"].as_string() == "yes")
         {
-            continue; // skip this domain
+            mesh_nameschemes = true;
+            CONDUIT_ERROR("TODO no support for nameschemes yet");
         }
+        detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
 
-        std::string bottom_level_mesh_name, tmp;
-        conduit::utils::rsplit_file_path(mesh_name, "/", bottom_level_mesh_name, tmp);
+        std::string root_file_name, relative_dir;
+        utils::rsplit_file_path(root_file_path, root_file_name, relative_dir);
 
-        // root only case
-        if (mesh_domain_filename.empty())
+        // If the root file is named OvlTop.silo, then there is a very good chance that
+        // this file is valid overlink. Therefore, we must modify the paths we get from
+        // the root node to reflect this.
+        bool ovltop_case = (root_file_name == "OvlTop.silo");
+
+        for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
         {
-            mesh_domain_filename = root_file_path;
-            // we are in the root file only case so overlink is not possible
-            ovltop_case = false;
-        }
+            //
+            // Read Mesh
+            //
 
-        detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
-            nullptr, &DBClose};
-        DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, 
-            mesh_domain_filename, "", nullptr, mesh_domain_file);
+            const std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
+            const int_accessor meshtypes = mesh_index["mesh_types"].value();
+            const int meshtype = meshtypes[domain_id];
 
-        // this is for the blueprint mesh output
-        std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
+            std::string mesh_name, mesh_domain_filename;
+            mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
 
-        if (! read_mesh_domain(meshtype, mesh_domain_file_to_use, mesh_name, 
-                               multimesh_name, domain_path, mesh))
-        {
-            continue; // we hit a case where we want to skip this mesh domain
-        }
-
-        // we know we were for sure successful (we didn't skip ahead to the next domain)
-        // so we create the mesh_out now for good
-        Node &mesh_out = mesh[domain_path];
-
-        //
-        // Read State
-        //
-
-        mesh_out["state"]["domain_id"] = static_cast<index_t>(domain_id);
-        if (mesh_index.has_path("state/time"))
-        {
-            mesh_out["state"]["time"] = mesh_index["state"]["time"].as_double();
-        }
-        if (mesh_index.has_path("state/cycle"))
-        {
-            mesh_out["state"]["cycle"] = (index_t) mesh_index["state"]["cycle"].as_int();
-        }
-
-        //
-        // Read Adjset (overlink only)
-        //
-
-        read_adjset(mesh_domain_file_to_use, multimesh_name, domain_id, mesh_out);
-
-        //
-        // Read Materials
-        //
-
-        // This node will house the recipe for reconstructing matset_values
-        // from silo mixvals.
-        Node matset_field_reconstruction;
-
-        // for each mesh domain, we would like to iterate through all the materials
-        // and extract the same domain from them.
-        if (mesh_index.has_child("matsets"))
-        {
-            auto matset_itr = mesh_index["matsets"].children();
-            while (matset_itr.has_next())
+            if (mesh_name == "EMPTY")
             {
-                const Node &n_matset = matset_itr.next();
-                std::string multimat_name = matset_itr.name();
+                continue; // skip this domain
+            }
 
-                bool matset_nameschemes = false;
-                if (n_matset.has_child("nameschemes") &&
-                    n_matset["nameschemes"].as_string() == "yes")
+            std::string bottom_level_mesh_name, tmp;
+            conduit::utils::rsplit_file_path(mesh_name, "/", bottom_level_mesh_name, tmp);
+
+            // root only case
+            if (mesh_domain_filename.empty())
+            {
+                mesh_domain_filename = root_file_path;
+                // we are in the root file only case so overlink is not possible
+                ovltop_case = false;
+            }
+
+            detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
+                nullptr, &DBClose};
+            DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, 
+                mesh_domain_filename, "", nullptr, mesh_domain_file);
+
+            // this is for the blueprint mesh output
+            std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
+
+            if (! read_mesh_domain(meshtype, mesh_domain_file_to_use, mesh_name, 
+                                   mesh_index_name, domain_path, mesh))
+            {
+                continue; // we hit a case where we want to skip this mesh domain
+            }
+
+            // we know we were for sure successful (we didn't skip ahead to the next domain)
+            // so we create the mesh_out now for good
+            Node &mesh_out = mesh[domain_path];
+
+            //
+            // Read State
+            //
+
+            mesh_out["state"]["domain_id"] = static_cast<index_t>(domain_id);
+            if (mesh_index.has_path("state/time"))
+            {
+                mesh_out["state"]["time"] = mesh_index["state"]["time"].as_double();
+            }
+            if (mesh_index.has_path("state/cycle"))
+            {
+                mesh_out["state"]["cycle"] = (index_t) mesh_index["state"]["cycle"].as_int();
+            }
+
+            //
+            // Read Adjset (overlink only)
+            //
+
+            read_adjset(mesh_domain_file_to_use, mesh_index_name, domain_id, mesh_out);
+
+            //
+            // Read Materials
+            //
+
+            // This node will house the recipe for reconstructing matset_values
+            // from silo mixvals.
+            Node matset_field_reconstruction;
+
+            // for each mesh domain, we would like to iterate through all the materials
+            // and extract the same domain from them.
+            if (mesh_index.has_child("matsets"))
+            {
+                auto matset_itr = mesh_index["matsets"].children();
+                while (matset_itr.has_next())
                 {
-                    matset_nameschemes = true;
-                    CONDUIT_ERROR("TODO no support for nameschemes yet");
-                }
-                detail::SiloTreePathGenerator matset_path_gen{matset_nameschemes};
+                    const Node &n_matset = matset_itr.next();
+                    std::string multimat_name = matset_itr.name();
 
-                std::string silo_matset_path = n_matset["matset_paths"][domain_id].as_string();
+                    bool matset_nameschemes = false;
+                    if (n_matset.has_child("nameschemes") &&
+                        n_matset["nameschemes"].as_string() == "yes")
+                    {
+                        matset_nameschemes = true;
+                        CONDUIT_ERROR("TODO no support for nameschemes yet");
+                    }
+                    detail::SiloTreePathGenerator matset_path_gen{matset_nameschemes};
 
-                std::string matset_name, matset_domain_filename;
-                matset_path_gen.GeneratePaths(silo_matset_path, relative_dir, matset_domain_filename, matset_name);
+                    std::string silo_matset_path = n_matset["matset_paths"][domain_id].as_string();
 
-                if (matset_name == "EMPTY")
-                {
-                    // we choose not to write anything to blueprint
-                    continue;
-                }
+                    std::string matset_name, matset_domain_filename;
+                    matset_path_gen.GeneratePaths(silo_matset_path, relative_dir, matset_domain_filename, matset_name);
 
-                // root only case
-                if (matset_domain_filename.empty())
-                {
-                    matset_domain_filename = root_file_path;
-                    // we are in the root file only case so overlink is not possible
-                    ovltop_case = false;
-                }
+                    if (matset_name == "EMPTY")
+                    {
+                        // we choose not to write anything to blueprint
+                        continue;
+                    }
 
-                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> matset_domain_file{
-                    nullptr, &DBClose};
-                DBfile *matset_domain_file_to_use = open_or_reuse_file(
-                    ovltop_case, matset_domain_filename, mesh_domain_filename,
-                    mesh_domain_file.getSiloObject(), matset_domain_file);
+                    // root only case
+                    if (matset_domain_filename.empty())
+                    {
+                        matset_domain_filename = root_file_path;
+                        // we are in the root file only case so overlink is not possible
+                        ovltop_case = false;
+                    }
 
-                // If this completes successfully, it means we have found a matset
-                // associated with this mesh. Thus we can break iteration here,
-                // since there can only be one matset. This is the earliest we can 
-                // break iteration because the silo index may have multiple matsets,
-                // and we have no way of knowing until now which one is associated
-                // with our mesh.
-                // In silo, for each mesh, there can only be one matset, because otherwise
-                // it would be ambiguous. In Blueprint, we can allow multiple matsets per
-                // topo, because the fields explicitly link to the matset they use.
-                // Right now, we only ever read one mesh, meaning that there can only
-                // be one matset in our newly created blueprint mesh.
-                if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
-                                       multimesh_name, multimat_name, bottom_level_mesh_name,
-                                       opts_matset_style, matset_field_reconstruction, mesh_out))
-                {
-                    break;
+                    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> matset_domain_file{
+                        nullptr, &DBClose};
+                    DBfile *matset_domain_file_to_use = open_or_reuse_file(
+                        ovltop_case, matset_domain_filename, mesh_domain_filename,
+                        mesh_domain_file.getSiloObject(), matset_domain_file);
+
+                    // If this completes successfully, it means we have found a matset
+                    // associated with this mesh. Thus we can break iteration here,
+                    // since there can only be one matset. This is the earliest we can 
+                    // break iteration because the silo index may have multiple matsets,
+                    // and we have no way of knowing until now which one is associated
+                    // with our mesh.
+                    // In silo, for each mesh, there can only be one matset, because otherwise
+                    // it would be ambiguous. In Blueprint, we can allow multiple matsets per
+                    // topo, because the fields explicitly link to the matset they use.
+                    // Right now, we only ever read one mesh, meaning that there can only
+                    // be one matset in our newly created blueprint mesh.
+                    if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
+                                           mesh_index_name, multimat_name, bottom_level_mesh_name,
+                                           opts_matset_style, matset_field_reconstruction, mesh_out))
+                    {
+                        break;
+                    }
                 }
             }
-        }
 
-        //
-        // Read Fields
-        //
+            //
+            // Read Fields
+            //
 
-        // for each mesh domain, we would like to iterate through all the variables
-        // and extract the same domain from them.
-        if (mesh_index.has_child("vars"))
-        {
-            auto var_itr = mesh_index["vars"].children();
-            while (var_itr.has_next())
+            // for each mesh domain, we would like to iterate through all the variables
+            // and extract the same domain from them.
+            if (mesh_index.has_child("vars"))
             {
-                const Node &n_var = var_itr.next();
-                std::string multivar_name = var_itr.name();
-
-                bool var_nameschemes = false;
-                if (n_var.has_child("nameschemes") &&
-                    n_var["nameschemes"].as_string() == "yes")
+                auto var_itr = mesh_index["vars"].children();
+                while (var_itr.has_next())
                 {
-                    var_nameschemes = true;
-                    CONDUIT_ERROR("TODO no support for nameschemes yet");
+                    const Node &n_var = var_itr.next();
+                    std::string multivar_name = var_itr.name();
+
+                    bool var_nameschemes = false;
+                    if (n_var.has_child("nameschemes") &&
+                        n_var["nameschemes"].as_string() == "yes")
+                    {
+                        var_nameschemes = true;
+                        CONDUIT_ERROR("TODO no support for nameschemes yet");
+                    }
+                    detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
+
+                    std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
+                    int_accessor vartypes = n_var["var_types"].value();
+                    int vartype = vartypes[domain_id];
+
+                    std::string var_name, var_domain_filename;
+                    var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
+
+                    if (var_name == "EMPTY")
+                    {
+                        // we choose not to write anything to blueprint
+                        continue;
+                    }
+
+                    // this info can be tracked with overlink VAR_ATTRIBUTES
+                    std::string volume_dependent = "";
+                    if (n_var.has_child("volume_dependent"))
+                    {
+                        volume_dependent = n_var["volume_dependent"].as_string();
+                    }
+
+                    // root only case
+                    if (var_domain_filename.empty())
+                    {
+                        var_domain_filename = root_file_path;
+                        // we are in the root file only case so overlink is not possible
+                        ovltop_case = false;
+                    }
+
+                    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
+                        nullptr, &DBClose};
+                    DBfile *var_domain_file_to_use = open_or_reuse_file(
+                        ovltop_case, var_domain_filename, mesh_domain_filename,
+                        mesh_domain_file.getSiloObject(), var_domain_file);
+
+                    // we don't care if this skips the var or not since this is the
+                    // last thing in the loop iteration
+                    read_variable_domain(vartype, var_domain_file_to_use, var_name,
+                        mesh_index_name, multivar_name, bottom_level_mesh_name,
+                        volume_dependent, opts_matset_style,
+                        matset_field_reconstruction, mesh_out);
                 }
-                detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
-
-                std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
-                int_accessor vartypes = n_var["var_types"].value();
-                int vartype = vartypes[domain_id];
-
-                std::string var_name, var_domain_filename;
-                var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
-
-                if (var_name == "EMPTY")
-                {
-                    // we choose not to write anything to blueprint
-                    continue;
-                }
-
-                // this info can be tracked with overlink VAR_ATTRIBUTES
-                std::string volume_dependent = "";
-                if (n_var.has_child("volume_dependent"))
-                {
-                    volume_dependent = n_var["volume_dependent"].as_string();
-                }
-
-                // root only case
-                if (var_domain_filename.empty())
-                {
-                    var_domain_filename = root_file_path;
-                    // we are in the root file only case so overlink is not possible
-                    ovltop_case = false;
-                }
-
-                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
-                    nullptr, &DBClose};
-                DBfile *var_domain_file_to_use = open_or_reuse_file(
-                    ovltop_case, var_domain_filename, mesh_domain_filename,
-                    mesh_domain_file.getSiloObject(), var_domain_file);
-
-                // we don't care if this skips the var or not since this is the
-                // last thing in the loop iteration
-                read_variable_domain(vartype, var_domain_file_to_use, var_name,
-                    multimesh_name, multivar_name, bottom_level_mesh_name,
-                    volume_dependent, opts_matset_style,
-                    matset_field_reconstruction, mesh_out);
             }
         }
     }
