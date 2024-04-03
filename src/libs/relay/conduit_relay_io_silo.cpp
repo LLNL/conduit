@@ -2540,6 +2540,68 @@ read_root_silo_index(const std::string &root_file_path,
         return false;
     }
 
+    // handle legacy mesh_name argument
+    Node real_opts;
+    if (opts.has_child("mesh_name"))
+    {
+        const std::string opts_mesh_name = opts["mesh_name"].as_string();
+        // we could manually go through the other opts, but I think this approach
+        // is cleaner in case we add more down the road
+        auto opts_itr = opts.children();
+        while (opts_itr.has_next())
+        {
+            const Node &opts_item = opts_itr.next();
+            const std::string opt_name = opts_itr.name();
+            if (opt_name != "silo_names")
+            {
+                real_opts[opt_name].set_external(opts_item);
+            }
+            else
+            {
+                // silo names case
+                auto silo_names_itr = opts["silo_names"].children();
+                while (silo_names_itr.has_next())
+                {
+                    const Node &silo_names_entry = silo_names_itr.next();
+                    const std::string silo_names_name = silo_names_itr.name();
+                    if (silo_names_name != "multimesh_names")
+                    {
+                        real_opts["silo_names"][silo_names_name].set_external(silo_names_entry);
+                    }
+                }
+            }
+        }
+
+        if (opts.has_path("silo_names/multimesh_names"))
+        {
+            if (opts["silo_names"]["multimesh_names"].has_child("all") ||
+                opts["silo_names"]["multimesh_names"].has_child("none") ||
+                opts["silo_names"]["multimesh_names"].has_child(opts_mesh_name))
+            {
+                real_opts["silo_names"]["multimesh_names"].set_external(opts["silo_names"]["multimesh_names"]);
+            }
+            else
+            {
+                auto mmesh_names_itr = opts["silo_names"]["multimesh_names"].children();
+                while (mmesh_names_itr.has_next())
+                {
+                    const Node &mmesh_names_entry = mmesh_names_itr.next();
+                    const std::string mmesh_name = mmesh_names_itr.name();
+                    real_opts["silo_names"]["multimesh_names"][mmesh_name].set_external(mmesh_names_entry);
+                }
+                real_opts["silo_names"]["multimesh_names"][opts_mesh_name];
+            }
+        }
+        else
+        {
+            real_opts["silo_names"]["multimesh_names"].set(opts_mesh_name);
+        }
+    }
+    else
+    {
+        real_opts.set_external(opts);
+    }
+
     std::map<std::string, detail::SiloReadBookkeeping> reading_info;
 
     // read all is turned on, and read none is turned off
@@ -2556,9 +2618,9 @@ read_root_silo_index(const std::string &root_file_path,
     reading_info["mat_names"] = detail::SiloReadBookkeeping();
     // reading_info["matspecies_names"] = detail::SiloReadBookkeeping();
 
-    if (opts.has_child("silo_names"))
+    if (real_opts.has_child("silo_names"))
     {
-        auto silo_names_itr = opts["silo_names"].children();
+        auto silo_names_itr = real_opts["silo_names"].children();
         while (silo_names_itr.has_next())
         {
             const Node &silo_object_type = silo_names_itr.next();
@@ -2570,25 +2632,54 @@ read_root_silo_index(const std::string &root_file_path,
                 return false;
             }
 
-            if (silo_object_type.number_of_children() > 0)
+            if (silo_object_type.dtype().is_object())
             {
-                if (silo_object_type.has_child("all"))
+                if (silo_object_type.number_of_children() > 0)
                 {
-                    if (silo_object_type.number_of_children() > 1)
+                    if (silo_object_type.has_child("all"))
                     {
-                        error_oss << "TODO this is bad";
-                        return false;
+                        if (silo_object_type.number_of_children() > 1)
+                        {
+                            error_oss << "TODO this is bad";
+                            return false;
+                        }
+                        reading_info[silo_object_type_name].read_all = true;
+                        reading_info[silo_object_type_name].read_none = false;
                     }
+                    else if (silo_object_type.has_child("none"))
+                    {
+                        if (silo_object_type.number_of_children() > 1)
+                        {
+                            error_oss << "TODO this is bad";
+                            return false;
+                        }
+                        reading_info[silo_object_type_name].read_all = false;
+                        reading_info[silo_object_type_name].read_none = true;
+                    }
+                    else
+                    {
+                        // we must have named some specific items we want to read
+                        reading_info[silo_object_type_name].read_all = false;
+                        reading_info[silo_object_type_name].read_none = false;
+                    }
+                }
+                else
+                {
+                    // no children were specified so we want to read everything of this kind
                     reading_info[silo_object_type_name].read_all = true;
                     reading_info[silo_object_type_name].read_none = false;
                 }
-                else if (silo_object_type.has_child("none"))
+            }
+            else
+            {
+                const std::string silo_name_value = silo_object_type.as_string();
+                if ("all" == silo_name_value)
                 {
-                    if (silo_object_type.number_of_children() > 1)
-                    {
-                        error_oss << "TODO this is bad";
-                        return false;
-                    }
+                    reading_info[silo_object_type_name].read_all = true;
+                    reading_info[silo_object_type_name].read_none = false;
+                }
+                else if ("none" == silo_name_value)
+                {
                     reading_info[silo_object_type_name].read_all = false;
                     reading_info[silo_object_type_name].read_none = true;
                 }
@@ -2598,12 +2689,6 @@ read_root_silo_index(const std::string &root_file_path,
                     reading_info[silo_object_type_name].read_all = false;
                     reading_info[silo_object_type_name].read_none = false;
                 }
-            }
-            else
-            {
-                // no children were specified so we want to read everything of this kind
-                reading_info[silo_object_type_name].read_all = true;
-                reading_info[silo_object_type_name].read_none = false;
             }
         }
     }
@@ -2626,7 +2711,15 @@ read_root_silo_index(const std::string &root_file_path,
             }
             else
             {
-                reading_info[silo_obj_name].names_to_read = opts["silo_names"][silo_obj_name].child_names();
+                if (real_opts["silo_names"][silo_obj_name].dtype().is_object())
+                {
+                    reading_info[silo_obj_name].names_to_read = real_opts["silo_names"][silo_obj_name].child_names();
+                }
+                else
+                {
+                    reading_info[silo_obj_name].names_to_read.push_back(real_opts["silo_names"][silo_obj_name].as_string());
+                }
+
                 for (size_t list_id = 0; list_id < reading_info[silo_obj_name].names_to_read.size(); list_id ++)
                 {
                     bool found = false;
@@ -2671,9 +2764,9 @@ read_root_silo_index(const std::string &root_file_path,
 
     // Get the selected matset flavor
     std::string opts_matset_style = "";
-    if (opts.has_child("matset_style") && opts["matset_style"].dtype().is_string())
+    if (real_opts.has_child("matset_style") && real_opts["matset_style"].dtype().is_string())
     {
-        opts_matset_style = opts["matset_style"].as_string();
+        opts_matset_style = real_opts["matset_style"].as_string();
         if (opts_matset_style != "default" && 
             opts_matset_style != "multi_buffer_full" &&
             opts_matset_style != "sparse_by_element" &&
@@ -2885,6 +2978,11 @@ read_root_silo_index(const std::string &root_file_path,
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
+///
+///      mesh_name: legacy argument. This is interpreted as a multimesh name.
+///            It is added to the list of multimesh names to read, unless the
+///            user has specified "all" or "none", which will supersede this.
+///            TODO does it make sense to remove this? When?
 ///
 /// note: we have made the choice to read ONLY the multimesh with the name
 /// mesh_name. We also read all multivariables which are associated with the
