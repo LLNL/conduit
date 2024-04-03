@@ -2472,7 +2472,6 @@ read_root_silo_index(const std::string &root_file_path,
 {
     // clear output vars
     root_node.reset();
-    std::string multimesh_name = ""; // TODO preserve legacy functionality somehow
     error_oss.str("");
 
     // first, make sure we can open the root file
