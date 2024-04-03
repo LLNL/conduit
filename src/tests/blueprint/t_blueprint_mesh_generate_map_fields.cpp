@@ -185,6 +185,38 @@ TEST(conduit_blueprint_generate_unstructured, generate_sides_2D)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_no_fields)
+{
+    const index_t nlevels = 2;
+    const index_t nz = 1;
+    Node n, side_mesh, info;
+
+    // create polytessalation with two levels
+    examples::polytess(nlevels, nz, n);
+    EXPECT_TRUE(verify(n, info));
+
+    n.remove_child("fields");
+
+    Node s2dmap, d2smap;
+    Node &side_coords = side_mesh["coordsets/coords"];
+    Node &side_topo = side_mesh["topologies/topo"];
+    Node side_fields;
+    Node options;
+    options["field_names"] = "level";
+
+    blueprint::mesh::topology::unstructured::generate_sides(n["topologies/topo"],
+                                                            side_topo,
+                                                            side_coords,
+                                                            side_fields,
+                                                            s2dmap,
+                                                            d2smap,
+                                                            options);
+
+    EXPECT_TRUE(verify(side_mesh, info));
+    EXPECT_EQ(side_mesh["fields"].number_of_children(), 0);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_generate_unstructured, generate_sides_2D_skip_bad_field)
 {
     const index_t nlevels = 2;

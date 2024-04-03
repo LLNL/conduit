@@ -40,9 +40,21 @@ from os.path import join as pjoin
 
 from setuptools import setup, Extension
 from setuptools.command.build_ext import build_ext
-from distutils.version import LooseVersion
 
-CONDUIT_VERSION = '0.8.7'
+##############################################################################
+# NOTE 2024/02/16
+# with distutils gone, there is no built-in equivalent to:
+# from distutils.version import LooseVersion
+#
+# The packaging module helps, but it's *not* built in to 
+# standard python installs and we don't want to add another 
+# dep for a one line check for cmake.
+#
+# I removed the cmake version check.
+# 
+##############################################################################
+
+CONDUIT_VERSION = '0.9.1'
 
 class CMakeExtension(Extension):
     def __init__(self, name, sourcedir=''):
@@ -55,16 +67,9 @@ class CMakeBuild(build_ext):
         try:
             out = subprocess.check_output(['cmake', '--version'])
         except OSError:
-            raise RuntimeError("CMake >= 3.9.0 must be installed to build the following " +
+            raise RuntimeError("CMake must be installed to build the following " +
                                "extensions: " +
                                ", ".join(e.name for e in self.extensions))
-
-        cmake_version = LooseVersion(re.search(r'version\s*([\d.]+)',
-                                               out.decode()
-                                               ).group(1))
-
-        if cmake_version < '3.9.0':
-            raise RuntimeError("CMake >= 3.9.0 is required")
 
         for ext in self.extensions:
             self.build_extension(ext)

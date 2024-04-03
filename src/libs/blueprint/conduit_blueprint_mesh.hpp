@@ -743,6 +743,22 @@ namespace matset
     bool CONDUIT_BLUEPRINT_API is_material_dominant(const conduit::Node &matset);
 
     //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_full(const conduit::Node &src_matset,
+                                                    conduit::Node &dest_matset);
+
+    //-------------------------------------------------------------------------
+    // creates a unibuffer case with 1st index into elements
+    void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
+                                                    conduit::Node &dest_matset,
+                                                    const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
+    // covers both the sparse and non sparse case
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_by_material(const conduit::Node &src_matset,
+                                                           conduit::Node &dest_matset,
+                                                           const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
     // Converts a blueprint matset to the silo style sparse mixed slot 
     // representation.
     //
@@ -781,6 +797,28 @@ namespace field
                                               const std::string & toponame,
                                               const std::string& topo_dest,
                                               std::map<std::string, std::string>& matset_names);
+
+    //-------------------------------------------------------------------------
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_full(const conduit::Node &src_matset,
+                                                    const conduit::Node &src_field,
+                                                    const std::string &dest_matset_name,
+                                                    conduit::Node &dest_field);
+
+    //-------------------------------------------------------------------------
+    // creates a unibuffer case with 1st index into elements
+    void CONDUIT_BLUEPRINT_API to_sparse_by_element(const conduit::Node &src_matset,
+                                                    const conduit::Node &src_field,
+                                                    const std::string &dest_matset_name,
+                                                    conduit::Node &dest_field,
+                                                    const float64 epsilon = CONDUIT_EPSILON);
+
+    //-------------------------------------------------------------------------
+    // covers both the sparse and non sparse case
+    void CONDUIT_BLUEPRINT_API to_multi_buffer_by_material(const conduit::Node &src_matset,
+                                                           const conduit::Node &src_field,
+                                                           const std::string &dest_matset_name,
+                                                           conduit::Node &dest_field,
+                                                           const float64 epsilon = CONDUIT_EPSILON);
 
     //-------------------------------------------------------------------------
     // Given a blueprint field and matset, converts the matset and the field
@@ -864,6 +902,10 @@ namespace adjset
     //-------------------------------------------------------------------------
     void CONDUIT_BLUEPRINT_API to_maxshare(const conduit::Node &adjset,
                                            conduit::Node &dest);
+
+    //-------------------------------------------------------------------------
+    /// Return the canonical adjacency set group prefix used in group names.
+    std::string CONDUIT_BLUEPRINT_API group_prefix();
 
     //-------------------------------------------------------------------------
     // blueprint::mesh::adjset::index protocol interface

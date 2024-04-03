@@ -2260,3 +2260,51 @@ TEST(conduit_relay_io_hdf5, wrong_proto_message)
         std::cout << e.message() << std::endl;
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_error_writing_incompat_leaf)
+{
+    Node n;
+    n["thing"].set(42);
+    bool err_occured = false;
+ 
+    std::string test_file_name = "tout_imcompat.hdf5:/";
+    try
+    {
+        conduit::relay::io::save(n,test_file_name);
+        n["thing"].set("string");
+        conduit::relay::io::save_merged(n,test_file_name);
+    }
+    catch(conduit::Error &e)
+    {
+        std::string emsg = e.message();
+        std::cout << emsg << std::endl;
+        err_occured = true;
+    }
+
+    EXPECT_TRUE(err_occured);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_hdf5, conduit_hdf5_error_writing_leaf_to_root)
+{
+    Node n;
+    n.set(42);
+    bool err_occured = false;
+ 
+    std::string test_file_name = "tout_cant_write_to_root.hdf5:/";
+    try
+    {
+        conduit::relay::io::save(n,test_file_name);
+    }
+    catch(conduit::Error &e)
+    {
+        std::string emsg = e.message();
+        std::size_t found = emsg.find("Attempt to write Conduit leaf dataset to HDF5 file root.");
+        EXPECT_TRUE(found!=std::string::npos);
+        std::cout << emsg << std::endl;
+        err_occured = true;
+    }
+
+    EXPECT_TRUE(err_occured);
+}

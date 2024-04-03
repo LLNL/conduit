@@ -13,13 +13,17 @@
 #include "conduit_blueprint.hpp"
 #include "conduit_blueprint_mesh_partition.hpp"
 #include "conduit_blueprint_mesh_utils.hpp"
+#include "conduit_blueprint_mesh_utils_iterate_elements.hpp"
 #include "conduit_relay.hpp"
 #include "conduit_log.hpp"
 
 #include <math.h>
-#include <iostream>
 #include <array>
 #include <cmath>
+#include <iostream>
+#include <numeric>
+#include <set>
+
 #include "gtest/gtest.h"
 
 #include "blueprint_test_helpers.hpp"
@@ -969,6 +973,38 @@ TEST(conduit_blueprint_mesh_partition_point_merge, multidomain8)
 //-----------------------------------------------------------------------------
 //-- Combine topology --
 //-----------------------------------------------------------------------------
+static bool ph_faces_unique(const conduit::Node &topo)
+{
+    bool unique = true;
+    const auto sizes = topo["subelements/sizes"].as_int_accessor();
+    const auto connectivity = topo["subelements/connectivity"].as_index_t_accessor();
+    std::vector<conduit::index_t> zids;
+
+    // Iterate over the face definitions and make ids for them.
+    std::set<conduit::uint64> uniqueFaces;
+    conduit::index_t offset = 0;
+    for(conduit::index_t fi = 0; fi < sizes.number_of_elements(); fi++)
+    {
+        const auto npts = sizes[fi];
+
+        zids.clear();
+        zids.reserve(npts);
+        for(conduit::index_t i = 0; i < npts; i++)
+            zids.push_back(connectivity[offset + i]);
+
+        auto faceId = conduit::utils::hash(&zids[0], npts);
+        auto it = uniqueFaces.find(faceId);
+        bool notFound = it == uniqueFaces.end();
+        if(notFound)
+            uniqueFaces.insert(faceId);
+        unique &= notFound;
+        offset += npts;
+    }
+    return unique;
+}
+
+//-----------------------------------------------------------------------------
+// #define DEBUG_RECOMBINE_BRAID
 TEST(conduit_blueprint_mesh_combine, recombine_braid)
 {
     const auto recombine_braid_case = [](const std::string &case_name, const conduit::index_t *vdims)
@@ -1028,6 +1064,15 @@ TEST(conduit_blueprint_mesh_combine, recombine_braid)
                 verify_info.print();
             }
             EXPECT_TRUE(is_valid);
+
+            // If the combined mesh is polyhedral then make sure all the face
+            // definitions are unique.
+            if(combine.has_path("topologies/mesh/elements/shape") &&
+               combine["topologies/mesh/elements/shape"].as_string() == "polyhedral")
+            {
+                bool unique = ph_faces_unique(combine["topologies/mesh"]);
+                EXPECT_TRUE(unique);
+            }
         }
 
         // Compare combined mesh to baselines
@@ -2657,5 +2702,294 @@ TEST(conduit_blueprint_mesh_partition, generate_boundary_partition)
     for(conduit::index_t i = 0; i < bparts.number_of_elements(); i++)
     {
         EXPECT_EQ(bparts_baseline[i], bparts[i]);
+    }
+}
+
+//-----------------------------------------------------------------------------
+std::vector<double> blend(double x0, double x1, int n)
+{
+    std::vector<double> values(n);
+    for(int i = 0; i < n; i++)
+    {
+        double t = static_cast<double>(i) / static_cast<double>(n - 1);
+        values[i] = (1. - t) * x0 + t * x1;
+    }
+    return values;
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, map_back_set_external)
+{
+#define F_XYC(X,Y,C) (static_cast<double>((C) + 1) * sqrt((X)*(X) + (Y)*(Y)))
+
+    auto compute_nodal_field = [](conduit::Node &mesh, conduit::Node &f)
+    {
+        std::string type = mesh["coordsets/coords/type"].as_string();
+        const auto x = mesh["coordsets/coords/values/x"].as_double_accessor();
+        const auto y = mesh["coordsets/coords/values/y"].as_double_accessor();
+        conduit::Node &values = f["values"];
+        int nc = std::max(1, static_cast<int>(values.number_of_children()));
+        bool single = values.number_of_children() == 0;
+
+        if(type == "rectilinear")
+        {
+            for(int c = 0; c < nc; c++)
+            {
+                auto comp = single ? values.as_double_array() : values[c].as_double_array();
+                int idx =0 ;
+                for(int j = 0; j < y.number_of_elements(); j++)
+                for(int i = 0; i < x.number_of_elements(); i++, idx++)
+                    comp[idx] = F_XYC(x[i], y[j], c);
+            }
+        }
+        else if(type == "unstructured")
+        {
+            for(int c = 0; c < nc; c++)
+            {
+                auto comp = single ? values.as_double_array() : values[c].as_double_array();
+                for(int i = 0; i < x.number_of_elements(); i++)
+                    comp[i] = F_XYC(x[i], y[i], c);
+            }
+        }
+    };
+
+    auto compute_zonal_field = [](conduit::Node &mesh, conduit::Node &f)
+    {
+        namespace topoutils = conduit::blueprint::mesh::utils::topology;
+
+        // Turn to explicit coordinates just in case.
+        conduit::Node expcoords;
+        conduit::blueprint::mesh::coordset::to_explicit(mesh["coordsets/coords"], expcoords);
+        const auto x = expcoords["values/x"].as_double_accessor();
+        const auto y = expcoords["values/y"].as_double_accessor();
+        conduit::Node &values = f["values"];
+        topoutils::iterate_elements(mesh["topologies/main"],
+            [&](const topoutils::entity &e)
+        {
+            // Make a zone center.
+            double w = 1. / static_cast<double>(e.element_ids.size());
+            double zc[] = {0., 0., 0.};
+            for(const auto id : e.element_ids)
+            {
+                zc[0] = w * x[id];
+                zc[1] = w * y[id];
+            }
+
+            int nc = std::max(1, static_cast<int>(values.number_of_children()));
+            bool single = values.number_of_children() == 0;
+
+            for(int c = 0; c < nc; c++)
+            {
+                auto comp = single ? values.as_double_array() : values[c].as_double_array();
+                comp[e.entity_id] = F_XYC(zc[0], zc[1], c);
+            }
+        });
+    };
+
+    auto wrap = [](conduit::Node &root,
+                   std::vector<double> &nodal,
+                   std::vector<double> &zonal,
+                   std::vector<double> &nodalvec,
+                   std::vector<double> &zonalvec,
+                   int nnodes, int nzones)
+    {
+        root["fields/nodal/topology"] = "main";
+        root["fields/nodal/association"] = "vertex";
+        root["fields/nodal/values"].set_external(&nodal[0], nnodes);
+
+        root["fields/zonal/topology"] = "main";
+        root["fields/zonal/association"] = "element";
+        root["fields/zonal/values"].set_external(&zonal[0], nzones);
+
+        root["fields/nodalvec/topology"] = "main";
+        root["fields/nodalvec/association"] = "vertex";
+        root["fields/nodalvec/values/x"].set_external(&nodalvec[0], nnodes, 0, 2*sizeof(double));
+        root["fields/nodalvec/values/y"].set_external(&nodalvec[0], nnodes, sizeof(double), 2*sizeof(double));
+
+        root["fields/zonalvec/topology"] = "main";
+        root["fields/zonalvec/association"] = "element";
+        root["fields/zonalvec/values/cx"].set_external(&zonalvec[0], nzones, 0, 2*sizeof(double));
+        root["fields/zonalvec/values/cy"].set_external(&zonalvec[0], nzones, sizeof(double), 2*sizeof(double));
+    };
+
+    const double extents[] = {-2., 2., -2., 2.};
+    constexpr int dims[] = {15,10};
+    constexpr int nnodes = dims[0] * dims[1];
+    constexpr int nzones = (dims[0] - 1) * (dims[1] - 1);
+
+    conduit::Node mesh;
+    mesh["coordsets/coords/type"] = "rectilinear";
+    mesh["coordsets/coords/values/x"].set(blend(extents[0], extents[1], dims[0]));
+    mesh["coordsets/coords/values/y"].set(blend(extents[2], extents[3], dims[1]));
+
+    mesh["topologies/main/type"] = "rectilinear";
+    mesh["topologies/main/coordset"] = "coords";
+
+    mesh["state/cycle"] = 123;
+    mesh["state/domain_id"] = 0;
+
+    // Make a global vertex field or we get a failure during map_back.
+    mesh["fields/global_vertex_ids/topology"] = "main";
+    mesh["fields/global_vertex_ids/association"] = "vertex";
+    mesh["fields/global_vertex_ids/values"].set(conduit::DataType::int32(nnodes));
+    int *gids = mesh["fields/global_vertex_ids/values"].as_int_ptr();
+    std::iota(gids, gids + nnodes, 0);
+
+    // Make external fields.
+    std::vector<double> nodal(nnodes, 0.), zonal(nzones, 0.),
+                        nodalvec(nnodes * 2., 0.), zonalvec(nzones * 2, 0.);
+    wrap(mesh, nodal, zonal, nodalvec, zonalvec, nnodes, nzones);
+    //mesh.print();
+
+    // Make results vectors
+    std::vector<double> nodal_result(nnodes, 0.), zonal_result(nzones, 0.),
+                        nodalvec_result(nnodes * 2, 0.), zonalvec_result(nzones * 2, 0.);
+    conduit::Node results;
+    results["coordsets"].set_external_node(mesh["coordsets"]);
+    results["topologies"].set_external_node(mesh["topologies"]);
+    wrap(results, nodal_result, zonal_result, nodalvec_result, zonalvec_result, nnodes, nzones);
+
+    // Compute values into the results.
+    compute_nodal_field(results, results["fields/nodal"]);
+    compute_zonal_field(results, results["fields/zonal"]);
+    compute_nodal_field(results, results["fields/nodalvec"]);
+    compute_zonal_field(results, results["fields/zonalvec"]);
+    //results.print();
+
+    // Partition the mesh into 2 domains.
+    conduit::Node part, options;
+    options["target"] = 2;
+    options["mapping"] = 1;
+    options["original_element_ids"] = "eids";
+    options["original_vertex_ids"] = "vids";
+    //std::cout << "Calling partition" << std::endl;
+    //options.print();
+    conduit::blueprint::mesh::partition(mesh, options, part);
+
+    auto domains = conduit::blueprint::mesh::domains(part);
+    EXPECT_EQ(domains.size(), 2);
+    for(auto &dom : domains)
+    {
+        EXPECT_TRUE(dom->has_path("fields/eids/values"));
+        EXPECT_TRUE(dom->has_path("fields/vids/values"));
+    }
+
+    // Compute the fields on the part mesh.
+    for(auto &dom : domains)
+    {
+        compute_nodal_field(*dom, dom->fetch_existing("fields/nodal"));
+        compute_zonal_field(*dom, dom->fetch_existing("fields/zonal"));
+        compute_nodal_field(*dom, dom->fetch_existing("fields/nodalvec"));
+        compute_zonal_field(*dom, dom->fetch_existing("fields/zonalvec"));
+        //dom->print();
+    }
+
+    // Map the fields back to the original mesh.
+    conduit::Node mbopts;
+    mbopts["fields"].append().set("nodal");
+    mbopts["fields"].append().set("zonal");
+    mbopts["fields"].append().set("nodalvec");
+    mbopts["fields"].append().set("zonalvec");
+    mbopts["original_element_ids"] = "eids";
+    mbopts["original_vertex_ids"] = "vids";
+    //std::cout << "Calling partition_map_back" << std::endl;
+    //mbopts.print();
+    conduit::blueprint::mesh::partition_map_back(part, mbopts, mesh);
+
+    // Printing the nodal field, it should not contain non-zero values.
+    //std::cout << "After map_back" << std::endl;
+    //mesh["fields/nodal"].print();
+
+    // Make sure mapping back the fields did not change addresses of the fields
+    // in the original mesh. Y components should be at index 1.
+    EXPECT_EQ(&nodal[0], mesh["fields/nodal/values"].as_double_ptr());
+    EXPECT_EQ(&zonal[0], mesh["fields/zonal/values"].as_double_ptr());
+    EXPECT_EQ(&nodalvec[0], mesh["fields/nodalvec/values/x"].as_double_ptr());
+    EXPECT_EQ(&nodalvec[1], mesh["fields/nodalvec/values/y"].as_double_ptr());
+    EXPECT_EQ(&zonalvec[0], mesh["fields/zonalvec/values/cx"].as_double_ptr());
+    EXPECT_EQ(&zonalvec[1], mesh["fields/zonalvec/values/cy"].as_double_ptr());
+
+    // Check lengths
+    EXPECT_EQ(mesh["fields/nodal/values"].dtype().number_of_elements(), nnodes);
+    EXPECT_EQ(mesh["fields/zonal/values"].dtype().number_of_elements(), nzones);
+    EXPECT_EQ(mesh["fields/nodalvec/values/x"].dtype().number_of_elements(), nnodes);
+    EXPECT_EQ(mesh["fields/nodalvec/values/y"].dtype().number_of_elements(), nnodes);
+    EXPECT_EQ(mesh["fields/zonalvec/values/cx"].dtype().number_of_elements(), nzones);
+    EXPECT_EQ(mesh["fields/zonalvec/values/cy"].dtype().number_of_elements(), nzones);
+
+    // Check that the vectors are interleaved.
+    EXPECT_EQ(mesh["fields/nodalvec/values/x"].dtype().offset(), 0);
+    EXPECT_EQ(mesh["fields/nodalvec/values/x"].dtype().stride(), 2 * sizeof(double));
+    EXPECT_EQ(mesh["fields/nodalvec/values/y"].dtype().offset(), sizeof(double));
+    EXPECT_EQ(mesh["fields/nodalvec/values/y"].dtype().stride(), 2 * sizeof(double));
+    EXPECT_EQ(mesh["fields/zonalvec/values/cx"].dtype().offset(), 0);
+    EXPECT_EQ(mesh["fields/zonalvec/values/cx"].dtype().stride(), 2 * sizeof(double));
+    EXPECT_EQ(mesh["fields/zonalvec/values/cy"].dtype().offset(), sizeof(double));
+    EXPECT_EQ(mesh["fields/zonalvec/values/cy"].dtype().stride(), 2 * sizeof(double));
+
+    // Make sure that the field values are the same as the results.
+    const std::vector<std::string> fieldNames{"nodal", "zonal", "nodalve", "zonalvec"};
+    for(const auto &name : fieldNames)
+    {
+        conduit::Node info;
+        bool different = results["fields"][name].diff(mesh["fields"][name], info);
+        if(different)
+            info.print();
+        EXPECT_FALSE(different);
+    }
+#undef F_XYC
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_partition, partition_single_group)
+{
+    // This test is designed to make sure that we can send an mcarray with a single
+    // component through partitioning when the partitioner causes domain recombining.
+    // There was a problem where this was not quite working due to the mcarray being
+    // treated as a scalar (had the wrong schema).
+    const double extents[3][4] = {{0.,1., 0., 1.},{1.,2., 0., 1.},{0.,2., 1., 2.}};
+    constexpr int dims[3][2] = {{5,5}, {5,5}, {9,5}};
+
+    conduit::Node mesh;
+    for(int d = 0; d < 3; d++)
+    {
+        char name[32];
+        sprintf(name, "domain_%05d", d);
+        conduit::Node &dom = mesh[name];
+        const int nnodes = dims[d][0] * dims[d][1];
+
+        dom["coordsets/coords/type"] = "rectilinear";
+        dom["coordsets/coords/values/x"].set(blend(extents[d][0], extents[d][1], dims[d][0]));
+        dom["coordsets/coords/values/y"].set(blend(extents[d][2], extents[d][3], dims[d][1]));
+
+        dom["topologies/main/type"] = "rectilinear";
+        dom["topologies/main/coordset"] = "coords";
+
+        dom["state/cycle"] = 123;
+        dom["state/domain_id"] = d;
+
+        // Make a mcarray with 1 component. We'll send this through partition to the part mesh
+        // where it won't exist but will need to be created, testing the partitioner's vector vs
+        // scalar logic for 1 component.
+        dom["fields/single_group/topology"] = "main";
+        dom["fields/single_group/association"] = "vertex";
+        dom["fields/single_group/values/group0"].set(conduit::DataType::int32(nnodes));
+        int *sg = dom["fields/single_group/values/group0"].as_int_ptr();
+        std::iota(sg, sg + nnodes, 0);
+    }  
+
+    // Repartition the mesh from 3 domains into 2 domains.
+    conduit::Node part, options;
+    options["target"] = 2;
+    options["mapping"] = 1;
+    conduit::blueprint::mesh::partition(mesh, options, part);
+
+    // Check the part mesh.
+    EXPECT_EQ(part.number_of_children(), 2);
+    for(conduit::index_t d = 0; d < part.number_of_children(); d++)
+    {
+        conduit::Node &dom = part[d];
+        EXPECT_TRUE(dom.has_path("fields/single_group/values/group0"));
+        EXPECT_EQ(dom.fetch_existing("fields/single_group/values").number_of_children(), 1);
     }
 }

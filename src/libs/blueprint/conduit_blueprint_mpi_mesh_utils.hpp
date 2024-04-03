@@ -174,6 +174,7 @@ namespace adjset
 
      @param mesh A node that contains one or more mesh domains.
      @param adjsetName The name of the adjset to check. This must be a pairwise adjset.
+     @param[out] info Information about the failed adjset comparison.
      @param comm The MPI communicator to use.
 
      @return True if the adjset are the same pointwise across each interface;
@@ -181,6 +182,7 @@ namespace adjset
      */
      bool CONDUIT_BLUEPRINT_API compare_pointwise(conduit::Node &mesh,
                                                   const std::string &adjsetName,
+                                                  conduit::Node &info,
                                                   MPI_Comm comm);
 }
 //-----------------------------------------------------------------------------

@@ -45,7 +45,10 @@
 
 #cmakedefine CONDUIT_USE_FMT
 
+// keep CONDUIT_USE_CXX11 to support old logic
 #cmakedefine CONDUIT_USE_CXX11
+
+#cmakedefine CONDUIT_USE_CXX14
 
 #cmakedefine CONDUIT_USE_CALIPER
 

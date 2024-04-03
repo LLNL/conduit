@@ -12,9 +12,136 @@ https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
 
+v0.9.1
+---------------------------------
+
+* Released 2024-02-09
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.9.1/conduit-v0.9.1-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Changed
+~~~~~~~
+
+
+* **Conduit**
+
+ * Relaxed strict header check for C++14 back to C++11. A downstream consumer of Conduit has C++11 hardcoded into their build system and patching for related deployments is intractable.
+ * Restore logic to avoid fused mpi c++ and fortran flags that can undermine blt's mpi smoke test.
+
+* **Blueprint**
+
+ * Fixed missing build dependency relationship with the python conduit blueprint table examples module.
+ * Fixed partitioner so it does not duplicate faces when combining polyhedral meshes.
+
+Added
+~~~~~
+
+
+* **Relay**
+
+ * Added polygonal support to Blueprint Silo I/O.
+
+
+v0.9.0
+---------------------------------
+
+* Released 2024-02-04
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.9.0/conduit-v0.9.0-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **General**
+
+ * Added ``conduit_json_external`` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to ``set_external()``.
+ * Added a ``conduit_generate_data`` executable that can generate datasets using the ``tiled()`` and ``braid()`` functions and save the datasets to files.
+ * Added helpers that support enhanced debugging of Conduit Node objects in several debuggers.
+ * Added the ability to set values via a DataAccessor and DataAccessor to string methods.
+ * Added explicit set methods to DataArray, and the ability to set DataArray values from a DataAccessor.
+
+* **Relay**
+
+ * Added extensive Mesh Blueprint Silo I/O support including, including options for Overlink Silo conventions. This capability allows Silo files to be used as a close peer to the Blueprint HDF5 I/O options.
+ * Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
+ * Added ``conduit.relay.io.silo`` to the Python interface.
+
+* **Blueprint**
+
+ * Added a ``conduit::blueprint::mesh::examples::tiled()`` function that can generate meshes by repeating a tiled pattern.
+ * Added a ``conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise()`` function that can compare adjsets for multi-domain meshes in parallel. The function is used to diagnose adjsets with points that are out of order on either side of the boundary. The comparison is done point by point within each group and it checks to ensure that the points reference the same spatial location.
+ * Added a ``conduit::blueprint::mesh::utils::reorder()`` function that can accept a vector of element ids and create a reordered topology. The points and coordinates are re-ordered according to their first use in the new element ordering.
+ * Added a ``conduit::blueprint::mesh::utils::topology::spatial_ordering()`` function that takes a topology and computes centroids for each element, passes them through a kdtree, and returns the new element ordering. The new ordering can be used with the ``reorder()`` function.
+ * Added a ``conduit::blueprint::mesh::utils::topology::hilbert_ordering()`` function that computes a new order for a topology's elements based on their centroids and a Hilbert curve. The new ordering can be used with the ``reorder()`` function.
+ * Added a ``conduit::blueprint::mesh::utils::slice_array()`` function that can slice Conduit nodes that contain arrays. A new node with the same type is created but it contains only the selected indices.
+ * Added a ``conduit::blueprint::mesh::utils::slice_field()`` function. It is like ``slice_array()`` but it can handle the mcarray protocol. This functionality was generalized from the partitioner.
+ * Added a ``conduit::blueprint::mesh::utils::topology::unstructured::rewrite_connectivity()`` function that will rewrite a topology's connectivity in terms of a different coordset. The PointQuery is used internally to search for equivalent coordinates in the new coordset.
+ * Added a ``conduit::blueprint::mesh::utils::copy_fields()`` function that helps copy fields from one fields node to another.
+ * Added a ``conduit::blueprint::mesh::utils::convert()`` function that converts a list of nodes to a desired data type.
+ * Added a ``conduit::blueprint::mesh::generate_boundary_partition_field()`` function that can take a topology and a partition field and generate a field for a related boundary topology. This is helpful when partitioning a boundary topology in the same manner as its parent topology.
+ * Added ``blueprint.mesh.examples.strided_structured`` to the blueprint python module.
+ * Added ``conduit::blueprint::mesh::utils::adjset::to_topo()`` function to make new point mesh topologies for each group of an adjacency set. This permits each group to be visualized as a set of points in VisIt. The groups for each side of the domain interface can be compared since they are separate point meshes.
+ * Added ``conduit::blueprint::mesh::utils::adjset::is_canonical()`` function to check whether the group names in an adjacency set are canonical.
+ * Added more Mesh Blueprint docs.
+
+Changed
+~~~~~~~
+
+
+* **General**
+
+ * Conduit now requires C++14 and CMake 3.21 or newer.
+ * Improved the efficiency of json parsing logic.
+ * The ``conduit_relay_io_convert`` program was enhanced so it can read/write Blueprint root files by passing _"blueprint"_ for the read or write protocols.
+ * The ``conduit_adjset_validate`` program now writes a point mesh for each adjset groups if the `-output` argument is supplied.
+ * Updated to BLT 0.6.1
+ * Updated Python logic hybrid module build logic to use pip and setuptools. Removed use of distutils.
+
+* **Blueprint**
+
+ * The ``conduit::blueprint::mpi::mesh::partition_map_back()`` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the ``global_vertex_ids`` field, which could have been created with a prefix by the same option in the ``conduit::blueprint::mpi::mesh::generate_partition_field()`` function.
+ * The ``conduit::blueprint::mesh::utils::ShapeType`` class was enhanced so it can take topologies other than unstructured.
+ * The ``conduit::blueprint::mesh::utils::topology::unstructured::points()`` function was changed so it takes an optional argument that can turn off point uniqueness and sorting so the method can return points for an element as they appear in the connectivity, for non-polyhedral shapes.
+ * Removed deprecated use of ``npts_z !=0`` for 2D shape types in ``conduit::blueprint::mesh::examples::{braid,basic,grid}``. These cases now issue a ``CONDUIT_ERROR``.
+ * Removed ``volume_dependent`` entry in ``specsets``. Species ratios and mass fractions are innately volume independent.
+
+* **Relay**
+
+ * Relay Mesh Blueprint I/O methods (``conduit::relay::io::blueprint::{save,write}_mesh()````) now default to ``hdf5`` protocol if Conduit is built with ``hdf5`` support.
+
+Fixed
+~~~~~
+
+
+* **General**
+
+ * The Fortran ``node`` procedures for fetching integer pointers are now associated with the correct routines.
+
+* **Blueprint**
+
+ * The ``conduit::blueprint::mesh::partition()`` function no longer issues an error when it receives a "maxshare" adjset.
+ * The partitioner is better about outputting a "material_map" node for matsets. The "material_map" node is optional for some varieties of matset but they can also help the ``conduit::blueprint::mesh::matset::to_silo()`` function generate the right material numbers when a domain does not contain all materials.
+ * The ``conduit::Node::swap()`` and ``conduit::Node::move()`` functions no longer cause node names to disappear.
+ * The ``conduit::blueprint::mesh::utils::kdtree`` could erroneously return that points were not found when one of the coordset dimensions had a very narrow range of values. This could happen with planar 2D geometries embedded in 3D, such as inside a ``MatchQuery`` during adjacency set creation.
+ * The ``conduit::blueprint::mpi::mesh::generate_partition_field()`` function was not treating polyhedral topologies correctly, leading to unusable partitioning fields.
+ * The point merging algorithm in the Blueprint partitioner was corrected so it should no longer produce occasional duplicate points when merging coordsets.
+
+
 v0.8.8
 ---------------------------------
 
+* Released 2023-05-18
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.8/conduit-v0.8.8-src-with-blt.tar.gz>`__
 
 Highlights
@@ -54,6 +181,7 @@ Fixed
 v0.8.7
 ---------------------------------
 
+* Released 2023-03-23
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.7/conduit-v0.8.7-src-with-blt.tar.gz>`__
 
 Highlights
@@ -115,6 +243,7 @@ Changed
 v0.8.6
 ---------------------------------
 
+* Released 2023-01-11
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.6/conduit-v0.8.6-src-with-blt.tar.gz>`__
 
 Highlights
@@ -149,6 +278,7 @@ Fixed
 v0.8.5
 ---------------------------------
 
+* Released 2022-12-22
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.5/conduit-v0.8.5-src-with-blt.tar.gz>`__
 
 Highlights
@@ -214,6 +344,7 @@ Fixed
 v0.8.4
 ---------------------------------
 
+* Released 2022-08-22
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.4/conduit-v0.8.4-src-with-blt.tar.gz>`__
 
 Highlights
@@ -284,6 +415,7 @@ Fixed
 v0.8.3
 ---------------------------------
 
+* Released 2022-04-14
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.3/conduit-v0.8.3-src-with-blt.tar.gz>`__
 
 Highlights
@@ -331,6 +463,7 @@ Changed
 v0.8.2
 ---------------------------------
 
+* Released 2022-02-01
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.2/conduit-v0.8.2-src-with-blt.tar.gz>`__
 
 Highlights
@@ -350,6 +483,7 @@ Fixed
 v0.8.1
 ---------------------------------
 
+* Released 2022-01-25
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.1/conduit-v0.8.1-src-with-blt.tar.gz>`__
 
 Highlights
@@ -391,6 +525,7 @@ Fixed
 v0.8.0
 ---------------------------------
 
+* Released 2021-12-20
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.8.0/conduit-v0.8.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -479,6 +614,7 @@ Fixed
 v0.7.2
 ---------------------------------
 
+* Released 2021-05-19
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.2/conduit-v0.7.2-src-with-blt.tar.gz>`__
 
 Highlights
@@ -539,6 +675,7 @@ Fixed
 v0.7.1
 ---------------------------------
 
+* Released 2021-02-11
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.1/conduit-v0.7.1-src-with-blt.tar.gz>`__
 
 Highlights
@@ -563,6 +700,7 @@ Fixed
 v0.7.0
 ---------------------------------
 
+* Released 2021-02-08
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.7.0/conduit-v0.7.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -638,6 +776,7 @@ Removed
 v0.6.0
 ---------------------------------
 
+* Released 2020-11-02
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.6.0/conduit-v0.6.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -737,6 +876,8 @@ Changed
 
 v0.5.1
 -----------------
+
+* Released 2020-01-18
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.5.1/conduit-v0.5.1-src-with-blt.tar.gz>`__
 
 Highlights
@@ -776,6 +917,8 @@ Fixed
 
 v0.5.0
 -----------------
+
+* Released 2019-10-25
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.5.0/conduit-v0.5.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -836,6 +979,8 @@ Fixed
 
 v0.4.0
 -----------------
+
+* Released 2019-03-01
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.4.0/conduit-v0.4.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -923,6 +1068,7 @@ Fixed
 v0.3.1
 -----------------
 
+* Released 2018-02-26
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.1/conduit-v0.3.1-src-with-blt.tar.gz>`__
 
 
@@ -955,6 +1101,7 @@ Highlights
 v0.3.0
 -----------------
 
+* Released 2017-08-21
 * `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.3.0/conduit-v0.3.0-src-with-blt.tar.gz>`__
 
 Highlights
@@ -995,6 +1142,7 @@ Highlights
 v0.2.1
 -----------------
 
+* Released 2017-01-06
 * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.1.tar.gz>`__
 
 
@@ -1023,6 +1171,7 @@ Highlights
 v0.2.0
 -----------------
 
+* Released 2016-11-03
 * `Source Tarball <https://github.com/LLNL/conduit/archive/v0.2.0.tar.gz>`__
     
 Highlights 
@@ -1052,5 +1201,11 @@ Highlights
  * Refactored the ``relay::WebServer`` and the Conduit Node Viewer application
  * Added entangle, a python script ssh tunneling solution
 
+v0.1.0
+-----------------
+
+* Released 2016-03-30
+* Initial Open Source Release on GitHub
+* `Source Tarball <https://github.com/LLNL/conduit/archive/v0.1.0.tar.gz>`__
 
 

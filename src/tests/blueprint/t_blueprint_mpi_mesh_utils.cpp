@@ -16,6 +16,7 @@
 #include "conduit_log.hpp"
 
 #include "blueprint_test_helpers.hpp"
+#include "blueprint_mpi_test_helpers.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -230,6 +231,89 @@ TEST(conduit_blueprint_mpi_mesh_utils, adjset_validate_element_3d)
         EXPECT_EQ(c1["element"].to_int(), 2);
         EXPECT_EQ(c1["neighbor"].to_int(), 0);
     }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mpi_mesh_utils, adjset_compare_pointwise_2d)
+{
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    conduit::Node root, info;
+    create_2_domain_2d_mesh(root, rank, size);
+    save_mesh(root, "adjset_compare_pointwise_2d");
+    auto domains = conduit::blueprint::mesh::domains(root);
+
+    for(const auto &domPtr : domains)
+    {
+        // It's not in canonical form.
+        const conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
+        bool canonical = conduit::blueprint::mesh::utils::adjset::is_canonical(adjset);
+        EXPECT_FALSE(canonical);
+
+        // The fails_pointwise adjset is in canonical form.
+        const conduit::Node &adjset2 = domPtr->fetch_existing("adjsets/fails_pointwise");
+        canonical = conduit::blueprint::mesh::utils::adjset::is_canonical(adjset2);
+        EXPECT_TRUE(canonical);
+    }
+
+    // Check that we can still run compare_pointwise - it will convert internally.
+    bool eq = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(root, "pt_adjset", info, MPI_COMM_WORLD);
+    EXPECT_TRUE(eq);
+
+    // Make sure the extra adjset was removed.
+    for(const auto &domPtr : domains)
+    {
+        // It's not in canonical form.
+        bool tmpExists = domPtr->has_path("adjsets/__pt_adjset__");
+        EXPECT_FALSE(tmpExists);
+    }
+
+    // Force it to be canonical
+    for(const auto &domPtr : domains)
+    {
+        // It's not in canonical form.
+        conduit::Node &adjset = domPtr->fetch_existing("adjsets/pt_adjset");
+        conduit::blueprint::mesh::utils::adjset::canonicalize(adjset);
+    }
+    info.reset();
+    eq = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(root, "pt_adjset", info, MPI_COMM_WORLD);
+    in_rank_order(MPI_COMM_WORLD, [&](int r)
+    {
+        if(!eq)
+        {
+            std::cout << rank << ": pt_adjset eq=" << eq << std::endl;
+            info.print();
+        }
+    });
+    EXPECT_TRUE(eq);
+
+    // Test that the fails_pointwise adjset actually fails.
+    info.reset();
+    eq = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(root, "fails_pointwise", info, MPI_COMM_WORLD);
+    in_rank_order(MPI_COMM_WORLD, [&](int r)
+    {
+        if(eq)
+        {
+            std::cout << rank << ": fails_pointwise eq=" << eq << std::endl;
+            info.print();
+        }
+    });
+    EXPECT_FALSE(eq);
+
+    // Test that the notevenclose adjset actually fails.
+    info.reset();
+    eq = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(root, "notevenclose", info, MPI_COMM_WORLD);
+    in_rank_order(MPI_COMM_WORLD, [&](int r)
+    {
+        if(eq)
+        {
+            std::cout << rank << ": notevenclose eq=" << eq << std::endl;
+            info.print();
+        }
+    });
+    EXPECT_FALSE(eq);
 }
 
 //-----------------------------------------------------------------------------

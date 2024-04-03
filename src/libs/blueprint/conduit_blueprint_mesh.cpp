@@ -766,7 +766,7 @@ verify_single_domain(const Node &n,
     // optional: "fields", each child must conform to "mesh::field"
     if(n.has_path("fields"))
     {
-        if(!verify_object_field(protocol, n, info, "fields"))
+        if(!verify_object_field(protocol + "::fields", n, info, "fields"))
         {
             res = false;
         }
@@ -783,12 +783,12 @@ verify_single_domain(const Node &n,
                 field_res &= blueprint::mesh::field::verify(chld, chld_info);
                 if(chld.has_child("topology"))
                 {
-                    field_res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol + "::field", n, info,
                         chld, chld_info, "topology", "topologies");
                 }
                 if(chld.has_child("matset"))
                 {
-                    field_res &= verify_reference_field(protocol, n, info,
+                    field_res &= verify_reference_field(protocol + "::field", n, info,
                         chld, chld_info, "matset", "matsets");
                 }
             }
@@ -2413,6 +2413,10 @@ mesh::generate_index_for_single_domain(const Node &mesh,
             {
                 idx_fld["matset"] = fld["matset"].as_string();
             }
+            if(fld.has_child("volume_dependent"))
+            {
+                idx_fld["volume_dependent"] = fld["volume_dependent"].as_string();
+            }
 
             if(fld.has_child("association"))
             {
@@ -3386,7 +3390,7 @@ generate_decomposed_entities(conduit::Node &mesh,
 
 
 //-----------------------------------------------------------------------------
-void
+static void
 verify_generate_mesh(const conduit::Node &mesh,
                      const std::string &adjset_name)
 {
@@ -3396,14 +3400,22 @@ verify_generate_mesh(const conduit::Node &mesh,
         const Node &domain = *domains[di];
         Node info;
 
-        if(!domain["adjsets"].has_child(adjset_name))
+        if(!domain.has_path("adjsets"))
+        {
+            CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
+                          "Domain '" << domain.name() << "' lacks adjacency sets.");
+        }
+
+        const Node &n_adjsets = domain.fetch_existing("adjsets");
+
+        if(!n_adjsets.has_child(adjset_name))
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Requested source adjacency set '" << adjset_name << "' " <<
                           "doesn't exist on domain '" << domain.name() << ".'");
         }
 
-        if(domain["adjsets"][adjset_name]["association"].as_string() != "vertex")
+        if(n_adjsets[adjset_name]["association"].as_string() != "vertex")
         {
             CONDUIT_ERROR("<blueprint::mpi::mesh::generate_*> " <<
                           "Given adjacency set has an unsupported association type 'element.'\n" <<
@@ -3411,7 +3423,7 @@ verify_generate_mesh(const conduit::Node &mesh,
                           "  'vertex'");
         }
 
-        const Node &adjset = domain["adjsets"][adjset_name];
+        const Node &adjset = n_adjsets[adjset_name];
         const Node *topo_ptr = bputils::find_reference_node(adjset, "topology");
         const Node &topo = *topo_ptr;
         if(!conduit::blueprint::mesh::topology::unstructured::verify(topo, info))
@@ -3424,7 +3436,6 @@ verify_generate_mesh(const conduit::Node &mesh,
         }
     }
 }
-
 
 //-----------------------------------------------------------------------------
 void
@@ -4661,6 +4672,11 @@ mesh::topology::unstructured::generate_lines(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_lines".
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
@@ -4688,6 +4704,11 @@ mesh::topology::unstructured::generate_faces(const Node &topo,
                                              Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // TODO(JRC): Revise this function so that it works on every base topology
     // type and then move it to "mesh::topology::{uniform|...}::generate_faces".
@@ -4750,7 +4771,12 @@ mesh::topology::unstructured::generate_sides(const Node &topo,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    // Retrieve Relevent Coordinate/Topology Metadata //
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
+    // Retrieve Relevant Coordinate/Topology Metadata //
 
     const Node *coordset = bputils::find_reference_node(topo, "coordset");
     const std::vector<std::string> csys_axes = bputils::coordset::axes(*coordset);
@@ -5089,20 +5115,19 @@ namespace detail
         }
     }
 
-    template<typename T> // T is the type of the new field values
     void
     vertex_associated_field(const Node &topo_dest,
                             float64_accessor poly_field_data,
                             int orig_num_points,
                             int new_num_points,
                             int dimensions,
-                            T *values_array)
+                            float64_accessor field_values)
     {
         // copy field values from the original field over to the
         // points that are in both the old and new topologies
         for (int i = 0; i < orig_num_points; i ++)
         {
-            values_array[i] = static_cast<T>(poly_field_data[i]);
+            field_values.set(i, poly_field_data[i]);
         }
 
         // this map will record for each new point (represented by
@@ -5160,7 +5185,7 @@ namespace detail
                 {
                     if (*it < orig_num_points)
                     {
-                        sum += values_array[*it];
+                        sum += field_values[*it];
                         num_neighbors += 1.0;
                     }
                 }
@@ -5169,17 +5194,16 @@ namespace detail
                 // the size of the set, since there are neighbors which
                 // may go unused, since they are not from the original
                 // coordset
-                values_array[i] = static_cast<T>(sum / num_neighbors);
+                field_values.set(i, sum / num_neighbors);
             }
             // if the points go unused in the topology, we assign them 0
             else
             {
-                values_array[i] = static_cast<T>(0.0);
+                field_values.set(i, 0.0);
             }
         }
     }
 
-    template<typename T> // T is the type of the new field values
     void
     map_field_to_generated_sides(Node &field_out,
                                  const Node &field_src,
@@ -5194,7 +5218,7 @@ namespace detail
                                  const Node &topo_dest)
     {
         // a pointer to the destination for field values
-        T *values_array = field_out["values"].value();
+        float64_accessor field_values = field_out["values"].value();
 
         // a pointer to the original field values
         float64_accessor poly_field_data = field_src["values"].value();
@@ -5202,12 +5226,12 @@ namespace detail
         // if our field is vertex associated
         if (vert_assoc)
         {
-            vertex_associated_field<T>(topo_dest,
-                                       poly_field_data,
-                                       orig_num_points,
-                                       new_num_points,
-                                       dimensions,
-                                       values_array);
+            vertex_associated_field(topo_dest,
+                                    poly_field_data,
+                                    orig_num_points,
+                                    new_num_points,
+                                    dimensions,
+                                    field_values);
         }
         else
         {
@@ -5222,11 +5246,11 @@ namespace detail
                 // if our field is volume dependent
                 if (vol_dep)
                 {
-                    values_array[i] = static_cast<T>(poly_field_data[tri_to_poly[i]] * volume_ratio[i]);
+                    field_values.set(i, poly_field_data[tri_to_poly[i]] * volume_ratio[i]);
                 }
                 else
                 {
-                    values_array[i] = static_cast<T>(poly_field_data[tri_to_poly[i]]);
+                    field_values.set(i, poly_field_data[tri_to_poly[i]]);
                 }
             }
         }
@@ -5403,17 +5427,6 @@ namespace detail
                 if (vol_dep || vert_assoc)
                 {
                     field_out["values"].set(conduit::DataType::float64(field_out_size));
-                    map_field_to_generated_sides<float64>(field_out,
-                                                          field,
-                                                          new_num_shapes,
-                                                          tri_to_poly,
-                                                          volume_ratio,
-                                                          vol_dep,
-                                                          vert_assoc,
-                                                          orig_num_points,
-                                                          new_num_points,
-                                                          dimensions,
-                                                          topo_dest);
                 }
                 // If we are neither volume dependent nor vertex associated, we can go
                 // ahead and honor the original field type.
@@ -5422,98 +5435,44 @@ namespace detail
                     if (field["values"].dtype().is_uint64())
                     {
                         field_out["values"].set(conduit::DataType::uint64(field_out_size));
-                        map_field_to_generated_sides<uint64>(field_out,
-                                                             field,
-                                                             new_num_shapes,
-                                                             tri_to_poly,
-                                                             volume_ratio,
-                                                             vol_dep,
-                                                             vert_assoc,
-                                                             orig_num_points,
-                                                             new_num_points,
-                                                             dimensions,
-                                                             topo_dest);
                     }
                     else if (field["values"].dtype().is_uint32())
                     {
                         field_out["values"].set(conduit::DataType::uint32(field_out_size));
-                        map_field_to_generated_sides<uint32>(field_out,
-                                                             field,
-                                                             new_num_shapes,
-                                                             tri_to_poly,
-                                                             volume_ratio,
-                                                             vol_dep,
-                                                             vert_assoc,
-                                                             orig_num_points,
-                                                             new_num_points,
-                                                             dimensions,
-                                                             topo_dest);
                     }
                     else if (field["values"].dtype().is_int64())
                     {
                         field_out["values"].set(conduit::DataType::int64(field_out_size));
-                        map_field_to_generated_sides<int64>(field_out,
-                                                            field,
-                                                            new_num_shapes,
-                                                            tri_to_poly,
-                                                            volume_ratio,
-                                                            vol_dep,
-                                                            vert_assoc,
-                                                            orig_num_points,
-                                                            new_num_points,
-                                                            dimensions,
-                                                            topo_dest);
                     }
                     else if (field["values"].dtype().is_int32())
                     {
                         field_out["values"].set(conduit::DataType::int32(field_out_size));
-                        map_field_to_generated_sides<int32>(field_out,
-                                                            field,
-                                                            new_num_shapes,
-                                                            tri_to_poly,
-                                                            volume_ratio,
-                                                            vol_dep,
-                                                            vert_assoc,
-                                                            orig_num_points,
-                                                            new_num_points,
-                                                            dimensions,
-                                                            topo_dest);
                     }
                     else if (field["values"].dtype().is_float64())
                     {
                         field_out["values"].set(conduit::DataType::float64(field_out_size));
-                        map_field_to_generated_sides<float64>(field_out,
-                                                              field,
-                                                              new_num_shapes,
-                                                              tri_to_poly,
-                                                              volume_ratio,
-                                                              vol_dep,
-                                                              vert_assoc,
-                                                              orig_num_points,
-                                                              new_num_points,
-                                                              dimensions,
-                                                              topo_dest);
                     }
                     else if (field["values"].dtype().is_float32())
                     {
                         field_out["values"].set(conduit::DataType::float32(field_out_size));
-                        map_field_to_generated_sides<float32>(field_out,
-                                                              field,
-                                                              new_num_shapes,
-                                                              tri_to_poly,
-                                                              volume_ratio,
-                                                              vol_dep,
-                                                              vert_assoc,
-                                                              orig_num_points,
-                                                              new_num_points,
-                                                              dimensions,
-                                                              topo_dest);
                     }
                     else
                     {
                         CONDUIT_ERROR("Unsupported field type in " << field["values"].dtype().to_yaml());
                     }
                 }
+
+                map_field_to_generated_sides(field_out,
+                                             field,
+                                             new_num_shapes,
+                                             tri_to_poly,
+                                             volume_ratio,
+                                             vol_dep,
+                                             vert_assoc,
+                                             orig_num_points,
+                                             new_num_points,
+                                             dimensions,
+                                             topo_dest);
 
                 if (vol_dep)
                 {
@@ -5549,75 +5508,87 @@ mesh::topology::unstructured::generate_sides(const conduit::Node &topo_src,
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
+    if(topo_src.has_path("type") && topo_src["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
+
     std::string field_prefix = "";
     std::vector<std::string> field_names;
-    const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
+
     const Node &coordset_src = (*(topo_src.parent()->parent()))["coordsets/" + topo_src["coordset"].as_string()];
-
-    // check for existence of field prefix
-    if (options.has_child("field_prefix"))
-    {
-        if (options["field_prefix"].dtype().is_string())
-        {
-            field_prefix = options["field_prefix"].as_string();
-        }
-        else
-        {
-            CONDUIT_ERROR("field_prefix must be a string.");
-        }
-    }
-
-    // check for target field names
-    if (options.has_child("field_names"))
-    {
-        if (options["field_names"].dtype().is_string())
-        {
-            field_names.push_back(options["field_names"].as_string());
-        }
-        else if (options["field_names"].dtype().is_list())
-        {
-            NodeConstIterator itr = options["field_names"].children();
-            while (itr.has_next())
-            {
-                const Node &cld = itr.next();
-                if (cld.dtype().is_string())
-                {
-                    field_names.push_back(cld.as_string());
-                }
-                else
-                {
-                    CONDUIT_ERROR("field_names must be a string or a list of strings.");
-                }
-            }
-        }
-        else
-        {
-            CONDUIT_ERROR("field_names must be a string or a list of strings.");
-        }
-    }
-
-    // check that the discovered field names exist in the target fields
-    for (uint64 i = 0; i < field_names.size(); i ++)
-    {
-        if (! fields_src.has_child(field_names[i]))
-        {
-            CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
-        }
-    }
 
     // generate sides as usual
     generate_sides(topo_src, topo_dest, coordset_dest, s2dmap, d2smap);
 
-    // now map fields
-    detail::map_fields_to_generated_sides(topo_src,
-                                          coordset_src,
-                                          fields_src,
-                                          d2smap,
-                                          topo_dest,
-                                          coordset_dest,
-                                          fields_dest,
-                                          field_names,
-                                          field_prefix);
+    if (topo_src.parent() &&
+        topo_src.parent()->parent() &&
+        (*(topo_src.parent()->parent())).has_child("fields"))
+    {
+        const Node &fields_src = (*(topo_src.parent()->parent()))["fields"];
+
+        // check for existence of field prefix
+        if (options.has_child("field_prefix"))
+        {
+            if (options["field_prefix"].dtype().is_string())
+            {
+                field_prefix = options["field_prefix"].as_string();
+            }
+            else
+            {
+                CONDUIT_ERROR("field_prefix must be a string.");
+            }
+        }
+
+        // check for target field names
+        if (options.has_child("field_names"))
+        {
+            if (options["field_names"].dtype().is_string())
+            {
+                field_names.push_back(options["field_names"].as_string());
+            }
+            else if (options["field_names"].dtype().is_list())
+            {
+                NodeConstIterator itr = options["field_names"].children();
+                while (itr.has_next())
+                {
+                    const Node &cld = itr.next();
+                    if (cld.dtype().is_string())
+                    {
+                        field_names.push_back(cld.as_string());
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("field_names must be a string or a list of strings.");
+                    }
+                }
+            }
+            else
+            {
+                CONDUIT_ERROR("field_names must be a string or a list of strings.");
+            }
+        }
+
+        // check that the discovered field names exist in the target fields
+        for (uint64 i = 0; i < field_names.size(); i ++)
+        {
+            if (! fields_src.has_child(field_names[i]))
+            {
+                CONDUIT_ERROR("field " + field_names[i] + " not found in target.");
+            }
+        }
+
+        // now map fields
+        detail::map_fields_to_generated_sides(topo_src,
+                                              coordset_src,
+                                              fields_src,
+                                              d2smap,
+                                              topo_dest,
+                                              coordset_dest,
+                                              fields_dest,
+                                              field_names,
+                                              field_prefix);
+    }
 }
 
 // this variant of the function same as generate sides and map fields
@@ -5650,6 +5621,11 @@ mesh::topology::unstructured::generate_corners(const Node &topo,
                                                Node &d2smap)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
+
+    if(topo.has_path("type") && topo["type"].as_string() != "unstructured")
+    {
+        CONDUIT_ERROR("The topology was not unstructured.");
+    }
 
     // Retrieve Relevent Coordinate/Topology Metadata //
 
@@ -6655,9 +6631,6 @@ mesh::specset::verify(const Node &specset,
     bool res = true;
     info.reset();
 
-    // TODO(JRC): Enable 'volume_dependent' once it's confirmed to be a required
-    // entry for specsets.
-    // res &= verify_enum_field(protocol, specset, info, "volume_dependent", bputils::BOOLEANS);
     res &= verify_string_field(protocol, specset, info, "matset");
     if(!verify_object_field(protocol, specset, info, "matset_values"))
     {
@@ -7077,6 +7050,13 @@ mesh::adjset::to_maxshare(const Node &adjset,
     }
 
     bputils::adjset::canonicalize(dest);
+}
+
+//-----------------------------------------------------------------------------
+std::string
+mesh::adjset::group_prefix()
+{
+    return "group";
 }
 
 //-----------------------------------------------------------------------------

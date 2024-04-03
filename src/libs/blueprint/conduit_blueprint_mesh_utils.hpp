@@ -150,6 +150,15 @@ static const index_t TOPO_WEDGE_EMBEDDING[8][3] = {
 static const index_t TOPO_PYRAMID_EMBEDDING[6][3] = {
     {0, 1, 2}, {3, 2, 0}, {0, 1, 4},
     {1, 2, 4}, {2, 3, 4}, {3, 0, 4}};
+
+// Express the faces of the wedge and pyramid shapes without breaking the faces
+// into triangles. (npts, points, ...) unused points are -1. For the rest of
+// the shapes, the embeddings may be used.
+static const index_t TOPO_WEDGE_FACES[5][5] = {
+    {3, 0, 2, 1, -1}, {4, 0, 1, 4, 3}, {4, 1, 2, 5, 4}, {4, 2, 0, 3, 5}, {3, 3, 4, 5, -1}};
+static const index_t TOPO_PYRAMID_FACES[5][5] = {
+    {4, 0, 3, 2, 1}, {3, 0, 1, 4, -1}, {3, 1, 2, 4, -1}, {3, 2, 3, 4, -1}, {3, 3, 0, 4, -1}};
+
 static const std::vector<const index_t*> TOPO_SHAPE_EMBEDDINGS = {
     &TOPO_POINT_EMBEDDING[0][0], &TOPO_LINE_EMBEDDING[0][0],
     &TOPO_TRI_EMBEDDING[0][0], &TOPO_QUAD_EMBEDDING[0][0],
@@ -175,6 +184,12 @@ public:
     bool is_polyhedral() const;
     bool is_valid() const;
 
+    /// Return the number of actual faces (not triangulated)
+    index_t num_faces() const;
+
+    /// Return the ids and number of ids for the requested face.
+    const index_t *get_face(index_t face, index_t &nIds) const;
+
     std::string type;
     index_t id, dim, indices;
     index_t embed_id, embed_count, *embedding;
@@ -182,6 +197,9 @@ public:
 private:
     void init(const index_t type_id);
     void init(const std::string &type_name);
+
+    static index_t wedge_id;
+    static index_t pyramid_id;
 };
 
 //---------------------------------------------------------------------------//
@@ -525,8 +543,8 @@ namespace topology
             entities are defined in terms of topo1 coordinates, if possible.
             Then, if that works for an entity, the entity is looked for in topo1.
 
-     @param topo1 A single topology.
-     @param topo2 A single topology.
+     @param topo1 A single topology. (haystack)
+     @param topo2 A single topology. (needle)
 
      @return A vector of ints, sized length(topo2), that contains 1 if the
              entity exists in topo1 and 0 otherwise.
@@ -555,8 +573,26 @@ namespace topology
         void CONDUIT_BLUEPRINT_API generate_offsets_inline(Node &topo);
 
         //-------------------------------------------------------------------------
+        /**
+         @brief This function returns the points for a specified element index from
+                the given topology. For non-polyhedral element types, the \a unique
+                parameter indicates whether the function will return a unique+sorted
+                vector of point ids. The order can therefore differ from the point
+                order in the connectivity. When \a unique is false, the original
+                cell connectivity is preserved. For polyhedral types, the points
+                are always unique and sorted according to point id.
+
+         @param topo The input topology.
+         @param ei The element index.
+         @param unique Whether points should be unique+sorted. The default is true
+                       to continue earlier behavior.
+
+         @return A vector of point ids for the given element.
+         */
         std::vector<index_t> CONDUIT_BLUEPRINT_API points(const Node &topo,
-                                                          const index_t i);
+                                                          const index_t ei,
+                                                          bool unique = true);
+
         //-------------------------------------------------------------------------
         /**
          * @brief Rewrite the topology's connectivity in terms of the supplied
@@ -901,7 +937,43 @@ protected:
 namespace adjset
 {
     //-------------------------------------------------------------------------
+    /**
+     @brief Makes sure the adjset is in canonical form. This means renaming all
+            groups so they begin with "group_" followed by a sorted list of the
+            neighbors.
+     @param adjset The adjset to be modified.
+     */
     void CONDUIT_BLUEPRINT_API canonicalize(Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
+      @brief Return whether the adjset appears to be canonical.
+      @param adjset The adjset node.
+      @return True if the groups are named canonically; False otherwise.
+     */
+    bool CONDUIT_BLUEPRINT_API is_canonical(const Node &adjset);
+
+    //-------------------------------------------------------------------------
+    /**
+     @brief Adds a canonical pairwise adjset to each input domain, converting
+            as needed. If the input adjset is already pairwise then the data
+            in the adjset groups is shallow-copied from the original adjset.
+
+     @param doms A node containing the domains.
+     @param adjsetName The name of the source adjset.
+     @param newAdjsetName The name of the adjset that will be created.
+     */
+    void CONDUIT_BLUEPRINT_API to_pairwise_canonical(conduit::Node &doms,
+                                                     const std::string &adjsetName,
+                                                     const std::string &newAdjsetName);
+
+    //-------------------------------------------------------------------------
+    /**
+      @brief Removes the adjset from each domain in the mesh.
+      @param doms A node containing the domains.
+      @param adjsetName The name of the adjset to remove.
+     */
+    void CONDUIT_BLUEPRINT_API remove(conduit::Node &doms, const std::string &adjsetName);
 
     //-------------------------------------------------------------------------
     /**
@@ -958,6 +1030,37 @@ namespace adjset
                                         query::PointQuery &PQ,
                                         query::MatchQuery &MQ,
                                         bool checkMultiDomain);
+
+    /**
+     @brief Traverse the adjset groups and make sure that the points are the same
+            on both sides of the interface. This is more restrictive than just
+            checking whether they exist on the other domain. Now, they have to be
+            the same point.
+
+     @param mesh A node that contains one or more mesh domains.
+     @param adjsetName The name of the adjset to check. This must be a pairwise adjset.
+     @param[out] info Information about the failed adjset comparison.
+
+     @return True if the adjset are the same pointwise across each interface;
+             False otherwise.
+     */
+     bool CONDUIT_BLUEPRINT_API compare_pointwise(conduit::Node &mesh,
+                                                  const std::string &adjsetName,
+                                                  conduit::Node &info);
+
+     /**
+      @brief Converts adjsets for domain boundary pairs into meshes in
+             the out node. We get point meshes or face meshes, depending on the
+             adjset type. This can aid visualization.
+
+      @param mesh A node that contains all domains.
+      @param adjsetName The name of the adjset to select.
+      @param[out] out A node to contain the resulting mesh domains that represent
+                      the adjsets as point meshes.
+      */
+     void CONDUIT_BLUEPRINT_API to_topo(conduit::Node &mesh,
+                                        const std::string &adjsetName,
+                                        conduit::Node &out);
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils::adjset --

@@ -1076,9 +1076,25 @@ check_if_conduit_leaf_is_compatible_with_hdf5_obj(const DataType &dtype,
         std::ostringstream oss;
         oss << "Conduit Node (leaf) at path '" << ref_path << "'"
             << " is not compatible with given HDF5 Dataset at path"
-            << "'" << ref_path << "'"
+            << " '" << ref_path << "'"
             << "\nConduit leaf vs HDF5 Dataset: Bad HDF5 Leaf ID"
-            << " or HDF5 ID is not a HDF5 Group";
+            << " or HDF5 ID is not a HDF5 Dataset";
+
+        // check if we have the root group of a file, if so provide a
+        // more info
+        if( h5_obj_info.type == H5O_TYPE_GROUP )
+        {
+            // we have a group, check if the id is actually a file as well
+            H5F_info_t h5_file_info;
+            h5_status = H5Fget_info(hdf5_id, &h5_file_info);
+            // dest is root group of a hdf5 file
+            if( CONDUIT_HDF5_STATUS_OK(h5_status) )
+            {
+                oss << "\nAttempt to write Conduit leaf dataset to HDF5 file root."
+                    << "\nThe root of a HDF5 file is always a HDF5 Group and only"
+                    << " supports Conduit `Object` or `List` Nodes.";
+            }
+        }
 
         incompat_details = oss.str();
         res = false;
@@ -1301,7 +1317,7 @@ check_if_conduit_node_is_compatible_with_hdf5_tree(const Node &node,
         std::ostringstream oss;
         oss << "Conduit Node at path '" << ref_path << "'"
             << " has an unsupported dtype (" << dt.name() << ")"
-            << " for HDF5 i/o and cannot be written to HDF5 path"
+            << " for HDF5 I/O and cannot be written to HDF5 path"
             << " '" << ref_path  << "'";
 
         incompat_details = oss.str();
