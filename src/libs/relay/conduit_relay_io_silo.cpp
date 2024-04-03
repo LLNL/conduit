@@ -2545,56 +2545,63 @@ read_root_silo_index(const std::string &root_file_path,
     if (opts.has_child("mesh_name"))
     {
         const std::string opts_mesh_name = opts["mesh_name"].as_string();
-        // we could manually go through the other opts, but I think this approach
-        // is cleaner in case we add more down the road
-        auto opts_itr = opts.children();
-        while (opts_itr.has_next())
+        if (! opts_mesh_name.empty())
         {
-            const Node &opts_item = opts_itr.next();
-            const std::string opt_name = opts_itr.name();
-            if (opt_name != "silo_names")
+            // we could manually go through the other opts, but I think this approach
+            // is cleaner in case we add more down the road
+            auto opts_itr = opts.children();
+            while (opts_itr.has_next())
             {
-                real_opts[opt_name].set_external(opts_item);
-            }
-            else
-            {
-                // silo names case
-                auto silo_names_itr = opts["silo_names"].children();
-                while (silo_names_itr.has_next())
+                const Node &opts_item = opts_itr.next();
+                const std::string opt_name = opts_itr.name();
+                if (opt_name != "silo_names")
                 {
-                    const Node &silo_names_entry = silo_names_itr.next();
-                    const std::string silo_names_name = silo_names_itr.name();
-                    if (silo_names_name != "multimesh_names")
+                    real_opts[opt_name].set_external(opts_item);
+                }
+                else
+                {
+                    // silo names case
+                    auto silo_names_itr = opts["silo_names"].children();
+                    while (silo_names_itr.has_next())
                     {
-                        real_opts["silo_names"][silo_names_name].set_external(silo_names_entry);
+                        const Node &silo_names_entry = silo_names_itr.next();
+                        const std::string silo_names_name = silo_names_itr.name();
+                        if (silo_names_name != "multimesh_names")
+                        {
+                            real_opts["silo_names"][silo_names_name].set_external(silo_names_entry);
+                        }
                     }
                 }
             }
-        }
 
-        if (opts.has_path("silo_names/multimesh_names"))
-        {
-            if (opts["silo_names"]["multimesh_names"].has_child("all") ||
-                opts["silo_names"]["multimesh_names"].has_child("none") ||
-                opts["silo_names"]["multimesh_names"].has_child(opts_mesh_name))
+            if (opts.has_path("silo_names/multimesh_names"))
             {
-                real_opts["silo_names"]["multimesh_names"].set_external(opts["silo_names"]["multimesh_names"]);
+                if (opts["silo_names"]["multimesh_names"].has_child("all") ||
+                    opts["silo_names"]["multimesh_names"].has_child("none") ||
+                    opts["silo_names"]["multimesh_names"].has_child(opts_mesh_name))
+                {
+                    real_opts["silo_names"]["multimesh_names"].set_external(opts["silo_names"]["multimesh_names"]);
+                }
+                else
+                {
+                    auto mmesh_names_itr = opts["silo_names"]["multimesh_names"].children();
+                    while (mmesh_names_itr.has_next())
+                    {
+                        const Node &mmesh_names_entry = mmesh_names_itr.next();
+                        const std::string mmesh_name = mmesh_names_itr.name();
+                        real_opts["silo_names"]["multimesh_names"][mmesh_name].set_external(mmesh_names_entry);
+                    }
+                    real_opts["silo_names"]["multimesh_names"][opts_mesh_name];
+                }
             }
             else
             {
-                auto mmesh_names_itr = opts["silo_names"]["multimesh_names"].children();
-                while (mmesh_names_itr.has_next())
-                {
-                    const Node &mmesh_names_entry = mmesh_names_itr.next();
-                    const std::string mmesh_name = mmesh_names_itr.name();
-                    real_opts["silo_names"]["multimesh_names"][mmesh_name].set_external(mmesh_names_entry);
-                }
-                real_opts["silo_names"]["multimesh_names"][opts_mesh_name];
+                real_opts["silo_names"]["multimesh_names"].set(opts_mesh_name);
             }
         }
         else
         {
-            real_opts["silo_names"]["multimesh_names"].set(opts_mesh_name);
+            real_opts.set_external(opts);
         }
     }
     else
