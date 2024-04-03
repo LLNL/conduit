@@ -2086,42 +2086,6 @@ open_or_reuse_file(const bool ovltop_case,
 }
 
 //-----------------------------------------------------------------------------
-void
-prepare_simple_mesh_metadata(const std::string &mesh_name,
-                             const int mesh_type,
-                             Node &root_node)
-{
-    root_node[mesh_name]["nblocks"] = 1;
-    root_node[mesh_name]["nameschemes"] = "no";
-    root_node[mesh_name]["mesh_types"].set(mesh_type);
-    root_node[mesh_name]["mesh_paths"].append().set(mesh_name);
-}
-
-//-----------------------------------------------------------------------------
-void
-prepare_simple_var_metadata(const std::string &mesh_name,
-                            const std::string &var_name,
-                            const int var_type,
-                            Node &root_node)
-{
-    Node &var = root_node[mesh_name]["vars"][var_name];
-    var["nameschemes"] = "no";
-    var["var_types"].set(var_type);
-    var["var_paths"].append().set(var_name);
-}
-
-//-----------------------------------------------------------------------------
-void
-prepare_simple_mat_metadata(const std::string &mesh_name,
-                            const std::string &mat_name,
-                            Node &root_node)
-{
-    Node &material = root_node[mesh_name]["matsets"][mat_name];
-    material["nameschemes"] = "no";
-    material["matset_paths"].append().set(mat_name);
-}
-
-//-----------------------------------------------------------------------------
 bool
 read_multimesh(DBfile *dbfile,
                const std::string &multimesh_name,
@@ -2831,86 +2795,62 @@ read_root_silo_index(const std::string &root_file_path,
         }
     }
 
-    // next quadmeshes and quadvars
-    for (const std::string &qmesh_name : reading_info["qmesh_names"].names_to_read)
+    auto prep_simple_silo_obj_metadata = [&](const std::vector<std::string> &mesh_names,
+                                             const std::vector<std::string> &var_names,
+                                             const std::vector<std::string> &mat_names,
+                                             const int mesh_type,
+                                             const int var_type)
     {
-        prepare_simple_mesh_metadata(qmesh_name, DB_QUADMESH, root_node);
-
-        // at this stage we assume that all qvars could be associated with this qmesh
-        // TODO should I do a check here then?
-        for (const std::string &qvar_name : reading_info["qvar_names"].names_to_read)
+        for (const std::string &mesh_name : mesh_names)
         {
-            prepare_simple_var_metadata(qmesh_name, qvar_name, DB_QUADVAR, root_node);
+            root_node[mesh_name]["nblocks"] = 1;
+            root_node[mesh_name]["nameschemes"] = "no";
+            root_node[mesh_name]["mesh_types"].set(mesh_type);
+            root_node[mesh_name]["mesh_paths"].append().set(mesh_name);
+
+            // at this stage we assume that all vars could be associated with this mesh
+            // TODO should I do a check here then?
+            for (const std::string &var_name : var_names)
+            {
+                Node &var = root_node[mesh_name]["vars"][var_name];
+                var["nameschemes"] = "no";
+                var["var_types"].set(var_type);
+                var["var_paths"].append().set(var_name);
+            }
+            // same is true for materials
+            // TODO ugh I don't like this
+            for (const std::string &mat_name : mat_names)
+            {
+                Node &material = root_node[mesh_name]["matsets"][mat_name];
+                material["nameschemes"] = "no";
+                material["matset_paths"].append().set(mat_name);
+            }
+
+            // TODO I love rereading state for every mesh. This is so silly
+            read_state(dbfile.getSiloObject(), root_node, mesh_name);
+
+            if (! opts_matset_style.empty())
+            {
+                root_node[mesh_name]["matset_style"] = opts_matset_style;
+            }
         }
-        // same is true for materials
-        // TODO ugh I don't like this
-        for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
-        {
-            prepare_simple_mat_metadata(qmesh_name, mat_name, root_node);
-        }
+    };
 
-        // TODO I love rereading state for every mesh. This is so silly
-        read_state(dbfile.getSiloObject(), root_node, qmesh_name);
-
-        if (! opts_matset_style.empty())
-        {
-            root_node[qmesh_name]["matset_style"] = opts_matset_style;
-        }
-    }
-
-    // next ucdmeshes and ucdvars
-    for (const std::string &ucdmesh_name : reading_info["ucdmesh_names"].names_to_read)
-    {
-        prepare_simple_mesh_metadata(ucdmesh_name, DB_UCDMESH, root_node);
-
-        // at this stage we assume that all ucdvars could be associated with this ucdmesh
-        // TODO should I do a check here then?
-        for (const std::string &ucdvar_name : reading_info["ucdvar_names"].names_to_read)
-        {
-            prepare_simple_var_metadata(ucdmesh_name, ucdvar_name, DB_UCDVAR, root_node);
-        }
-        // same is true for materials
-        // TODO ugh I don't like this
-        for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
-        {
-            prepare_simple_mat_metadata(ucdmesh_name, mat_name, root_node);
-        }
-
-        // TODO I love rereading state for every mesh. This is so silly
-        read_state(dbfile.getSiloObject(), root_node, ucdmesh_name);
-
-        if (! opts_matset_style.empty())
-        {
-            root_node[ucdmesh_name]["matset_style"] = opts_matset_style;
-        }
-    }
-
-    // next ptmeshes and ptvars
-    for (const std::string &ptmesh_name : reading_info["ptmesh_names"].names_to_read)
-    {
-        prepare_simple_mesh_metadata(ptmesh_name, DB_POINTMESH, root_node);
-
-        // at this stage we assume that all ptvars could be associated with this ptmesh
-        // TODO should I do a check here then?
-        for (const std::string &ptvar_name : reading_info["ptvar_names"].names_to_read)
-        {
-            prepare_simple_var_metadata(ptmesh_name, ptvar_name, DB_POINTVAR, root_node);
-        }
-        // same is true for materials
-        // TODO ugh I don't like this
-        for (const std::string &mat_name : reading_info["mat_names"].names_to_read)
-        {
-            prepare_simple_mat_metadata(ptmesh_name, mat_name, root_node);
-        }
-
-        // TODO I love rereading state for every mesh. This is so silly
-        read_state(dbfile.getSiloObject(), root_node, ptmesh_name);
-
-        if (! opts_matset_style.empty())
-        {
-            root_node[ptmesh_name]["matset_style"] = opts_matset_style;
-        }
-    }
+    prep_simple_silo_obj_metadata(reading_info["qmesh_names"].names_to_read,
+                                  reading_info["qvar_names"].names_to_read,
+                                  reading_info["mat_names"].names_to_read,
+                                  DB_QUADMESH,
+                                  DB_QUADVAR);
+    prep_simple_silo_obj_metadata(reading_info["ucdmesh_names"].names_to_read,
+                                  reading_info["ucdvar_names"].names_to_read,
+                                  reading_info["mat_names"].names_to_read,
+                                  DB_UCDMESH,
+                                  DB_UCDVAR);
+    prep_simple_silo_obj_metadata(reading_info["ptmesh_names"].names_to_read,
+                                  reading_info["ptvar_names"].names_to_read,
+                                  reading_info["mat_names"].names_to_read,
+                                  DB_POINTMESH,
+                                  DB_POINTVAR);
 
     // our silo index should look like this:
 
