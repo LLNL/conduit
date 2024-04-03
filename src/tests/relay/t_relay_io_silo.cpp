@@ -815,10 +815,9 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
 
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename);
-    
-    opts["mesh_name"] = "mesh_topo2";
+    opts["silo_names"]["multimesh_names"] = "mesh_topo2";
     io::silo::load_mesh(filename, opts, load_mesh);
-    opts["mesh_name"] = "mesh_topo";
+    opts["silo_names"]["multimesh_names"] = "mesh_topo";
     io::silo::load_mesh(filename, opts, load_mesh2);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh2, info));
@@ -1174,6 +1173,7 @@ TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
 }
 
 //-----------------------------------------------------------------------------
+// TODO this is now a legacy feature. Should I remove eventually?
 TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
 {
     Node load_mesh, info, opts;
@@ -1740,11 +1740,11 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink5)
 TEST(conduit_relay_io_silo, read_silo)
 {
     const std::vector<std::vector<std::string>> file_info = {
-        {".",                  "multi_curv3d", ".silo"}, // test default case
-        {".",                  "tire",         ".silo"}, // test default case
-        {".",                  "galaxy0000",   ".silo"}, // test default case
-        {".",                  "emptydomains", ".silo"}, // test default case
-        {"multidir_test_data", "multidir0000", ".root"}, // test default case
+        {".",                  "multi_curv3d", ".silo"},
+        {".",                  "tire",         ".silo"},
+        {".",                  "galaxy0000",   ".silo"},
+        {".",                  "emptydomains", ".silo"},
+        {"multidir_test_data", "multidir0000", ".root"},
     };
 
     // TODO what to do in the case where a multimesh points to no data? (mesh1_back)
