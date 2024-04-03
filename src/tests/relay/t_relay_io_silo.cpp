@@ -1805,11 +1805,11 @@ TEST(conduit_relay_io_silo, read_silo)
 TEST(conduit_relay_io_silo, read_simple_silo)
 {
     Node load_mesh, info;
-    const std::string filename = "/usr/workspace/justin/visit_builds/3.4RC-w-tpls-03_05_24/visit/build/testdata/silo_hdf5_test_data/curv2d.silo";
-    io::silo::load_mesh(filename, load_mesh);
+    const std::string input_file = relay_test_silo_data_path(utils::join_file_path("silo", "curv2d.silo"));
+    io::silo::load_mesh(input_file, load_mesh);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-    io::blueprint::save_mesh(load_mesh, "curvmesh2d_blueprint", "hdf5");
+    io::blueprint::save_mesh(load_mesh, "curv2d_blueprint", "hdf5");
 
     load_mesh.print();
 }
