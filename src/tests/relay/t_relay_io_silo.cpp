@@ -132,19 +132,6 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_silo, read_curv2d)
-{
-    Node load_mesh, info;
-    const std::string filename = "/usr/workspace/justin/visit_builds/3.4RC-w-tpls-03_05_24/visit/build/testdata/silo_hdf5_test_data/curv2d.silo";
-    io::silo::load_mesh(filename, load_mesh);
-    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-    io::blueprint::save_mesh(load_mesh, "curvmesh2d_blueprint", "hdf5");
-
-    load_mesh.print();
-}
-
-//-----------------------------------------------------------------------------
 TEST(conduit_relay_io_silo, round_trip_basic)
 {
     const std::vector<std::pair<std::string, std::string>> mesh_types = {
@@ -936,7 +923,7 @@ TEST(conduit_relay_io_silo, unstructured_points)
 //-----------------------------------------------------------------------------
 
 // 
-// save and read option tests
+// save option tests
 // 
 
 // save options:
@@ -969,16 +956,6 @@ TEST(conduit_relay_io_silo, unstructured_points)
 ///            when "multi_file" or "overlink":
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
-
-// read options:
-/// opts:
-///      mesh_name: "{name}"
-///          provide explicit mesh name, for cases where silo data includes
-///           more than one mesh.
-///
-///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
-///            "multi_buffer_by_material"
-///            "default"   ==> "sparse_by_element"
 
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_silo, round_trip_save_option_file_style)
@@ -1170,152 +1147,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_mesh_name)
     EXPECT_EQ(load_mesh.number_of_children(), 1);
     EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
     EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
-}
-
-//-----------------------------------------------------------------------------
-// TODO this is now a legacy feature. Should I remove eventually?
-TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
-{
-    Node load_mesh, info, opts;
-    const std::string path = utils::join_file_path("silo", "multi_curv3d.silo");
-    const std::string input_file = relay_test_silo_data_path(path);
-
-    opts["mesh_name"] = "mesh1_dup";
-
-    io::silo::load_mesh(input_file, opts, load_mesh);
-    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-    EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_relay_io_silo, round_trip_read_option_matset_style)
-{
-    // the matset type and the type we are requesting on read
-    const std::vector<std::pair<std::string, std::string>> matset_types = {
-        std::make_pair("full", "full"),
-        std::make_pair("sparse_by_material", "sparse_by_material"),
-        std::make_pair("sparse_by_element", "sparse_by_element"),
-        std::make_pair("sparse_by_element", "full"),
-        std::make_pair("sparse_by_material", "sparse_by_element"),
-        std::make_pair("sparse_by_material", "default"),
-    };
-
-    for (int i = 0; i < matset_types.size(); i ++)
-    {
-        std::string matset_type = matset_types[i].first;
-        std::string matset_request = matset_types[i].second;
-
-        for (int j = 0; j < 2; j ++)
-        {
-            Node mesh_full, mesh_sbe, mesh_sbm, baseline_mesh, load_mesh, info;
-            std::string size;
-            int nx, ny;
-            const double radius = 0.25;
-            if (j == 0)
-            {
-                size = "small";
-                nx = ny = 4;
-            }
-            else
-            {
-                size = "large";
-                nx = ny = 100;
-            }
-
-            blueprint::mesh::examples::venn("full", nx, ny, radius, mesh_full);
-            blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh_sbm);
-            blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh_sbe);
-
-            if (matset_type == "full")
-            {
-                baseline_mesh.set_external(mesh_full);
-            }
-            else if (matset_type == "sparse_by_material")
-            {
-                baseline_mesh.set_external(mesh_sbm);
-            }
-            else // (matset_type == "sparse_by_element")
-            {
-                baseline_mesh.set_external(mesh_sbe);
-            }
-
-            Node opts;
-            if (matset_request == "full")
-            {
-                opts["matset_style"] = "multi_buffer_full";
-            }
-            else if (matset_request == "sparse_by_material")
-            {
-                opts["matset_style"] = "multi_buffer_by_material";
-            }
-            else if (matset_request == "sparse_by_element")
-            {
-                opts["matset_style"] = "sparse_by_element";
-            }
-            else
-            {
-                opts["matset_style"] = "default";
-            }
-
-            const std::string basename = "silo_venn2_" + matset_type + "_" + size;
-            const std::string filename = basename + ".root";
-
-            remove_path_if_exists(filename);
-            io::silo::save_mesh(baseline_mesh, basename);
-            io::silo::load_mesh(filename, opts, load_mesh);
-            EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-            if (matset_request == "full")
-            {
-                baseline_mesh.set_external(mesh_full);
-            }
-            else if (matset_request == "sparse_by_material")
-            {
-                baseline_mesh.set_external(mesh_sbm);
-            }
-            else if (matset_request == "sparse_by_element")
-            {
-                baseline_mesh.set_external(mesh_sbe);
-            }
-            else
-            {
-                baseline_mesh.set_external(mesh_sbe);
-            }
-
-            // make changes to save mesh so the diff will pass
-
-            // The field mat_check has values that are one type and matset_values
-            // that are another type. The silo writer converts both to double arrays
-            // in this case, so we follow suit.
-            Node mat_check_new_values, mat_check_new_matset_values;
-            baseline_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
-            if (baseline_mesh["fields"]["mat_check"]["matset_values"].dtype().is_object())
-            {
-                auto mat_vals_itr = baseline_mesh["fields"]["mat_check"]["matset_values"].children();
-                while (mat_vals_itr.has_next())
-                {
-                    Node &mat_vals_for_mat = mat_vals_itr.next();
-                    const std::string mat_name = mat_vals_itr.name();
-                    mat_vals_for_mat.to_double_array(mat_check_new_matset_values[mat_name]);
-                }
-            }
-            else
-            {
-                baseline_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
-            }
-            baseline_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
-            baseline_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
-
-            silo_name_changer("mesh", baseline_mesh);
-
-            // the loaded mesh will be in the multidomain format
-            // but the saved mesh is in the single domain format
-            EXPECT_EQ(load_mesh.number_of_children(), 1);
-            EXPECT_EQ(load_mesh[0].number_of_children(), baseline_mesh.number_of_children());
-            EXPECT_FALSE(load_mesh[0].diff(baseline_mesh, info, CONDUIT_EPSILON, true));
-        }
-    }
 }
 
 //-----------------------------------------------------------------------------
@@ -1731,6 +1562,191 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink5)
 
 //-----------------------------------------------------------------------------
 
+// 
+// read option tests
+// 
+
+// read options:
+/// opts:
+///      silo_names:
+///         multimesh_names:
+///               "{name1}" - multimeshes with this name will be read if they exist
+///               "{name2}"
+///               ...
+///               or
+///               "{all}" - all multimeshes will be read.
+///               or
+///               "{none}" - no multimeshes will be read.
+///         multivar_names: similar to multimesh_names.
+///         multimat_names: similar to multimesh_names.
+///         multimatspecies_names: similar to multimesh_names. TODO
+///         qmesh_names: similar to multimesh_names.
+///         qvar_names: similar to multimesh_names.
+///         ucdmesh_names: similar to multimesh_names.
+///         ucdvar_names: similar to multimesh_names.
+///         ptmesh_names: similar to multimesh_names.
+///         ptvar_names: similar to multimesh_names.
+///         mat_names: similar to multimesh_names.
+///         matspecies_names: similar to multimesh_names. TODO
+///            By default, everything in the file will be read unless manually turned off.
+///
+///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
+///            "multi_buffer_by_material"
+///            "default"   ==> "sparse_by_element"
+///
+///      mesh_name: legacy argument. This is interpreted as a multimesh name.
+///            It is added to the list of multimesh names to read, unless the
+///            user has specified "all" or "none", which will supersede this.
+///            TODO does it make sense to remove this? When?
+
+//-----------------------------------------------------------------------------
+// TODO this is now a legacy feature. Should I remove eventually?
+TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
+{
+    Node load_mesh, info, opts;
+    const std::string path = utils::join_file_path("silo", "multi_curv3d.silo");
+    const std::string input_file = relay_test_silo_data_path(path);
+
+    opts["mesh_name"] = "mesh1_dup";
+
+    io::silo::load_mesh(input_file, opts, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_read_option_matset_style)
+{
+    // the matset type and the type we are requesting on read
+    const std::vector<std::pair<std::string, std::string>> matset_types = {
+        std::make_pair("full", "full"),
+        std::make_pair("sparse_by_material", "sparse_by_material"),
+        std::make_pair("sparse_by_element", "sparse_by_element"),
+        std::make_pair("sparse_by_element", "full"),
+        std::make_pair("sparse_by_material", "sparse_by_element"),
+        std::make_pair("sparse_by_material", "default"),
+    };
+
+    for (int i = 0; i < matset_types.size(); i ++)
+    {
+        std::string matset_type = matset_types[i].first;
+        std::string matset_request = matset_types[i].second;
+
+        for (int j = 0; j < 2; j ++)
+        {
+            Node mesh_full, mesh_sbe, mesh_sbm, baseline_mesh, load_mesh, info;
+            std::string size;
+            int nx, ny;
+            const double radius = 0.25;
+            if (j == 0)
+            {
+                size = "small";
+                nx = ny = 4;
+            }
+            else
+            {
+                size = "large";
+                nx = ny = 100;
+            }
+
+            blueprint::mesh::examples::venn("full", nx, ny, radius, mesh_full);
+            blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh_sbm);
+            blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh_sbe);
+
+            if (matset_type == "full")
+            {
+                baseline_mesh.set_external(mesh_full);
+            }
+            else if (matset_type == "sparse_by_material")
+            {
+                baseline_mesh.set_external(mesh_sbm);
+            }
+            else // (matset_type == "sparse_by_element")
+            {
+                baseline_mesh.set_external(mesh_sbe);
+            }
+
+            Node opts;
+            if (matset_request == "full")
+            {
+                opts["matset_style"] = "multi_buffer_full";
+            }
+            else if (matset_request == "sparse_by_material")
+            {
+                opts["matset_style"] = "multi_buffer_by_material";
+            }
+            else if (matset_request == "sparse_by_element")
+            {
+                opts["matset_style"] = "sparse_by_element";
+            }
+            else
+            {
+                opts["matset_style"] = "default";
+            }
+
+            const std::string basename = "silo_venn2_" + matset_type + "_" + size;
+            const std::string filename = basename + ".root";
+
+            remove_path_if_exists(filename);
+            io::silo::save_mesh(baseline_mesh, basename);
+            io::silo::load_mesh(filename, opts, load_mesh);
+            EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+            if (matset_request == "full")
+            {
+                baseline_mesh.set_external(mesh_full);
+            }
+            else if (matset_request == "sparse_by_material")
+            {
+                baseline_mesh.set_external(mesh_sbm);
+            }
+            else if (matset_request == "sparse_by_element")
+            {
+                baseline_mesh.set_external(mesh_sbe);
+            }
+            else
+            {
+                baseline_mesh.set_external(mesh_sbe);
+            }
+
+            // make changes to save mesh so the diff will pass
+
+            // The field mat_check has values that are one type and matset_values
+            // that are another type. The silo writer converts both to double arrays
+            // in this case, so we follow suit.
+            Node mat_check_new_values, mat_check_new_matset_values;
+            baseline_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
+            if (baseline_mesh["fields"]["mat_check"]["matset_values"].dtype().is_object())
+            {
+                auto mat_vals_itr = baseline_mesh["fields"]["mat_check"]["matset_values"].children();
+                while (mat_vals_itr.has_next())
+                {
+                    Node &mat_vals_for_mat = mat_vals_itr.next();
+                    const std::string mat_name = mat_vals_itr.name();
+                    mat_vals_for_mat.to_double_array(mat_check_new_matset_values[mat_name]);
+                }
+            }
+            else
+            {
+                baseline_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
+            }
+            baseline_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
+            baseline_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
+
+            silo_name_changer("mesh", baseline_mesh);
+
+            // the loaded mesh will be in the multidomain format
+            // but the saved mesh is in the single domain format
+            EXPECT_EQ(load_mesh.number_of_children(), 1);
+            EXPECT_EQ(load_mesh[0].number_of_children(), baseline_mesh.number_of_children());
+            EXPECT_FALSE(load_mesh[0].diff(baseline_mesh, info, CONDUIT_EPSILON, true));
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 //
 // read and write Silo and Overlink tests
 //
@@ -1782,6 +1798,20 @@ TEST(conduit_relay_io_silo, read_silo)
             io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+// test that we can read silo without multimeshes, multivars, and multimats
+TEST(conduit_relay_io_silo, read_simple_silo)
+{
+    Node load_mesh, info;
+    const std::string filename = "/usr/workspace/justin/visit_builds/3.4RC-w-tpls-03_05_24/visit/build/testdata/silo_hdf5_test_data/curv2d.silo";
+    io::silo::load_mesh(filename, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    io::blueprint::save_mesh(load_mesh, "curvmesh2d_blueprint", "hdf5");
+
+    load_mesh.print();
 }
 
 //-----------------------------------------------------------------------------
