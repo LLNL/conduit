@@ -1115,18 +1115,19 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         const int *dims = quadmesh_ptr->dims;
         const int *min_index = quadmesh_ptr->min_index;
         const int *max_index = quadmesh_ptr->max_index;
+        int origin[3] = {0,0,0};
 
         // if min and max are in line with dims
         if (min_index[0] == 0 && max_index[0] == dims[0] - 1)
         {
             // We subtract 1 from each of these because in silo these dims are node dims, not element dims
             mesh_domain["topologies"][multimesh_name]["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
-            mesh_domain["topologies"][multimesh_name]["elements/origin/i"] = 0;
+            origin[0] = 0;
         }
         else
         {
             mesh_domain["topologies"][multimesh_name]["elements/dims/i"] = max_index[0] - min_index[0];
-            mesh_domain["topologies"][multimesh_name]["elements/origin/i"] = min_index[0];
+            origin[0] = min_index[0];
         }
         if (ndims > 1)
         {
@@ -1135,12 +1136,13 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
             {
                 // We subtract 1 from each of these because in silo these dims are node dims, not element dims
                 mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
-                mesh_domain["topologies"][multimesh_name]["elements/origin/j"] = 0;
+                origin[1] = 0;
             }
             else
             {
                 mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = max_index[1] - min_index[1];
                 mesh_domain["topologies"][multimesh_name]["elements/origin/j"] = min_index[1];
+                origin[1] = min_index[1];
             }
         }
         if (ndims > 2)
@@ -1150,12 +1152,26 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
             {
                 // We subtract 1 from each of these because in silo these dims are node dims, not element dims
                 mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
-                mesh_domain["topologies"][multimesh_name]["elements/origin/k"] = 0;
+                origin[2] = 0;
             }
             else
             {
                 mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = max_index[2] - min_index[2];
-                mesh_domain["topologies"][multimesh_name]["elements/origin/k"] = min_index[2];
+                origin[2] = min_index[2];
+            }
+        }
+
+        // if we need to specify an origin
+        if (origin[0] != 0 || origin[1] != 0 || origin[2] != 0)
+        {
+            mesh_domain["topologies"][multimesh_name]["elements/origin/i"] = origin[0];
+            if (ndims > 1)
+            {
+                mesh_domain["topologies"][multimesh_name]["elements/origin/j"] = origin[1];
+            }
+            if (ndims > 2)
+            {
+                mesh_domain["topologies"][multimesh_name]["elements/origin/k"] = origin[2];
             }
         }
     }
