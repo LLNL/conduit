@@ -1804,14 +1804,44 @@ TEST(conduit_relay_io_silo, read_silo)
 // test that we can read silo without multimeshes, multivars, and multimats
 TEST(conduit_relay_io_silo, read_simple_silo)
 {
-    Node load_mesh, info;
-    const std::string input_file = relay_test_silo_data_path(utils::join_file_path("silo", "curv2d.silo"));
-    io::silo::load_mesh(input_file, load_mesh);
-    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    const std::vector<std::pair<std::string, std::string>> file_info = {
+        {"curv2d",          ".silo"},
+        {"curv2d_colmajor", ".silo"},
+        {"curv3d",          ".silo"},
+        {"curv3d_colmajor", ".silo"},
+        {"globe",           ".silo"},
+    };
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string basename = file_info[i].first;
+        const std::string fileext  = file_info[i].second;
 
-    io::blueprint::save_mesh(load_mesh, "curv2d_blueprint", "hdf5");
+        Node load_mesh, info, write_opts;
+        std::string filepath = basename + fileext;
+        filepath = utils::join_file_path("silo", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-    load_mesh.print();
+        io::silo::load_mesh(input_file, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+        const std::string out_name = "read_silo_" + basename;
+
+        // TODO are these remove paths doing anything? Don't they need filenames?
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+
+        remove_path_if_exists(out_name + "_write_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+
+        // overlink requires matsets
+        if (load_mesh[0].has_child("matsets"))
+        {
+            remove_path_if_exists(out_name + "_write_overlink");
+            write_opts["file_style"] = "overlink";
+            write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
+            io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
