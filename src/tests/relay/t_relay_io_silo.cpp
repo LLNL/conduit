@@ -1806,9 +1806,9 @@ TEST(conduit_relay_io_silo, read_simple_silo)
 {
     const std::vector<std::pair<std::string, std::string>> file_info = {
         {"curv2d",          ".silo"},
-        // {"curv2d_colmajor", ".silo"},
-        // {"curv3d",          ".silo"},
-        // {"curv3d_colmajor", ".silo"},
+        {"curv2d_colmajor", ".silo"},
+        {"curv3d",          ".silo"},
+        {"curv3d_colmajor", ".silo"},
         // {"globe",           ".silo"}, // TODO need to fix a known bug for this one to work
     };
     for (int i = 0; i < file_info.size(); i ++) 
@@ -1823,8 +1823,6 @@ TEST(conduit_relay_io_silo, read_simple_silo)
 
         io::silo::load_mesh(input_file, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-        // std::cout << load_mesh.to_yaml() << std::endl;
 
         const std::string out_name = "read_silo_" + basename;
 
