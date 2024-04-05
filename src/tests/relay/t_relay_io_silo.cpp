@@ -1824,9 +1824,6 @@ TEST(conduit_relay_io_silo, read_simple_silo)
         io::silo::load_mesh(input_file, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        // load_mesh[0]["topologies"]["curvmesh2d"]["elements"]["dims"]["i"] = 3;
-        // load_mesh[0]["topologies"]["curvmesh2d"]["elements"]["dims"]["j"] = 3;
-
         load_mesh.print();
 
         const std::string out_name = "read_silo_" + basename;

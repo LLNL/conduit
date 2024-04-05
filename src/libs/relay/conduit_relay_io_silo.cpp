@@ -1113,10 +1113,13 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         return dim0_ok && dim1_ok && dim2_ok;
     };
 
+    Node &topo_out = mesh_domain["topologies"][multimesh_name];
+    Node &coords_out = mesh_domain["coordsets"][multimesh_name];
+
     if (coordtype == DB_COLLINEAR)
     {
-        mesh_domain["coordsets"][multimesh_name]["type"] = "rectilinear";
-        mesh_domain["topologies"][multimesh_name]["type"] = "rectilinear";
+        coords_out["type"] = "rectilinear";
+        topo_out["type"] = "rectilinear";
         real_dims = quadmesh_ptr->dims;
 
         if (! check_using_whole_coordset(quadmesh_ptr, ndims))
@@ -1126,37 +1129,36 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
     }
     else if (coordtype == DB_NONCOLLINEAR)
     {
-        mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
-        mesh_domain["topologies"][multimesh_name]["type"] = "structured";
-
-        // We subtract 1 from each of these because in silo these dims are node dims, not element dims
-        mesh_domain["topologies"][multimesh_name]["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
-        if (ndims > 1)
-        {
-            mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
-        }
-        if (ndims > 2)
-        {
-            mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
-        }
+        coords_out["type"] = "explicit";
+        topo_out["type"] = "structured";
 
         if (! check_using_whole_coordset(quadmesh_ptr, ndims))
         {
-            std::cout << "hello i am here" << std::endl;
-            const int *offsets = quadmesh_ptr->min_index;
             // strided structured case
-            mesh_domain["topologies"][multimesh_name]["elements/dims/offsets"].set(offsets, ndims);
-            mesh_domain["topologies"][multimesh_name]["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
-        
-
-            mesh_domain["topologies"][multimesh_name]["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+            topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
             if (ndims > 1)
             {
-                mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+                topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
             }
             if (ndims > 2)
             {
-                mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+                topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+            }
+
+            topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
+            topo_out["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
+        }
+        else
+        {
+            // We subtract 1 from each of these because in silo these dims are node dims, not element dims
+            topo_out["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
+            if (ndims > 1)
+            {
+                topo_out["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
+            }
+            if (ndims > 2)
+            {
+                topo_out["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
             }
         }
     }
@@ -1167,14 +1169,14 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
 
     const int major_order = quadmesh_ptr->major_order;
 
-    mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
+    topo_out["coordset"] = multimesh_name;
 
     // If the origin is not the default value, then we need to specify it
     if (quadmesh_ptr->base_index[0] != 0 && 
         quadmesh_ptr->base_index[1] != 0 && 
         quadmesh_ptr->base_index[2] != 0)
     {
-        Node &origin = mesh_domain["topologies"][multimesh_name]["elements"]["origin"];
+        Node &origin = topo_out["elements"]["origin"];
         origin["i"] = quadmesh_ptr->base_index[0];
         if (ndims > 1)
         {
@@ -1191,7 +1193,7 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                               ndims,
                               real_dims,
                               quadmesh_ptr->coord_sys,
-                              mesh_domain["coordsets"][multimesh_name]["values"]);
+                              coords_out["values"]);
 }
 
 //-----------------------------------------------------------------------------
