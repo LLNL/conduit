@@ -607,6 +607,19 @@ void convert_to_double_array(const Node &n_src,
 }
 
 //-----------------------------------------------------------------------------
+bool
+check_using_whole_coordset(const int *dims,
+                           const int *min_index,
+                           const int *max_index,
+                           const int ndims)
+{
+    const bool dim0_ok = (min_index[0] == 0 && max_index[0] == dims[0] - 1);
+    const bool dim1_ok = (ndims > 1 ? (min_index[1] == 0 && max_index[1] == dims[1] - 1) : true);
+    const bool dim2_ok = (ndims > 2 ? (min_index[2] == 0 && max_index[2] == dims[2] - 1) : true);
+    return dim0_ok && dim1_ok && dim2_ok;
+};
+
+//-----------------------------------------------------------------------------
 void
 copy_point_coords(const int datatype,
                   void *coords[3],
@@ -1101,18 +1114,6 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                   quadmesh_ptr->nnodes};
     int *real_dims = dims;
 
-    auto check_using_whole_coordset = [](const DBquadmesh *quadmesh_ptr,
-                                         const int ndims)
-    {
-        const int *dims = quadmesh_ptr->dims;
-        const int *min_index = quadmesh_ptr->min_index;
-        const int *max_index = quadmesh_ptr->max_index;
-        const bool dim0_ok = (min_index[0] == 0 && max_index[0] == dims[0] - 1);
-        const bool dim1_ok = (ndims > 1 ? (min_index[1] == 0 && max_index[1] == dims[1] - 1) : true);
-        const bool dim2_ok = (ndims > 2 ? (min_index[2] == 0 && max_index[2] == dims[2] - 1) : true);
-        return dim0_ok && dim1_ok && dim2_ok;
-    };
-
     Node &topo_out = mesh_domain["topologies"][multimesh_name];
     Node &coords_out = mesh_domain["coordsets"][multimesh_name];
 
@@ -1122,7 +1123,10 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         topo_out["type"] = "rectilinear";
         real_dims = quadmesh_ptr->dims;
 
-        if (! check_using_whole_coordset(quadmesh_ptr, ndims))
+        if (! detail::check_using_whole_coordset(quadmesh_ptr->dims, 
+                                                 quadmesh_ptr->min_index,
+                                                 quadmesh_ptr->max_index,
+                                                 ndims))
         {
             CONDUIT_ERROR("TODO what do I do in this case");
         }
@@ -1132,7 +1136,10 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         coords_out["type"] = "explicit";
         topo_out["type"] = "structured";
 
-        if (! check_using_whole_coordset(quadmesh_ptr, ndims))
+        if (! detail::check_using_whole_coordset(quadmesh_ptr->dims, 
+                                                 quadmesh_ptr->min_index,
+                                                 quadmesh_ptr->max_index,
+                                                 ndims))
         {
             // strided structured case
             topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
@@ -1496,10 +1503,25 @@ read_variable_domain_helper(const T *var_ptr,
     else if (vartype == DB_QUADVAR)
     {
         intermediate_field["association"] = var_ptr->centering == DB_NODECENT ? "vertex" : "element";
+    
+        const DBquadvar* quadvar_ptr = reinterpret_cast<const DBquadvar*>(var_ptr);
+
+        // TODO what do we do if we aren't structured? Same q for dealing with meshes
+        // handle strided structured fields, if appropriate
+        if (! detail::check_using_whole_coordset(quadvar_ptr->dims,
+                                                 quadvar_ptr->min_index,
+                                                 quadvar_ptr->max_index,
+                                                 quadvar_ptr->ndims))
+        {
+            intermediate_field["offsets"].set(quadvar_ptr->min_index, quadvar_ptr->ndims);
+            intermediate_field["strides"].set(quadvar_ptr->stride, quadvar_ptr->ndims);
+        }
     }
     else // if (vartype == DB_POINTVAR)
     {
         intermediate_field["association"] = "vertex";
+
+        // TODO what to do about check_using_whole_coordset case?
     }
 
     // if we have volume dependence we can track it
