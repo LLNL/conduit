@@ -1094,18 +1094,35 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                      const std::string &multimesh_name,
                      Node &mesh_domain)
 {
-    int coordtype{quadmesh_ptr->coordtype};
+    const int coordtype{quadmesh_ptr->coordtype};
     int ndims{quadmesh_ptr->ndims};
     int dims[] = {quadmesh_ptr->nnodes,
                   quadmesh_ptr->nnodes,
                   quadmesh_ptr->nnodes};
     int *real_dims = dims;
 
+    auto check_using_whole_coordset = [](const DBquadmesh *quadmesh_ptr,
+                                         const int ndims)
+    {
+        const int *dims = quadmesh_ptr->dims;
+        const int *min_index = quadmesh_ptr->min_index;
+        const int *max_index = quadmesh_ptr->max_index;
+        const bool dim0_ok = (min_index[0] == 0 && max_index[0] == dims[0] - 1);
+        const bool dim1_ok = (ndims > 1 ? (min_index[1] == 0 && max_index[1] == dims[1] - 1) : true);
+        const bool dim2_ok = (ndims > 2 ? (min_index[2] == 0 && max_index[2] == dims[2] - 1) : true);
+        return dim0_ok && dim1_ok && dim2_ok;
+    };
+
     if (coordtype == DB_COLLINEAR)
     {
         mesh_domain["coordsets"][multimesh_name]["type"] = "rectilinear";
         mesh_domain["topologies"][multimesh_name]["type"] = "rectilinear";
         real_dims = quadmesh_ptr->dims;
+
+        if (! check_using_whole_coordset(quadmesh_ptr, ndims))
+        {
+            CONDUIT_ERROR("TODO what do I do in this case");
+        }
     }
     else if (coordtype == DB_NONCOLLINEAR)
     {
@@ -1122,11 +1139,33 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         {
             mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
         }
+
+        if (! check_using_whole_coordset(quadmesh_ptr, ndims))
+        {
+            std::cout << "hello i am here" << std::endl;
+            const int *offsets = quadmesh_ptr->min_index;
+            // strided structured case
+            mesh_domain["topologies"][multimesh_name]["elements/dims/offsets"].set(offsets, ndims);
+            mesh_domain["topologies"][multimesh_name]["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
+        
+
+            mesh_domain["topologies"][multimesh_name]["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+            if (ndims > 1)
+            {
+                mesh_domain["topologies"][multimesh_name]["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+            }
+            if (ndims > 2)
+            {
+                mesh_domain["topologies"][multimesh_name]["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+            }
+        }
     }
     else
     {
         CONDUIT_ERROR("Undefined coordtype in " << coordtype);
     }
+
+    const int major_order = quadmesh_ptr->major_order;
 
     mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
 
