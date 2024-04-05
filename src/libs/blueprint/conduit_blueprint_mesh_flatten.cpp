@@ -297,29 +297,6 @@ generate_element_centers_impl(const Node &topo, const index_t dimension,
         // Polyhedra must be handled specially.
         if(e.shape.is_polyhedral())
         {
-#if 0
-            std::cout << "entity_id: " << e.entity_id << std::endl;
-            std::cout << "element_ids.size: " << e.element_ids.size() << std::endl;
-            std::cout << "element_ids: [";
-            for(const auto &value : e.element_ids)
-               std::cout << value << ", ";
-            std::cout << "]\n";
-            std::cout << "subelement_ids.size: " << e.subelement_ids.size() << std::endl;
-            std::cout << "subelement_ids:\n";
-            for(const auto &facePointIds : e.subelement_ids)
-            {
-                std::cout << "  -\n    [";
-                for(const auto &id : facePointIds)
-                    std::cout << id << ", ";
-                std::cout << "]\n";
-            }
-            std::cout << "cset_values[0].number_of_elements=" << cset_values[0].number_of_elements() << std::endl;
-            std::cout << "cset_values[1].number_of_elements=" << cset_values[1].number_of_elements() << std::endl;
-            std::cout << "cset_values[2].number_of_elements=" << cset_values[2].number_of_elements() << std::endl;
-            std::cout << "\n\n";
-            std::cout.flush();
-#endif
-
             for(index_t d = 0; d < dimension; d++)
             {
                 OutputType sum = 0;
