@@ -292,18 +292,64 @@ generate_element_centers_impl(const Node &topo, const index_t dimension,
 {
     using conduit::blueprint::mesh::utils::topology::entity;
     index_t output_idx = offset;
+    
     utils::topology::iterate_elements(topo, [&](const entity &e) {
-        const index_t nids = static_cast<index_t>(e.element_ids.size());
-        for(index_t d = 0; d < dimension; d++)
+        // Polyhedra must be handled specially.
+        if(e.shape.is_polyhedral())
         {
-            OutputType sum = 0;
-            for(index_t i = 0; i < nids; i++)
+#if 0
+            std::cout << "entity_id: " << e.entity_id << std::endl;
+            std::cout << "element_ids.size: " << e.element_ids.size() << std::endl;
+            std::cout << "element_ids: [";
+            for(const auto &value : e.element_ids)
+               std::cout << value << ", ";
+            std::cout << "]\n";
+            std::cout << "subelement_ids.size: " << e.subelement_ids.size() << std::endl;
+            std::cout << "subelement_ids:\n";
+            for(const auto &facePointIds : e.subelement_ids)
             {
-                sum += static_cast<OutputType>(cset_values[d][e.element_ids[i]]);
+                std::cout << "  -\n    [";
+                for(const auto &id : facePointIds)
+                    std::cout << id << ", ";
+                std::cout << "]\n";
             }
-            output_values[d][output_idx] = sum / static_cast<OutputType>(nids);
+            std::cout << "cset_values[0].number_of_elements=" << cset_values[0].number_of_elements() << std::endl;
+            std::cout << "cset_values[1].number_of_elements=" << cset_values[1].number_of_elements() << std::endl;
+            std::cout << "cset_values[2].number_of_elements=" << cset_values[2].number_of_elements() << std::endl;
+            std::cout << "\n\n";
+            std::cout.flush();
+#endif
+
+            for(index_t d = 0; d < dimension; d++)
+            {
+                OutputType sum = 0;
+                int count = 0;
+                for(const auto &facePointIds : e.subelement_ids)
+                {
+                    for(const auto &id : facePointIds)
+                    {
+                        sum += static_cast<OutputType>(cset_values[d][id]);
+                        count++;
+                    }
+                }
+                output_values[d][output_idx] = sum / static_cast<OutputType>(count);
+            }
+            output_idx++;
         }
-        output_idx++;
+        else
+        {
+            const index_t nids = static_cast<index_t>(e.element_ids.size());
+            for(index_t d = 0; d < dimension; d++)
+            {
+                OutputType sum = 0;
+                for(index_t i = 0; i < nids; i++)
+                {
+                    sum += static_cast<OutputType>(cset_values[d][e.element_ids[i]]);
+                }
+                output_values[d][output_idx] = sum / static_cast<OutputType>(nids);
+            }
+            output_idx++;
+        }
     });
 }
 
