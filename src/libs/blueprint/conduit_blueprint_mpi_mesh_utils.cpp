@@ -17,7 +17,7 @@
 #include "conduit_annotations.hpp"
 #include "conduit_relay_mpi.hpp"
 
-//#define DEBUG_PRINT
+// #define DEBUG_PRINT
 #ifdef DEBUG_PRINT
 // NOTE: if DEBUG_PRINT is defined then the library must also depend on conduit_relay
 #include "conduit_relay_io.hpp"
@@ -73,7 +73,7 @@ PointQuery::execute(const std::string &coordsetName)
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    int rank, size;
+    int rank = 0, size = 1;
     MPI_Comm_rank(m_comm, &rank);
     MPI_Comm_size(m_comm, &size);
 
@@ -323,7 +323,7 @@ MatchQuery::execute()
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
-    int rank, size;
+    int rank = 0, size = 1;
     MPI_Comm_rank(m_comm, &rank);
     MPI_Comm_size(m_comm, &size);
 

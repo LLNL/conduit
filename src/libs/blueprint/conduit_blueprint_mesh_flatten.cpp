@@ -292,18 +292,41 @@ generate_element_centers_impl(const Node &topo, const index_t dimension,
 {
     using conduit::blueprint::mesh::utils::topology::entity;
     index_t output_idx = offset;
+    
     utils::topology::iterate_elements(topo, [&](const entity &e) {
-        const index_t nids = static_cast<index_t>(e.element_ids.size());
-        for(index_t d = 0; d < dimension; d++)
+        // Polyhedra must be handled specially.
+        if(e.shape.is_polyhedral())
         {
-            OutputType sum = 0;
-            for(index_t i = 0; i < nids; i++)
+            for(index_t d = 0; d < dimension; d++)
             {
-                sum += static_cast<OutputType>(cset_values[d][e.element_ids[i]]);
+                OutputType sum = 0;
+                int count = 0;
+                for(const auto &facePointIds : e.subelement_ids)
+                {
+                    for(const auto &id : facePointIds)
+                    {
+                        sum += static_cast<OutputType>(cset_values[d][id]);
+                        count++;
+                    }
+                }
+                output_values[d][output_idx] = sum / static_cast<OutputType>(count);
             }
-            output_values[d][output_idx] = sum / static_cast<OutputType>(nids);
+            output_idx++;
         }
-        output_idx++;
+        else
+        {
+            const index_t nids = static_cast<index_t>(e.element_ids.size());
+            for(index_t d = 0; d < dimension; d++)
+            {
+                OutputType sum = 0;
+                for(index_t i = 0; i < nids; i++)
+                {
+                    sum += static_cast<OutputType>(cset_values[d][e.element_ids[i]]);
+                }
+                output_values[d][output_idx] = sum / static_cast<OutputType>(nids);
+            }
+            output_idx++;
+        }
     });
 }
 
