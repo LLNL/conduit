@@ -1826,6 +1826,9 @@ TEST(conduit_relay_io_silo, read_simple_silo)
 
         load_mesh.print();
 
+        std::cout << load_mesh[0]["coordsets/curvmesh2d/values/z"].dtype().number_of_elements() << std::endl;
+        std::cout << load_mesh[0]["coordsets/curvmesh2d/values/r"].dtype().number_of_elements() << std::endl;
+
         const std::string out_name = "read_silo_" + basename;
 
         // TODO are these remove paths doing anything? Don't they need filenames?

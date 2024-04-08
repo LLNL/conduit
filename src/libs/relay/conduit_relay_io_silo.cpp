@@ -4373,33 +4373,81 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 const bool write_overlink,
                                 Node &n_mesh_info) 
 {
-    int ele_dims[3];
-    ele_dims[0] = n_topo["elements/dims/i"].to_value();
-    ele_dims[1] = n_topo["elements/dims/j"].to_value();
-    ele_dims[2] = 0;
-
-    index_t num_elems = ele_dims[0] * ele_dims[1];
-
-    if (n_topo["elements/dims"].has_path("k"))
-    {
-        ele_dims[2] = n_topo["elements/dims/k"].to_value();
-        num_elems *= ele_dims[2];
-    }
-
-    // silo needs the node dims to define a structured grid
     int pts_dims[3];
-    pts_dims[0] = ele_dims[0] + 1;
-    pts_dims[1] = ele_dims[1] + 1;
-    pts_dims[2] = 1;
+    int ele_dims[3];
+    index_t num_elems;
 
-    n_mesh_info[topo_name]["num_elems"].set(num_elems);
-    n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
-    n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
-
-    if (ndims == 3)
+    // check for strided structured case
+    if (n_topo.has_path("elements/dims/offsets") &&
+        n_topo.has_path("elements/dims/strides"))
     {
-        n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
-        pts_dims[2] = ele_dims[2] + 1;
+        // we must reverse engineer the dims from the strides and the num coords
+        const int num_pts = n_mesh_info[topo_name]["num_pts"].as_int();
+
+        // TODO this can't be right, what if strides[0] != 1?
+        
+        const int_accessor strides = n_topo["elements"]["dims"]["strides"].value();
+
+        if (2 == ndims)
+        {
+            pts_dims[0] = strides[1];
+            pts_dims[1] = num_pts / strides[1];
+            
+            ele_dims[0] = pts_dims[0] - 1;
+            ele_dims[1] = pts_dims[1] - 1;
+            
+            num_elems = ele_dims[0] * ele_dims[1];
+        }
+        else // 3 == ndims
+        {
+            pts_dims[0] = strides[1];
+            pts_dims[1] = strides[2] / strides[1];
+            pts_dims[2] = num_pts / strides[2];
+            
+            ele_dims[0] = pts_dims[0] - 1;
+            ele_dims[1] = pts_dims[1] - 1;
+            ele_dims[2] = pts_dims[2] - 1;
+            
+            num_elems = ele_dims[0] * ele_dims[1] * ele_dims[2];
+        }
+
+        n_mesh_info[topo_name]["num_elems"].set(num_elems);
+        n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
+        n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
+
+        if (ndims == 3)
+        {
+            n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
+        }
+    }
+    else
+    {
+        ele_dims[0] = n_topo["elements/dims/i"].to_value();
+        ele_dims[1] = n_topo["elements/dims/j"].to_value();
+        ele_dims[2] = 0;
+
+        num_elems = ele_dims[0] * ele_dims[1];
+
+        if (ndims == 3)
+        {
+            ele_dims[2] = n_topo["elements/dims/k"].to_value();
+            num_elems *= ele_dims[2];
+        }
+
+        // silo needs the node dims to define a structured grid
+        pts_dims[0] = ele_dims[0] + 1;
+        pts_dims[1] = ele_dims[1] + 1;
+        pts_dims[2] = 1;
+
+        n_mesh_info[topo_name]["num_elems"].set(num_elems);
+        n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
+        n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
+
+        if (ndims == 3)
+        {
+            n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
+            pts_dims[2] = ele_dims[2] + 1;
+        }
     }
 
     int base_index[] = {0,0,0};
