@@ -4387,6 +4387,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
         // TODO this can't be right, what if strides[0] != 1?
         
         const int_accessor strides = n_topo["elements"]["dims"]["strides"].value();
+        const int_accessor offsets = n_topo["elements"]["dims"]["offsets"].value();
 
         if (2 == ndims)
         {
@@ -4415,10 +4416,35 @@ void silo_write_structured_mesh(DBfile *dbfile,
         n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
         n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
 
-        if (ndims == 3)
+        if (3 == ndims)
         {
             n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
         }
+
+        int min_index[3];
+        int max_index[3];
+
+        // TODO these numbers are not getting to silo correctly
+        // it is truly a mystery
+        min_index[0] = offsets[0];
+        max_index[0] = offsets[0] + n_topo["elements"]["dims"]["i"].to_int();
+        min_index[1] = offsets[1];
+        max_index[1] = offsets[1] + n_topo["elements"]["dims"]["j"].to_int();
+        if (3 == ndims)
+        {
+            min_index[2] = offsets[2];
+            max_index[2] = offsets[2] + n_topo["elements"]["dims"]["k"].to_int();
+        }
+
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist,
+                                             DBOPT_LO_OFFSET,
+                                             min_index),
+                                 "Error adding option");
+
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist,
+                                             DBOPT_HI_OFFSET,
+                                             max_index),
+                                 "Error adding option");
     }
     else
     {
@@ -4461,10 +4487,10 @@ void silo_write_structured_mesh(DBfile *dbfile,
         }
         
 
-        CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist,
-                                              DBOPT_BASEINDEX,
-                                              base_index),
-                                  "Error adding option");
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist,
+                                             DBOPT_BASEINDEX,
+                                             base_index),
+                                 "Error adding option");
     }
 
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
