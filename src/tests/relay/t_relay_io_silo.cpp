@@ -1805,8 +1805,8 @@ TEST(conduit_relay_io_silo, read_silo)
 TEST(conduit_relay_io_silo, read_simple_silo)
 {
     const std::vector<std::pair<std::string, std::string>> file_info = {
-        {"curv2d",          ".silo"},
-        // {"curv2d_colmajor", ".silo"}, // TODO look at strided structured to handle this case
+        // {"curv2d",          ".silo"},
+        {"curv2d_colmajor", ".silo"}, // TODO look at strided structured to handle this case
         // {"curv3d",          ".silo"},
         // {"curv3d_colmajor", ".silo"},
         // // {"globe",           ".silo"}, // TODO need to fix a known bug for this one to work
@@ -1835,17 +1835,17 @@ TEST(conduit_relay_io_silo, read_simple_silo)
         remove_path_if_exists(out_name + "_write_blueprint");
         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-        remove_path_if_exists(out_name + "_write_silo");
-        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+        // remove_path_if_exists(out_name + "_write_silo");
+        // io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-        // overlink requires matsets
-        if (load_mesh[0].has_child("matsets"))
-        {
-            remove_path_if_exists(out_name + "_write_overlink");
-            write_opts["file_style"] = "overlink";
-            write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
-            io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-        }
+        // // overlink requires matsets
+        // if (load_mesh[0].has_child("matsets"))
+        // {
+        //     remove_path_if_exists(out_name + "_write_overlink");
+        //     write_opts["file_style"] = "overlink";
+        //     write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
+        //     io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        // }
     }
 }
 

@@ -1142,18 +1142,71 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                                                  ndims))
         {
             // strided structured case
-            topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
-            if (ndims > 1)
-            {
-                topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
-            }
-            if (ndims > 2)
-            {
-                topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
-            }
 
-            topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
-            topo_out["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
+            const int major_order = quadmesh_ptr->major_order;
+            if (major_order == DB_COLMAJOR)
+            {
+                int flipped_strides[] = {0,0,0};
+                int flipped_offsets[] = {0,0,0};
+                int flipped_dims[]    = {0,0,0};
+                if (1 == ndims)
+                {
+                    flipped_strides[0] = quadmesh_ptr->stride[0];
+                    
+                    flipped_offsets[0] = quadmesh_ptr->min_index[0];
+                    
+                    flipped_dims[0] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+                    topo_out["elements/dims/i"] = flipped_dims[0];
+                }
+                else if (2 == ndims)
+                {
+                    flipped_strides[0] = quadmesh_ptr->stride[1];
+                    flipped_strides[1] = quadmesh_ptr->stride[0];
+                    
+                    flipped_offsets[0] = quadmesh_ptr->min_index[1];
+                    flipped_offsets[1] = quadmesh_ptr->min_index[0];
+
+                    flipped_dims[0] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+                    flipped_dims[1] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+                    topo_out["elements/dims/i"] = flipped_dims[0];
+                    topo_out["elements/dims/j"] = flipped_dims[1];
+                }
+                else // 3 == ndims
+                {
+                    flipped_strides[0] = quadmesh_ptr->stride[2];
+                    flipped_strides[1] = quadmesh_ptr->stride[1];
+                    flipped_strides[2] = quadmesh_ptr->stride[0];
+                    
+                    flipped_offsets[0] = quadmesh_ptr->min_index[2];
+                    flipped_offsets[1] = quadmesh_ptr->min_index[1];
+                    flipped_offsets[2] = quadmesh_ptr->min_index[0];
+
+                    flipped_dims[0] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+                    flipped_dims[1] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+                    flipped_dims[2] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+
+                    topo_out["elements/dims/i"] = flipped_dims[0];
+                    topo_out["elements/dims/j"] = flipped_dims[1];
+                    topo_out["elements/dims/k"] = flipped_dims[2];
+                }
+                topo_out["elements/dims/offsets"].set(flipped_offsets, ndims);
+                topo_out["elements/dims/strides"].set(flipped_strides, ndims);
+            }
+            else
+            {
+                topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+                if (ndims > 1)
+                {
+                    topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+                }
+                if (ndims > 2)
+                {
+                    topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+                }
+
+                topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
+                topo_out["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
+            }
         }
         else
         {
@@ -1167,14 +1220,18 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
             {
                 topo_out["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
             }
+
+            const int major_order = quadmesh_ptr->major_order;
+            if (major_order == DB_COLMAJOR)
+            {
+                CONDUIT_ERROR("TODO what to do in this case");
+            }
         }
     }
     else
     {
         CONDUIT_ERROR("Undefined coordtype in " << coordtype);
     }
-
-    const int major_order = quadmesh_ptr->major_order;
 
     topo_out["coordset"] = multimesh_name;
 
