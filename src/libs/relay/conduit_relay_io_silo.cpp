@@ -4373,9 +4373,12 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 const bool write_overlink,
                                 Node &n_mesh_info) 
 {
+    // declare pointers out here to prevent losing them to scope
     int pts_dims[3];
     int ele_dims[3];
     index_t num_elems;
+    int min_index[3];
+    int max_index[3];
 
     // check for strided structured case
     if (n_topo.has_path("elements/dims/offsets") &&
@@ -4421,11 +4424,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
             n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
         }
 
-        int min_index[3];
-        int max_index[3];
-
-        // TODO these numbers are not getting to silo correctly
-        // it is truly a mystery
+        // TODO why aren't these values getting to silo correctly?
         min_index[0] = offsets[0];
         max_index[0] = offsets[0] + n_topo["elements"]["dims"]["i"].to_int();
         min_index[1] = offsets[1];
