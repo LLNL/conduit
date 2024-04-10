@@ -1123,13 +1123,17 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         topo_out["type"] = "rectilinear";
         real_dims = quadmesh_ptr->dims;
 
-        if (! detail::check_using_whole_coordset(quadmesh_ptr->dims, 
-                                                 quadmesh_ptr->min_index,
-                                                 quadmesh_ptr->max_index,
-                                                 ndims))
-        {
-            CONDUIT_ERROR("TODO what do I do in this case");
-        }
+        CONDUIT_ASSERT(detail::check_using_whole_coordset(quadmesh_ptr->dims, 
+                                                          quadmesh_ptr->min_index,
+                                                          quadmesh_ptr->max_index,
+                                                          ndims),
+                       "Rectilinear grid (collinear quadmesh) " << multimesh_name <<
+                       " is using a subset of the provided coordinates. We do not "
+                       "support this case.");
+
+        CONDUIT_ASSERT(quadmesh_ptr->major_order == DB_ROWMAJOR,
+                       "Rectilinear grid (collinear quadmesh) " << multimesh_name <<
+                       " is column major in silo. We do not support this case.");
     }
     else if (coordtype == DB_NONCOLLINEAR)
     {
@@ -1146,30 +1150,42 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
             const int major_order = quadmesh_ptr->major_order;
             if (major_order == DB_COLMAJOR)
             {
+                // TODO I don't know what I'm doing
+                topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+                if (ndims > 1)
+                {
+                    topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+                }
+                if (ndims > 2)
+                {
+                    topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+                }
+
+                topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
                 int flipped_strides[] = {0,0,0};
-                int flipped_offsets[] = {0,0,0};
-                int flipped_dims[]    = {0,0,0};
+                // int flipped_offsets[] = {0,0,0};
+                // int flipped_dims[]    = {0,0,0};
                 if (1 == ndims)
                 {
                     flipped_strides[0] = quadmesh_ptr->stride[0];
                     
-                    flipped_offsets[0] = quadmesh_ptr->min_index[0];
+                    // flipped_offsets[0] = quadmesh_ptr->min_index[0];
                     
-                    flipped_dims[0] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
-                    topo_out["elements/dims/i"] = flipped_dims[0];
+                    // flipped_dims[0] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+                    // topo_out["elements/dims/i"] = flipped_dims[0];
                 }
                 else if (2 == ndims)
                 {
                     flipped_strides[0] = quadmesh_ptr->stride[1];
                     flipped_strides[1] = quadmesh_ptr->stride[0];
                     
-                    flipped_offsets[0] = quadmesh_ptr->min_index[1];
-                    flipped_offsets[1] = quadmesh_ptr->min_index[0];
+                    // flipped_offsets[0] = quadmesh_ptr->min_index[1];
+                    // flipped_offsets[1] = quadmesh_ptr->min_index[0];
 
-                    flipped_dims[0] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
-                    flipped_dims[1] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
-                    topo_out["elements/dims/i"] = flipped_dims[0];
-                    topo_out["elements/dims/j"] = flipped_dims[1];
+                    // flipped_dims[0] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+                    // flipped_dims[1] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+                    // topo_out["elements/dims/i"] = flipped_dims[0];
+                    // topo_out["elements/dims/j"] = flipped_dims[1];
                 }
                 else // 3 == ndims
                 {
@@ -1177,19 +1193,19 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                     flipped_strides[1] = quadmesh_ptr->stride[1];
                     flipped_strides[2] = quadmesh_ptr->stride[0];
                     
-                    flipped_offsets[0] = quadmesh_ptr->min_index[2];
-                    flipped_offsets[1] = quadmesh_ptr->min_index[1];
-                    flipped_offsets[2] = quadmesh_ptr->min_index[0];
+                    // flipped_offsets[0] = quadmesh_ptr->min_index[2];
+                    // flipped_offsets[1] = quadmesh_ptr->min_index[1];
+                    // flipped_offsets[2] = quadmesh_ptr->min_index[0];
 
-                    flipped_dims[0] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
-                    flipped_dims[1] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
-                    flipped_dims[2] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+                    // flipped_dims[0] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+                    // flipped_dims[1] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+                    // flipped_dims[2] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
 
-                    topo_out["elements/dims/i"] = flipped_dims[0];
-                    topo_out["elements/dims/j"] = flipped_dims[1];
-                    topo_out["elements/dims/k"] = flipped_dims[2];
+                    // topo_out["elements/dims/i"] = flipped_dims[0];
+                    // topo_out["elements/dims/j"] = flipped_dims[1];
+                    // topo_out["elements/dims/k"] = flipped_dims[2];
                 }
-                topo_out["elements/dims/offsets"].set(flipped_offsets, ndims);
+                // topo_out["elements/dims/offsets"].set(flipped_offsets, ndims);
                 topo_out["elements/dims/strides"].set(flipped_strides, ndims);
             }
             else
@@ -2622,6 +2638,9 @@ read_root_silo_index(const std::string &root_file_path,
         error_oss << "Table of contents could not be extracted from file: " << root_file_path;
         return false;
     }
+
+    // TODO unify lists of meshes and vars
+    // then be smart about reading
 
     // handle legacy mesh_name argument
     Node real_opts;
@@ -4441,6 +4460,9 @@ void silo_write_structured_mesh(DBfile *dbfile,
     if (n_topo.has_path("elements/dims/offsets") &&
         n_topo.has_path("elements/dims/strides"))
     {
+        // TODO this case is BUSTED - cyrus says punt on this
+
+
         // we must reverse engineer the dims from the strides and the num coords
         const int num_pts = n_mesh_info[topo_name]["num_pts"].as_int();
 
