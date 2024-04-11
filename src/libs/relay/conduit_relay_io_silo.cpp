@@ -1180,12 +1180,8 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                 topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
                 topo_out["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
             }
-            else
+            else // colmajor
             {
-                // TODO I don't know what I'm doing
-                // this doesn't work
-                // I'm not convinced I'm the one who's wrong
-                // could be docs, could be bp reader, or could be me
                 topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
                 if (ndims > 1)
                 {
@@ -1197,24 +1193,36 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                 }
 
                 topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
-                int flipped_strides[] = {0,0,0};
+
+                int actual_strides[] = {0,0,0};
+
+                // we can only succeed here if the data is regularly strided
                 if (1 == ndims)
                 {
-                    flipped_strides[0] = quadmesh_ptr->stride[0];
+                    CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1,
+                                   "TODO BAD");
+                    actual_strides[0] = 1;
                 }
                 else if (2 == ndims)
                 {
-                    flipped_strides[0] = quadmesh_ptr->stride[1];
-                    flipped_strides[1] = quadmesh_ptr->stride[0];
+                    CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
+                                   quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0],
+                                   "TODO BAD");
+                    actual_strides[0] = quadmesh_ptr->dims[1];
+                    actual_strides[1] = 1;
                 }
-                else // 3 == ndims
+                else // (3 == ndims)
                 {
-                    flipped_strides[0] = quadmesh_ptr->stride[2];
-                    flipped_strides[1] = quadmesh_ptr->stride[1];
-                    flipped_strides[2] = quadmesh_ptr->stride[0];
+                    CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
+                                   quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0] &&
+                                   quadmesh_ptr->stride[2] == quadmesh_ptr->dims[0] * quadmesh_ptr->dims[1],
+                                   "TODO BAD");
+                    actual_strides[0] = quadmesh_ptr->dims[1] * quadmesh_ptr->dims[2];
+                    actual_strides[1] = quadmesh_ptr->dims[2];
+                    actual_strides[2] = 1;
                 }
 
-                topo_out["elements/dims/strides"].set(flipped_strides, ndims);
+                topo_out["elements/dims/strides"].set(actual_strides, ndims);
             }
         }
     }

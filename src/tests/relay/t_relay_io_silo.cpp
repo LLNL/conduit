@@ -1881,7 +1881,7 @@ TEST(conduit_relay_io_silo, bungus)
     "            6.6,   6.6,   6.6,   6.6,   6.6,   6.6,\n"
     "           10.0,  10.0,  10.0,  10.0,  10.0,  10.0]\n"
     "      y: [-10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
-    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0\n"
+    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
     "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
     "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
     "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
@@ -1904,25 +1904,31 @@ TEST(conduit_relay_io_silo, bungus)
     "      dims:\n"
     "        i: 6\n"
     "        j: 5\n"
-    // "  mesh_col_maj:\n"
-    // "    type: \"structured\"\n"
-    // "    coordset: \"col_maj_coords\"\n"
-    // "    elements:\n"
-    // "      dims:\n"
-    // "        i: 3\n"
-    // "        j: 2\n"
-    // "        offsets: [2, 2]\n"
-    // "        strides: [6, 1]\n"
+    "        offsets: [0, 0]\n"
+    "        strides: [1, 7]\n"
+    "  mesh_col_maj:\n"
+    "    type: \"structured\"\n"
+    "    coordset: \"col_maj_coords\"\n"
+    "    elements:\n"
+    "      dims:\n"
+    "        i: 3\n"
+    "        j: 2\n"
+    "        offsets: [2, 2]\n"
+    "        strides: [6, 1]\n"
     "  full_mesh_col_maj:\n"
     "    type: \"structured\"\n"
     "    coordset: \"col_maj_coords\"\n"
     "    elements:\n"
     "      dims:\n"
-    "        i: 5\n"
-    "        j: 6\n"
+    "        i: 6\n"
+    "        j: 5\n"
     // "        offsets: [0, 0]\n"
-    // "        strides: [6, 1]\n"
+    "        strides: [6, 1]\n"
     "";
+
+    // TODO justin add a new test case to t_blueprint_mesh_examples
+    // also might want to add as a visit test
+    // just take the yaml and save for conduit test
 
     Node my_structured_strided_mesh;
     my_structured_strided_mesh.parse(yaml_text, "yaml");
