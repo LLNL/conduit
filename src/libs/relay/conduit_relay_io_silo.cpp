@@ -1213,6 +1213,7 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                     flipped_strides[1] = quadmesh_ptr->stride[1];
                     flipped_strides[2] = quadmesh_ptr->stride[0];
                 }
+
                 topo_out["elements/dims/strides"].set(flipped_strides, ndims);
             }
         }
@@ -2641,7 +2642,7 @@ read_root_silo_index(const std::string &root_file_path,
                     {
                         const Node &silo_names_entry = silo_names_itr.next();
                         const std::string silo_names_name = silo_names_itr.name();
-                        if (silo_names_name != "multimesh_names")
+                        if (silo_names_name != "mesh_names")
                         {
                             real_opts["silo_names"][silo_names_name].set_external(silo_names_entry);
                         }
@@ -2649,29 +2650,29 @@ read_root_silo_index(const std::string &root_file_path,
                 }
             }
 
-            if (opts.has_path("silo_names/multimesh_names"))
+            if (opts.has_path("silo_names/mesh_names"))
             {
-                if (opts["silo_names"]["multimesh_names"].has_child("all") ||
-                    opts["silo_names"]["multimesh_names"].has_child("none") ||
-                    opts["silo_names"]["multimesh_names"].has_child(opts_mesh_name))
+                if (opts["silo_names"]["mesh_names"].has_child("all") ||
+                    opts["silo_names"]["mesh_names"].has_child("none") ||
+                    opts["silo_names"]["mesh_names"].has_child(opts_mesh_name))
                 {
-                    real_opts["silo_names"]["multimesh_names"].set_external(opts["silo_names"]["multimesh_names"]);
+                    real_opts["silo_names"]["mesh_names"].set_external(opts["silo_names"]["mesh_names"]);
                 }
                 else
                 {
-                    auto mmesh_names_itr = opts["silo_names"]["multimesh_names"].children();
-                    while (mmesh_names_itr.has_next())
+                    auto mesh_names_itr = opts["silo_names"]["mesh_names"].children();
+                    while (mesh_names_itr.has_next())
                     {
-                        const Node &mmesh_names_entry = mmesh_names_itr.next();
-                        const std::string mmesh_name = mmesh_names_itr.name();
-                        real_opts["silo_names"]["multimesh_names"][mmesh_name].set_external(mmesh_names_entry);
+                        const Node &mesh_names_entry = mesh_names_itr.next();
+                        const std::string mesh_name = mesh_names_itr.name();
+                        real_opts["silo_names"]["mesh_names"][mesh_name].set_external(mesh_names_entry);
                     }
-                    real_opts["silo_names"]["multimesh_names"][opts_mesh_name];
+                    real_opts["silo_names"]["mesh_names"][opts_mesh_name];
                 }
             }
             else
             {
-                real_opts["silo_names"]["multimesh_names"].set(opts_mesh_name);
+                real_opts["silo_names"]["mesh_names"].set(opts_mesh_name);
             }
         }
         else
@@ -2687,16 +2688,8 @@ read_root_silo_index(const std::string &root_file_path,
     std::map<std::string, detail::SiloReadBookkeeping> reading_info;
 
     // read all is turned on, and read none is turned off
-    reading_info["multimesh_names"] = detail::SiloReadBookkeeping();
-    reading_info["multivar_names"] = detail::SiloReadBookkeeping();
-    reading_info["multimat_names"] = detail::SiloReadBookkeeping();
-    // reading_info["multimatspecies_names"] = detail::SiloReadBookkeeping();
-    reading_info["qmesh_names"] = detail::SiloReadBookkeeping();
-    reading_info["qvar_names"] = detail::SiloReadBookkeeping();
-    reading_info["ucdmesh_names"] = detail::SiloReadBookkeeping();
-    reading_info["ucdvar_names"] = detail::SiloReadBookkeeping();
-    reading_info["ptmesh_names"] = detail::SiloReadBookkeeping();
-    reading_info["ptvar_names"] = detail::SiloReadBookkeeping();
+    reading_info["mesh_names"] = detail::SiloReadBookkeeping();
+    reading_info["var_names"] = detail::SiloReadBookkeeping();
     reading_info["mat_names"] = detail::SiloReadBookkeeping();
     // reading_info["matspecies_names"] = detail::SiloReadBookkeeping();
 
@@ -2775,13 +2768,13 @@ read_root_silo_index(const std::string &root_file_path,
         }
     }
 
-    // names to read get stored in reading_info["multimesh_names"].names_to_read
-    auto generate_read_list = [&](const std::string silo_obj_name, // e.g. "multimesh_names"
-                                  const std::string obj_name, // e.g. "multimesh" - just for errors
+    // names to read get stored in reading_info["mesh_names"].names_to_read
+    auto generate_read_list = [&](const std::string silo_obj_name, // e.g. "mesh_names"
+                                  const std::string obj_name, // e.g. "mesh" - just for errors
                                   const int num_silo_objects_in_toc,
                                   char** toc_names)
     {
-        // if we are not reading no multimeshes --> we are reading multimeshes
+        // if we are *not* reading *no* meshes --> we are reading meshes
         if (! reading_info[silo_obj_name].read_none)
         {
             if (reading_info[silo_obj_name].read_all)
@@ -2825,7 +2818,7 @@ read_root_silo_index(const std::string &root_file_path,
         return true;
     };
 
-    // silo doesn't let us have any names that are the same in the same directory,
+    // Silo doesn't let us have any names that are the same in the same directory,
     // even if they are different types. So we don't have to worry about name collisions.
     if (! (generate_read_list("multimesh_names", "multimesh", toc->nmultimesh, toc->multimesh_names) &&
            generate_read_list("multivar_names", "multivar", toc->nmultivar, toc->multivar_names) &&
@@ -4426,105 +4419,39 @@ void silo_write_structured_mesh(DBfile *dbfile,
     int pts_dims[3];
     int ele_dims[3];
     index_t num_elems;
-    int min_index[3];
-    int max_index[3];
 
     // check for strided structured case
     if (n_topo.has_path("elements/dims/offsets") &&
         n_topo.has_path("elements/dims/strides"))
     {
-        // TODO this case is BUSTED - cyrus says punt on this
-
-
-        // we must reverse engineer the dims from the strides and the num coords
-        const int num_pts = n_mesh_info[topo_name]["num_pts"].as_int();
-
-        // TODO this can't be right, what if strides[0] != 1?
-        
-        const int_accessor strides = n_topo["elements"]["dims"]["strides"].value();
-        const int_accessor offsets = n_topo["elements"]["dims"]["offsets"].value();
-
-        if (2 == ndims)
-        {
-            pts_dims[0] = strides[1];
-            pts_dims[1] = num_pts / strides[1];
-            
-            ele_dims[0] = pts_dims[0] - 1;
-            ele_dims[1] = pts_dims[1] - 1;
-            
-            num_elems = ele_dims[0] * ele_dims[1];
-        }
-        else // 3 == ndims
-        {
-            pts_dims[0] = strides[1];
-            pts_dims[1] = strides[2] / strides[1];
-            pts_dims[2] = num_pts / strides[2];
-            
-            ele_dims[0] = pts_dims[0] - 1;
-            ele_dims[1] = pts_dims[1] - 1;
-            ele_dims[2] = pts_dims[2] - 1;
-            
-            num_elems = ele_dims[0] * ele_dims[1] * ele_dims[2];
-        }
-
-        n_mesh_info[topo_name]["num_elems"].set(num_elems);
-        n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
-        n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
-
-        if (3 == ndims)
-        {
-            n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
-        }
-
-        // TODO why aren't these values getting to silo correctly?
-        min_index[0] = offsets[0];
-        max_index[0] = offsets[0] + n_topo["elements"]["dims"]["i"].to_int();
-        min_index[1] = offsets[1];
-        max_index[1] = offsets[1] + n_topo["elements"]["dims"]["j"].to_int();
-        if (3 == ndims)
-        {
-            min_index[2] = offsets[2];
-            max_index[2] = offsets[2] + n_topo["elements"]["dims"]["k"].to_int();
-        }
-
-        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist,
-                                             DBOPT_LO_OFFSET,
-                                             min_index),
-                                 "Error adding option");
-
-        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist,
-                                             DBOPT_HI_OFFSET,
-                                             max_index),
-                                 "Error adding option");
+        CONDUIT_ERROR("Strided Structured Blueprint case does not have a general "
+                      "analog in Silo.");
     }
-    else
+    ele_dims[0] = n_topo["elements/dims/i"].to_value();
+    ele_dims[1] = n_topo["elements/dims/j"].to_value();
+    ele_dims[2] = 0;
+
+    num_elems = ele_dims[0] * ele_dims[1];
+
+    if (ndims == 3)
     {
-        ele_dims[0] = n_topo["elements/dims/i"].to_value();
-        ele_dims[1] = n_topo["elements/dims/j"].to_value();
-        ele_dims[2] = 0;
+        ele_dims[2] = n_topo["elements/dims/k"].to_value();
+        num_elems *= ele_dims[2];
+    }
 
-        num_elems = ele_dims[0] * ele_dims[1];
+    // silo needs the node dims to define a structured grid
+    pts_dims[0] = ele_dims[0] + 1;
+    pts_dims[1] = ele_dims[1] + 1;
+    pts_dims[2] = 1;
 
-        if (ndims == 3)
-        {
-            ele_dims[2] = n_topo["elements/dims/k"].to_value();
-            num_elems *= ele_dims[2];
-        }
+    n_mesh_info[topo_name]["num_elems"].set(num_elems);
+    n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
+    n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
 
-        // silo needs the node dims to define a structured grid
-        pts_dims[0] = ele_dims[0] + 1;
-        pts_dims[1] = ele_dims[1] + 1;
-        pts_dims[2] = 1;
-
-        n_mesh_info[topo_name]["num_elems"].set(num_elems);
-        n_mesh_info[topo_name]["elements/i"] = ele_dims[0];
-        n_mesh_info[topo_name]["elements/j"] = ele_dims[1];
-
-        if (ndims == 3)
-        {
-            n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
-            pts_dims[2] = ele_dims[2] + 1;
-        }
+    if (ndims == 3)
+    {
+        n_mesh_info[topo_name]["elements/k"] = ele_dims[2];
+        pts_dims[2] = ele_dims[2] + 1;
     }
 
     int base_index[] = {0,0,0};
