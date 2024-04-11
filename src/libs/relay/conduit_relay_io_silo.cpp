@@ -2652,10 +2652,11 @@ read_root_silo_index(const std::string &root_file_path,
         return false;
     }
 
-    // TODO unify lists of meshes and vars
-    // then be smart about reading
-
-    // handle legacy mesh_name argument
+    // Handle legacy mesh_name argument:
+    // The best way to do this is to put this mesh name into the opts before we
+    // start looking at the opts for real. However, we can't modify the opts the 
+    // user passed in. Thus we need to create a new opts node and have it point
+    // at the original opts node for everything except the mesh names.
     Node real_opts;
     if (opts.has_child("mesh_name"))
     {
@@ -2669,6 +2670,7 @@ read_root_silo_index(const std::string &root_file_path,
             {
                 const Node &opts_item = opts_itr.next();
                 const std::string opt_name = opts_itr.name();
+                // if you're not the silo_names, then we can point to original opts
                 if (opt_name != "silo_names")
                 {
                     real_opts[opt_name].set_external(opts_item);
@@ -2681,6 +2683,7 @@ read_root_silo_index(const std::string &root_file_path,
                     {
                         const Node &silo_names_entry = silo_names_itr.next();
                         const std::string silo_names_name = silo_names_itr.name();
+                        // if you're not the mesh_names, then you can point to original opts
                         if (silo_names_name != "mesh_names")
                         {
                             real_opts["silo_names"][silo_names_name].set_external(silo_names_entry);
@@ -2689,23 +2692,36 @@ read_root_silo_index(const std::string &root_file_path,
                 }
             }
 
+            // now handle mesh names
             if (opts.has_path("silo_names/mesh_names"))
             {
                 if (opts["silo_names"]["mesh_names"].has_child("all") ||
                     opts["silo_names"]["mesh_names"].has_child("none") ||
                     opts["silo_names"]["mesh_names"].has_child(opts_mesh_name))
                 {
+                    // if we have already set things up such that the provided mesh name is superfluous
+                    // then we can point to original opts
                     real_opts["silo_names"]["mesh_names"].set_external(opts["silo_names"]["mesh_names"]);
                 }
                 else
                 {
-                    auto mesh_names_itr = opts["silo_names"]["mesh_names"].children();
-                    while (mesh_names_itr.has_next())
+                    // otherwise we must grab the mesh names that are already present and point to them
+                    if (opts["silo_names"]["mesh_names"].dtype().is_object())
                     {
-                        const Node &mesh_names_entry = mesh_names_itr.next();
-                        const std::string mesh_name = mesh_names_itr.name();
-                        real_opts["silo_names"]["mesh_names"][mesh_name].set_external(mesh_names_entry);
+                        auto mesh_names_itr = opts["silo_names"]["mesh_names"].children();
+                        while (mesh_names_itr.has_next())
+                        {
+                            const Node &mesh_names_entry = mesh_names_itr.next();
+                            const std::string mesh_name = mesh_names_itr.name();
+                            real_opts["silo_names"]["mesh_names"][mesh_name].set_external(mesh_names_entry);
+                        }
                     }
+                    else
+                    {
+                        // I am letting users abuse me
+                        real_opts["silo_names"]["mesh_names"][opts["silo_names"]["mesh_names"].as_string()];
+                    }
+                    // and then add our extra mesh name to the list
                     real_opts["silo_names"]["mesh_names"][opts_mesh_name];
                 }
             }
@@ -2724,6 +2740,9 @@ read_root_silo_index(const std::string &root_file_path,
         real_opts.set_external(opts);
     }
 
+    // Reading options will hold information about what to read for each general
+    // kind of silo object. For each of the cases, we have the option to read all,
+    // read none, or read some of that type.
     std::map<std::string, detail::SiloReadOptions> reading_options;
 
     // read all is turned on, and read none is turned off
@@ -2732,6 +2751,11 @@ read_root_silo_index(const std::string &root_file_path,
     reading_options["mat_names"] = detail::SiloReadOptions();
     // reading_options["matspecies_names"] = detail::SiloReadOptions();
 
+    // TODO is there any way I could skip the following step or combine it with the next step?
+    // this is awfully complicated
+
+    // Now we need to see what things we are supposed to read based on
+    // what was passed in to the options.
     if (real_opts.has_child("silo_names"))
     {
         auto silo_names_itr = real_opts["silo_names"].children();
