@@ -314,12 +314,26 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class SiloReadBookkeeping
+class SiloReadOptions
 {
 public:
     bool read_all = true;
     bool read_none = false;
+};
+
+//-----------------------------------------------------------------------------
+
+class SiloReadBookkeeping
+{
+public:
+    int num_obj_in_toc = 0;
+    char **toc_names = nullptr;
+    int var_type;
     std::vector<std::string> names_to_read;
+
+    SiloReadBookkeeping(int num_obj_in_toc_, char **toc_names_, int var_type_) : 
+        num_obj_in_toc(num_obj_in_toc_), toc_names(toc_names_), var_type(var_type_) {}
+    SiloReadBookkeeping(){}
 };
 
 //-----------------------------------------------------------------------------
@@ -2710,13 +2724,13 @@ read_root_silo_index(const std::string &root_file_path,
         real_opts.set_external(opts);
     }
 
-    std::map<std::string, detail::SiloReadBookkeeping> reading_info;
+    std::map<std::string, detail::SiloReadOptions> reading_options;
 
     // read all is turned on, and read none is turned off
-    reading_info["mesh_names"] = detail::SiloReadBookkeeping();
-    reading_info["var_names"] = detail::SiloReadBookkeeping();
-    reading_info["mat_names"] = detail::SiloReadBookkeeping();
-    // reading_info["matspecies_names"] = detail::SiloReadBookkeeping();
+    reading_options["mesh_names"] = detail::SiloReadOptions();
+    reading_options["var_names"] = detail::SiloReadOptions();
+    reading_options["mat_names"] = detail::SiloReadOptions();
+    // reading_options["matspecies_names"] = detail::SiloReadOptions();
 
     if (real_opts.has_child("silo_names"))
     {
@@ -2726,7 +2740,7 @@ read_root_silo_index(const std::string &root_file_path,
             const Node &silo_object_type = silo_names_itr.next();
             const std::string silo_object_type_name = silo_names_itr.name();
 
-            if (reading_info.count(silo_object_type_name) == 0)
+            if (reading_options.count(silo_object_type_name) == 0)
             {
                 error_oss << "TODO unknown option";
                 return false;
@@ -2743,8 +2757,8 @@ read_root_silo_index(const std::string &root_file_path,
                             error_oss << "TODO this is bad";
                             return false;
                         }
-                        reading_info[silo_object_type_name].read_all = true;
-                        reading_info[silo_object_type_name].read_none = false;
+                        reading_options[silo_object_type_name].read_all = true;
+                        reading_options[silo_object_type_name].read_none = false;
                     }
                     else if (silo_object_type.has_child("none"))
                     {
@@ -2753,21 +2767,21 @@ read_root_silo_index(const std::string &root_file_path,
                             error_oss << "TODO this is bad";
                             return false;
                         }
-                        reading_info[silo_object_type_name].read_all = false;
-                        reading_info[silo_object_type_name].read_none = true;
+                        reading_options[silo_object_type_name].read_all = false;
+                        reading_options[silo_object_type_name].read_none = true;
                     }
                     else
                     {
                         // we must have named some specific items we want to read
-                        reading_info[silo_object_type_name].read_all = false;
-                        reading_info[silo_object_type_name].read_none = false;
+                        reading_options[silo_object_type_name].read_all = false;
+                        reading_options[silo_object_type_name].read_none = false;
                     }
                 }
                 else
                 {
                     // no children were specified so we want to read everything of this kind
-                    reading_info[silo_object_type_name].read_all = true;
-                    reading_info[silo_object_type_name].read_none = false;
+                    reading_options[silo_object_type_name].read_all = true;
+                    reading_options[silo_object_type_name].read_none = false;
                 }
             }
             else
@@ -2775,65 +2789,140 @@ read_root_silo_index(const std::string &root_file_path,
                 const std::string silo_name_value = silo_object_type.as_string();
                 if ("all" == silo_name_value)
                 {
-                    reading_info[silo_object_type_name].read_all = true;
-                    reading_info[silo_object_type_name].read_none = false;
+                    reading_options[silo_object_type_name].read_all = true;
+                    reading_options[silo_object_type_name].read_none = false;
                 }
                 else if ("none" == silo_name_value)
                 {
-                    reading_info[silo_object_type_name].read_all = false;
-                    reading_info[silo_object_type_name].read_none = true;
+                    reading_options[silo_object_type_name].read_all = false;
+                    reading_options[silo_object_type_name].read_none = true;
                 }
                 else
                 {
                     // we must have named some specific items we want to read
-                    reading_info[silo_object_type_name].read_all = false;
-                    reading_info[silo_object_type_name].read_none = false;
+                    reading_options[silo_object_type_name].read_all = false;
+                    reading_options[silo_object_type_name].read_none = false;
                 }
             }
         }
     }
 
-    // names to read get stored in reading_info["mesh_names"].names_to_read
-    auto generate_read_list = [&](const std::string silo_obj_name, // e.g. "mesh_names"
-                                  const std::string obj_name, // e.g. "mesh" - just for errors
-                                  const int num_silo_objects_in_toc,
-                                  char** toc_names)
+    std::map<std::string, detail::SiloReadBookkeeping> reading_info;
+    reading_info["multimesh_names"] = detail::SiloReadBookkeeping(toc->nmultimesh, 
+                                                                  toc->multimesh_names,
+                                                                  DB_MULTIMESH);
+    reading_info["multivar_names"] = detail::SiloReadBookkeeping(toc->nmultivar, 
+                                                                 toc->multivar_names,
+                                                                 DB_MULTIVAR);
+    reading_info["multimat_names"] = detail::SiloReadBookkeeping(toc->nmultimat, 
+                                                                 toc->multimat_names,
+                                                                 DB_MULTIMAT);
+    // reading_info["multimatspecies_names"] = detail::SiloReadBookkeeping(toc->nmultimatspecies, 
+    //                                                                     toc->multimatspecies_names,
+    //                                                                     DB_MULTIMATSPECIES);
+    reading_info["qmesh_names"] = detail::SiloReadBookkeeping(toc->nqmesh, 
+                                                              toc->qmesh_names,
+                                                              DB_QUADMESH);
+    reading_info["qvar_names"] = detail::SiloReadBookkeeping(toc->nqvar, 
+                                                             toc->qvar_names,
+                                                             DB_QUADVAR);
+    reading_info["ucdmesh_names"] = detail::SiloReadBookkeeping(toc->nucdmesh, 
+                                                                toc->ucdmesh_names,
+                                                                DB_UCDMESH);
+    reading_info["ucdvar_names"] = detail::SiloReadBookkeeping(toc->nucdvar, 
+                                                               toc->ucdvar_names,
+                                                               DB_UCDVAR);
+    reading_info["ptmesh_names"] = detail::SiloReadBookkeeping(toc->nptmesh, 
+                                                               toc->ptmesh_names,
+                                                               DB_POINTMESH);
+    reading_info["ptvar_names"] = detail::SiloReadBookkeeping(toc->nptvar, 
+                                                              toc->ptvar_names,
+                                                              DB_POINTVAR);
+    reading_info["mat_names"] = detail::SiloReadBookkeeping(toc->nmat, 
+                                                            toc->mat_names,
+                                                            DB_MATERIAL);
+    // reading_info["matspecies_names"] = detail::SiloReadBookkeeping(toc->nmatspecies, 
+    //                                                                toc->matspecies_names,
+    //                                                                DB_MATSPECIES);
+
+    const std::vector<std::string> mesh_name_types = 
+        {"multimesh_names", "qmesh_names", "ucdmesh_names", "ptmesh_names"};
+    const std::vector<std::string> var_name_types = 
+        {"multivar_names", "qvar_names", "ucdvar_names", "ptvar_names"};
+    const std::vector<std::string> mat_name_types = 
+        {"multimat_names", "mat_names"};
+    // std::vector<std::string> mat_species_name_types = 
+    //    {"multimatspecies_names", "matspecies_names"};
+
+    auto generate_read_list = [&](DBfile *dbfile,
+                                  std::ostringstream &error_oss,
+                                  const std::string &what_are_we_reading,
+                                  const std::vector<std::string> &type_names,
+                                  const std::string &error_msg)
     {
-        // if we are *not* reading *no* meshes --> we are reading meshes
-        if (! reading_info[silo_obj_name].read_none)
+        // if we are *not* reading *no* objects of this type --> we are reading objects of this type
+        if (! reading_options[what_are_we_reading].read_none)
         {
-            if (reading_info[silo_obj_name].read_all)
+            if (reading_options[what_are_we_reading].read_all)
             {
-                for (int toc_id = 0; toc_id < num_silo_objects_in_toc; toc_id ++)
+                for (const std::string &type_name : type_names)
                 {
-                    reading_info[silo_obj_name].names_to_read.push_back(toc_names[toc_id]);
+                    for (int toc_id = 0; toc_id < reading_info[type_name].num_obj_in_toc; toc_id ++)
+                    {
+                        reading_info[type_name].names_to_read.push_back(
+                            reading_info[type_name].toc_names[toc_id]);
+                    }
                 }
             }
             else
             {
-                if (real_opts["silo_names"][silo_obj_name].dtype().is_object())
+                auto check_silo_name = [&](const std::string &silo_name)
                 {
-                    reading_info[silo_obj_name].names_to_read = real_opts["silo_names"][silo_obj_name].child_names();
-                }
-                else
-                {
-                    reading_info[silo_obj_name].names_to_read.push_back(real_opts["silo_names"][silo_obj_name].as_string());
-                }
-
-                for (size_t list_id = 0; list_id < reading_info[silo_obj_name].names_to_read.size(); list_id ++)
-                {
-                    bool found = false;
-                    for (int toc_id = 0; toc_id < num_silo_objects_in_toc; toc_id ++)
+                    if (! DBInqVarExists(dbfile, silo_name.c_str()))
                     {
-                        if (toc_names[toc_id] == reading_info[silo_obj_name].names_to_read[list_id])
+                        error_oss << "No silo var found matching " << silo_name;
+                        return false;
+                    }
+
+                    const int silo_var_type = DBInqVarType(dbfile, silo_name.c_str());
+
+                    bool found = false;
+                    for (const std::string &type_name : type_names)
+                    {
+                        if (silo_var_type == reading_info[type_name].var_type)
                         {
+                            reading_info[type_name].names_to_read.push_back(silo_name);
                             found = true;
                             break;
                         }
                     }
-                    if (!found)
+                    if (! found)
                     {
-                        error_oss << "No " << obj_name << " found matching " << reading_info["multimesh_names"].names_to_read[list_id];
+                        error_oss << "Requested silo object " << silo_name << error_msg << silo_var_type << ".";
+                        return false;
+                    }
+
+                    return true;
+                };
+
+                if (real_opts["silo_names"][what_are_we_reading].dtype().is_object())
+                {
+                    for (const std::string silo_name : real_opts["silo_names"][what_are_we_reading].child_names())
+                    {
+                        if (! check_silo_name(silo_name))
+                        {
+                            // error_oss is already populated
+                            return false;
+                        }
+                    }
+                }
+                else
+                {
+                    const std::string silo_name = real_opts["silo_names"][what_are_we_reading].as_string();
+
+                    if (! check_silo_name(silo_name))
+                    {
+                        // error_oss is already populated
                         return false;
                     }
                 }
@@ -2845,18 +2934,28 @@ read_root_silo_index(const std::string &root_file_path,
 
     // Silo doesn't let us have any names that are the same in the same directory,
     // even if they are different types. So we don't have to worry about name collisions.
-    if (! (generate_read_list("multimesh_names", "multimesh", toc->nmultimesh, toc->multimesh_names) &&
-           generate_read_list("multivar_names", "multivar", toc->nmultivar, toc->multivar_names) &&
-           generate_read_list("multimat_names", "multimat", toc->nmultimat, toc->multimat_names) &&
-           // generate_read_list("multimatspecies_names", "multimatspecies", toc->nmultimatspecies, toc->multimatspecies_names) &&
-           generate_read_list("qmesh_names", "qmesh", toc->nqmesh, toc->qmesh_names) &&
-           generate_read_list("qvar_names", "qvar", toc->nqvar, toc->qvar_names) &&
-           generate_read_list("ucdmesh_names", "ucdmesh", toc->nucdmesh, toc->ucdmesh_names) &&
-           generate_read_list("ucdvar_names", "ucdvar", toc->nucdvar, toc->ucdvar_names) &&
-           generate_read_list("ptmesh_names", "ptmesh", toc->nptmesh, toc->ptmesh_names) &&
-           generate_read_list("ptvar_names", "ptvar", toc->nptvar, toc->ptvar_names) &&
-           generate_read_list("mat_names", "mat", toc->nmat, toc->mat_names)))
-           // generate_read_list("matspecies_names", "matspecies", toc->nmatspecies, toc->matspecies_names)
+
+    if (! (generate_read_list(dbfile.getSiloObject(),
+                              error_oss,
+                              "mesh_names",
+                              mesh_name_types,
+                              " was found in file but it is not one of the supported "
+                              "mesh types: DB_MULTIMESH, DB_QUADMESH, DB_UCDMESH, or "
+                              "DB_POINTMESH. Instead it had silo var type ") &&
+           generate_read_list(dbfile.getSiloObject(),
+                              error_oss,
+                              "var_names",
+                              var_name_types,
+                              " was found in file but it is not one of the supported "
+                              "var types: DB_MULTIVAR, DB_QUADVAR, DB_UCDVAR, or "
+                              "DB_POINTVAR. Instead it had silo var type ") &&
+           generate_read_list(dbfile.getSiloObject(),
+                              error_oss,
+                              "mat_names",
+                              mat_name_types,
+                              " was found in file but it is not one of the supported "
+                              "mat types: DB_MULTIMAT or DB_MATERIAL. Instead it had "
+                              "silo var type ")))
     {
         // error msg should already be populated
         return false;
