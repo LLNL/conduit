@@ -1117,6 +1117,41 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
     Node &topo_out = mesh_domain["topologies"][multimesh_name];
     Node &coords_out = mesh_domain["coordsets"][multimesh_name];
 
+    auto colmajor_regular_striding = [&](int strides[])
+    {
+        // we can only succeed here if the data is regularly strided
+        if (1 == ndims)
+        {
+            CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1,
+                           "Structured (noncollinear) column major quadmesh " <<
+                           multimesh_name << " has irregular striding, which "
+                           "makes it impossible to correctly convert to Blueprint.");
+            strides[0] = 1;
+        }
+        else if (2 == ndims)
+        {
+            CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
+                           quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0],
+                           "Structured (noncollinear) column major quadmesh " <<
+                           multimesh_name << " has irregular striding, which "
+                           "makes it impossible to correctly convert to Blueprint.");
+            strides[0] = quadmesh_ptr->dims[1];
+            strides[1] = 1;
+        }
+        else // (3 == ndims)
+        {
+            CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
+                           quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0] &&
+                           quadmesh_ptr->stride[2] == quadmesh_ptr->dims[0] * quadmesh_ptr->dims[1],
+                           "Structured (noncollinear) column major quadmesh " <<
+                           multimesh_name << " has irregular striding, which "
+                           "makes it impossible to correctly convert to Blueprint.");
+            strides[0] = quadmesh_ptr->dims[1] * quadmesh_ptr->dims[2];
+            strides[1] = quadmesh_ptr->dims[2];
+            strides[2] = 1;
+        }
+    };
+
     if (coordtype == DB_COLLINEAR)
     {
         coords_out["type"] = "rectilinear";
@@ -1158,8 +1193,13 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
 
             if (quadmesh_ptr->major_order == DB_COLMAJOR)
             {
-                CONDUIT_ERROR("TODO what to do in this case");
-                // resort to strided structured?
+                // resort to strided structured
+                int strides[] = {0,0,0};
+
+                // we can only succeed here if the data is regularly strided
+                colmajor_regular_striding(strides);
+
+                topo_out["elements/dims/strides"].set(strides, ndims);
             }
         }
         else
@@ -1197,30 +1237,7 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                 int actual_strides[] = {0,0,0};
 
                 // we can only succeed here if the data is regularly strided
-                if (1 == ndims)
-                {
-                    CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1,
-                                   "TODO BAD");
-                    actual_strides[0] = 1;
-                }
-                else if (2 == ndims)
-                {
-                    CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
-                                   quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0],
-                                   "TODO BAD");
-                    actual_strides[0] = quadmesh_ptr->dims[1];
-                    actual_strides[1] = 1;
-                }
-                else // (3 == ndims)
-                {
-                    CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
-                                   quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0] &&
-                                   quadmesh_ptr->stride[2] == quadmesh_ptr->dims[0] * quadmesh_ptr->dims[1],
-                                   "TODO BAD");
-                    actual_strides[0] = quadmesh_ptr->dims[1] * quadmesh_ptr->dims[2];
-                    actual_strides[1] = quadmesh_ptr->dims[2];
-                    actual_strides[2] = 1;
-                }
+                colmajor_regular_striding(actual_strides);
 
                 topo_out["elements/dims/strides"].set(actual_strides, ndims);
             }
@@ -4429,9 +4446,12 @@ void silo_write_structured_mesh(DBfile *dbfile,
     index_t num_elems;
 
     // check for strided structured case
-    if (n_topo.has_path("elements/dims/offsets") &&
+    if (n_topo.has_path("elements/dims/offsets") ||
         n_topo.has_path("elements/dims/strides"))
     {
+        // I could potentially support either case where only offsets or only strides
+        // is present. Would need to think more about that. But certainly if both
+        // are present we have to give up, or completely take apart the mesh.
         CONDUIT_ERROR("Strided Structured Blueprint case does not have a general "
                       "analog in Silo.");
     }

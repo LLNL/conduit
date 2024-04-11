@@ -1805,11 +1805,11 @@ TEST(conduit_relay_io_silo, read_silo)
 TEST(conduit_relay_io_silo, read_simple_silo)
 {
     const std::vector<std::vector<std::string>> file_info = {
-        // {"curv2d",          ".silo", "no"},
-        {"curv2d_colmajor", ".silo", "no"}, // TODO look at strided structured to handle this case
-        // {"curv3d",          ".silo", "yes"},
-        // {"curv3d_colmajor", ".silo", "no"}, // TODO
-        // {"globe",           ".silo", "yes"}, // TODO need to fix a known bug for this one to work
+        {"curv2d",          ".silo", "no"},
+        {"curv2d_colmajor", ".silo", "no"},
+        {"curv3d",          ".silo", "yes"},
+        {"curv3d_colmajor", ".silo", "no"},
+        // {"globe",           ".silo", "yes"}, // TODO need to add support for mixed shape topos
     };
     for (int i = 0; i < file_info.size(); i ++) 
     {
@@ -1824,8 +1824,6 @@ TEST(conduit_relay_io_silo, read_simple_silo)
 
         io::silo::load_mesh(input_file, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-        load_mesh.print();
 
         const std::string out_name = "read_silo_" + basename;
 
