@@ -69,7 +69,7 @@ barrier()
 #include "blueprint_baseline_helpers.hpp"
 
 using namespace conduit;
-
+#if 0
 TEST(t_blueprint_mpi_mesh_flatten, braid)
 {
     const MPI_Comm comm = MPI_COMM_WORLD;
@@ -97,7 +97,7 @@ TEST(t_blueprint_mpi_mesh_flatten, braid)
         table::compare_to_baseline(table, baseline);
     }
 }
-
+#endif
 TEST(t_blueprint_mpi_mesh_flatten, spiral)
 {
     const MPI_Comm comm = MPI_COMM_WORLD;

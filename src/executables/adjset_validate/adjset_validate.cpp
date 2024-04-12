@@ -100,7 +100,6 @@ addPointMesh(const std::string &adjsetName, const conduit::Node &info, conduit::
         // Add topo
         std::string topoName(adjsetName);
         conduit::Node &topo = n["topologies/" + topoName];
-        int npts = static_cast<int>(cx.size());
         topo["coordset"] = coordsetName;
         topo["type"] = "points";
 
