@@ -1653,9 +1653,9 @@ braid_quads_and_tris(index_t npts_x,
     std::vector< int32 > stream_ids_buffer;
     std::vector< int32 > stream_lengths;
 
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
              if ( ielem % 2 == 0 )
              {
@@ -1689,16 +1689,14 @@ braid_quads_and_tris(index_t npts_x,
     // Fill in connectivity array
     int32 idx = 0;
     int32 elem  = 0;
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        int32 yoff = j * (nele_x+1);
-
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
-            int32 n1 = yoff + i;
-            int32 n2 = n1 + (nele_x+1);
-            int32 n3 = n1 + 1 + (nele_x+1);
-            int32 n4 = n1 + 1;
+            int32 n1 = j * npts_x + i;
+            int32 n2 = j * npts_x + i + 1;
+            int32 n3 = (j+1) * npts_x + i + 1;
+            int32 n4 = (j+1) * npts_x + i;
 
             if ( elem % 2 == 0 )
             {
@@ -1780,9 +1778,9 @@ braid_quads_and_tris_offsets(index_t npts_x,
     std::vector< int32 > stream_offsets;
     stream_offsets.push_back( 0 );
 
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
             int32 next = stream_offsets.back();
 
@@ -1820,16 +1818,14 @@ braid_quads_and_tris_offsets(index_t npts_x,
     // Fill in connectivity array
     int32 idx = 0;
     int32 elem  = 0;
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        int32 yoff = j * (nele_x+1);
-
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
-            int32 n1 = yoff + i;
-            int32 n2 = n1 + (nele_x+1);
-            int32 n3 = n1 + 1 + (nele_x+1);
-            int32 n4 = n1 + 1;
+            int32 n1 = j * npts_x + i;
+            int32 n2 = j * npts_x + i + 1;
+            int32 n3 = (j+1) * npts_x + i + 1;
+            int32 n4 = (j+1) * npts_x + i;
 
             if ( elem % 2 == 0 )
             {
