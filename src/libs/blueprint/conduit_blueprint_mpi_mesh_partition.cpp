@@ -191,11 +191,11 @@ ParallelPartitioner::count_targets() const
     std::vector<int> global_dd(ntotal_sel);
     MPI_Allgatherv(&local_dd[0],
                    static_cast<int>(local_dd.size()),
-                   MPI_UNSIGNED,
+                   MPI_INT,
                    &global_dd[0],
                    &nglobal_sel[0],
                    &offsets[0],
-                   MPI_UNSIGNED,
+                   MPI_INT,
                    comm);
 
     // Now we know where each domain wants to go, determine the target count.

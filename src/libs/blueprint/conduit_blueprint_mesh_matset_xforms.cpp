@@ -775,7 +775,6 @@ multi_buffer_by_element_to_uni_buffer_by_element_field(const conduit::Node &src_
 
         for (int elem_id = 0; elem_id < num_elems; elem_id ++)
         {
-            int size = 0;
             for (mat_id = 0; mat_id < nmats; mat_id ++)
             {
                 float64 matset_val = full_matset_vals[mat_id][elem_id];
@@ -783,7 +782,6 @@ multi_buffer_by_element_to_uni_buffer_by_element_field(const conduit::Node &src_
                 if (vol_frac > epsilon)
                 {
                     matset_values.push_back(matset_val);
-                    size ++;
                 }
             }
         }
