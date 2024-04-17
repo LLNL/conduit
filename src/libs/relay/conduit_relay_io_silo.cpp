@@ -2044,6 +2044,14 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     }
     else // COLMAJOR
     {
+        // I'm not convinced it is ever possible to hit this case.
+        // If you have column major mesh data, you hit the strided structured
+        // case, which (for now) forces an early return at the beginning of
+        // this function. We may reenable that case later, which requires 
+        // filtering the matset down and is potentially quite challenging.
+        // The only way you can get here I think is if you have column major
+        // material data and row major mesh data. I've never seen an example
+        // file like that so far.
         for (int x = 0; x < nx; x ++)
         {
             for (int y = 0; y < ny; y ++)
