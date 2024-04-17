@@ -1873,6 +1873,29 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         return false;
     }
 
+    // we can only succeed here if the data is regularly strided
+    const std::string irregular_striding_err_msg = "DBmaterial " + matset_name + 
+        " has irregular striding, which makes it impossible to correctly convert"
+        " to Blueprint.";
+    if (1 == matset_ptr->ndims)
+    {
+        CONDUIT_ASSERT(matset_ptr->stride[0] == 1,
+                       irregular_striding_err_msg);
+    }
+    else if (2 == matset_ptr->ndims)
+    {
+        CONDUIT_ASSERT(matset_ptr->stride[0] == 1 && 
+                       matset_ptr->stride[1] == matset_ptr->dims[0],
+                       irregular_striding_err_msg);
+    }
+    else // (3 == matset_ptr->ndims)
+    {
+        CONDUIT_ASSERT(matset_ptr->stride[0] == 1 && 
+                       matset_ptr->stride[1] == matset_ptr->dims[0] &&
+                       matset_ptr->stride[2] == matset_ptr->dims[0] * matset_ptr->dims[1],
+                       irregular_striding_err_msg);
+    }
+
     CONDUIT_ASSERT(matset_ptr->allowmat0 == 0,
         "Material " << matset_name << " for multimesh " << multimesh_name << 
         " may contain zones with no materials defined on them." << 
