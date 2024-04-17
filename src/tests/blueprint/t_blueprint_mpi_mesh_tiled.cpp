@@ -173,11 +173,9 @@ void
 test_tiled_adjsets(const int dims[3], const std::string &testName)
 {
     // Make 4 domains but alter their locations.
-    int index = 0;
     foreach_permutation(4, [&](const std::vector<int> &domainNumbering)
     {
         const int domains[] = {2,2,1};
-        const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
         const std::vector<std::string> reorder{"normal", "kdtree"};
         for(const auto &r : reorder)
         {
@@ -271,7 +269,6 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
 {
     // This 12 domain case was found to cause adjset problems.
     const int dims[] = {2,2,2}, domains[] = {3,2,2};
-    const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
     const std::vector<std::string> reorder{"normal", "kdtree"};
 
     for(const auto &r : reorder)

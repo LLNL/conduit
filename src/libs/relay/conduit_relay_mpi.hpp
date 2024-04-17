@@ -77,6 +77,17 @@ namespace mpi
 /// Standard MPI Send Recv
 //-----------------------------------------------------------------------------
 
+    /**
+      @brief MPI tags can be in the range [0,MPI_TAG_UB]. The values are
+             implementation-dependent. If the tag is not in that range, return
+             MPI_TAG_UB so it is safe to use with MPI functions.
+
+      @param tag The input tag.
+
+      @return A tag value that is safe to use with MPI.
+    */
+    int CONDUIT_RELAY_API safe_tag(int tag);
+
     int CONDUIT_RELAY_API send(const Node &node,
                                 int dest,
                                 int tag,

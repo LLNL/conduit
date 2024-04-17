@@ -180,7 +180,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
     uint64_array local_num_verts_pri = local_info["num_verts_primary"].value();
     std::vector<std::unordered_map<uint64, int64>> dom_shared_nodes(domains.size());
 
-    const int64 local_ndomains = domains.size();
+    int64 local_ndomains = static_cast<int64>(domains.size());
     int64 global_ndomains;
     MPI_Allreduce(&local_ndomains, &global_ndomains, 1,
                   MPI_INT64_T, MPI_SUM, comm);
@@ -337,7 +337,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             for(uint64 i=0; i < local_num_verts[local_dom_idx]; i++)
             {
                 bool is_primary_domain = true;
-                int primary_domid;
+                int primary_domid = 0;
                 if (dom_shared_nodes[local_dom_idx].count(i) > 0)
                 {
                     primary_domid = dom_shared_nodes[local_dom_idx][i];
@@ -464,7 +464,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             for (const std::set<uint64>& group : recv_groups)
             {
                 index_t domid = *(group.begin());
-                const int tag = TAG_SHARED_NODE_SYNC + domid * 100 + group_idx;
+                const int tag = conduit::relay::mpi::safe_tag(TAG_SHARED_NODE_SYNC + domid * 100 + group_idx);
                 async_recvs.push_back(MPI_Request{});
                 group_idx++;
                 std::vector<uint64>& recvbuf = groups_2_vids[group];
@@ -484,10 +484,10 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
             for (const std::set<uint64>& group : send_groups)
             {
                 index_t domid = *(group.begin());
-                const int tag = TAG_SHARED_NODE_SYNC + domid * 100 + group_idx;
+                const int tag = conduit::relay::mpi::safe_tag(TAG_SHARED_NODE_SYNC + domid * 100 + group_idx);
                 async_sends.push_back(MPI_Request{});
                 group_idx++;
-                const std::vector<uint64>& sendbuf = groups_2_vids[group];
+                std::vector<uint64>& sendbuf = groups_2_vids[group];
                 MPI_Isend(sendbuf.data(), sendbuf.size(), MPI_UINT64_T,
                           rank_to, tag, comm, &(*async_sends.rbegin()));
             }
