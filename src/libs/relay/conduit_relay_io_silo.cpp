@@ -3153,35 +3153,26 @@ read_root_silo_index(const std::string &root_file_path,
 ///
 /// opts:
 ///      silo_names:
-///         multimesh_names:
-///               "{name1}" - multimeshes with this name will be read if they exist
+///         mesh_names:
+///               "{name1}" - meshes with this name will be read if they exist
 ///               "{name2}"
 ///               ...
 ///               or
-///               "{all}" - all multimeshes will be read.
+///               "{all}" - all meshes will be read.
 ///               or
-///               "{none}" - no multimeshes will be read.
-///         multivar_names: similar to multimesh_names.
-///         multimat_names: similar to multimesh_names.
-///         multimatspecies_names: similar to multimesh_names. TODO
-///         qmesh_names: similar to multimesh_names.
-///         qvar_names: similar to multimesh_names.
-///         ucdmesh_names: similar to multimesh_names.
-///         ucdvar_names: similar to multimesh_names.
-///         ptmesh_names: similar to multimesh_names.
-///         ptvar_names: similar to multimesh_names.
-///         mat_names: similar to multimesh_names.
-///         matspecies_names: similar to multimesh_names. TODO
+///               "{none}" - no meshes will be read.
+///         var_names: similar to mesh_names.
+///         mat_names: similar to mesh_names.
+///         matspecies_names: similar to mesh_names. TODO
 ///            By default, everything in the file will be read unless manually turned off.
 ///
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
 ///
-///      mesh_name: legacy argument. This is interpreted as a multimesh name.
-///            It is added to the list of multimesh names to read, unless the
+///      mesh_name: legacy argument. This is interpreted as a mesh name.
+///            It is added to the list of mesh names to read, unless the
 ///            user has specified "all" or "none", which will supersede this.
-///            TODO does it make sense to remove this? When?
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
 read_mesh(const std::string &root_file_path,
@@ -3543,35 +3534,26 @@ void load_mesh(const std::string &root_file_path,
 //-----------------------------------------------------------------------------
 /// opts:
 ///      silo_names:
-///         multimesh_names:
-///               "{name1}" - multimeshes with this name will be read if they exist
+///         mesh_names:
+///               "{name1}" - meshes with this name will be read if they exist
 ///               "{name2}"
 ///               ...
 ///               or
-///               "{all}" - all multimeshes will be read.
+///               "{all}" - all meshes will be read.
 ///               or
-///               "{none}" - no multimeshes will be read.
-///         multivar_names: similar to multimesh_names.
-///         multimat_names: similar to multimesh_names.
-///         multimatspecies_names: similar to multimesh_names. TODO
-///         qmesh_names: similar to multimesh_names.
-///         qvar_names: similar to multimesh_names.
-///         ucdmesh_names: similar to multimesh_names.
-///         ucdvar_names: similar to multimesh_names.
-///         ptmesh_names: similar to multimesh_names.
-///         ptvar_names: similar to multimesh_names.
-///         mat_names: similar to multimesh_names.
-///         matspecies_names: similar to multimesh_names. TODO
+///               "{none}" - no meshes will be read.
+///         var_names: similar to mesh_names.
+///         mat_names: similar to mesh_names.
+///         matspecies_names: similar to mesh_names. TODO
 ///            By default, everything in the file will be read unless manually turned off.
 ///
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
 ///
-///      mesh_name: legacy argument. This is interpreted as a multimesh name.
-///            It is added to the list of multimesh names to read, unless the
+///      mesh_name: legacy argument. This is interpreted as a mesh name.
+///            It is added to the list of mesh names to read, unless the
 ///            user has specified "all" or "none", which will supersede this.
-///            TODO does it make sense to remove this? When?
 //-----------------------------------------------------------------------------
 void load_mesh(const std::string &root_file_path,
                const Node &opts,
