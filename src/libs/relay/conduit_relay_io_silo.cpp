@@ -635,6 +635,41 @@ check_using_whole_coordset(const int *dims,
 
 //-----------------------------------------------------------------------------
 void
+colmajor_regular_striding(int *strides_out,
+                          const int ndims,
+                          const std::string &error_msg,
+                          const int *silo_strides,
+                          const int *silo_dims)
+{
+    // we can only succeed here if the data is regularly strided
+    if (1 == ndims)
+    {
+        CONDUIT_ASSERT(silo_strides[0] == 1,
+                       error_msg);
+        strides_out[0] = 1;
+    }
+    else if (2 == ndims)
+    {
+        CONDUIT_ASSERT(silo_strides[0] == 1 && 
+                       silo_strides[1] == silo_dims[0],
+                       error_msg);
+        strides_out[0] = silo_dims[1];
+        strides_out[1] = 1;
+    }
+    else // (3 == ndims)
+    {
+        CONDUIT_ASSERT(silo_strides[0] == 1 && 
+                       silo_strides[1] == silo_dims[0] &&
+                       silo_strides[2] == silo_dims[0] * silo_dims[1],
+                       error_msg);
+        strides_out[0] = silo_dims[1] * silo_dims[2];
+        strides_out[1] = silo_dims[2];
+        strides_out[2] = 1;
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
 copy_point_coords(const int datatype,
                   void *coords[3],
                   int ndims,
@@ -1131,41 +1166,6 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
     Node &topo_out = mesh_domain["topologies"][multimesh_name];
     Node &coords_out = mesh_domain["coordsets"][multimesh_name];
 
-    auto colmajor_regular_striding = [&](int strides[])
-    {
-        // we can only succeed here if the data is regularly strided
-        if (1 == ndims)
-        {
-            CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1,
-                           "Structured (noncollinear) column major quadmesh " <<
-                           multimesh_name << " has irregular striding, which "
-                           "makes it impossible to correctly convert to Blueprint.");
-            strides[0] = 1;
-        }
-        else if (2 == ndims)
-        {
-            CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
-                           quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0],
-                           "Structured (noncollinear) column major quadmesh " <<
-                           multimesh_name << " has irregular striding, which "
-                           "makes it impossible to correctly convert to Blueprint.");
-            strides[0] = quadmesh_ptr->dims[1];
-            strides[1] = 1;
-        }
-        else // (3 == ndims)
-        {
-            CONDUIT_ASSERT(quadmesh_ptr->stride[0] == 1 && 
-                           quadmesh_ptr->stride[1] == quadmesh_ptr->dims[0] &&
-                           quadmesh_ptr->stride[2] == quadmesh_ptr->dims[0] * quadmesh_ptr->dims[1],
-                           "Structured (noncollinear) column major quadmesh " <<
-                           multimesh_name << " has irregular striding, which "
-                           "makes it impossible to correctly convert to Blueprint.");
-            strides[0] = quadmesh_ptr->dims[1] * quadmesh_ptr->dims[2];
-            strides[1] = quadmesh_ptr->dims[2];
-            strides[2] = 1;
-        }
-    };
-
     if (coordtype == DB_COLLINEAR)
     {
         coords_out["type"] = "rectilinear";
@@ -1189,6 +1189,10 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         coords_out["type"] = "explicit";
         topo_out["type"] = "structured";
 
+        const std::string irregular_striding_err_msg = "Structured (noncollinear)"
+            " column major quadmesh " + multimesh_name + " has irregular striding,"
+            " which makes it impossible to correctly convert to Blueprint.";
+
         if (detail::check_using_whole_coordset(quadmesh_ptr->dims, 
                                                quadmesh_ptr->min_index,
                                                quadmesh_ptr->max_index,
@@ -1205,54 +1209,47 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                 topo_out["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
             }
 
+            // row major case requires nothing else
             if (quadmesh_ptr->major_order == DB_COLMAJOR)
             {
                 // resort to strided structured
                 int strides[] = {0,0,0};
-
-                // we can only succeed here if the data is regularly strided
-                colmajor_regular_striding(strides);
-
+                detail::colmajor_regular_striding(strides,
+                                                  ndims, 
+                                                  irregular_striding_err_msg,
+                                                  quadmesh_ptr->stride,
+                                                  quadmesh_ptr->dims);
                 topo_out["elements/dims/strides"].set(strides, ndims);
             }
         }
         else
         {
             // strided structured case
+
+            topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+            if (ndims > 1)
+            {
+                topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+            }
+            if (ndims > 2)
+            {
+                topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+            }
+
+            topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
+
             if (quadmesh_ptr->major_order == DB_ROWMAJOR)
             {
-                topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
-                if (ndims > 1)
-                {
-                    topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
-                }
-                if (ndims > 2)
-                {
-                    topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
-                }
-
-                topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
                 topo_out["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
             }
             else // colmajor
             {
-                topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
-                if (ndims > 1)
-                {
-                    topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
-                }
-                if (ndims > 2)
-                {
-                    topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
-                }
-
-                topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
-
                 int actual_strides[] = {0,0,0};
-
-                // we can only succeed here if the data is regularly strided
-                colmajor_regular_striding(actual_strides);
-
+                detail::colmajor_regular_striding(actual_strides,
+                                                  ndims, 
+                                                  irregular_striding_err_msg,
+                                                  quadmesh_ptr->stride,
+                                                  quadmesh_ptr->dims);
                 topo_out["elements/dims/strides"].set(actual_strides, ndims);
             }
         }
@@ -1544,6 +1541,7 @@ read_variable_domain_helper(const T *var_ptr,
                             const int vartype,
                             const std::string &bottom_level_mesh_name,
                             const std::string &volume_dependent,
+                            const Node &mesh_out,
                             Node &intermediate_field)
 {
     // If we cannot fetch this var we will skip
@@ -1581,7 +1579,9 @@ read_variable_domain_helper(const T *var_ptr,
 
     intermediate_field["topology"] = multimesh_name;
 
-    // handle association
+    const std::string &topo_type = mesh_out["topologies"][multimesh_name]["type"].as_string();
+
+    // handle association and strided structured
     if (vartype == DB_UCDVAR)
     {
         intermediate_field["association"] = var_ptr->centering == DB_ZONECENT ? "element" : "vertex";
@@ -1590,17 +1590,69 @@ read_variable_domain_helper(const T *var_ptr,
     {
         intermediate_field["association"] = var_ptr->centering == DB_NODECENT ? "vertex" : "element";
     
+        // put me in jail
         const DBquadvar* quadvar_ptr = reinterpret_cast<const DBquadvar*>(var_ptr);
 
-        // TODO what do we do if we aren't structured? Same q for dealing with meshes
-        // handle strided structured fields, if appropriate
-        if (! detail::check_using_whole_coordset(quadvar_ptr->dims,
-                                                 quadvar_ptr->min_index,
-                                                 quadvar_ptr->max_index,
-                                                 quadvar_ptr->ndims))
+        if (topo_type == "structured")
         {
-            intermediate_field["offsets"].set(quadvar_ptr->min_index, quadvar_ptr->ndims);
-            intermediate_field["strides"].set(quadvar_ptr->stride, quadvar_ptr->ndims);
+            const std::string irregular_striding_err_msg = "Structured (noncollinear)"
+                " column major quadmesh " + multimesh_name + " field " + var_name + 
+                " has irregular striding, which makes it impossible to correctly"
+                " convert to Blueprint.";
+            
+            if (detail::check_using_whole_coordset(quadvar_ptr->dims,
+                                                   quadvar_ptr->min_index,
+                                                   quadvar_ptr->max_index,
+                                                   quadvar_ptr->ndims))
+            {
+                // row major case requires nothing else
+                if (quadvar_ptr->major_order == DB_COLMAJOR)
+                {
+                    // resort to strided structured
+                    int strides[] = {0,0,0};
+                    detail::colmajor_regular_striding(strides,
+                                                      quadvar_ptr->ndims, 
+                                                      irregular_striding_err_msg,
+                                                      quadvar_ptr->stride,
+                                                      quadvar_ptr->dims);
+                    intermediate_field["strides"].set(strides, quadvar_ptr->ndims);
+                }
+            }
+            else
+            {
+                // strided structured case
+
+                intermediate_field["offsets"].set(quadvar_ptr->min_index, quadvar_ptr->ndims);
+
+                if (quadvar_ptr->major_order == DB_ROWMAJOR)
+                {
+                    intermediate_field["strides"].set(quadvar_ptr->stride, quadvar_ptr->ndims);
+                }
+                else // colmajor
+                {
+                    int actual_strides[] = {0,0,0};
+                    detail::colmajor_regular_striding(actual_strides,
+                                                      quadvar_ptr->ndims, 
+                                                      irregular_striding_err_msg,
+                                                      quadvar_ptr->stride,
+                                                      quadvar_ptr->dims);
+                    intermediate_field["strides"].set(actual_strides, quadvar_ptr->ndims);
+                }
+            }
+        }
+        else // rectilinear
+        {
+            CONDUIT_ASSERT(detail::check_using_whole_coordset(quadvar_ptr->dims,
+                                                              quadvar_ptr->min_index,
+                                                              quadvar_ptr->max_index,
+                                                              quadvar_ptr->ndims),
+                           "Field " << var_name << " for Rectilinear grid (collinear quadmesh) " << 
+                           multimesh_name << " is using a subset of the provided field values. We "
+                           "do not support this case.");
+
+            CONDUIT_ASSERT(quadvar_ptr->major_order == DB_ROWMAJOR,
+                           "Field " << var_name << " for Rectilinear grid (collinear quadmesh) " << 
+                           multimesh_name << " is column major in silo. We do not support this case.");
         }
     }
     else // if (vartype == DB_POINTVAR)
@@ -1608,6 +1660,8 @@ read_variable_domain_helper(const T *var_ptr,
         intermediate_field["association"] = "vertex";
 
         // TODO what to do about check_using_whole_coordset case?
+
+        // TODO what to do about colmajor case?
     }
 
     // if we have volume dependence we can track it
@@ -1663,8 +1717,8 @@ read_variable_domain(const int vartype,
             &DBFreeUcdvar};
 
         if (!read_variable_domain_helper<DBucdvar>(
-            ucdvar.getSiloObject(), var_name, multimesh_name,
-            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
+            ucdvar.getSiloObject(), var_name, multimesh_name, vartype,
+            bottom_level_mesh_name, volume_dependent, mesh_out, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1681,8 +1735,8 @@ read_variable_domain(const int vartype,
             &DBFreeQuadvar};
 
         if (!read_variable_domain_helper<DBquadvar>(
-            quadvar.getSiloObject(), var_name, multimesh_name,
-            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
+            quadvar.getSiloObject(), var_name, multimesh_name, vartype,
+            bottom_level_mesh_name, volume_dependent, mesh_out, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1699,8 +1753,8 @@ read_variable_domain(const int vartype,
             &DBFreeMeshvar};
 
         if (!read_variable_domain_helper<DBmeshvar>(
-            meshvar.getSiloObject(), var_name, multimesh_name,
-            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
+            meshvar.getSiloObject(), var_name, multimesh_name, vartype,
+            bottom_level_mesh_name, volume_dependent, mesh_out, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
