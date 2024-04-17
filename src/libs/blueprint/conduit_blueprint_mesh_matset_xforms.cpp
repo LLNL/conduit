@@ -1437,14 +1437,15 @@ to_silo(const conduit::Node &specset,
 {
     if(!specset.dtype().is_object() )
     {
-        CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed specset node"
-                      " must be a valid specset tree.");
+        CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed specset node "
+                      "must be a valid specset tree.");
     }
 
     if(!matset.dtype().is_object() )
     {
-        CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed matset node"
-                      " must be a valid matset tree.");
+        CONDUIT_ERROR("blueprint::mesh::specset::to_silo passed matset node "
+                      "must be a valid matset tree or a valid intermediate silo "
+                      "representation of a matset.");
         // TODO well, not entirely true...
     }
 

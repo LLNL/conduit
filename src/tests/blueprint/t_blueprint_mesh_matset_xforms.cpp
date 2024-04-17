@@ -484,10 +484,7 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_to_silo_misc)
     const Node &matset = mesh["matsets/mesh"];
     const Node &specset = mesh["specsets/mesh"];
 
-    Node silo_rep, silo_rep_matset, info;
-    blueprint::mesh::specset::to_silo(specset, matset, silo_rep);
-    blueprint::mesh::matset::to_silo(matset, silo_rep_matset);
-    std::cout << silo_rep.to_yaml() << std::endl;
+    Node silo_rep1, silo_rep2, silo_rep_matset, info;
 
     const std::string yaml_text = 
         "specnames: \n"
@@ -505,5 +502,15 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_to_silo_misc)
     Node baseline;
     baseline.parse(yaml_text, "yaml");
 
-    EXPECT_FALSE(silo_rep.diff(baseline, info, CONDUIT_EPSILON, true));
+
+    // first test transforming specset to silo rep with a regular matset
+    blueprint::mesh::specset::to_silo(specset, matset, silo_rep1);
+    std::cout << silo_rep1.to_yaml() << std::endl;
+    EXPECT_FALSE(silo_rep1.diff(baseline, info, CONDUIT_EPSILON, true));
+
+    // next we test transforming specset to silo rep with a silo rep matset
+    blueprint::mesh::matset::to_silo(matset, silo_rep_matset);
+    blueprint::mesh::specset::to_silo(specset, silo_rep_matset, silo_rep2);
+    std::cout << silo_rep2.to_yaml() << std::endl;
+    EXPECT_FALSE(silo_rep2.diff(baseline, info, CONDUIT_EPSILON, true));
 }
