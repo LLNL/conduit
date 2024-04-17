@@ -541,7 +541,7 @@ get_coordset_axis_labels(const int sys)
     }
     else if (sys == DB_OTHER)
     {
-        CONDUIT_INFO("Encountered DB_OTHER, we will default to a cartesian coordinate system.");
+        CONDUIT_INFO("Encountered DB_OTHER; defaulting to a cartesian coordinate system.");
         coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[0].c_str());
         coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[1].c_str());
         coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[2].c_str());
@@ -1599,7 +1599,7 @@ read_variable_domain_helper(const T *var_ptr,
                 " column major quadmesh " + multimesh_name + " field " + var_name + 
                 " has irregular striding, which makes it impossible to correctly"
                 " convert to Blueprint.";
-            
+
             if (detail::check_using_whole_coordset(quadvar_ptr->dims,
                                                    quadvar_ptr->min_index,
                                                    quadvar_ptr->max_index,
@@ -1848,6 +1848,26 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         CONDUIT_INFO("DBmaterial " + matset_name + " is not "
                      "associated with mesh " + bottom_level_mesh_name +
                      ". Skipping.");
+        return false;
+    }
+
+    // Check for structured strided case:
+    const Node &topo_out = mesh_out["topologies"][multimesh_name];
+    if (topo_out["type"].as_string() == "structured" &&
+        (topo_out.has_path("elements/dims/strides") || 
+         topo_out.has_path("elements/dims/strides")))
+    {
+        CONDUIT_INFO("DBmaterial " + matset_name + " is associated with mesh " + 
+                     bottom_level_mesh_name + ", which is a Structured (noncollinear) "
+                     "quadmesh. It uses a subset of the coordinates to define the mesh. "
+                     "We map meshes like this to Structured Strided meshes in Blueprint, "
+                     "which expect associated matsets to only provide data for mesh zones "
+                     "that are actually being used by the topology. Silo materials provide "
+                     "data for all mesh zones, whether or not they are being used by the "
+                     "quadmesh. We have opted to not support this case, as to do so would "
+                     "require us to manually remove material set data that corresponds to "
+                     "unused zones. If there is a need for this feature, please contact a "
+                     "Conduit developer. In the meantime, we will skip reading this DBmaterial.");
         return false;
     }
 
@@ -3484,8 +3504,6 @@ read_mesh(const std::string &root_file_path,
                     // In silo, for each mesh, there can only be one matset, because otherwise
                     // it would be ambiguous. In Blueprint, we can allow multiple matsets per
                     // topo, because the fields explicitly link to the matset they use.
-                    // Right now, we only ever read one mesh, meaning that there can only
-                    // be one matset in our newly created blueprint mesh.
                     if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
                                            mesh_index_name, multimat_name, bottom_level_mesh_name,
                                            opts_matset_style, matset_field_reconstruction, mesh_out))
