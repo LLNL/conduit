@@ -734,6 +734,8 @@ void
 add_shape_info(DBzonelist *zonelist_ptr,
                Node &n_elements)
 {
+    // TODO handle min and max index case (check_using_whole_coordset case)
+
     for (int i = 0; i < zonelist_ptr->nshapes; ++i)
     {
         CONDUIT_ASSERT(zonelist_ptr->shapetype[0] == zonelist_ptr->shapetype[i],
@@ -1659,8 +1661,8 @@ read_variable_domain_helper(const T *var_ptr,
     {
         intermediate_field["association"] = "vertex";
 
-        // TODO what to do about check_using_whole_coordset case?
-
+        // TODO handle min and max index case (check_using_whole_coordset case)
+        
         // TODO what to do about colmajor case?
     }
 
@@ -2031,7 +2033,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         }
     }
 
-    // TODO find colmajor data to test this
+    // TODO still need to find colmajor data to test this
     // TODO are there other places where I'm reading where things could be rowmajor or colmajor
 
     intermediate_matset["material_ids"].set(material_ids.data(), material_ids.size());
