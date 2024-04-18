@@ -1591,7 +1591,6 @@ TEST(conduit_relay_io_silo, round_trip_save_option_overlink5)
 ///            user has specified "all" or "none", which will supersede this.
 
 //-----------------------------------------------------------------------------
-// TODO this is now a legacy feature. Should I remove eventually?
 TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
 {
     Node load_mesh, info, opts;
@@ -1604,6 +1603,8 @@ TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
     EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
+
+    EXPECT_TRUE(load_mesh[0]["topologies"].number_of_children() == 1);
 }
 
 //-----------------------------------------------------------------------------
