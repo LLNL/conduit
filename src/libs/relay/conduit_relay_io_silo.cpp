@@ -4650,11 +4650,6 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 const bool write_overlink,
                                 Node &n_mesh_info) 
 {
-    // declare pointers out here to prevent losing them to scope
-    int pts_dims[3];
-    int ele_dims[3];
-    index_t num_elems;
-
     // check for strided structured case
     if (n_topo.has_path("elements/dims/offsets") ||
         n_topo.has_path("elements/dims/strides"))
@@ -4665,11 +4660,12 @@ void silo_write_structured_mesh(DBfile *dbfile,
         CONDUIT_ERROR("Strided Structured Blueprint case does not have a general "
                       "analog in Silo.");
     }
+    int ele_dims[3];
     ele_dims[0] = n_topo["elements/dims/i"].to_value();
     ele_dims[1] = n_topo["elements/dims/j"].to_value();
     ele_dims[2] = 0;
 
-    num_elems = ele_dims[0] * ele_dims[1];
+    index_t num_elems = ele_dims[0] * ele_dims[1];
 
     if (ndims == 3)
     {
@@ -4678,6 +4674,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
     }
 
     // silo needs the node dims to define a structured grid
+    int pts_dims[3];
     pts_dims[0] = ele_dims[0] + 1;
     pts_dims[1] = ele_dims[1] + 1;
     pts_dims[2] = 1;
