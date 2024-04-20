@@ -313,30 +313,6 @@ public:
 };
 
 //-----------------------------------------------------------------------------
-
-class SiloReadOptions
-{
-public:
-    bool read_all = true;
-    bool read_none = false;
-};
-
-//-----------------------------------------------------------------------------
-
-class SiloReadBookkeeping
-{
-public:
-    int num_obj_in_toc = 0;
-    char **toc_names = nullptr;
-    int var_type;
-    std::vector<std::string> names_to_read;
-
-    SiloReadBookkeeping(int num_obj_in_toc_, char **toc_names_, int var_type_) : 
-        num_obj_in_toc(num_obj_in_toc_), toc_names(toc_names_), var_type(var_type_) {}
-    SiloReadBookkeeping(){}
-};
-
-//-----------------------------------------------------------------------------
 std::string sanitize_silo_varname(const std::string &varname)
 {
     std::stringstream newvarname;
@@ -2724,10 +2700,12 @@ bool
 read_root_silo_index(const std::string &root_file_path,
                      const Node &opts,
                      Node &root_node, // output
+                     std::string &mesh_name_to_read, // output
                      std::ostringstream &error_oss) // output
 {
     // clear output vars
     root_node.reset();
+    mesh_name_to_read = "";
     error_oss.str("");
 
     // first, make sure we can open the root file
@@ -2759,344 +2737,82 @@ read_root_silo_index(const std::string &root_file_path,
         return false;
     }
 
-    // Handle legacy mesh_name argument:
-    // The best way to do this is to put this mesh name into the opts before we
-    // start looking at the opts for real. However, we can't modify the opts the 
-    // user passed in. Thus we need to create a new opts node and have it point
-    // at the original opts node for everything except the mesh names.
-    Node real_opts;
-    if (opts.has_child("mesh_name"))
+    // decide what multimesh to extract
+    if (opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
     {
-        const std::string opts_mesh_name = opts["mesh_name"].as_string();
-        if (! opts_mesh_name.empty())
-        {
-            // we could manually go through the other opts, but I think this approach
-            // is cleaner in case we add more down the road
-            auto opts_itr = opts.children();
-            while (opts_itr.has_next())
-            {
-                const Node &opts_item = opts_itr.next();
-                const std::string opt_name = opts_itr.name();
-                // if you're not the silo_names, then we can point to original opts
-                if (opt_name != "silo_names")
-                {
-                    real_opts[opt_name].set_external(opts_item);
-                }
-                else
-                {
-                    // silo names case
-                    auto silo_names_itr = opts["silo_names"].children();
-                    while (silo_names_itr.has_next())
-                    {
-                        const Node &silo_names_entry = silo_names_itr.next();
-                        const std::string silo_names_name = silo_names_itr.name();
-                        // if you're not the mesh_names, then you can point to original opts
-                        if (silo_names_name != "mesh_names")
-                        {
-                            real_opts["silo_names"][silo_names_name].set_external(silo_names_entry);
-                        }
-                    }
-                }
-            }
+        mesh_name_to_read = opts["mesh_name"].as_string();
+    }
 
-            // now handle mesh names
-            if (opts.has_path("silo_names/mesh_names"))
-            {
-                if (opts["silo_names"]["mesh_names"].has_child("all") ||
-                    opts["silo_names"]["mesh_names"].has_child("none") ||
-                    opts["silo_names"]["mesh_names"].has_child(opts_mesh_name))
-                {
-                    // if we have already set things up such that the provided mesh name is superfluous
-                    // then we can point to original opts
-                    real_opts["silo_names"]["mesh_names"].set_external(opts["silo_names"]["mesh_names"]);
-                }
-                else
-                {
-                    // otherwise we must grab the mesh names that are already present and point to them
-                    if (opts["silo_names"]["mesh_names"].dtype().is_object())
-                    {
-                        auto mesh_names_itr = opts["silo_names"]["mesh_names"].children();
-                        while (mesh_names_itr.has_next())
-                        {
-                            const Node &mesh_names_entry = mesh_names_itr.next();
-                            const std::string mesh_name = mesh_names_itr.name();
-                            real_opts["silo_names"]["mesh_names"][mesh_name].set_external(mesh_names_entry);
-                        }
-                    }
-                    else
-                    {
-                        // I am letting users abuse me
-                        real_opts["silo_names"]["mesh_names"][opts["silo_names"]["mesh_names"].as_string()];
-                    }
-                    // and then add our extra mesh name to the list
-                    real_opts["silo_names"]["mesh_names"][opts_mesh_name];
-                }
-            }
-            else
-            {
-                real_opts["silo_names"]["mesh_names"].set(opts_mesh_name);
-            }
+    // we want to know the mesh type so it is easy to read later
+    int mesh_type = -1;
+
+    // check mesh name
+    if (mesh_name_to_read.empty())
+    {
+        // if not specified, we will default to first multimesh we find
+        if (toc->nmultimesh > 0)
+        {
+            mesh_name_to_read = toc->multimesh_names[0];
+            mesh_type = DB_MULTIMESH;
+        }
+        // otherwise we will try quadmeshes
+        else if (toc->nqmesh > 0)
+        {
+            mesh_name_to_read = toc->qmesh_names[0];
+            mesh_type = DB_QUADMESH;
+        }
+        // otherwise we will try ucdmeshes
+        else if (toc->nucdmesh > 0)
+        {
+            mesh_name_to_read = toc->ucdmesh_names[0];
+            mesh_type = DB_UCDMESH;
+        }
+        // otherwise we will try ptmeshes
+        else if (toc->nptmesh > 0)
+        {
+            mesh_name_to_read = toc->ptmesh_names[0];
+            mesh_type = DB_POINTMESH;
         }
         else
         {
-            real_opts.set_external(opts);
+            error_oss << "No meshes found in file: " << root_file_path;
+            return false;
         }
     }
     else
     {
-        real_opts.set_external(opts);
-    }
-
-    // Reading options will hold information about what to read for each general
-    // kind of silo object. For each of the cases, we have the option to read all,
-    // read none, or read some of that type.
-    std::map<std::string, detail::SiloReadOptions> reading_options;
-
-    // read all is turned on, and read none is turned off
-    reading_options["mesh_names"] = detail::SiloReadOptions();
-    reading_options["var_names"] = detail::SiloReadOptions();
-    reading_options["mat_names"] = detail::SiloReadOptions();
-    // reading_options["matspecies_names"] = detail::SiloReadOptions();
-
-    // TODO is there any way I could skip the following step or combine it with the next step?
-    // this is awfully complicated
-
-    // Now we need to see what things we are supposed to read based on
-    // what was passed in to the options.
-    if (real_opts.has_child("silo_names"))
-    {
-        auto silo_names_itr = real_opts["silo_names"].children();
-        while (silo_names_itr.has_next())
+        bool found = false;
+        auto check_mesh_name_in_file = [&](const int nmeshes,
+                                           char **mesh_names,
+                                           const int curr_mesh_type)
         {
-            const Node &silo_object_type = silo_names_itr.next();
-            const std::string silo_object_type_name = silo_names_itr.name();
-
-            if (reading_options.count(silo_object_type_name) == 0)
+            for (int i = 0; i < nmeshes; i ++)
             {
-                error_oss << "TODO unknown option";
-                return false;
-            }
-
-            if (silo_object_type.dtype().is_object())
-            {
-                if (silo_object_type.number_of_children() > 0)
+                if (mesh_names[i] == mesh_name_to_read)
                 {
-                    if (silo_object_type.has_child("all"))
-                    {
-                        if (silo_object_type.number_of_children() > 1)
-                        {
-                            error_oss << "TODO this is bad";
-                            return false;
-                        }
-                        reading_options[silo_object_type_name].read_all = true;
-                        reading_options[silo_object_type_name].read_none = false;
-                    }
-                    else if (silo_object_type.has_child("none"))
-                    {
-                        if (silo_object_type.number_of_children() > 1)
-                        {
-                            error_oss << "TODO this is bad";
-                            return false;
-                        }
-                        reading_options[silo_object_type_name].read_all = false;
-                        reading_options[silo_object_type_name].read_none = true;
-                    }
-                    else
-                    {
-                        // we must have named some specific items we want to read
-                        reading_options[silo_object_type_name].read_all = false;
-                        reading_options[silo_object_type_name].read_none = false;
-                    }
-                }
-                else
-                {
-                    // no children were specified so we want to read everything of this kind
-                    reading_options[silo_object_type_name].read_all = true;
-                    reading_options[silo_object_type_name].read_none = false;
+                    found = true;
+                    mesh_type = curr_mesh_type;
+                    break;
                 }
             }
-            else
-            {
-                const std::string silo_name_value = silo_object_type.as_string();
-                if ("all" == silo_name_value)
-                {
-                    reading_options[silo_object_type_name].read_all = true;
-                    reading_options[silo_object_type_name].read_none = false;
-                }
-                else if ("none" == silo_name_value)
-                {
-                    reading_options[silo_object_type_name].read_all = false;
-                    reading_options[silo_object_type_name].read_none = true;
-                }
-                else
-                {
-                    // we must have named some specific items we want to read
-                    reading_options[silo_object_type_name].read_all = false;
-                    reading_options[silo_object_type_name].read_none = false;
-                }
-            }
-        }
-    }
-
-    std::map<std::string, detail::SiloReadBookkeeping> reading_info;
-    reading_info["multimesh_names"] = detail::SiloReadBookkeeping(toc->nmultimesh, 
-                                                                  toc->multimesh_names,
-                                                                  DB_MULTIMESH);
-    reading_info["multivar_names"] = detail::SiloReadBookkeeping(toc->nmultivar, 
-                                                                 toc->multivar_names,
-                                                                 DB_MULTIVAR);
-    reading_info["multimat_names"] = detail::SiloReadBookkeeping(toc->nmultimat, 
-                                                                 toc->multimat_names,
-                                                                 DB_MULTIMAT);
-    // reading_info["multimatspecies_names"] = detail::SiloReadBookkeeping(toc->nmultimatspecies, 
-    //                                                                     toc->multimatspecies_names,
-    //                                                                     DB_MULTIMATSPECIES);
-    reading_info["qmesh_names"] = detail::SiloReadBookkeeping(toc->nqmesh, 
-                                                              toc->qmesh_names,
-                                                              DB_QUADMESH);
-    reading_info["qvar_names"] = detail::SiloReadBookkeeping(toc->nqvar, 
-                                                             toc->qvar_names,
-                                                             DB_QUADVAR);
-    reading_info["ucdmesh_names"] = detail::SiloReadBookkeeping(toc->nucdmesh, 
-                                                                toc->ucdmesh_names,
-                                                                DB_UCDMESH);
-    reading_info["ucdvar_names"] = detail::SiloReadBookkeeping(toc->nucdvar, 
-                                                               toc->ucdvar_names,
-                                                               DB_UCDVAR);
-    reading_info["ptmesh_names"] = detail::SiloReadBookkeeping(toc->nptmesh, 
-                                                               toc->ptmesh_names,
-                                                               DB_POINTMESH);
-    reading_info["ptvar_names"] = detail::SiloReadBookkeeping(toc->nptvar, 
-                                                              toc->ptvar_names,
-                                                              DB_POINTVAR);
-    reading_info["mat_names"] = detail::SiloReadBookkeeping(toc->nmat, 
-                                                            toc->mat_names,
-                                                            DB_MATERIAL);
-    // reading_info["matspecies_names"] = detail::SiloReadBookkeeping(toc->nmatspecies, 
-    //                                                                toc->matspecies_names,
-    //                                                                DB_MATSPECIES);
-
-    const std::vector<std::string> mesh_name_types = 
-        {"multimesh_names", "qmesh_names", "ucdmesh_names", "ptmesh_names"};
-    const std::vector<std::string> var_name_types = 
-        {"multivar_names", "qvar_names", "ucdvar_names", "ptvar_names"};
-    const std::vector<std::string> mat_name_types = 
-        {"multimat_names", "mat_names"};
-    // std::vector<std::string> mat_species_name_types = 
-    //    {"multimatspecies_names", "matspecies_names"};
-
-    auto generate_read_list = [&](DBfile *dbfile,
-                                  std::ostringstream &error_oss,
-                                  const std::string &what_are_we_reading,
-                                  const std::vector<std::string> &type_names,
-                                  const std::string &error_msg)
-    {
-        // if we are *not* reading *no* objects of this type --> we are reading objects of this type
-        if (! reading_options[what_are_we_reading].read_none)
+        };
+        check_mesh_name_in_file(toc->nmultimesh, toc->multimesh_names, DB_MULTIMESH);
+        check_mesh_name_in_file(toc->nqmesh, toc->qmesh_names, DB_QUADMESH);
+        check_mesh_name_in_file(toc->nucdmesh, toc->ucdmesh_names, DB_UCDMESH);
+        check_mesh_name_in_file(toc->nptmesh, toc->ptmesh_names, DB_POINTMESH);
+        
+        if (!found)
         {
-            if (reading_options[what_are_we_reading].read_all)
-            {
-                for (const std::string &type_name : type_names)
-                {
-                    for (int toc_id = 0; toc_id < reading_info[type_name].num_obj_in_toc; toc_id ++)
-                    {
-                        reading_info[type_name].names_to_read.push_back(
-                            reading_info[type_name].toc_names[toc_id]);
-                    }
-                }
-            }
-            else
-            {
-                auto check_silo_name = [&](const std::string &silo_name)
-                {
-                    if (! DBInqVarExists(dbfile, silo_name.c_str()))
-                    {
-                        error_oss << "No silo var found matching " << silo_name;
-                        return false;
-                    }
-
-                    const int silo_var_type = DBInqVarType(dbfile, silo_name.c_str());
-
-                    bool found = false;
-                    for (const std::string &type_name : type_names)
-                    {
-                        if (silo_var_type == reading_info[type_name].var_type)
-                        {
-                            reading_info[type_name].names_to_read.push_back(silo_name);
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (! found)
-                    {
-                        error_oss << "Requested silo object " << silo_name << error_msg << silo_var_type << ".";
-                        return false;
-                    }
-
-                    return true;
-                };
-
-                if (real_opts["silo_names"][what_are_we_reading].dtype().is_object())
-                {
-                    for (const std::string silo_name : real_opts["silo_names"][what_are_we_reading].child_names())
-                    {
-                        if (! check_silo_name(silo_name))
-                        {
-                            // error_oss is already populated
-                            return false;
-                        }
-                    }
-                }
-                else
-                {
-                    const std::string silo_name = real_opts["silo_names"][what_are_we_reading].as_string();
-
-                    if (! check_silo_name(silo_name))
-                    {
-                        // error_oss is already populated
-                        return false;
-                    }
-                }
-            }
+            error_oss << "No mesh found matching " << mesh_name_to_read;
+            return false;
         }
-
-        return true;
-    };
-
-    // Silo doesn't let us have any names that are the same in the same directory,
-    // even if they are different types. So we don't have to worry about name collisions.
-
-    if (! (generate_read_list(dbfile.getSiloObject(),
-                              error_oss,
-                              "mesh_names",
-                              mesh_name_types,
-                              " was found in file but it is not one of the supported "
-                              "mesh types: DB_MULTIMESH, DB_QUADMESH, DB_UCDMESH, or "
-                              "DB_POINTMESH. Instead it had silo var type ") &&
-           generate_read_list(dbfile.getSiloObject(),
-                              error_oss,
-                              "var_names",
-                              var_name_types,
-                              " was found in file but it is not one of the supported "
-                              "var types: DB_MULTIVAR, DB_QUADVAR, DB_UCDVAR, or "
-                              "DB_POINTVAR. Instead it had silo var type ") &&
-           generate_read_list(dbfile.getSiloObject(),
-                              error_oss,
-                              "mat_names",
-                              mat_name_types,
-                              " was found in file but it is not one of the supported "
-                              "mat types: DB_MULTIMAT or DB_MATERIAL. Instead it had "
-                              "silo var type ")))
-    {
-        // error msg should already be populated
-        return false;
     }
 
     // Get the selected matset flavor
     std::string opts_matset_style = "";
-    if (real_opts.has_child("matset_style") && real_opts["matset_style"].dtype().is_string())
+    if (opts.has_child("matset_style") && opts["matset_style"].dtype().is_string())
     {
-        opts_matset_style = real_opts["matset_style"].as_string();
+        opts_matset_style = opts["matset_style"].as_string();
         if (opts_matset_style != "default" && 
             opts_matset_style != "multi_buffer_full" &&
             opts_matset_style != "sparse_by_element" &&
@@ -3110,12 +2826,48 @@ read_root_silo_index(const std::string &root_file_path,
         }
     }
 
-    // start with multimeshes, multivars, and multimats (and someday multimatspecies)
-    for (const std::string &multimesh_name : reading_info["multimesh_names"].names_to_read)
+    auto prep_simple_silo_obj_metadata = [&](const int num_vars,
+                                             char **var_names,
+                                             const int var_type,
+                                             const int num_mats,
+                                             char **mat_names)
+    {
+        root_node[mesh_name_to_read]["nblocks"] = 1;
+        root_node[mesh_name_to_read]["nameschemes"] = "no";
+        root_node[mesh_name_to_read]["mesh_types"].set(mesh_type);
+        root_node[mesh_name_to_read]["mesh_paths"].append().set(mesh_name_to_read);
+
+        for (int i = 0; i < num_vars; i ++)
+        {
+            const std::string var_name = var_names[i];
+            Node &var = root_node[mesh_name_to_read]["vars"][var_name];
+            var["nameschemes"] = "no";
+            var["var_types"].set(var_type);
+            var["var_paths"].append().set(var_name);
+        }
+        // TODO should we check here if materials are associated with this mesh?
+        // we have logic to get the right one later, but it could be quick to check now
+        for (int i = 0; i < num_mats; i ++)
+        {
+            const std::string mat_name = mat_names[i];
+            Node &material = root_node[mesh_name_to_read]["matsets"][mat_name];
+            material["nameschemes"] = "no";
+            material["matset_paths"].append().set(mat_name);
+        }
+
+        read_state(dbfile.getSiloObject(), root_node, mesh_name_to_read);
+
+        if (! opts_matset_style.empty())
+        {
+            root_node[mesh_name_to_read]["matset_style"] = opts_matset_style;
+        }
+    };
+
+    if (DB_MULTIMESH == mesh_type)
     {
         int nblocks;
         if (! read_multimesh(dbfile.getSiloObject(),
-                             multimesh_name,
+                             mesh_name_to_read,
                              nblocks,
                              root_node,
                              error_oss))
@@ -3124,7 +2876,7 @@ read_root_silo_index(const std::string &root_file_path,
         }
         if (! read_multivars(toc,
                              dbfile.getSiloObject(),
-                             multimesh_name,
+                             mesh_name_to_read,
                              nblocks,
                              root_node,
                              error_oss))
@@ -3133,7 +2885,7 @@ read_root_silo_index(const std::string &root_file_path,
         }
         if (! read_multimats(toc,
                              dbfile.getSiloObject(),
-                             multimesh_name,
+                             mesh_name_to_read,
                              nblocks,
                              root_node,
                              error_oss))
@@ -3141,75 +2893,38 @@ read_root_silo_index(const std::string &root_file_path,
             return false;
         }
 
-        read_state(dbfile.getSiloObject(), root_node, multimesh_name);
+        read_state(dbfile.getSiloObject(), root_node, mesh_name_to_read);
 
         // overlink-specific
         read_var_attributes(dbfile.getSiloObject(),
-                            multimesh_name,
+                            mesh_name_to_read,
                             root_node);
 
         if (! opts_matset_style.empty())
         {
-            root_node[multimesh_name]["matset_style"] = opts_matset_style;
+            root_node[mesh_name_to_read]["matset_style"] = opts_matset_style;
         }
     }
-
-    auto prep_simple_silo_obj_metadata = [&](const std::vector<std::string> &mesh_names,
-                                             const std::vector<std::string> &var_names,
-                                             const std::vector<std::string> &mat_names,
-                                             const int mesh_type,
-                                             const int var_type)
+    else if (DB_QUADMESH == mesh_type)
     {
-        for (const std::string &mesh_name : mesh_names)
-        {
-            root_node[mesh_name]["nblocks"] = 1;
-            root_node[mesh_name]["nameschemes"] = "no";
-            root_node[mesh_name]["mesh_types"].set(mesh_type);
-            root_node[mesh_name]["mesh_paths"].append().set(mesh_name);
-
-            // at this stage we assume that all vars could be associated with this mesh
-            // TODO should I do a check here then?
-            for (const std::string &var_name : var_names)
-            {
-                Node &var = root_node[mesh_name]["vars"][var_name];
-                var["nameschemes"] = "no";
-                var["var_types"].set(var_type);
-                var["var_paths"].append().set(var_name);
-            }
-            // same is true for materials
-            // TODO ugh I don't like this
-            for (const std::string &mat_name : mat_names)
-            {
-                Node &material = root_node[mesh_name]["matsets"][mat_name];
-                material["nameschemes"] = "no";
-                material["matset_paths"].append().set(mat_name);
-            }
-
-            // TODO I love rereading state for every mesh. This is so silly
-            read_state(dbfile.getSiloObject(), root_node, mesh_name);
-
-            if (! opts_matset_style.empty())
-            {
-                root_node[mesh_name]["matset_style"] = opts_matset_style;
-            }
-        }
-    };
-
-    prep_simple_silo_obj_metadata(reading_info["qmesh_names"].names_to_read,
-                                  reading_info["qvar_names"].names_to_read,
-                                  reading_info["mat_names"].names_to_read,
-                                  DB_QUADMESH,
-                                  DB_QUADVAR);
-    prep_simple_silo_obj_metadata(reading_info["ucdmesh_names"].names_to_read,
-                                  reading_info["ucdvar_names"].names_to_read,
-                                  reading_info["mat_names"].names_to_read,
-                                  DB_UCDMESH,
-                                  DB_UCDVAR);
-    prep_simple_silo_obj_metadata(reading_info["ptmesh_names"].names_to_read,
-                                  reading_info["ptvar_names"].names_to_read,
-                                  reading_info["mat_names"].names_to_read,
-                                  DB_POINTMESH,
-                                  DB_POINTVAR);
+        prep_simple_silo_obj_metadata(toc->nqvar, toc->qvar_names, DB_QUADVAR,
+                                      toc->nmat, toc->mat_names);
+    }
+    else if (DB_UCDMESH == mesh_type)
+    {
+        prep_simple_silo_obj_metadata(toc->nucdvar, toc->ucdvar_names, DB_UCDVAR,
+                                      toc->nmat, toc->mat_names);
+    }
+    else if (DB_POINTMESH == mesh_type)
+    {
+        prep_simple_silo_obj_metadata(toc->nptvar, toc->ptvar_names, DB_POINTVAR,
+                                      toc->nmat, toc->mat_names);
+    }
+    else
+    {
+        error_oss << "Unknown mesh type for mesh " << mesh_name_to_read;
+        return false;
+    }
 
     // our silo index should look like this:
 
@@ -3259,27 +2974,15 @@ read_root_silo_index(const std::string &root_file_path,
 //-----------------------------------------------------------------------------
 ///
 /// opts:
-///      silo_names:
-///         mesh_names:
-///               "{name1}" - meshes with this name will be read if they exist
-///               "{name2}"
-///               ...
-///               or
-///               "{all}" - all meshes will be read.
-///               or
-///               "{none}" - no meshes will be read.
-///         var_names: similar to mesh_names.
-///         mat_names: similar to mesh_names.
-///         matspecies_names: similar to mesh_names. TODO
-///            By default, everything in the file will be read unless manually turned off.
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where silo data includes
+///           more than one mesh.
+///          We only allow reading of a single mesh to keep these options on
+///          par with the relay io blueprint options.
 ///
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
-///
-///      mesh_name: legacy argument. This is interpreted as a mesh name.
-///            It is added to the list of mesh names to read, unless the
-///            user has specified "all" or "none", which will supersede this.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
 read_mesh(const std::string &root_file_path,
@@ -3295,6 +2998,7 @@ read_mesh(const std::string &root_file_path,
 
     int error = 0;
     std::ostringstream error_oss;
+    std::string mesh_name_to_read;
     Node root_node;
 
     // only read bp index on rank 0
@@ -3303,6 +3007,7 @@ read_mesh(const std::string &root_file_path,
         if (!read_root_silo_index(root_file_path,
                                   opts,
                                   root_node,
+                                  mesh_name_to_read,
                                   error_oss))
         {
             error = 1;
@@ -3331,8 +3036,13 @@ read_mesh(const std::string &root_file_path,
     }
     else
     {
-        // broadcast the root node
+        // broadcast the mesh name and the root node
         // from rank 0 to all ranks
+        n_global.set(mesh_name_to_read);
+        conduit::relay::mpi::broadcast_using_schema(n_global,
+                                                    0,
+                                                    mpi_comm);
+        mesh_name_to_read = n_global.as_string();
         conduit::relay::mpi::broadcast_using_schema(root_node,
                                                     0,
                                                     mpi_comm);
@@ -3345,271 +3055,264 @@ read_mesh(const std::string &root_file_path,
     }
 #endif
 
-    auto root_itr = root_node.children();
-    while (root_itr.has_next())
-    {
-        const Node &mesh_index = root_itr.next();
-        const std::string mesh_index_name = root_itr.name();
+    const Node &mesh_index = root_node[mesh_name_to_read];
 
-        // read all domains for given mesh
-        int num_domains = mesh_index["nblocks"].to_int();
+    // read all domains for given mesh
+    int num_domains = mesh_index["nblocks"].to_int();
 
-        std::ostringstream oss;
-        int domain_start = 0;
-        int domain_end = num_domains;
+    std::ostringstream oss;
+    int domain_start = 0;
+    int domain_end = num_domains;
 
 #if CONDUIT_RELAY_IO_MPI_ENABLED
 
-        int read_size = num_domains / par_size;
-        int rem = num_domains % par_size;
-        if(par_rank < rem)
-        {
-            read_size++;
-        }
+    int read_size = num_domains / par_size;
+    int rem = num_domains % par_size;
+    if(par_rank < rem)
+    {
+        read_size++;
+    }
 
-        Node n_read_size;
-        Node n_doms_per_rank;
+    Node n_read_size;
+    Node n_doms_per_rank;
 
-        n_read_size.set_int32(read_size);
+    n_read_size.set_int32(read_size);
 
-        relay::mpi::all_gather_using_schema(n_read_size,
-                                            n_doms_per_rank,
-                                            mpi_comm);
-        int *counts = (int*)n_doms_per_rank.data_ptr();
+    relay::mpi::all_gather_using_schema(n_read_size,
+                                        n_doms_per_rank,
+                                        mpi_comm);
+    int *counts = (int*)n_doms_per_rank.data_ptr();
 
-        int rank_offset = 0;
-        for(int i = 0; i < par_rank; ++i)
-        {
-            rank_offset += counts[i];
-        }
+    int rank_offset = 0;
+    for(int i = 0; i < par_rank; ++i)
+    {
+        rank_offset += counts[i];
+    }
 
-        domain_start = rank_offset;
-        domain_end = rank_offset + read_size;
+    domain_start = rank_offset;
+    domain_end = rank_offset + read_size;
 #endif
 
-        // TODO there's no reason for this to live inside each mesh index
-        // but I don't know where else to stash it
-        const std::string opts_matset_style = (mesh_index.has_child("matset_style") ? 
-            mesh_index["matset_style"].as_string() : "default");
+    const std::string opts_matset_style = (mesh_index.has_child("matset_style") ? 
+        mesh_index["matset_style"].as_string() : "default");
 
-        bool mesh_nameschemes = false;
-        if (mesh_index.has_child("nameschemes") &&
-            mesh_index["nameschemes"].as_string() == "yes")
+    bool mesh_nameschemes = false;
+    if (mesh_index.has_child("nameschemes") &&
+        mesh_index["nameschemes"].as_string() == "yes")
+    {
+        mesh_nameschemes = true;
+        CONDUIT_ERROR("TODO no support for nameschemes yet");
+    }
+    detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
+
+    std::string root_file_name, relative_dir;
+    utils::rsplit_file_path(root_file_path, root_file_name, relative_dir);
+
+    // If the root file is named OvlTop.silo, then there is a very good chance that
+    // this file is valid overlink. Therefore, we must modify the paths we get from
+    // the root node to reflect this.
+    bool ovltop_case = (root_file_name == "OvlTop.silo");
+
+    for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
+    {
+        //
+        // Read Mesh
+        //
+
+        const std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
+        const int_accessor meshtypes = mesh_index["mesh_types"].value();
+        const int meshtype = meshtypes[domain_id];
+
+        std::string mesh_name, mesh_domain_filename;
+        mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
+
+        if (mesh_name == "EMPTY")
         {
-            mesh_nameschemes = true;
-            CONDUIT_ERROR("TODO no support for nameschemes yet");
+            continue; // skip this domain
         }
-        detail::SiloTreePathGenerator mesh_path_gen{mesh_nameschemes};
 
-        std::string root_file_name, relative_dir;
-        utils::rsplit_file_path(root_file_path, root_file_name, relative_dir);
+        std::string bottom_level_mesh_name, tmp;
+        conduit::utils::rsplit_file_path(mesh_name, "/", bottom_level_mesh_name, tmp);
 
-        // If the root file is named OvlTop.silo, then there is a very good chance that
-        // this file is valid overlink. Therefore, we must modify the paths we get from
-        // the root node to reflect this.
-        bool ovltop_case = (root_file_name == "OvlTop.silo");
-
-        for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
+        // root only case
+        if (mesh_domain_filename.empty())
         {
-            //
-            // Read Mesh
-            //
+            mesh_domain_filename = root_file_path;
+            // we are in the root file only case so overlink is not possible
+            ovltop_case = false;
+        }
 
-            const std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
-            const int_accessor meshtypes = mesh_index["mesh_types"].value();
-            const int meshtype = meshtypes[domain_id];
+        detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
+            nullptr, &DBClose};
+        DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, 
+            mesh_domain_filename, "", nullptr, mesh_domain_file);
 
-            std::string mesh_name, mesh_domain_filename;
-            mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
+        // this is for the blueprint mesh output
+        std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
 
-            if (mesh_name == "EMPTY")
+        if (! read_mesh_domain(meshtype, mesh_domain_file_to_use, mesh_name, 
+                               mesh_name_to_read, domain_path, mesh))
+        {
+            continue; // we hit a case where we want to skip this mesh domain
+        }
+
+        // we know we were for sure successful (we didn't skip ahead to the next domain)
+        // so we create the mesh_out now for good
+        Node &mesh_out = mesh[domain_path];
+
+        //
+        // Read State
+        //
+
+        mesh_out["state"]["domain_id"] = static_cast<index_t>(domain_id);
+        if (mesh_index.has_path("state/time"))
+        {
+            mesh_out["state"]["time"] = mesh_index["state"]["time"].as_double();
+        }
+        if (mesh_index.has_path("state/cycle"))
+        {
+            mesh_out["state"]["cycle"] = (index_t) mesh_index["state"]["cycle"].as_int();
+        }
+
+        //
+        // Read Adjset (overlink only)
+        //
+
+        read_adjset(mesh_domain_file_to_use, mesh_name_to_read, domain_id, mesh_out);
+
+        //
+        // Read Materials
+        //
+
+        // This node will house the recipe for reconstructing matset_values
+        // from silo mixvals.
+        Node matset_field_reconstruction;
+
+        // for each mesh domain, we would like to iterate through all the materials
+        // and extract the same domain from them.
+        if (mesh_index.has_child("matsets"))
+        {
+            auto matset_itr = mesh_index["matsets"].children();
+            while (matset_itr.has_next())
             {
-                continue; // skip this domain
-            }
+                const Node &n_matset = matset_itr.next();
+                std::string multimat_name = matset_itr.name();
 
-            std::string bottom_level_mesh_name, tmp;
-            conduit::utils::rsplit_file_path(mesh_name, "/", bottom_level_mesh_name, tmp);
-
-            // root only case
-            if (mesh_domain_filename.empty())
-            {
-                mesh_domain_filename = root_file_path;
-                // we are in the root file only case so overlink is not possible
-                ovltop_case = false;
-            }
-
-            detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> mesh_domain_file{
-                nullptr, &DBClose};
-            DBfile *mesh_domain_file_to_use = open_or_reuse_file(ovltop_case, 
-                mesh_domain_filename, "", nullptr, mesh_domain_file);
-
-            // this is for the blueprint mesh output
-            std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
-
-            if (! read_mesh_domain(meshtype, mesh_domain_file_to_use, mesh_name, 
-                                   mesh_index_name, domain_path, mesh))
-            {
-                continue; // we hit a case where we want to skip this mesh domain
-            }
-
-            // we know we were for sure successful (we didn't skip ahead to the next domain)
-            // so we create the mesh_out now for good
-            Node &mesh_out = mesh[domain_path];
-
-            //
-            // Read State
-            //
-
-            mesh_out["state"]["domain_id"] = static_cast<index_t>(domain_id);
-            if (mesh_index.has_path("state/time"))
-            {
-                mesh_out["state"]["time"] = mesh_index["state"]["time"].as_double();
-            }
-            if (mesh_index.has_path("state/cycle"))
-            {
-                mesh_out["state"]["cycle"] = (index_t) mesh_index["state"]["cycle"].as_int();
-            }
-
-            //
-            // Read Adjset (overlink only)
-            //
-
-            read_adjset(mesh_domain_file_to_use, mesh_index_name, domain_id, mesh_out);
-
-            //
-            // Read Materials
-            //
-
-            // This node will house the recipe for reconstructing matset_values
-            // from silo mixvals.
-            Node matset_field_reconstruction;
-
-            // for each mesh domain, we would like to iterate through all the materials
-            // and extract the same domain from them.
-            if (mesh_index.has_child("matsets"))
-            {
-                auto matset_itr = mesh_index["matsets"].children();
-                while (matset_itr.has_next())
+                bool matset_nameschemes = false;
+                if (n_matset.has_child("nameschemes") &&
+                    n_matset["nameschemes"].as_string() == "yes")
                 {
-                    const Node &n_matset = matset_itr.next();
-                    std::string multimat_name = matset_itr.name();
+                    matset_nameschemes = true;
+                    CONDUIT_ERROR("TODO no support for nameschemes yet");
+                }
+                detail::SiloTreePathGenerator matset_path_gen{matset_nameschemes};
 
-                    bool matset_nameschemes = false;
-                    if (n_matset.has_child("nameschemes") &&
-                        n_matset["nameschemes"].as_string() == "yes")
-                    {
-                        matset_nameschemes = true;
-                        CONDUIT_ERROR("TODO no support for nameschemes yet");
-                    }
-                    detail::SiloTreePathGenerator matset_path_gen{matset_nameschemes};
+                std::string silo_matset_path = n_matset["matset_paths"][domain_id].as_string();
 
-                    std::string silo_matset_path = n_matset["matset_paths"][domain_id].as_string();
+                std::string matset_name, matset_domain_filename;
+                matset_path_gen.GeneratePaths(silo_matset_path, relative_dir, matset_domain_filename, matset_name);
 
-                    std::string matset_name, matset_domain_filename;
-                    matset_path_gen.GeneratePaths(silo_matset_path, relative_dir, matset_domain_filename, matset_name);
+                if (matset_name == "EMPTY")
+                {
+                    // we choose not to write anything to blueprint
+                    continue;
+                }
 
-                    if (matset_name == "EMPTY")
-                    {
-                        // we choose not to write anything to blueprint
-                        continue;
-                    }
+                // root only case
+                if (matset_domain_filename.empty())
+                {
+                    matset_domain_filename = root_file_path;
+                    // we are in the root file only case so overlink is not possible
+                    ovltop_case = false;
+                }
 
-                    // root only case
-                    if (matset_domain_filename.empty())
-                    {
-                        matset_domain_filename = root_file_path;
-                        // we are in the root file only case so overlink is not possible
-                        ovltop_case = false;
-                    }
+                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> matset_domain_file{
+                    nullptr, &DBClose};
+                DBfile *matset_domain_file_to_use = open_or_reuse_file(
+                    ovltop_case, matset_domain_filename, mesh_domain_filename,
+                    mesh_domain_file.getSiloObject(), matset_domain_file);
 
-                    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> matset_domain_file{
-                        nullptr, &DBClose};
-                    DBfile *matset_domain_file_to_use = open_or_reuse_file(
-                        ovltop_case, matset_domain_filename, mesh_domain_filename,
-                        mesh_domain_file.getSiloObject(), matset_domain_file);
-
-                    // If this completes successfully, it means we have found a matset
-                    // associated with this mesh. Thus we can break iteration here,
-                    // since there can only be one matset. This is the earliest we can 
-                    // break iteration because the silo index may have multiple matsets,
-                    // and we have no way of knowing until now which one is associated
-                    // with our mesh.
-                    // In silo, for each mesh, there can only be one matset, because otherwise
-                    // it would be ambiguous. In Blueprint, we can allow multiple matsets per
-                    // topo, because the fields explicitly link to the matset they use.
-                    if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
-                                           mesh_index_name, multimat_name, bottom_level_mesh_name,
-                                           opts_matset_style, matset_field_reconstruction, mesh_out))
-                    {
-                        break;
-                    }
+                // If this completes successfully, it means we have found a matset
+                // associated with this mesh. Thus we can break iteration here,
+                // since there can only be one matset. This is the earliest we can 
+                // break iteration because the silo index may have multiple matsets,
+                // and we have no way of knowing until now which one is associated
+                // with our mesh.
+                // In silo, for each mesh, there can only be one matset, because otherwise
+                // it would be ambiguous. In Blueprint, we can allow multiple matsets per
+                // topo, because the fields explicitly link to the matset they use.
+                if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
+                                       mesh_name_to_read, multimat_name, bottom_level_mesh_name,
+                                       opts_matset_style, matset_field_reconstruction, mesh_out))
+                {
+                    break;
                 }
             }
+        }
 
-            //
-            // Read Fields
-            //
+        //
+        // Read Fields
+        //
 
-            // for each mesh domain, we would like to iterate through all the variables
-            // and extract the same domain from them.
-            if (mesh_index.has_child("vars"))
+        // for each mesh domain, we would like to iterate through all the variables
+        // and extract the same domain from them.
+        if (mesh_index.has_child("vars"))
+        {
+            auto var_itr = mesh_index["vars"].children();
+            while (var_itr.has_next())
             {
-                auto var_itr = mesh_index["vars"].children();
-                while (var_itr.has_next())
+                const Node &n_var = var_itr.next();
+                std::string multivar_name = var_itr.name();
+
+                bool var_nameschemes = false;
+                if (n_var.has_child("nameschemes") &&
+                    n_var["nameschemes"].as_string() == "yes")
                 {
-                    const Node &n_var = var_itr.next();
-                    std::string multivar_name = var_itr.name();
-
-                    bool var_nameschemes = false;
-                    if (n_var.has_child("nameschemes") &&
-                        n_var["nameschemes"].as_string() == "yes")
-                    {
-                        var_nameschemes = true;
-                        CONDUIT_ERROR("TODO no support for nameschemes yet");
-                    }
-                    detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
-
-                    std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
-                    int_accessor vartypes = n_var["var_types"].value();
-                    int vartype = vartypes[domain_id];
-
-                    std::string var_name, var_domain_filename;
-                    var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
-
-                    if (var_name == "EMPTY")
-                    {
-                        // we choose not to write anything to blueprint
-                        continue;
-                    }
-
-                    // this info can be tracked with overlink VAR_ATTRIBUTES
-                    std::string volume_dependent = "";
-                    if (n_var.has_child("volume_dependent"))
-                    {
-                        volume_dependent = n_var["volume_dependent"].as_string();
-                    }
-
-                    // root only case
-                    if (var_domain_filename.empty())
-                    {
-                        var_domain_filename = root_file_path;
-                        // we are in the root file only case so overlink is not possible
-                        ovltop_case = false;
-                    }
-
-                    detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
-                        nullptr, &DBClose};
-                    DBfile *var_domain_file_to_use = open_or_reuse_file(
-                        ovltop_case, var_domain_filename, mesh_domain_filename,
-                        mesh_domain_file.getSiloObject(), var_domain_file);
-
-                    // we don't care if this skips the var or not since this is the
-                    // last thing in the loop iteration
-                    read_variable_domain(vartype, var_domain_file_to_use, var_name,
-                        mesh_index_name, multivar_name, bottom_level_mesh_name,
-                        volume_dependent, opts_matset_style,
-                        matset_field_reconstruction, mesh_out);
+                    var_nameschemes = true;
+                    CONDUIT_ERROR("TODO no support for nameschemes yet");
                 }
+                detail::SiloTreePathGenerator var_path_gen{var_nameschemes};
+
+                std::string silo_var_path = n_var["var_paths"][domain_id].as_string();
+                int_accessor vartypes = n_var["var_types"].value();
+                int vartype = vartypes[domain_id];
+
+                std::string var_name, var_domain_filename;
+                var_path_gen.GeneratePaths(silo_var_path, relative_dir, var_domain_filename, var_name);
+
+                if (var_name == "EMPTY")
+                {
+                    // we choose not to write anything to blueprint
+                    continue;
+                }
+
+                // this info can be tracked with overlink VAR_ATTRIBUTES
+                std::string volume_dependent = "";
+                if (n_var.has_child("volume_dependent"))
+                {
+                    volume_dependent = n_var["volume_dependent"].as_string();
+                }
+
+                // root only case
+                if (var_domain_filename.empty())
+                {
+                    var_domain_filename = root_file_path;
+                    // we are in the root file only case so overlink is not possible
+                    ovltop_case = false;
+                }
+
+                detail::SiloObjectWrapperCheckError<DBfile, decltype(&DBClose)> var_domain_file{
+                    nullptr, &DBClose};
+                DBfile *var_domain_file_to_use = open_or_reuse_file(
+                    ovltop_case, var_domain_filename, mesh_domain_filename,
+                    mesh_domain_file.getSiloObject(), var_domain_file);
+
+                // we don't care if this skips the var or not since this is the
+                // last thing in the loop iteration
+                read_variable_domain(vartype, var_domain_file_to_use, var_name,
+                    mesh_name_to_read, multivar_name, bottom_level_mesh_name,
+                    volume_dependent, opts_matset_style,
+                    matset_field_reconstruction, mesh_out);
             }
         }
     }
@@ -3638,27 +3341,13 @@ void load_mesh(const std::string &root_file_path,
 
 //-----------------------------------------------------------------------------
 /// opts:
-///      silo_names:
-///         mesh_names:
-///               "{name1}" - meshes with this name will be read if they exist
-///               "{name2}"
-///               ...
-///               or
-///               "{all}" - all meshes will be read.
-///               or
-///               "{none}" - no meshes will be read.
-///         var_names: similar to mesh_names.
-///         mat_names: similar to mesh_names.
-///         matspecies_names: similar to mesh_names. TODO
-///            By default, everything in the file will be read unless manually turned off.
+///      mesh_name: "{name}"
+///          provide explicit mesh name, for cases where silo data includes
+///           more than one mesh.
 ///
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
-///
-///      mesh_name: legacy argument. This is interpreted as a mesh name.
-///            It is added to the list of mesh names to read, unless the
-///            user has specified "all" or "none", which will supersede this.
 //-----------------------------------------------------------------------------
 void load_mesh(const std::string &root_file_path,
                const Node &opts,
