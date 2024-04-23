@@ -1594,474 +1594,375 @@ TEST(conduit_relay_io_silo, round_trip_read_option_mesh_name)
     EXPECT_TRUE(load_mesh[0]["topologies"].number_of_children() == 1);
 }
 
+TEST(conduit_relay_io_silo, round_trip_read_option_matset_style)
 //-----------------------------------------------------------------------------
-TEST(conduit_relay_io_silo, round_trip_read_option_silo_names)
 {
-    Node load_mesh, info;
-    const std::string path = utils::join_file_path("silo", "multi_curv3d.silo");
-    const std::string input_file = relay_test_silo_data_path(path);
-
-    auto check_read_all_case = [&]()
-    {
-        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-        
-        // check meshes
-        EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1"));
-        EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
-        EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_hidden"));
-        EXPECT_TRUE(load_mesh[0]["topologies"].number_of_children() == 3);
-
-        // check vars
-        EXPECT_TRUE(load_mesh[0].has_path("fields/d"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/d_dup"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/p"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/u"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/u_dup"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/v"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/v_dup"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/v_dup_hidden"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/w"));
-        EXPECT_TRUE(load_mesh[0].has_path("fields/w_dup"));
-        EXPECT_TRUE(load_mesh[0]["fields"].number_of_children() == 10);
-
-        // check mats
-        EXPECT_TRUE(load_mesh[0].has_path("matsets/mat1"));
-        EXPECT_TRUE(load_mesh[0]["matsets"].number_of_children() == 1);
+    // the matset type and the type we are requesting on read
+    const std::vector<std::pair<std::string, std::string>> matset_types = {
+        std::make_pair("full", "full"),
+        std::make_pair("sparse_by_material", "sparse_by_material"),
+        std::make_pair("sparse_by_element", "sparse_by_element"),
+        std::make_pair("sparse_by_element", "full"),
+        std::make_pair("sparse_by_material", "sparse_by_element"),
+        std::make_pair("sparse_by_material", "default"),
     };
 
-    { // read all by default
-        io::silo::load_mesh(input_file, load_mesh);
-        check_read_all_case();
-        load_mesh.reset();
-    }
-
-    { // read all with string
-        Node opts;
-        opts["silo_names"]["mesh_names"] = "all";
-        opts["silo_names"]["var_names"] = "all";
-        opts["silo_names"]["mat_names"] = "all";
-        io::silo::load_mesh(input_file, opts, load_mesh);
-        check_read_all_case();
-        load_mesh.reset();
-    }
-
-    { // read all with child
-        Node opts;
-        opts["silo_names"]["mesh_names"]["all"];
-        opts["silo_names"]["var_names"]["all"];
-        opts["silo_names"]["mat_names"]["all"];
-        io::silo::load_mesh(input_file, opts, load_mesh);
-        check_read_all_case();
-        load_mesh.reset();
-    }
-
-    // we will still read all meshes so there is something to read
-    auto check_read_none_case = [&]()
+    for (int i = 0; i < matset_types.size(); i ++)
     {
-        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-        
-        // check meshes
-        EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1"));
-        EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_dup"));
-        EXPECT_TRUE(load_mesh[0].has_path("topologies/mesh1_hidden"));
-        EXPECT_TRUE(load_mesh[0]["topologies"].number_of_children() == 3);
+        std::string matset_type = matset_types[i].first;
+        std::string matset_request = matset_types[i].second;
 
-        // check vars
-        EXPECT_FALSE(load_mesh[0].has_child("fields"));
+        for (int j = 0; j < 2; j ++)
+        {
+            Node mesh_full, mesh_sbe, mesh_sbm, baseline_mesh, load_mesh, info;
+            std::string size;
+            int nx, ny;
+            const double radius = 0.25;
+            if (j == 0)
+            {
+                size = "small";
+                nx = ny = 4;
+            }
+            else
+            {
+                size = "large";
+                nx = ny = 100;
+            }
 
-        // check mats
-        EXPECT_FALSE(load_mesh[0].has_child("matsets"));
-    };
+            blueprint::mesh::examples::venn("full", nx, ny, radius, mesh_full);
+            blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh_sbm);
+            blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh_sbe);
 
-    { // read none with string
-        Node opts;
-        opts["silo_names"]["var_names"] = "none";
-        opts["silo_names"]["mat_names"] = "none";
-        io::silo::load_mesh(input_file, opts, load_mesh);
-        check_read_none_case();
-        load_mesh.reset();
-    }
+            if (matset_type == "full")
+            {
+                baseline_mesh.set_external(mesh_full);
+            }
+            else if (matset_type == "sparse_by_material")
+            {
+                baseline_mesh.set_external(mesh_sbm);
+            }
+            else // (matset_type == "sparse_by_element")
+            {
+                baseline_mesh.set_external(mesh_sbe);
+            }
 
-    { // read none with child
-        Node opts;
-        opts["silo_names"]["var_names"]["none"];
-        opts["silo_names"]["mat_names"]["none"];
-        io::silo::load_mesh(input_file, opts, load_mesh);
-        load_mesh.print();
-        check_read_none_case();
-        load_mesh.reset();
+            Node opts;
+            if (matset_request == "full")
+            {
+                opts["matset_style"] = "multi_buffer_full";
+            }
+            else if (matset_request == "sparse_by_material")
+            {
+                opts["matset_style"] = "multi_buffer_by_material";
+            }
+            else if (matset_request == "sparse_by_element")
+            {
+                opts["matset_style"] = "sparse_by_element";
+            }
+            else
+            {
+                opts["matset_style"] = "default";
+            }
+
+            const std::string basename = "silo_venn2_" + matset_type + "_" + size;
+            const std::string filename = basename + ".root";
+
+            remove_path_if_exists(filename);
+            io::silo::save_mesh(baseline_mesh, basename);
+            io::silo::load_mesh(filename, opts, load_mesh);
+            EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+            if (matset_request == "full")
+            {
+                baseline_mesh.set_external(mesh_full);
+            }
+            else if (matset_request == "sparse_by_material")
+            {
+                baseline_mesh.set_external(mesh_sbm);
+            }
+            else if (matset_request == "sparse_by_element")
+            {
+                baseline_mesh.set_external(mesh_sbe);
+            }
+            else
+            {
+                baseline_mesh.set_external(mesh_sbe);
+            }
+
+            // make changes to save mesh so the diff will pass
+
+            // The field mat_check has values that are one type and matset_values
+            // that are another type. The silo writer converts both to double arrays
+            // in this case, so we follow suit.
+            Node mat_check_new_values, mat_check_new_matset_values;
+            baseline_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
+            if (baseline_mesh["fields"]["mat_check"]["matset_values"].dtype().is_object())
+            {
+                auto mat_vals_itr = baseline_mesh["fields"]["mat_check"]["matset_values"].children();
+                while (mat_vals_itr.has_next())
+                {
+                    Node &mat_vals_for_mat = mat_vals_itr.next();
+                    const std::string mat_name = mat_vals_itr.name();
+                    mat_vals_for_mat.to_double_array(mat_check_new_matset_values[mat_name]);
+                }
+            }
+            else
+            {
+                baseline_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
+            }
+            baseline_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
+            baseline_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
+
+            silo_name_changer("mesh", baseline_mesh);
+
+            // the loaded mesh will be in the multidomain format
+            // but the saved mesh is in the single domain format
+            EXPECT_EQ(load_mesh.number_of_children(), 1);
+            EXPECT_EQ(load_mesh[0].number_of_children(), baseline_mesh.number_of_children());
+            EXPECT_FALSE(load_mesh[0].diff(baseline_mesh, info, CONDUIT_EPSILON, true));
+        }
     }
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_relay_io_silo, round_trip_read_option_matset_style)
-// {
-//     // the matset type and the type we are requesting on read
-//     const std::vector<std::pair<std::string, std::string>> matset_types = {
-//         std::make_pair("full", "full"),
-//         std::make_pair("sparse_by_material", "sparse_by_material"),
-//         std::make_pair("sparse_by_element", "sparse_by_element"),
-//         std::make_pair("sparse_by_element", "full"),
-//         std::make_pair("sparse_by_material", "sparse_by_element"),
-//         std::make_pair("sparse_by_material", "default"),
-//     };
+//-----------------------------------------------------------------------------
 
-//     for (int i = 0; i < matset_types.size(); i ++)
-//     {
-//         std::string matset_type = matset_types[i].first;
-//         std::string matset_request = matset_types[i].second;
+//
+// read and write Silo and Overlink tests
+//
 
-//         for (int j = 0; j < 2; j ++)
-//         {
-//             Node mesh_full, mesh_sbe, mesh_sbm, baseline_mesh, load_mesh, info;
-//             std::string size;
-//             int nx, ny;
-//             const double radius = 0.25;
-//             if (j == 0)
-//             {
-//                 size = "small";
-//                 nx = ny = 4;
-//             }
-//             else
-//             {
-//                 size = "large";
-//                 nx = ny = 100;
-//             }
+//-----------------------------------------------------------------------------
+// read normal silo files containing multimeshes, multivars, and multimats
+TEST(conduit_relay_io_silo, read_silo)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+        {".",                  "multi_curv3d", ".silo"},
+        {".",                  "tire",         ".silo"},
+        {".",                  "galaxy0000",   ".silo"},
+        {".",                  "emptydomains", ".silo"},
+        {"multidir_test_data", "multidir0000", ".root"},
+    };
 
-//             blueprint::mesh::examples::venn("full", nx, ny, radius, mesh_full);
-//             blueprint::mesh::examples::venn("sparse_by_material", nx, ny, radius, mesh_sbm);
-//             blueprint::mesh::examples::venn("sparse_by_element", nx, ny, radius, mesh_sbe);
+    // TODO what to do in the case where a multimesh points to no data? (mesh1_back)
+    // fail silently, as we do now?
 
-//             if (matset_type == "full")
-//             {
-//                 baseline_mesh.set_external(mesh_full);
-//             }
-//             else if (matset_type == "sparse_by_material")
-//             {
-//                 baseline_mesh.set_external(mesh_sbm);
-//             }
-//             else // (matset_type == "sparse_by_element")
-//             {
-//                 baseline_mesh.set_external(mesh_sbe);
-//             }
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string dirname  = file_info[i][0];
+        const std::string basename = file_info[i][1];
+        const std::string fileext  = file_info[i][2];
 
-//             Node opts;
-//             if (matset_request == "full")
-//             {
-//                 opts["matset_style"] = "multi_buffer_full";
-//             }
-//             else if (matset_request == "sparse_by_material")
-//             {
-//                 opts["matset_style"] = "multi_buffer_by_material";
-//             }
-//             else if (matset_request == "sparse_by_element")
-//             {
-//                 opts["matset_style"] = "sparse_by_element";
-//             }
-//             else
-//             {
-//                 opts["matset_style"] = "default";
-//             }
+        Node load_mesh, info, write_opts;
+        std::string filepath = utils::join_file_path(dirname, basename) + fileext;
+        filepath = utils::join_file_path("silo", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-//             const std::string basename = "silo_venn2_" + matset_type + "_" + size;
-//             const std::string filename = basename + ".root";
+        io::silo::load_mesh(input_file, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//             remove_path_if_exists(filename);
-//             io::silo::save_mesh(baseline_mesh, basename);
-//             io::silo::load_mesh(filename, opts, load_mesh);
-//             EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        const std::string out_name = "read_silo_" + basename;
 
-//             if (matset_request == "full")
-//             {
-//                 baseline_mesh.set_external(mesh_full);
-//             }
-//             else if (matset_request == "sparse_by_material")
-//             {
-//                 baseline_mesh.set_external(mesh_sbm);
-//             }
-//             else if (matset_request == "sparse_by_element")
-//             {
-//                 baseline_mesh.set_external(mesh_sbe);
-//             }
-//             else
-//             {
-//                 baseline_mesh.set_external(mesh_sbe);
-//             }
+        // TODO are these remove paths doing anything? Don't they need filenames?
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-//             // make changes to save mesh so the diff will pass
+        remove_path_if_exists(out_name + "_write_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-//             // The field mat_check has values that are one type and matset_values
-//             // that are another type. The silo writer converts both to double arrays
-//             // in this case, so we follow suit.
-//             Node mat_check_new_values, mat_check_new_matset_values;
-//             baseline_mesh["fields"]["mat_check"]["values"].to_double_array(mat_check_new_values);
-//             if (baseline_mesh["fields"]["mat_check"]["matset_values"].dtype().is_object())
-//             {
-//                 auto mat_vals_itr = baseline_mesh["fields"]["mat_check"]["matset_values"].children();
-//                 while (mat_vals_itr.has_next())
-//                 {
-//                     Node &mat_vals_for_mat = mat_vals_itr.next();
-//                     const std::string mat_name = mat_vals_itr.name();
-//                     mat_vals_for_mat.to_double_array(mat_check_new_matset_values[mat_name]);
-//                 }
-//             }
-//             else
-//             {
-//                 baseline_mesh["fields"]["mat_check"]["matset_values"].to_double_array(mat_check_new_matset_values);
-//             }
-//             baseline_mesh["fields"]["mat_check"]["values"].set_external(mat_check_new_values);
-//             baseline_mesh["fields"]["mat_check"]["matset_values"].set_external(mat_check_new_matset_values);
+        // overlink requires matsets and does not support point meshes
+        if (load_mesh[0].has_child("matsets") && basename != "galaxy0000")
+        {
+            remove_path_if_exists(out_name + "_write_overlink");
+            write_opts["file_style"] = "overlink";
+            write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
+            io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+        }
+    }
+}
 
-//             silo_name_changer("mesh", baseline_mesh);
+//-----------------------------------------------------------------------------
+// test that we can read silo without multimeshes, multivars, and multimats
+TEST(conduit_relay_io_silo, read_simple_silo)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+        {"curv2d",          ".silo", "no"},
+        {"curv2d_colmajor", ".silo", "no"},
+        {"curv3d",          ".silo", "yes"},
+        {"curv3d_colmajor", ".silo", "no"},
+        // {"globe",           ".silo", "yes"}, // TODO need to add support for mixed shape topos
+    };
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string basename   = file_info[i][0];
+        const std::string fileext    = file_info[i][1];
+        const std::string round_trip = file_info[i][2];
 
-//             // the loaded mesh will be in the multidomain format
-//             // but the saved mesh is in the single domain format
-//             EXPECT_EQ(load_mesh.number_of_children(), 1);
-//             EXPECT_EQ(load_mesh[0].number_of_children(), baseline_mesh.number_of_children());
-//             EXPECT_FALSE(load_mesh[0].diff(baseline_mesh, info, CONDUIT_EPSILON, true));
-//         }
-//     }
-// }
+        Node load_mesh, info, write_opts;
+        std::string filepath = basename + fileext;
+        filepath = utils::join_file_path("silo", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-// //-----------------------------------------------------------------------------
+        io::silo::load_mesh(input_file, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-// //
-// // read and write Silo and Overlink tests
-// //
+        const std::string out_name = "read_silo_" + basename;
 
-// //-----------------------------------------------------------------------------
-// // read normal silo files containing multimeshes, multivars, and multimats
-// TEST(conduit_relay_io_silo, read_silo)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//         {".",                  "multi_curv3d", ".silo"},
-//         {".",                  "tire",         ".silo"},
-//         {".",                  "galaxy0000",   ".silo"},
-//         {".",                  "emptydomains", ".silo"},
-//         {"multidir_test_data", "multidir0000", ".root"},
-//     };
+        // TODO are these remove paths doing anything? Don't they need filenames?
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-//     // TODO what to do in the case where a multimesh points to no data? (mesh1_back)
-//     // fail silently, as we do now?
+        if (round_trip == "yes")
+        {
+            remove_path_if_exists(out_name + "_write_silo");
+            io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string dirname  = file_info[i][0];
-//         const std::string basename = file_info[i][1];
-//         const std::string fileext  = file_info[i][2];
+            // overlink requires matsets
+            if (load_mesh[0].has_child("matsets"))
+            {
+                remove_path_if_exists(out_name + "_write_overlink");
+                write_opts["file_style"] = "overlink";
+                write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
+                io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+            }
+        }
+    }
+}
 
-//         Node load_mesh, info, write_opts;
-//         std::string filepath = utils::join_file_path(dirname, basename) + fileext;
-//         filepath = utils::join_file_path("silo", filepath);
-//         std::string input_file = relay_test_silo_data_path(filepath);
+//-----------------------------------------------------------------------------
+// test that we can read the fake overlink files from the visit test data
+TEST(conduit_relay_io_silo, read_fake_overlink)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+     // {"ev_0_0_100",              "OvlTop", ".silo"},
+        // uncomment once silo ucdmesh phzones are supported
+        {"hl18spec",                "OvlTop", ".silo"},
+     // {"regrovl_qh_1000_10001_4", "OvlTop", ".silo"},
+        // uncomment once silo ucdmesh phzones are supported
+        {"utpyr4",                  "OvlTop", ".silo"},
+    };
 
-//         io::silo::load_mesh(input_file, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string dirname  = file_info[i][0];
+        const std::string basename = file_info[i][1];
+        const std::string fileext  = file_info[i][2];
 
-//         const std::string out_name = "read_silo_" + basename;
+        Node load_mesh, info, write_opts;
+        std::string filepath = utils::join_file_path(dirname, basename) + fileext;
+        filepath = utils::join_file_path("fake_overlink", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-//         // TODO are these remove paths doing anything? Don't they need filenames?
-//         remove_path_if_exists(out_name + "_write_blueprint");
-//         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+        io::silo::load_mesh(input_file, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//         remove_path_if_exists(out_name + "_write_silo");
-//         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+        const std::string out_name = "read_fake_overlink_" + dirname;
 
-//         // overlink requires matsets and does not support point meshes
-//         if (load_mesh[0].has_child("matsets") && basename != "galaxy0000")
-//         {
-//             remove_path_if_exists(out_name + "_write_overlink");
-//             write_opts["file_style"] = "overlink";
-//             write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
-//             io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-//         }
-//     }
-// }
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-// //-----------------------------------------------------------------------------
-// // test that we can read silo without multimeshes, multivars, and multimats
-// TEST(conduit_relay_io_silo, read_simple_silo)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//         {"curv2d",          ".silo", "no"},
-//         {"curv2d_colmajor", ".silo", "no"},
-//         {"curv3d",          ".silo", "yes"},
-//         {"curv3d_colmajor", ".silo", "no"},
-//         // {"globe",           ".silo", "yes"}, // TODO need to add support for mixed shape topos
-//     };
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string basename   = file_info[i][0];
-//         const std::string fileext    = file_info[i][1];
-//         const std::string round_trip = file_info[i][2];
+        remove_path_if_exists(out_name + "_write_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-//         Node load_mesh, info, write_opts;
-//         std::string filepath = basename + fileext;
-//         filepath = utils::join_file_path("silo", filepath);
-//         std::string input_file = relay_test_silo_data_path(filepath);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+    }
+}
 
-//         io::silo::load_mesh(input_file, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+//-----------------------------------------------------------------------------
+// read overlink files in symlink format
+// should be similar to reading raw silo
+TEST(conduit_relay_io_silo, read_overlink_symlink_format)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+        {".", "box2d",                  ".silo"},
+        {".", "box3d",                  ".silo"},
+     // {".", "diamond",                ".silo"},
+        // fails b/c polytopal not yet supported
+        {".", "testDisk2D_a",           ".silo"},
+     // {".", "donordiv.s2_materials2", ".silo"},
+        // fails b/c polytopal not yet supported
+        {".", "donordiv.s2_materials3", ".silo"},
+    };
 
-//         const std::string out_name = "read_silo_" + basename;
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string dirname  = file_info[i][0];
+        const std::string basename = file_info[i][1];
+        const std::string fileext  = file_info[i][2];
 
-//         // TODO are these remove paths doing anything? Don't they need filenames?
-//         remove_path_if_exists(out_name + "_write_blueprint");
-//         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+        Node load_mesh, info, write_opts;
+        std::string filepath = utils::join_file_path(dirname, basename) + fileext;
+        filepath = utils::join_file_path("overlink", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-//         if (round_trip == "yes")
-//         {
-//             remove_path_if_exists(out_name + "_write_silo");
-//             io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+        io::silo::load_mesh(input_file, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-//             // overlink requires matsets
-//             if (load_mesh[0].has_child("matsets"))
-//             {
-//                 remove_path_if_exists(out_name + "_write_overlink");
-//                 write_opts["file_style"] = "overlink";
-//                 write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
-//                 io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-//             }
-//         }
-//     }
-// }
+        const std::string out_name = "read_overlink_symlink_" + basename;
 
-// //-----------------------------------------------------------------------------
-// // test that we can read the fake overlink files from the visit test data
-// TEST(conduit_relay_io_silo, read_fake_overlink)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//      // {"ev_0_0_100",              "OvlTop", ".silo"},
-//         // uncomment once silo ucdmesh phzones are supported
-//         {"hl18spec",                "OvlTop", ".silo"},
-//      // {"regrovl_qh_1000_10001_4", "OvlTop", ".silo"},
-//         // uncomment once silo ucdmesh phzones are supported
-//         {"utpyr4",                  "OvlTop", ".silo"},
-//     };
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string dirname  = file_info[i][0];
-//         const std::string basename = file_info[i][1];
-//         const std::string fileext  = file_info[i][2];
+        remove_path_if_exists(out_name + "_write_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-//         Node load_mesh, info, write_opts;
-//         std::string filepath = utils::join_file_path(dirname, basename) + fileext;
-//         filepath = utils::join_file_path("fake_overlink", filepath);
-//         std::string input_file = relay_test_silo_data_path(filepath);
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+    }
+}
 
-//         io::silo::load_mesh(input_file, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+//-----------------------------------------------------------------------------
+// read overlink directly from ovltop.silo
+// this case is tricky and involves messing with paths
+TEST(conduit_relay_io_silo, read_overlink_directly)
+{
+    const std::vector<std::vector<std::string>> file_info = {
+        {"box2d",                  "OvlTop", ".silo"},
+        {"box3d",                  "OvlTop", ".silo"},
+     // {"diamond",                "OvlTop", ".silo"},
+        {"testDisk2D_a",           "OvlTop", ".silo"},
+     // {"donordiv.s2_materials2", "OvlTop", ".silo"},
+        {"donordiv.s2_materials3", "OvlTop", ".silo"},
+    };
 
-//         const std::string out_name = "read_fake_overlink_" + dirname;
+    for (int i = 0; i < file_info.size(); i ++) 
+    {
+        const std::string dirname  = file_info[i][0];
+        const std::string basename = file_info[i][1];
+        const std::string fileext  = file_info[i][2];
 
-//         remove_path_if_exists(out_name + "_write_blueprint");
-//         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+        Node load_mesh, info, write_opts;
 
-//         remove_path_if_exists(out_name + "_write_silo");
-//         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+        std::string filepath = utils::join_file_path(dirname, basename) + fileext;
+        filepath = utils::join_file_path("overlink", filepath);
+        std::string input_file = relay_test_silo_data_path(filepath);
 
-//         remove_path_if_exists(out_name + "_write_overlink");
-//         write_opts["file_style"] = "overlink";
-//         write_opts["ovl_topo_name"] = "MMESH";
-//         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-//     }
-// }
+        io::silo::load_mesh(input_file, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-// //-----------------------------------------------------------------------------
-// // read overlink files in symlink format
-// // should be similar to reading raw silo
-// TEST(conduit_relay_io_silo, read_overlink_symlink_format)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//         {".", "box2d",                  ".silo"},
-//         {".", "box3d",                  ".silo"},
-//      // {".", "diamond",                ".silo"},
-//         // fails b/c polytopal not yet supported
-//         {".", "testDisk2D_a",           ".silo"},
-//      // {".", "donordiv.s2_materials2", ".silo"},
-//         // fails b/c polytopal not yet supported
-//         {".", "donordiv.s2_materials3", ".silo"},
-//     };
+        const std::string out_name = "read_overlink_direct_" + dirname;
 
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string dirname  = file_info[i][0];
-//         const std::string basename = file_info[i][1];
-//         const std::string fileext  = file_info[i][2];
+        remove_path_if_exists(out_name + "_write_blueprint");
+        io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
 
-//         Node load_mesh, info, write_opts;
-//         std::string filepath = utils::join_file_path(dirname, basename) + fileext;
-//         filepath = utils::join_file_path("overlink", filepath);
-//         std::string input_file = relay_test_silo_data_path(filepath);
+        remove_path_if_exists(out_name + "_write_silo");
+        io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 
-//         io::silo::load_mesh(input_file, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+        remove_path_if_exists(out_name + "_write_overlink");
+        write_opts["file_style"] = "overlink";
+        write_opts["ovl_topo_name"] = "MMESH";
+        io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
+    }
+}
 
-//         const std::string out_name = "read_overlink_symlink_" + basename;
+// TODO add tests for...
+//  - polytopal meshes once they are supported
+//  - units once they are supported
+//  - etc.
 
-//         remove_path_if_exists(out_name + "_write_blueprint");
-//         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+// TODO add tetra8 and c36_m5 to all the overlink i/o tests
 
-//         remove_path_if_exists(out_name + "_write_silo");
-//         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
-
-//         remove_path_if_exists(out_name + "_write_overlink");
-//         write_opts["file_style"] = "overlink";
-//         write_opts["ovl_topo_name"] = "MMESH";
-//         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-//     }
-// }
-
-// //-----------------------------------------------------------------------------
-// // read overlink directly from ovltop.silo
-// // this case is tricky and involves messing with paths
-// TEST(conduit_relay_io_silo, read_overlink_directly)
-// {
-//     const std::vector<std::vector<std::string>> file_info = {
-//         {"box2d",                  "OvlTop", ".silo"},
-//         {"box3d",                  "OvlTop", ".silo"},
-//      // {"diamond",                "OvlTop", ".silo"},
-//         {"testDisk2D_a",           "OvlTop", ".silo"},
-//      // {"donordiv.s2_materials2", "OvlTop", ".silo"},
-//         {"donordiv.s2_materials3", "OvlTop", ".silo"},
-//     };
-
-//     for (int i = 0; i < file_info.size(); i ++) 
-//     {
-//         const std::string dirname  = file_info[i][0];
-//         const std::string basename = file_info[i][1];
-//         const std::string fileext  = file_info[i][2];
-
-//         Node load_mesh, info, write_opts;
-
-//         std::string filepath = utils::join_file_path(dirname, basename) + fileext;
-//         filepath = utils::join_file_path("overlink", filepath);
-//         std::string input_file = relay_test_silo_data_path(filepath);
-
-//         io::silo::load_mesh(input_file, load_mesh);
-//         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-//         const std::string out_name = "read_overlink_direct_" + dirname;
-
-//         remove_path_if_exists(out_name + "_write_blueprint");
-//         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
-
-//         remove_path_if_exists(out_name + "_write_silo");
-//         io::silo::save_mesh(load_mesh, out_name + "_write_silo");
-
-//         remove_path_if_exists(out_name + "_write_overlink");
-//         write_opts["file_style"] = "overlink";
-//         write_opts["ovl_topo_name"] = "MMESH";
-//         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
-//     }
-// }
-
-// // TODO add tests for...
-// //  - polytopal meshes once they are supported
-// //  - units once they are supported
-// //  - etc.
-
-// // TODO add tetra8 and c36_m5 to all the overlink i/o tests
-
-// // TODO somewhere I need to error on overlink when there are different var or mesh types across domains
+// TODO somewhere I need to error on overlink when there are different var or mesh types across domains
