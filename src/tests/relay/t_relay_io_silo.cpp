@@ -1771,11 +1771,8 @@ TEST(conduit_relay_io_silo, read_silo)
         io::silo::load_mesh(input_file, read_opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        std::string out_name = "read_silo_" + basename;
-        if (!meshname.empty())
-        {
-            out_name += "_" + meshname;
-        }
+        const std::string out_name = "read_silo_" + basename + 
+                                     (meshname.empty() ? "" : "_" + meshname);
 
         // TODO are these remove paths doing anything? Don't they need filenames?
         remove_path_if_exists(out_name + "_write_blueprint");
@@ -1876,11 +1873,8 @@ TEST(conduit_relay_io_silo, read_fake_overlink)
         io::silo::load_mesh(input_file, read_opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        std::string out_name = "read_fake_overlink_" + dirname;
-        if (!meshname.empty())
-        {
-            out_name += "_" + meshname;
-        }
+        const std::string out_name = "read_fake_overlink_" + dirname + 
+                                     (meshname.empty() ? "" : "_" + meshname);
 
         remove_path_if_exists(out_name + "_write_blueprint");
         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
@@ -1933,11 +1927,8 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         io::silo::load_mesh(input_file, read_opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        std::string out_name = "read_overlink_symlink_" + basename;
-        if (!meshname.empty())
-        {
-            out_name += "_" + meshname;
-        }
+        const std::string out_name = "read_overlink_symlink_" + basename + 
+                                     (meshname.empty() ? "" : "_" + meshname);
 
         remove_path_if_exists(out_name + "_write_blueprint");
         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
@@ -1989,11 +1980,8 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
         io::silo::load_mesh(input_file, read_opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        std::string out_name = "read_overlink_direct_" + dirname;
-        if (!meshname.empty())
-        {
-            out_name += "_" + meshname;
-        }
+        const std::string out_name = "read_overlink_direct_" + dirname + 
+                                     (meshname.empty() ? "" : "_" + meshname);
 
         remove_path_if_exists(out_name + "_write_blueprint");
         io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
