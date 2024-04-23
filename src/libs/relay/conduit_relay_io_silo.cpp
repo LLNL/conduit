@@ -2044,7 +2044,6 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     }
 
     // TODO still need to find colmajor data to test this
-    // TODO are there other places where I'm reading where things could be rowmajor or colmajor
 
     intermediate_matset["material_ids"].set(material_ids.data(), material_ids.size());
     intermediate_matset["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
