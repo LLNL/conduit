@@ -802,9 +802,9 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
 
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename);
-    opts["silo_names"]["mesh_names"] = "mesh_topo2";
+    opts["mesh_name"] = "mesh_topo2";
     io::silo::load_mesh(filename, opts, load_mesh);
-    opts["silo_names"]["mesh_names"] = "mesh_topo";
+    opts["mesh_name"] = "mesh_topo";
     io::silo::load_mesh(filename, opts, load_mesh2);
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
     EXPECT_TRUE(blueprint::mesh::verify(load_mesh2, info));
