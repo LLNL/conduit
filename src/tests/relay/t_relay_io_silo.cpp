@@ -802,6 +802,7 @@ TEST(conduit_relay_io_silo, missing_domain_mesh)
 
     remove_path_if_exists(filename);
     io::silo::save_mesh(save_mesh, basename);
+
     opts["mesh_name"] = "mesh_topo2";
     io::silo::load_mesh(filename, opts, load_mesh);
     opts["mesh_name"] = "mesh_topo";
@@ -1735,11 +1736,20 @@ TEST(conduit_relay_io_silo, round_trip_read_option_matset_style)
 TEST(conduit_relay_io_silo, read_silo)
 {
     const std::vector<std::vector<std::string>> file_info = {
-        {".",                  "multi_curv3d", ".silo"},
-        {".",                  "tire",         ".silo"},
-        {".",                  "galaxy0000",   ".silo"},
-        {".",                  "emptydomains", ".silo"},
-        {"multidir_test_data", "multidir0000", ".root"},
+        {".",                  "multi_curv3d", ".silo", ""            }, // test default case
+        {".",                  "multi_curv3d", ".silo", "mesh1"       },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_back"  }, // this multimesh points to paths that do not exist
+        {".",                  "multi_curv3d", ".silo", "mesh1_dup"   },
+        // {".",                  "multi_curv3d", ".silo", "mesh1_front" }, // same here
+        {".",                  "multi_curv3d", ".silo", "mesh1_hidden"},
+        {".",                  "tire",         ".silo", ""            }, // test default case
+        {".",                  "tire",         ".silo", "tire"        },
+        {".",                  "galaxy0000",   ".silo", ""            }, // test default case
+        {".",                  "galaxy0000",   ".silo", "StarMesh"    },
+        {".",                  "emptydomains", ".silo", ""            }, // test default case
+        {".",                  "emptydomains", ".silo", "mesh"        },
+        {"multidir_test_data", "multidir0000", ".root", ""            }, // test default case
+        {"multidir_test_data", "multidir0000", ".root", "Mesh"        },
     };
 
     // TODO what to do in the case where a multimesh points to no data? (mesh1_back)
@@ -1750,16 +1760,22 @@ TEST(conduit_relay_io_silo, read_silo)
         const std::string dirname  = file_info[i][0];
         const std::string basename = file_info[i][1];
         const std::string fileext  = file_info[i][2];
+        const std::string meshname = file_info[i][3];
 
-        Node load_mesh, info, write_opts;
+        Node load_mesh, info, read_opts, write_opts;
         std::string filepath = utils::join_file_path(dirname, basename) + fileext;
         filepath = utils::join_file_path("silo", filepath);
         std::string input_file = relay_test_silo_data_path(filepath);
 
-        io::silo::load_mesh(input_file, load_mesh);
+        read_opts["mesh_name"] = meshname;
+        io::silo::load_mesh(input_file, read_opts, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
-        const std::string out_name = "read_silo_" + basename;
+        std::string out_name = "read_silo_" + basename;
+        if (!meshname.empty())
+        {
+            out_name += "_" + meshname;
+        }
 
         // TODO are these remove paths doing anything? Don't they need filenames?
         remove_path_if_exists(out_name + "_write_blueprint");
@@ -1773,7 +1789,7 @@ TEST(conduit_relay_io_silo, read_silo)
         {
             remove_path_if_exists(out_name + "_write_overlink");
             write_opts["file_style"] = "overlink";
-            write_opts["ovl_topo_name"] = "MMESH"; // TODO do I even need this
+            write_opts["ovl_topo_name"] = meshname; // TODO do I even need this
             io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
         }
     }
