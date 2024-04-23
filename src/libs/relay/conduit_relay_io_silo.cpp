@@ -1637,9 +1637,12 @@ read_variable_domain_helper(const T *var_ptr,
     {
         intermediate_field["association"] = "vertex";
 
-        // TODO handle min and max index case (check_using_whole_coordset case)
-        
-        // TODO what to do about colmajor case?
+        // we don't need to worry about the min_index and max_index case
+        // nor do we need to worry about strides
+        // nor do we need to worry about colmajor versus row major
+        // I have it on good authority that these cases are meaningless for point var data
+        // each of the above attributes are dependent on ndims > 0, which seems to never be 
+        // the case for point variable data.
     }
 
     // if we have volume dependence we can track it
