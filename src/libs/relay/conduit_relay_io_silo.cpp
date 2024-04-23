@@ -2839,6 +2839,8 @@ read_root_silo_index(const std::string &root_file_path,
         root_node[mesh_name_to_read]["mesh_types"].set(mesh_type);
         root_node[mesh_name_to_read]["mesh_paths"].append().set(mesh_name_to_read);
 
+        // TODO should we check here if vars are associated with this mesh?
+        // we have logic to get the right ones later, but it could be quick to check now
         for (int i = 0; i < num_vars; i ++)
         {
             const std::string var_name = var_names[i];
