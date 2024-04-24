@@ -3373,24 +3373,22 @@ void silo_write_field(DBfile *dbfile,
     const std::string units = (n_var.has_child("units") ? n_var["units"].as_string() : "");
     const std::string label = (n_var.has_child("label") ? n_var["label"].as_string() : "");
 
-    const int num_opts = (units.empty() ? 0 : 1) + (label.empty() ? 0 : 1);
-
     // create optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-        DBMakeOptlist(num_opts),
+        DBMakeOptlist(2),
         &DBFreeOptlist,
-        "Error freeing state optlist."};
+        "Error freeing optlist."};
     CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
     
     CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
-                                         DBOPT_COORDSYS,
-                                         &silo_coordsys_type),
-                             "error adding coordsys option");
+                                         DBOPT_UNITS,
+                                         const_cast<char *>(units.c_str())),
+                             "error adding units option");
 
     CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
                                          DBOPT_LABEL,
-                                         &silo_coordsys_type),
-                             "error adding coordsys option");
+                                         const_cast<char *>(label.c_str())),
+                             "error adding label option");
 
     // TODO audit DBMakeOptlist calls
 
@@ -4800,6 +4798,13 @@ void write_multimesh(DBfile *dbfile,
     {
         domain_name_ptrs.push_back(domain_name_strings[i].c_str());
     }
+
+    // create state optlist
+    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
+        DBMakeOptlist(3), 
+        &DBFreeOptlist,
+        "Error freeing state optlist."};
+    CONDUIT_ASSERT(state_optlist.getSiloObject(), "Error creating state optlist");
 
     int cycle;
     float ftime;
