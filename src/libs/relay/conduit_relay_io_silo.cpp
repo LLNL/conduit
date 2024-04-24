@@ -1503,6 +1503,15 @@ read_variable_domain_helper(const T *var_ptr,
         intermediate_field["volume_dependent"] = volume_dependent;
     }
 
+    if (var_ptr->units)
+    {
+        intermediate_field["units"] = var_ptr->units;
+    }
+    if (var_ptr->label)
+    {
+        intermediate_field["label"] = var_ptr->label;
+    }
+
     // TODO investigate the dims, major_order, and stride for vars. Should match the mesh;
     // what to do if it is different? Will I need to walk these arrays differently?
 
@@ -3361,6 +3370,30 @@ void silo_write_field(DBfile *dbfile,
                             comp_vals_ptrs,
                             comp_name_ptrs);
 
+    const std::string units = (n_var.has_child("units") ? n_var["units"].as_string() : "");
+    const std::string label = (n_var.has_child("label") ? n_var["label"].as_string() : "");
+
+    const int num_opts = (units.empty() ? 0 : 1) + (label.empty() ? 0 : 1);
+
+    // create optlist
+    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+        DBMakeOptlist(num_opts),
+        &DBFreeOptlist,
+        "Error freeing state optlist."};
+    CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
+    
+    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                         DBOPT_COORDSYS,
+                                         &silo_coordsys_type),
+                             "error adding coordsys option");
+
+    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                         DBOPT_LABEL,
+                                         &silo_coordsys_type),
+                             "error adding coordsys option");
+
+    // TODO audit DBMakeOptlist calls
+
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
     int var_type = DB_INVALID_OBJECT;
     int silo_error = 0;
@@ -3394,7 +3427,7 @@ void silo_write_field(DBfile *dbfile,
                                       mixlen, // length of mixed data arrays
                                       silo_vals_type, // Datatype of the variable
                                       centering, // centering (nodal or zonal)
-                                      NULL); // optlist
+                                      optlist.getSiloObject()); // optlist
         }
         else
         {
@@ -3416,7 +3449,7 @@ void silo_write_field(DBfile *dbfile,
                                               mixlen, // length of mixed data arrays
                                               silo_vals_type, // Datatype of the variable
                                               centering, // centering (nodal or zonal)
-                                              NULL); // optlist
+                                              optlist.getSiloObject()); // optlist
                 }
             }
             else
@@ -3432,7 +3465,7 @@ void silo_write_field(DBfile *dbfile,
                                          mixlen, // length of mixed data arrays
                                          silo_vals_type, // Datatype of the variable
                                          centering, // centering (nodal or zonal)
-                                         NULL); // optlist
+                                         optlist.getSiloObject()); // optlist
             }
         }
     }
@@ -3488,7 +3521,7 @@ void silo_write_field(DBfile *dbfile,
                                        mixlen, // length of mixed data arrays
                                        silo_vals_type, // Datatype of the variable
                                        centering, // centering (nodal or zonal)
-                                       NULL); // optlist
+                                       optlist.getSiloObject()); // optlist
         }
         else
         {
@@ -3511,7 +3544,7 @@ void silo_write_field(DBfile *dbfile,
                                                mixlen, // length of mixed data arrays
                                                silo_vals_type, // Datatype of the variable
                                                centering, // centering (nodal or zonal)
-                                               NULL); // optlist
+                                               optlist.getSiloObject()); // optlist
                 }
             }
             else
@@ -3528,7 +3561,7 @@ void silo_write_field(DBfile *dbfile,
                                           mixlen, // length of mixed data arrays
                                           silo_vals_type, // Datatype of the variable
                                           centering, // centering (nodal or zonal)
-                                          NULL); // optlist
+                                          optlist.getSiloObject()); // optlist
             }
         }
     }
@@ -3549,7 +3582,7 @@ void silo_write_field(DBfile *dbfile,
                                    comp_vals_ptrs.data(), // data values
                                    num_pts, // Number of elements (points)
                                    silo_vals_type, // Datatype of the variable
-                                   NULL); // optlist
+                                   optlist.getSiloObject()); // optlist
     }
     else
     {
@@ -4767,13 +4800,6 @@ void write_multimesh(DBfile *dbfile,
     {
         domain_name_ptrs.push_back(domain_name_strings[i].c_str());
     }
-
-    // create state optlist
-    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> state_optlist{
-        DBMakeOptlist(3), 
-        &DBFreeOptlist,
-        "Error freeing state optlist."};
-    CONDUIT_ASSERT(state_optlist.getSiloObject(), "Error creating state optlist");
 
     int cycle;
     float ftime;
