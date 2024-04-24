@@ -652,6 +652,37 @@ TEST(conduit_relay_io_silo, round_trip_units_and_labels)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, read_silo_units_and_labels)
+{
+    Node load_mesh, info;
+    const std::string basename = "multi_curv3d";
+    const std::string fileext  = ".silo";
+    const std::string filepath = utils::join_file_path("silo", basename + fileext);
+    const std::string input_file = relay_test_silo_data_path(filepath);
+
+    io::silo::load_mesh(input_file, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    Node units, labels;
+    units["x"] = "cm";
+    units["y"] = "cm";
+    units["z"] = "cm";
+    labels["x"] = "X Axis";
+    labels["y"] = "Y Axis";
+    labels["z"] = "Z Axis";
+
+    NodeConstIterator l_itr = load_mesh.children();
+    while (l_itr.has_next())
+    {
+        const Node &l_curr = l_itr.next();
+        EXPECT_TRUE(l_curr.has_path("coordsets/mesh1/units"));
+        EXPECT_TRUE(l_curr.has_path("coordsets/mesh1/labels"));
+        EXPECT_FALSE(l_curr["coordsets/mesh1/units"].diff(units, info));
+        EXPECT_FALSE(l_curr["coordsets/mesh1/labels"].diff(labels, info));
+    }
+}
+
+//-----------------------------------------------------------------------------
 // 
 // test read and write semantics
 // 
