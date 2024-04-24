@@ -209,7 +209,7 @@ TEST(conduit_relay_io_silo, round_trip_braid)
         index_t ny = 4;
         index_t nz = (dim == "2" ? 0 : 2);
 
-        std::string mesh_type = mesh_types[i].first;
+        const std::string mesh_type = mesh_types[i].first;
 
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
@@ -576,6 +576,78 @@ TEST(conduit_relay_io_silo, round_trip_grid_adjset)
         const Node &s_curr = s_itr.next();
 
         EXPECT_FALSE(l_curr.diff(s_curr, info, CONDUIT_EPSILON, true));
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, round_trip_units_and_labels)
+{
+    const std::vector<std::pair<std::string, std::string>> mesh_types = {
+        std::make_pair("rectilinear", "2"), std::make_pair("rectilinear", "3"),
+        std::make_pair("points", "2"), std::make_pair("points", "3"),
+        std::make_pair("points_implicit", "2"), std::make_pair("points_implicit", "3"),
+        std::make_pair("quads", "2"),
+        std::make_pair("hexs", "3"),
+    };
+    for (int i = 0; i < mesh_types.size(); ++i)
+    {
+        std::string dim = mesh_types[i].second;
+        index_t nx = 3;
+        index_t ny = 4;
+        index_t nz = (dim == "2" ? 0 : 2);
+
+        std::string mesh_type = mesh_types[i].first;
+
+        Node save_mesh, load_mesh, info;
+        blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
+
+        save_mesh["coordsets"]["coords"]["units"]["x"] = "these are my x units";
+        save_mesh["coordsets"]["coords"]["units"]["y"] = "these are my y units";
+        save_mesh["coordsets"]["coords"]["labels"]["x"] = "these are my x labels";
+        save_mesh["coordsets"]["coords"]["labels"]["y"] = "these are my y labels";
+        if (dim == "3")
+        {
+            save_mesh["coordsets"]["coords"]["units"]["z"] = "these are my z units";
+            save_mesh["coordsets"]["coords"]["labels"]["z"] = "these are my z labels";
+        }
+
+        const std::string basename = "silo_braid_units_and_labels_" + mesh_type + "_" + dim + "D";
+        const std::string filename = basename + ".cycle_000100.root";
+
+        // remove existing root file, directory and any output files
+        remove_path_if_exists(filename);
+
+        io::silo::save_mesh(save_mesh, basename);
+        io::silo::load_mesh(filename, load_mesh);
+        EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+        // make changes to save mesh so the diff will pass
+        if (mesh_type == "points")
+        {
+            // this is custom code for braid
+            // We know it is correct because the unstructured points version of braid
+            // uses every point in the coordset
+            save_mesh["topologies"].remove_child("mesh");
+            save_mesh["topologies"]["mesh"]["type"] = "points";
+            save_mesh["topologies"]["mesh"]["coordset"] = "coords";
+        }
+        if (mesh_type == "points_implicit" || mesh_type == "points")
+        {
+            // the association doesn't matter for point meshes
+            // we choose vertex by convention
+            save_mesh["fields"]["radial"]["association"].reset();
+            save_mesh["fields"]["radial"]["association"] = "vertex";
+        }
+        silo_name_changer("mesh", save_mesh);
+
+        // the loaded mesh will be in the multidomain format
+        // but the saved mesh is in the single domain format
+        EXPECT_EQ(load_mesh.number_of_children(), 1);
+        EXPECT_EQ(load_mesh[0].number_of_children(), save_mesh.number_of_children());
+        EXPECT_FALSE(load_mesh[0].diff(save_mesh, info, CONDUIT_EPSILON, true));
+
+        EXPECT_TRUE(load_mesh[0]["coordsets"]["mesh_mesh"].has_child("units"));
+        EXPECT_TRUE(load_mesh[0]["coordsets"]["mesh_mesh"].has_child("labels"));
     }
 }
 

@@ -93,6 +93,26 @@ silo_name_changer(const std::string &mmesh_name,
             // change the name of the coordset
             if (save_mesh.has_path("coordsets/" + coordset_name))
             {
+                // add default labels if they don't exist already
+                if (! save_mesh["coordsets"][coordset_name].has_child("labels") &&
+                    save_mesh["topologies"][new_topo_name]["type"].as_string() != "points")
+                {
+                    const int ndims = save_mesh["coordsets"][coordset_name]["values"].number_of_children();
+
+                    const std::string &x_axis_label = save_mesh["coordsets"][coordset_name]["values"][0].name();
+                    save_mesh["coordsets"][coordset_name]["labels"][x_axis_label] = "X Axis";
+                    if (ndims > 1)
+                    {
+                        const std::string &y_axis_label = save_mesh["coordsets"][coordset_name]["values"][1].name();
+                        save_mesh["coordsets"][coordset_name]["labels"][y_axis_label] = "Y Axis";
+                    }
+                    if (ndims > 2)
+                    {
+                        const std::string &z_axis_label = save_mesh["coordsets"][coordset_name]["values"][2].name();
+                        save_mesh["coordsets"][coordset_name]["labels"][z_axis_label] = "Z Axis";
+                    }
+                }
+
                 save_mesh["coordsets"].rename_child(coordset_name, new_coordset_name);
             }
         }
@@ -228,6 +248,26 @@ overlink_name_changer(conduit::Node &save_mesh)
     // we assume only 1 child for each
     std::string coordset_name = coordsets.children().next().name();
     std::string topo_name = topologies.children().next().name();
+
+    // add default labels if they don't exist already
+    if (! save_mesh["coordsets"][coordset_name].has_child("labels") &&
+        save_mesh["topologies"][topo_name]["type"].as_string() != "points")
+    {
+        const int ndims = save_mesh["coordsets"][coordset_name]["values"].number_of_children();
+
+        const std::string &x_axis_label = save_mesh["coordsets"][coordset_name]["values"][0].name();
+        save_mesh["coordsets"][coordset_name]["labels"][x_axis_label] = "X Axis";
+        if (ndims > 1)
+        {
+            const std::string &y_axis_label = save_mesh["coordsets"][coordset_name]["values"][1].name();
+            save_mesh["coordsets"][coordset_name]["labels"][y_axis_label] = "Y Axis";
+        }
+        if (ndims > 2)
+        {
+            const std::string &z_axis_label = save_mesh["coordsets"][coordset_name]["values"][2].name();
+            save_mesh["coordsets"][coordset_name]["labels"][z_axis_label] = "Z Axis";
+        }
+    }
 
     // rename the coordset and references to it
     coordsets.rename_child(coordset_name, "MMESH");
