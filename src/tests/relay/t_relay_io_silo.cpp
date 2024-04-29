@@ -601,6 +601,7 @@ TEST(conduit_relay_io_silo, round_trip_units_and_labels)
         Node save_mesh, load_mesh, info;
         blueprint::mesh::examples::braid(mesh_type, nx, ny, nz, save_mesh);
 
+        // add units and labels to coordset
         save_mesh["coordsets"]["coords"]["units"]["x"] = "these are my x units";
         save_mesh["coordsets"]["coords"]["units"]["y"] = "these are my y units";
         save_mesh["coordsets"]["coords"]["labels"]["x"] = "these are my x labels";
@@ -610,6 +611,14 @@ TEST(conduit_relay_io_silo, round_trip_units_and_labels)
             save_mesh["coordsets"]["coords"]["units"]["z"] = "these are my z units";
             save_mesh["coordsets"]["coords"]["labels"]["z"] = "these are my z labels";
         }
+
+        // add units and labels to fields
+        save_mesh["fields"]["braid"]["units"] = "these are my braid units";
+        save_mesh["fields"]["radial"]["units"] = "these are my radial units";
+        save_mesh["fields"]["vel"]["units"] = "these are my vel units";
+        save_mesh["fields"]["braid"]["label"] = "this is my braid label";
+        save_mesh["fields"]["radial"]["label"] = "this is my radial label";
+        save_mesh["fields"]["vel"]["label"] = "this is my vel label";
 
         const std::string basename = "silo_braid_units_and_labels_" + mesh_type + "_" + dim + "D";
         const std::string filename = basename + ".cycle_000100.root";
@@ -648,8 +657,14 @@ TEST(conduit_relay_io_silo, round_trip_units_and_labels)
 
         EXPECT_TRUE(load_mesh[0]["coordsets"]["mesh_mesh"].has_child("units"));
         EXPECT_TRUE(load_mesh[0]["coordsets"]["mesh_mesh"].has_child("labels"));
+        EXPECT_TRUE(load_mesh[0]["fields"]["mesh_braid"].has_child("units"));
+        EXPECT_TRUE(load_mesh[0]["fields"]["mesh_braid"].has_child("label"));
+        EXPECT_TRUE(load_mesh[0]["fields"]["mesh_radial"].has_child("units"));
+        EXPECT_TRUE(load_mesh[0]["fields"]["mesh_radial"].has_child("label"));
+        EXPECT_TRUE(load_mesh[0]["fields"]["mesh_vel"].has_child("units"));
+        EXPECT_TRUE(load_mesh[0]["fields"]["mesh_vel"].has_child("label"));
 
-        // TODO tests for fields - a round trip test and read galaxy.silo since it has units for fields
+        // TODO tests for fields - read galaxy.silo since it has units for fields
     }
 }
 
@@ -2062,8 +2077,6 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
 
 // TODO add tests for...
 //  - polytopal meshes once they are supported
-//  - units once they are supported
-//  - etc.
 
 // TODO add tetra8 and c36_m5 to all the overlink i/o tests
 
