@@ -3713,15 +3713,22 @@ void silo_write_field(DBfile *dbfile,
         "Error freeing optlist."};
     CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
     
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
-                                         DBOPT_UNITS,
-                                         const_cast<char *>(units.c_str())),
-                             "error adding units option");
+    if (!units.empty())
+    {
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                             DBOPT_UNITS,
+                                             const_cast<char *>(units.c_str())),
+                                 "error adding units option");
+    }
+    if (!label.empty())
+    {
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                             DBOPT_LABEL,
+                                             const_cast<char *>(label.c_str())),
+                                 "error adding label option");
+    }
 
-    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
-                                         DBOPT_LABEL,
-                                         const_cast<char *>(label.c_str())),
-                             "error adding label option");
+    
 
     // TODO audit DBMakeOptlist calls
 
