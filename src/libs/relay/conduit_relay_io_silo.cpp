@@ -3708,7 +3708,7 @@ void silo_write_field(DBfile *dbfile,
 
     // create optlist
     detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-        DBMakeOptlist(2),
+        DBMakeOptlist(1),
         &DBFreeOptlist,
         "Error freeing optlist."};
     CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
@@ -3727,10 +3727,6 @@ void silo_write_field(DBfile *dbfile,
                                              const_cast<char *>(label.c_str())),
                                  "error adding label option");
     }
-
-    
-
-    // TODO audit DBMakeOptlist calls
 
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
     int var_type = DB_INVALID_OBJECT;
@@ -5455,7 +5451,7 @@ write_multimats(DBfile *dbfile,
                 }
 
                 detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-                    DBMakeOptlist(1),
+                    DBMakeOptlist(4),
                     &DBFreeOptlist,
                     "Error freeing optlist."};
                 CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
