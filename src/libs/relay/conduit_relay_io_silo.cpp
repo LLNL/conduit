@@ -261,6 +261,8 @@ public:
     }
 };
 
+//-----------------------------------------------------------------------------
+
 template <class T, class Deleter>
 class SiloObjectWrapperCheckError
 {
@@ -282,6 +284,8 @@ public:
         CONDUIT_ASSERT(!(obj && del(obj) != 0 && !errmsg.empty()), errmsg);
     }
 };
+
+//-----------------------------------------------------------------------------
 
 class SiloTreePathGenerator
 {
@@ -513,7 +517,7 @@ get_coordset_axis_labels(const int sys)
     }
     else if (sys == DB_OTHER)
     {
-        CONDUIT_INFO("Encountered DB_OTHER, we will default to a cartesian coordinate system.");
+        CONDUIT_INFO("Encountered DB_OTHER; defaulting to a cartesian coordinate system.");
         coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[0].c_str());
         coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[1].c_str());
         coordnames.push_back(conduit::blueprint::mesh::utils::CARTESIAN_AXES[2].c_str());
@@ -589,6 +593,54 @@ void convert_to_double_array(const Node &n_src,
         {
             n_dest.set_external(n_src);
         }
+    }
+}
+
+//-----------------------------------------------------------------------------
+bool
+check_using_whole_coordset(const int *dims,
+                           const int *min_index,
+                           const int *max_index,
+                           const int ndims)
+{
+    const bool dim0_ok = (min_index[0] == 0 && max_index[0] == dims[0] - 1);
+    const bool dim1_ok = (ndims > 1 ? (min_index[1] == 0 && max_index[1] == dims[1] - 1) : true);
+    const bool dim2_ok = (ndims > 2 ? (min_index[2] == 0 && max_index[2] == dims[2] - 1) : true);
+    return dim0_ok && dim1_ok && dim2_ok;
+};
+
+//-----------------------------------------------------------------------------
+void
+colmajor_regular_striding(int *strides_out,
+                          const int ndims,
+                          const std::string &error_msg,
+                          const int *silo_strides,
+                          const int *silo_dims)
+{
+    // we can only succeed here if the data is regularly strided
+    if (1 == ndims)
+    {
+        CONDUIT_ASSERT(silo_strides[0] == 1,
+                       error_msg);
+        strides_out[0] = 1;
+    }
+    else if (2 == ndims)
+    {
+        CONDUIT_ASSERT(silo_strides[0] == 1 && 
+                       silo_strides[1] == silo_dims[0],
+                       error_msg);
+        strides_out[0] = silo_dims[1];
+        strides_out[1] = 1;
+    }
+    else // (3 == ndims)
+    {
+        CONDUIT_ASSERT(silo_strides[0] == 1 && 
+                       silo_strides[1] == silo_dims[0] &&
+                       silo_strides[2] == silo_dims[0] * silo_dims[1],
+                       error_msg);
+        strides_out[0] = silo_dims[1] * silo_dims[2];
+        strides_out[1] = silo_dims[2];
+        strides_out[2] = 1;
     }
 }
 
@@ -680,6 +732,8 @@ void
 add_shape_info(DBzonelist *zonelist_ptr,
                Node &n_elements)
 {
+    // TODO handle min and max index case (check_using_whole_coordset case)
+
     for (int i = 0; i < zonelist_ptr->nshapes; ++i)
     {
         CONDUIT_ASSERT(zonelist_ptr->shapetype[0] == zonelist_ptr->shapetype[i],
@@ -1112,36 +1166,102 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                      const std::string &multimesh_name,
                      Node &mesh_domain)
 {
-    int coordtype{quadmesh_ptr->coordtype};
+    const int coordtype{quadmesh_ptr->coordtype};
     int ndims{quadmesh_ptr->ndims};
     int dims[] = {quadmesh_ptr->nnodes,
                   quadmesh_ptr->nnodes,
                   quadmesh_ptr->nnodes};
     int *real_dims = dims;
 
-    Node &coordset = mesh_domain["coordsets"][multimesh_name];
-    Node &topo = mesh_domain["topologies"][multimesh_name];
+    Node &topo_out = mesh_domain["topologies"][multimesh_name];
+    Node &coords_out = mesh_domain["coordsets"][multimesh_name];
 
     if (coordtype == DB_COLLINEAR)
     {
-        coordset["type"] = "rectilinear";
-        topo["type"] = "rectilinear";
+        coords_out["type"] = "rectilinear";
+        topo_out["type"] = "rectilinear";
         real_dims = quadmesh_ptr->dims;
+
+        CONDUIT_ASSERT(detail::check_using_whole_coordset(quadmesh_ptr->dims, 
+                                                          quadmesh_ptr->min_index,
+                                                          quadmesh_ptr->max_index,
+                                                          ndims),
+                       "Rectilinear grid (collinear quadmesh) " << multimesh_name <<
+                       " is using a subset of the provided coordinates. We do not "
+                       "support this case.");
+
+        CONDUIT_ASSERT(quadmesh_ptr->major_order == DB_ROWMAJOR,
+                       "Rectilinear grid (collinear quadmesh) " << multimesh_name <<
+                       " is column major in silo. We do not support this case.");
     }
     else if (coordtype == DB_NONCOLLINEAR)
     {
-        coordset["type"] = "explicit";
-        topo["type"] = "structured";
+        coords_out["type"] = "explicit";
+        topo_out["type"] = "structured";
 
-        // We subtract 1 from each of these because in silo these dims are node dims, not element dims
-        topo["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
-        if (ndims > 1)
+        const std::string irregular_striding_err_msg = "Structured (noncollinear)"
+            " column major quadmesh " + multimesh_name + " has irregular striding,"
+            " which makes it impossible to correctly convert to Blueprint.";
+
+        if (detail::check_using_whole_coordset(quadmesh_ptr->dims, 
+                                               quadmesh_ptr->min_index,
+                                               quadmesh_ptr->max_index,
+                                               ndims))
         {
-            topo["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
+            // We subtract 1 from each of these because in silo these dims are node dims, not element dims
+            topo_out["elements/dims/i"] = quadmesh_ptr->dims[0] - 1;
+            if (ndims > 1)
+            {
+                topo_out["elements/dims/j"] = quadmesh_ptr->dims[1] - 1;
+            }
+            if (ndims > 2)
+            {
+                topo_out["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
+            }
+
+            // row major case requires nothing else
+            if (quadmesh_ptr->major_order == DB_COLMAJOR)
+            {
+                // resort to strided structured
+                int strides[] = {0,0,0};
+                detail::colmajor_regular_striding(strides,
+                                                  ndims, 
+                                                  irregular_striding_err_msg,
+                                                  quadmesh_ptr->stride,
+                                                  quadmesh_ptr->dims);
+                topo_out["elements/dims/strides"].set(strides, ndims);
+            }
         }
-        if (ndims > 2)
+        else
         {
-            topo["elements/dims/k"] = quadmesh_ptr->dims[2] - 1;
+            // strided structured case
+
+            topo_out["elements/dims/i"] = quadmesh_ptr->max_index[0] - quadmesh_ptr->min_index[0];
+            if (ndims > 1)
+            {
+                topo_out["elements/dims/j"] = quadmesh_ptr->max_index[1] - quadmesh_ptr->min_index[1];
+            }
+            if (ndims > 2)
+            {
+                topo_out["elements/dims/k"] = quadmesh_ptr->max_index[2] - quadmesh_ptr->min_index[2];
+            }
+
+            topo_out["elements/dims/offsets"].set(quadmesh_ptr->min_index, ndims);
+
+            if (quadmesh_ptr->major_order == DB_ROWMAJOR)
+            {
+                topo_out["elements/dims/strides"].set(quadmesh_ptr->stride, ndims);
+            }
+            else // colmajor
+            {
+                int actual_strides[] = {0,0,0};
+                detail::colmajor_regular_striding(actual_strides,
+                                                  ndims, 
+                                                  irregular_striding_err_msg,
+                                                  quadmesh_ptr->stride,
+                                                  quadmesh_ptr->dims);
+                topo_out["elements/dims/strides"].set(actual_strides, ndims);
+            }
         }
     }
     else
@@ -1149,14 +1269,14 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         CONDUIT_ERROR("Undefined coordtype in " << coordtype);
     }
 
-    topo["coordset"] = multimesh_name;
+    topo_out["coordset"] = multimesh_name;
 
     // If the origin is not the default value, then we need to specify it
     if (quadmesh_ptr->base_index[0] != 0 && 
         quadmesh_ptr->base_index[1] != 0 && 
         quadmesh_ptr->base_index[2] != 0)
     {
-        Node &origin = topo["elements"]["origin"];
+        Node &origin = topo_out["elements"]["origin"];
         origin["i"] = quadmesh_ptr->base_index[0];
         if (ndims > 1)
         {
@@ -1446,6 +1566,7 @@ read_variable_domain_helper(const T *var_ptr,
                             const int vartype,
                             const std::string &bottom_level_mesh_name,
                             const std::string &volume_dependent,
+                            const Node &mesh_out,
                             Node &intermediate_field)
 {
     // If we cannot fetch this var we will skip
@@ -1483,7 +1604,9 @@ read_variable_domain_helper(const T *var_ptr,
 
     intermediate_field["topology"] = multimesh_name;
 
-    // handle association
+    const std::string &topo_type = mesh_out["topologies"][multimesh_name]["type"].as_string();
+
+    // handle association and strided structured
     if (vartype == DB_UCDVAR)
     {
         intermediate_field["association"] = var_ptr->centering == DB_ZONECENT ? "element" : "vertex";
@@ -1491,10 +1614,82 @@ read_variable_domain_helper(const T *var_ptr,
     else if (vartype == DB_QUADVAR)
     {
         intermediate_field["association"] = var_ptr->centering == DB_NODECENT ? "vertex" : "element";
+    
+        // put me in jail
+        const DBquadvar* quadvar_ptr = reinterpret_cast<const DBquadvar*>(var_ptr);
+
+        if (topo_type == "structured")
+        {
+            const std::string irregular_striding_err_msg = "Structured (noncollinear)"
+                " column major quadmesh " + multimesh_name + " field " + var_name + 
+                " has irregular striding, which makes it impossible to correctly"
+                " convert to Blueprint.";
+
+            if (detail::check_using_whole_coordset(quadvar_ptr->dims,
+                                                   quadvar_ptr->min_index,
+                                                   quadvar_ptr->max_index,
+                                                   quadvar_ptr->ndims))
+            {
+                // row major case requires nothing else
+                if (quadvar_ptr->major_order == DB_COLMAJOR)
+                {
+                    // resort to strided structured
+                    int strides[] = {0,0,0};
+                    detail::colmajor_regular_striding(strides,
+                                                      quadvar_ptr->ndims, 
+                                                      irregular_striding_err_msg,
+                                                      quadvar_ptr->stride,
+                                                      quadvar_ptr->dims);
+                    intermediate_field["strides"].set(strides, quadvar_ptr->ndims);
+                }
+            }
+            else
+            {
+                // strided structured case
+
+                intermediate_field["offsets"].set(quadvar_ptr->min_index, quadvar_ptr->ndims);
+
+                if (quadvar_ptr->major_order == DB_ROWMAJOR)
+                {
+                    intermediate_field["strides"].set(quadvar_ptr->stride, quadvar_ptr->ndims);
+                }
+                else // colmajor
+                {
+                    int actual_strides[] = {0,0,0};
+                    detail::colmajor_regular_striding(actual_strides,
+                                                      quadvar_ptr->ndims, 
+                                                      irregular_striding_err_msg,
+                                                      quadvar_ptr->stride,
+                                                      quadvar_ptr->dims);
+                    intermediate_field["strides"].set(actual_strides, quadvar_ptr->ndims);
+                }
+            }
+        }
+        else // rectilinear
+        {
+            CONDUIT_ASSERT(detail::check_using_whole_coordset(quadvar_ptr->dims,
+                                                              quadvar_ptr->min_index,
+                                                              quadvar_ptr->max_index,
+                                                              quadvar_ptr->ndims),
+                           "Field " << var_name << " for Rectilinear grid (collinear quadmesh) " << 
+                           multimesh_name << " is using a subset of the provided field values. We "
+                           "do not support this case.");
+
+            CONDUIT_ASSERT(quadvar_ptr->major_order == DB_ROWMAJOR,
+                           "Field " << var_name << " for Rectilinear grid (collinear quadmesh) " << 
+                           multimesh_name << " is column major in silo. We do not support this case.");
+        }
     }
     else // if (vartype == DB_POINTVAR)
     {
         intermediate_field["association"] = "vertex";
+
+        // we don't need to worry about the min_index and max_index case
+        // nor do we need to worry about strides
+        // nor do we need to worry about colmajor versus row major
+        // I have it on good authority that these cases are meaningless for point var data
+        // each of the above attributes are dependent on ndims > 0, which seems to never be 
+        // the case for point variable data.
     }
 
     // if we have volume dependence we can track it
@@ -1559,8 +1754,8 @@ read_variable_domain(const int vartype,
             &DBFreeUcdvar};
 
         if (!read_variable_domain_helper<DBucdvar>(
-            ucdvar.getSiloObject(), var_name, multimesh_name,
-            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
+            ucdvar.getSiloObject(), var_name, multimesh_name, vartype,
+            bottom_level_mesh_name, volume_dependent, mesh_out, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1577,8 +1772,8 @@ read_variable_domain(const int vartype,
             &DBFreeQuadvar};
 
         if (!read_variable_domain_helper<DBquadvar>(
-            quadvar.getSiloObject(), var_name, multimesh_name,
-            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
+            quadvar.getSiloObject(), var_name, multimesh_name, vartype,
+            bottom_level_mesh_name, volume_dependent, mesh_out, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1595,8 +1790,8 @@ read_variable_domain(const int vartype,
             &DBFreeMeshvar};
 
         if (!read_variable_domain_helper<DBmeshvar>(
-            meshvar.getSiloObject(), var_name, multimesh_name,
-            vartype, bottom_level_mesh_name, volume_dependent, intermediate_field))
+            meshvar.getSiloObject(), var_name, multimesh_name, vartype,
+            bottom_level_mesh_name, volume_dependent, mesh_out, intermediate_field))
         {
             return false; // we hit a case where we want to skip this var
         }
@@ -1691,6 +1886,49 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
                      "associated with mesh " + bottom_level_mesh_name +
                      ". Skipping.");
         return false;
+    }
+
+    // Check for structured strided case:
+    const Node &topo_out = mesh_out["topologies"][multimesh_name];
+    if (topo_out["type"].as_string() == "structured" &&
+        (topo_out.has_path("elements/dims/strides") || 
+         topo_out.has_path("elements/dims/strides")))
+    {
+        CONDUIT_INFO("DBmaterial " + matset_name + " is associated with mesh " + 
+                     bottom_level_mesh_name + ", which is a Structured (noncollinear) "
+                     "quadmesh. It uses a subset of the coordinates to define the mesh. "
+                     "We map meshes like this to Structured Strided meshes in Blueprint, "
+                     "which expect associated matsets to only provide data for mesh zones "
+                     "that are actually being used by the topology. Silo materials provide "
+                     "data for all mesh zones, whether or not they are being used by the "
+                     "quadmesh. We have opted to not support this case, as to do so would "
+                     "require us to manually remove material set data that corresponds to "
+                     "unused zones. If there is a need for this feature, please contact a "
+                     "Conduit developer. In the meantime, we will skip reading this DBmaterial.");
+        return false;
+    }
+
+    // we can only succeed here if the data is regularly strided
+    const std::string irregular_striding_err_msg = "DBmaterial " + matset_name + 
+        " has irregular striding, which makes it impossible to correctly convert"
+        " to Blueprint.";
+    if (1 == matset_ptr->ndims)
+    {
+        CONDUIT_ASSERT(matset_ptr->stride[0] == 1,
+                       irregular_striding_err_msg);
+    }
+    else if (2 == matset_ptr->ndims)
+    {
+        CONDUIT_ASSERT(matset_ptr->stride[0] == 1 && 
+                       matset_ptr->stride[1] == matset_ptr->dims[0],
+                       irregular_striding_err_msg);
+    }
+    else // (3 == matset_ptr->ndims)
+    {
+        CONDUIT_ASSERT(matset_ptr->stride[0] == 1 && 
+                       matset_ptr->stride[1] == matset_ptr->dims[0] &&
+                       matset_ptr->stride[2] == matset_ptr->dims[0] * matset_ptr->dims[1],
+                       irregular_striding_err_msg);
     }
 
     CONDUIT_ASSERT(matset_ptr->allowmat0 == 0,
@@ -1841,6 +2079,14 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     }
     else // COLMAJOR
     {
+        // I'm not convinced it is ever possible to hit this case.
+        // If you have column major mesh data, you hit the strided structured
+        // case, which (for now) forces an early return at the beginning of
+        // this function. We may reenable that case later, which requires 
+        // filtering the matset down and is potentially quite challenging.
+        // The only way you can get here I think is if you have column major
+        // material data and row major mesh data. I've never seen an example
+        // file like that so far.
         for (int x = 0; x < nx; x ++)
         {
             for (int y = 0; y < ny; y ++)
@@ -1853,8 +2099,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
         }
     }
 
-    // TODO find colmajor data to test this
-    // TODO are there other places where I'm reading where things could be rowmajor or colmajor
+    // TODO still need to find colmajor data to test this
 
     intermediate_matset["material_ids"].set(material_ids.data(), material_ids.size());
     intermediate_matset["volume_fractions"].set(volume_fractions.data(), volume_fractions.size());
@@ -2185,7 +2430,7 @@ bool
 read_multivars(DBtoc *toc,
                DBfile *dbfile,
                const std::string &multimesh_name,
-               const int nblocks,
+               const int &nblocks,
                Node &root_node,
                std::ostringstream &error_oss)
 {
@@ -2513,12 +2758,12 @@ bool
 read_root_silo_index(const std::string &root_file_path,
                      const Node &opts,
                      Node &root_node, // output
-                     std::string &multimesh_name, // output
+                     std::string &mesh_name_to_read, // output
                      std::ostringstream &error_oss) // output
 {
     // clear output vars
     root_node.reset();
-    multimesh_name = "";
+    mesh_name_to_read = "";
     error_oss.str("");
 
     // first, make sure we can open the root file
@@ -2549,96 +2794,196 @@ read_root_silo_index(const std::string &root_file_path,
         error_oss << "Table of contents could not be extracted from file: " << root_file_path;
         return false;
     }
-    // check for multimeshes
-    if (toc->nmultimesh <= 0)
-    {
-        error_oss << "No multimesh found in file: " << root_file_path;
-        return false;
-    }
 
     // decide what multimesh to extract
     if (opts.has_child("mesh_name") && opts["mesh_name"].dtype().is_string())
     {
-        multimesh_name = opts["mesh_name"].as_string();
+        mesh_name_to_read = opts["mesh_name"].as_string();
     }
 
-    // check multimesh name
-    if (multimesh_name.empty())
+    // we want to know the mesh type so it is easy to read later
+    int mesh_type = -1;
+
+    // check mesh name
+    if (mesh_name_to_read.empty())
     {
-        multimesh_name = toc->multimesh_names[0];
+        // if not specified, we will default to first multimesh we find
+        if (toc->nmultimesh > 0)
+        {
+            mesh_name_to_read = toc->multimesh_names[0];
+            mesh_type = DB_MULTIMESH;
+        }
+        // otherwise we will try quadmeshes
+        else if (toc->nqmesh > 0)
+        {
+            mesh_name_to_read = toc->qmesh_names[0];
+            mesh_type = DB_QUADMESH;
+        }
+        // otherwise we will try ucdmeshes
+        else if (toc->nucdmesh > 0)
+        {
+            mesh_name_to_read = toc->ucdmesh_names[0];
+            mesh_type = DB_UCDMESH;
+        }
+        // otherwise we will try ptmeshes
+        else if (toc->nptmesh > 0)
+        {
+            mesh_name_to_read = toc->ptmesh_names[0];
+            mesh_type = DB_POINTMESH;
+        }
+        else
+        {
+            error_oss << "No meshes found in file: " << root_file_path;
+            return false;
+        }
     }
     else
     {
         bool found = false;
-        for (int i = 0; i < toc->nmultimesh; i ++)
+        auto check_mesh_name_in_file = [&](const int nmeshes,
+                                           char **mesh_names,
+                                           const int curr_mesh_type)
         {
-            if (toc->multimesh_names[i] == multimesh_name)
+            for (int i = 0; i < nmeshes; i ++)
             {
-                found = true;
-                break;
+                if (mesh_names[i] == mesh_name_to_read)
+                {
+                    found = true;
+                    mesh_type = curr_mesh_type;
+                    break;
+                }
             }
-        }
+        };
+        check_mesh_name_in_file(toc->nmultimesh, toc->multimesh_names, DB_MULTIMESH);
+        check_mesh_name_in_file(toc->nqmesh, toc->qmesh_names, DB_QUADMESH);
+        check_mesh_name_in_file(toc->nucdmesh, toc->ucdmesh_names, DB_UCDMESH);
+        check_mesh_name_in_file(toc->nptmesh, toc->ptmesh_names, DB_POINTMESH);
+        
         if (!found)
         {
-            error_oss << "No multimesh found matching " << multimesh_name;
+            error_oss << "No mesh found matching " << mesh_name_to_read;
             return false;
         }
     }
 
-    int nblocks;
-    if (! read_multimesh(dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
-        return false;
-    }
-    if (! read_multivars(toc,
-                         dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
-        return false;
-    }
-    if (! read_multimats(toc,
-                         dbfile.getSiloObject(),
-                         multimesh_name,
-                         nblocks,
-                         root_node,
-                         error_oss))
-    {
-        return false;
-    }
-
-    read_state(dbfile.getSiloObject(), root_node, multimesh_name);
-
-    // overlink-specific
-    read_var_attributes(dbfile.getSiloObject(),
-                        multimesh_name,
-                        root_node);
-
     // Get the selected matset flavor
+    std::string opts_matset_style = "";
     if (opts.has_child("matset_style") && opts["matset_style"].dtype().is_string())
     {
-        std::string opts_matset_style = opts["matset_style"].as_string();
+        opts_matset_style = opts["matset_style"].as_string();
         if (opts_matset_style != "default" && 
             opts_matset_style != "multi_buffer_full" &&
             opts_matset_style != "sparse_by_element" &&
             opts_matset_style != "multi_buffer_by_material")
         {
-            CONDUIT_ERROR("read_mesh invalid matset_style option: \"" 
-                          << opts_matset_style << "\"\n"
-                          " expected: \"default\", \"multi_buffer_full\", "
-                          "\"sparse_by_element\", or \"multi_buffer_by_material\"");
+            error_oss << "read_mesh invalid matset_style option: \"" 
+                         << opts_matset_style << "\"\n"
+                         " expected: \"default\", \"multi_buffer_full\", "
+                         "\"sparse_by_element\", or \"multi_buffer_by_material\"";
+            return false;
         }
-        else
+    }
+
+    auto prep_simple_silo_obj_metadata = [&](const int num_vars,
+                                             char **var_names,
+                                             const int var_type,
+                                             const int num_mats,
+                                             char **mat_names)
+    {
+        root_node[mesh_name_to_read]["nblocks"] = 1;
+        root_node[mesh_name_to_read]["nameschemes"] = "no";
+        root_node[mesh_name_to_read]["mesh_types"].set(mesh_type);
+        root_node[mesh_name_to_read]["mesh_paths"].append().set(mesh_name_to_read);
+
+        // TODO should we check here if vars are associated with this mesh?
+        // we have logic to get the right ones later, but it could be quick to check now
+        for (int i = 0; i < num_vars; i ++)
         {
-            root_node[multimesh_name]["matset_style"] = opts_matset_style;
+            const std::string var_name = var_names[i];
+            Node &var = root_node[mesh_name_to_read]["vars"][var_name];
+            var["nameschemes"] = "no";
+            var["var_types"].set(var_type);
+            var["var_paths"].append().set(var_name);
+        }
+        // TODO should we check here if materials are associated with this mesh?
+        // we have logic to get the right one later, but it could be quick to check now
+        for (int i = 0; i < num_mats; i ++)
+        {
+            const std::string mat_name = mat_names[i];
+            Node &material = root_node[mesh_name_to_read]["matsets"][mat_name];
+            material["nameschemes"] = "no";
+            material["matset_paths"].append().set(mat_name);
         }
 
+        read_state(dbfile.getSiloObject(), root_node, mesh_name_to_read);
+
+        if (! opts_matset_style.empty())
+        {
+            root_node[mesh_name_to_read]["matset_style"] = opts_matset_style;
+        }
+    };
+
+    if (DB_MULTIMESH == mesh_type)
+    {
+        int nblocks;
+        if (! read_multimesh(dbfile.getSiloObject(),
+                             mesh_name_to_read,
+                             nblocks,
+                             root_node,
+                             error_oss))
+        {
+            return false;
+        }
+        if (! read_multivars(toc,
+                             dbfile.getSiloObject(),
+                             mesh_name_to_read,
+                             nblocks,
+                             root_node,
+                             error_oss))
+        {
+            return false;
+        }
+        if (! read_multimats(toc,
+                             dbfile.getSiloObject(),
+                             mesh_name_to_read,
+                             nblocks,
+                             root_node,
+                             error_oss))
+        {
+            return false;
+        }
+
+        read_state(dbfile.getSiloObject(), root_node, mesh_name_to_read);
+
+        // overlink-specific
+        read_var_attributes(dbfile.getSiloObject(),
+                            mesh_name_to_read,
+                            root_node);
+
+        if (! opts_matset_style.empty())
+        {
+            root_node[mesh_name_to_read]["matset_style"] = opts_matset_style;
+        }
+    }
+    else if (DB_QUADMESH == mesh_type)
+    {
+        prep_simple_silo_obj_metadata(toc->nqvar, toc->qvar_names, DB_QUADVAR,
+                                      toc->nmat, toc->mat_names);
+    }
+    else if (DB_UCDMESH == mesh_type)
+    {
+        prep_simple_silo_obj_metadata(toc->nucdvar, toc->ucdvar_names, DB_UCDVAR,
+                                      toc->nmat, toc->mat_names);
+    }
+    else if (DB_POINTMESH == mesh_type)
+    {
+        prep_simple_silo_obj_metadata(toc->nptvar, toc->ptvar_names, DB_POINTVAR,
+                                      toc->nmat, toc->mat_names);
+    }
+    else
+    {
+        error_oss << "Unknown mesh type for mesh " << mesh_name_to_read;
+        return false;
     }
 
     // our silo index should look like this:
@@ -2679,6 +3024,9 @@ read_root_silo_index(const std::string &root_file_path,
     //             ...
     //       ...
     //    matset_style: "default", OR "multi_buffer_full", OR "sparse_by_element", OR "multi_buffer_by_material"
+    // mesh2:
+    //    ...
+    // ...
 
     return true;
 }
@@ -2689,14 +3037,12 @@ read_root_silo_index(const std::string &root_file_path,
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
 ///           more than one mesh.
+///          We only allow reading of a single mesh to keep these options on
+///          par with the relay io blueprint options.
 ///
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
-///
-/// note: we have made the choice to read ONLY the multimesh with the name
-/// mesh_name. We also read all multivariables which are associated with the
-/// chosen multimesh.
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API
 read_mesh(const std::string &root_file_path,
@@ -2712,17 +3058,17 @@ read_mesh(const std::string &root_file_path,
 
     int error = 0;
     std::ostringstream error_oss;
-    std::string multimesh_name;
+    std::string mesh_name_to_read;
     Node root_node;
 
     // only read bp index on rank 0
-    if(par_rank == 0)
+    if (par_rank == 0)
     {
-        if(!read_root_silo_index(root_file_path,
-                                 opts,
-                                 root_node,
-                                 multimesh_name,
-                                 error_oss))
+        if (!read_root_silo_index(root_file_path,
+                                  opts,
+                                  root_node,
+                                  mesh_name_to_read,
+                                  error_oss))
         {
             error = 1;
         }
@@ -2750,13 +3096,13 @@ read_mesh(const std::string &root_file_path,
     }
     else
     {
-        // broadcast the mesh name and the bp index
+        // broadcast the mesh name and the root node
         // from rank 0 to all ranks
-        n_global.set(multimesh_name);
+        n_global.set(mesh_name_to_read);
         conduit::relay::mpi::broadcast_using_schema(n_global,
                                                     0,
                                                     mpi_comm);
-        multimesh_name = n_global.as_string();
+        mesh_name_to_read = n_global.as_string();
         conduit::relay::mpi::broadcast_using_schema(root_node,
                                                     0,
                                                     mpi_comm);
@@ -2768,7 +3114,8 @@ read_mesh(const std::string &root_file_path,
         CONDUIT_ERROR(error_oss.str());
     }
 #endif
-    const Node &mesh_index = root_node[multimesh_name];
+
+    const Node &mesh_index = root_node[mesh_name_to_read];
 
     // read all domains for given mesh
     int num_domains = mesh_index["nblocks"].to_int();
@@ -2806,11 +3153,8 @@ read_mesh(const std::string &root_file_path,
     domain_end = rank_offset + read_size;
 #endif
 
-    std::string opts_matset_style = "default";
-    if (mesh_index.has_child("matset_style"))
-    {
-        opts_matset_style = mesh_index["matset_style"].as_string();
-    }
+    const std::string opts_matset_style = (mesh_index.has_child("matset_style") ? 
+        mesh_index["matset_style"].as_string() : "default");
 
     bool mesh_nameschemes = false;
     if (mesh_index.has_child("nameschemes") &&
@@ -2827,11 +3171,7 @@ read_mesh(const std::string &root_file_path,
     // If the root file is named OvlTop.silo, then there is a very good chance that
     // this file is valid overlink. Therefore, we must modify the paths we get from
     // the root node to reflect this.
-    bool ovltop_case = false;
-    if (root_file_name == "OvlTop.silo")
-    {
-        ovltop_case = true;
-    }
+    bool ovltop_case = (root_file_name == "OvlTop.silo");
 
     for (int domain_id = domain_start; domain_id < domain_end; domain_id ++)
     {
@@ -2839,9 +3179,9 @@ read_mesh(const std::string &root_file_path,
         // Read Mesh
         //
 
-        std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
-        int_accessor meshtypes = mesh_index["mesh_types"].value();
-        int meshtype = meshtypes[domain_id];
+        const std::string silo_mesh_path = mesh_index["mesh_paths"][domain_id].as_string();
+        const int_accessor meshtypes = mesh_index["mesh_types"].value();
+        const int meshtype = meshtypes[domain_id];
 
         std::string mesh_name, mesh_domain_filename;
         mesh_path_gen.GeneratePaths(silo_mesh_path, relative_dir, mesh_domain_filename, mesh_name);
@@ -2871,7 +3211,7 @@ read_mesh(const std::string &root_file_path,
         std::string domain_path = conduit_fmt::format("domain_{:06d}", domain_id);
 
         if (! read_mesh_domain(meshtype, mesh_domain_file_to_use, mesh_name, 
-                               multimesh_name, domain_path, mesh))
+                               mesh_name_to_read, domain_path, mesh))
         {
             continue; // we hit a case where we want to skip this mesh domain
         }
@@ -2898,7 +3238,7 @@ read_mesh(const std::string &root_file_path,
         // Read Adjset (overlink only)
         //
 
-        read_adjset(mesh_domain_file_to_use, multimesh_name, domain_id, mesh_out);
+        read_adjset(mesh_domain_file_to_use, mesh_name_to_read, domain_id, mesh_out);
 
         //
         // Read Materials
@@ -2961,10 +3301,8 @@ read_mesh(const std::string &root_file_path,
                 // In silo, for each mesh, there can only be one matset, because otherwise
                 // it would be ambiguous. In Blueprint, we can allow multiple matsets per
                 // topo, because the fields explicitly link to the matset they use.
-                // Right now, we only ever read one mesh, meaning that there can only
-                // be one matset in our newly created blueprint mesh.
                 if (read_matset_domain(matset_domain_file_to_use, n_matset, matset_name,
-                                       multimesh_name, multimat_name, bottom_level_mesh_name,
+                                       mesh_name_to_read, multimat_name, bottom_level_mesh_name,
                                        opts_matset_style, matset_field_reconstruction, mesh_out))
                 {
                     break;
@@ -3032,7 +3370,7 @@ read_mesh(const std::string &root_file_path,
                 // we don't care if this skips the var or not since this is the
                 // last thing in the loop iteration
                 read_variable_domain(vartype, var_domain_file_to_use, var_name,
-                    multimesh_name, multivar_name, bottom_level_mesh_name,
+                    mesh_name_to_read, multivar_name, bottom_level_mesh_name,
                     volume_dependent, opts_matset_style,
                     matset_field_reconstruction, mesh_out);
             }
@@ -3062,7 +3400,6 @@ void load_mesh(const std::string &root_file_path,
 }
 
 //-----------------------------------------------------------------------------
-///
 /// opts:
 ///      mesh_name: "{name}"
 ///          provide explicit mesh name, for cases where silo data includes
@@ -3071,10 +3408,6 @@ void load_mesh(const std::string &root_file_path,
 ///      matset_style: "default", "multi_buffer_full", "sparse_by_element", 
 ///            "multi_buffer_by_material"
 ///            "default"   ==> "sparse_by_element"
-///
-/// note: we have made the choice to read ONLY the multimesh with the name
-/// mesh_name. We also read all multivariables which are associated with the
-/// chosen multimesh.
 //-----------------------------------------------------------------------------
 void load_mesh(const std::string &root_file_path,
                const Node &opts,
@@ -4088,6 +4421,16 @@ void silo_write_structured_mesh(DBfile *dbfile,
                                 const bool write_overlink,
                                 Node &n_mesh_info) 
 {
+    // check for strided structured case
+    if (n_topo.has_path("elements/dims/offsets") ||
+        n_topo.has_path("elements/dims/strides"))
+    {
+        // I could potentially support either case where only offsets or only strides
+        // is present. Would need to think more about that. But certainly if both
+        // are present we have to give up, or completely take apart the mesh.
+        CONDUIT_ERROR("Strided Structured Blueprint case does not have a general "
+                      "analog in Silo.");
+    }
     int ele_dims[3];
     ele_dims[0] = n_topo["elements/dims/i"].to_value();
     ele_dims[1] = n_topo["elements/dims/j"].to_value();
@@ -4095,7 +4438,7 @@ void silo_write_structured_mesh(DBfile *dbfile,
 
     index_t num_elems = ele_dims[0] * ele_dims[1];
 
-    if (n_topo["elements/dims"].has_path("k"))
+    if (ndims == 3)
     {
         ele_dims[2] = n_topo["elements/dims/k"].to_value();
         num_elems *= ele_dims[2];
@@ -4128,10 +4471,10 @@ void silo_write_structured_mesh(DBfile *dbfile,
         }
         
 
-        CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist,
-                                              DBOPT_BASEINDEX,
-                                              base_index),
-                                  "Error adding option");
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist,
+                                             DBOPT_BASEINDEX,
+                                             base_index),
+                                 "Error adding option");
     }
 
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));

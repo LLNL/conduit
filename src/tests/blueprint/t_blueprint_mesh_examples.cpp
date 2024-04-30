@@ -579,6 +579,90 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
 
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, strided_structured_colmajor)
+{
+    Node res;
+
+    const std::string yaml_text = ""
+    "coordsets:\n"
+    "  coords:\n"
+    "    type: \"explicit\"\n"
+    "    values:\n"
+    "      x: [-10.0,  -6.6,  -3.3,   0.0,   3.3,   6.6,  10.0,\n"
+    "          -10.0,  -6.6,  -3.3,   0.0,   3.3,   6.6,  10.0,\n"
+    "          -10.0,  -6.6,  -3.3,   0.0,   3.3,   6.6,  10.0,\n"
+    "          -10.0,  -6.6,  -3.3,   0.0,   3.3,   6.6,  10.0,\n"
+    "          -10.0,  -6.6,  -3.3,   0.0,   3.3,   6.6,  10.0,\n"
+    "          -10.0,  -6.6,  -3.3,   0.0,   3.3,   6.6,  10.0]\n"
+    "      y: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0, -10.0,\n"
+    "           -6.0,  -6.0,  -6.0,  -6.0,  -6.0,  -6.0,  -6.0,\n"
+    "           -2.0,  -2.0,  -2.0,  -2.0,  -2.0,  -2.0,  -2.0,\n"
+    "            2.0,   2.0,   2.0,   2.0,   2.0,   2.0,   2.0,\n"
+    "            6.0,   6.0,   6.0,   6.0,   6.0,   6.0,   6.0,\n"
+    "            10.0, 10.0,  10.0,  10.0,  10.0,  10.0,  10.0]\n"
+    "  col_maj_coords:\n"
+    "    type: \"explicit\"\n"
+    "    values:\n"
+    "      x: [-10.0, -10.0, -10.0, -10.0, -10.0, -10.0,\n"
+    "           -6.6,  -6.6,  -6.6,  -6.6,  -6.6,  -6.6,\n"
+    "           -3.3,  -3.3,  -3.3,  -3.3,  -3.3,  -3.3,\n"
+    "            0.0,   0.0,   0.0,   0.0,   0.0,   0.0,\n"
+    "            3.3,   3.3,   3.3,   3.3,   3.3,   3.3,\n"
+    "            6.6,   6.6,   6.6,   6.6,   6.6,   6.6,\n"
+    "           10.0,  10.0,  10.0,  10.0,  10.0,  10.0]\n"
+    "      y: [-10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
+    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
+    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
+    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
+    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
+    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0,\n"
+    "          -10.0,  -6.0,  -2.0,   2.0,   6.0,  10.0]\n"
+    "topologies:\n"
+    "  mesh:\n"
+    "    type: \"structured\"\n"
+    "    coordset: \"coords\"\n"
+    "    elements:\n"
+    "      dims:\n"
+    "        i: 3\n"
+    "        j: 2\n"
+    "        offsets: [2, 2]\n"
+    "        strides: [1, 7]\n"
+    "  full_mesh:\n"
+    "    type: \"structured\"\n"
+    "    coordset: \"coords\"\n"
+    "    elements:\n"
+    "      dims:\n"
+    "        i: 6\n"
+    "        j: 5\n"
+    "        offsets: [0, 0]\n"
+    "        strides: [1, 7]\n"
+    "  mesh_col_maj:\n"
+    "    type: \"structured\"\n"
+    "    coordset: \"col_maj_coords\"\n"
+    "    elements:\n"
+    "      dims:\n"
+    "        i: 3\n"
+    "        j: 2\n"
+    "        offsets: [2, 2]\n"
+    "        strides: [6, 1]\n"
+    "  full_mesh_col_maj:\n"
+    "    type: \"structured\"\n"
+    "    coordset: \"col_maj_coords\"\n"
+    "    elements:\n"
+    "      dims:\n"
+    "        i: 6\n"
+    "        j: 5\n"
+    "        strides: [6, 1]\n";
+
+    res.parse(yaml_text, "yaml");
+
+    Node info;
+    EXPECT_TRUE(blueprint::mesh::verify(res, info));
+    CONDUIT_INFO(info.to_yaml());
+
+    test_save_mesh_helper(res, "strided_structured_colmajor");
+}
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, julia)
