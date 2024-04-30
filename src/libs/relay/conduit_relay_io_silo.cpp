@@ -1296,10 +1296,10 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
                               real_dims,
                               quadmesh_ptr->coord_sys,
                               labels,
-                              coordset["values"]);
+                              coords_out["values"]);
 
-    detail::set_units_or_labels(quadmesh_ptr->units, ndims, labels, coordset, "units");
-    detail::set_units_or_labels(quadmesh_ptr->labels, ndims, labels, coordset, "labels");
+    detail::set_units_or_labels(quadmesh_ptr->units, ndims, labels, coords_out, "units");
+    detail::set_units_or_labels(quadmesh_ptr->labels, ndims, labels, coords_out, "labels");
 }
 
 //-----------------------------------------------------------------------------
