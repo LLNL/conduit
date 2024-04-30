@@ -387,6 +387,57 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
 
 //-----------------------------------------------------------------------------
 void
+vector_field_to_scalars_braid(Node &n_mesh, const std::string &dim)
+{
+    Node &field_vel = n_mesh["fields"]["vel"];
+    
+    Node &field_vel_u = n_mesh["fields"]["vel_u"];
+    field_vel_u["topology"].set(field_vel["topology"]);
+    field_vel_u["association"].set(field_vel["association"]);
+    field_vel_u["values"].set(field_vel["values/u"]);
+    if (field_vel.has_child("units"))
+    {
+        field_vel_u["units"].set(field_vel["units"]);
+    }
+    if (field_vel.has_child("label"))
+    {
+        field_vel_u["label"].set(field_vel["label"]);
+    }
+    
+    Node &field_vel_v = n_mesh["fields"]["vel_v"];
+    field_vel_v["topology"].set(field_vel["topology"]);
+    field_vel_v["association"].set(field_vel["association"]);
+    field_vel_v["values"].set(field_vel["values/v"]);
+    if (field_vel.has_child("units"))
+    {
+        field_vel_v["units"].set(field_vel["units"]);
+    }
+    if (field_vel.has_child("label"))
+    {
+        field_vel_v["label"].set(field_vel["label"]);
+    }
+
+    if (dim == "3")
+    {
+        Node &field_vel_w = n_mesh["fields"]["vel_w"];
+        field_vel_w["topology"].set(field_vel["topology"]);
+        field_vel_w["association"].set(field_vel["association"]);
+        field_vel_w["values"].set(field_vel["values/w"]);
+        if (field_vel.has_child("units"))
+        {
+            field_vel_w["units"].set(field_vel["units"]);
+        }
+        if (field_vel.has_child("label"))
+        {
+            field_vel_w["label"].set(field_vel["label"]);
+        }
+    }
+
+    n_mesh["fields"].remove_child("vel");
+}
+
+//-----------------------------------------------------------------------------
+void
 add_multi_buffer_full_matset(Node &n_mesh,
                              const int num_elements,
                              const std::string &topo_name)

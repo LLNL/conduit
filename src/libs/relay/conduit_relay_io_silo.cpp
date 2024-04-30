@@ -1878,7 +1878,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     else if (opts_matset_style == "multi_buffer_full")
     {
         conduit::blueprint::mesh::matset::to_multi_buffer_full(intermediate_matset, matset_out);
-        
+
         // we only need to stash the matset for use in converters later if we need
         // a different flavor of matset
         matset_field_reconstruction["original_matset"].move(intermediate_matset);
@@ -4516,6 +4516,8 @@ void silo_write_matset(DBfile *dbfile,
     int ndims = 1;
     const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
     const int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
+    CONDUIT_ASSERT(num_elems == silo_matset_compact["matlist"].dtype().number_of_elements(),
+        "matset " << matset_name << " must have the same number of elements as its associated topology.");
     if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
     {
         ndims = n_mesh_info[topo_name]["ndims"].as_int();
