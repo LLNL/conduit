@@ -61,7 +61,6 @@ configure_file ("${CMAKE_CURRENT_SOURCE_DIR}/conduit_relay_exports.h.in"
 #
 set(conduit_relay_headers
     conduit_relay.hpp
-    conduit_relay_execution_policies.hpp
     conduit_relay_io.hpp
     conduit_relay_io_handle.hpp
     conduit_relay_io_handle_api.hpp
@@ -86,7 +85,6 @@ set(conduit_relay_c_headers
 #
 set(conduit_relay_sources
     conduit_relay.cpp
-    conduit_relay_execution_policies.cpp
     conduit_relay_io.cpp
     conduit_relay_io_handle.cpp
     conduit_relay_io_handle_sidre.cpp
