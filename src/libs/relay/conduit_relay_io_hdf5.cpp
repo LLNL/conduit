@@ -1783,7 +1783,7 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
 
             H5Fclose(hdf5_id);
 
-            H5Dclose(dataspace);
+            H5Sclose(dataspace);
             dataspace = H5Dget_space(hdf5_dset_id);
         }
 
@@ -1804,7 +1804,7 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                                 << hdf5_dset_id);
 
             //get new dataspace after extending
-            H5Dclose(dataspace);
+            H5Sclose(dataspace);
             dataspace = H5Dget_space(hdf5_dset_id);
         }
 
@@ -1836,8 +1836,8 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
                                  n.data_ptr());
         }
 
-        H5Dclose(nodespace);
-        H5Dclose(dataspace);
+        H5Sclose(nodespace);
+        H5Sclose(dataspace);
     }
 
     // check write result
@@ -2996,8 +2996,8 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                 dest.set(n_tmp);
             }
 
-            H5Dclose(nodespace);
-            H5Dclose(dataspace);
+            H5Sclose(nodespace);
+            H5Sclose(dataspace);
         }
 
         delete[] stride;
