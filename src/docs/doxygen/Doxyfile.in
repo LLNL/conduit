@@ -5,7 +5,10 @@
 PROJECT_NAME  = Conduit
 PROJECT_BRIEF = "Scientific Data Exchange Library for HPC Simulations"
 
-INPUT = @CMAKE_CURRENT_SOURCE_DIR@/../../libs
+INPUT = ../../libs
 
 GENERATE_XML = YES
 RECURSIVE    = YES
+EXTRACT_ALL  = YES
+HAVE_DOT     = YES
+DOT_PATH     = "C:\Program Files (x86)\Graphviz2.38\bin\dot.exe"
