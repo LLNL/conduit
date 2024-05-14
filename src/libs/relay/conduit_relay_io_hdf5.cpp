@@ -1837,8 +1837,8 @@ write_conduit_leaf_to_hdf5_dataset(const Node &node,
         }
 
         H5Sclose(nodespace);
-        H5Sclose(dataspace);
     }
+    H5Sclose(dataspace);
 
     // check write result
     CONDUIT_CHECK_HDF5_ERROR_WITH_FILE_AND_REF_PATH(h5_status,
