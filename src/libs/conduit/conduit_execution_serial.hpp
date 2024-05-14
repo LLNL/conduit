@@ -37,6 +37,7 @@ namespace seq
 //---------------------------------------------------------------------------
 struct for_policy
 {
+    // TODO understand why these have implementations instead of being template tags
     template <typename Func>
     inline void operator()(index_t begin, index_t end, Func &&func)
     {
@@ -47,15 +48,11 @@ struct for_policy
 
 //---------------------------------------------------------------------------
 struct reduce_policy
-{
-    // TODO
-};
+{};
 
 //---------------------------------------------------------------------------
 struct atomic_policy
-{
-    // TODO
-};
+{};
 
 //---------------------------------------------------------------------------
 struct sort_policy

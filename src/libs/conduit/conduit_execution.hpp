@@ -52,8 +52,6 @@ struct SerialExec
 #endif
     using atomic_policy = RAJA::seq_atomic;
     static std::string memory_space;
-    
-    using sort_policy = seq::sort_policy; // ?
 };
 
 //---------------------------------------------------------------------------
@@ -63,7 +61,6 @@ struct CudaExec
     using for_policy    = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
     using reduce_policy = RAJA::cuda_reduce;
     using atomic_policy = RAJA::cuda_atomic;
-    using sort_policy = seq::sort_policy; // ?
     static std::string memory_space;
 };
 #endif
@@ -75,7 +72,6 @@ struct HipExec
     using for_policy    = RAJA::hip_exec<HIP_BLOCK_SIZE>;
     using reduce_policy = RAJA::hip_reduce;
     using atomic_policy = RAJA::hip_atomic;
-    using sort_policy = omp::sort_policy; // ?
     static std::string memory_space;
 };
 #endif
@@ -97,8 +93,6 @@ struct OpenMPExec
 #endif
     using atomic_policy = RAJA::omp_atomic;
     static std::string memory_space;
-
-    using sort_policy = omp::sort_policy; // ?
 };
 #endif
 
@@ -107,48 +101,18 @@ struct OpenMPExec
 //---------------------------------------------------------------------------//
 // RAJA_OFF policies for when raja is OFF
 //---------------------------------------------------------------------------//
+struct EmptyPolicy
+{};
+//---------------------------------------------------------------------------
+
 //---------------------------------------------------------------------------
 struct SerialExec
 {
-    using for_policy = seq::for_policy;
-    using reduce_policy = ExecPolicyTagA;
-    using atomic_policy = ExecPolicyTagA;
-    using sort_policy = seq::sort_policy;
+    using for_policy = EmptyPolicy;
+    using reduce_policy = EmptyPolicy;
+    using atomic_policy = EmptyPolicy;
+    static std::string memory_space;
 };
-
-//---------------------------------------------------------------------------
-#if defined(CONDUIT_USE_CUDA) // TODO who is this
-struct CudaExec
-{
-    using for_policy = seq::for_policy;
-    using reduce_policy = ExecPolicyTagA;
-    using atomic_policy = ExecPolicyTagA;
-    using sort_policy = seq::sort_policy;
-};
-#endif
-
-#if defined(CONDUIT_USE_HIP)
-//---------------------------------------------------------------------------
-struct HipExec
-{
-    using for_policy = omp::for_policy;
-    using reduce_policy = ExecPolicyTagA;
-    using atomic_policy = ExecPolicyTagA;
-    using sort_policy = omp::sort_policy;
-};
-#endif
-
-#if defined(CONDUIT_USE_OPENMP)
-//---------------------------------------------------------------------------
-struct OpenMPExec
-{
-    using for_policy = omp::for_policy;
-    using reduce_policy = ExecPolicyTagA;
-    using atomic_policy = ExecPolicyTagA;
-    using sort_policy = omp::sort_policy;
-};
-#endif
-
 
 #endif
 
