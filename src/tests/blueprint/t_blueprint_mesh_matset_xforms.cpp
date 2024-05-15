@@ -475,3 +475,42 @@ TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_matset_full_to_sparse_by_el
         EXPECT_FALSE(converted_field.diff(sbe_field_baseline, info, CONDUIT_EPSILON, true));
     }
 }
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_matset_xforms, mesh_util_to_silo_misc)
+{
+    Node mesh;
+    blueprint::mesh::examples::misc("specsets", 4, 4, 1, mesh);
+    const Node &matset = mesh["matsets/mesh"];
+    const Node &specset = mesh["specsets/mesh"];
+
+    Node silo_rep1, silo_rep2, silo_rep_matset, info;
+
+    const std::string yaml_text = 
+        "specnames: \n"
+        "  - \"spec1\"\n"
+        "  - \"spec2\"\n"
+        "  - \"spec1\"\n"
+        "  - \"spec2\"\n"
+        "nmat: 2\n"
+        "nmatspec: [2, 2]\n"
+        "speclist: [3, -1, 9, 15, -3, 21, 27, -5, 33]\n"
+        "nspecies_mf: 36\n"
+        "species_mf: [0.0, 1.0, 0.0, 1.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.0, 1.0, 0.0, 0.0, 1.0, 0.0, 1.0, 0.5, 0.5, 0.5, 0.5, 1.0, 0.0, 1.0, 0.0]\n"
+        "mix_spec: [5, 7, 17, 19, 29, 31]\n"
+        "mixlen: 6";
+    Node baseline;
+    baseline.parse(yaml_text, "yaml");
+
+
+    // first test transforming specset to silo rep with a regular matset
+    blueprint::mesh::specset::to_silo(specset, matset, silo_rep1);
+    std::cout << silo_rep1.to_yaml() << std::endl;
+    EXPECT_FALSE(silo_rep1.diff(baseline, info, CONDUIT_EPSILON, true));
+
+    // next we test transforming specset to silo rep with a silo rep matset
+    blueprint::mesh::matset::to_silo(matset, silo_rep_matset);
+    blueprint::mesh::specset::to_silo(specset, silo_rep_matset, silo_rep2);
+    std::cout << silo_rep2.to_yaml() << std::endl;
+    EXPECT_FALSE(silo_rep2.diff(baseline, info, CONDUIT_EPSILON, true));
+}

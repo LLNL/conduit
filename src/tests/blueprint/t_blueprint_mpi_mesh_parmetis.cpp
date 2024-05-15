@@ -334,7 +334,7 @@ TEST(blueprint_mpi_parmetis, braid)
             auto sync_edges =
                 [&prev_rank_shared, &next_rank_shared](float64_array values)
                 {
-                    for (int ibdr = 0; ibdr < prev_rank_shared.size(); ibdr++)
+                    for (size_t ibdr = 0; ibdr < prev_rank_shared.size(); ibdr++)
                     {
                         index_t left_edge = prev_rank_shared[ibdr];
                         index_t right_edge = next_rank_shared[ibdr];
@@ -450,7 +450,7 @@ TEST(blueprint_mpi_parmetis, braid)
             const Node& groups = dom["adjsets/elem_aset/groups"];
             for (const Node& group : groups.children())
             {
-                int64 nbr = group["neighbors"].as_int64();
+                //int64 nbr = group["neighbors"].as_int64();
                 int64_accessor grp_vals = group["values"].as_int64_accessor();
                 for (index_t iv = 0; iv < grp_vals.number_of_elements(); iv++)
                 {
@@ -548,8 +548,6 @@ TEST(blueprint_mpi_parmetis, uniform_adjset)
 
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
-
-    const int npts = 10;
 
     // test with a 2d poly example
     Node mesh, side_mesh, info;

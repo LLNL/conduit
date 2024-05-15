@@ -258,6 +258,131 @@ mpi_dtype_to_conduit_dtype_id(MPI_Datatype dt)
 }
 
 //---------------------------------------------------------------------------//
+/**
+ @brief Checks whether the input tag is invalid.
+
+ @param tag The MPI tag to check for validity.
+ @return True if the tag is wildly incorrect (negative).
+
+ @note Right now, this function only flags tags that are negative. Tags are
+       supposed to be less than or equal to MPI_TAG_UB too. This function does
+       not check for that - it's done by using safe_tag when tags are used.
+ */
+bool invalid_tag(int tag)
+{
+    return tag < 0;
+}
+
+//---------------------------------------------------------------------------//
+/**
+ @brief MPI tags can be in the range [0,MPI_TAG_UB]. The values are
+        implementation-dependent. If the tag is not in that range, return
+        MPI_TAG_UB so it is safe to use with MPI functions.
+
+ @param tag The input tag.
+
+ @return A tag value that is safe to use with MPI.
+ */
+int safe_tag(int tag)
+{
+    return (tag < MPI_TAG_UB) ? ((tag >= 0) ? tag : MPI_TAG_UB) : MPI_TAG_UB;
+}
+
+//---------------------------------------------------------------------------//
+/**
+ @brief Some MPI installations install an error handler that causes functions
+        to abort if there was an error. That is fine but it makes it difficult
+        to find the cause of an error. This class installs a temporary error
+        handling function that we can use to trap errors, etc. It follows an
+        RAII pattern.
+ */
+class HandleMPICommError
+{
+public:
+    HandleMPICommError(MPI_Comm comm) : m_comm(comm), m_oldHandlerSet(false),
+        m_newHandlerSet(false)
+    {
+        initialize();
+    }
+
+    ~HandleMPICommError()
+    {
+        finalize();
+    }
+private:
+    /// Create and install the new error handler.
+    int initialize()
+    {
+        int mpi_error = MPI_Comm_get_errhandler(m_comm, &m_oldHandler);
+        CONDUIT_CHECK_MPI_ERROR(mpi_error);
+        m_oldHandlerSet = true;
+
+        // Create/install a new error handler.
+        mpi_error = MPI_Comm_create_errhandler(handler, &m_newHandler);
+        CONDUIT_CHECK_MPI_ERROR(mpi_error);
+        m_newHandlerSet = true;
+        mpi_error = MPI_Comm_set_errhandler(m_comm, m_newHandler);
+        CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+        return MPI_SUCCESS;
+    }
+
+    /// Restore the old error handler.
+    int finalize()
+    {
+        if(m_oldHandlerSet && m_newHandlerSet)
+        {
+            int mpi_error = MPI_Comm_set_errhandler(m_comm, m_oldHandler);
+            CONDUIT_CHECK_MPI_ERROR(mpi_error);
+
+            mpi_error = MPI_Errhandler_free(&m_newHandler);
+            CONDUIT_CHECK_MPI_ERROR(mpi_error);
+        }
+
+        return MPI_SUCCESS;
+    }
+
+    /// MPI calls this function to handle errors.
+    static void handler(MPI_Comm *comm,
+                        int      *errcode,
+                        ...)
+    {
+#if 0
+        // Variable arguments are MPI implementation-dependent.
+        // Be sure to include <cstdarg>
+        va_list argp;
+        va_start(argp, errcode);
+        // Get the next arg as an int pointer.
+        int *arg2 = va_arg(argp, int*);
+        va_end(argp);
+#endif
+
+        std::cout << "handler: comm=" << *comm << ", errcode=" << *errcode << std::endl;
+
+#if 0
+        // We could try emitting a Conduit error.
+        (void)checkError(*errcode);
+#endif
+#if 0
+        // We could tell MPI to ignore the error and continue.
+        *errcode = MPI_SUCCESS;
+#endif
+    }
+
+    static int checkError(int errcode)
+    {
+        CONDUIT_CHECK_MPI_ERROR(errcode);
+        return MPI_SUCCESS;
+    }
+
+    MPI_Comm       m_comm;
+    bool           m_oldHandlerSet;
+    bool           m_newHandlerSet;
+    MPI_Errhandler m_oldHandler;
+    MPI_Errhandler m_newHandler;
+};
+
+//---------------------------------------------------------------------------//
 int 
 send_using_schema(const Node &node, int dest, int tag, MPI_Comm comm)
 {     
@@ -834,6 +959,10 @@ isend(const Node &node,
       MPI_Comm mpi_comm,
       Request *request) 
 {
+    if(invalid_tag(tag))
+    {
+       CONDUIT_ERROR("isend given invalid tag (" << tag << ").");
+    }
 
     const void *data_ptr  = node.contiguous_data_ptr();
     index_t     data_size = node.total_bytes_compact();
@@ -863,7 +992,7 @@ isend(const Node &node,
                                static_cast<int>(data_size),
                                MPI_BYTE, 
                                dest, 
-                               tag,
+                               safe_tag(tag),
                                mpi_comm,
                                &(request->m_request));
                                
@@ -879,6 +1008,11 @@ irecv(Node &node,
       MPI_Comm mpi_comm,
       Request *request) 
 {
+    if(invalid_tag(tag))
+    {
+       CONDUIT_ERROR("irecv given invalid tag (" << tag << ").");
+    }
+
     // if rcv is compact, we can write directly into recv
     // if it's not compact, we need a recv_buffer
 
@@ -911,7 +1045,7 @@ irecv(Node &node,
                                static_cast<int>(data_size),
                                MPI_BYTE,
                                src,
-                               tag,
+                               safe_tag(tag),
                                mpi_comm,
                                &(request->m_request));
 
@@ -1709,6 +1843,12 @@ communicate_using_schema::set_logging_root(const std::string &filename)
 void
 communicate_using_schema::add_isend(const Node &node, int dest, int tag)
 {
+    if(invalid_tag(tag))
+    {
+       CONDUIT_ERROR("add_isend given invalid tag (" << tag << ").");
+    }
+    // Note: any tags larger than MPI_TAG_UB will be handled in execute.
+
     // Append the work to the operations.
     operation work;
     work.op = OP_SEND;
@@ -1725,6 +1865,12 @@ communicate_using_schema::add_isend(const Node &node, int dest, int tag)
 void
 communicate_using_schema::add_irecv(Node &node, int src, int tag)
 {
+    if(invalid_tag(tag))
+    {
+       CONDUIT_ERROR("add_irecv given invalid tag (" << tag << ").");
+    }
+    // Note: any tags larger than MPI_TAG_UB will be handled in execute.
+
     // Append the work to the operations.
     operation work;
     work.op = OP_RECV;
@@ -1744,6 +1890,9 @@ communicate_using_schema::execute()
     int mpi_error = 0;
     std::vector<MPI_Request> requests(operations.size());
     std::vector<MPI_Status>  statuses(operations.size());
+
+    // Uncomment this to install an MPI_Comm error handler.
+    // HandleMPICommError errHandler(comm);
 
     int rank, size;
     MPI_Comm_rank(comm, &rank);
@@ -1804,7 +1953,7 @@ communicate_using_schema::execute()
                     << msg_data_size << ", "
                     << "MPI_BYTE, "
                     << operations[i].rank << ", "
-                    << operations[i].tag << ", "
+                    << safe_tag(operations[i].tag) << ", "
                     << "comm, &requests[" << i << "]);" << std::endl;
             }
             
@@ -1819,7 +1968,7 @@ communicate_using_schema::execute()
                                   static_cast<int>(msg_data_size),
                                   MPI_BYTE,
                                   operations[i].rank,
-                                  operations[i].tag,
+                                  safe_tag(operations[i].tag),
                                   comm,
                                   &requests[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -1841,10 +1990,10 @@ communicate_using_schema::execute()
             {
                 log << "    MPI_Probe("
                     << operations[i].rank << ", "
-                    << operations[i].tag << ", "
+                    << safe_tag(operations[i].tag) << ", "
                     << "comm, &statuses[" << i << "]);" << std::endl;
             }
-            mpi_error = MPI_Probe(operations[i].rank, operations[i].tag, comm, &statuses[i]);    
+            mpi_error = MPI_Probe(operations[i].rank, safe_tag(operations[i].tag), comm, &statuses[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
             int buffer_size = 0;
@@ -1866,7 +2015,7 @@ communicate_using_schema::execute()
                     << buffer_size << ", "
                     << "MPI_BYTE, "
                     << operations[i].rank << ", "
-                    << operations[i].tag << ", "
+                    << safe_tag(operations[i].tag) << ", "
                     << "comm, &requests[" << i << "]);" << std::endl;
             }
 
@@ -1875,7 +2024,7 @@ communicate_using_schema::execute()
                                   buffer_size,
                                   MPI_BYTE,
                                   operations[i].rank,
-                                  operations[i].tag,
+                                  safe_tag(operations[i].tag),
                                   comm,
                                   &requests[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
