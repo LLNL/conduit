@@ -33,6 +33,19 @@ namespace conduit
 namespace execution
 {
 
+enum policy_id { Serial, Cuda, Hip, OpenMP };
+
+//---------------------------------------------------------------------------//
+// Runtime Policy Object
+//---------------------------------------------------------------------------//
+class ExecPolicy
+{
+public:
+    ExecPolicy(policy_id _id): id(_id)
+    {}
+    policy_id id;
+};
+
 #if defined(CONDUIT_USE_RAJA)
 //---------------------------------------------------------------------------//
 // RAJA_ON policies for when raja is on
@@ -53,6 +66,8 @@ struct SerialExec
     using atomic_policy = RAJA::seq_atomic;
     static std::string memory_space;
 };
+
+// cuda, hip, openMP, we might alias one of these to be device (cuda or hip)
 
 //---------------------------------------------------------------------------
 #if defined(CONDUIT_USE_CUDA) // TODO who is this
@@ -116,10 +131,40 @@ struct SerialExec
 
 #endif
 
+//---------------------------------------------------------------------------//
+// invoke functor with concrete template tag
+//---------------------------------------------------------------------------//
+template <typename ExecPolicyTag, typename Function>
+inline void invoke(ExecPolicyTag &exec, Function&& func) noexcept
+{
+    func(exec);
+}
 
+//---------------------------------------------------------------------------//
+// runtime to concrete template tag dispatch of a functor
+//---------------------------------------------------------------------------//
+template <typename Function>
+void dispatch(ExecPolicy policy, Function&& func)
+{
+    SerialExec se;
+    CudaExec ce;
+    HipExec he;
+    OpenMPExec ompe;
 
+    switch(policy.policy_id)
+    {
+        case Serial:
+            return invoke(se, func);
+        case Cuda:
+            return invoke(ce, func);
+        case Hip:
+            return invoke(he, func);
+        case OpenMP:
+            return invoke(ompe, func);
+    }
+}
 
-// cuda, hip, openMP, we might alias one of these to be device (cuda or hip)
+// OLD BRAD STUFF below
 
 //---------------------------------------------------------------------------
 template <typename ExecutionPolicy, typename Func>
