@@ -1901,6 +1901,9 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         {".", "box3d",                  ".silo", "MMESH"},
         {".", "diamond",                ".silo", ""     }, // test default case
         {".", "diamond",                ".silo", "MMESH"},
+        // TODO check diamond filled boundary plot in visit
+        // once https://github.com/visit-dav/visit/issues/19522
+        // is resolved.
         {".", "testDisk2D_a",           ".silo", ""     }, // test default case
         {".", "testDisk2D_a",           ".silo", "MMESH"},
         {".", "donordiv.s2_materials2", ".silo", ""     }, // test default case
