@@ -4085,58 +4085,51 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
     if (topo_shape == "polyhedral")
     {
         const Node &n_subelements = n_topo["subelements"];
-        const int num_elems = n_elements["sizes"].dtype().number_of_elements();
+        
+        Node n_conn_compact, n_sizes_compact, n_subconn_compact;
+        detail::conditional_compact(n_elements["connectivity"], n_conn_compact);
+        detail::conditional_compact(n_elements["sizes"], n_sizes_compact);
+        detail::conditional_compact(n_subelements["connectivity"], n_subconn_compact);
+        
+        const int num_elems = n_sizes_compact.dtype().number_of_elements();
 
         const std::string phzlist_name = 
             detail::sanitize_silo_varname(write_overlink ? "PHzonelist" : topo_name + "_connectivity");
         n_mesh_info[topo_name]["phzonelist_name"] = phzlist_name;
 
         const std::string subelem_topo_shape = n_subelements["shape"].as_string();
-
+        
         int num_subelems;
-
-        std::vector<int> shapecnt;
 
         int *nodecnts;
         std::vector<int> nodecnts_vec; // only needed for quad and tri case
-        std::vector<int> facecnts;
-        std::vector<int> facelist;
+        Node n_subelem_sizes_compact; // only needed for polygonal case
 
-        auto set_up_single_shape_type = [&](index_t num_pts)
+        auto set_up_single_shape_type = [&](const index_t num_pts)
         {
-            const int num_elems = n_subelements["connectivity"].dtype().number_of_elements() / num_pts;
+            num_subelems = n_subconn_compact.dtype().number_of_elements() / num_pts;
 
-            for (int i = 0; i < num_elems; i ++)
+            for (int i = 0; i < num_subelems; i ++)
             {
                 nodecnts_vec.push_back(num_pts);
             }
-
-            shapecnt.push_back(num_elems);
-
-            return num_elems;
+            nodecnts = nodecnts_vec.data();
         };
 
         if (subelem_topo_shape == "quad")
         {
-            num_subelems = set_up_single_shape_type(4);
-            nodecnts = nodecnts_vec.data();
+            set_up_single_shape_type(4);
         }
         else if (subelem_topo_shape == "tri")
         {
-            num_subelems = set_up_single_shape_type(3);
-            nodecnts = nodecnts_vec.data();
+            set_up_single_shape_type(3);
         }
         else if (subelem_topo_shape == "polygonal")
         {
-            num_subelems = n_elements["sizes"].dtype().number_of_elements();
-            int_accessor sizes = n_elements["sizes"].value();
+            num_subelems = n_sizes_compact.dtype().number_of_elements();
 
-            nodecnts = n_subelements["sizes"].value();
-            
-            for (int i = 0; i < num_subelems; i ++)
-            {
-                shapecnt.push_back(1);
-            }
+            detail::conditional_compact(n_subelements["sizes"], n_subelem_sizes_compact);
+            nodecnts = n_subelem_sizes_compact.value();
         }
         else
         {
@@ -4146,28 +4139,25 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
 
         // TODO can I have mixed subelements and mixed polyhedral elements?
 
-        Node n_subconn_compact;
-        detail::conditional_compact(n_subelements["connectivity"], n_subconn_compact);
-
+        const int conn_len = n_conn_compact.dtype().number_of_elements();
         const int subconn_len = n_subconn_compact.dtype().number_of_elements();
-        int *subconn_ptr = n_subconn_compact.value();
 
         silo_error = DBPutPHZonelist(
-                 /*[x]*/ dbfile,               // silo file
-                 /*[x]*/ phzlist_name.c_str(), // silo obj name
-                 /*[x]*/ num_subelems,         // number of faces
-                 /*[x]*/ nodecnts,             // subelement sizes
-                 /*[x]*/ subconn_len,          // len of subelement connectivity array
-                 /*[x]*/ subconn_ptr,          // subelement connectivity array
-                 /*[x]*/ nullptr,              //
-                 /*[x]*/ num_elems,            //
-                 /*[ ]*/ facecnts.data(),      //
-                 /*[ ]*/ lfacelist,            //
-                 /*[ ]*/ facelist.data(),      //
-                 /*[x]*/ 0,                    // origin
-                 /*[x]*/ 0,                    // # ghosts low
-                 /*[x]*/ 0,                    // # ghosts high
-                 /*[x]*/ nullptr);             // optlist
+                         dbfile,                    // silo file
+                         phzlist_name.c_str(),      // silo obj name
+                         num_subelems,              // number of faces
+                         nodecnts,                  // subelement sizes
+                         subconn_len,               // len of subelement connectivity array
+                         n_subconn_compact.value(), // subelement connectivity array
+                         nullptr,                   //
+                         num_elems,                 //
+                         n_sizes_compact.value(),   //
+                         conn_len,                  // length of facelist
+                         n_conn_compact.value(),    // facelist (element connectivity array)
+                         0,                         // origin
+                         0,                         // # ghosts low
+                         0,                         // # ghosts high
+                         nullptr);                  // optlist
     }
     else
     {
@@ -4210,66 +4200,69 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         int total_num_elems;
 
         std::vector<int> shapetype;
-        std::vector<int> shapesize;
         std::vector<int> shapecnt;
+        int *shapesize;
+        std::vector<int> shapesize_vec; // used in the other cases
+        Node n_elem_sizes_compact; // only needed for polygonal case
 
         index_t num_shapes = 0;
 
-        auto set_up_single_shape_type = [&](index_t num_pts, int db_zonetype)
+        auto set_up_single_shape_type = [&](const index_t num_pts, const int db_zonetype)
         {
             num_shapes = 1;
 
-            const int num_elems = n_conn.dtype().number_of_elements() / num_pts;
+            total_num_elems = n_conn.dtype().number_of_elements() / num_pts;
 
             shapetype.push_back(db_zonetype);
-            shapesize.push_back(num_pts);
-            shapecnt.push_back(num_elems);
-
-            return num_elems;
+            shapesize_vec.push_back(num_pts);
+            shapesize = shapesize_vec.data();
+            shapecnt.push_back(total_num_elems);
         };
 
         if (topo_shape == "quad")
         {
-            total_num_elems = set_up_single_shape_type(4, DB_ZONETYPE_QUAD);
+            set_up_single_shape_type(4, DB_ZONETYPE_QUAD);
         }
         else if (topo_shape == "tri")
         {
             CONDUIT_ASSERT(! write_overlink, "Triangle topologies are not supported in Overlink, "
                            "use general Silo instead.");
-            total_num_elems = set_up_single_shape_type(3, DB_ZONETYPE_TRIANGLE);
+            set_up_single_shape_type(3, DB_ZONETYPE_TRIANGLE);
         }
         else if (topo_shape == "hex")
         {
-            total_num_elems = set_up_single_shape_type(8, DB_ZONETYPE_HEX);
+            set_up_single_shape_type(8, DB_ZONETYPE_HEX);
         }
         else if (topo_shape == "tet")
         {
             CONDUIT_ASSERT(! write_overlink, "Tetrahedral topologies are not supported in Overlink, "
                            "use general Silo instead.");
-            total_num_elems = set_up_single_shape_type(4, DB_ZONETYPE_TET);
+            set_up_single_shape_type(4, DB_ZONETYPE_TET);
         }
         else if( topo_shape == "wedge")
         {
             CONDUIT_ASSERT(! write_overlink, "Wedge topologies are not supported in Overlink, "
                            "use general Silo instead.");
-            total_num_elems = set_up_single_shape_type(6, DB_ZONETYPE_PRISM);
+            set_up_single_shape_type(6, DB_ZONETYPE_PRISM);
         }
         else if( topo_shape == "pyramid")
         {
             CONDUIT_ASSERT(! write_overlink, "Pyramid topologies are not supported in Overlink, "
                            "use general Silo instead.");
-            total_num_elems = set_up_single_shape_type(5, DB_ZONETYPE_PYRAMID);
+            set_up_single_shape_type(5, DB_ZONETYPE_PYRAMID);
         }
         else if (topo_shape == "line")
         {
             CONDUIT_ASSERT(! write_overlink, "Line topologies are not supported in Overlink, "
                            "use general Silo instead.");
-            total_num_elems = set_up_single_shape_type(2, DB_ZONETYPE_BEAM);
+            set_up_single_shape_type(2, DB_ZONETYPE_BEAM);
         }
         else if (topo_shape == "polygonal")
         {
-            const int num_elems = n_elements["sizes"].dtype().number_of_elements();
-            int_accessor sizes = n_elements["sizes"].value();
+            detail::conditional_compact(n_elements["sizes"], n_elem_sizes_compact);
+            shapesize = n_elem_sizes_compact.value();
+
+            const int num_elems = n_elem_sizes_compact.dtype().number_of_elements();            
             
             // worst case is that all elems are a different shape
             num_shapes = num_elems;
@@ -4277,7 +4270,6 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
             for (int i = 0; i < num_elems; i ++)
             {
                 shapetype.push_back(DB_ZONETYPE_POLYGON);
-                shapesize.push_back(sizes[i]);
                 shapecnt.push_back(1);
             }
             total_num_elems = num_elems;
@@ -4292,7 +4284,6 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         detail::conditional_compact(n_conn, n_conn_compact);
 
         const int conn_len = n_conn_compact.dtype().number_of_elements();
-        int *conn_ptr = n_conn_compact.value();
 
         n_mesh_info[topo_name]["num_elems"] = total_num_elems;
 
@@ -4303,20 +4294,20 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         const int ndims = n_mesh_info[topo_name]["ndims"].as_int();
 
         silo_error = DBPutZonelist2(
-                         dbfile,             // silo file
-                         zlist_name.c_str(), // silo obj name
-                         total_num_elems,    // number of elements
-                         ndims,              // spatial dims
-                         conn_ptr,           // connectivity array
-                         conn_len,           // len of connectivity array
-                         0,                  // origin
-                         0,                  // # ghosts low
-                         0,                  // # ghosts high
-                         shapetype.data(),   // list of shapes ids
-                         shapesize.data(),   // number of points per shape id
-                         shapecnt.data(),    // number of elements each shape id is used for
-                         num_shapes,         // number of shapes ids
-                         nullptr);           // optlist
+                         dbfile,                 // silo file
+                         zlist_name.c_str(),     // silo obj name
+                         total_num_elems,        // number of elements
+                         ndims,                  // spatial dims
+                         n_conn_compact.value(), // connectivity array
+                         conn_len,               // len of connectivity array
+                         0,                      // origin
+                         0,                      // # ghosts low
+                         0,                      // # ghosts high
+                         shapetype.data(),       // list of shapes ids
+                         shapesize,              // number of points per shape id
+                         shapecnt.data(),        // number of elements each shape id is used for
+                         num_shapes,             // number of shapes ids
+                         nullptr);               // optlist
     }
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " after saving ucd " + topo_shape + " topology");
@@ -4369,24 +4360,24 @@ void silo_write_quad_rect_mesh(DBfile *dbfile,
         base_index[1] = n_topo["elements/origin/j"].as_int();
         base_index[2] = n_topo["elements/origin/k"].as_int();
 
-        CONDUIT_CHECK_SILO_ERROR( DBAddOption(state_optlist,
-                                              DBOPT_BASEINDEX,
-                                              base_index),
-                                  "Error adding option");
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(state_optlist,
+                                             DBOPT_BASEINDEX,
+                                             base_index),
+                                 "Error adding option");
     }
 
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
 
-    int silo_error =
-        DBPutQuadmesh(dbfile,                      // silo file ptr
+    const int silo_error =
+        DBPutQuadmesh(dbfile,                // silo file ptr
                       safe_meshname.c_str(), // mesh name
-                      coordnames, // coord names
-                      coords_ptrs,                 // coords values
-                      pts_dims,                    // dims vals
-                      ndims,                       // number of dims
-                      coords_dtype,                // type of data array
-                      DB_COLLINEAR,   // DB_COLLINEAR or DB_NONCOLLINEAR
-                      state_optlist); // opt list
+                      coordnames,            // coord names
+                      coords_ptrs,           // coords values
+                      pts_dims,              // dims vals
+                      ndims,                 // number of dims
+                      coords_dtype,          // type of data array
+                      DB_COLLINEAR,          // DB_COLLINEAR or DB_NONCOLLINEAR
+                      state_optlist);        // opt list
 
     CONDUIT_CHECK_SILO_ERROR(silo_error, " DBPutQuadmesh");
 }
@@ -4411,7 +4402,7 @@ void silo_write_ucd_mesh(DBfile *dbfile,
     {
         const std::string phzlist_name = n_mesh_info[topo_name]["phzonelist_name"].as_string();
 
-        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist,
                                              DBOPT_PHZONELIST,
                                              const_cast<char *>(phzlist_name.c_str())),
                                  "Error adding phzonelist option for ucd mesh.");
