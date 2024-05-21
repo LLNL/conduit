@@ -11,6 +11,53 @@ Source distributions for Conduit releases are hosted on github:
 https://github.com/LLNL/conduit/releases
 
 .. note:: Conduit uses `BLT <https://github.com/LLNL/blt>`__ as its core CMake build system. We leverage BLT as a git submodule, however github does not include submodule contents in its automatically created source tarballs. To avoid confusion, starting with v0.3.0 we provide our own source tarballs that include BLT. 
+v0.9.2
+---------------------------------
+
+* Released 2024-05-21
+* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v0.9.2/conduit-v0.9.2-src-with-blt.tar.gz>`__
+
+Highlights
+++++++++++++++++++++++++++++++++++++
+
+(Extracted from Conduit's :download:`Changelog <../../../CHANGELOG.md>`)
+
+
+Added
+~~~~~
+
+
+* **Relay**
+
+ * Added support for Blueprint + Silo round trip for axis units and labels.
+ * Added support for reading Silo column major data as strided structured Blueprint data.
+ * Added support for reading a much wider set of Silo meshes, beyond multimeshes, multivars, etc.
+
+Changed
+~~~~~~~
+
+
+* **Conduit**
+
+ * Removed cmake use of distutils for python introspection.
+
+* **Blueprint**
+
+ * Fixed partitioner so it reverses vertex order as needed in polyhedral face definitions when extracting mesh elements.
+ * Changed ``conduit::blueprint::mesh::partition_map_back()`` function so it will attempt to reuse existing field memory when mapping fields back. This permits ``partition_map_back()`` to send data from a partitioned mesh into the original mesh where fields were provided from a host code using ``Node::set_external()``.
+ * Changed ``generate_sides`` to be robust to the case where no fields exist.
+
+* **Relay**
+
+ * Changed ``conduit::relay::mpi::communicate_using_schema`` to avoid an invalid tag MPI error message on some MPI distributions.
+
+Fixed
+~~~~~
+
+
+* **Relay**
+
+ * Fixed Relay I/O HDF5 DataSpace handle leak.
 
 v0.9.1
 ---------------------------------
