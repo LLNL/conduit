@@ -588,7 +588,7 @@ walk_uni_buffer_by_element_to_multi_buffer_by_element(
     // iterate through matset
     for (int elem_id = 0; elem_id < num_elems; elem_id ++)
     {
-        for (int many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
+        for (index_t many_id = 0; many_id < o2m_idx.size(elem_id); many_id ++)
         {
             index_t data_index = o2m_idx.index(elem_id, many_id);
 

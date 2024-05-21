@@ -649,17 +649,18 @@ void
 copy_point_coords(const int datatype,
                   void *coords[3],
                   int ndims,
-                  int *dims,
+                  const int *dims,
                   const int coord_sys,
+                  std::vector<const char *> &labels,
                   Node &node)
 {
     ndims = ndims < 3 ? ndims : 3;
-    std::vector<const char *> labels = get_coordset_axis_labels(coord_sys);
+    labels = get_coordset_axis_labels(coord_sys);
     CONDUIT_ASSERT(!(coord_sys == DB_CYLINDRICAL && ndims >= 3), 
         "Blueprint only supports 2D cylindrical coordinates");
     for (int i = 0; i < ndims; i ++)
     {
-        if (coords[i] != NULL)
+        if (coords[i])
         {
             if (datatype == DB_DOUBLE)
             {
@@ -677,6 +678,27 @@ copy_point_coords(const int datatype,
         else
         {
             return;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+set_units_or_labels(char *units_or_labels[3],
+                    const int ndims,
+                    const std::vector<const char *> &labels,
+                    Node &coordset,
+                    const std::string &units_or_labels_string)
+{
+    for (int i = 0; i < ndims; i ++)
+    {
+        if (units_or_labels[i])
+        {
+            coordset[units_or_labels_string][labels[i]] = units_or_labels[i];
+        }
+        else
+        {
+            break;
         }
     }
 }
@@ -1110,21 +1132,31 @@ read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
                       << mesh_name);
     }
 
+    Node &coordset = mesh_domain["coordsets"][multimesh_name];
+
     mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
-    mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
     mesh_domain["topologies"][multimesh_name]["type"] = "unstructured";
+    coordset["type"] = "explicit";
 
     // explicit coords
-    int dims[] = {ucdmesh_ptr->nnodes,
-                  ucdmesh_ptr->nnodes,
-                  ucdmesh_ptr->nnodes};
+    const int dims[] = {ucdmesh_ptr->nnodes,
+                        ucdmesh_ptr->nnodes,
+                        ucdmesh_ptr->nnodes};
+
+    const int ndims = ucdmesh_ptr->ndims;
+
+    std::vector<const char *> labels;
 
     detail::copy_point_coords(ucdmesh_ptr->datatype,
                               ucdmesh_ptr->coords,
-                              ucdmesh_ptr->ndims,
+                              ndims,
                               dims,
                               ucdmesh_ptr->coord_sys,
-                              mesh_domain["coordsets"][multimesh_name]["values"]);
+                              labels,
+                              coordset["values"]);
+
+    detail::set_units_or_labels(ucdmesh_ptr->units, ndims, labels, coordset, "units");
+    detail::set_units_or_labels(ucdmesh_ptr->labels, ndims, labels, coordset, "labels");
 }
 
 //-----------------------------------------------------------------------------
@@ -1256,12 +1288,18 @@ read_quadmesh_domain(DBquadmesh *quadmesh_ptr,
         }
     }
 
+    std::vector<const char *> labels;
+
     detail::copy_point_coords(quadmesh_ptr->datatype,
                               quadmesh_ptr->coords,
                               ndims,
                               real_dims,
                               quadmesh_ptr->coord_sys,
+                              labels,
                               coords_out["values"]);
+
+    detail::set_units_or_labels(quadmesh_ptr->units, ndims, labels, coords_out, "units");
+    detail::set_units_or_labels(quadmesh_ptr->labels, ndims, labels, coords_out, "labels");
 }
 
 //-----------------------------------------------------------------------------
@@ -1271,19 +1309,28 @@ read_pointmesh_domain(DBpointmesh *pointmesh_ptr,
                       const std::string &multimesh_name,
                       Node &mesh_domain)
 {
+    Node &coordset = mesh_domain["coordsets"][multimesh_name];
+
     mesh_domain["topologies"][multimesh_name]["type"] = "points";
     mesh_domain["topologies"][multimesh_name]["coordset"] = multimesh_name;
-    mesh_domain["coordsets"][multimesh_name]["type"] = "explicit";
-    int dims[] = {pointmesh_ptr->nels,
-                  pointmesh_ptr->nels,
-                  pointmesh_ptr->nels};
+    coordset["type"] = "explicit";
+    const int dims[] = {pointmesh_ptr->nels,
+                        pointmesh_ptr->nels,
+                        pointmesh_ptr->nels};
+
+    const int ndims = pointmesh_ptr->ndims;
+    std::vector<const char *> labels;
 
     detail::copy_point_coords(pointmesh_ptr->datatype,
                               pointmesh_ptr->coords,
-                              pointmesh_ptr->ndims,
+                              ndims,
                               dims,
                               DB_CARTESIAN,
-                              mesh_domain["coordsets"][multimesh_name]["values"]);
+                              labels,
+                              coordset["values"]);
+
+    detail::set_units_or_labels(pointmesh_ptr->units, ndims, labels, coordset, "units");
+    detail::set_units_or_labels(pointmesh_ptr->labels, ndims, labels, coordset, "labels");
 }
 
 //-----------------------------------------------------------------------------
@@ -1649,6 +1696,15 @@ read_variable_domain_helper(const T *var_ptr,
     if (! volume_dependent.empty())
     {
         intermediate_field["volume_dependent"] = volume_dependent;
+    }
+
+    if (var_ptr->units)
+    {
+        intermediate_field["units"] = var_ptr->units;
+    }
+    if (var_ptr->label)
+    {
+        intermediate_field["label"] = var_ptr->label;
     }
 
     // TODO investigate the dims, major_order, and stride for vars. Should match the mesh;
@@ -2067,7 +2123,7 @@ read_matset_domain(DBfile* matset_domain_file_to_use,
     else if (opts_matset_style == "multi_buffer_full")
     {
         conduit::blueprint::mesh::matset::to_multi_buffer_full(intermediate_matset, matset_out);
-        
+
         // we only need to stash the matset for use in converters later if we need
         // a different flavor of matset
         matset_field_reconstruction["original_matset"].move(intermediate_matset);
@@ -3647,6 +3703,31 @@ void silo_write_field(DBfile *dbfile,
                             comp_vals_ptrs,
                             comp_name_ptrs);
 
+    const std::string units = (n_var.has_child("units") ? n_var["units"].as_string() : "");
+    const std::string label = (n_var.has_child("label") ? n_var["label"].as_string() : "");
+
+    // create optlist
+    detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
+        DBMakeOptlist(1),
+        &DBFreeOptlist,
+        "Error freeing optlist."};
+    CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
+    
+    if (!units.empty())
+    {
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                             DBOPT_UNITS,
+                                             const_cast<char *>(units.c_str())),
+                                 "error adding units option");
+    }
+    if (!label.empty())
+    {
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                             DBOPT_LABEL,
+                                             const_cast<char *>(label.c_str())),
+                                 "error adding label option");
+    }
+
     const std::string safe_meshname = (write_overlink ? "MESH" : detail::sanitize_silo_varname(topo_name));
     int var_type = DB_INVALID_OBJECT;
     int silo_error = 0;
@@ -3680,7 +3761,7 @@ void silo_write_field(DBfile *dbfile,
                                       mixlen, // length of mixed data arrays
                                       silo_vals_type, // Datatype of the variable
                                       centering, // centering (nodal or zonal)
-                                      NULL); // optlist
+                                      optlist.getSiloObject()); // optlist
         }
         else
         {
@@ -3702,7 +3783,7 @@ void silo_write_field(DBfile *dbfile,
                                               mixlen, // length of mixed data arrays
                                               silo_vals_type, // Datatype of the variable
                                               centering, // centering (nodal or zonal)
-                                              NULL); // optlist
+                                              optlist.getSiloObject()); // optlist
                 }
             }
             else
@@ -3718,7 +3799,7 @@ void silo_write_field(DBfile *dbfile,
                                          mixlen, // length of mixed data arrays
                                          silo_vals_type, // Datatype of the variable
                                          centering, // centering (nodal or zonal)
-                                         NULL); // optlist
+                                         optlist.getSiloObject()); // optlist
             }
         }
     }
@@ -3774,7 +3855,7 @@ void silo_write_field(DBfile *dbfile,
                                        mixlen, // length of mixed data arrays
                                        silo_vals_type, // Datatype of the variable
                                        centering, // centering (nodal or zonal)
-                                       NULL); // optlist
+                                       optlist.getSiloObject()); // optlist
         }
         else
         {
@@ -3797,7 +3878,7 @@ void silo_write_field(DBfile *dbfile,
                                                mixlen, // length of mixed data arrays
                                                silo_vals_type, // Datatype of the variable
                                                centering, // centering (nodal or zonal)
-                                               NULL); // optlist
+                                               optlist.getSiloObject()); // optlist
                 }
             }
             else
@@ -3814,7 +3895,7 @@ void silo_write_field(DBfile *dbfile,
                                           mixlen, // length of mixed data arrays
                                           silo_vals_type, // Datatype of the variable
                                           centering, // centering (nodal or zonal)
-                                          NULL); // optlist
+                                          optlist.getSiloObject()); // optlist
             }
         }
     }
@@ -3835,7 +3916,7 @@ void silo_write_field(DBfile *dbfile,
                                    comp_vals_ptrs.data(), // data values
                                    num_pts, // Number of elements (points)
                                    silo_vals_type, // Datatype of the variable
-                                   NULL); // optlist
+                                   optlist.getSiloObject()); // optlist
     }
     else
     {
@@ -4458,7 +4539,7 @@ void silo_write_topo(const Node &mesh_domain,
     CONDUIT_ASSERT(mesh_domain.has_path("coordsets"), "mesh missing: coordsets");
 
     // get this topo's coordset name
-    std::string coordset_name = n_topo["coordset"].as_string();
+    const std::string coordset_name = n_topo["coordset"].as_string();
 
     n_mesh_info[topo_name]["coordset"].set(coordset_name);
 
@@ -4498,7 +4579,7 @@ void silo_write_topo(const Node &mesh_domain,
     }
 
     // get coordsys info
-    std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
+    const std::string coordsys = conduit::blueprint::mesh::utils::coordset::coordsys(n_coords);
     int silo_coordsys_type = detail::get_coordset_silo_type(coordsys);
     std::vector<const char *> silo_coordset_axis_labels = detail::get_coordset_axis_labels(silo_coordsys_type);
     // create optlist
@@ -4507,10 +4588,62 @@ void silo_write_topo(const Node &mesh_domain,
         &DBFreeOptlist,
         "Error freeing state optlist."};
     CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating optlist");
-    CONDUIT_CHECK_SILO_ERROR( DBAddOption(optlist.getSiloObject(),
-                                          DBOPT_COORDSYS,
-                                          &silo_coordsys_type),
+    CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                         DBOPT_COORDSYS,
+                                         &silo_coordsys_type),
                              "error adding coordsys option");
+
+    //
+    // handle units and labels, if they exist
+    //
+
+    std::vector<std::string> units;
+    std::vector<std::string> labels;
+    std::vector<const char *> units_str;
+    std::vector<const char *> labels_str;
+
+    if (n_coords.has_child("units"))
+    {
+        auto units_itr = n_coords["units"].children();
+        while (units_itr.has_next())
+        {
+            const Node &n_unit = units_itr.next();
+            units.emplace_back(n_unit.as_string());
+        }
+    }
+    if (n_coords.has_child("labels"))
+    {
+        auto labels_itr = n_coords["labels"].children();
+        while (labels_itr.has_next())
+        {
+            const Node &n_label = labels_itr.next();
+            labels.emplace_back(n_label.as_string());
+        }
+    }
+    for (const std::string &unit_name : units)
+    {
+        units_str.emplace_back(unit_name.c_str());
+    }
+    for (const std::string &label_name : labels)
+    {
+        labels_str.emplace_back(label_name.c_str());
+    }
+    for (int i = 0; i < static_cast<int>(units_str.size()); i ++)
+    {
+        const int dbopt = (i == 0 ? DBOPT_XUNITS : (i == 1 ? DBOPT_YUNITS : DBOPT_ZUNITS));
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                             dbopt,
+                                             static_cast<void *>(const_cast<char *>(units_str[i]))),
+                                 "error adding units option");
+    }
+    for (int i = 0; i < static_cast<int>(labels_str.size()); i ++)
+    {
+        const int dbopt = (i == 0 ? DBOPT_XLABEL : (i == 1 ? DBOPT_YLABEL : DBOPT_ZLABEL));
+        CONDUIT_CHECK_SILO_ERROR(DBAddOption(optlist.getSiloObject(),
+                                             dbopt,
+                                             static_cast<void *>(const_cast<char *>(labels_str[i]))),
+                                 "error adding labels option");
+    }
 
     int mesh_type = DB_INVALID_OBJECT;
 
@@ -4729,6 +4862,8 @@ void silo_write_matset(DBfile *dbfile,
     int ndims = 1;
     const std::string mesh_type = n_mesh_info[topo_name]["type"].as_string();
     const int num_elems = n_mesh_info[topo_name]["num_elems"].to_value();
+    CONDUIT_ASSERT(num_elems == silo_matset_compact["matlist"].dtype().number_of_elements(),
+        "matset " << matset_name << " must have the same number of elements as its associated topology.");
     if (mesh_type == "structured" || mesh_type == "rectilinear" || mesh_type == "uniform")
     {
         ndims = n_mesh_info[topo_name]["ndims"].as_int();
@@ -5316,7 +5451,7 @@ write_multimats(DBfile *dbfile,
                 }
 
                 detail::SiloObjectWrapperCheckError<DBoptlist, decltype(&DBFreeOptlist)> optlist{
-                    DBMakeOptlist(1),
+                    DBMakeOptlist(4),
                     &DBFreeOptlist,
                     "Error freeing optlist."};
                 CONDUIT_ASSERT(optlist.getSiloObject(), "Error creating options");
