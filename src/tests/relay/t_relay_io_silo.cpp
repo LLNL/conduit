@@ -1804,7 +1804,7 @@ TEST(conduit_relay_io_silo, read_simple_silo)
         {"curv3d",          ".silo", "yes"},
         {"curv3d_colmajor", ".silo", "no"},
      // {"globe",           ".silo", "yes"}, // TODO need to add support for mixed shape topos
-        {"arbpoly",         ".silo", "yes"},
+        {"arbpoly",         ".silo", "yes"}, // TODO understand why this looks different w/ blueprint in visit
     };
     for (int i = 0; i < file_info.size(); i ++) 
     {
