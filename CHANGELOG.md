@@ -4,7 +4,14 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [0.9.2] - Released 2024-05-21
+
+### Added
+
+#### Relay
+- Added support for Blueprint + Silo round trip for axis units and labels.
+- Added support for reading Silo column major data as strided structured Blueprint data.
+- Added support for reading a much wider set of Silo meshes, beyond multimeshes, multivars, etc.
 
 ### Changed
 
@@ -14,9 +21,15 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Blueprint
 - Fixed partitioner so it reverses vertex order as needed in polyhedral face definitions when extracting mesh elements.
 - Changed `conduit::blueprint::mesh::partition_map_back()` function so it will attempt to reuse existing field memory when mapping fields back. This permits `partition_map_back()` to send data from a partitioned mesh into the original mesh where fields were provided from a host code using `Node::set_external()`.
+- Changed `generate_sides` to be robust to the case where no fields exist. 
 
 #### Relay
 - Changed `conduit::relay::mpi::communicate_using_schema` to avoid an invalid tag MPI error message on some MPI distributions.
+
+### Fixed
+
+#### Relay
+- Fixed Relay I/O HDF5 DataSpace handle leak.
 
 ## [0.9.1] - Released 2024-02-09
 
