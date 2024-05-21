@@ -145,7 +145,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
         std::make_pair("hexs", "3"),
         std::make_pair("wedges", "3"),
         std::make_pair("pyramids", "3"),
-        std::make_pair("polyhedra", "3")
+        std::make_pair("polyhedra", "3"), // TODO understand why this is broken
     };
     for (int i = 0; i < mesh_types.size(); ++i)
     {
@@ -2000,6 +2000,8 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
 //-----------------------------------------------------------------------------
 TEST(conduit_relay_io_silo, bungus)
 {
+    // TODO steal this file and add to std silo tests
+    // TODO understand why blueprint renders so differently
     const std::string path = "/usr/workspace/justin/visit_builds/3.4RC-w-tpls-03_05_24/visit/build/testdata/silo_hdf5_test_data";
     const std::string basename = "arbpoly";
     const std::string fileext = ".silo";
