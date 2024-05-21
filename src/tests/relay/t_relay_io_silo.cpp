@@ -1798,11 +1798,13 @@ TEST(conduit_relay_io_silo, read_silo)
 TEST(conduit_relay_io_silo, read_simple_silo)
 {
     const std::vector<std::vector<std::string>> file_info = {
+        // name           extension  round trip
         {"curv2d",          ".silo", "no"},
         {"curv2d_colmajor", ".silo", "no"},
         {"curv3d",          ".silo", "yes"},
         {"curv3d_colmajor", ".silo", "no"},
-        // {"globe",           ".silo", "yes"}, // TODO need to add support for mixed shape topos
+     // {"globe",           ".silo", "yes"}, // TODO need to add support for mixed shape topos
+        {"arbpoly",         ".silo", "yes"},
     };
     for (int i = 0; i < file_info.size(); i ++) 
     {
@@ -1995,33 +1997,6 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
         write_opts["ovl_topo_name"] = "MMESH";
         io::silo::save_mesh(load_mesh, out_name + "_write_overlink", write_opts);
     }
-}
-
-//-----------------------------------------------------------------------------
-TEST(conduit_relay_io_silo, bungus)
-{
-    // TODO steal this file and add to std silo tests
-    // TODO understand why blueprint renders so differently
-    const std::string path = "/usr/workspace/justin/visit_builds/3.4RC-w-tpls-03_05_24/visit/build/testdata/silo_hdf5_test_data";
-    const std::string basename = "arbpoly";
-    const std::string fileext = ".silo";
-
-    Node load_mesh, info, write_opts;
-    std::string filepath = basename + fileext;
-    filepath = utils::join_file_path(path, filepath);
-    const std::string input_file = filepath;
-
-    io::silo::load_mesh(input_file, load_mesh);
-    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
-
-    const std::string out_name = "bungus_" + basename;
-
-    // TODO are these remove paths doing anything? Don't they need filenames?
-    remove_path_if_exists(out_name + "_write_blueprint");
-    io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
-
-    remove_path_if_exists(out_name + "_write_silo");
-    io::silo::save_mesh(load_mesh, out_name + "_write_silo");
 }
 
 // TODO add tests for...
