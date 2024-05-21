@@ -1997,6 +1997,31 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
     }
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_relay_io_silo, bungus)
+{
+    const std::string path = "/usr/workspace/justin/visit_builds/3.4RC-w-tpls-03_05_24/visit/build/testdata/silo_hdf5_test_data";
+    const std::string basename = "arbpoly";
+    const std::string fileext = ".silo";
+
+    Node load_mesh, info, write_opts;
+    std::string filepath = basename + fileext;
+    filepath = utils::join_file_path(path, filepath);
+    const std::string input_file = filepath;
+
+    io::silo::load_mesh(input_file, load_mesh);
+    EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
+
+    const std::string out_name = "bungus_" + basename;
+
+    // TODO are these remove paths doing anything? Don't they need filenames?
+    remove_path_if_exists(out_name + "_write_blueprint");
+    io::blueprint::save_mesh(load_mesh, out_name + "_write_blueprint", "hdf5");
+
+    remove_path_if_exists(out_name + "_write_silo");
+    io::silo::save_mesh(load_mesh, out_name + "_write_silo");
+}
+
 // TODO add tests for...
 //  - polytopal meshes once they are supported
 //  - units once they are supported
