@@ -788,6 +788,8 @@ add_shape_info(DBzonelist *zonelist_ptr,
         }
     }
 
+    // TODO look at poly3d.silo, it has an example of this strange case
+    // it is also a mixed topo
     if (zonelist_ptr->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
         CONDUIT_ERROR("Polyhedra are only understood in the context of polyhedral zone lists.");
