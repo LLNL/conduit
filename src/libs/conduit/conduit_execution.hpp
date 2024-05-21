@@ -146,20 +146,26 @@ inline void invoke(ExecPolicyTag &exec, Function&& func) noexcept
 template <typename Function>
 void dispatch(ExecPolicy policy, Function&& func)
 {
-    SerialExec se;
-    CudaExec ce;
-    HipExec he;
-    OpenMPExec ompe;
+    
+    // TODO ifdef these out
+    
+    // make these enums
 
     switch(policy.policy_id)
     {
         case Serial:
+            SerialExec se;
             return invoke(se, func);
+        case Device:
+            ??
         case Cuda:
+            CudaExec ce;
             return invoke(ce, func);
         case Hip:
+            HipExec he;
             return invoke(he, func);
         case OpenMP:
+            OpenMPExec ompe;
             return invoke(ompe, func);
     }
 }
