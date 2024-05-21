@@ -88,17 +88,17 @@ TEST(conduit_relay_io_silo, load_mesh_geometry)
     std::vector<std::string> filename_vec = {
         "box2d.silo",
         "box3d.silo",
-        // "diamond.silo", <--- TODO this one fails because polytopal is not yet supported
+        "diamond.silo",
         // TODO: rename these files to be more descriptive.
         // would also require modifying the paths stored within the files,
         // and re-symlinking
         "testDisk2D_a.silo",
-        // "donordiv.s2_materials2.silo", <--- TODO this one fails because polytopal is not yet supported
+        "donordiv.s2_materials2.silo",
         "donordiv.s2_materials3.silo"
     };
-    std::vector<int> dims_vec            = {2, 3, /*2,*/  2,    /*2,*/  2};
-    std::vector<int> coordset_length_vec = {4, 8, /*36,*/ 1994, /*16,*/ 961};
-    std::vector<int> topology_length_vec = {1, 1, /*33,*/ 1920, /*9,*/  900};
+    std::vector<int> dims_vec            = {2, 3, 2,  2,    2,  2};
+    std::vector<int> coordset_length_vec = {4, 8, 36, 1994, 16, 961};
+    std::vector<int> topology_length_vec = {1, 1, 33, 1920, 9,  900};
     for (int i = 0; i < filename_vec.size(); ++i)
     {
         Node mesh, info;
@@ -1899,14 +1899,15 @@ TEST(conduit_relay_io_silo, read_overlink_symlink_format)
         {".", "box2d",                  ".silo", "MMESH"},
         {".", "box3d",                  ".silo", ""     }, // test default case
         {".", "box3d",                  ".silo", "MMESH"},
-     // {".", "diamond",                ".silo", ""     }, // test default case
-     // {".", "diamond",                ".silo", "MMESH"},
-        // fails b/c polytopal not yet supported
+        {".", "diamond",                ".silo", ""     }, // test default case
+        {".", "diamond",                ".silo", "MMESH"},
+        // TODO check diamond filled boundary plot in visit
+        // once https://github.com/visit-dav/visit/issues/19522
+        // is resolved.
         {".", "testDisk2D_a",           ".silo", ""     }, // test default case
         {".", "testDisk2D_a",           ".silo", "MMESH"},
-     // {".", "donordiv.s2_materials2", ".silo", ""     }, // test default case
-     // {".", "donordiv.s2_materials2", ".silo", "MMESH"},
-        // fails b/c polytopal not yet supported
+        {".", "donordiv.s2_materials2", ".silo", ""     }, // test default case
+        {".", "donordiv.s2_materials2", ".silo", "MMESH"},
         {".", "donordiv.s2_materials3", ".silo", ""     }, // test default case
         {".", "donordiv.s2_materials3", ".silo", "MMESH"},
     };
@@ -1953,12 +1954,12 @@ TEST(conduit_relay_io_silo, read_overlink_directly)
         {"box2d",                  "OvlTop", ".silo", "MMESH"},
         {"box3d",                  "OvlTop", ".silo", ""     }, // test default case
         {"box3d",                  "OvlTop", ".silo", "MMESH"},
-     // {"diamond",                "OvlTop", ".silo", ""     }, // test default case
-     // {"diamond",                "OvlTop", ".silo", "MMESH"},
+        {"diamond",                "OvlTop", ".silo", ""     }, // test default case
+        {"diamond",                "OvlTop", ".silo", "MMESH"},
         {"testDisk2D_a",           "OvlTop", ".silo", ""     }, // test default case
         {"testDisk2D_a",           "OvlTop", ".silo", "MMESH"},
-     // {"donordiv.s2_materials2", "OvlTop", ".silo", ""     }, // test default case
-     // {"donordiv.s2_materials2", "OvlTop", ".silo", "MMESH"},
+        {"donordiv.s2_materials2", "OvlTop", ".silo", ""     }, // test default case
+        {"donordiv.s2_materials2", "OvlTop", ".silo", "MMESH"},
         {"donordiv.s2_materials3", "OvlTop", ".silo", ""     }, // test default case
         {"donordiv.s2_materials3", "OvlTop", ".silo", "MMESH"},
     };
