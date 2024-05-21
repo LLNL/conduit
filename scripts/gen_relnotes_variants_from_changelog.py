@@ -99,7 +99,7 @@ def sphinx_translate_ticks(l):
 
 def gen_github_entry(release_id,src):
     txt  = "# {0} Release Highlights\n\n".format(release_id)
-    txt += "(adapted from Conduit's Changelog)\n\n"
+    txt += "(adapted from Conduit's [Changelog](https://github.com/LLNL/conduit/blob/develop/CHANGELOG.md) )\n\n"
     txt += "Released {0}\n\n".format(release_date(release_id,src))
     sub_open = False
     active_rel = ""
