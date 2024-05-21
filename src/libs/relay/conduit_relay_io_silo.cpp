@@ -707,12 +707,45 @@ add_sizes_and_offsets(DBzonelist *zones,
 
 //-----------------------------------------------------------------------------
 void
+add_polyhedral_shape_info(DBphzonelist *phzonelist_ptr,
+                          Node &n_topo)
+{
+    Node &n_elements = n_topo["elements"];
+    Node &n_subelements = n_topo["subelements"];
+
+    auto compute_offsets = [](const Node &sizes, Node &offsets)
+    {
+        int_accessor sizes_accessor = sizes.value();
+        std::vector<int> offsets_vec;
+        int running_sum = 0;
+        for (int i = 0; i < sizes.dtype().number_of_elements(); i ++)
+        {
+            offsets_vec.push_back(running_sum);
+            running_sum += sizes_accessor[i];
+        }
+        offsets.set(offsets_vec.data(), offsets_vec.size());
+    };
+    
+    n_elements["shape"] = "polyhedral";
+    n_elements["connectivity"].set(phzonelist_ptr->facelist, phzonelist_ptr->lfacelist);
+    n_elements["sizes"].set(phzonelist_ptr->facecnt, phzonelist_ptr->nzones);
+    compute_offsets(n_elements["sizes"], n_elements["offsets"]);
+
+    // silo only supports the arbitrary case - no triangle or quad sub elements, just polygons
+    n_subelements["shape"] = "polygonal";
+    n_subelements["connectivity"].set(phzonelist_ptr->nodelist, phzonelist_ptr->lnodelist);
+    n_subelements["sizes"].set(phzonelist_ptr->nodecnt, phzonelist_ptr->nfaces);
+    compute_offsets(n_subelements["sizes"], n_subelements["offsets"]);
+}
+
+//-----------------------------------------------------------------------------
+void
 add_shape_info(DBzonelist *zonelist_ptr,
                Node &n_elements)
 {
     // TODO handle min and max index case (check_using_whole_coordset case)
 
-    for (int i = 0; i < zonelist_ptr->nshapes; ++i)
+    for (int i = 0; i < zonelist_ptr->nshapes; i ++)
     {
         CONDUIT_ASSERT(zonelist_ptr->shapetype[0] == zonelist_ptr->shapetype[i],
                        "Expected a single shape type, got "
@@ -722,7 +755,7 @@ add_shape_info(DBzonelist *zonelist_ptr,
 
     // TODO you can have a list of different shapetypes, so querying
     // zonelist_ptr->shapetype[0] and guessing that the rest are the same
-    // is wrong.
+    // is wrong. Mixed topo is the answer I think.
 
     n_elements["shape"] = shapetype_to_string(zonelist_ptr->shapetype[0]);
     n_elements["connectivity"].set(zonelist_ptr->nodelist, zonelist_ptr->lnodelist);
@@ -755,13 +788,9 @@ add_shape_info(DBzonelist *zonelist_ptr,
         }
     }
 
-    // TODO polytopal support
     if (zonelist_ptr->shapetype[0] == DB_ZONETYPE_POLYHEDRON)
     {
-        CONDUIT_ERROR("Polyhedra not yet supported");
-        // n_elements["sizes"].set(zonelist_ptr->shapesize, zonelist_ptr->nzones);
-        // TODO double check this approach
-        add_sizes_and_offsets(zonelist_ptr, n_elements["subelements"]); 
+        CONDUIT_ERROR("Polyhedra are only understood in the context of polyhedral zone lists.");
     }
     if (zonelist_ptr->shapetype[0] == DB_ZONETYPE_POLYGON)
     {
@@ -1099,10 +1128,8 @@ read_ucdmesh_domain(DBucdmesh *ucdmesh_ptr,
     }
     else if (ucdmesh_ptr->phzones)
     {
-        // TODO implement support for phzones
-        CONDUIT_ERROR("Silo ucdmesh phzones not yet supported");
-        mesh_domain["topologies"][multimesh_name]["elements"]["shape"] =
-            detail::shapetype_to_string(DB_ZONETYPE_POLYHEDRON);
+        detail::add_polyhedral_shape_info(ucdmesh_ptr->phzones,
+                                          mesh_domain["topologies"][multimesh_name]);
     }
     else
     {
@@ -4093,6 +4120,8 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         
         const int num_elems = n_sizes_compact.dtype().number_of_elements();
 
+        n_mesh_info[topo_name]["num_elems"] = num_elems;
+
         const std::string phzlist_name = 
             detail::sanitize_silo_varname(write_overlink ? "PHzonelist" : topo_name + "_connectivity");
         n_mesh_info[topo_name]["phzonelist_name"] = phzlist_name;
@@ -4126,9 +4155,9 @@ void silo_write_ucd_zonelist(DBfile *dbfile,
         }
         else if (subelem_topo_shape == "polygonal")
         {
-            num_subelems = n_sizes_compact.dtype().number_of_elements();
-
             detail::conditional_compact(n_subelements["sizes"], n_subelem_sizes_compact);
+            
+            num_subelems = n_subelem_sizes_compact.dtype().number_of_elements();
             nodecnts = n_subelem_sizes_compact.value();
         }
         else

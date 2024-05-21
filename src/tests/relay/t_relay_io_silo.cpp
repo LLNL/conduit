@@ -145,7 +145,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
         std::make_pair("hexs", "3"),
         std::make_pair("wedges", "3"),
         std::make_pair("pyramids", "3"),
-        // std::make_pair("polyhedra", "3")
+        std::make_pair("polyhedra", "3")
     };
     for (int i = 0; i < mesh_types.size(); ++i)
     {
@@ -164,6 +164,7 @@ TEST(conduit_relay_io_silo, round_trip_basic)
 
         remove_path_if_exists(filename);
         io::silo::save_mesh(save_mesh, basename);
+        io::blueprint::save_mesh(save_mesh, "bungus");
         io::silo::load_mesh(filename, load_mesh);
         EXPECT_TRUE(blueprint::mesh::verify(load_mesh, info));
 
