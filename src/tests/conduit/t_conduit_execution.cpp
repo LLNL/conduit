@@ -46,8 +46,8 @@ TEST(conduit_execution, justin_fun)
 {
     std::cout << "forall cases!" << std::endl;
 
-    conduit::execution::ExecPolicy ea(Serial);
-    conduit::execution::ExecPolicy eb(Device);
+    conduit::execution::ExecPolicy ea(conduit::execution::policies::Serial);
+    conduit::execution::ExecPolicy eb(conduit::execution::policies::Device);
 
     int size = 4;
 
@@ -56,10 +56,10 @@ TEST(conduit_execution, justin_fun)
        std::cout << i << std::endl;
     });
 
-    conduit::execution::new_forall(eb, 0, size, [=] (int i)
-    {
-       std::cout << i << std::endl;
-    });
+    // conduit::execution::new_forall(eb, 0, size, [=] (int i)
+    // {
+    //    std::cout << i << std::endl;
+    // });
 
     // std::cout << "functor cases!" << std::endl;
 

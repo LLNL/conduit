@@ -33,7 +33,14 @@ namespace conduit
 namespace execution
 {
 
-enum policy_id { Serial, Device, Cuda, Hip, OpenMP };
+//---------------------------------------------------------------------------
+enum class policies { Serial, Device, Cuda, Hip, OpenMP };
+//---------------------------------------------------------------------------
+
+//---------------------------------------------------------------------------
+struct EmptyPolicy
+{};
+//---------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------//
 // Runtime Policy Object
@@ -41,8 +48,8 @@ enum policy_id { Serial, Device, Cuda, Hip, OpenMP };
 class ExecPolicy
 {
 public:
-    ExecPolicy(policy_id _id): id(_id) {}
-    policy_id id;
+    ExecPolicy(policies _id): id(_id) {}
+    policies id;
 };
 
 #if defined(CONDUIT_USE_RAJA)
@@ -63,6 +70,7 @@ struct SerialExec
     using reduce_policy = RAJA::seq_reduce;
 #endif
     using atomic_policy = RAJA::seq_atomic;
+    using sort_policy = EmptyPolicy;
     static std::string memory_space;
 };
 
@@ -75,6 +83,7 @@ struct CudaExec
     using for_policy    = RAJA::cuda_exec<CUDA_BLOCK_SIZE>;
     using reduce_policy = RAJA::cuda_reduce;
     using atomic_policy = RAJA::cuda_atomic;
+    using sort_policy = EmptyPolicy;
     static std::string memory_space;
 };
 #endif
@@ -86,6 +95,7 @@ struct HipExec
     using for_policy    = RAJA::hip_exec<HIP_BLOCK_SIZE>;
     using reduce_policy = RAJA::hip_reduce;
     using atomic_policy = RAJA::hip_atomic;
+    using sort_policy = EmptyPolicy;
     static std::string memory_space;
 };
 #endif
@@ -106,6 +116,7 @@ struct OpenMPExec
     using reduce_policy = RAJA::omp_reduce;
 #endif
     using atomic_policy = RAJA::omp_atomic;
+    using sort_policy = EmptyPolicy;
     static std::string memory_space;
 };
 #endif
@@ -115,16 +126,14 @@ struct OpenMPExec
 //---------------------------------------------------------------------------//
 // RAJA_OFF policies for when raja is OFF
 //---------------------------------------------------------------------------//
-struct EmptyPolicy
-{};
-//---------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------
 struct SerialExec
 {
-    using for_policy = EmptyPolicy;
+    using for_policy = seq::for_policy;
     using reduce_policy = EmptyPolicy;
     using atomic_policy = EmptyPolicy;
+    using sort_policy = seq::sort_policy;
     static std::string memory_space;
 };
 
@@ -145,9 +154,9 @@ inline void invoke(ExecPolicyTag &exec, Function&& func) noexcept
 template <typename Function>
 void dispatch(ExecPolicy policy, Function&& func)
 {
-    switch(policy.policy_id)
+    switch(policy.id)
     {
-        case Device: // TODO I have made device prefer cuda over hip if both are available
+        case policies::Device: // TODO I have made device prefer cuda over hip if both are available
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             CudaExec ce;
             return invoke(ce, func);
@@ -157,28 +166,28 @@ void dispatch(ExecPolicy policy, Function&& func)
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case Cuda:
+        case policies::Cuda:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             CudaExec ce;
             return invoke(ce, func);
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case Hip:
+        case policies::Hip:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_HIP)
             HipExec he;
             return invoke(he, func);
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case OpenMP:
+        case policies::OpenMP:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_OPENMP)
             OpenMPExec ompe;
             return invoke(ompe, func);
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case Serial:
+        case policies::Serial:
         default:
             SerialExec se;
             return invoke(se, func);
@@ -190,8 +199,8 @@ void dispatch(ExecPolicy policy, Function&& func)
 //---------------------------------------------------------------------------//
 template <typename ExecPolicy,typename Kernel>
 inline void new_forall_exec(const int& begin,
-                        const int& end,
-                        Kernel&& kernel) noexcept
+                            const int& end,
+                            Kernel&& kernel) noexcept
 {
 
     std::cout << typeid(ExecPolicy).name() << "  START" << std::endl;
@@ -208,8 +217,8 @@ inline void new_forall_exec(const int& begin,
 //---------------------------------------------------------------------------//
 template <typename ExecPolicy, typename Kernel>
 inline void new_forall(const int& begin,
-                   const int& end,
-                   Kernel&& kernel) noexcept
+                       const int& end,
+                       Kernel&& kernel) noexcept
 {
     new_forall_exec<ExecPolicy>(begin,end, std::forward<Kernel>(kernel));
 }
@@ -219,52 +228,46 @@ inline void new_forall(const int& begin,
 //---------------------------------------------------------------------------//
 template <typename Kernel>
 inline void new_forall(ExecPolicy &policy,
-                   const int& begin,
-                   const int& end,
-                   Kernel&& kernel) noexcept
+                       const int& begin,
+                       const int& end,
+                       Kernel&& kernel) noexcept
 {
-    switch(policy.policy_id)
+    switch(policy.id)
     {
-        case Device: // TODO I have made device prefer cuda over hip if both are available
+        case policies::Device: // TODO I have made device prefer cuda over hip if both are available
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
-            CudaExec ce;
-            new_forall<ce>(begin,end,std::forward<Kernel>(kernel));
+            new_forall<CudaExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #elif defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_HIP)
-            HipExec he;
-            new_forall<he>(begin,end,std::forward<Kernel>(kernel));
+            new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case Cuda:
+        case policies::Cuda:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
-            CudaExec ce;
-            new_forall<ce>(begin,end,std::forward<Kernel>(kernel));
+            new_forall<CudaExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case Hip:
+        case policies::Hip:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_HIP)
-            HipExec he;
-            new_forall<he>(begin,end,std::forward<Kernel>(kernel));
+            new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case OpenMP:
+        case policies::OpenMP:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_OPENMP)
-            HipExec ompe;
-            new_forall<ompe>(begin,end,std::forward<Kernel>(kernel));
+            new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
             CONDUIT_ERROR("bad choice");
 #endif
-        case Serial:
+        case policies::Serial:
         default:
-            SerialExec se;
-            new_forall<se>(begin,end,std::forward<Kernel>(kernel));
+            new_forall<SerialExec>(begin,end,std::forward<Kernel>(kernel));
             break;
     }
 }
