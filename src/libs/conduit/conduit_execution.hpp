@@ -137,6 +137,18 @@ struct SerialExec
     static std::string memory_space;
 };
 
+#if defined(CONDUIT_USE_OPENMP)
+//---------------------------------------------------------------------------
+struct OpenMPExec
+{
+    using for_policy = omp::for_policy;
+    using reduce_policy = EmptyPolicy;
+    using atomic_policy = EmptyPolicy;
+    using sort_policy = omp::sort_policy;
+    static std::string memory_space;
+};
+#endif
+
 #endif
 
 //---------------------------------------------------------------------------//
@@ -181,7 +193,7 @@ void dispatch(ExecPolicy policy, Function&& func)
             CONDUIT_ERROR("bad choice");
 #endif
         case policies::OpenMP:
-#if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_OPENMP)
+#if defined(CONDUIT_USE_OPENMP)
             OpenMPExec ompe;
             return invoke(ompe, func);
 #else

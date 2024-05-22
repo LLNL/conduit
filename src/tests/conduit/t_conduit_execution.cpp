@@ -46,41 +46,41 @@ TEST(conduit_execution, justin_fun)
 {
     std::cout << "forall cases!" << std::endl;
 
-    conduit::execution::ExecPolicy ea(conduit::execution::policies::Serial);
-    conduit::execution::ExecPolicy eb(conduit::execution::policies::Device);
+    conduit::execution::ExecPolicy SerialPolicy(conduit::execution::policies::Serial);
+    conduit::execution::ExecPolicy DevicePolicy(conduit::execution::policies::Device);
 
     int size = 4;
 
-    conduit::execution::new_forall(ea, 0, size, [=] (int i)
+    conduit::execution::new_forall(SerialPolicy, 0, size, [=] (int i)
     {
        std::cout << i << std::endl;
     });
 
-    // conduit::execution::new_forall(eb, 0, size, [=] (int i)
-    // {
-    //    std::cout << i << std::endl;
-    // });
+    conduit::execution::new_forall(DevicePolicy, 0, size, [=] (int i)
+    {
+       std::cout << i << std::endl;
+    });
 
     // std::cout << "functor cases!" << std::endl;
 
     // MyFunctor func;
     // func.size = size;
-    // conduit::execution::dispatch(ea,func);
+    // conduit::execution::dispatch(SerialPolicy,func);
     // std::cout << func.res << std::endl;
 
-    // conduit::execution::dispatch(eb,func);
+    // conduit::execution::dispatch(DevicePolicy,func);
     // std::cout << func.res << std::endl;
 
     // MySpecialFunctor sfunc;
     // sfunc.size = 4;
-    // conduit::execution::dispatch(ea,sfunc);
+    // conduit::execution::dispatch(SerialPolicy,sfunc);
     // std::cout << func.res << std::endl;
     
     // std::cout << "C++ 20" << std::endl;
 
     // int res =0;
     // /// c++ 20 allows us to double lambda instead of a functor
-    // conduit::execution::dispatch(ea, [&] <typename ComboPolicyTag>(ComboPolicyTag &exec)
+    // conduit::execution::dispatch(SerialPolicy, [&] <typename ComboPolicyTag>(ComboPolicyTag &exec)
     // {
     //      using thetag = typename ComboPolicyTag::tag_2;
     //      MySpecialClass<thetag> s(10);
