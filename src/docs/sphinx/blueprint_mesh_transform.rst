@@ -42,8 +42,8 @@ Flatten a mesh into a table
 - flatten()
 - generate_domain_ids()  a helper method?
 
-Mesh transforms
----------------
+Generate a derived topology
+---------------------------
 The blueprint library has several helper functions that each take a polyhedral or polygonal topology and produce a new topology based on it.  Each of these functions uses the TopologyMetadata helper class to map the "dimensional cascade" from one dimension to an adjacent dimensions.  For example, the TopologyMetadata for a 3D mesh tells which sides are associated with an element, which edges are associated with a side, and which vertices area associated with an edge.  For illustration purposes, here are two simple meshes, one polygonal (2D) and one polyhedral (3D).
 
   [include pentagon and hexahedron]
@@ -62,3 +62,25 @@ The blueprint library has several helper functions that each take a polyhedral o
 
 - generate_centroids() ... not sure?? beyond what the name of the function implies.  This function is ultimately called from the ___ which is used by the Tiler class to generate a tiled mesh pattern.
   
+Transform a coordset
+--------------------
+- Transform between explicit and rectilinear: to_explicit, to_rectilinear
+
+Transform a topology
+--------------------
+- Transform uniform -> rectilinear, structured, unstructured
+- Transform rectilinear -> structured, unstructured
+- Transform structured -> unstructured
+- Transform unstructured -> polytopal (polygonal)
+
+Transform a matset or a field
+-----------------------------
+- To multi-buffer-full
+- To sparse by element
+- To multi-buffer-by-material
+- To Silo (specset too)
+
+Transform adjset
+----------------
+Transform between pairwise and maxshare
+
