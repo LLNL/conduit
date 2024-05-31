@@ -620,20 +620,33 @@ void to_polygonal(const Node &n,
                                 const index_t out_x_size = out_x.number_of_elements();
                                 const index_t out_y_size = out_y.number_of_elements();
 
+				// Reserve vector capacity for added vertices
                                 std::vector<double> new_x;
                                 std::vector<double> new_y;
-                                new_x.reserve(out_x_size + added);
-                                new_y.reserve(out_y_size + added);
+                                if ((xbuffer.size()-1) % use_ratio == 0)
+                                {
+                                    new_x.reserve(out_x_size + added);
+                                }
+                                else
+                                {
+                                    new_x.reserve(out_x_size + 2 * added);
+                                }
+
+                                if ((ybuffer.size()-1) % use_ratio == 0)
+                                {
+                                    new_y.reserve(out_y_size + added);
+                                }
+                                else
+                                {
+                                    new_y.reserve(out_y_size + 2 * added);
+                                }
+
                                 const double* out_x_ptr = static_cast<const double*>(out_x.element_ptr(0));
                                 const double* out_y_ptr = static_cast<const double*>(out_y.element_ptr(0));
 
                                 new_x.insert(new_x.end(), out_x_ptr, out_x_ptr + out_x_size);
                                 new_y.insert(new_y.end(), out_y_ptr, out_y_ptr + out_y_size);
 
-                                if ((xbuffer.size()-1)%use_ratio)
-                                {
-                                    new_x.reserve(out_x_size + added*2);
-                                }
 
                                 bool flip = false;
                                 if (group.has_child("orientation"))
