@@ -19,6 +19,8 @@
 #include "conduit_utils.hpp"
 #include "conduit_fmt/conduit_fmt.h"
 
+#include "blueprint_mpi_test_helpers.hpp"
+
 #include <mpi.h>
 #include <iostream>
 #include <sstream>
@@ -32,7 +34,13 @@ using namespace conduit::utils;
 
 using namespace std;
 
-
+static void print(const conduit::Node &n)
+{
+   conduit::Node opt;
+   opt["num_children_threshold"] = 100000;
+   opt["num_elements_threshold"] = 100000;
+   std::cout << n.to_summary_string(opt) << std::endl;
+}
 
 //-----------------------------------------------------------------------------
 TEST(blueprint_mpi_parmetis, basic)
@@ -97,6 +105,160 @@ TEST(blueprint_mpi_parmetis, basic)
     // Node opts;
     // opts["file_style"] = "root_only";
     conduit::relay::mpi::io::blueprint::save_mesh(side_mesh,
+                                                  output_base,
+                                                  "hdf5",
+                                                   // opts,
+                                                   MPI_COMM_WORLD);
+    EXPECT_TRUE(true);
+
+}
+
+//-----------------------------------------------------------------------------
+TEST(blueprint_mpi_parmetis, polyhedra)
+{
+    int par_size, par_rank;
+
+    MPI_Comm_size(MPI_COMM_WORLD, &par_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
+
+
+    // test with a polyhedral example. Make them way unbalanced
+    index_t nlevels = par_rank == 0 ? 4 : 2;
+    index_t nz = 3;
+    Node mesh, side_mesh, info;
+
+    // create polyhedra
+    conduit::blueprint::mesh::examples::polytess(nlevels, nz, mesh.append());
+
+    // Figure out the translation on rank 0
+    float64_array xvals = mesh[0]["coordsets/coords/values/x"].value();
+    float64_array yvals = mesh[0]["coordsets/coords/values/y"].value();
+    float64_array zvals = mesh[0]["coordsets/coords/values/z"].value();
+    double translate[3] = {0., 0., 0.};
+    if(par_rank == 0)
+    {
+        // These indices are good at level 4
+        const int origin = 28;
+        const int newOrigin = 91;
+        translate[0] = xvals[newOrigin] - xvals[origin];
+        translate[1] = yvals[newOrigin] - yvals[origin];
+        translate[2] = zvals[newOrigin] - zvals[origin];
+    }
+    // Send the translation to domain 1.
+    MPI_Bcast(translate, 3, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+    // on the second mpi task, shift all the coords over,
+    // so domains just touch.
+    if(par_rank == 1)
+    {
+        for(index_t i=0;i<xvals.number_of_elements();i++)
+        {
+            xvals[i] += translate[0];
+            yvals[i] += translate[1];
+            zvals[i] += translate[2];
+        }
+    }
+
+    // NOTE: The domain_id and the adjacency sets are critical to generating
+    //       the right global vertex ids.
+
+    // Set the domain_id.
+    mesh[0]["state/domain_id"] = par_rank;
+
+    // Add adjsets.
+    const char *dom0_adjset = R"(
+topo_adjset:
+  association: vertex
+  topology: topo
+  groups:
+    group_0_1:
+      neighbors: 1
+      values: [107,235,363,106,234,362,91,219,347,90,218,346,89,217,345,88,216,344,87,215,343,100,228,356]
+)";
+    const char *dom1_adjset = R"(
+topo_adjset:
+  association: vertex
+  topology: topo
+  groups:
+    group_0_1:
+      neighbors: 0
+      values: [30,62,94,31,63,95,28,60,92,9,41,73,8,40,72,14,46,78,10,42,74,11,43,75]
+)";
+    mesh[0]["adjsets"].parse((par_rank == 0) ? dom0_adjset : dom1_adjset);
+
+    bool v = conduit::blueprint::mesh::verify(mesh, info);
+    if(!v)
+        info.print();
+    EXPECT_TRUE(v);
+
+    // Paint a field with parmetis result
+    Node part_opts;
+    part_opts["partitions"] = 2;
+    part_opts["adjset"] = "topo_adjset";
+    conduit::blueprint::mpi::mesh::generate_partition_field(mesh,
+                                                            part_opts,
+                                                            MPI_COMM_WORLD);
+
+#if 0
+    // Print the results so we can make the baselines.
+    in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+        std::cout << "Rank " << rank << std::endl;
+        print(mesh[0]["fields/parmetis_result"]);
+        print(mesh[0]["fields/global_vertex_ids"]);
+    });
+#endif
+
+    // Baselines
+    const char *dom0_parmetis_result = R"(
+association: "element"
+topology: "topo"
+values: [0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0]
+)";
+    const char *dom0_global_vertex_ids = R"(
+association: "vertex"
+topology: "topo"
+values: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32, 33, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 66, 67, 68, 69, 70, 71, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 83, 84, 85, 86, 87, 88, 89, 90, 91, 92, 93, 94, 95, 96, 97, 98, 99, 100, 101, 102, 103, 104, 105, 106, 107, 108, 109, 110, 111, 112, 113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127, 128, 129, 130, 131, 132, 133, 134, 135, 136, 137, 138, 139, 140, 141, 142, 143, 144, 145, 146, 147, 148, 149, 150, 151, 152, 153, 154, 155, 156, 157, 158, 159, 160, 161, 162, 163, 164, 165, 166, 167, 168, 169, 170, 171, 172, 173, 174, 175, 176, 177, 178, 179, 180, 181, 182, 183, 184, 185, 186, 187, 188, 189, 190, 191, 192, 193, 194, 195, 196, 197, 198, 199, 200, 201, 202, 203, 204, 205, 206, 207, 208, 209, 210, 211, 212, 213, 214, 215, 216, 217, 218, 219, 220, 221, 222, 223, 224, 225, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 246, 247, 248, 249, 250, 251, 252, 253, 254, 255, 256, 257, 258, 259, 260, 261, 262, 263, 264, 265, 266, 267, 268, 269, 270, 271, 272, 273, 274, 275, 276, 277, 278, 279, 280, 281, 282, 283, 284, 285, 286, 287, 288, 289, 290, 291, 292, 293, 294, 295, 296, 297, 298, 299, 300, 301, 302, 303, 304, 305, 306, 307, 308, 309, 310, 311, 312, 313, 314, 315, 316, 317, 318, 319, 320, 321, 322, 323, 324, 325, 326, 327, 328, 329, 330, 331, 332, 333, 334, 335, 336, 337, 338, 339, 340, 341, 342, 343, 344, 345, 346, 347, 348, 349, 350, 351, 352, 353, 354, 355, 356, 357, 358, 359, 360, 361, 362, 363, 364, 365, 366, 367, 368, 369, 370, 371, 372, 373, 374, 375, 376, 377, 378, 379, 380, 381, 382, 383]
+)";
+    const char *dom1_parmetis_result = R"(
+association: "element"
+topology: "topo"
+values: [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
+)";
+    const char *dom1_global_vertex_ids = R"(
+association: "vertex"
+topology: "topo"
+values: [384, 385, 386, 387, 388, 389, 390, 391, 89, 90, 87, 100, 392, 393, 88, 394, 395, 396, 397, 398, 399, 400, 401, 402, 403, 404, 405, 406, 91, 407, 107, 106, 408, 409, 410, 411, 412, 413, 414, 415, 217, 218, 215, 228, 416, 417, 216, 418, 419, 420, 421, 422, 423, 424, 425, 426, 427, 428, 429, 430, 219, 431, 235, 234, 432, 433, 434, 435, 436, 437, 438, 439, 345, 346, 343, 356, 440, 441, 344, 442, 443, 444, 445, 446, 447, 448, 449, 450, 451, 452, 453, 454, 347, 455, 363, 362]
+)";
+
+    // Compare fields.
+    conduit::Node baselines;
+    std::vector<std::string> fields{"fields/parmetis_result", "fields/global_vertex_ids"};
+    if(par_rank == 0)
+    {
+        baselines["fields/parmetis_result"].parse(dom0_parmetis_result);
+        baselines["fields/global_vertex_ids"].parse(dom0_global_vertex_ids);
+    }
+    else
+    {
+        baselines["fields/parmetis_result"].parse(dom1_parmetis_result);
+        baselines["fields/global_vertex_ids"].parse(dom1_global_vertex_ids);
+    }
+    for(const auto &field : fields)
+    {
+        bool different = mesh[0][field].diff(baselines[field], info);
+        in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+            if(different)
+            {
+                print(info);
+            }
+        });
+        EXPECT_FALSE(different);
+    }
+
+    // Node opts;
+    // opts["file_style"] = "root_only";
+    std::string output_base = "tout_bp_mpi_mesh_parametis_polyhedra_test";
+    conduit::relay::mpi::io::blueprint::save_mesh(mesh,
                                                   output_base,
                                                   "hdf5",
                                                    // opts,
@@ -172,7 +334,7 @@ TEST(blueprint_mpi_parmetis, braid)
             auto sync_edges =
                 [&prev_rank_shared, &next_rank_shared](float64_array values)
                 {
-                    for (int ibdr = 0; ibdr < prev_rank_shared.size(); ibdr++)
+                    for (size_t ibdr = 0; ibdr < prev_rank_shared.size(); ibdr++)
                     {
                         index_t left_edge = prev_rank_shared[ibdr];
                         index_t right_edge = next_rank_shared[ibdr];
@@ -288,7 +450,7 @@ TEST(blueprint_mpi_parmetis, braid)
             const Node& groups = dom["adjsets/elem_aset/groups"];
             for (const Node& group : groups.children())
             {
-                int64 nbr = group["neighbors"].as_int64();
+                //int64 nbr = group["neighbors"].as_int64();
                 int64_accessor grp_vals = group["values"].as_int64_accessor();
                 for (index_t iv = 0; iv < grp_vals.number_of_elements(); iv++)
                 {
@@ -386,8 +548,6 @@ TEST(blueprint_mpi_parmetis, uniform_adjset)
 
     MPI_Comm_size(MPI_COMM_WORLD, &par_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &par_rank);
-
-    const int npts = 10;
 
     // test with a 2d poly example
     Node mesh, side_mesh, info;

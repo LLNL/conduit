@@ -19,6 +19,7 @@
 #include "conduit_log.hpp"
 
 #include "blueprint_test_helpers.hpp"
+#include "blueprint_mpi_test_helpers.hpp"
 
 #include <algorithm>
 #include <vector>
@@ -48,8 +49,20 @@ void save_mesh(const conduit::Node &root, const std::string &filebase)
 #endif
 
 //-----------------------------------------------------------------------------
+template <typename T>
+std::ostream &operator << (std::ostream &os, const std::vector<T> &vec)
+{
+    os << "{";
+    for(const T &value : vec)
+        os << value << ", ";
+    os << "}";
+    return os;
+}
+
+//-----------------------------------------------------------------------------
 /**
- @brief Make domains for a tiled mesh.
+ @brief Make domains for a tiled mesh. The way this is being done, it will use
+        the original tiler suitable for weak scaling.
 
  @param mesh The node that will contain the domains.
  @param dims The number of zones in each domain. dims[2] == 0 for 2D meshes.
@@ -160,11 +173,9 @@ void
 test_tiled_adjsets(const int dims[3], const std::string &testName)
 {
     // Make 4 domains but alter their locations.
-    int index = 0;
     foreach_permutation(4, [&](const std::vector<int> &domainNumbering)
     {
         const int domains[] = {2,2,1};
-        const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
         const std::vector<std::string> reorder{"normal", "kdtree"};
         for(const auto &r : reorder)
         {
@@ -202,19 +213,38 @@ test_tiled_adjsets(const int dims[3], const std::string &testName)
 #endif
 
             // Check that its adjset points are the same along the edges.
-            bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "mesh_adjset", MPI_COMM_WORLD);
-            if(!same)
-            {
-                mesh.print();
-            }
+            conduit::Node info;
+            bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "mesh_adjset", info, MPI_COMM_WORLD);
+            in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+                if(!same)
+                {
+                    if(info.number_of_children() > 0)
+                    {
+                        std::cout << "Rank " << rank << ": mesh_adjset was different."
+                                  << " domainNumbering=" << domainNumbering
+                                  << ", reorder=" << r
+                                  << std::endl;
+                        info.print();
+                    }
+                }
+            });
             EXPECT_TRUE(same);
 
             // Check that its adjset points are the same along the edges.
-            same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", MPI_COMM_WORLD);
-            if(!same)
-            {
-                mesh.print();
-            }
+            same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", info, MPI_COMM_WORLD);
+            in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+                if(!same)
+                {
+                    if(info.number_of_children() > 0)
+                    {
+                        std::cout << "Rank " << rank << ": corner_pairwise_adjset was different."
+                                  << " domainNumbering=" << domainNumbering
+                                  << ", reorder=" << r
+                                  << std::endl;
+                        info.print();
+                    }
+                }
+            });
             EXPECT_TRUE(same);
         }
     });
@@ -239,7 +269,6 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
 {
     // This 12 domain case was found to cause adjset problems.
     const int dims[] = {2,2,2}, domains[] = {3,2,2};
-    const int par_rank = relay::mpi::rank(MPI_COMM_WORLD);
     const std::vector<std::string> reorder{"normal", "kdtree"};
 
     for(const auto &r : reorder)
@@ -277,8 +306,176 @@ TEST(conduit_blueprint_mpi_mesh_tiled, three_dimensional_12)
 #endif
 
         // Check that its adjset points are the same along the edges.
-        bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", MPI_COMM_WORLD);
+        conduit::Node info;
+        bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "corner_pairwise_adjset", info, MPI_COMM_WORLD);
+        in_rank_order(MPI_COMM_WORLD, [&](int rank) {
+            if(!same)
+            {
+                if(info.number_of_children() > 0)
+                {
+                    std::cout << "Rank " << rank << ": corner_pairwise_adjset was different."
+                              << " reorder=" << r
+                              << std::endl;
+                    info.print();
+                }
+            }
+        });
         EXPECT_TRUE(same);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mpi_mesh_utils, topdown_17_domain)
+{
+    // This test case tries the topdown tiler on 17 domains in a configuration
+    // that once caused there to be too few groups in the adjsets. That is fixed
+    // but test for it.
+    int rank, size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &size);
+    EXPECT_EQ(size, 4);
+
+    // Spread out the 17 domains over the 4 MPI ranks.
+    const std::vector<int> selectedDomains[] = {
+        {0,1,2,3,4},
+        {5,6,7,8},
+        {9,10,11,12},
+        {13,14,15,16}
+    };
+
+    // Make a 1 quad tile so we get hex zones.
+    // This is a simpler tile to speed up testing.
+    const char *tile = R"(
+coordsets:
+  coords:
+    type: explicit
+    values:
+      x: [0., 1., 1., 0.]
+      y: [0., 0., 1., 1.]
+topologies:
+  tile:
+    type: unstructured
+    coordset: coords
+    elements:
+      shape: quad
+      connectivity: [0,1,2,3]
+left: [0,3]
+right: [1,2]
+bottom: [0,1]
+top: [3,2]
+translate:
+   x: 1.
+   y: 1.
+)";
+
+    // This uses the tiler to make a mesh that is divided top-down.
+    conduit::index_t dims[] = {52, 59, 61};
+    conduit::Node mesh, opts;
+    opts["tile"].parse(tile);
+    opts["numDomains"] = 17; // This selects the topdown tiler.
+    opts["curveSplitting"] = 0;
+    opts["meshname"] = "main";
+    opts["selectedDomains"].set(selectedDomains[rank]);
+    conduit::blueprint::mesh::examples::tiled(dims[0], dims[1], dims[2], mesh, opts);
+
+    // Make sure each rank made the right number of domains.
+    EXPECT_EQ(selectedDomains[rank].size(), conduit::blueprint::mesh::domains(mesh).size());
+
+    // Make sure that the adjset is compares pointwise.
+    conduit::Node info;
+    bool same = conduit::blueprint::mpi::mesh::utils::adjset::compare_pointwise(mesh, "main_adjset", info, MPI_COMM_WORLD);
+    in_rank_order(MPI_COMM_WORLD, [&](int rank)
+    {
+        if(!same)
+        {
+            if(info.number_of_children() > 0)
+            {
+                std::cout << "Rank " << rank << ": main_adjset was different." << std::endl;
+                info.print();
+            }
+        }
+    });
+    EXPECT_TRUE(same);
+
+    // Generate faces for the mesh.
+    conduit::Node s2dmap, d2smap;
+    conduit::blueprint::mpi::mesh::generate_faces(mesh,
+                                                  "main_adjset",
+                                                  "face_adjset",
+                                                  "main_faces",
+                                                  s2dmap,
+                                                  d2smap,
+                                                  MPI_COMM_WORLD);
+
+    // Read through the face_adjset groups and make a map of neighbors per domain.
+    auto make_dom_neighbors = [](const conduit::Node &mesh)
+    {
+        std::map<conduit::index_t, std::set<conduit::index_t>> dom_neighbors;
+        const auto doms = conduit::blueprint::mesh::domains(mesh);
+        for(const auto &domPtr : doms)
+        {
+            const conduit::Node &dom = *domPtr;
+            auto domain_id = dom["state/domain_id"].to_int();
+            auto it = dom_neighbors.find(domain_id);
+            if(it == dom_neighbors.end())
+            {
+                dom_neighbors[domain_id] = std::set<conduit::index_t>();
+                it = dom_neighbors.find(domain_id);
+            }
+            const auto &groups = dom["adjsets/face_adjset/groups"];
+            for(conduit::index_t i = 0; i < groups.number_of_children(); i++)
+            {
+                const auto &group = groups[i];
+                const auto neighbors = group["neighbors"].as_int_accessor();
+                for(conduit::index_t j = 0; j < neighbors.number_of_elements(); j++)
+                {
+                    it->second.insert(neighbors[j]);
+                }
+            }
+        }
+        return dom_neighbors;
+    };
+
+    // Make sure the face adjset has the right neighbors on each domain.
+    std::map<conduit::index_t, std::set<conduit::index_t>> dom_neighbors, baseline;
+#if 0
+    // Make this section to compile to rebaseline.
+    in_rank_order(MPI_COMM_WORLD, [&](int rank)
+    {
+        // Print out the adjsets for each domain.
+        baseline = make_dom_neighbors(mesh);
+        for(auto it = baseline.begin(); it != baseline.end(); it++)
+        {
+            std::cout << "    baseline[" << it->first << "] = std::set<conduit::index_t>{";
+            for(const auto &value : it->second)
+                std::cout << value << ", ";
+            std::cout << "};" << std::endl;
+        }
+    });
+#else
+    // NOTE: These values are pasted in from the above code.
+    baseline[0] = std::set<conduit::index_t>{1, 3, 9};
+    baseline[1] = std::set<conduit::index_t>{0, 2, 4, 9, 10};
+    baseline[2] = std::set<conduit::index_t>{1, 5, 10};
+    baseline[3] = std::set<conduit::index_t>{0, 4, 6, 9, 11};
+    baseline[4] = std::set<conduit::index_t>{1, 3, 5, 7, 9, 10, 11, 12};
+    baseline[5] = std::set<conduit::index_t>{2, 4, 8, 10, 12};
+    baseline[6] = std::set<conduit::index_t>{3, 7, 11};
+    baseline[7] = std::set<conduit::index_t>{4, 6, 8, 11, 12};
+    baseline[8] = std::set<conduit::index_t>{5, 7, 12};
+    baseline[9] = std::set<conduit::index_t>{0, 1, 3, 4, 10, 11, 13};
+    baseline[10] = std::set<conduit::index_t>{1, 2, 4, 5, 9, 12, 14};
+    baseline[11] = std::set<conduit::index_t>{3, 4, 6, 7, 9, 12, 15};
+    baseline[12] = std::set<conduit::index_t>{4, 5, 7, 8, 10, 11, 16};
+    baseline[13] = std::set<conduit::index_t>{9, 14, 15};
+    baseline[14] = std::set<conduit::index_t>{10, 13, 16};
+    baseline[15] = std::set<conduit::index_t>{11, 13, 16};
+    baseline[16] = std::set<conduit::index_t>{12, 14, 15};
+#endif
+    dom_neighbors = make_dom_neighbors(mesh);
+    for(const auto &domainId : selectedDomains[rank])
+    {
+        EXPECT_EQ(dom_neighbors[domainId], baseline[domainId]);
     }
 }
 

@@ -59,9 +59,14 @@ silo_name_changer(const std::string &mmesh_name,
 {
     std::map<std::string, std::string> old_to_new_names;
 
-    if (!save_mesh.has_path("state/domain_id"))
+    if (! save_mesh.has_path("state/domain_id"))
     {
         save_mesh["state"]["domain_id"] = 0;
+    }
+    if (! save_mesh.has_path("state/cycle"))
+    {
+        // this is to pass the diff, as silo will add cycle in if it is not there
+        save_mesh["state/cycle"] = 0;
     }
 
     if (save_mesh.has_child("topologies"))
@@ -88,6 +93,26 @@ silo_name_changer(const std::string &mmesh_name,
             // change the name of the coordset
             if (save_mesh.has_path("coordsets/" + coordset_name))
             {
+                // add default labels if they don't exist already
+                if (! save_mesh["coordsets"][coordset_name].has_child("labels") &&
+                    save_mesh["topologies"][new_topo_name]["type"].as_string() != "points")
+                {
+                    const int ndims = save_mesh["coordsets"][coordset_name]["values"].number_of_children();
+
+                    const std::string &x_axis_label = save_mesh["coordsets"][coordset_name]["values"][0].name();
+                    save_mesh["coordsets"][coordset_name]["labels"][x_axis_label] = "X Axis";
+                    if (ndims > 1)
+                    {
+                        const std::string &y_axis_label = save_mesh["coordsets"][coordset_name]["values"][1].name();
+                        save_mesh["coordsets"][coordset_name]["labels"][y_axis_label] = "Y Axis";
+                    }
+                    if (ndims > 2)
+                    {
+                        const std::string &z_axis_label = save_mesh["coordsets"][coordset_name]["values"][2].name();
+                        save_mesh["coordsets"][coordset_name]["labels"][z_axis_label] = "Z Axis";
+                    }
+                }
+
                 save_mesh["coordsets"].rename_child(coordset_name, new_coordset_name);
             }
         }
@@ -158,7 +183,7 @@ silo_name_changer(const std::string &mmesh_name,
                     // will just skip.
                 }
                 std::string new_matset_name = old_to_new_names[old_matset_name];
-                // use new topo name
+                // use new matset name
                 n_field["matset"].reset();
                 n_field["matset"] = new_matset_name;
             }
@@ -205,15 +230,44 @@ silo_name_changer(const std::string &mmesh_name,
 void
 overlink_name_changer(conduit::Node &save_mesh)
 {
-    // we assume 1 coordset, 1 topo, and fields
+    // handle state
+    if (! save_mesh.has_path("state/domain_id"))
+    {
+        save_mesh["state"]["domain_id"] = 0;
+    }
+    if (! save_mesh.has_path("state/cycle"))
+    {
+        save_mesh["state/cycle"] = 0;
+    }
 
+    // we assume 1 coordset and 1 topo
     Node &coordsets = save_mesh["coordsets"];
     Node &topologies = save_mesh["topologies"];
-    Node &fields = save_mesh["fields"];
+    
 
     // we assume only 1 child for each
     std::string coordset_name = coordsets.children().next().name();
     std::string topo_name = topologies.children().next().name();
+
+    // add default labels if they don't exist already
+    if (! save_mesh["coordsets"][coordset_name].has_child("labels") &&
+        save_mesh["topologies"][topo_name]["type"].as_string() != "points")
+    {
+        const int ndims = save_mesh["coordsets"][coordset_name]["values"].number_of_children();
+
+        const std::string &x_axis_label = save_mesh["coordsets"][coordset_name]["values"][0].name();
+        save_mesh["coordsets"][coordset_name]["labels"][x_axis_label] = "X Axis";
+        if (ndims > 1)
+        {
+            const std::string &y_axis_label = save_mesh["coordsets"][coordset_name]["values"][1].name();
+            save_mesh["coordsets"][coordset_name]["labels"][y_axis_label] = "Y Axis";
+        }
+        if (ndims > 2)
+        {
+            const std::string &z_axis_label = save_mesh["coordsets"][coordset_name]["values"][2].name();
+            save_mesh["coordsets"][coordset_name]["labels"][z_axis_label] = "Z Axis";
+        }
+    }
 
     // rename the coordset and references to it
     coordsets.rename_child(coordset_name, "MMESH");
@@ -223,49 +277,74 @@ overlink_name_changer(conduit::Node &save_mesh)
     // rename the topo
     topologies.rename_child(topo_name, "MMESH");
 
-    auto field_itr = fields.children();
-    while (field_itr.has_next())
+    if (save_mesh.has_child("adjsets"))
     {
-        Node &n_field = field_itr.next();
-        std::string field_name = field_itr.name();
+        // we assume 1 adjset
+        Node &n_adjset = save_mesh["adjsets"].children().next();
+        std::string adjset_name = n_adjset.name();
 
         // use new topo name
-        n_field["topology"].reset();
-        n_field["topology"] = "MMESH";
+        n_adjset["topology"].reset();
+        n_adjset["topology"] = "MMESH";
 
-        // remove vol dep
-        if (n_field.has_child("volume_dependent"))
+
+        if (adjset_name != "adjset")
         {
-            n_field.remove_child("volume_dependent");
+            // rename the adjset
+            save_mesh["adjsets"].rename_child(adjset_name, "adjset");
         }
+    }
 
-        // we need to rename vector components
-        if (n_field["values"].dtype().is_object())
+    if (save_mesh.has_child("matsets"))
+    {
+        // you can have multiple matsets when saving, provided you only have
+        // one per topo. But if you want the diff to pass for tests, you 
+        // really can only have one. So we assume one.
+        Node &n_matset = save_mesh["matsets"].children().next();
+        std::string matset_name = n_matset.name();
+
+        // use new topo name
+        n_matset["topology"].reset();
+        n_matset["topology"] = "MMESH";
+
+        // rename the matset
+        save_mesh["matsets"].rename_child(matset_name, "MMATERIAL");
+    }
+
+    if (save_mesh.has_child("fields"))
+    {
+        auto field_itr = save_mesh["fields"].children();
+        while (field_itr.has_next())
         {
-            if (n_field["values"].number_of_children() > 0)
+            Node &n_field = field_itr.next();
+
+            // use new topo name
+            n_field["topology"].reset();
+            n_field["topology"] = "MMESH";
+
+            if (n_field.has_child("matset"))
             {
-                int child_index = 0;
-                auto val_itr = n_field["values"].children();
-                while (val_itr.has_next())
-                {
-                    val_itr.next();
-                    std::string comp_name = val_itr.name();
+                // use new matset name
+                n_field["matset"].reset();
+                n_field["matset"] = "MMATERIAL";
+            }
 
-                    // rename vector components
-                    n_field["values"].rename_child(comp_name, std::to_string(child_index));
+            // overlink tracks volume dependence so we do not have to remove it
+            // but we should add it in if it is not present
+            // remove vol dep
+            if (! n_field.has_child("volume_dependent"))
+            {
+                n_field["volume_dependent"] = "false";
+            }
 
-                    child_index ++;
-                }
+            // there are only scalar variables for overlink so we do not
+            // need to worry about renaming vector components.
+            if (n_field["values"].dtype().is_object())
+            {
+                CONDUIT_ERROR("Overlink only allows scalar variables. You are doing this wrong.");
             }
         }
     }
-
-    if (!save_mesh.has_path("state/domain_id"))
-    {
-        save_mesh["state"]["domain_id"] = 0;
-    }
-
-    // TODO materials
 }
 
 //-----------------------------------------------------------------------------
@@ -302,6 +381,111 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
         for (index_t i = 0; i < data.number_of_elements(); i++)
         {
             data[i] = 1.f;
+        }
+    }
+}
+
+//-----------------------------------------------------------------------------
+void
+vector_field_to_scalars_braid(Node &n_mesh, const std::string &dim)
+{
+    Node &field_vel = n_mesh["fields"]["vel"];
+    
+    Node &field_vel_u = n_mesh["fields"]["vel_u"];
+    field_vel_u["topology"].set(field_vel["topology"]);
+    field_vel_u["association"].set(field_vel["association"]);
+    field_vel_u["values"].set(field_vel["values/u"]);
+    if (field_vel.has_child("units"))
+    {
+        field_vel_u["units"].set(field_vel["units"]);
+    }
+    if (field_vel.has_child("label"))
+    {
+        field_vel_u["label"].set(field_vel["label"]);
+    }
+    
+    Node &field_vel_v = n_mesh["fields"]["vel_v"];
+    field_vel_v["topology"].set(field_vel["topology"]);
+    field_vel_v["association"].set(field_vel["association"]);
+    field_vel_v["values"].set(field_vel["values/v"]);
+    if (field_vel.has_child("units"))
+    {
+        field_vel_v["units"].set(field_vel["units"]);
+    }
+    if (field_vel.has_child("label"))
+    {
+        field_vel_v["label"].set(field_vel["label"]);
+    }
+
+    if (dim == "3")
+    {
+        Node &field_vel_w = n_mesh["fields"]["vel_w"];
+        field_vel_w["topology"].set(field_vel["topology"]);
+        field_vel_w["association"].set(field_vel["association"]);
+        field_vel_w["values"].set(field_vel["values/w"]);
+        if (field_vel.has_child("units"))
+        {
+            field_vel_w["units"].set(field_vel["units"]);
+        }
+        if (field_vel.has_child("label"))
+        {
+            field_vel_w["label"].set(field_vel["label"]);
+        }
+    }
+
+    n_mesh["fields"].remove_child("vel");
+}
+
+//-----------------------------------------------------------------------------
+void
+add_multi_buffer_full_matset(Node &n_mesh,
+                             const int num_elements,
+                             const std::string &topo_name)
+{
+    Node &n_matset = n_mesh["matsets"]["matset"];
+    n_matset["topology"] = topo_name;
+    n_matset["volume_fractions"]["mat_a"].set(DataType::float64(num_elements));
+    n_matset["volume_fractions"]["mat_b"].set(DataType::float64(num_elements));
+
+    double_array a_vfs = n_matset["volume_fractions"]["mat_a"].value();
+    double_array b_vfs = n_matset["volume_fractions"]["mat_b"].value();
+
+    for (int i = 0; i < num_elements; i ++)
+    {
+        a_vfs[i] = (i % 2 ? 1.0 : 0.0);
+        b_vfs[i] = (i % 2 ? 0.0 : 1.0);
+    }
+}
+
+//---------------------------------------------------------------------------//
+// (mostly) copied from conduit_blueprint_mesh_examples.hpp
+void braid_init_example_matset(index_t nele_x,
+                               index_t nele_y,
+                               index_t nele_z,
+                               Node &res)
+{
+    index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
+
+    res["topology"] = "mesh";
+
+    Node &vfs = res["volume_fractions"];
+    vfs["mat1"].set(DataType::float64(nele));
+    vfs["mat2"].set(DataType::float64(nele));
+
+    float64_array mat1_vals = vfs["mat1"].value();
+    float64_array mat2_vals = vfs["mat2"].value();
+
+    for(index_t k = 0, idx = 0; (idx == 0 || k < nele_z); k++)
+    {
+        for(index_t j = 0; (idx == 0 || j < nele_y) ; j++)
+        {
+            for(index_t i = 0; (idx == 0 || i < nele_x) ; i++, idx++)
+            {
+                float64 mv = (nele_x == 1) ? 0.5 : i / (nele_x - 1.0);
+
+                mat1_vals[idx] = mv;
+                mat2_vals[idx] = 1.0 - mv;
+            }
         }
     }
 }

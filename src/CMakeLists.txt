@@ -2,7 +2,8 @@
 # Project developers. See top-level LICENSE AND COPYRIGHT files for dates and
 # other details. No copyright assignment is required to contribute to Conduit.
 
-cmake_minimum_required(VERSION 3.0)
+# BLT >= 0.6.0  requires cmake >= 3.21
+cmake_minimum_required(VERSION 3.21)
 ################################
 # cmake policy selections
 ################################
@@ -10,12 +11,16 @@ cmake_minimum_required(VERSION 3.0)
 if(POLICY CMP0074)
   cmake_policy(SET CMP0074 NEW)
 endif()
+# use old cmake python find logic
+if(POLICY CMP0148)
+  cmake_policy(SET CMP0148 OLD)
+endif()
 
 ################################
 # Conduit
 ################################
 
-project(conduit VERSION "0.8.9")
+project(conduit VERSION "0.9.2")
 
 ################################ 
 # Build Options
@@ -39,6 +44,16 @@ option(ENABLE_OPENMP      "Build OpenMP Support"        OFF)
 # control over conduit tests for cases where 
 # conduit is brought in as a submodule
 option(CONDUIT_ENABLE_TESTS "Build conduit tests" ON)
+
+######################
+# CMake Policy Selections
+######################
+
+# allow FindPythonInterp and FindPythonLibs
+# https://cmake.org/cmake/help/latest/policy/CMP0148.html
+if(POLICY CMP0148)
+    cmake_policy(SET CMP0148 OLD)
+endif()
 
 ################################
 # Invoke CMake Fortran setup

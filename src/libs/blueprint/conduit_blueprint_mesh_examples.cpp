@@ -66,12 +66,6 @@ namespace examples
 //---------------------------------------------------------------------------//
 const float64 PI_VALUE = 3.14159265359;
 
-// NOTE(CYRUSH)
-// Using npts_z != 0 for 2d only shape types in our examples is deprecated
-// this bool controls if we throw an exception when npts_z != 0 for 2D
-// only examples. In a future release move to throw error and remove
-// this and related CONDUIT_INFO logic
-const bool STRICT_NPTS_Z_FOR_2D = false;
 
 //---------------------------------------------------------------------------//
 struct point
@@ -697,7 +691,6 @@ void braid_init_example_specset(index_t nele_x,
     index_t nele = nele_x * nele_y * ((nele_z > 0) ? nele_z : 1);
 
     res["matset"] = "mesh";
-    res["volume_dependent"] = "false";
 
     Node &mfs = res["matset_values"];
     mfs["mat1/spec1"].set(DataType::float64(nele));
@@ -1660,9 +1653,9 @@ braid_quads_and_tris(index_t npts_x,
     std::vector< int32 > stream_ids_buffer;
     std::vector< int32 > stream_lengths;
 
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
              if ( ielem % 2 == 0 )
              {
@@ -1696,16 +1689,14 @@ braid_quads_and_tris(index_t npts_x,
     // Fill in connectivity array
     int32 idx = 0;
     int32 elem  = 0;
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        int32 yoff = j * (nele_x+1);
-
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
-            int32 n1 = yoff + i;
-            int32 n2 = n1 + (nele_x+1);
-            int32 n3 = n1 + 1 + (nele_x+1);
-            int32 n4 = n1 + 1;
+            int32 n1 = j * npts_x + i;
+            int32 n2 = j * npts_x + i + 1;
+            int32 n3 = (j+1) * npts_x + i + 1;
+            int32 n4 = (j+1) * npts_x + i;
 
             if ( elem % 2 == 0 )
             {
@@ -1787,9 +1778,9 @@ braid_quads_and_tris_offsets(index_t npts_x,
     std::vector< int32 > stream_offsets;
     stream_offsets.push_back( 0 );
 
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
             int32 next = stream_offsets.back();
 
@@ -1827,16 +1818,14 @@ braid_quads_and_tris_offsets(index_t npts_x,
     // Fill in connectivity array
     int32 idx = 0;
     int32 elem  = 0;
-    for(int32 j = 0; j < nele_x ; j++)
+    for(int32 j = 0; j < nele_y ; j++)
     {
-        int32 yoff = j * (nele_x+1);
-
-        for(int32 i = 0; i < nele_y; i++)
+        for(int32 i = 0; i < nele_x; i++)
         {
-            int32 n1 = yoff + i;
-            int32 n2 = n1 + (nele_x+1);
-            int32 n3 = n1 + 1 + (nele_x+1);
-            int32 n4 = n1 + 1;
+            int32 n1 = j * npts_x + i;
+            int32 n2 = j * npts_x + i + 1;
+            int32 n3 = (j+1) * npts_x + i + 1;
+            int32 n4 = (j+1) * npts_x + i;
 
             if ( elem % 2 == 0 )
             {
@@ -3226,16 +3215,7 @@ basic(const std::string &mesh_type,
     if( npts_z != 0 &&
         braid_2d_only_shape_type(mesh_type) )
     {
-        if(STRICT_NPTS_Z_FOR_2D)
-        {
-            npts_z_ok = false;
-        }
-        else
-        {
-            CONDUIT_INFO("DEPRECATED:"
-                     " Detected npts_z != 0 for example with 2D shape type."
-                     " This will throw a conduit::Error in a future release.");
-        }
+        npts_z_ok = false;
     }
 
     // don't let de-morgan get you ...
@@ -3475,16 +3455,7 @@ grid(const std::string &mesh_type,
     if( npts_z != 0 &&
         braid_2d_only_shape_type(mesh_type) )
     {
-        if(STRICT_NPTS_Z_FOR_2D)
-        {
-            npts_ok = false;
-        }
-        else
-        {
-            CONDUIT_INFO("DEPRECATED:"
-                    " Detected npts_z != 0 for example with 2D shape type."
-                    " This will throw a conduit::Error in a future release.");
-        }
+        npts_ok = false;
     }
 
     if( braid_3d_only_shape_type(mesh_type) )
@@ -3599,16 +3570,7 @@ braid(const std::string &mesh_type,
         if ( npts_z != 0 &&
              braid_2d_only_shape_type(mesh_type) )
         {
-            if(STRICT_NPTS_Z_FOR_2D)
-            {
-                npts_z_ok = false;
-            }
-            else
-            {
-                CONDUIT_INFO("DEPRECATED:"
-                    " Detected npts_z != 0 for example with 2D shape type."
-                    " This will throw a conduit::Error in a future release.");
-            }
+            npts_z_ok = false;
         }
 
         // check 3d cases which require z

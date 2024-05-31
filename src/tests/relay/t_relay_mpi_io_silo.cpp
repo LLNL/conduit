@@ -57,7 +57,7 @@ TEST(conduit_relay_mpi_io_silo, round_trip_braid)
     save_mesh["coordsets/coords/origin/x"] = -10.0 + 20.0 * par_rank;
     save_mesh["state/domain_id"] = par_rank;
     // set cycle to 0, so we can construct the correct root file
-    save_mesh["state/cycle"] = (int64) 0;
+    save_mesh["state/cycle"] = 0;
 
     Node load_mesh, info;
 
@@ -80,7 +80,7 @@ TEST(conduit_relay_mpi_io_silo, round_trip_braid)
     EXPECT_EQ(load_mesh.number_of_children(), 1);
     EXPECT_EQ(load_mesh.child(0).number_of_children(), save_mesh.number_of_children());
 
-    EXPECT_FALSE(load_mesh.child(0).diff(save_mesh, info));
+    EXPECT_FALSE(load_mesh.child(0).diff(save_mesh, info, CONDUIT_EPSILON, true));
 }
 
 //-----------------------------------------------------------------------------
@@ -93,10 +93,10 @@ TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_braid)
     Node save_mesh, v_info;
     blueprint::mpi::mesh::examples::braid_uniform_multi_domain(save_mesh,
                                                                comm);
-    save_mesh["state/cycle"] = (int64) 0;
+    save_mesh["state/cycle"] = 0;
 
     // check verify
-    EXPECT_TRUE(blueprint::mpi::mesh::verify(save_mesh,v_info,comm));
+    EXPECT_TRUE(blueprint::mpi::mesh::verify(save_mesh,v_info, comm));
 
     // locally, expect 1 domain
     EXPECT_EQ(blueprint::mesh::number_of_domains(save_mesh),1);
@@ -112,8 +112,8 @@ TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_braid)
     std::string output_root = output_base + ".cycle_000000.root";
     Node load_mesh, info;
     conduit::relay::mpi::io::silo::load_mesh(output_root,
-                                                  load_mesh,
-                                                  comm);
+                                             load_mesh,
+                                             comm);
 
     silo_uniform_to_rect_conversion("coords", "mesh", save_mesh);
 
@@ -121,7 +121,7 @@ TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_braid)
     silo_name_changer("mesh", save_mesh);
 
     // diff == false, no diff == diff clean
-    EXPECT_FALSE(save_mesh.diff(load_mesh.child(0),info));
+    EXPECT_FALSE(save_mesh.diff(load_mesh.child(0), info, CONDUIT_EPSILON, true));
 }
 
 //-----------------------------------------------------------------------------
@@ -283,18 +283,8 @@ TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_spiral_1dom)
     // make changes to save mesh so the diff will pass
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
     {
-        int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-        save_mesh[child]["state"]["cycle"].reset();
-        save_mesh[child]["state"]["cycle"] = (int64) cycle;
-
         // get the matset for this domain
         Node &n_matset = save_mesh[child]["matsets"]["matset"];
-        
-        // clean up material ids
-        Node mat_ids_arr;
-        n_matset["material_ids"].to_int_array(mat_ids_arr);
-        n_matset["material_ids"].reset();
-        n_matset["material_ids"].set(mat_ids_arr);
 
         // clean up volume fractions
         Node vf_arr;
@@ -312,7 +302,7 @@ TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_spiral_1dom)
     // globally, expect 1 domain
     EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(load_mesh,comm),1);
 
-    if(par_rank == 0)
+    if (par_rank == 0)
     {
         EXPECT_EQ(blueprint::mesh::number_of_domains(load_mesh),1);
     }
@@ -322,16 +312,19 @@ TEST(conduit_relay_mpi_io_silo, mpi_mesh_examples_spiral_1dom)
     }
 
     EXPECT_EQ(save_mesh.number_of_children(),load_mesh.number_of_children());
-    for(conduit::index_t i=0;i < save_mesh.number_of_children();i++)
+    for (conduit::index_t i=0;i < save_mesh.number_of_children();i++)
     {
         save_mesh.print();
         load_mesh.print();
         // diff == false, no diff == diff clean
-        EXPECT_FALSE(save_mesh.child(i).diff(load_mesh.child(i),n_diff_info));
+        EXPECT_FALSE(save_mesh.child(i).diff(load_mesh.child(i),
+                                             n_diff_info,
+                                             CONDUIT_EPSILON,
+                                             true));
     }
 
     // globally, expect par_size domains
-    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(load_mesh,comm),1);
+    EXPECT_EQ(blueprint::mpi::mesh::number_of_domains(load_mesh, comm), 1);
 }
 
 //-----------------------------------------------------------------------------
@@ -485,25 +478,12 @@ TEST(conduit_relay_mpi_io_silo, spiral_multi_file)
         {
             // get the matset for this domain
             Node &n_matset = diff_mesh[child]["matsets"]["matset"];
-            
-            // clean up material ids
-            Node mat_ids_arr;
-            n_matset["material_ids"].to_int_array(mat_ids_arr);
-            n_matset["material_ids"].reset();
-            n_matset["material_ids"].set(mat_ids_arr);
 
             // clean up volume fractions
             Node vf_arr;
             n_matset["volume_fractions"].to_float64_array(vf_arr);
             n_matset["volume_fractions"].reset();
             n_matset["volume_fractions"].set(vf_arr);
-            
-            if (diff_mesh[child]["state"]["cycle"].dtype().is_int32())
-            {
-                int cycle = diff_mesh[child]["state"]["cycle"].as_int32();
-                diff_mesh[child]["state"]["cycle"].reset();
-                diff_mesh[child]["state"]["cycle"] = (int64) cycle;
-            }
 
             // cheat a little bit - we don't have these to start
             n_matset["sizes"].set_external(load_mesh[child]["matsets"]["mesh_matset"]["sizes"]);
@@ -526,7 +506,10 @@ TEST(conduit_relay_mpi_io_silo, spiral_multi_file)
         // in all cases we expect 7 domains to match
         for (int dom_idx = 0; dom_idx < num_local_domains; dom_idx ++)
         {
-            EXPECT_FALSE(diff_mesh.child(dom_idx).diff(load_mesh.child(dom_idx), info));
+            EXPECT_FALSE(diff_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),
+                                                       info,
+                                                       CONDUIT_EPSILON,
+                                                       true));
         }
     }
 
@@ -614,21 +597,8 @@ TEST(conduit_relay_mpi_io_silo, spiral_root_only)
     // make changes to save mesh so the diff will pass
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
     {
-        if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
-        {
-            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-            save_mesh[child]["state"]["cycle"].reset();
-            save_mesh[child]["state"]["cycle"] = (int64) cycle;
-        }
-
         // get the matset for this domain
         Node &n_matset = save_mesh[child]["matsets"]["matset"];
-        
-        // clean up material ids
-        Node mat_ids_arr;
-        n_matset["material_ids"].to_int_array(mat_ids_arr);
-        n_matset["material_ids"].reset();
-        n_matset["material_ids"].set(mat_ids_arr);
 
         // clean up volume fractions
         Node vf_arr;
@@ -647,7 +617,10 @@ TEST(conduit_relay_mpi_io_silo, spiral_root_only)
     // in all cases we expect 7 domains to match
     for (int dom_idx = 0; dom_idx < num_local_domains; dom_idx ++)
     {
-        EXPECT_FALSE(save_mesh.child(dom_idx).diff(n_read.child(dom_idx), info));
+        EXPECT_FALSE(save_mesh.child(dom_idx).diff(n_read.child(dom_idx),
+                                                   info,
+                                                   CONDUIT_EPSILON,
+                                                   true));
     }
 }
 
@@ -972,12 +945,6 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_var)
     {
         silo_name_changer("mesh", save_mesh[child]);
 
-        if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
-        {
-            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-            save_mesh[child]["state"]["cycle"].reset();
-            save_mesh[child]["state"]["cycle"] = (int64) cycle;
-        }
         if (save_mesh[child]["state"]["domain_id"].as_int() == 2)
         {
             save_mesh[child].remove_child("fields");
@@ -998,7 +965,10 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_var)
     // in all cases we expect 7 domains to match
     for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
     {
-        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),info));
+        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),
+                                                   info,
+                                                   CONDUIT_EPSILON,
+                                                   true));
     }
 }
 
@@ -1082,23 +1052,10 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_matset)
     // make changes to save mesh so the diff will pass
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
     {
-        if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
-        {
-            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-            save_mesh[child]["state"]["cycle"].reset();
-            save_mesh[child]["state"]["cycle"] = (int64) cycle;
-        }
-
         if (save_mesh[child].has_path("matsets/matset"))
         {
             // get the matset for this domain
             Node &n_matset = save_mesh[child]["matsets"]["matset"];
-            
-            // clean up material ids
-            Node mat_ids_arr;
-            n_matset["material_ids"].to_int_array(mat_ids_arr);
-            n_matset["material_ids"].reset();
-            n_matset["material_ids"].set(mat_ids_arr);
 
             // clean up volume fractions
             Node vf_arr;
@@ -1131,9 +1088,12 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_matset)
 
     std::cout << "par_rank " << par_rank << "  read # of children " << load_mesh.number_of_children();
     // in all cases we expect 7 domains to match
-    for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+    for (int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
     {
-        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),info));
+        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),
+                                                   info,
+                                                   CONDUIT_EPSILON,
+                                                   true));
     }
 }
 
@@ -1243,13 +1203,6 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_mesh_trivial)
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
     {
         silo_name_changer("mesh", save_mesh[child]);
-
-        if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
-        {
-            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-            save_mesh[child]["state"]["cycle"].reset();
-            save_mesh[child]["state"]["cycle"] = (int64) cycle;
-        }
     }
 
     // rank 0 will have 3, rank 1 will have 3
@@ -1260,9 +1213,12 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_mesh_trivial)
 
     std::cout << "par_rank " << par_rank << "  read # of children " << load_mesh.number_of_children();
     // in all cases we expect 7 domains to match
-    for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
+    for (int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
     {
-        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),info));
+        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),
+                                                   info,
+                                                   CONDUIT_EPSILON,
+                                                   true));
     }
 }
 
@@ -1380,13 +1336,6 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_mesh)
     for (index_t child = 0; child < save_mesh.number_of_children(); child ++)
     {
         silo_name_changer("mesh", save_mesh[child]);
-
-        if (save_mesh[child]["state"]["cycle"].dtype().is_int32())
-        {
-            int cycle = save_mesh[child]["state"]["cycle"].as_int32();
-            save_mesh[child]["state"]["cycle"].reset();
-            save_mesh[child]["state"]["cycle"] = (int64) cycle;
-        }
     }
 
     // we must merge the two meshes in load mesh
@@ -1437,7 +1386,10 @@ TEST(conduit_relay_mpi_io_silo, missing_domain_mesh)
     // in all cases we expect 7 domains to match
     for(int dom_idx =0; dom_idx <num_local_domains; dom_idx++)
     {
-        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),info));
+        EXPECT_FALSE(save_mesh.child(dom_idx).diff(load_mesh.child(dom_idx),
+                                                   info,
+                                                   CONDUIT_EPSILON,
+                                                   true));
     }
 }
 

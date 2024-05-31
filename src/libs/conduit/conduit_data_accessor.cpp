@@ -14,6 +14,7 @@
 //-----------------------------------------------------------------------------
 #include <algorithm>
 #include <limits>
+#include <type_traits>
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -173,7 +174,7 @@ DataAccessor<T>::element(index_t idx) const
 {
     switch(m_dtype.id())
     {
-        // ints 
+        // ints
         case DataType::INT8_ID:
             return (T)(*(int8*)(element_ptr(idx)));
         case DataType::INT16_ID: 
@@ -192,9 +193,9 @@ DataAccessor<T>::element(index_t idx) const
         case DataType::UINT64_ID:
             return (T)(*(uint64*)(element_ptr(idx)));
         // floats 
-        case DataType::FLOAT32_ID: 
+        case DataType::FLOAT32_ID:
             return (T)(*(float32*)(element_ptr(idx)));
-        case DataType::FLOAT64_ID: 
+        case DataType::FLOAT64_ID:
             return (T)(*(float64*)(element_ptr(idx)));
     }
 
@@ -202,6 +203,406 @@ DataAccessor<T>::element(index_t idx) const
     CONDUIT_ERROR("DataAccessor does not support dtype: "
                   << m_dtype.name());
     return (T)0;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::set(index_t idx, T value)
+{
+    switch(m_dtype.id())
+    {
+        // ints
+        case DataType::INT8_ID:
+        {
+            (*(int8*)(element_ptr(idx))) = static_cast<int8>(value);
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            (*(int16*)(element_ptr(idx))) = static_cast<int16>(value);
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            (*(int32*)(element_ptr(idx))) = static_cast<int32>(value);
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            (*(int64*)(element_ptr(idx))) = static_cast<int64>(value);
+            break;
+        }
+        // uints
+        case DataType::UINT8_ID:
+        {
+            (*(uint8*)(element_ptr(idx))) = static_cast<uint8>(value);
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            (*(uint16*)(element_ptr(idx))) = static_cast<uint16>(value);
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            (*(uint32*)(element_ptr(idx))) = static_cast<uint32>(value);
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            (*(uint64*)(element_ptr(idx))) = static_cast<uint64>(value);
+            break;
+        }
+        // floats
+        case DataType::FLOAT32_ID:
+        {
+            (*(float32*)(element_ptr(idx))) = static_cast<float32>(value);
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            (*(float64*)(element_ptr(idx))) = static_cast<float64>(value);
+            break;
+        }
+        default:
+            // error
+            CONDUIT_ERROR("DataAccessor does not support dtype: "
+                          << m_dtype.name());
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::fill(T value)
+{
+    switch(m_dtype.id())
+    {
+        // ints
+        case DataType::INT8_ID:
+        {
+            int8 v = static_cast<int8>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int8*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::INT16_ID:
+        {
+            int16 v = static_cast<int16>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int16*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::INT32_ID:
+        {
+            int32 v = static_cast<int32>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int32*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::INT64_ID:
+        {
+            int64 v = static_cast<int64>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(int64*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        // uints
+        case DataType::UINT8_ID:
+        {
+            uint8 v = static_cast<uint8>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint8*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::UINT16_ID:
+        {
+            uint16 v = static_cast<uint16>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint16*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::UINT32_ID:
+        {
+            uint32 v = static_cast<uint32>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint32*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::UINT64_ID:
+        {
+            uint64 v = static_cast<uint64>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(uint64*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        // floats
+        case DataType::FLOAT32_ID:
+        {
+            float32 v = static_cast<float32>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(float32*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        case DataType::FLOAT64_ID:
+        {
+            float64 v = static_cast<float64>(value);
+            for(index_t i=0;i < m_dtype.number_of_elements(); i++)
+            {
+                 (*(float64*)(element_ptr(i))) = v;
+            }
+            break;
+        }
+        default:
+            // error
+            CONDUIT_ERROR("DataAccessor does not support dtype: "
+                          << m_dtype.name());
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_string(const std::string &protocol) const
+{
+    std::ostringstream oss;
+    to_string_stream(oss,protocol);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_string_stream(std::ostream &os,
+                                  const std::string &protocol) const
+{
+    if(protocol == "yaml")
+    {
+        to_yaml_stream(os);
+    }
+    else if(protocol == "json")
+    {
+        to_json_stream(os);
+    }
+    else
+    {
+        // unsupported
+        CONDUIT_ERROR("Unknown DataType::to_string protocol:" << protocol
+                     <<"\nSupported protocols:\n"
+                     <<" json, yaml");
+    }
+
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_string_default() const
+{
+    return to_string();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_json() const
+{
+    std::ostringstream oss;
+    to_json_stream(oss);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_json_stream(std::ostream &os) const
+{
+    index_t nele = number_of_elements();
+    // note: nele == 0 case:
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
+        os << "[";
+
+    bool first=true;
+    for(index_t idx = 0; idx < nele; idx++)
+    {
+        if(!first)
+            os << ", ";
+
+        // need to deal with nan and infs for fp cases
+        if(std::is_floating_point<T>::value)
+        {
+            std::string fs = utils::float64_to_string((float64)element(idx));
+            //check for inf and nan
+            // looking for 'n' covers inf and nan
+            bool inf_or_nan = fs.find('n') != std::string::npos;
+
+            if(inf_or_nan)
+                os << "\"";
+
+            os << fs;
+
+            if(inf_or_nan)
+                os << "\"";
+        }
+        else
+        {
+            os << element(idx);
+        }
+
+        first=false;
+    }
+    // note: nele == 0 case:
+    // https://github.com/LLNL/conduit/issues/992
+    // we want empty arrays to display as [] not empty string
+    if(nele == 0 || nele > 1)
+        os << "]";
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_yaml() const
+{
+    std::ostringstream oss;
+    to_yaml_stream(oss);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_yaml_stream(std::ostream &os) const
+{
+    // yep, its the same as to_json_stream ...
+    to_json_stream(os);;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_summary_string_default() const
+{
+    return to_summary_string();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+std::string
+DataAccessor<T>::to_summary_string(index_t threshold) const
+{
+    std::ostringstream oss;
+    to_summary_string_stream(oss, threshold);
+    return oss.str();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+DataAccessor<T>::to_summary_string_stream(std::ostream &os,
+                                          index_t threshold) const
+{
+    // if we are less than or equal to threshold, we use to_yaml
+    index_t nele = number_of_elements();
+
+    if(nele <= threshold)
+    {
+        to_yaml_stream(os);
+    }
+    else
+    {
+        // if above threshold only show threshold # of values
+        index_t half = threshold / 2;
+        index_t bottom = half;
+        index_t top = half;
+
+        //
+        // if odd, show 1/2 +1 first
+        //
+
+        if( (threshold % 2) > 0)
+        {
+            bottom++;
+        }
+
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
+            os << "[";
+
+        bool done  = (nele == 0);
+        index_t idx = 0;
+
+        while(!done)
+        {
+            // if not first, add a comma prefix
+            if(idx > 0 )
+                os << ", ";
+
+            // need to deal with nan and infs for fp cases
+            if(std::is_floating_point<T>::value)
+            {
+                std::string fs = utils::float64_to_string((float64)element(idx));
+                //check for inf and nan
+                // looking for 'n' covers inf and nan
+                bool inf_or_nan = fs.find('n') != std::string::npos;
+
+                if(inf_or_nan)
+                    os << "\"";
+
+                os << fs;
+
+                if(inf_or_nan)
+                    os << "\"";
+            }
+            else
+            {
+                os << element(idx);
+            }
+
+            idx++;
+
+            if(idx == bottom)
+            {
+                idx = nele - top;
+                os << ", ...";
+            }
+
+            if(idx == nele)
+            {
+                done = true;
+            }
+        }
+
+        // note: nele == 0 case:
+        // https://github.com/LLNL/conduit/issues/992
+        // we want empty arrays to display as [] not empty string
+        if(nele == 0 || nele > 1)
+            os << "]";
+
+    }
 }
 
 

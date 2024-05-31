@@ -4,16 +4,67 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.9.2] - Released 2024-05-21
+
+### Added
+
+#### Relay
+- Added support for Blueprint + Silo round trip for axis units and labels.
+- Added support for reading Silo column major data as strided structured Blueprint data.
+- Added support for reading a much wider set of Silo meshes, beyond multimeshes, multivars, etc.
+
+### Changed
+
+#### Conduit
+- Removed cmake use of distutils for python introspection.
+
+#### Blueprint
+- Fixed partitioner so it reverses vertex order as needed in polyhedral face definitions when extracting mesh elements.
+- Changed `conduit::blueprint::mesh::partition_map_back()` function so it will attempt to reuse existing field memory when mapping fields back. This permits `partition_map_back()` to send data from a partitioned mesh into the original mesh where fields were provided from a host code using `Node::set_external()`.
+- Changed `generate_sides` to be robust to the case where no fields exist. 
+
+#### Relay
+- Changed `conduit::relay::mpi::communicate_using_schema` to avoid an invalid tag MPI error message on some MPI distributions.
+
+### Fixed
+
+#### Relay
+- Fixed Relay I/O HDF5 DataSpace handle leak.
+
+## [0.9.1] - Released 2024-02-09
+
+### Changed
+
+#### Conduit
+- Relaxed strict header check for C++14 back to C++11. A downstream consumer of Conduit has C++11 hardcoded into their build system and patching for related deployments is intractable.
+- Restore logic to avoid fused mpi c++ and fortran flags that can undermine blt's mpi smoke test.
+
+
+#### Blueprint
+- Fixed missing build dependency relationship with the python conduit blueprint table examples module.
+- Fixed partitioner so it does not duplicate faces when combining polyhedral meshes.
+
+### Added
+
+#### Relay
+- Added polygonal support to Blueprint Silo I/O.
+
+## [0.9.0] - Released 2024-02-05
 
 ### Added
 
 #### General
 - Added `conduit_json_external` protocol. Creates a json schema representation of a node that includes all addresses that the node is pointing to. Parsing this schema will create a node equivalent to `set_external()`.
 - Added a `conduit_generate_data` executable that can generate datasets using the `tiled()` and `braid()` functions and save the datasets to files.
+- Added helpers that support enhanced debugging of Conduit Node objects in several debuggers.
+- Added the ability to set values via a DataAccessor and DataAccessor to string methods.
+- Added explicit set methods to DataArray, and the ability to set DataArray values from a DataAccessor.
+
 
 #### Relay
+- Added extensive Mesh Blueprint Silo I/O support including, including options for Overlink Silo conventions. This capability allows Silo files to be used as a close peer to the Blueprint HDF5 I/O options.
 - Added ability to read N-dimensional hyperslabs from HDF5 leaf arrays into linear memory arrays.
+- Added `conduit.relay.io.silo` to the Python interface.
 
 #### Blueprint
 - Added a `conduit::blueprint::mesh::examples::tiled()` function that can generate meshes by repeating a tiled pattern.
@@ -28,23 +79,42 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added a `conduit::blueprint::mesh::utils::convert()` function that converts a list of nodes to a desired data type.
 - Added a `conduit::blueprint::mesh::generate_boundary_partition_field()` function that can take a topology and a partition field and generate a field for a related boundary topology. This is helpful when partitioning a boundary topology in the same manner as its parent topology.
 - Added `blueprint.mesh.examples.strided_structured` to the blueprint python module.
-
+- Added `conduit::blueprint::mesh::utils::adjset::to_topo()` function to make new point mesh topologies for each group of an adjacency set. This permits each group to be visualized as a set of points in VisIt. The groups for each side of the domain interface can be compared since they are separate point meshes.
+- Added `conduit::blueprint::mesh::utils::adjset::is_canonical()` function to check whether the group names in an adjacency set are canonical.
+- Added more Mesh Blueprint docs.
 
 ### Changed
 
 #### General
+- Conduit now requires C++14 and CMake 3.21 or newer.
 - Improved the efficiency of json parsing logic.
 - The `conduit_relay_io_convert` program was enhanced so it can read/write Blueprint root files by passing _"blueprint"_ for the read or write protocols.
+- The `conduit_adjset_validate` program now writes a point mesh for each adjset groups if the `-output` argument is supplied.
+- Updated to BLT 0.6.1
+- Updated Python logic hybrid module build logic to use pip and setuptools. Removed use of distutils.
 
 #### Blueprint
 - The `conduit::blueprint::mpi::mesh::partition_map_back()` function was enhanced so it accepts a "field_prefix" value in its options. The prefix is used when looking for the `global_vertex_ids` field, which could have been created with a prefix by the same option in the `conduit::blueprint::mpi::mesh::generate_partition_field()` function.
+- The `conduit::blueprint::mesh::utils::ShapeType` class was enhanced so it can take topologies other than unstructured.
+- The `conduit::blueprint::mesh::utils::topology::unstructured::points()` function was changed so it takes an optional argument that can turn off point uniqueness and sorting so the method can return points for an element as they appear in the connectivity, for non-polyhedral shapes.
+- Removed deprecated use of `npts_z !=0` for 2D shape types in `conduit::blueprint::mesh::examples::{braid,basic,grid}`. These cases now issue a `CONDUIT_ERROR`.
+- Removed `volume_dependent` entry in `specsets`. Species ratios and mass fractions are innately volume independent. 
+
+#### Relay
+- Relay Mesh Blueprint I/O methods (`conduit::relay::io::blueprint::{save,write}_mesh()``) now default to `hdf5` protocol if Conduit is built with `hdf5` support.
 
 ### Fixed
+
+#### General
+- The Fortran `node` procedures for fetching integer pointers are now associated with the correct routines.
 
 #### Blueprint
 - The `conduit::blueprint::mesh::partition()` function no longer issues an error when it receives a "maxshare" adjset.
 - The partitioner is better about outputting a "material_map" node for matsets. The "material_map" node is optional for some varieties of matset but they can also help the `conduit::blueprint::mesh::matset::to_silo()` function generate the right material numbers when a domain does not contain all materials.
 - The `conduit::Node::swap()` and `conduit::Node::move()` functions no longer cause node names to disappear.
+- The `conduit::blueprint::mesh::utils::kdtree` could erroneously return that points were not found when one of the coordset dimensions had a very narrow range of values. This could happen with planar 2D geometries embedded in 3D, such as inside a `MatchQuery` during adjacency set creation.
+- The `conduit::blueprint::mpi::mesh::generate_partition_field()` function was not treating polyhedral topologies correctly, leading to unusable partitioning fields.
+- The point merging algorithm in the Blueprint partitioner was corrected so it should no longer produce occasional duplicate points when merging coordsets.
 
 ## [0.8.8] - Released 2023-05-18
 
@@ -838,7 +908,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.8.8...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.1...HEAD
+[0.9.1]: https://github.com/llnl/conduit/compare/v0.9.0...v0.9.1
+[0.9.0]: https://github.com/llnl/conduit/compare/v0.8.8...v0.9.0
 [0.8.8]: https://github.com/llnl/conduit/compare/v0.8.7...v0.8.8
 [0.8.7]: https://github.com/llnl/conduit/compare/v0.8.6...v0.8.7
 [0.8.6]: https://github.com/llnl/conduit/compare/v0.8.5...v0.8.6

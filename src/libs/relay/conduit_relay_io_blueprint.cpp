@@ -598,7 +598,17 @@ identify_protocol(const std::string &path)
                                   file_name_ext,
                                   file_name_base);
 
+    // default
     std::string io_type = "bin";
+
+    // if hdf5 is supported, it should be the default for mesh i/o
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+    if( io_protos["io/protocols/hdf5"].as_string() == "enabled" )
+    {
+      io_type = "hdf5";
+    }
+
     if(file_name_ext.find("blueprint_root") == 0)
     {
         std::string file_name_true_ext = file_name_ext.substr(

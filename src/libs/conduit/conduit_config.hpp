@@ -21,15 +21,15 @@
 #include "conduit_config.h"
 
 //-----------------------------------------------------------------------------
-// if built with c++11 support, make sure a c++11 compiler is used
+// if built with c++14 support, make sure a c++14 compiler is used
 //-----------------------------------------------------------------------------
-#if defined(CONDUIT_USE_CXX11)
+#if defined(CONDUIT_USE_CXX14)
     #if defined(_MSC_VER)
         #if _MSC_VER < 1900
-            #error Conduit was built with c++11 support, please use a c++11 compliant compiler
+            #error Conduit was built with c++14 support, please use a c++14 compliant compiler
         #endif
-    #elif __cplusplus <= 199711L
-        #error Conduit was built with c++11 support, please use a c++11 compliant compiler
+    #elif __cplusplus < 201103L
+        #error Conduit was built with c++14 support, please use a c++14 compliant compiler
     #endif
 #endif
 

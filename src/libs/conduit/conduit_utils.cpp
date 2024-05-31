@@ -2019,6 +2019,30 @@ hash(const uint64 *k, unsigned int length)
                                length * sizeof(uint64));
 }
 
+//---------------------------------------------------------------------------
+std::vector<conduit::index_t> factor(conduit::index_t num)
+{
+   std::vector<conduit::index_t> factors;
+   conduit::index_t prod = 1;
+   conduit::index_t n = num;
+   for (conduit::index_t f = 2; f <= num && prod < num; f++)
+   {
+       while (n % f == 0)
+       {
+           factors.push_back(f);
+           n /= f;
+           prod *= f;
+       }
+   }
+   if (factors.empty())
+   {
+       factors.push_back(1);
+       if (num > 1)
+           factors.push_back(num);
+   }
+   return factors;
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::utils --

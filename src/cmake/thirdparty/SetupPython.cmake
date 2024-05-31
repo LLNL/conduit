@@ -18,17 +18,16 @@ endif()
 
 find_package(PythonInterp REQUIRED)
 if(PYTHONINTERP_FOUND)
-        
         MESSAGE(STATUS "PYTHON_EXECUTABLE ${PYTHON_EXECUTABLE}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                        "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
+                        "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('VERSION'))"
                         OUTPUT_VARIABLE PYTHON_CONFIG_VERSION
                         ERROR_VARIABLE  ERROR_FINDING_PYTHON_VERSION)
         MESSAGE(STATUS "PYTHON_CONFIG_VERSION ${PYTHON_CONFIG_VERSION}")
 
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                "import sys;from distutils.sysconfig import get_python_inc;sys.stdout.write(get_python_inc())"
+                                "import sys;from sysconfig import get_path;sys.stdout.write(get_path('include'))"
                         OUTPUT_VARIABLE PYTHON_INCLUDE_DIR
                         ERROR_VARIABLE ERROR_FINDING_INCLUDES)
         MESSAGE(STATUS "PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR}")
@@ -37,17 +36,31 @@ if(PYTHONINTERP_FOUND)
             MESSAGE(FATAL_ERROR "Reported PYTHON_INCLUDE_DIR ${PYTHON_INCLUDE_DIR} does not exist!")
         endif()
 
-        execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
-                        OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
-                        ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
-        MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
+        #######################################################################
+        # Find main python package dirs for embedded use cases
+        # (used in Ascent, not Conduit)
+        #######################################################################
+        # #
+        # # TODO: replacing distutils.get_python_lib() isn't straight forward
+        # #       distutils had special logic for some platforms (ubuntu)
+        # #       which is not 1:1 using sysconfig. 
+        # #       We may need several queries and a list of paths to replace
+        # #       get_python_lib()
+        # #
+        # execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
+        #                         "import sys;from distutils.sysconfig import get_python_lib;sys.stdout.write(get_python_lib())"
+        #                 OUTPUT_VARIABLE PYTHON_SITE_PACKAGES_DIR
+        #                 ERROR_VARIABLE ERROR_FINDING_SITE_PACKAGES_DIR)
+        # MESSAGE(STATUS "PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR}")
 
-        if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
-            MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
-        endif()
+        # if(NOT EXISTS ${PYTHON_SITE_PACKAGES_DIR})
+        #     MESSAGE(FATAL_ERROR "Reported PYTHON_SITE_PACKAGES_DIR ${PYTHON_SITE_PACKAGES_DIR} does not exist!")
+        # endif()
+        # # for embedded python, we need to know where the site packages dir is
+        # set(EXTRA_PYTHON_MODULE_DIRS "")
+        # list(APPEND EXTRA_PYTHON_MODULE_DIRS ${PYTHON_SITE_PACKAGES_DIR})
+        #######################################################################
 
-        
         # check if we need "-undefined dynamic_lookup" by inspecting LDSHARED flags
         execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c"
                                 "import sys;import sysconfig;sys.stdout.write(sysconfig.get_config_var('LDSHARED'))"
@@ -65,7 +78,7 @@ if(PYTHONINTERP_FOUND)
         endif()
 
         # our goal is to find the specific python lib, based on info
-        # we extract from distutils.sysconfig from the python executable
+        # we extract from sysconfig from the python executable
         #
         # check for python libs differs for windows python installs
         if(NOT WIN32)
@@ -81,22 +94,22 @@ if(PYTHONINTERP_FOUND)
             #  LIBPL + LIBRARY
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBDIR'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBDIR
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBDIR)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBPL'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBPL
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBPL)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LDLIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LDLIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LDLIBRARY)
 
             execute_process(COMMAND "${PYTHON_EXECUTABLE}" "-c" 
-                                    "import sys;from distutils.sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
+                                    "import sys;from sysconfig import get_config_var; sys.stdout.write(get_config_var('LIBRARY'))"
                             OUTPUT_VARIABLE PYTHON_CONFIG_LIBRARY
                             ERROR_VARIABLE  ERROR_FINDING_PYTHON_LIBRARY)
 
@@ -180,9 +193,9 @@ find_package_handle_standard_args(Python  DEFAULT_MSG
 
 
 ##############################################################################
-# Macro to use a pure python distutils setup script
+# Macro to use a pure python pip setup script
 ##############################################################################
-FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
+FUNCTION(PYTHON_ADD_PIP_SETUP)
     set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
     set(multiValuedArgs  PY_SOURCES)
 
@@ -193,52 +206,52 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
     # check req'd args
     if(NOT DEFINED args_NAME)
        message(FATAL_ERROR
-               "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument NAME")
+               "PYTHON_ADD_PIP_SETUP: Missing required argument NAME")
     endif()
 
     if(NOT DEFINED args_DEST_DIR)
        message(FATAL_ERROR
-               "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument DEST_DIR")
+               "PYTHON_ADD_PIP_SETUP: Missing required argument DEST_DIR")
     endif()
 
     if(NOT DEFINED args_PY_MODULE_DIR)
        message(FATAL_ERROR
-       "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument PY_MODULE_DIR")
+       "PYTHON_ADD_PIP_SETUP: Missing required argument PY_MODULE_DIR")
     endif()
 
     if(NOT DEFINED args_PY_SETUP_FILE)
        message(FATAL_ERROR
-       "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument PY_SETUP_FILE")
+       "PYTHON_ADD_PIP_SETUP: Missing required argument PY_SETUP_FILE")
     endif()
 
     if(NOT DEFINED args_PY_SOURCES)
        message(FATAL_ERROR
-       "PYTHON_ADD_DISTUTILS_SETUP: Missing required argument PY_SOURCES")
+       "PYTHON_ADD_PIP_SETUP: Missing required argument PY_SOURCES")
     endif()
 
-    MESSAGE(STATUS "Configuring python distutils setup: ${args_NAME}")
+    MESSAGE(STATUS "Configuring python pip setup: ${args_NAME}")
 
     # dest for build dir
     set(abs_dest_path ${CMAKE_BINARY_DIR}/${args_DEST_DIR})
     if(WIN32)
-        # on windows, distutils seems to need standard "\" style paths
+        # on windows, python seems to need standard "\" style paths
         string(REGEX REPLACE "/" "\\\\" abs_dest_path  ${abs_dest_path})
     endif()
 
+    # NOTE: With pip, you can't directly control build dir with an arg
+    # like we were able to do with distutils, you have to use TMPDIR
+    # TODO: we might want to  explore this in the future
     add_custom_command(OUTPUT  ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
-            COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
-            ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-            build
-            --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build
-            install
-            --install-purelib="${abs_dest_path}"
+            COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+            --disable-pip-version-check --no-warn-script-location
+            --target "${abs_dest_path}"
             DEPENDS  ${args_PY_SETUP_FILE} ${args_PY_SOURCES}
             WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR})
 
     add_custom_target(${args_NAME} ALL DEPENDS
                       ${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build)
 
-    # also use distutils for the install ...
+    # also use pip for the install ...
     # if PYTHON_MODULE_INSTALL_PREFIX is set, install there
     if(PYTHON_MODULE_INSTALL_PREFIX)
         set(py_mod_inst_prefix ${PYTHON_MODULE_INSTALL_PREFIX})
@@ -249,10 +262,9 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
-                    ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
-                    install --install-purelib=${py_mod_inst_prefix}
+                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                --disable-pip-version-check --no-warn-script-location
+                --target ${py_mod_inst_prefix}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
@@ -261,10 +273,9 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         INSTALL(CODE
             "
             EXECUTE_PROCESS(WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
-                COMMAND ${CMAKE_COMMAND} -E env SETUPTOOLS_USE_DISTUTILS=stdlib
-                    ${PYTHON_EXECUTABLE} ${args_PY_SETUP_FILE} -v
-                    build   --build-base=${CMAKE_CURRENT_BINARY_DIR}/${args_NAME}_build_install
-                    install --install-purelib=\$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
+                COMMAND ${PYTHON_EXECUTABLE} -m pip install . -V --upgrade
+                --disable-pip-version-check --no-warn-script-location
+                --target \$ENV{DESTDIR}\${CMAKE_INSTALL_PREFIX}/${args_DEST_DIR}
                 OUTPUT_VARIABLE PY_DIST_UTILS_INSTALL_OUT)
             MESSAGE(STATUS \"\${PY_DIST_UTILS_INSTALL_OUT}\")
             ")
@@ -275,7 +286,7 @@ FUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
         blt_set_target_folder(TARGET ${args_NAME} FOLDER ${args_FOLDER})
     endif()
 
-ENDFUNCTION(PYTHON_ADD_DISTUTILS_SETUP)
+ENDFUNCTION(PYTHON_ADD_PIP_SETUP)
 
 ##############################################################################
 # Macro to create a compiled python module 
@@ -368,7 +379,7 @@ FUNCTION(PYTHON_ADD_COMPILED_MODULE)
 ENDFUNCTION(PYTHON_ADD_COMPILED_MODULE)
 
 ##############################################################################
-# Macro to create a compiled distutils and compiled python module
+# Macro to create a pip script and compiled python module
 ##############################################################################
 FUNCTION(PYTHON_ADD_HYBRID_MODULE)
     set(singleValuedArgs NAME DEST_DIR PY_MODULE_DIR PY_SETUP_FILE FOLDER)
@@ -411,12 +422,12 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
 
     MESSAGE(STATUS "Configuring hybrid python module: ${args_NAME}")
 
-    PYTHON_ADD_DISTUTILS_SETUP(NAME          "${args_NAME}_py_setup"
-                               DEST_DIR      ${args_DEST_DIR}
-                               PY_MODULE_DIR ${args_PY_MODULE_DIR}
-                               PY_SETUP_FILE ${args_PY_SETUP_FILE}
-                               PY_SOURCES    ${args_PY_SOURCES}
-                               FOLDER        ${args_FOLDER})
+    PYTHON_ADD_PIP_SETUP(NAME          "${args_NAME}_py_setup"
+                         DEST_DIR      ${args_DEST_DIR}
+                         PY_MODULE_DIR ${args_PY_MODULE_DIR}
+                         PY_SETUP_FILE ${args_PY_SETUP_FILE}
+                         PY_SOURCES    ${args_PY_SOURCES}
+                         FOLDER        ${args_FOLDER})
 
     PYTHON_ADD_COMPILED_MODULE(NAME          ${args_NAME}
                                DEST_DIR      ${args_DEST_DIR}
@@ -424,6 +435,10 @@ FUNCTION(PYTHON_ADD_HYBRID_MODULE)
                                SOURCES       ${args_SOURCES}
                                FOLDER        ${args_FOLDER})
 
+    # args_NAME depends on "${args_NAME}_py_setup"
+    add_dependencies( ${args_NAME} "${args_NAME}_py_setup")
+
 ENDFUNCTION(PYTHON_ADD_HYBRID_MODULE)
+
 
 

@@ -734,13 +734,36 @@ protected:
         const std::vector<std::vector<index_t>>& remap_to_local_doms,
         std::map<index_t, std::vector<index_t>>& orig_dom_gvids);
 
+    /**
+     @brief Return the name of the field that contains original vertex ids.
+
+     @return The name of the field to use for original vertex ids.
+     */
+    const std::string &original_vertex_ids_name() const
+    {
+        return original_vertex_ids;
+    }
+
+    /**
+     @brief Return the name of the field that contains original element ids.
+
+     @return The name of the field to use for original element ids.
+     */
+    const std::string &original_element_ids_name() const
+    {
+        return original_element_ids;
+    }
+
     int rank, size;
     unsigned int target;
     std::vector<const Node *>                meshes;
     std::vector<std::shared_ptr<Selection> > selections;
     std::vector<std::string>                 selected_fields;
     bool                                     mapping;
+    bool                                     build_adjsets;
     double                                   merge_tolerance;
+    std::string                              original_vertex_ids;
+    std::string                              original_element_ids;
 };
 
 }

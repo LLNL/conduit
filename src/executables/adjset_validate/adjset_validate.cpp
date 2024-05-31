@@ -100,7 +100,6 @@ addPointMesh(const std::string &adjsetName, const conduit::Node &info, conduit::
         // Add topo
         std::string topoName(adjsetName);
         conduit::Node &topo = n["topologies/" + topoName];
-        int npts = static_cast<int>(cx.size());
         topo["coordset"] = coordsetName;
         topo["type"] = "points";
 
@@ -145,7 +144,7 @@ printUsage(const char *program)
 int
 main(int argc, char *argv[])
 {
-    std::string input, output("adjset_validate"), protocol;
+    std::string input, output, protocol;
 
     // Set default protocol. Use HDF5 if present.
     conduit::Node props;
@@ -202,28 +201,53 @@ main(int argc, char *argv[])
         std::vector<const conduit::Node *> adjsets(GetAdjsets(root));
 
         // Look through the adjsets to see if the points are all good.
-        std::string msg2("Check adjset ");
         bool err = false;
         conduit::Node pointMeshes;
         for(size_t i = 0; i < adjsets.size(); i++)
         {
             std::string adjsetName(adjsets[i]->name());
+
+            // Get the adjset association.
+            std::string association;
+            if(adjsets[i]->has_path("association"))
+                association = adjsets[i]->fetch_existing("association").as_string();
+
             conduit::Node info;
             bool res = conduit::blueprint::mesh::utils::adjset::validate(root, adjsetName, info);
             if(res)
             {
-                std::cout << msg2 << adjsetName << "... PASS" << std::endl;
+                // If the adjset is vertex associated then compare the points in
+                // it to make sure that they are the same on each side of the boundary.
+                if(association == "vertex")
+                    res = conduit::blueprint::mesh::utils::adjset::compare_pointwise(root, adjsetName, info);
+
+                if(res)
+                {
+                    std::cout << "Check " << association << " adjset " << adjsetName << "... PASS" << std::endl;
+                }
+                else
+                {
+                    std::cout << "Check " << association << " adjset " << adjsetName << "... FAIL: The adjset points have different orders" << std::endl;
+                    info.print();
+                    err = true;
+                }
             }
             else
             {
-                std::cout << msg2 << adjsetName << "... FAIL: The adjsets contain errors." << std::endl;
+                std::cout << "Check " << association << " adjset " << adjsetName << "... FAIL: The adjsets contain errors." << std::endl;
                 info.print();
-                addPointMesh(adjsetName, info, pointMeshes);
+                // If we're outputting, make a point mesh of the differences.
+                if(!output.empty())
+                    addPointMesh(adjsetName, info, pointMeshes);
                 err = true;
             }
+
+            // If we're outputting. write the adjsets as point meshes that we can look at.
+            if(!output.empty())
+                conduit::blueprint::mesh::utils::adjset::to_topo(root, adjsetName, pointMeshes);
         }
         // Write any point meshes that were created.
-        if(pointMeshes.number_of_children() > 0)
+        if(!output.empty() && pointMeshes.number_of_children() > 0)
         {
             conduit::relay::io::blueprint::save_mesh(pointMeshes, output, protocol);
         }

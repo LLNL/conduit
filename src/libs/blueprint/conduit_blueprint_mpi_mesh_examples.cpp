@@ -53,9 +53,9 @@ braid_uniform_multi_domain(Node &res, MPI_Comm comm)
 {
     int par_rank = relay::mpi::rank(comm);
 
-    index_t npts_x = 10;
-    index_t npts_y = 10;
-    index_t npts_z = 10;
+    index_t npts_x = 11;
+    index_t npts_y = 11;
+    index_t npts_z = 11;
 
     blueprint::mesh::examples::braid("uniform",
                                       npts_x,

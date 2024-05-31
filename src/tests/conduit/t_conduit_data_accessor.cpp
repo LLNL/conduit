@@ -202,6 +202,91 @@ TEST(conduit_data_accessor, default_construct)
 }
 
 
+//-----------------------------------------------------------------------------
+TEST(conduit_data_accessor, set)
+{
+
+    Node n;
+    n.set(DataType::int8(10));
+
+    int8_accessor  i8_acc  = n.value();
+    int16_accessor i16_acc = n.value();
+    int32_accessor i32_acc = n.value();
+    int64_accessor i64_acc = n.value();
+
+    uint8_accessor  ui8_acc  = n.value();
+    uint16_accessor ui16_acc = n.value();
+    uint32_accessor ui32_acc = n.value();
+    uint64_accessor ui64_acc = n.value();
+
+    float32_accessor f32_acc = n.value();
+    float64_accessor f64_acc = n.value();
+
+    i8_acc.set(0,-4);
+    i16_acc.set(1,-8);
+    i32_acc.set(2,-16);
+    i64_acc.set(3,-32);
+
+    ui8_acc.set(4, 4);
+    ui16_acc.set(5,8);
+    ui32_acc.set(6,16);
+    ui64_acc.set(7,32);
+
+    f32_acc.set(8,16);
+    f64_acc.set(9,32);
+
+    EXPECT_EQ(i32_acc[0],-4);
+    EXPECT_EQ(i32_acc[1],-8);
+    EXPECT_EQ(i32_acc[2],-16);
+    EXPECT_EQ(i32_acc[3],-32);
+
+    EXPECT_EQ(i32_acc[4],4);
+    EXPECT_EQ(i32_acc[5],8);
+    EXPECT_EQ(i32_acc[6],16);
+    EXPECT_EQ(i32_acc[7],32);
+
+    EXPECT_EQ(i32_acc[8],16);
+    EXPECT_EQ(i32_acc[9],32);
+
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_data_accessor, fill)
+{
+    Node n;
+    n.set(DataType::int32(10));
+
+    int32_array    arr = n.value();
+    int64_accessor acc = n.value();
+
+    acc.fill(-1);
+
+    for(int i=0;i<10;i++)
+    {
+        EXPECT_EQ(arr[0],-1);
+    }
+}
+
+
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_data_accessor, to_string)
+{
+    Node n;
+    n.set(DataType::int32(6));
+
+    int32_accessor acc = n.value();
+
+    std::string res = acc.to_string();
+    std::cout << res << std::endl;
+    EXPECT_EQ(res,"[0, 0, 0, 0, 0, 0]");
+
+    res = acc.to_summary_string();
+    std::cout << res << std::endl;
+    EXPECT_EQ(res,"[0, 0, 0, ..., 0, 0]");
+}
 
 
 

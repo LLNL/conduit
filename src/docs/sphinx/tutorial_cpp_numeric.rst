@@ -92,8 +92,7 @@ indexing for all types of arrays.
 C++11 Initializer Lists 
 -----------------------------------
 
-When C++11 support is enabled you can set Node values using initializer lists
-with numeric literals. 
+You can set Node values using C++11 style initializer lists of numeric literals. 
 
 .. literalinclude:: ../../tests/docs/t_conduit_docs_tutorial_numeric.cpp
    :start-after: BEGIN_EXAMPLE("numeric_cxx11_init")

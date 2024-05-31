@@ -40,6 +40,16 @@ def timestamp(t=None,sep="_"):
 def conduit_blurb():
     return "[Conduit](https://github.com/LLNL/conduit) provides an intuitive model for describing hierarchical scientific data in C++, C, Fortran, and Python. It is used for data coupling between packages in-core, serialization, and I/O tasks."
 
+def release_date(release_id,src):
+    for l in src.split("\n"):
+        if l.startswith("## "):
+            sub_open = False
+            active_rel = proc_changelog_rel_id_line(l)
+            if active_rel == release_id:
+                # grab the date, it will be the last token
+                return l.split()[-1]
+    return "Unknown Date"
+
 def gen_llnl_news_entry(release_id,src):
     txt  = "---\n"
     txt += 'title: "Conduit {0} Released"\n'.format(release_id)
@@ -57,6 +67,7 @@ def gen_llnl_news_entry(release_id,src):
 def gen_sphinx_entry(release_id,src):
     txt  = "v{0}\n".format(release_id)
     txt += "---------------------------------\n\n"
+    txt += "* Released {0}\n".format(release_date(release_id,src))
     txt += "* `Source Tarball <https://github.com/LLNL/conduit/releases/download/v{0}/conduit-v{0}-src-with-blt.tar.gz>`__\n\n".format(release_id)
     txt += "Highlights\n"
     txt += "++++++++++++++++++++++++++++++++++++\n\n"
@@ -88,7 +99,8 @@ def sphinx_translate_ticks(l):
 
 def gen_github_entry(release_id,src):
     txt  = "# {0} Release Highlights\n\n".format(release_id)
-    txt += "(adapted from Conduit's Changelog)\n"
+    txt += "(adapted from Conduit's [Changelog](https://github.com/LLNL/conduit/blob/develop/CHANGELOG.md) )\n\n"
+    txt += "Released {0}\n\n".format(release_date(release_id,src))
     sub_open = False
     active_rel = ""
     for l in src.split("\n"):
