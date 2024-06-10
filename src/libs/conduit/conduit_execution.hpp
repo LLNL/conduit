@@ -137,6 +137,7 @@ struct SerialExec
     static std::string memory_space;
 };
 
+// TODO do we want this to be an option when RAJA is off?
 #if defined(CONDUIT_USE_OPENMP)
 //---------------------------------------------------------------------------
 struct OpenMPExec
@@ -176,28 +177,28 @@ void dispatch(ExecPolicy policy, Function&& func)
             HipExec he;
             return invoke(he, func);
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was built with neither CUDA nor HIP.");
 #endif
         case policies::Cuda:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             CudaExec ce;
             return invoke(ce, func);
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was not built with CUDA.");
 #endif
         case policies::Hip:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_HIP)
             HipExec he;
             return invoke(he, func);
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was not built with HIP.");
 #endif
         case policies::OpenMP:
 #if defined(CONDUIT_USE_OPENMP)
             OpenMPExec ompe;
             return invoke(ompe, func);
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was not built with OpenMP.");
 #endif
         case policies::Serial:
         default:
@@ -254,28 +255,28 @@ inline void new_forall(ExecPolicy &policy,
             new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was built with neither CUDA nor HIP.");
 #endif
         case policies::Cuda:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             new_forall<CudaExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was not built with CUDA.");
 #endif
         case policies::Hip:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_HIP)
             new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was not built with HIP.");
 #endif
         case policies::OpenMP:
-#if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_OPENMP)
+#if defined(CONDUIT_USE_OPENMP)
             new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
-            CONDUIT_ERROR("bad choice");
+            CONDUIT_ERROR("Conduit was not built with OpenMP.");
 #endif
         case policies::Serial:
         default:
