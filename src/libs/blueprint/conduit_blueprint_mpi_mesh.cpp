@@ -476,11 +476,24 @@ void to_polygonal(const Node &n,
 
                                 temp.reset();
 
+                                index_t part_lo = nbr_win["partial_lo"].to_index_t();
+                                index_t part_hi = nbr_win["partial_hi"].to_index_t();
+                                const double dbl_max =
+                                    std::numeric_limits<double>::max();
+                                if (part_lo)
+                                {
+                                    for (index_t m = 0; m < part_lo; ++m)
+                                    {
+                                        xbuffer.push_back(dbl_max);
+                                        ybuffer.push_back(dbl_max);
+                                    }
+                                }
+
                                 if (ref_size_i == 1)
                                 {
                                     const index_t icnst = origin_i - i_lo;
-                                    const index_t jstart = origin_j - j_lo;
-                                    const index_t jend = jstart + ref_size_j;
+                                    const index_t jstart = origin_j - j_lo + part_lo;
+                                    const index_t jend = jstart + ref_size_j - part_hi - part_lo;
                                     for (index_t jidx = jstart; jidx < jend; ++jidx)
                                     {
                                         const index_t offset = jidx * niwidth + icnst;
@@ -495,8 +508,8 @@ void to_polygonal(const Node &n,
                                 else if (ref_size_j == 1)
                                 {
                                     const index_t jcnst = origin_j - j_lo;
-                                    const index_t istart = origin_i - i_lo;
-                                    const index_t iend = istart + ref_size_i;
+                                    const index_t istart = origin_i - i_lo + part_lo;
+                                    const index_t iend = istart + ref_size_i - part_hi - part_lo;
                                     for (index_t iidx = istart; iidx < iend; ++iidx)
                                     {
                                         const index_t offset = jcnst * niwidth + iidx;
@@ -508,6 +521,15 @@ void to_polygonal(const Node &n,
                                         ybuffer.push_back(temp.to_double());
                                     }
                                 }
+                                if (part_hi)
+                                {
+                                    for (index_t m = 0; m < part_hi; ++m)
+                                    {
+                                        xbuffer.push_back(dbl_max);
+                                        ybuffer.push_back(dbl_max);
+                                    }
+                                }
+
                                 const index_t nbr_rank = group["rank"].to_index_t();
                                 MPI_Send(&xbuffer[0],
                                          xbuffer.size(),
@@ -580,6 +602,39 @@ void to_polygonal(const Node &n,
                                     index_t jstart = origin_j - nj_lo;
                                     index_t iend = istart + nbr_size_i;
                                     index_t jend = jstart + nbr_size_j;
+
+                                    index_t part_lo = nbr_win["partial_lo"].to_index_t();
+                                    index_t part_hi = nbr_win["partial_hi"].to_index_t();
+
+                                const double dbl_max =
+                                    std::numeric_limits<double>::max();
+
+                                    if (part_lo)
+                                    {
+                                        if (nbr_size_i > 1)
+                                        {
+                                            istart += part_lo;
+                                        }
+                                        else if (nbr_size_j > 1)
+                                        {
+                                            jstart += part_lo;
+                                        }
+                                        for (index_t m = 0; m < part_lo; ++m)
+                                        {
+                                            xbuffer.push_back(dbl_max); 
+                                            ybuffer.push_back(dbl_max); 
+                                        }
+                                    }
+                                    if (part_hi)
+                                    {
+                                        if (nbr_size_i > 1)
+                                        {
+                                           iend -= part_hi;
+                                        } else if (nbr_size_j > 1)
+                                        {
+                                           jend -= part_hi;
+                                        }
+                                    }
                                     for (index_t jidx = jstart; jidx < jend; ++jidx)
                                     {
                                         index_t joffset = jidx*nbr_iwidth;
@@ -588,6 +643,13 @@ void to_polygonal(const Node &n,
                                             index_t offset = joffset+iidx;
                                             xbuffer.push_back(xarray[offset]);
                                             ybuffer.push_back(yarray[offset]);
+                                        }
+                                    }
+                                    if (part_hi)
+                                    {
+                                        for (index_t m = 0; m < part_hi; ++m) {
+                                            xbuffer.push_back(dbl_max);
+                                            ybuffer.push_back(dbl_max);
                                         }
                                     }
                                 }
@@ -620,7 +682,7 @@ void to_polygonal(const Node &n,
                                 const index_t out_x_size = out_x.number_of_elements();
                                 const index_t out_y_size = out_y.number_of_elements();
 
-				// Reserve vector capacity for added vertices
+                                // Reserve vector capacity for added vertices
                                 std::vector<double> new_x;
                                 std::vector<double> new_y;
                                 if ((xbuffer.size()-1) % use_ratio == 0)
@@ -646,10 +708,14 @@ void to_polygonal(const Node &n,
 
                                 new_x.insert(new_x.end(), out_x_ptr, out_x_ptr + out_x_size);
                                 new_y.insert(new_y.end(), out_y_ptr, out_y_ptr + out_y_size);
+                                index_t part_lo = ref_win["partial_lo"].to_index_t();
+                                index_t part_hi = ref_win["partial_hi"].to_index_t();
+                                index_t nbr_part_lo = nbr_win["partial_lo"].to_index_t();
+                                index_t nbr_part_hi = nbr_win["partial_hi"].to_index_t();
 
 
                                 bool flip = false;
-                                if (group.has_child("orientation"))
+                                if (group.has_child("orientation") && (nbr_part_lo+nbr_part_hi) > -7)
                                 {
                                     auto& orientation = group["orientation"].as_int_array();
                                     index_t ref_size_i = ref_win["dims/i"].to_index_t();
@@ -664,10 +730,11 @@ void to_polygonal(const Node &n,
                                     }
                                 }
 
+                                index_t buf_size = (index_t)xbuffer.size();
                                 if (flip)
                                 {
-                                    for (index_t ni = (index_t)xbuffer.size()-1;
-                                         ni >=0; --ni)
+                                    for (index_t ni = buf_size-1-part_hi;
+                                         ni >= part_lo; --ni)
                                     {
                                         if (ni % use_ratio)
                                         {
@@ -678,7 +745,7 @@ void to_polygonal(const Node &n,
                                 }
                                 else
                                 {
-                                    for (index_t ni = 0; ni < (index_t)xbuffer.size(); ++ni)
+                                    for (index_t ni = part_lo; ni < buf_size-part_hi; ++ni)
                                     {
                                         if (ni % use_ratio)
                                         {
@@ -697,7 +764,8 @@ void to_polygonal(const Node &n,
                                                                            iwidth,
                                                                            use_ratio,
                                                                            new_vertex,
-                                                                           poly_elems);
+                                                                           poly_elems,
+                                                                           flip);
                             }
                         }
                     }
