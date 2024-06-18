@@ -138,6 +138,7 @@ struct SerialExec
 };
 
 // TODO do we want this to be an option when RAJA is off?
+// TODO decide about if we want to provide this as an option when RAJA is on as well
 #if defined(CONDUIT_USE_OPENMP)
 //---------------------------------------------------------------------------
 struct OpenMPExec
