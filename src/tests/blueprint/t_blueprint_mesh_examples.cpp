@@ -665,6 +665,166 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_colmajor)
 }
 
 //-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mixed_mesh_simple_2d)
+{
+    Node data, verify_info;
+
+    //
+    // Create example mesh.
+    //
+
+    // create simple mixed 2d mesh with triangles and quads
+    /*
+    3     *-------*-------*       (8, 9, 10)
+         / \     / \     / \
+        / d \ e / f \ g / h \
+       /     \ /     \ /     \
+    1  *------*-------*------*    (4, 5, 6, 7)
+       |   a  |   b   |  c   |
+    0  *------*-------*------*
+       0      1       2      3
+    */
+
+    data["coordsets/coords/type"] = "explicit";
+    data["coordsets/coords/values/x"].set(DataType::float64(11));
+    data["coordsets/coords/values/y"].set(DataType::float64(11));
+
+    data["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.5, 1.5, 2.5 };
+    data["coordsets/coords/values/y"] = { 0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          3.0, 3.0, 3.0};
+
+    data["topologies/topo/type"] = "unstructured";
+    data["topologies/topo/coordset"] = "coords";
+    data["topologies/topo/elements/shape"] = "mixed";
+    data["topologies/topo/elements/shape_map/tri"]  = 5;
+    data["topologies/topo/elements/shape_map/quad"] = 9;
+    data["topologies/topo/elements/shapes"] = { 9, 9, 9,
+                                                5, 5, 5, 5, 5};
+    data["topologies/topo/elements/sizes"] =  { 4, 4, 4,
+                                                3, 3, 3, 3, 3};
+    data["topologies/topo/elements/offsets"] =  {0, 4, 8,
+                                                 12, 15, 18, 21, 24};
+
+    data["topologies/topo/elements/connectivity"] =  {0, 1, 5, 4,
+                                                      1, 2, 6, 5,
+                                                      2, 3, 7, 6,
+                                                      4, 5, 8,
+                                                      8, 5, 9,
+                                                      5, 6, 9,
+                                                      9, 6, 10,
+                                                      6, 7, 10};
+
+    data["fields/ele_id/topology"] = "topo";
+    data["fields/ele_id/association"] = "element";
+    data["fields/ele_id/values"] = { 0, 1, 2,
+                                     3, 4, 5, 6, 7};
+
+    // also add a points topo to help with debugging
+
+    data["topologies/pts/type"] = "points";
+    data["topologies/pts/coordset"] = "coords";
+    data["fields/pts_id/topology"] = "pts";
+    data["fields/pts_id/association"] = "element";
+    data["fields/pts_id/values"] = { 0, 1, 2, 3,
+                                     4, 5, 6, 7, 
+                                     8, 9, 10};
+
+    //data.print();
+
+    EXPECT_TRUE(blueprint::mesh::verify(data, verify_info));
+    CONDUIT_INFO(verify_info.to_yaml());
+
+    test_save_mesh_helper(data, "mixed_mesh_simple_2d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mixed_mesh_simple_3d)
+{
+    Node data, verify_info;
+
+    //
+    // Create example mesh.
+    //
+
+    // create simple mixed 3d mesh with hexs and pyramids
+    /*
+            *       *      * ( x: 0.5, 1.5, 2.5). 16, 17, 18
+                             ( y:   2,   2,   2)
+                             ( z: 0.5, 0.5, 0.5)
+   1    *------*-------*------*  (12, 13, 14, 15) (back upper)
+  z    /      /.      /.     /|
+ 0  1 *------*-------*------* |  (8, 9, 10, 11) (front upper)
+    y |   a  |   b   |  c   | / 
+    0 *------*-------*------*    (4, 5, 6, 7) (back lower)
+      0      1       2      3
+    */
+
+    data["coordsets/coords/type"] = "explicit";
+    data["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.5, 1.5, 2.5};
+
+    data["coordsets/coords/values/y"] = { 0.0, 0.0, 0.0, 0.0,
+                                          0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          2.0, 2.0, 2.0};
+
+    data["coordsets/coords/values/z"] = { 0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          0.5, 0.5, 0.5};
+
+
+    data["topologies/topo/type"] = "unstructured";
+    data["topologies/topo/coordset"] = "coords";
+    data["topologies/topo/elements/shape"] = "mixed";
+    data["topologies/topo/elements/shape_map/hex"]  = 12;
+    data["topologies/topo/elements/shape_map/pyramid"]  = 14;
+    data["topologies/topo/elements/shapes"] =  { 12, 12, 12, 14, 14, 14 };
+    data["topologies/topo/elements/sizes"] =   { 8, 8, 8, 5, 5, 5};
+    data["topologies/topo/elements/offsets"] = { 0, 8, 16,
+                                                 24, 29, 34};
+
+    data["topologies/topo/elements/connectivity"] =  {  0,  1,  5,  4,  8,  9, 13, 12,
+                                                        1,  2,  6,  5,  9, 10, 14, 13,
+                                                        2,  3,  7,  6, 10, 11, 15, 14,
+                                                        8,  9, 13, 12, 16,
+                                                        9, 10, 14, 13, 17,
+                                                       10, 11, 15, 14, 18
+                                                    };
+
+    data["fields/ele_id/topology"] = "topo";
+    data["fields/ele_id/association"] = "element";
+    data["fields/ele_id/values"] = { 0, 1, 2, 3, 4, 5};
+
+    // also add a points topo to help with debugging
+
+    data["topologies/pts/type"] = "points";
+    data["topologies/pts/coordset"] = "coords";
+    data["fields/pts_id/topology"] = "pts";
+    data["fields/pts_id/association"] = "element";
+    data["fields/pts_id/values"] = {  0,  1,  2,  3,
+                                      4,  5,  6,  7,
+                                      8,  9, 10, 11,
+                                     12, 13, 14, 15,
+                                     16, 17, 18};
+
+    //data.print();
+
+    EXPECT_TRUE(blueprint::mesh::verify(data, verify_info));
+    CONDUIT_INFO(verify_info.to_yaml());
+
+    test_save_mesh_helper(data, "mixed_mesh_simple_3d");
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, julia)
 {
     Node res;
