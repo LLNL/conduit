@@ -8,7 +8,7 @@
 Mesh Blueprint Transforms
 ===========================
 
-These are methods in conduit::blueprint::mesh.  Generally they take a Node mesh and return information about it or transform it.
+These are methods in conduit::blueprint::mesh.  Generally a method takes a Node mesh and returns information about it or transforms it.
 
 Multi-domain methods
 --------------------
