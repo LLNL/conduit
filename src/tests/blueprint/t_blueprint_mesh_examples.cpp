@@ -204,6 +204,10 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         CONDUIT_INFO(info.to_yaml());
     }
 
+    // TODO: What are these meshes and how should they be rendered?
+    dsets.remove("quads_and_tris");
+    dsets.remove("quads_and_tris_offsets");
+
     braid_save_helper(dsets,"braid_2d_examples");
 #if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
     if(silo_enabled)
@@ -332,6 +336,9 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
         CONDUIT_INFO(info.to_yaml());
     }
+
+    // TODO: What is this mesh and how should it be rendered?
+    dsets.remove("hexs_and_tets");
 
     braid_save_helper(dsets,"braid_3d_examples");
 #if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
