@@ -204,12 +204,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         CONDUIT_INFO(info.to_yaml());
     }
 
-    // TODO: Add VisIt support for rendering mixed element and implicit point
-    // meshes so they don't have to be removed before outputting mesh data.
-    dsets.remove("quads_and_tris");
-    dsets.remove("quads_and_tris_offsets");
-    dsets.remove("mixed_2d");
-
     braid_save_helper(dsets,"braid_2d_examples");
 #if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
     if(silo_enabled)
@@ -338,11 +332,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
         CONDUIT_INFO(info.to_yaml());
     }
-
-    // TODO: Add VisIt support for rendering mixed element and implicit point
-    // meshes so they don't have to be removed before outputting mesh data.
-    dsets.remove("hexs_and_tets");
-    dsets.remove("mixed");
 
     braid_save_helper(dsets,"braid_3d_examples");
 #if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
@@ -504,6 +493,8 @@ TEST(conduit_blueprint_mesh_examples, strided_structured_2d)
     test_save_mesh_helper(res, "strided_structured_2d_pad");
 }
 
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, strided_structured_3d)
 {
     Node res;
@@ -1099,7 +1090,7 @@ TEST(conduit_blueprint_mesh_examples, venn_sparse_by_element)
     venn_test_small_yaml("sparse_by_element");
 }
 
-
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, mesh_julia_nestset_simple)
 {
 
