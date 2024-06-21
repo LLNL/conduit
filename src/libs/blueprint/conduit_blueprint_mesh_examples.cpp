@@ -1000,16 +1000,21 @@ braid_init_example_adjset(Node &mesh)
         }
     }
 
+    // Now mesh_point_doms_map has an entry (x, y, z) -> {dom -> i} for each point in ALL domains.
+
     group_idx_map groups_map;
     point_doms_map::const_iterator pm_itr;
     for(pm_itr = mesh_point_doms_map.begin();
         pm_itr != mesh_point_doms_map.end(); ++pm_itr)
     {
+        // The only points we're interested in are the ones with more than one
+        // value.  Those are the points that sit on the domain boundary.
         const std::map<index_t, index_t>& point_dom_idx_map = pm_itr->second;
         if(point_dom_idx_map.size() > 1)
         {
             std::set<index_t> point_group;
 
+            // Put all the the domains for this point into point_group
             std::map<index_t, index_t>::const_iterator pg_itr;
             for(pg_itr = point_dom_idx_map.begin();
                 pg_itr != point_dom_idx_map.end(); ++pg_itr)
@@ -1017,12 +1022,15 @@ braid_init_example_adjset(Node &mesh)
                 point_group.insert(pg_itr->first);
             }
 
+            // Get/create the vector-of-vector-of-index for this group (set of adjoining domains)
             std::vector<std::vector<index_t> >& group_indices = groups_map[point_group];
             if(group_indices.empty())
             {
                 group_indices.resize(point_group.size());
             }
 
+            // For each domain that contains this point, push that domain's point index back
+            // in that domain's vector.
             std::set<index_t>::const_iterator gd_itr;
             std::set<index_t>::size_type gi = 0;
             for(gd_itr = point_group.begin();
@@ -1033,6 +1041,16 @@ braid_init_example_adjset(Node &mesh)
             }
         }
     }
+
+    // Now groups_map has an entry for each border {dom} -> [ (domain) [i] ] ,
+    // where the set of domains comprising that border is the key and the value is
+    // a vector (one for each domain) of vectors (the indices of the border points
+    // in that domain).
+    // 
+    // In the map value, the order of domains (the outer vector) is determined by
+    // the iterator over the key (the set of owning domains).  The main point is
+    // that the order of the inner vectors (the points in that domain) is consistent.
+    // That is, index k of all the inner vectors refers to the same physical point.
 
     group_idx_map::const_iterator gm_itr;
     index_t gid = 0;
@@ -3717,6 +3735,7 @@ braid(const std::string &mesh_type,
         CONDUIT_ERROR("unknown mesh_type = " << mesh_type);
     }
 }
+
 
 //---------------------------------------------------------------------------//
 void spiral(index_t ndoms,

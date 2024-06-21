@@ -91,11 +91,23 @@ test_save_mesh_helper(const conduit::Node &dsets,
     }
 }
 
+void validate_basic_example(const std::string& name,
+    Node& mesh,
+    const std::string& ref_str,
+    bool print_json = false);
+
 void validate_basic_example(const std::string &name,
                             Node &mesh,
-                            const std::string &ref_str)
+                            const std::string &ref_str,
+                            bool print_json)
 {
     CONDUIT_INFO("Testing Basic Example '" << name << "'");
+
+    if (print_json) {
+        std::cout << "--------------------------------------------------------" << std::endl;
+        std::cout << mesh.to_json() << std::endl;
+        std::cout << "--------------------------------------------------------" << std::endl;
+    }
 
     Node info;
     EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
@@ -121,7 +133,10 @@ void validate_basic_example(const std::string &name,
     mesh["topologies/mesh_points/type"] = "points";
     mesh["topologies/mesh_points/coordset"] = "coords";
 
-    std::cout << mesh.to_yaml() << std::endl;
+    mesh["topologies/new_mesh_points/type"] = "points";
+    mesh["topologies/new_mesh_points/coordset"] = "new_coords";
+
+    // std::cout << mesh.to_yaml() << std::endl;
 
     test_save_mesh_helper(mesh, name);
 }
@@ -133,8 +148,8 @@ TEST(conduit_docs, blueprint_demo_transform_side)
 {
     BEGIN_EXAMPLE("blueprint_demo_transform_side");
     // some useful (arbitrary) names
-    const std::string SIDE_COORDSET_NAME = "scoords";
-    const std::string SIDE_TOPOLOGY_NAME = "stopo";
+    const std::string SIDE_COORDSET_NAME = "new_coords";
+    const std::string SIDE_TOPOLOGY_NAME = "new_mesh";
 
     // create container node and generate simple uniform 2d 'polygon' mesh
     Node mesh;
@@ -159,49 +174,253 @@ TEST(conduit_docs, blueprint_demo_transform_side)
 
     const std::string mesh_json = R"(
     {
-      "coordsets": 
+      "coordsets":
       {
-        "coords": 
+        "coords":
         {
-          "type": "uniform",
-          "dims": 
+          "type": "explicit",
+          "values":
           {
-            "i": 3,
-            "j": 3
-          },
-          "origin": 
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 10.0, 10.0, 10.0]
+          }
+        },
+        "new_coords":
+        {
+          "type": "explicit",
+          "values":
           {
-            "x": -10.0,
-            "y": -10.0
-          },
-          "spacing": 
-          {
-            "dx": 10.0,
-            "dy": 10.0
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -5.0, 5.0],
+            "y": [-10.0, -10.0, -10.0, 10.0, 10.0, 10.0, 0.0, 0.0]
           }
         }
       },
-      "topologies": 
+      "topologies":
       {
-        "mesh": 
+        "mesh":
         {
-          "type": "uniform",
-          "coordset": "coords"
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements":
+          {
+            "shape": "polygonal",
+            "connectivity": [0, 3, 4, 1, 1, 4, 5, 2],
+            "sizes": [4, 4],
+            "offsets": [0, 4]
+          }
+        },
+        "new_mesh":
+        {
+          "type": "unstructured",
+          "coordset": "new_coords",
+          "elements":
+          {
+            "shape": "tri",
+            "connectivity": [0, 3, 6, 3, 4, 6, 4, 1, 6, 1, 0, 6, 1, 4, 7, 4, 5, 7, 5, 2, 7, 2, 1, 7]
+          }
         }
       },
-      "fields": 
+      "fields":
       {
-        "field": 
+        "field":
         {
           "association": "element",
           "topology": "mesh",
           "volume_dependent": "false",
-          "values": [0.0, 1.0, 2.0, 3.0]
+          "values": [0.0, 1.0]
         }
       }
     }
     )";
 
-    validate_basic_example("uniform",mesh,mesh_json);
+    validate_basic_example("side",mesh,mesh_json);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_transform_corner)
+{
+    BEGIN_EXAMPLE("blueprint_demo_transform_corner");
+    // some useful (arbitrary) names
+    const std::string CORNER_COORDSET_NAME = "new_coords";
+    const std::string CORNER_TOPOLOGY_NAME = "new_mesh";
+
+    // create container node and generate simple uniform 2d 'polygon' mesh
+    Node mesh;
+    conduit::blueprint::mesh::examples::basic("polygons", 3, 2, 0, mesh);
+    // Get a reference to the original (first) mesh topology
+    Node &grid_topo = mesh["topologies"].child(0);
+
+    // Set up a new "side" mesh
+    Node t2c_map, c2t_map;
+    Node &corner_coords = mesh["coordsets"][CORNER_COORDSET_NAME];
+    Node &corner_topo = mesh["topologies"][CORNER_TOPOLOGY_NAME];
+    conduit::blueprint::mesh::topology::unstructured::
+        generate_corners(grid_topo, corner_topo, corner_coords, t2c_map, c2t_map);
+
+    // print out results
+    std::cout << mesh.to_yaml() << std::endl;
+    END_EXAMPLE("blueprint_demo_transform_corner");
+
+    // print out t2s_map and s2t_map
+    std::cout << t2c_map.to_yaml() << std::endl;
+    std::cout << c2t_map.to_yaml() << std::endl;
+
+    const std::string mesh_json = R"(
+    {
+      "coordsets":
+      {
+        "coords":
+        {
+          "type": "explicit",
+          "values":
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 10.0, 10.0, 10.0]
+          }
+        },
+        "new_coords":
+        {
+          "type": "explicit",
+          "values":
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0, -10.0, -5.0, 0.0, -5.0, 5.0, 10.0, 5.0, -5.0, 5.0],
+            "y": [-10.0, -10.0, -10.0, 10.0, 10.0, 10.0, 0.0, 10.0, 0.0, -10.0, 10.0, 0.0, -10.0, 0.0, 0.0]
+          }
+        }
+      },
+      "topologies":
+      {
+        "mesh":
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements":
+          {
+            "shape": "polygonal",
+            "connectivity": [0, 3, 4, 1, 1, 4, 5, 2],
+            "sizes": [4, 4],
+            "offsets": [0, 4]
+          }
+        },
+        "new_mesh":
+        {
+          "type": "unstructured",
+          "coordset": "new_coords",
+          "elements":
+          {
+            "shape": "polygonal",
+            "connectivity": [0, 6, 13, 9, 3, 7, 13, 6, 4, 8, 13, 7, 1, 9, 13, 8, 1, 8, 14, 12, 4, 10, 14, 8, 5, 11, 14, 10, 2, 12, 14, 11],
+            "sizes": [4, 4, 4, 4, 4, 4, 4, 4],
+            "offsets": [0, 4, 8, 12, 16, 20, 24, 28]
+          }
+        }
+      },
+      "fields":
+      {
+        "field":
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("corner", mesh, mesh_json);
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_docs, blueprint_demo_transform_centroid)
+{
+    BEGIN_EXAMPLE("blueprint_demo_transform_centroid");
+    // some useful (arbitrary) names
+    const std::string CENTROID_COORDSET_NAME = "new_coords";
+    const std::string CENTROID_TOPOLOGY_NAME = "new_mesh";
+
+    // create container node and generate simple uniform 2d 'polygon' mesh
+    Node mesh;
+    conduit::blueprint::mesh::examples::basic("polygons", 3, 2, 0, mesh);
+    // Get a reference to the original (first) mesh topology
+    Node &grid_topo = mesh["topologies"].child(0);
+
+    // Set up a new "side" mesh
+    Node t2c_map, c2t_map;
+    Node &corner_coords = mesh["coordsets"][CENTROID_COORDSET_NAME];
+    Node &corner_topo = mesh["topologies"][CENTROID_TOPOLOGY_NAME];
+    conduit::blueprint::mesh::topology::unstructured::
+        generate_centroids(grid_topo, corner_topo, corner_coords, t2c_map, c2t_map);
+
+    // print out results
+    std::cout << mesh.to_yaml() << std::endl;
+    END_EXAMPLE("blueprint_demo_transform_centroid");
+
+    // print out t2s_map and s2t_map
+    std::cout << t2c_map.to_yaml() << std::endl;
+    std::cout << c2t_map.to_yaml() << std::endl;
+
+    const std::string mesh_json = R"(
+    {
+      "coordsets":
+      {
+        "coords":
+        {
+          "type": "explicit",
+          "values":
+          {
+            "x": [-10.0, 0.0, 10.0, -10.0, 0.0, 10.0],
+            "y": [-10.0, -10.0, -10.0, 10.0, 10.0, 10.0]
+          }
+        },
+        "new_coords":
+        {
+          "type": "explicit",
+          "values":
+          {
+            "x": [-5.0, 5.0],
+            "y": [0.0, 0.0]
+          }
+        }
+      },
+      "topologies":
+      {
+        "mesh":
+        {
+          "type": "unstructured",
+          "coordset": "coords",
+          "elements":
+          {
+            "shape": "polygonal",
+            "connectivity": [0, 3, 4, 1, 1, 4, 5, 2],
+            "sizes": [4, 4],
+            "offsets": [0, 4]
+          }
+        },
+        "new_mesh":
+        {
+          "type": "unstructured",
+          "coordset": "new_coords",
+          "elements":
+          {
+            "shape": "point",
+            "connectivity": [0, 1]
+          }
+        }
+      },
+      "fields":
+      {
+        "field":
+        {
+          "association": "element",
+          "topology": "mesh",
+          "volume_dependent": "false",
+          "values": [0.0, 1.0]
+        }
+      }
+    }
+    )";
+
+    validate_basic_example("centroid", mesh, mesh_json);
 }
 
