@@ -836,11 +836,26 @@ void braid_init_rectilinear_coordset(index_t npts_x,
 }
 
 //---------------------------------------------------------------------------//
+
 void
 braid_init_explicit_coordset(index_t npts_x,
                              index_t npts_y,
                              index_t npts_z,
-                             Node &coords)
+                             Node &coords,
+                             double* in_origin = nullptr,
+                             double* in_vec_fst = nullptr,
+                             double* in_vec_snd = nullptr,
+                             double* in_vec_thd = nullptr);
+
+void
+braid_init_explicit_coordset(index_t npts_x,
+                             index_t npts_y,
+                             index_t npts_z,
+                             Node &coords,
+                             double* in_origin,
+                             double* in_vec_fst,
+                             double* in_vec_snd,
+                             double* in_vec_thd)
 {
     coords["type"] = "explicit";
 
@@ -882,18 +897,37 @@ braid_init_explicit_coordset(index_t npts_x,
         z_vals = coord_vals["z"].value();
     }
 
-    float64 dx = 20.0 / float64(npts_x-1);
-    float64 dy = 20.0 / float64(npts_y-1);
-    if (npts_y > 0)
+    double the_origin[3] {-10., -10., -10.};
+    double vec_fst[3] {1., 0., 0.};
+    double vec_snd[3] {0., 1., 0.};
+    double vec_thd[3] {0., 0., 1.};
+
+    if (in_origin != nullptr)
     {
-        dy = 20.0 / float64(npts_y-1);
+        the_origin[0] = in_origin[0];
+        if (npts_y > 0) { the_origin[1] = in_origin[1]; }
+        if (npts_z > 0) { the_origin[2] = in_origin[2]; }
     }
 
-    float64 dz = 0.0;
-
-    if(npts_z > 1)
+    if (in_vec_fst != nullptr)
     {
-        dz = 20.0 / float64(npts_z-1);
+        vec_fst[0] = in_vec_fst[0];
+        if (npts_y > 0) { vec_fst[1] = in_vec_fst[1]; }
+        if (npts_z > 0) { vec_fst[2] = in_vec_fst[2]; }
+    }
+
+    if (in_vec_snd != nullptr)
+    {
+        vec_snd[0] = in_vec_snd[0];
+        if (npts_y > 0) { vec_snd[1] = in_vec_snd[1]; }
+        if (npts_z > 0) { vec_snd[2] = in_vec_snd[2]; }
+    }
+
+    if (in_vec_thd != nullptr)
+    {
+        vec_thd[0] = in_vec_thd[0];
+        if (npts_y > 0) { vec_thd[1] = in_vec_thd[1]; }
+        if (npts_z > 0) { vec_thd[2] = in_vec_thd[2]; }
     }
 
     index_t idx = 0;
@@ -914,24 +948,23 @@ braid_init_explicit_coordset(index_t npts_x,
 
     for(index_t k = 0; k < outer; k++)
     {
-        float64 cz = -10.0 + k * dz;
-
         for(index_t j = 0; j < middle ; j++)
         {
-            float64 cy =  -10.0 + j * dy;
-
             for(index_t i = 0; i < npts_x ; i++)
             {
-                x_vals[idx] = -10.0 + i * dx;
+                x_vals[idx] = the_origin[0] + i * vec_fst[0] +
+                    j * vec_fst[1] + k * vec_fst[2];
 
                 if(npts_y > 1)
                 {
-                    y_vals[idx] = cy;
+                    y_vals[idx] = the_origin[1] + i * vec_snd[0] +
+                        j * vec_snd[1] + k * vec_snd[2];
                 }
 
                 if(npts_z > 1)
                 {
-                    z_vals[idx] = cz;
+                    z_vals[idx] = the_origin[2] + i * vec_thd[0] +
+                        j * vec_thd[1] + k * vec_thd[2];
                 }
 
                 idx++;
