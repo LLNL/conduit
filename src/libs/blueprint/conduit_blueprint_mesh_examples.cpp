@@ -1627,6 +1627,8 @@ braid_quads_and_tris(index_t npts_x,
             index_t npts_y,
             Node &res)
 {
+    // TODO make this one conform to real mixed spec
+
     res.reset();
 
     int32 nele_x = (int32)(npts_x - 1);
@@ -1750,6 +1752,8 @@ braid_quads_and_tris_offsets(index_t npts_x,
                              index_t npts_y,
                              Node &res)
 {
+
+    // TODO delete this one
 
     res.reset();
 
@@ -2650,6 +2654,8 @@ braid_hexs_and_tets(index_t npts_x,
                     index_t npts_z,
                     Node &res)
 {
+    // TODO make this one conform to real mixed spec
+    
 
     // WARNING -- The code below is UNTESTED.
     //            The SILO writer is missing an implementation for
