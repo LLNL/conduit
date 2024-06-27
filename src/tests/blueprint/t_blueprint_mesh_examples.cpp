@@ -171,12 +171,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["quads_and_tris"]);
 
-    blueprint::mesh::examples::braid("quads_and_tris_offsets",
-                                     npts_x,
-                                     npts_y,
-                                     npts_z,
-                                     dsets["quads_and_tris_offsets"]);
-
     blueprint::mesh::examples::braid("points",
                                      npts_x,
                                      npts_y,
@@ -206,7 +200,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
 
     // TODO: What are these meshes and how should they be rendered?
     dsets.remove("quads_and_tris");
-    dsets.remove("quads_and_tris_offsets");
 
     braid_save_helper(dsets,"braid_2d_examples");
 #if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
@@ -226,7 +219,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             //   std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if( name == "quads_and_tris" || name == "quads_and_tris_offsets" || name == "mixed_2d")
+            if( name == "quads_and_tris" || name == "mixed_2d")
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
                 CONDUIT_INFO("feature is unavailable for mixed element meshes")
@@ -899,6 +892,104 @@ TEST(conduit_blueprint_mesh_examples, mixed_mesh_simple_3d)
     CONDUIT_INFO(verify_info.to_yaml());
 
     test_save_mesh_helper(data, "mixed_mesh_simple_3d");
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mixed_mesh_polyhedral_3d)
+{
+    Node data, verify_info;
+
+    //
+    // Create example mesh.
+    //
+
+    // create mixed 3d mesh with hexs and pyramids and concave polyhedra
+    /*
+            *       *      * ( x: 0.5, 1.5, 2.5). 16, 17, 18
+                             ( y:   2,   2,   2)
+                             ( z: 0.5, 0.5, 0.5)
+   1    *------*-------*------*  (12, 13, 14, 15) (back upper)
+  z    /      /.      /.     /|
+ 0  1 *------*-------*------* |  (8, 9, 10, 11) (front upper)
+    y |   a  |   b   |  c   | / 
+    0 *------*-------*------*    (4, 5, 6, 7) (back lower)
+      0      1       2      3
+    */
+
+    data["coordsets/coords/type"] = "explicit";
+    data["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.0, 1.0, 2.0, 3.0,
+                                          0.5, 1.5, 2.5};
+
+    data["coordsets/coords/values/y"] = { 0.0, 0.0, 0.0, 0.0,
+                                          0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          2.0, 2.0, 2.0};
+
+    data["coordsets/coords/values/z"] = { 0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          0.0, 0.0, 0.0, 0.0,
+                                          1.0, 1.0, 1.0, 1.0,
+                                          0.5, 0.5, 0.5};
+
+
+    data["topologies/topo/type"] = "unstructured";
+    data["topologies/topo/coordset"] = "coords";
+    data["topologies/topo/elements/shape"] = "mixed";
+    data["topologies/topo/elements/shape_map/hex"]  = 12;
+    data["topologies/topo/elements/shape_map/pyramid"]  = 14;
+    data["topologies/topo/elements/shape_map/polyhedral"]  = 42;
+    data["topologies/topo/elements/shapes"] =  { 42, 12, 12, 14, 14, 14 };
+    data["topologies/topo/elements/sizes"] =   { 6, 8, 8, 5, 5, 5};
+    data["topologies/topo/elements/offsets"] = { 0, 6, 14,
+                                                 22, 27, 32};
+
+    data["topologies/topo/elements/connectivity"] =  {  0,  1,  2,  3,  4,  5,
+                                                        1,  2,  6,  5,  9, 10, 14, 13,
+                                                        2,  3,  7,  6, 10, 11, 15, 14,
+                                                        8,  9, 13, 12, 16,
+                                                        9, 10, 14, 13, 17,
+                                                       10, 11, 15, 14, 18
+                                                    };
+
+    data["topologies/topo/subelements/shape"] = "mixed";
+    data["topologies/topo/subelements/shape_map/quad"]  = 9;
+    data["topologies/topo/subelements/shapes"] =  { 9, 9, 9, 9, 9, 9 };
+
+    data["topologies/topo/subelements/sizes"] = {4, 4, 4, 4, 4, 4};
+    data["topologies/topo/subelements/offsets"] = {0, 4, 8, 12, 16, 20};
+    data["topologies/topo/subelements/connectivity"] = {0, 1, 5, 4,  
+                                                        0, 8, 9, 1,
+                                                        1, 9, 13, 5,
+                                                        5, 13, 12, 4,
+                                                        4, 12, 8, 0,
+                                                        9, 8, 12, 13};
+
+    data["fields/ele_id/topology"] = "topo";
+    data["fields/ele_id/association"] = "element";
+    data["fields/ele_id/values"] = { 0, 1, 2, 3, 4, 5};
+
+    // also add a points topo to help with debugging
+
+    data["topologies/pts/type"] = "points";
+    data["topologies/pts/coordset"] = "coords";
+    data["fields/pts_id/topology"] = "pts";
+    data["fields/pts_id/association"] = "element";
+    data["fields/pts_id/values"] = {  0,  1,  2,  3,
+                                      4,  5,  6,  7,
+                                      8,  9, 10, 11,
+                                     12, 13, 14, 15,
+                                     16, 17, 18};
+
+    //data.print();
+
+    EXPECT_TRUE(blueprint::mesh::verify(data, verify_info));
+    CONDUIT_INFO(verify_info.to_yaml());
+
+    test_save_mesh_helper(data, "mixed_mesh_polyhedral_3d");
 }
 
 //-----------------------------------------------------------------------------
