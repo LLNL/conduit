@@ -288,12 +288,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
                                      npts_z,
                                      dsets["hexs"]);
 
-    blueprint::mesh::examples::braid("hexs_and_tets",
-                                     npts_x,
-                                     npts_y,
-                                     npts_z,
-                                     dsets["hexs_and_tets"]);
-
     blueprint::mesh::examples::braid("mixed",
                                      npts_x,
                                      npts_y,
@@ -332,14 +326,14 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
             const Node &mesh = itr.next();
             std::string name = itr.name();
 
-            // Skip output of silo mesh for mixed mesh of hexs and tets for now.
+            // Skip output of silo mesh for mixed mesh for now.
             // The silo output is not yet defined and it throws an exception
             // in conduit_silo.cpp::silo_write_ucd_zonelist()
             // in the following line that is looking for the 'shape' node:
             //              std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if(name == "hexs_and_tets" || name == "mixed")
+            if (name == "mixed")
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
                 CONDUIT_INFO("feature is unavailable for mixed element meshes")
