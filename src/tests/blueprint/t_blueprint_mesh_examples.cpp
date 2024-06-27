@@ -881,6 +881,9 @@ TEST(conduit_blueprint_mesh_examples, mixed_mesh_polyhedral_3d)
 {
     Node data, verify_info;
 
+    // TODO we should explore why this looks wrong in VisIt. I think
+    // generate_sides is the culprit. https://github.com/LLNL/conduit/issues/1289
+
     //
     // Create example mesh.
     //
@@ -899,14 +902,14 @@ TEST(conduit_blueprint_mesh_examples, mixed_mesh_polyhedral_3d)
     */
 
     data["coordsets/coords/type"] = "explicit";
-    data["coordsets/coords/values/x"] = { 0.0, 1.0, 2.0, 3.0,
-                                          0.0, 1.0, 2.0, 3.0,
+    data["coordsets/coords/values/x"] = { 0.75, 1.0, 2.0, 3.0,
+                                          0.75, 1.0, 2.0, 3.0,
                                           0.0, 1.0, 2.0, 3.0,
                                           0.0, 1.0, 2.0, 3.0,
                                           0.5, 1.5, 2.5};
 
-    data["coordsets/coords/values/y"] = { 0.0, 0.0, 0.0, 0.0,
-                                          0.0, 0.0, 0.0, 0.0,
+    data["coordsets/coords/values/y"] = { 0.75, 0.0, 0.0, 0.0,
+                                          0.75, 0.0, 0.0, 0.0,
                                           1.0, 1.0, 1.0, 1.0,
                                           1.0, 1.0, 1.0, 1.0,
                                           2.0, 2.0, 2.0};
