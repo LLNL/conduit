@@ -23,6 +23,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Changed `conduit::blueprint::mesh::partition_map_back()` function so it will attempt to reuse existing field memory when mapping fields back. This permits `partition_map_back()` to send data from a partitioned mesh into the original mesh where fields were provided from a host code using `Node::set_external()`.
 - Changed `generate_sides` to be robust to the case where no fields exist. 
 - Deprecated braid `quads_and_tris` example in favor of `mixed_2d`.
+- Deprecated braid `braid_quads_and_tris_offsets` example in favor of `mixed_2d`.
 - Deprecated braid `hexs_and_tris` example in favor of `mixed`.
 
 #### Relay

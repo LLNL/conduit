@@ -144,8 +144,6 @@ braid_2d_only_shape_type(const std::string& mesh_type)
     if ( mesh_type == "tris"  ||
          mesh_type == "quads" ||
          mesh_type == "quads_poly" ||
-         mesh_type == "quads_and_tris" ||
-         mesh_type == "quads_and_tris_offsets" ||
          mesh_type == "mixed_2d")
     {
         return true;
@@ -163,7 +161,6 @@ braid_3d_only_shape_type(const std::string& mesh_type)
     if( mesh_type == "tets" ||
         mesh_type == "hexs" ||
         mesh_type == "hexs_poly" ||
-        mesh_type == "hexs_and_tets" ||
         mesh_type == "wedges" ||
         mesh_type == "pyramids" ||
         mesh_type == "mixed")
@@ -1626,6 +1623,18 @@ void
 braid_quads_and_tris(index_t npts_x,
                      index_t npts_y,
                      Node &res)
+{
+    CONDUIT_INFO("This braid example is deprecated in favor of mixed_2d.")
+
+    // TODO remove in conduit 0.9.4
+}
+
+
+//---------------------------------------------------------------------------//
+void
+braid_quads_and_tris_offsets(index_t npts_x,
+                             index_t npts_y,
+                             Node &res)
 {
     CONDUIT_INFO("This braid example is deprecated in favor of mixed_2d.")
 
