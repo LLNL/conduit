@@ -198,9 +198,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
         CONDUIT_INFO(info.to_yaml());
     }
 
-    // TODO: What are these meshes and how should they be rendered?
-    dsets.remove("quads_and_tris");
-
     braid_save_helper(dsets,"braid_2d_examples");
 #if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
     if(silo_enabled)

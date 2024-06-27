@@ -1624,8 +1624,8 @@ braid_quads(index_t npts_x,
 //---------------------------------------------------------------------------//
 void
 braid_quads_and_tris(index_t npts_x,
-            index_t npts_y,
-            Node &res)
+                     index_t npts_y,
+                     Node &res)
 {
     // TODO make this one conform to real mixed spec
 
@@ -1644,49 +1644,60 @@ braid_quads_and_tris(index_t npts_x,
     res["topologies/mesh/coordset"] = "coords";
 
     Node &elems = res["topologies/mesh/elements"];
-    elems["element_types/quads/stream_id"] = 9; // VTK_QUAD
-    elems["element_types/quads/shape"]     = "quad";
-    elems["element_types/tris/stream_id"]  = 5; // VTK_TRIANGLE
-    elems["element_types/tris/shape"]      = "tri";
+    elems["shape"] = "mixed";
+    elems["shape_map/quad"] = 9; // VTK_QUAD
+    elems["shape_map/tri"] = 5; // VTK_TRIANGLE
 
-    // Fill in stream IDs and calculate size of the connectivity array
+    std::vector<int32> shapes;
+    std::vector<int32> sizes;
+    std::vector<int32> offsets;
+
+    // Fill in shapes, sizes, and offsets, and calculate size of the connectivity array
     int32 count   = 0;
     int32 ielem   = 0;
-    std::vector< int32 > stream_ids_buffer;
-    std::vector< int32 > stream_lengths;
-
+    int32 last_offset = 0;
     for(int32 j = 0; j < nele_y ; j++)
     {
         for(int32 i = 0; i < nele_x; i++)
         {
-             if ( ielem % 2 == 0 )
-             {
-                 // QUAD
-                 stream_ids_buffer.push_back( 9 );
-                 stream_lengths.push_back( 1 );
-                 count += 4;
-             }
-             else
-             {
-                 // TRIANGLE
-                 stream_ids_buffer.push_back( 5 );
-                 count += 6;
-                 stream_lengths.push_back( 2 );
-             }
+            if ( ielem % 2 == 0 )
+            {
+                // QUAD
+                shapes.push_back(9);
+                sizes.push_back(4);
+                offsets.push_back(last_offset);
+                last_offset += 4;
 
-             ++ielem;
+                count += 4;
+            }
+            else
+            {
+                // TRIANGLE
+                shapes.push_back(5);
+                shapes.push_back(5);
+                sizes.push_back(3);
+                offsets.push_back(last_offset);
+                last_offset += 3;
+                sizes.push_back(3);
+                offsets.push_back(last_offset);
+                last_offset += 3;
+
+                count += 6;
+            }
+
+            ++ielem;
 
         } // END for all i
 
     } // END for all j
 
-
-    elems["element_index/stream_ids"].set(stream_ids_buffer);
-    elems["element_index/element_counts"].set(stream_lengths);
+    elems["shapes"].set(shapes);
+    elems["sizes"].set(sizes);
+    elems["offsets"].set(offsets);
 
     // Allocate connectivity array
-    elems["stream"].set(DataType::int32(count));
-    int32* conn = elems["stream"].value();
+    elems["connectivity"].set(DataType::int32(count));
+    int32_array conn = elems["connectivity"].value();
 
     // Fill in connectivity array
     int32 idx = 0;
@@ -3542,10 +3553,6 @@ braid(const std::string &mesh_type,
     else if(mesh_type == "quads_and_tris")
     {
         braid_quads_and_tris(npts_x,npts_y,res);
-    }
-    else if(mesh_type == "quads_and_tris_offsets")
-    {
-        braid_quads_and_tris_offsets(npts_x,npts_y,res);
     }
     else if(mesh_type == "tets")
     {
