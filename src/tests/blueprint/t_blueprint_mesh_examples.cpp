@@ -165,12 +165,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
                                      npts_z,
                                      dsets["quads"]);
 
-    blueprint::mesh::examples::braid("quads_and_tris",
-                                     npts_x,
-                                     npts_y,
-                                     npts_z,
-                                     dsets["quads_and_tris"]);
-
     blueprint::mesh::examples::braid("points",
                                      npts_x,
                                      npts_y,
@@ -216,7 +210,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2d)
             //   std::string topo_shape = shape_block->fetch("shape").as_string();
             // which does not exist for indexed_stream meshes.
             // The silo writer needs to be updated for this case.
-            if( name == "quads_and_tris" || name == "mixed_2d")
+            if(name == "mixed_2d")
             {
                 CONDUIT_INFO("\tNOTE: skipping output to SILO -- ")
                 CONDUIT_INFO("feature is unavailable for mixed element meshes")
@@ -326,9 +320,6 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
         EXPECT_TRUE(blueprint::mesh::verify(mesh,info));
         CONDUIT_INFO(info.to_yaml());
     }
-
-    // TODO: What is this mesh and how should it be rendered?
-    dsets.remove("hexs_and_tets");
 
     braid_save_helper(dsets,"braid_3d_examples");
 #if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
