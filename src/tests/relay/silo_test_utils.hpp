@@ -93,6 +93,26 @@ silo_name_changer(const std::string &mmesh_name,
             // change the name of the coordset
             if (save_mesh.has_path("coordsets/" + coordset_name))
             {
+                // add default labels if they don't exist already
+                if (! save_mesh["coordsets"][coordset_name].has_child("labels") &&
+                    save_mesh["topologies"][new_topo_name]["type"].as_string() != "points")
+                {
+                    const int ndims = save_mesh["coordsets"][coordset_name]["values"].number_of_children();
+
+                    const std::string &x_axis_label = save_mesh["coordsets"][coordset_name]["values"][0].name();
+                    save_mesh["coordsets"][coordset_name]["labels"][x_axis_label] = "X Axis";
+                    if (ndims > 1)
+                    {
+                        const std::string &y_axis_label = save_mesh["coordsets"][coordset_name]["values"][1].name();
+                        save_mesh["coordsets"][coordset_name]["labels"][y_axis_label] = "Y Axis";
+                    }
+                    if (ndims > 2)
+                    {
+                        const std::string &z_axis_label = save_mesh["coordsets"][coordset_name]["values"][2].name();
+                        save_mesh["coordsets"][coordset_name]["labels"][z_axis_label] = "Z Axis";
+                    }
+                }
+
                 save_mesh["coordsets"].rename_child(coordset_name, new_coordset_name);
             }
         }
@@ -229,6 +249,26 @@ overlink_name_changer(conduit::Node &save_mesh)
     std::string coordset_name = coordsets.children().next().name();
     std::string topo_name = topologies.children().next().name();
 
+    // add default labels if they don't exist already
+    if (! save_mesh["coordsets"][coordset_name].has_child("labels") &&
+        save_mesh["topologies"][topo_name]["type"].as_string() != "points")
+    {
+        const int ndims = save_mesh["coordsets"][coordset_name]["values"].number_of_children();
+
+        const std::string &x_axis_label = save_mesh["coordsets"][coordset_name]["values"][0].name();
+        save_mesh["coordsets"][coordset_name]["labels"][x_axis_label] = "X Axis";
+        if (ndims > 1)
+        {
+            const std::string &y_axis_label = save_mesh["coordsets"][coordset_name]["values"][1].name();
+            save_mesh["coordsets"][coordset_name]["labels"][y_axis_label] = "Y Axis";
+        }
+        if (ndims > 2)
+        {
+            const std::string &z_axis_label = save_mesh["coordsets"][coordset_name]["values"][2].name();
+            save_mesh["coordsets"][coordset_name]["labels"][z_axis_label] = "Z Axis";
+        }
+    }
+
     // rename the coordset and references to it
     coordsets.rename_child(coordset_name, "MMESH");
     topologies[topo_name]["coordset"].reset();
@@ -343,6 +383,57 @@ add_matset_to_spiral(Node &n_mesh, const int ndomains)
             data[i] = 1.f;
         }
     }
+}
+
+//-----------------------------------------------------------------------------
+void
+vector_field_to_scalars_braid(Node &n_mesh, const std::string &dim)
+{
+    Node &field_vel = n_mesh["fields"]["vel"];
+    
+    Node &field_vel_u = n_mesh["fields"]["vel_u"];
+    field_vel_u["topology"].set(field_vel["topology"]);
+    field_vel_u["association"].set(field_vel["association"]);
+    field_vel_u["values"].set(field_vel["values/u"]);
+    if (field_vel.has_child("units"))
+    {
+        field_vel_u["units"].set(field_vel["units"]);
+    }
+    if (field_vel.has_child("label"))
+    {
+        field_vel_u["label"].set(field_vel["label"]);
+    }
+    
+    Node &field_vel_v = n_mesh["fields"]["vel_v"];
+    field_vel_v["topology"].set(field_vel["topology"]);
+    field_vel_v["association"].set(field_vel["association"]);
+    field_vel_v["values"].set(field_vel["values/v"]);
+    if (field_vel.has_child("units"))
+    {
+        field_vel_v["units"].set(field_vel["units"]);
+    }
+    if (field_vel.has_child("label"))
+    {
+        field_vel_v["label"].set(field_vel["label"]);
+    }
+
+    if (dim == "3")
+    {
+        Node &field_vel_w = n_mesh["fields"]["vel_w"];
+        field_vel_w["topology"].set(field_vel["topology"]);
+        field_vel_w["association"].set(field_vel["association"]);
+        field_vel_w["values"].set(field_vel["values/w"]);
+        if (field_vel.has_child("units"))
+        {
+            field_vel_w["units"].set(field_vel["units"]);
+        }
+        if (field_vel.has_child("label"))
+        {
+            field_vel_w["label"].set(field_vel["label"]);
+        }
+    }
+
+    n_mesh["fields"].remove_child("vel");
 }
 
 //-----------------------------------------------------------------------------
