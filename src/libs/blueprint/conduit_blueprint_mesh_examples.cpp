@@ -898,9 +898,9 @@ braid_init_explicit_coordset(index_t npts_x,
     }
 
     double the_origin[3] {-10., -10., -10.};
-    double vec_fst[3] {1., 0., 0.};
-    double vec_snd[3] {0., 1., 0.};
-    double vec_thd[3] {0., 0., 1.};
+    double vec_fst[3] {20.0 / float64(npts_x - 1), 0., 0.};
+    double vec_snd[3] {0., 20.0 / float64(npts_y - 1), 0.};
+    double vec_thd[3] {0., 0., 20.0 / float64(npts_z - 1)};
 
     if (in_origin != nullptr)
     {
