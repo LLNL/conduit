@@ -93,7 +93,7 @@ struct MySpecialFunctor
 //     index_t host_vals[size];
 //     index_t *dev_vals_ptr = static_cast<index_t*>(alloc(sizeof(index_t) * size));
 
-//     conduit::execution::forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
+//     conduit::execution::new_forall<for_policy>(0, size, [=] ASCENT_LAMBDA(index_t i)
 //     {
 //         dev_vals_ptr[i] = i;
 //     });
