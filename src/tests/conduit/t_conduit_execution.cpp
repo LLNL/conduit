@@ -16,6 +16,75 @@
 
 using namespace conduit;
 
+//---------------------------------------------------------------------------//
+// example functor 
+//---------------------------------------------------------------------------//
+struct MyFunctor
+{
+    int res;
+    int size;
+    template<typename ComboPolicyTag>
+    void operator()(ComboPolicyTag &exec)
+    {
+        std::cout << typeid(ComboPolicyTag).name() << std::endl;
+        using thetag = typename ComboPolicyTag::for_policy;
+        std::cout << typeid(thetag).name() << std::endl;
+        res = 0;
+        conduit::execution::new_forall<thetag>(0, size, [=] (int i)
+        {
+            std::cout << i << std::endl;
+            res ++;
+        });
+    }
+};
+
+//---------------------------------------------------------------------------//
+// Mock of a class templated on a concrete tag
+// (like a RAJA Reduction Object)
+//---------------------------------------------------------------------------//
+template <typename ExecPolicy>
+class MySpecialClass
+{
+public:
+    using policy = ExecPolicy;
+    int val;
+
+    MySpecialClass(int _val)
+    :val(_val)
+    {
+
+    }
+    
+    void exec(int i) const
+    {
+        std::cout << typeid(policy).name() << " exec " <<  val << " " <<  i <<std::endl;
+    }
+};
+
+//---------------------------------------------------------------------------//
+// example functor using MySpecialClass
+//---------------------------------------------------------------------------//
+struct MySpecialFunctor
+{
+  int res;
+  int size;
+  template<typename ComboPolicyTag>
+  void operator()(ComboPolicyTag &exec)
+  {
+     // in this case we use an object
+     // that is templated on a concrete tag
+     // (like a RAJA Reduction Object)
+     using thetag = typename ComboPolicyTag::for_policy;
+     res = 0;
+     MySpecialClass<thetag> s(10);
+     conduit::execution::new_forall<thetag>(0, size, [=] (int i)
+     {
+         s.exec(i);
+         res ++;
+     });
+  }
+};
+
 // //-----------------------------------------------------------------------------
 // TEST(conduit_execution, test_forall)
 // {
@@ -61,35 +130,38 @@ TEST(conduit_execution, justin_fun)
     //    std::cout << i << std::endl;
     // });
 
-    // std::cout << "functor cases!" << std::endl;
+    std::cout << "functor cases!" << std::endl;
 
-    // MyFunctor func;
-    // func.size = size;
-    // conduit::execution::dispatch(SerialPolicy,func);
-    // std::cout << func.res << std::endl;
+    MyFunctor func;
+    func.size = size;
+    conduit::execution::dispatch(SerialPolicy,func);
+    std::cout << func.res << std::endl;
 
     // conduit::execution::dispatch(DevicePolicy,func);
     // std::cout << func.res << std::endl;
 
-    // MySpecialFunctor sfunc;
-    // sfunc.size = 4;
-    // conduit::execution::dispatch(SerialPolicy,sfunc);
-    // std::cout << func.res << std::endl;
+    MySpecialFunctor sfunc;
+    sfunc.size = 4;
+    conduit::execution::dispatch(SerialPolicy,sfunc);
+    std::cout << func.res << std::endl;
     
-    // std::cout << "C++ 20" << std::endl;
+    std::cout << "C++ 20" << std::endl;
 
-    // int res =0;
-    // /// c++ 20 allows us to double lambda instead of a functor
-    // conduit::execution::dispatch(SerialPolicy, [&] <typename ComboPolicyTag>(ComboPolicyTag &exec)
-    // {
-    //      using thetag = typename ComboPolicyTag::tag_2;
-    //      MySpecialClass<thetag> s(10);
-    //      conduit::execution::new_forall<thetag>(0, size, [=] (int i)
-    //      {
-    //          s.exec(i);
-    //      });
-    //      res = 10;
-    // });
+    int res =0;
+    /// c++ 20 allows us to double lambda instead of a functor
+
+    // apparently this works just fine with cpp14...?
+
+    conduit::execution::dispatch(SerialPolicy, [&] <typename ComboPolicyTag>(ComboPolicyTag &exec)
+    {
+         using thetag = typename ComboPolicyTag::for_policy;
+         MySpecialClass<thetag> s(10);
+         conduit::execution::new_forall<thetag>(0, size, [=] (int i)
+         {
+             s.exec(i);
+         });
+         res = 10;
+    });
 
 }
 
