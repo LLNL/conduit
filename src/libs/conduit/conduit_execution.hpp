@@ -11,11 +11,11 @@
 #ifndef CONDUIT_EXECUTION_HPP
 #define CONDUIT_EXECUTION_HPP
 
-#include "conduit_config.h"
 
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
+#include "conduit_config.h"
 #include "conduit_execution_serial.hpp"
 #if defined(CONDUIT_USE_OPENMP)
 #include "conduit_execution_omp.hpp"
