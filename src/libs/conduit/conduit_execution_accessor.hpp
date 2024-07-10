@@ -26,6 +26,71 @@
 namespace conduit
 {
 
+class CONDUIT_API ExecutionAccessor
+{
+public:
+    template<typename T>
+    void use_with(T policy)
+    {
+        // yes cases are duplicated. But they may end needing to be
+        // b/c of the questions I need to ask about where data lives
+        if (policy == Device)
+        {
+            if (whereami() == Device)
+            {
+                data_ptr = orig_ptr;
+                offset = orig_dtype.offset;
+                stride = orig_dtype.stride;
+            }
+            else // whereami() == Host
+            {
+                // copy and get rid of striding; just copy what we need
+                other_ptr.copy_from(orig_ptr);
+                other_dtype.oofus(orig_dtype);
+
+                data_ptr = other_ptr;
+                offset = other_dtype.offset;
+                stride = other_dtype.stride;
+            }
+        }
+        else // policy == Host
+        {
+            if (whereami() == Device)
+            {
+                // copy and get rid of striding; just copy what we need
+                other_ptr.copy_from(orig_ptr);
+                other_dtype.oofus(orig_dtype);
+
+                data_ptr = other_ptr;
+                offset = other_dtype.offset;
+                stride = other_dtype.stride;
+            }
+            else // whereami() == Host
+            {
+                data_ptr = orig_ptr;
+                offset = orig_dtype.offset;
+                stride = orig_dtype.stride;
+            }
+        }
+    }
+
+    void operator[](index_t i)
+    {
+        return (data_ptr + offset)[stride * i];
+    }
+
+
+private:
+    void *orig_ptr;
+    void *orig_dtype;
+    void *other_ptr;
+    void *other_dtype;
+
+    void *data_ptr;
+    int   offset;
+    int   stride;
+}
+
 // //-----------------------------------------------------------------------------
 // // -- begin conduit::DataArray --
 // //-----------------------------------------------------------------------------
