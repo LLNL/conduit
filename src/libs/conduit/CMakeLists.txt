@@ -49,6 +49,7 @@ set(conduit_headers
     conduit_execution.hpp
     conduit_execution_omp.hpp
     conduit_execution_serial.hpp
+    conduit_execution_accessor.hpp
     conduit_memory_manager.hpp
     conduit_data_array.hpp
     conduit_data_accessor.hpp
@@ -88,6 +89,7 @@ set(conduit_sources
     conduit_error.cpp
     conduit_endianness.cpp
     conduit_memory_manager.cpp
+    conduit_execution_accessor.cpp
     conduit_data_type.cpp
     conduit_data_array.cpp
     conduit_data_accessor.cpp
