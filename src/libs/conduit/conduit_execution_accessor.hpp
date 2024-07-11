@@ -29,6 +29,20 @@ namespace conduit
 class CONDUIT_API ExecutionAccessor
 {
 public:
+    ExecutionAccessor();
+
+    ~ExecutionAccessor()
+    {
+        if (do_I_own_it)
+        {
+            delete other_ptr;
+        }
+
+
+        // other stuff
+    }
+
+
     template<typename T>
     void use_with(T policy)
     {
@@ -79,12 +93,51 @@ public:
         return (data_ptr + offset)[stride * i];
     }
 
+    // TODO what is the difference between these again???
+    void sync(Node n)
+    {
+        void *n_ptr = n.get_ptr();
+
+        // if the ptrs point to the same place
+        if (data_ptr == n_ptr)
+        {
+            // nothing to do
+        }
+        else
+        {
+            // I'm guessing that this is wrong and that sync is
+            // supposed to be a copy. where n_ptr lives shouldn't change
+
+            free(n_ptr);
+            n_ptr = data_ptr;
+
+            do_I_own_it = ?;
+        }
+    }
+
+    void replace(Node n)
+    {
+        void *n_ptr = n.get_ptr();
+
+        // if the ptrs point to the same place
+        if (data_ptr == n_ptr)
+        {
+            // nothing to do
+        }
+        else
+        {
+            n_ptr = data_ptr;
+            n.set_dtype(???);
+        }
+    }
+
 
 private:
     void *orig_ptr;
     void *orig_dtype;
     void *other_ptr;
     void *other_dtype;
+    bool  do_I_own_it;
 
     void *data_ptr;
     int   offset;
