@@ -842,20 +842,20 @@ braid_init_explicit_coordset(index_t npts_x,
                              index_t npts_y,
                              index_t npts_z,
                              Node &coords,
-                             double* in_origin = nullptr,
-                             double* in_vec_fst = nullptr,
-                             double* in_vec_snd = nullptr,
-                             double* in_vec_thd = nullptr);
+                             const double* in_origin = nullptr,
+                             const double* in_vec_fst = nullptr,
+                             const double* in_vec_snd = nullptr,
+                             const double* in_vec_thd = nullptr);
 
 void
 braid_init_explicit_coordset(index_t npts_x,
                              index_t npts_y,
                              index_t npts_z,
                              Node &coords,
-                             double* in_origin,
-                             double* in_vec_fst,
-                             double* in_vec_snd,
-                             double* in_vec_thd)
+                             const double* in_origin,
+                             const double* in_vec_fst,
+                             const double* in_vec_snd,
+                             const double* in_vec_thd)
 {
     coords["type"] = "explicit";
 
@@ -1672,6 +1672,74 @@ braid_quads(index_t npts_x,
                                           fields["vel"]);
 }
 
+
+//---------------------------------------------------------------------------//
+void
+braid_bent_quads(const Node & spec, Node &res)
+{
+    res.reset();
+
+    const int32 npts_x = spec["npts_x"].as_int32();
+    const int32 npts_y = spec["npts_y"].as_int32();
+
+    const double* origin = spec["origin"].as_double_ptr();
+    const double* vec_fst = spec["vec_x"].as_double_ptr();
+    const double* vec_snd = spec["vec_y"].as_double_ptr();
+
+    int32 nele_x = (int32)(npts_x - 1);
+    int32 nele_y = (int32)(npts_y - 1);
+    int32 nele = nele_x * nele_y;
+
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 1,
+                                 res["coordsets/coords"],
+                                 vec_fst,
+                                 vec_snd,
+                                 nullptr);
+
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "quad";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*4));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
+
+    int32 idx = 0;
+    for(int32 j = 0; j < nele_y ; j++)
+    {
+        int32 yoff = j * (nele_x+1);
+        for(int32 i = 0; i < nele_x; i++)
+        {
+            conn[idx+0] = yoff + i;
+            conn[idx+1] = yoff + i + (nele_x+1);
+            conn[idx+2] = yoff + i + 1 + (nele_x+1);
+            conn[idx+3] = yoff + i + 1;
+
+            idx+=4;
+        }
+    }
+
+
+    Node &fields = res["fields"];
+
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["braid"]);
+
+    braid_init_example_element_scalar_field(nele_x,
+                                            nele_y,
+                                            0,
+                                            fields["radial"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          1,
+                                          fields["vel"]);
+}
+
+
 //---------------------------------------------------------------------------//
 void
 braid_quads_and_tris(index_t npts_x,
@@ -2414,6 +2482,90 @@ braid_hexs(index_t npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"]);
+
+    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/coordset"] = "coords";
+    res["topologies/mesh/elements/shape"] = "hex";
+    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*8));
+    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
+
+    int32 idx = 0;
+    for(int32 k = 0; k < nele_z ; k++)
+    {
+        int32 zoff = k * (nele_x+1)*(nele_y+1);
+        int32 zoff_n = (k+1) * (nele_x+1)*(nele_y+1);
+
+        for(int32 j = 0; j < nele_y ; j++)
+        {
+            int32 yoff = j * (nele_x+1);
+            int32 yoff_n = (j+1) * (nele_x+1);
+
+
+            for(int32 i = 0; i < nele_x; i++)
+            {
+                // ordering is same as VTK_HEXAHEDRON
+
+                conn[idx+0] = zoff + yoff + i;
+                conn[idx+1] = zoff + yoff + i + 1;
+                conn[idx+2] = zoff + yoff_n + i + 1;
+                conn[idx+3] = zoff + yoff_n + i;
+
+                conn[idx+4] = zoff_n + yoff + i;
+                conn[idx+5] = zoff_n + yoff + i + 1;
+                conn[idx+6] = zoff_n + yoff_n + i + 1;
+                conn[idx+7] = zoff_n + yoff_n + i;
+
+                idx+=8;
+            }
+        }
+    }
+
+    Node &fields = res["fields"];
+
+    braid_init_example_point_scalar_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["braid"]);
+
+    braid_init_example_element_scalar_field(nele_x,
+                                            nele_y,
+                                            nele_z,
+                                            fields["radial"]);
+
+    braid_init_example_point_vector_field(npts_x,
+                                          npts_y,
+                                          npts_z,
+                                          fields["vel"]);
+}
+
+//---------------------------------------------------------------------------//
+void
+braid_bent_hexs(const Node & spec, Node &res)
+{
+    res.reset();
+
+    const int32 npts_x = spec["npts_x"].as_int32();
+    const int32 npts_y = spec["npts_y"].as_int32();
+    const int32 npts_z = spec["npts_z"].as_int32();
+
+    const double* origin = spec["origin"].as_double_ptr();
+    const double* vec_fst = spec["vec_x"].as_double_ptr();
+    const double* vec_snd = spec["vec_y"].as_double_ptr();
+    const double* vec_thd = spec["vec_z"].as_double_ptr();
+
+    int32 nele_x = (int32)(npts_x - 1);
+    int32 nele_y = (int32)(npts_y - 1);
+    int32 nele_z = (int32)(npts_z - 1);
+    int32 nele = nele_x * nele_y * nele_z;
+
+    braid_init_example_state(res);
+    braid_init_explicit_coordset(npts_x,
+                                 npts_y,
+                                 npts_z,
+                                 res["coordsets/coords"],
+                                 vec_fst,
+                                 vec_snd,
+                                 vec_thd);
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
@@ -3473,6 +3625,111 @@ strided_structured(Node &desc, // shape of requested data arrays
 }
 
 
+
+//---------------------------------------------------------------------------//
+void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
+    conduit::Node& res)
+{
+    // verify each child node in spec.
+    // 1. make sure each is dimensionally self-consistent
+    // 2. make sure dimensionality is equal among all domains
+    std::vector<int> dom_dimensions;
+    NodeConstIterator ver_it = spec.children();
+    while (ver_it.has_next())
+    {
+        const Node& ver_node = ver_it.next();
+        // Check for necessary domain information
+        bool has_npts_x = ver_node.has_child("npts_x");
+        bool has_npts_y = ver_node.has_child("npts_y");
+        bool has_npts_z = ver_node.has_child("npts_z");
+        bool has_origin = ver_node.has_child("origin");
+        bool has_vec_x = ver_node.has_child("vec_x");
+        bool has_vec_y = ver_node.has_child("vec_y");
+        bool has_vec_z = ver_node.has_child("vec_z");
+
+        int dims = 0;
+        if (has_npts_x) { dims += 1; }
+        if (has_npts_x && has_npts_y) { dims += 1; }
+        if (has_npts_x && has_npts_y && has_npts_z) { dims += 1; }
+
+        int vdims = 0;
+        if (has_vec_x) { vdims += 1; }
+        if (has_vec_x && has_vec_y) { vdims += 1; }
+        if (has_vec_x && has_vec_y && has_vec_z) { vdims += 1; }
+
+        bool children_ok = (dims > 1) && (dims == vdims) && has_origin;
+        bool dims_ok = false;
+        bool npts_ok = false;
+
+        if (children_ok)
+        {
+            dims_ok = ver_node["origin"].as_float64_accessor().number_of_elements() == dims;
+            dims_ok = dims_ok && ver_node["vec_x"].as_float64_accessor().number_of_elements() == dims;
+            dims_ok = dims_ok && ver_node["vec_y"].as_float64_accessor().number_of_elements() == dims;
+            if (dims > 2)
+            {
+                dims_ok = dims_ok && ver_node["vec_z"].as_float64_accessor().number_of_elements() == dims;
+            }
+
+            int npts_x = ver_node["npts_x"].as_int32();
+            int npts_y = 1;
+            npts_y = ver_node["npts_y"].as_int32();
+            int npts_z = 1;
+            if (dims > 2)
+            {
+                npts_z = ver_node["npts_z"].as_int32();
+            }
+
+            npts_ok = (npts_x > 1 && npts_y > 1);
+            if (dims > 2)
+            {
+                npts_ok = npts_ok && npts_z > 1;
+            }
+        }
+
+        if (!(children_ok && dims_ok && npts_ok))
+        {
+            // error: some domain doesn't have the right children.
+            CONDUIT_ERROR("blueprint::mesh::examples::bentgrid requires each domain in spec "
+                "to have children npts_x, npts_y; origin; vec_x, vec_y. " << std::endl <<
+                "For a 3D mesh, each domain must also have npts_z and vec_z." << std::endl <<
+                "Arrays in origin and vec_x, y, z must be of consistent length." << std::endl <<
+                "values provided:" << std::endl << ver_node.to_yaml() << std::endl);
+        }
+
+        dom_dimensions.push_back(dims);
+    }
+
+    bool consistent_dims = std::all_of(dom_dimensions.begin(), dom_dimensions.end(), [&](int i) { return i == dom_dimensions[0]; });
+
+    if (!consistent_dims)
+    {
+        std::stringstream errss;
+
+        for (int d : dom_dimensions)
+        {
+            errss << "  " << d;
+        }
+
+        // error: some domain has an inconsisten dimension.
+        CONDUIT_ERROR("blueprint::mesh::examples::bentgrid requires each domain in spec "
+            "to have the same dimensionality. " << std::endl <<
+            "Dimensions provided: " << errss.str() << std::endl);
+    }
+
+    // For each child node in spec,
+    // call braid()
+    NodeConstIterator doms_it = spec.children();
+    while (doms_it.has_next())
+    {
+        const Node& dom_node = doms_it.next();
+        bentgrid(dom_node, res);
+    }
+
+    braid_init_example_adjset(res);
+}
+
+
 //---------------------------------------------------------------------------//
 void
 grid(const std::string &mesh_type,
@@ -3571,6 +3828,22 @@ grid(const std::string &mesh_type,
     }
 
     braid_init_example_adjset(res);
+}
+
+
+//---------------------------------------------------------------------------//
+void
+bent_braid(const Node& spec,
+      Node &res)
+{
+    if(!spec.has_child("npts_z"))
+    {
+        braid_bent_quads(spec, res);
+    }
+    else
+    {
+        braid_bent_hexs(spec, res);
+    }
 }
 
 
