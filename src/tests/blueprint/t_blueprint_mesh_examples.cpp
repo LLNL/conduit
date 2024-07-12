@@ -1421,6 +1421,26 @@ TEST(conduit_blueprint_mesh_examples, polychain)
     test_save_mesh_helper(res,"polychain_example");
 }
 
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, gyre)
+{
+
+    index_t nsteps = 5;
+    float64 t = 0.0;
+    float64 dt = 1.0;
+    Node res;
+    for(index_t i=0; i < nsteps; i++)
+    {
+        blueprint::mesh::examples::gyre(25,25,2,t,res);
+        Node info;
+        EXPECT_TRUE(blueprint::mesh::verify(res,info));
+        t+= dt;
+        std::string ofbase = conduit_fmt::format("gyre_{:04d}",i);
+        test_save_mesh_helper(res,ofbase);
+    }
+
+}
+
 
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, polystar)

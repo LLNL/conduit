@@ -68,6 +68,17 @@ const float64 PI_VALUE = 3.14159265359;
 
 
 //---------------------------------------------------------------------------//
+void
+generate(const std::string &example_name,
+         const Node & opts,
+         Node &res)
+{
+    res.reset();
+    res = "HOWDY!";
+    res.print();
+}
+
+//---------------------------------------------------------------------------//
 struct point
 {
     point(float64 px = 0.0, float64 py = 0.0, float64 pz = 0.0) : x(px), y(py), z(pz) {};
