@@ -93,8 +93,7 @@ public:
         return (data_ptr + offset)[stride * i];
     }
 
-    // TODO what is the difference between these again???
-    void sync(Node n)
+    void sync(Node &n)
     {
         void *n_ptr = n.get_ptr();
 
@@ -105,13 +104,8 @@ public:
         }
         else
         {
-            // I'm guessing that this is wrong and that sync is
-            // supposed to be a copy. where n_ptr lives shouldn't change
-
-            free(n_ptr);
-            n_ptr = data_ptr;
-
-            do_I_own_it = ?;
+            n_ptr.copy_from(data_ptr);
+            n.set_dtype(???);
         }
     }
 
@@ -126,6 +120,7 @@ public:
         }
         else
         {
+            free(n_ptr);
             n_ptr = data_ptr;
             n.set_dtype(???);
         }
