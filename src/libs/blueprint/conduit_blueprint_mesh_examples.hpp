@@ -279,6 +279,13 @@ namespace examples
                                         conduit::Node& res);
 
     /// Generates a braid-like example mesh that covers elements defined in a
+    /// rectilinear grid.  Currently hexs are supported for 3D meshes and quads
+    /// are supported for 2D meshes.  Specify a mesh as outlined in the docs
+    /// for bentgrid().
+    void CONDUIT_BLUEPRINT_API bent_braid(const conduit::Node& spec,
+                                          conduit::Node& res);
+
+    /// Generates a braid-like example mesh that covers elements defined in a
     /// rectilinear grid. The element type (e.g. triangles, quads, their 3D
     /// counterparts, or a mixture) and the coordinate set/topology
     /// types can be configured by specifying different "mesh_type" values

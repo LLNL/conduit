@@ -953,18 +953,18 @@ braid_init_explicit_coordset(index_t npts_x,
             for(index_t i = 0; i < npts_x ; i++)
             {
                 x_vals[idx] = the_origin[0] + i * vec_fst[0] +
-                    j * vec_fst[1] + k * vec_fst[2];
+                    j * vec_snd[0] + k * vec_thd[0];
 
                 if(npts_y > 1)
                 {
-                    y_vals[idx] = the_origin[1] + i * vec_snd[0] +
-                        j * vec_snd[1] + k * vec_snd[2];
+                    y_vals[idx] = the_origin[1] + i * vec_fst[1] +
+                        j * vec_snd[1] + k * vec_thd[1];
                 }
 
                 if(npts_z > 1)
                 {
-                    z_vals[idx] = the_origin[2] + i * vec_thd[0] +
-                        j * vec_thd[1] + k * vec_thd[2];
+                    z_vals[idx] = the_origin[2] + i * vec_fst[2] +
+                        j * vec_snd[2] + k * vec_thd[2];
                 }
 
                 idx++;
@@ -1682,6 +1682,8 @@ braid_bent_quads(const Node & spec, Node &res)
     const int32 npts_x = spec["npts_x"].as_int32();
     const int32 npts_y = spec["npts_y"].as_int32();
 
+    const int32 domain_id = spec["domain_id"].as_int32();
+
     const double* origin = spec["origin"].as_double_ptr();
     const double* vec_fst = spec["vec_x"].as_double_ptr();
     const double* vec_snd = spec["vec_y"].as_double_ptr();
@@ -1691,10 +1693,12 @@ braid_bent_quads(const Node & spec, Node &res)
     int32 nele = nele_x * nele_y;
 
     braid_init_example_state(res);
+    res["state/domain_id"] = domain_id;
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  1,
                                  res["coordsets/coords"],
+                                 origin,
                                  vec_fst,
                                  vec_snd,
                                  nullptr);
@@ -3690,7 +3694,7 @@ void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
         if (!(children_ok && dims_ok && npts_ok))
         {
             // error: some domain doesn't have the right children.
-            CONDUIT_ERROR("blueprint::mesh::examples::bentgrid requires each domain in spec "
+            CONDUIT_ERROR("blueprint::mesh::examples::bentgrid requires each domain in spec " << std::endl <<
                 "to have children npts_x, npts_y; origin; vec_x, vec_y. " << std::endl <<
                 "For a 3D mesh, each domain must also have npts_z and vec_z." << std::endl <<
                 "Arrays in origin and vec_x, y, z must be of consistent length." << std::endl <<
@@ -3723,7 +3727,10 @@ void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
     while (doms_it.has_next())
     {
         const Node& dom_node = doms_it.next();
-        bentgrid(dom_node, res);
+        // I need to construct a name and pass in res[thename], not just res.
+        std::string thename;
+        // If spec is a list, use a numerical value that we increment.  Otherwise, use the name of this particular child.
+        bent_braid(dom_node, res[doms_it.name()]);
     }
 
     braid_init_example_adjset(res);
