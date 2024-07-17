@@ -4,29 +4,18 @@
 
 //-----------------------------------------------------------------------------
 ///
-/// file: t_blueprint_mesh_examples.cpp
+/// file: t_blueprint_mesh_examples_generate.cpp
 ///
 //-----------------------------------------------------------------------------
 
 #include "conduit.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_relay.hpp"
-#include "conduit_log.hpp"
-#include "conduit_fmt/conduit_fmt.h"
-#if defined (CONDUIT_RELAY_IO_SILO_ENABLED)
-#include "conduit_relay_io_silo.hpp"
-#endif
-
-#include <math.h>
 #include <iostream>
 #include "gtest/gtest.h"
 
 using namespace conduit;
 using namespace conduit::utils;
-
-index_t OUTPUT_NUM_AXIS_POINTS = 5;
-
-std::string PROTOCOL_VER = CONDUIT_VERSION;
 
 //-----------------------------------------------------------------------------
 bool

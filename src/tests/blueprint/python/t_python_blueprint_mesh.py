@@ -249,7 +249,7 @@ class Test_Blueprint_Mesh(unittest.TestCase):
         for ename in enames:
             n    = conduit.Node()
             info = conduit.Node()
-            blueprint.mesh.examples.generate_default_options(ename,n)
+            blueprint.mesh.examples.generate(ename,n)
             self.assertTrue(blueprint.mesh.verify(n,info))
 
     def test_partition(self):

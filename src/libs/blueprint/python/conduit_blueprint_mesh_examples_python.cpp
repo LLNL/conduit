@@ -141,8 +141,8 @@ PyBlueprint_mesh_examples_generate_default_options(PyObject *, //self
                                     kwargs,
                                     "O|s",
                                     const_cast<char**>(kwlist),
-                                    &example_name,
-                                    &py_node_res))
+                                    &py_node_res,
+                                    &example_name))
     {
         return (NULL);
     }
@@ -155,7 +155,6 @@ PyBlueprint_mesh_examples_generate_default_options(PyObject *, //self
         return NULL;
     }
 
-    //Node &node_opts = *PyConduit_Node_Get_Node_Ptr(py_node_opts);
     Node &node_res  = *PyConduit_Node_Get_Node_Ptr(py_node_res);
 
     if(example_name != NULL)
