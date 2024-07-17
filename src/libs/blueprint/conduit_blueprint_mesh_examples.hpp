@@ -24,6 +24,7 @@
 #include "conduit_blueprint_mesh_examples_rz_cylinder.hpp"
 #include "conduit_blueprint_mesh_examples_tiled.hpp"
 #include "conduit_blueprint_mesh_examples_gyre.hpp"
+#include "conduit_blueprint_mesh_examples_generate.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
@@ -49,11 +50,6 @@ namespace mesh
 //-----------------------------------------------------------------------------
 namespace examples
 {
-    // driver function that allows you to generate any of conduit's
-    // mesh examples
-    void CONDUIT_BLUEPRINT_API generate(const std::string &example_name,
-                                        const conduit::Node &opts,
-                                        conduit::Node &res);
 
     /// Generates a uniform grid with a scalar field that assigns a unique,
     /// monotonically increasing value to each element.
