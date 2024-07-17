@@ -4,6 +4,16 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+#### Blueprint
+- Added `conduit::blueprint::mesh::examples:generate` driver functions that supports creating any blueprint example mesh with options.
+- Added `conduit::blueprint::mesh::examples:generate_default_options` functions that provide default options values for `conduit::blueprint::mesh::examples:generate`.
+- Added python API support for `conduit::blueprint::mesh::examples:generate` and `conduit::blueprint::mesh::examples:generate_default_options`.
+- Added `gyre` example mesh, which provides a simple velocity vector field. 
+
 ## [0.9.2] - Released 2024-05-21
 
 ### Added
