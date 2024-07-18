@@ -63,7 +63,7 @@ find_package(Conduit REQUIRED
 # make sure we have mpi, since we are going to use
 # conduits mpi features
 if(NOT MPI_FOUND)
-    find_package(MPI COMPONENTS CXX)
+    find_package(MPI COMPONENTS C)
 endif()
 
 
