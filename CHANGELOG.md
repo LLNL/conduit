@@ -14,6 +14,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added python API support for `conduit::blueprint::mesh::examples:generate` and `conduit::blueprint::mesh::examples:generate_default_options`.
 - Added `gyre` example mesh, which provides a simple velocity vector field. 
 
+
+### Changed
+
+#### Conduit
+- Changed the MPI CMake target used by conduit from `MPI:MPI_CXX` to `MPI:MPI_C` to provide better compatibility with downstream tools.
+
 ## [0.9.2] - Released 2024-05-21
 
 ### Added
