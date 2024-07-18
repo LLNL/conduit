@@ -42,15 +42,15 @@ if(ENABLE_MPI)
     # if we are using BLT's enable mpi, then we must
     # make sure the MPI targets exist
     if(ENABLE_FIND_MPI)
-        if(TARGET MPI::MPI_CXX)
+        if(TARGET MPI::MPI_C)
             set(CONDUIT_USE_CMAKE_MPI_TARGETS TRUE CACHE BOOL "")
-            message(STATUS "Using MPI CMake imported target: MPI::MPI_CXX")
+            message(STATUS "Using MPI CMake imported target: MPI::MPI_C")
             # use cmake mpi targets directly
-            set(conduit_blt_mpi_deps MPI::MPI_CXX CACHE STRING "")
+            set(conduit_blt_mpi_deps MPI::MPI_C CACHE STRING "")
         else()
             message(FATAL_ERROR "Cannot use CMake imported targets for MPI."
                                 "(ENABLE_MPI == ON, but "
-                                "MPI::MPI_CXX CMake target is missing.)")
+                                "MPI::MPI_C CMake target is missing.)")
         endif()
     else()
         set(CONDUIT_USE_CMAKE_MPI_TARGETS FALSE CACHE BOOL "")

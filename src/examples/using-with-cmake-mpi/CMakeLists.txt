@@ -92,7 +92,7 @@ add_executable(conduit_mpi_example conduit_mpi_example.cpp)
 # link to conduit targets
 target_link_libraries(conduit_mpi_example conduit::conduit
                                           conduit::conduit_mpi
-                                          MPI::MPI_CXX)
+                                          MPI::MPI_C)
 
 # if you are using conduit's python CAPI capsule interface
 # target_link_libraries(conduit_mpi_example conduit::conduit_python)
