@@ -114,18 +114,6 @@ def shexe(cmd,ret_output=False,echo = True):
     else:
         return subprocess.call(cmd,shell=True)
 
-
-def azure_var_sub(txt, azure_vars):
-    pat ="${{ variables."
-    if txt.find(pat) >= 0:
-        st =txt.find(pat)
-        l = len(pat)
-        ed = txt.find("}}")
-        key = txt[st+l:ed]
-        key = key.strip()
-        txt = txt.replace(pat + key + " }}",azure_vars[key])
-    return txt
-
 def sanitize_var(v):
     if type(v)==bool:
         if v:
@@ -142,11 +130,11 @@ def proc_root(tree, config):
             proc_jobs(v, config)
 
 def map_gact_runners(runner,config):
-    if runner == "ubuntu-latest":
-        return config["default_container"]
+    if runner in config["runners"]:
+        return config["runners"][runner]
     else:
-        print("NOT SURE!")
-        sys.exit(-1)
+        print("# unsupported runner:" + runner)
+        return "UNSUPPORTED"
 
 def proc_jobs(tree, config):
     for job_name, job in tree.items():
@@ -163,34 +151,9 @@ def proc_jobs(tree, config):
             for k,v in job["env"].items():
                 job_ctx.print('export {0}="{1}"'.format(k,sanitize_var(v)))
         steps = job["steps"]
-        if "strategy" in job.keys():
-            if "matrix" in job["strategy"].keys():
-                for k,v in job["strategy"]["matrix"].items():
-                    matrix_ctx = CTX(job_ctx)
-                    if "containerImage" in v.keys():
-                          matrix_ctx.set_container(azure_var_sub(v["containerImage"],
-                                                   config["azure_vars"]))
-                          del v["containerImage"]
-                    else:
-                        matrix_ctx.set_container(job_ctx.container)
-
-                    # change container and name from base ctx
-                    
-                    
-                    matrix_entry_name = k
-                    matrix_ctx.set_name("{0}-{1}-{2}".format(stage_name,
-                                                          job_name,
-                                                          matrix_entry_name))
-                    env_vars = v
-                    proc_matrix_entry(steps,
-                                      config,
-                                      matrix_entry_name,
-                                      env_vars,
-                                      matrix_ctx)
-                    matrix_ctx.finish()
-        else:
-            proc_steps(steps,config, job_ctx)
-            job_ctx.finish()
+        proc_steps(steps,config, job_ctx)
+        job_ctx.finish()
+        ## fancier cases (matrix specs) not yet supported 
 
 def proc_matrix_entry(steps, 
                       config,
@@ -244,20 +207,14 @@ def proc_steps(steps, config, ctx):
             lines = s["run"].strip().split("\n")
             ctx.print_esc("turn ON halt on error")
             ctx.print("set -e")
-            # turn off errors
-            #ctx.print_esc("turn OFF halt on error")
-            ctx.print("set +e")
             for l in lines:
                 ctx.print(l)
-            # azure reports errors on last command
-            #ctx.print_esc("turn ON halt on error")
-            #ctx.print("set -e")
             ctx.print('echo ">end {0}"'.format(s["name"]))
             ctx.print("date")
             ctx.print("#++++++++++++++++++++++++++++++++")
         else:
-            if "displayName" in s.keys():
-                ctx.print_esc("STEP with displayName:{0} not SUPPORTED".format(s["displayName"]))
+            if "name" in s.keys():
+                ctx.print_esc("STEP with name:{0} not SUPPORTED".format(s["name"]))
             else:
                 ctx.print_esc("STEP not SUPPORTED")
 

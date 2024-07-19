@@ -18,31 +18,31 @@ jobs:
     steps:
     - name: Install System Deps
       run: |
-           sudo apt-get update
-           sudo apt-get install binutils \
-                                clang \
-                                llvm \
-                                python3 \
-                                perl \
-                                git \
-                                git-lfs \
-                                curl \
-                                wget \
-                                tar \
-                                unzip \
-                                build-essential \
-                                libncurses-dev \
-                                libssl-dev \
-                                libblas-dev \
-                                liblapack-dev \
-                                zlib1g-dev \
-                                libgdbm-dev \
-                                libreadline-dev \
-                                libsqlite3-dev \
-                                libbz2-dev \
-                                mpich \
-                                libmpich-dev \
-                                cmake
+           sudo apt-get update -y
+           sudo apt-get install -y binutils \
+                                   clang \
+                                   llvm \
+                                   python3 \
+                                   perl \
+                                   git \
+                                   git-lfs \
+                                   curl \
+                                   wget \
+                                   tar \
+                                   unzip \
+                                   build-essential \
+                                   libncurses-dev \
+                                   libssl-dev \
+                                   libblas-dev \
+                                   liblapack-dev \
+                                   zlib1g-dev \
+                                   libgdbm-dev \
+                                   libreadline-dev \
+                                   libsqlite3-dev \
+                                   libbz2-dev \
+                                   mpich \
+                                   libmpich-dev \
+                                   cmake
     - name: Checkout
       uses: actions/checkout@v4
       with:
@@ -56,13 +56,21 @@ jobs:
             enable_verbose=OFF \
             build_conduit=false \
             build_jobs=4 \
+            prefix=tpls \
             ./scripts/build_conduit/build_conduit.sh
     - name: Configure Conduit
       run: |
         cmake --version
         echo "**** Configuring Conduit"
-        #cmake -S src -B build -C conduit-config.cmake --debug-find -DENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install
-        cmake -S src -B build -C conduit-config.cmake -DENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install
+        # Note: for system clang + mpich, we need to pass
+        # mpi compiler wrappers are the c & cxx compilers
+        cmake -S src \
+              -B build \
+              -C tpls/conduit-config.cmake \
+              -DCMAKE_C_COMPILER=/usr/bin/mpicc \
+              -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx \
+              -DENABLE_TESTS=ON \
+              -DCMAKE_INSTALL_PREFIX=install
     - name: Build Conduit
       run: |
         echo "**** Building Conduit"
