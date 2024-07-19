@@ -2790,7 +2790,6 @@ fill_dataset_opts(const std::string & ref_path, const Node & inopts,
     nsizes.set(DataType::index_t(rank));
     index_t_array nsizes_array = nsizes.value();
     std::vector<hsize_t> psizes(rank);
-    // hsize_t* psizes = new hsize_t[rank];
     H5Sget_simple_extent_dims(dataspace_id, psizes.data(), nullptr);
     for (int d = 0; d < rank; ++d)
     {
