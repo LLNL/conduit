@@ -11,8 +11,8 @@ jobs:
     env:
       CC: clang
       CXX: clang++
-      CFLAGS: fsanitize=address
-      CXXFLAGS: fsanitize=address
+      CFLAGS: -fsanitize=address
+      CXXFLAGS: -fsanitize=address
     steps:
     - name: Install System Deps
       run: |
