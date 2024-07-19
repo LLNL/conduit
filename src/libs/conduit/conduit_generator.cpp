@@ -2507,30 +2507,11 @@ Generator::walk(Node &node) const
         // TODO
         // else if( m_protocol == "conduit_base64_yaml")
         // {
-        //     conduit_rapidyaml::Document document;
-        //     std::string res = utils::yaml_sanitize(m_schema);
-            
-        //     if(document.Parse<Parser::YAML::RAPIDYAML_PARSE_OPTS>(res.c_str()).HasParseError())
-        //     {
-        //         CONDUIT_YAML_PARSE_ERROR(res, document);
-        //     }
-
         //     Parser::YAML::parse_base64(&node,
         //                                document);
         // }
         else if( m_protocol == "conduit_yaml" || m_protocol == "conduit_yaml_external")
         {
-            // Note: conduit_yaml_external if case here for symmetry with gen / read options
-            // this case is fully handled by conduit_yaml logic
-            conduit_rapidyaml::Document document;
-            std::string res = utils::yaml_sanitize(m_schema);
-            
-            if(document.Parse<Parser::YAML::RAPIDYAML_PARSE_OPTS>(res.c_str()).HasParseError())
-            {
-                CONDUIT_YAML_PARSE_ERROR(res, document);
-            }
-            index_t curr_offset = 0;
-
             Parser::YAML::walk_yaml_schema(&node,
                                            node.schema_ptr(),
                                            m_data,
