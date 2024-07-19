@@ -2,4 +2,4 @@ name: conduit
 repo_url: https://github.com/LLNL/conduit.git
 # This tells azemu to find current branch via a git cmd
 repo_branch: <CURRENT>
-default_container:  ubuntu-latest
+default_container:  ubuntu:22.04

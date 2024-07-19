@@ -4,7 +4,7 @@
 # other details. No copyright assignment is required to contribute to Ascent.
 ###############################################################################
 """
-gactemu.py (General Action Emu Wrangler)
+gactemu.py (Generally Awesome Emu Wrangler)
 
 Digests .github/workflows/ specs and generates scripts to run steps 
 locally using docker.
@@ -67,7 +67,7 @@ class CTX:
         return "GACTEMU-SCRIPT-" + self.name + ".sh"
 
     def launch_file(self):
-        return "GACTMU-LAUNCH-" + self.name + ".sh"
+        return "GACTEMU-LAUNCH-" + self.name + ".sh"
 
     def gen_script(self):
         res  = "#!/bin/bash\n"
@@ -135,29 +135,33 @@ def sanitize_var(v):
     return v
 
 def proc_root(tree, config):
-    azure_vars = {}
-    print(tree)
     for k,v in tree.items():
         if k == "name":
             config["root_name"] = v
         if k == "jobs":
             proc_jobs(v, config)
 
+def map_gact_runners(runner,config):
+    if runner == "ubuntu-latest":
+        return config["default_container"]
+    else:
+        print("NOT SURE!")
+        sys.exit(-1)
+
 def proc_jobs(tree, config):
-    print(tree.keys())
     for job_name, job in tree.items():
         job_ctx = CTX()
         job_full_name = config["root_name"] + "-" + job_name
         job_ctx.print_esc(tag = "job", txt =job_full_name )
         if "runs-on" in job.keys():
-             job_ctx.set_container(job["runs-on"])
+             job_ctx.set_container(map_gact_runners(job["runs-on"],config))
         else:
             job_ctx.set_container(config["default_container"])
         job_ctx.set_name(job_full_name)
         if "env" in job.keys():
             job_ctx.print_esc("job env vars")
             for k,v in job["env"].items():
-                job_ctx.print("export {0}={1}".format(k,sanitize_var(v)))
+                job_ctx.print('export {0}="{1}"'.format(k,sanitize_var(v)))
         steps = job["steps"]
         if "strategy" in job.keys():
             if "matrix" in job["strategy"].keys():
@@ -168,7 +172,7 @@ def proc_jobs(tree, config):
                                                    config["azure_vars"]))
                           del v["containerImage"]
                     else:
-                        matrix_ctx.set_container(job_ctx.container)        
+                        matrix_ctx.set_container(job_ctx.container)
 
                     # change container and name from base ctx
                     
@@ -223,7 +227,7 @@ def proc_steps(steps, config, ctx):
     ctx.print_esc("STEPS")
     ctx.print("#-------------------------------------")
     for s in steps:
-        # we only process checkout and script
+        # we only process "uses:actions/checkout and run
         if "uses" in s.keys():
             # support checkout ...
             if s["uses"].count("actions/checkout") > 0:
@@ -238,15 +242,16 @@ def proc_steps(steps, config, ctx):
             if not ctx.cwd is None:
                 ctx.print("cd ~/{0}".format(ctx.cwd))
             lines = s["run"].strip().split("\n")
-            # turn off errors
-            ctx.print_esc("turn OFF halt on error")
-            ctx.print("set +e")
-            for l in lines[:-1]:
-                ctx.print(l)
-            # azure reports errors on last command
             ctx.print_esc("turn ON halt on error")
             ctx.print("set -e")
-            ctx.print(lines[-1])
+            # turn off errors
+            #ctx.print_esc("turn OFF halt on error")
+            ctx.print("set +e")
+            for l in lines:
+                ctx.print(l)
+            # azure reports errors on last command
+            #ctx.print_esc("turn ON halt on error")
+            #ctx.print("set -e")
             ctx.print('echo ">end {0}"'.format(s["name"]))
             ctx.print("date")
             ctx.print("#++++++++++++++++++++++++++++++++")
