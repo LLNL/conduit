@@ -2964,6 +2964,8 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                 {
                     // copy the data out to the conduit node
                     dest.set_string(read_ptr[0]);
+                    // hdf5 allocates this for us, so we need
+                    // to clean up
                     free(read_ptr[0]);
                 }
             }
