@@ -14,9 +14,6 @@ jobs:
       CFLAGS: "-fsanitize=address -DNDEBUG"
       CXXFLAGS: "-fsanitize=address -DNDEBUG"
     steps:
-    # note: skip mpi for now
-    # note: openmpi seems to have mpi cxx symbols linked into
-    # the c mpi libs. 
     - name: Install System Deps
       run: |
            sudo apt-get update
@@ -41,6 +38,8 @@ jobs:
                                 libreadline-dev \
                                 libsqlite3-dev \
                                 libbz2-dev \
+                                mpich \
+                                libmpich-dev \
                                 cmake
     - name: Checkout
       uses: actions/checkout@v4
@@ -48,7 +47,7 @@ jobs:
         submodules: 'recursive'
     - name: Build TPLs
       run: |
-        env enable_mpi=OFF \
+        env enable_mpi=ON \
             build_config=Debug \
             enable_fortran=OFF \
             enable_tests=OFF \
