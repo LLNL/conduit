@@ -242,15 +242,15 @@ fi
 
 # capture compiler flags  if they are provided via env vars
 if [ ! -z ${CFLAGS+x} ]; then
-    echo 'set(CMAKE_C_FLAGS ' ${CFLAGS} ' CACHE PATH "")' >> ${root_dir}/conduit-config.cmake
+    echo 'set(CMAKE_C_FLAGS "' ${CFLAGS} '" CACHE PATH "")' >> ${root_dir}/conduit-config.cmake
 fi
 
 if [ ! -z ${CXXFLAGS+x} ]; then
-    echo 'set(CMAKE_CXX_FLAGS ' ${CXXFLAGS} ' CACHE PATH "")' >> ${root_dir}/conduit-config.cmake
+    echo 'set(CMAKE_CXX_FLAGS "' ${CXXFLAGS} '" CACHE PATH "")' >> ${root_dir}/conduit-config.cmake
 fi
 
 if [ ! -z ${FFLAGS+x} ]; then
-    echo 'set(CMAKE_F_FLAGS ' ${FFLAGS} ' CACHE PATH "")' >> ${root_dir}/conduit-config.cmake
+    echo 'set(CMAKE_F_FLAGS "' ${FFLAGS} '" CACHE PATH "")' >> ${root_dir}/conduit-config.cmake
 fi
 
 echo 'set(CMAKE_VERBOSE_MAKEFILE ' ${enable_verbose} ' CACHE BOOL "")' >> ${root_dir}/conduit-config.cmake

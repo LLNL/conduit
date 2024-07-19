@@ -11,8 +11,8 @@ jobs:
     env:
       CC: clang
       CXX: clang++
-      CFLAGS: -fsanitize=address
-      CXXFLAGS: -fsanitize=address
+      CFLAGS: "-fsanitize=address -DNDEBUG"
+      CXXFLAGS: "-fsanitize=address -DNDEBUG"
     steps:
     # note: skip mpi for now
     # note: openmpi seems to have mpi cxx symbols linked into
@@ -68,10 +68,11 @@ jobs:
     - name: Run Conduit Unit Tests
       run: |
         echo "**** Conduit Unit Tests (asan)"
-        which llvm-symbolizer
         export ASAN_SYMBOLIZER_PATH=`which llvm-symbolizer`
         export CWD=`pwd`
         export LSAN_OPTIONS="suppressions=${CWD}src/cmake/asan.supp"
+        echo "ASAN_SYMBOLIZER_PATH=${ASAN_SYMBOLIZER_PATH}"
+        echo "LSAN_OPTIONS=${LSAN_OPTIONS}"
         export CTEST_OUTPUT_ON_FAILURE=1
         ctest --test-dir build
     - name: Install Conduit
