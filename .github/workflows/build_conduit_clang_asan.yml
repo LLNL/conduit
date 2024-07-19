@@ -65,7 +65,7 @@ jobs:
       run: |
         echo "**** Building Conduit"
         cmake --build build -j4 --config Debug
-  - name: Run Conduit Unit Tests
+    - name: Run Conduit Unit Tests
       run: |
         echo "**** Conduit Unit Tests (asan)"
         which llvm-symbolizer
