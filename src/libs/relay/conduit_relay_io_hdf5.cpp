@@ -2960,8 +2960,12 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                     H5P_DEFAULT,
                                     read_ptr);
 
-                // copy the data out to the conduit node
-                dest.set_string(read_ptr[0]);
+                if(read_ptr[0] != NULL)
+                {
+                    // copy the data out to the conduit node
+                    dest.set_string(read_ptr[0]);
+                    free(read_ptr[0]);
+                }
             }
             // check for bad # of elements
             else if( dt.number_of_elements() < 0 )
