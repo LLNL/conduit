@@ -73,7 +73,7 @@ jobs:
         export CWD=`pwd`
         export LSAN_OPTIONS="suppressions=${CWD}src/cmake/asan.supp"
         export CTEST_OUTPUT_ON_FAILURE=1
-        cmake --build build --config Debug --target RUN_TESTS
+        ctest --test-dir build
     - name: Install Conduit
       run: |
         echo "**** Installing Conduit"
