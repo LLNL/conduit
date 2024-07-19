@@ -59,7 +59,7 @@ jobs:
       run: |
         cmake --version
         echo "**** Configuring Conduit"
-        cmake -S src -B build -C conduit-config.cmake -DENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install
+        cmake -S src -B build -C conduit-config.cmake --debug-find -DENABLE_TESTS=ON -DCMAKE_INSTALL_PREFIX=install
     - name: Build Conduit
       run: |
         echo "**** Building Conduit"
