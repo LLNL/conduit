@@ -240,6 +240,8 @@ add_compiled_library(NAME conduit_blueprint_mpi
 
 blt_add_target_compile_flags(TO conduit_blueprint_mpi FLAGS "-DCONDUIT_BLUEPRINT_MPI_ENABLED")
 
+# avoid mpi C++ apis + link dep of libmpi_cxx
+target_compile_definitions(conduit_blueprint_mpi PUBLIC ${CONDUIT_MPI_SKIP_MPICXX_DEFINES} )
 
 endif() # end if MPI_FOUND
 
