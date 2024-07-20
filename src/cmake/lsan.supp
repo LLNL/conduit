@@ -4,3 +4,6 @@ leak:H5G__compact_build_table
 leak:H5MM_xstrdup
 # mpi related (mpich)
 leak:PMPI_Init
+# mpi related
+leak:libmpi.so
+
