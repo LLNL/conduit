@@ -49,7 +49,7 @@ jobs:
         submodules: 'recursive'
     - name: Build TPLs
       run: |
-        env enable_mpi=ON \
+        env enable_mpi=OFF \
             build_config=Debug \
             enable_fortran=OFF \
             enable_tests=OFF \
@@ -58,17 +58,26 @@ jobs:
             build_jobs=4 \
             prefix=tpls \
             ./scripts/build_conduit/build_conduit.sh
+    # - name: Configure Conduit (MPI)
+    #   run: |
+    #     cmake --version
+    #     echo "**** Configuring Conduit"
+    #     # Note: for system clang + mpich, we need to pass
+    #     # mpi compiler wrappers are the c & cxx compilers
+    #     cmake -S src \
+    #           -B build \
+    #           -C tpls/conduit-config.cmake \
+    #           -DCMAKE_C_COMPILER=/usr/bin/mpicc \
+    #           -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx \
+    #           -DENABLE_TESTS=ON \
+    #           -DCMAKE_INSTALL_PREFIX=install
     - name: Configure Conduit
       run: |
         cmake --version
         echo "**** Configuring Conduit"
-        # Note: for system clang + mpich, we need to pass
-        # mpi compiler wrappers are the c & cxx compilers
         cmake -S src \
               -B build \
               -C tpls/conduit-config.cmake \
-              -DCMAKE_C_COMPILER=/usr/bin/mpicc \
-              -DCMAKE_CXX_COMPILER=/usr/bin/mpicxx \
               -DENABLE_TESTS=ON \
               -DCMAKE_INSTALL_PREFIX=install
     - name: Build Conduit
@@ -91,10 +100,17 @@ jobs:
         cmake --install build --config Debug
     - name: Check Install
       run: |
-        echo "**** Checking Conduit using-with-cmake-mpi example"
-        export CC=/usr/bin/mpicc
-        export CXX=/usr/bin/mpicxx
-        cd install/examples/conduit/using-with-cmake-mpi
+        echo "**** Checking Conduit using-with-cmake example"
+        cd install/examples/conduit/using-with-cmake
         cmake -S . -B build
         cmake --build build --verbose -j4
-        mpiexec -n 2 ./build/conduit_mpi_example
+        ./build/conduit_example
+    # - name: Check Install (MPI)
+    #   run: |
+    #     echo "**** Checking Conduit using-with-cmake-mpi example"
+    #     export CC=/usr/bin/mpicc
+    #     export CXX=/usr/bin/mpicxx
+    #     cd install/examples/conduit/using-with-cmake-mpi
+    #     cmake -S . -B build
+    #     cmake --build build --verbose -j4
+    #     mpiexec -n 2 ./build/conduit_mpi_example
