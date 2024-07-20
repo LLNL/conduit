@@ -2789,8 +2789,8 @@ fill_dataset_opts(const std::string & ref_path, const Node & inopts,
     Node& nsizes = filled_opts["slabparams/dataset_sizes"];
     nsizes.set(DataType::index_t(rank));
     index_t_array nsizes_array = nsizes.value();
-    hsize_t* psizes = new hsize_t[rank];
-    H5Sget_simple_extent_dims(dataspace_id, psizes, nullptr);
+    std::vector<hsize_t> psizes(rank);
+    H5Sget_simple_extent_dims(dataspace_id, psizes.data(), nullptr);
     for (int d = 0; d < rank; ++d)
     {
         nsizes_array[d] = psizes[d];
@@ -2813,22 +2813,21 @@ fill_dataset_opts(const std::string & ref_path, const Node & inopts,
 
     index_t readcount = calculate_readsize(readsz, rank, nsizes_array, offset, stride);
     filled_opts["slabparams/readcount"] = readcount;
-
-    delete[] psizes;
 }
 
 //---------------------------------------------------------------------------//
-hsize_t*
-make_dataset_opt_copy(const Node& opts, const std::string opt_name)
+void
+make_dataset_opt_copy(const Node& opts,
+                      const std::string opt_name,
+                      std::vector<hsize_t> &values)
 {
     const index_t_accessor hdf5array = opts["slabparams"].fetch_existing(opt_name).as_index_t_accessor();
     int rank = hdf5array.number_of_elements();
-    hsize_t* retval = new hsize_t[rank];
+    values.resize(rank);
     for (int d = 0; d < rank; ++d)
     {
-        retval[d] = (hsize_t)hdf5array[d];
+        values[d] = (hsize_t)hdf5array[d];
     }
-    return retval;
 }
 
 //---------------------------------------------------------------------------//
@@ -2871,9 +2870,18 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
         index_t rank = slab_params["rank"].to_long_long();
         hsize_t readtotal = slab_params["readcount"].to_unsigned_long_long();
         index_t nelems = (index_t)readtotal;
-        hsize_t* readsize = make_dataset_opt_copy(filled_opts, "sizes");
-        hsize_t* offset = make_dataset_opt_copy(filled_opts, "offsets");
-        hsize_t* stride = make_dataset_opt_copy(filled_opts, "strides");
+        // use std::vector vs raw allocd pointer here b/c
+        // the vector will be cleaned up in exception cases
+        std::vector<hsize_t> readsize_vec;
+        std::vector<hsize_t> offset_vec;
+        std::vector<hsize_t> stride_vec;
+        
+        make_dataset_opt_copy(filled_opts, "sizes",readsize_vec);
+        make_dataset_opt_copy(filled_opts, "offsets", offset_vec);
+        make_dataset_opt_copy(filled_opts, "strides", stride_vec);
+        hsize_t* readsize = readsize_vec.data();
+        hsize_t* offset = offset_vec.data();
+        hsize_t* stride = stride_vec.data();
 
         // copy metadata to the node under hard-coded keys
         if (only_get_metadata)
@@ -2952,8 +2960,14 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
                                     H5P_DEFAULT,
                                     read_ptr);
 
-                // copy the data out to the conduit node
-                dest.set_string(read_ptr[0]);
+                if(read_ptr[0] != NULL)
+                {
+                    // copy the data out to the conduit node
+                    dest.set_string(read_ptr[0]);
+                    // hdf5 allocates this for us, so we need
+                    // to clean up
+                    free(read_ptr[0]);
+                }
             }
             // check for bad # of elements
             else if( dt.number_of_elements() < 0 )
@@ -2999,10 +3013,6 @@ read_hdf5_dataset_into_conduit_node(hid_t hdf5_dset_id,
             H5Sclose(nodespace);
             H5Sclose(dataspace);
         }
-
-        delete[] stride;
-        delete[] offset;
-        delete[] readsize;
 
         if(opts.dtype().is_empty())
         {
