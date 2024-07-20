@@ -41,8 +41,7 @@ if(ENABLE_MPI)
 
     #################
     # defines to prevent mpi from using C++ apis and introducing link
-    #  dep of libmpi_cxx
-    # (encountred when using openmpi as mpi)
+    # dep of libmpi_cxx  (encountred when using openmpi as mpi)
     #
     # In theory, calling set(MPI_CXX_SKIP_MPICXX TRUE BOOL) before FindMPI
     # would also add these flags, but that did not work w/ cmake 3.22
