@@ -39,6 +39,16 @@ if(ENABLE_MPI)
         set(MPI_FOUND ON CACHE BOOL "")
     endif()
 
+    #################
+    # defines to prevent mpi from using C++ apis and introducing link
+    #  dep of libmpi_cxx
+    # (encountred when using openmpi as mpi)
+    #
+    # In theory, calling set(MPI_CXX_SKIP_MPICXX TRUE BOOL) before FindMPI
+    # would also add these flags, but that did not work w/ cmake 3.22
+    #################
+    set(CONDUIT_MPI_SKIP_MPICXX_DEFINES MPICH_SKIP_MPICXX OMPI_SKIP_MPICXX _MPICC_H)
+
     # if we are using BLT's enable mpi, then we must
     # make sure the MPI targets exist
     if(ENABLE_FIND_MPI)
