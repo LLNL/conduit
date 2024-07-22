@@ -286,6 +286,22 @@ public:
                                                           yaml_node_t *yaml_node,
                                                           index_t &seq_size);
 
+    // main entry point for parsing yaml
+    // if data pointer is provided, data is copied into dest node
+    static void    walk_yaml_schema(Node   *node,
+                                    Schema *schema,
+                                    void   *data,
+                                    const char *yaml_txt,
+                                    index_t curr_offset);
+
+    // workhorse for parsing a yaml tree
+    static void    walk_yaml_schema(Node   *node,
+                                    Schema *schema,
+                                    void   *data,
+                                    yaml_document_t *yaml_doc,
+                                    yaml_node_t *yaml_node,
+                                    index_t curr_offset);
+
     // main entry point for parsing pure yaml
     static void    walk_pure_yaml_schema(Node  *node,
                                          Schema *schema,
@@ -2096,6 +2112,361 @@ Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
 
 //---------------------------------------------------------------------------//
 void 
+Generator::Parser::YAML::walk_yaml_schema(Node *node,
+                                          Schema *schema,
+                                          void *data,
+                                          const char *yaml_txt,
+                                          index_t curr_offset)
+{
+    YAMLParserWrapper parser;
+    parser.parse(yaml_txt);
+
+    yaml_document_t *yaml_doc  = parser.yaml_doc_ptr();
+    yaml_node_t     *yaml_node = parser.yaml_doc_root_ptr();
+
+
+    if (!yaml_doc || !yaml_node)
+    {
+        CONDUIT_ERROR("failed to fetch yaml document root");
+    }
+
+    walk_yaml_schema(node,
+                     schema,
+                     data,
+                     yaml_doc,
+                     yaml_node,
+                     curr_offset);
+
+    // YAMLParserWrapper cleans up for us
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_yaml_schema(Node *node,
+                                          Schema *schema,
+                                          void *data,
+                                          yaml_document_t *yaml_doc,
+                                          yaml_node_t *yaml_node,
+                                          index_t curr_offset)
+{
+    auto check_yaml_is_int = [](yaml_node_t *yaml_node,
+                                Node *node) -> bool
+    {
+        if (yaml_node->type == YAML_SCALAR_NODE)
+        {
+            const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+            if( yaml_value_str == NULL )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid yaml scalar value at path: "
+                              << node->path());
+            }
+
+            return string_is_integer(yaml_value_str);
+        }
+    };
+
+    auto get_yaml_int = [](yaml_node_t *yaml_node,
+                           Node *node) -> int
+    {
+        const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+        if( yaml_value_str == NULL )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid yaml scalar value at path: "
+                          << node->path());
+        }
+
+        return (int64)string_to_long(yaml_value_str)
+    };
+
+    auto check_yaml_is_string = [](yaml_node_t *yaml_node) -> bool
+    {
+        return yaml_node->type == YAML_SCALAR_NODE;
+    };
+
+    auto check_yaml_is_list = [](yaml_node_t *yaml_node) -> bool
+    {
+        return yaml_node->type == YAML_SEQUENCE_NODE;
+    }
+
+    auto check_yaml_is_object = [](yaml_node_t *yaml_node) -> bool
+    {
+        return yaml_node->type == YAML_MAPPING_NODE;
+    };
+
+    auto fetch_yaml_node = [](yaml_document_t *yaml_doc,
+                              yaml_node_t *yaml_node,
+                              const int index) -> yaml_node_t*
+    {
+        return yaml_document_get_node(yaml_doc, 
+            (yaml_node->data.mapping.pairs.start + index)->value);
+    };
+
+    auto get_index_of_member = [&](const std::string member_name,
+                                   yaml_node_t *yaml_node_to_search) -> int
+    {
+        int cld_idx = 0;
+        while ((yaml_node_to_search->data.mapping.pairs.start + cld_idx) < yaml_node_to_search->data.mapping.pairs.top)
+        {
+            yaml_node_pair_t *yaml_pair = yaml_node_to_search->data.mapping.pairs.start + cld_idx;
+
+            // TODO hi we don't need to do all these checks; some of them are wrong
+            // we don't necessarily want leaf nodes
+
+            if(yaml_pair == NULL)
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "failed to fetch mapping pair at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+            
+            if(yaml_key == NULL)
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "failed to fetch mapping key at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            if(yaml_key->type != YAML_SCALAR_NODE )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid mapping key type at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
+
+            if(yaml_key_str == NULL )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid mapping key value at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            const std::string entry_name(yaml_key_str);
+            if (entry_name == member_name)
+            {
+                return cld_idx;
+            }
+
+            cld_idx ++;
+        }
+
+        return -1;
+    };
+
+    // object cases
+    if (check_yaml_is_object(yaml_node))
+    {
+        // if dtype is an object, we have a "list_of" case
+        const int index_of_dtype = get_index_of_member("dtype", yaml_node);
+        if (index_of_dtype > -1) // if yaml has dtype
+        {
+            yaml_node_t *dt_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_dtype);
+            if (! dt_value)
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid mapping child at path: "
+                              << utils::join_path(node->path(),entry_name));
+            }
+
+            // if dtype yaml is object type
+            if (check_yaml_is_object(dt_value))
+            {
+                int length = 1;
+                const int index_of_length = get_index_of_member("length", yaml_node);
+                // if dtype has member length
+                if (index_of_length > -1)
+                {
+                    yaml_node_t *len_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_length);
+                    if (check_yaml_is_object(len_value) &&
+                        get_index_of_member("reference", len_value) > -1)
+                    {
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                      << "'reference' option is not supported"
+                                      << " when parsing to a Schema because"
+                                      << " reference data does not exist.");
+                    }
+                    // TODO double check this is the right conduit node to pass
+                    else if (check_yaml_is_int(len_value, node))
+                    {
+                        length = get_yaml_int(len_value, node);
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                      << "'length' must be a YAML Object or"
+                                      << " YAML number");
+                    }
+                }
+                // we will create `length' # of objects of obj des by dt_value
+
+                // TODO: we only need to parse this once, not leng # of times
+                // but this is the easiest way to start.
+                for (int i = 0; i < length; i++)
+                {
+                    Schema &curr_schema = schema->append();
+                    curr_schema.set(DataType::list());
+                    // TODO implement me!
+                    walk_yaml_schema(&curr_schema, yaml_doc, dt_value, curr_offset);
+                    curr_offset += curr_schema.total_strided_bytes();
+                }
+            }
+            else
+            {
+                // handle leaf node with explicit props
+                DataType dtype;
+                // TODO implement me!
+                parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+                schema->set(dtype);
+            }
+        }
+        else
+        {
+            // if we make it here and have an empty yaml object
+            // we still want the conduit schema to take on the
+            // object role
+            schema->set(DataType::object());
+
+            // loop over all entries
+            int cld_idx = 0;
+            // while (has_next) --> grab next, then process
+            while( (yaml_node->data.mapping.pairs.start + cld_idx) < yaml_node->data.mapping.pairs.top)
+            {
+                yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
+
+                if(yaml_pair == NULL)
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "failed to fetch mapping pair at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+
+                yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+                
+                if(yaml_key == NULL)
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "failed to fetch mapping key at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+
+                if(yaml_key->type != YAML_SCALAR_NODE )
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Invalid mapping key type at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+
+                const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
+
+                if(yaml_key_str == NULL )
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Invalid mapping key value at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+                
+                std::string entry_name(yaml_key_str);
+
+                // yaml files may have duplicate object names
+                // we could provide some clear semantics, such as:
+                //   always use first instance, or always use last instance
+                // however duplicate object names are most likely a
+                // typo, so it's best to throw an error
+                if (schema->has_child(entry_name))
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Duplicate YAML object name: "
+                                  << utils::join_path(node->path(),entry_name));
+                }
+
+                Schema &curr_schema = schema->add_child(entry_name);
+                curr_schema.set(DataType::object());
+
+                yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
+                if(yaml_child == NULL )
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Invalid mapping child at path: "
+                                  << utils::join_path(node->path(),entry_name));
+                }
+
+                // TODO implement me!
+                walk_yaml_schema(&curr_schema, yaml_doc, yaml_child, curr_offset);
+                curr_offset += curr_schema.total_strided_bytes();
+
+                cld_idx ++;
+            }
+        }
+    }
+    // List case
+    else if (check_yaml_is_list(yaml_node))
+    {
+        // if we make it here and have an empty yaml list
+        // we still want the conduit schema to take on the
+        // list role
+        schema->set(DataType::list());
+
+
+        index_t cld_idx = 0;
+        while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+        {
+            // TODO can I use my helper? Why is my helper different?
+            yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+                                                    yaml_node->data.sequence.items.start[cld_idx]);
+        
+            if(yaml_child == NULL )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid sequence child at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+            Schema &curr_schema = schema->append();
+            curr_schema.set(DataType::list());
+            walk_yaml_schema(&curr_schema, yaml_doc, yaml_child, curr_offset);
+            curr_offset += curr_schema.total_strided_bytes();
+
+            cld_idx++;
+        }
+    }
+    // Simplest case, handles "uint32", "float64", etc
+    else if (check_yaml_is_string(yaml_node))
+    {
+        DataType dtype;
+        // TODO implement me
+        parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+        schema->set(dtype);
+
+
+        // const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+
+        // if( yaml_value_str == NULL )
+        // {
+        //     CONDUIT_ERROR("YAML Generator error:\n"
+        //                   << "Invalid yaml scalar value at path: "
+        //                   << node->path());
+        // }
+
+        // parse_yaml_inline_leaf(yaml_value_str,*node);
+    }
+    else
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid YAML type for parsing Schema."
+                      << " Expected: YAML Map, Sequence, String, Null,"
+                      << " Boolean, or Number");
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void 
 Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                                                Schema *schema,
                                                const char *yaml_txt)
@@ -2442,6 +2813,8 @@ Generator::walk(Schema &schema) const
 void 
 Generator::walk(Node &node) const
 {
+    // TODO add the same stuff to walk_external
+
     // try catch b/c:
     // if something goes wrong we will clear the node and re-throw
     // if exception is caught downstream
