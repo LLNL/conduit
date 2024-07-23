@@ -257,6 +257,27 @@ public:
     // with the yaml parser
     //
 
+    static bool check_yaml_is_int(yaml_node_t *yaml_node,
+                                  Node *node); // TODO do I need this
+
+    static int64 get_yaml_int(yaml_node_t *yaml_node,
+                              Node *node); // TODO do I need this
+
+    static bool check_yaml_is_string(yaml_node_t *yaml_node);
+
+    static const char *get_yaml_string(yaml_node_t *yaml_node,
+                                       Node *node); // TODO do I need this
+
+    static bool check_yaml_is_list(yaml_node_t *yaml_node);
+
+    static bool check_yaml_is_object(yaml_node_t *yaml_node);
+
+    static yaml_node_t* fetch_yaml_node(yaml_document_t *yaml_doc,
+                                        yaml_node_t *yaml_node,
+                                        const int index);
+    static int get_index_of_member(const std::string member_name,
+                                   yaml_node_t *yaml_node_to_search);
+
     // assumes res is already inited to DataType::int64 w/ proper size
     static void parse_yaml_int64_array(yaml_document_t *yaml_doc,
                                        yaml_node_t *yaml_node,
@@ -269,6 +290,12 @@ public:
     // parses generic leaf and places value in res
     static void parse_yaml_inline_leaf(const char *yaml_txt,
                                        Node &res);
+
+    static void parse_leaf_dtype(yaml_document_t *yaml_doc,
+                                 yaml_node_t *yaml_node,
+                                 Node *node,
+                                 index_t offset,
+                                 DataType &dtype_res);
 
     // finds if leaf string is int64, float64, or neither (DataType::EMPTY_T)
     static index_t yaml_leaf_to_numeric_dtype(const char *txt_value);
@@ -1934,6 +1961,155 @@ Generator::Parser::YAML::yaml_leaf_to_numeric_dtype(const char *txt_value)
 }
 
 //---------------------------------------------------------------------------//
+bool 
+check_yaml_is_int(yaml_node_t *yaml_node,
+                  Node *node) // TODO do I need this
+{
+    if (yaml_node->type == YAML_SCALAR_NODE)
+    {
+        const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+        if( yaml_value_str == NULL )
+        {
+            // TODO do I need this part
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid yaml scalar value at path: "
+                          << node->path());
+        }
+
+        return string_is_integer(yaml_value_str);
+    }
+}
+
+//---------------------------------------------------------------------------//
+int64
+get_yaml_int(yaml_node_t *yaml_node,
+                        Node *node) // TODO do I need this
+{
+    // TODO any way to combine this w/ prior function? Maybe in some cases
+    const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+    if( yaml_value_str == NULL )
+    {
+        // TODO do I need this part
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid yaml scalar value at path: "
+                      << node->path());
+    }
+
+    return (int64)string_to_long(yaml_value_str)
+}
+
+//---------------------------------------------------------------------------//
+// TODO can I inline all of these checks
+bool 
+check_yaml_is_string(yaml_node_t *yaml_node)
+{
+    // TODO I am worried that this could eat up other cases like the int case
+    return yaml_node->type == YAML_SCALAR_NODE;
+}
+
+//---------------------------------------------------------------------------//
+const char *
+get_yaml_string(yaml_node_t *yaml_node,
+                Node *node); // TODO do I need this
+{
+    const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+
+    if( yaml_value_str == NULL )
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid yaml scalar value at path: "
+                      << node->path());
+    }
+
+    // TODO see the cases in parse_yaml_inline_leaf
+    // do we need to check that we are not one of those to use this as a string?
+
+    return yaml_value_str;
+}
+
+//---------------------------------------------------------------------------//
+bool 
+check_yaml_is_list(yaml_node_t *yaml_node)
+{
+    return yaml_node->type == YAML_SEQUENCE_NODE;
+}
+
+//---------------------------------------------------------------------------//
+bool 
+check_yaml_is_object(yaml_node_t *yaml_node)
+{
+    return yaml_node->type == YAML_MAPPING_NODE;
+}
+
+//---------------------------------------------------------------------------//
+yaml_node_t*
+fetch_yaml_node(yaml_document_t *yaml_doc,
+                                    yaml_node_t *yaml_node,
+                                    const int index)
+{
+    // TODO is there a way to do this with [] operator?
+    return yaml_document_get_node(yaml_doc, 
+        (yaml_node->data.mapping.pairs.start + index)->value);
+}
+
+//---------------------------------------------------------------------------//
+int 
+get_index_of_member(const std::string member_name,
+                               yaml_node_t *yaml_node_to_search)
+{
+    int cld_idx = 0;
+    while ((yaml_node_to_search->data.mapping.pairs.start + cld_idx) < yaml_node_to_search->data.mapping.pairs.top)
+    {
+        yaml_node_pair_t *yaml_pair = yaml_node_to_search->data.mapping.pairs.start + cld_idx;
+
+        // TODO hi we don't need to do all these checks; some of them are wrong
+        // we don't necessarily want leaf nodes
+
+        if(yaml_pair == NULL)
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "failed to fetch mapping pair at path: "
+                          << node->path() << "[" << cld_idx << "]");
+        }
+
+        yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+        
+        if(yaml_key == NULL)
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "failed to fetch mapping key at path: "
+                          << node->path() << "[" << cld_idx << "]");
+        }
+
+        if(yaml_key->type != YAML_SCALAR_NODE )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid mapping key type at path: "
+                          << node->path() << "[" << cld_idx << "]");
+        }
+
+        const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
+
+        if(yaml_key_str == NULL )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid mapping key value at path: "
+                          << node->path() << "[" << cld_idx << "]");
+        }
+
+        const std::string entry_name(yaml_key_str);
+        if (entry_name == member_name)
+        {
+            return cld_idx;
+        }
+
+        cld_idx ++;
+    }
+
+    return -1;
+}
+
+//---------------------------------------------------------------------------//
 // NOTE: Assumes Node res is already DataType::int64, w/ proper len
 void
 Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
@@ -2109,6 +2285,61 @@ Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
     }
 }
 
+//---------------------------------------------------------------------------//
+// TODO no need to duplicate this with JSON
+index_t 
+Generator::Parser::YAML::parse_leaf_dtype_name(const std::string &dtype_name)
+{
+    index_t dtype_id = DataType::name_to_id(dtype_name);
+    if(dtype_id == DataType::EMPTY_ID)
+    {
+        // also try native type names
+        dtype_id = DataType::c_type_name_to_id(dtype_name);
+    }
+
+    // do an explicit check for empty
+    if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                       << "invalid leaf type "
+                       << "\""  <<  dtype_name << "\"");
+    }
+    return dtype_id;
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
+                                          yaml_node_t *yaml_node,
+                                          Node *node,
+                                          index_t offset,
+                                          DataType &dtype_res)
+{
+    if (check_yaml_is_string(yaml_node))
+    {
+        std::string dtype_name(get_yaml_string(yaml_node, node));
+        index_t dtype_id = parse_leaf_dtype_name(dtype_name);
+        index_t ele_size = DataType::default_bytes(dtype_id);
+        dtype_res.set(dtype_id,
+                      1,
+                      offset,
+                      ele_size,
+                      ele_size,
+                      Endianness::DEFAULT_ID);
+    }
+    else if (check_yaml_is_object(yaml_node))
+    {
+        const int index_of_dtype = get_index_of_member("dtype", yaml_node);
+        
+    }
+    else
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                       << "a leaf dtype entry must be a YAML string or"
+                       <<  " YAML object.");
+    }
+}
+
 
 //---------------------------------------------------------------------------//
 void 
@@ -2150,115 +2381,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                           yaml_node_t *yaml_node,
                                           index_t curr_offset)
 {
-    auto check_yaml_is_int = [](yaml_node_t *yaml_node,
-                                Node *node) -> bool
-    {
-        if (yaml_node->type == YAML_SCALAR_NODE)
-        {
-            const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
-            if( yaml_value_str == NULL )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid yaml scalar value at path: "
-                              << node->path());
-            }
-
-            return string_is_integer(yaml_value_str);
-        }
-    };
-
-    auto get_yaml_int = [](yaml_node_t *yaml_node,
-                           Node *node) -> int
-    {
-        const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
-        if( yaml_value_str == NULL )
-        {
-            CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid yaml scalar value at path: "
-                          << node->path());
-        }
-
-        return (int64)string_to_long(yaml_value_str)
-    };
-
-    auto check_yaml_is_string = [](yaml_node_t *yaml_node) -> bool
-    {
-        return yaml_node->type == YAML_SCALAR_NODE;
-    };
-
-    auto check_yaml_is_list = [](yaml_node_t *yaml_node) -> bool
-    {
-        return yaml_node->type == YAML_SEQUENCE_NODE;
-    }
-
-    auto check_yaml_is_object = [](yaml_node_t *yaml_node) -> bool
-    {
-        return yaml_node->type == YAML_MAPPING_NODE;
-    };
-
-    auto fetch_yaml_node = [](yaml_document_t *yaml_doc,
-                              yaml_node_t *yaml_node,
-                              const int index) -> yaml_node_t*
-    {
-        return yaml_document_get_node(yaml_doc, 
-            (yaml_node->data.mapping.pairs.start + index)->value);
-    };
-
-    auto get_index_of_member = [&](const std::string member_name,
-                                   yaml_node_t *yaml_node_to_search) -> int
-    {
-        int cld_idx = 0;
-        while ((yaml_node_to_search->data.mapping.pairs.start + cld_idx) < yaml_node_to_search->data.mapping.pairs.top)
-        {
-            yaml_node_pair_t *yaml_pair = yaml_node_to_search->data.mapping.pairs.start + cld_idx;
-
-            // TODO hi we don't need to do all these checks; some of them are wrong
-            // we don't necessarily want leaf nodes
-
-            if(yaml_pair == NULL)
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "failed to fetch mapping pair at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-
-            yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
-            
-            if(yaml_key == NULL)
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "failed to fetch mapping key at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-
-            if(yaml_key->type != YAML_SCALAR_NODE )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid mapping key type at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-
-            const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
-
-            if(yaml_key_str == NULL )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid mapping key value at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-
-            const std::string entry_name(yaml_key_str);
-            if (entry_name == member_name)
-            {
-                return cld_idx;
-            }
-
-            cld_idx ++;
-        }
-
-        return -1;
-    };
-
     // object cases
     if (check_yaml_is_object(yaml_node))
     {
@@ -2440,7 +2562,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
     {
         DataType dtype;
         // TODO implement me
-        parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+        parse_leaf_dtype(yaml_doc, yaml_node, node, curr_offset, dtype);
         schema->set(dtype);
 
 
