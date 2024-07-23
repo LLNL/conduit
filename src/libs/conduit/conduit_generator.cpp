@@ -257,10 +257,13 @@ public:
     // with the yaml parser
     //
 
+    static bool check_yaml_is_number(yaml_node_t *yaml_node,
+                                     Node *node); // TODO do I need this
+
     static bool check_yaml_is_int(yaml_node_t *yaml_node,
                                   Node *node); // TODO do I need this
 
-    static int64 get_yaml_int(yaml_node_t *yaml_node,
+    static long get_yaml_long(yaml_node_t *yaml_node,
                               Node *node); // TODO do I need this
 
     static bool check_yaml_is_string(yaml_node_t *yaml_node);
@@ -275,6 +278,7 @@ public:
     static yaml_node_t* fetch_yaml_node(yaml_document_t *yaml_doc,
                                         yaml_node_t *yaml_node,
                                         const int index);
+
     static int get_index_of_member(const std::string member_name,
                                    yaml_node_t *yaml_node_to_search);
 
@@ -830,6 +834,8 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
         index_t ele_size  = DataType::default_bytes(dtype_id);
         index_t stride    = ele_size;
     
+        // TODO can I refactor these into helpers they're all the same
+
         //  parse offset (override default if passed)
         if(jvalue.HasMember("offset"))
         {
@@ -1961,6 +1967,26 @@ Generator::Parser::YAML::yaml_leaf_to_numeric_dtype(const char *txt_value)
 }
 
 //---------------------------------------------------------------------------//
+bool
+check_yaml_is_number(yaml_node_t *yaml_node,
+                     Node *node) // TODO do I need this
+{
+    if (yaml_node->type == YAML_SCALAR_NODE)
+    {
+        const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+        if( yaml_value_str == NULL )
+        {
+            // TODO do I need this part
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid yaml scalar value at path: "
+                          << node->path());
+        }
+
+        return string_is_integer(yaml_value_str) || string_is_double(yaml_value_str);
+    }
+}
+
+//---------------------------------------------------------------------------//
 bool 
 check_yaml_is_int(yaml_node_t *yaml_node,
                   Node *node) // TODO do I need this
@@ -1981,9 +2007,9 @@ check_yaml_is_int(yaml_node_t *yaml_node,
 }
 
 //---------------------------------------------------------------------------//
-int64
-get_yaml_int(yaml_node_t *yaml_node,
-                        Node *node) // TODO do I need this
+long
+get_yaml_long(yaml_node_t *yaml_node,
+             Node *node) // TODO do I need this
 {
     // TODO any way to combine this w/ prior function? Maybe in some cases
     const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
@@ -1995,7 +2021,7 @@ get_yaml_int(yaml_node_t *yaml_node,
                       << node->path());
     }
 
-    return (int64)string_to_long(yaml_value_str)
+    return string_to_long(yaml_value_str)
 }
 
 //---------------------------------------------------------------------------//
@@ -2330,7 +2356,107 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
     else if (check_yaml_is_object(yaml_node))
     {
         const int index_of_dtype = get_index_of_member("dtype", yaml_node);
-        
+        CONDUIT_ASSERT(index_of_dtype > -1,
+                       "YAML Generator error:\n"
+                        << "'dtype' must be a YAML string.");
+        yaml_node_t* dtype_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_dtype);
+        CONDUIT_ASSERT(check_yaml_is_string(dtype_node),
+                       "YAML Generator error:\n"
+                        << "'dtype' must be a YAML string.");
+
+        const std::string dtype_name(get_yaml_string(dtype_node, node));
+
+        index_t length = 0;
+
+        const int index_of_numele = get_index_of_member("number_of_elements", yaml_node);
+        if (index_of_numele > -1)
+        {
+            const yaml_node_t* numele_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_numele);
+            if (check_yaml_is_number(numele_node, node))
+            {
+                length = static_cast<uint64>(get_yaml_long(numele_node, node));
+            }
+            else
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                               << "'number_of_elements' must be a number ");
+            }
+        }
+        //
+        // DEPRECATE
+        //
+        // length is the old schema style, we should deprecate this path
+        const int index_of_length = get_index_of_member("length", yaml_node);
+        if (index_of_length > -1)
+        {
+            const yaml_node_t* length_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_length);
+            if (check_yaml_is_number(length_node, node))
+            {
+                length = static_cast<uint64>(get_yaml_long(length_node, node));
+            }
+            else
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                               << "'length' must be a number ");
+            }
+        }
+
+        index_t dtype_id = parse_leaf_dtype_name(dtype_name);
+        index_t ele_size = DataType::default_bytes(dtype_id);
+        index_t stride = ele_size;
+
+        // TODO can I refactor these into helpers they're all the same
+
+        //  parse offset (override default if passed)
+        const int index_of_offset = get_index_of_member("offset", yaml_node);
+        if (index_of_offset > -1)
+        {
+            const yaml_node_t* offset_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_offset);
+            if (check_yaml_is_number(offset_node, node))
+            {
+                offset = static_cast<uint64>(get_yaml_long(offset_node, node));
+            }
+            else
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                               << "'offset' must be a number ");
+            }
+        }
+
+        // parse stride (override default if passed)
+        const int index_of_stride = get_index_of_member("stride", yaml_node);
+        if (index_of_stride > -1)
+        {
+            const yaml_node_t* stride_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_stride);
+            if (check_yaml_is_number(stride_node, node))
+            {
+                stride = static_cast<uint64>(get_yaml_long(stride_node, node));
+            }
+            else
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                               << "'stride' must be a number ");
+            }
+        }
+
+        // parse element_bytes (override default if passed)
+        const int index_of_ele_bytes = get_index_of_member("element_bytes", yaml_node);
+        if (index_of_ele_bytes > -1)
+        {
+            const yaml_node_t* ele_bytes_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_ele_bytes);
+            if (check_yaml_is_number(ele_bytes_node, node))
+            {
+                ele_size = static_cast<uint64>(get_yaml_long(ele_bytes_node, node));
+            }
+            else
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                               << "'element_bytes' must be a number ");
+            }
+        }
+
+        // TODO I left off with endianess
+
     }
     else
     {
@@ -2416,7 +2542,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                     // TODO double check this is the right conduit node to pass
                     else if (check_yaml_is_int(len_value, node))
                     {
-                        length = get_yaml_int(len_value, node);
+                        length = static_cast<int64>(get_yaml_long(len_value, node));
                     }
                     else
                     {
