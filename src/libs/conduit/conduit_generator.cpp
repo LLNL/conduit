@@ -273,6 +273,8 @@ public:
 
     static bool check_yaml_is_list(yaml_node_t *yaml_node);
 
+    static int get_yaml_array_length(yaml_node_t *yaml_node);
+
     static bool check_yaml_is_object(yaml_node_t *yaml_node);
 
     static yaml_node_t* fetch_yaml_node(yaml_document_t *yaml_doc,
@@ -2061,6 +2063,13 @@ check_yaml_is_list(yaml_node_t *yaml_node)
 }
 
 //---------------------------------------------------------------------------//
+int
+get_yaml_array_length(yaml_node_t *yaml_node)
+{
+    return yaml_node->data.sequence.items.top;
+}
+
+//---------------------------------------------------------------------------//
 bool 
 check_yaml_is_object(yaml_node_t *yaml_node)
 {
@@ -2070,8 +2079,8 @@ check_yaml_is_object(yaml_node_t *yaml_node)
 //---------------------------------------------------------------------------//
 yaml_node_t*
 fetch_yaml_node(yaml_document_t *yaml_doc,
-                                    yaml_node_t *yaml_node,
-                                    const int index)
+                yaml_node_t *yaml_node,
+                const int index)
 {
     // TODO is there a way to do this with [] operator?
     return yaml_document_get_node(yaml_doc, 
@@ -2382,24 +2391,6 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                                << "'number_of_elements' must be a number ");
             }
         }
-        //
-        // DEPRECATE
-        //
-        // length is the old schema style, we should deprecate this path
-        const int index_of_length = get_index_of_member("length", yaml_node);
-        if (index_of_length > -1)
-        {
-            const yaml_node_t* length_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_length);
-            if (check_yaml_is_number(length_node, node))
-            {
-                length = static_cast<uint64>(get_yaml_long(length_node, node));
-            }
-            else
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                               << "'length' must be a number ");
-            }
-        }
 
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
@@ -2455,8 +2446,69 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
             }
         }
 
-        // TODO I left off with endianess
+        // parse endianness (override default if passed)
+        index_t endianness = Endianness::DEFAULT_ID;
+        const int index_of_endianness = get_index_of_member("endianness", yaml_node);
+        if (index_of_endianness > -1)
+        {
+            const yaml_node_t* endianness_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_endianness);
+            if (check_yaml_is_string(endianness_node))
+            {
+                const std::string end_val(get_yaml_string(endianness_node, node));
+                if ("big" == end_val)
+                {
+                    endianness = Endianness::BIG_ID;
+                }
+                else if ("little" == end_val)
+                {
+                    endianness = Endianness::LITTLE_ID;
+                }
+                else
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                              << "'endianness' must be a string"
+                              << " (\"big\" or \"little\")"
+                              << " parsed value: " << end_val);
+                }
+            }
+            else
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                          << "'endianness' must be a string"
+                          << " (\"big\" or \"little\")");
+            }
+        }
 
+        if (0 == length)
+        {
+            const int index_of_value = get_index_of_member("value", yaml_node);
+            if (index_of_value > -1)
+            {
+                const yaml_node_t* value_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_value);
+                if (check_yaml_is_list(value_node))
+                {
+                    length = get_yaml_array_length(value_node);
+                }
+                // TODO duplicating this logic is sadge
+                else if (get_index_of_member("length", yaml_node) == -1 &&
+                         get_index_of_member("number_of_elements", yaml_node) == -1)
+                {
+                    length = 1;
+                }
+            }
+            else if (get_index_of_member("length", yaml_node) == -1 &&
+                     get_index_of_member("number_of_elements", yaml_node) == -1)
+            {
+                length = 1;
+            }
+        }
+
+        dtype_res.set(dtype_id,
+                      length,
+                      offset,
+                      stride,
+                      ele_size,
+                      endianness);
     }
     else
     {
@@ -2500,6 +2552,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
 
 //---------------------------------------------------------------------------//
 void 
+// TODO do I need all these args?
 Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                           Schema *schema,
                                           void *data,
@@ -2559,8 +2612,12 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 {
                     Schema &curr_schema = schema->append();
                     curr_schema.set(DataType::list());
-                    // TODO implement me!
-                    walk_yaml_schema(&curr_schema, yaml_doc, dt_value, curr_offset);
+                    walk_yaml_schema(node,
+                                     &curr_schema,
+                                     data,
+                                     yaml_doc,
+                                     dt_value,
+                                     curr_offset);
                     curr_offset += curr_schema.total_strided_bytes();
                 }
             }
@@ -2568,8 +2625,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             {
                 // handle leaf node with explicit props
                 DataType dtype;
-                // TODO implement me!
-                parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+                parse_leaf_dtype(yaml_doc, yaml_node, node, curr_offset, dtype);
                 schema->set(dtype);
             }
         }
@@ -2644,8 +2700,12 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                   << utils::join_path(node->path(),entry_name));
                 }
 
-                // TODO implement me!
-                walk_yaml_schema(&curr_schema, yaml_doc, yaml_child, curr_offset);
+                walk_yaml_schema(node,
+                                 &curr_schema,
+                                 data,
+                                 yaml_doc,
+                                 yaml_child,
+                                 curr_offset);
                 curr_offset += curr_schema.total_strided_bytes();
 
                 cld_idx ++;
@@ -2668,7 +2728,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                     yaml_node->data.sequence.items.start[cld_idx]);
         
-            if(yaml_child == NULL )
+            if (yaml_child == NULL )
             {
                 CONDUIT_ERROR("YAML Generator error:\n"
                               << "Invalid sequence child at path: "
@@ -2680,28 +2740,15 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             walk_yaml_schema(&curr_schema, yaml_doc, yaml_child, curr_offset);
             curr_offset += curr_schema.total_strided_bytes();
 
-            cld_idx++;
+            cld_idx ++;
         }
     }
     // Simplest case, handles "uint32", "float64", etc
     else if (check_yaml_is_string(yaml_node))
     {
         DataType dtype;
-        // TODO implement me
         parse_leaf_dtype(yaml_doc, yaml_node, node, curr_offset, dtype);
         schema->set(dtype);
-
-
-        // const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
-
-        // if( yaml_value_str == NULL )
-        // {
-        //     CONDUIT_ERROR("YAML Generator error:\n"
-        //                   << "Invalid yaml scalar value at path: "
-        //                   << node->path());
-        // }
-
-        // parse_yaml_inline_leaf(yaml_value_str,*node);
     }
     else
     {
