@@ -284,6 +284,9 @@ public:
     static int get_index_of_member(const std::string member_name,
                                    yaml_node_t *yaml_node_to_search);
 
+    static void* parse_inline_address(yaml_node_t *yaml_node,
+                                      Node *node); // TODO do I need this
+
     // assumes res is already inited to DataType::int64 w/ proper size
     static void parse_yaml_int64_array(yaml_document_t *yaml_doc,
                                        yaml_node_t *yaml_node,
@@ -2066,6 +2069,7 @@ check_yaml_is_list(yaml_node_t *yaml_node)
 int
 get_yaml_array_length(yaml_node_t *yaml_node)
 {
+    // TODO I think this is actually top minus start; look at while loops for inspo
     return yaml_node->data.sequence.items.top;
 }
 
@@ -2142,6 +2146,84 @@ get_index_of_member(const std::string member_name,
     }
 
     return -1;
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::parse_inline_value(yaml_node_t *yaml_node,
+                                            Node &node)
+{
+    if (check_yaml_is_list(yaml_node))
+    {
+        // we assume a "value" is a leaf or list of compatible leaves
+        // TODO use some kind of yaml equivalent
+        index_t hval_type = check_homogenous_json_array(jvalue);
+
+        CONDUIT_ASSERT( (node.dtype().number_of_elements() >= get_yaml_array_length(yaml_node) ),
+                       "YAML Generator error:\n" 
+                        << "number of elements in YAML array is more"
+                        << "than dtype can hold");
+
+        if (hval_type == DataType::INT64_ID)
+        {
+            if (node.dtype().is_unsigned_integer())
+            {
+                // TODO use yaml equivalent
+                parse_json_uint64_array(jvalue,node);
+            }
+            else
+            {
+                // TODO use yaml equivalent
+                parse_json_int64_array(jvalue,node);
+            }
+        }
+        else if(hval_type == DataType::FLOAT64_ID)
+        {
+            // TODO use yaml equivalent
+            parse_json_float64_array(jvalue,node);
+        }
+        else if(hval_type == DataType::EMPTY_ID)
+        {
+            // we need to allow this case but do nothing.
+            // for conduit_yaml cases, the node will
+            // have the right data type
+        }
+        else
+        {
+            // Parsing Error, not homogenous
+            CONDUIT_ERROR("YAML Generator error:\n"
+                        << "a YAML array for value initialization"
+                        << " is not homogenous");
+        }
+    }
+    else
+    {
+        // TODO implement me
+        parse_inline_leaf(jvalue,node);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void *
+Generator::Parser::YAML::parse_inline_address(yaml_node_t *yaml_node,
+                                              Node *node)
+{
+    void * res = nullptr;
+    if (check_yaml_is_string(yaml_node))
+    {
+        const std::string sval(get_yaml_string(yaml_node, node));
+        res = utils::hex_string_to_value<void*>(sval);
+    }
+    // else if(jvalue.IsNumber())
+    // {
+    //     // TODO: FUTURE? ...
+    // }
+    else
+    {
+         CONDUIT_ERROR("YAML Generator error:\n"
+                       << "inline address should be a string");
+    }
+    return res;
 }
 
 //---------------------------------------------------------------------------//
@@ -2549,6 +2631,330 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
     // YAMLParserWrapper cleans up for us
 }
 
+// TODO look at these two functions - they are for node version
+// make sure I translated node version correctly
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_yaml_schema(Node *node,
+                                          Schema *schema,
+                                          void *data,
+                                          yaml_document_t *yaml_doc,
+                                          yaml_node_t *yaml_node,
+                                          index_t curr_offset)
+{
+    // object cases
+    if (check_yaml_is_object(yaml_node))
+    {
+        // if dtype is an object, we have a "list_of" case
+        const int index_of_dtype = get_index_of_member("dtype", yaml_node);
+        if (index_of_dtype > -1) // if yaml has dtype
+        {
+            yaml_node_t *dt_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_dtype);
+
+            // if dtype yaml is object type
+            if (check_yaml_is_object(dt_value))
+            {
+                index_t length = 1;
+                const int index_of_length = get_index_of_member("length", yaml_node);
+                // if dtype has member length
+                if (index_of_length > -1)
+                {
+                    yaml_node_t *len_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_length);
+                    // TODO double check this is the right conduit node to pass
+                    if (check_yaml_is_number(len_value, node))
+                    {
+                        length = static_cast<index_t>(get_yaml_long(len_value, node));
+                    }
+                    else if (check_yaml_is_object(len_value) &&
+                             get_index_of_member("reference", len_value) > -1)
+                    {
+                        // TODO this is so sad can I get this in advance
+                        const int index_of_ref = get_index_of_member("reference", len_value);
+                        yaml_node_t *ref_value = fetch_yaml_node(yaml_doc, len_value, index_of_ref);
+                        const std::string ref_path = get_yaml_string(ref_value, node);
+                        length = node->fetch(ref_path).to_index_t();
+                        
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                      << "'length' must be a number or"
+                                      << " reference");
+                    }
+                }
+                // we will create `length' # of objects of obj des by dt_value
+
+                // TODO: we only need to parse this once, not leng # of times
+                // but this is the easiest way to start.
+                for (index_t i = 0; i < length; i++)
+                {
+                    schema->append();
+                    Schema *curr_schema = schema->child_ptr(i);
+                    Node *curr_node = new Node();
+                    curr_node->set_schema_ptr(curr_schema);
+                    curr_node->set_parent(node);
+                    node->append_node_ptr(curr_node);
+                    walk_yaml_schema(curr_node,
+                                     curr_schema,
+                                     data,
+                                     yaml_doc,
+                                     dt_value,
+                                     curr_offset);
+                    // auto offset only makes sense when we have data
+                    if (data)
+                    {
+                        curr_offset += curr_schema->total_strided_bytes();
+                    }
+                }
+            }
+            else
+            {
+                // handle leaf node with explicit props
+                DataType src_dtype;
+                parse_leaf_dtype(yaml_doc, yaml_node, node, curr_offset, src_dtype);
+
+                DataType des_dtype;
+                src_dtype.compact_to(des_dtype);
+
+                // check for explicit address
+                const int index_of_address = get_index_of_member("address", yaml_node);
+                if (index_of_address > -1)
+                {
+                    yaml_node_t *address_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_address);
+                    void *data_ptr = parse_inline_address(address_value, node);
+                    node->set_external(src_dtype, data_ptr);
+                }
+                else
+                {
+                    if (data)
+                    {
+                        uint8 *src_data_ptr = ((uint8*)data) + src_dtype.offset();
+                        // node is already linked to the schema pointer
+                        // we need to dynamically alloc, use compact dtype
+                        node->set(des_dtype); // causes an init
+                        // copy bytes from src data to node's memory
+                        utils::conduit_memcpy_strided_elements(node->data_ptr(),               // dest data
+                                                               des_dtype.number_of_elements(), // num ele
+                                                               des_dtype.element_bytes(),      // ele bytes
+                                                               des_dtype.stride(),             // dest stride
+                                                               src_data_ptr,                   // src data
+                                                               src_dtype.stride());            // src stride
+                    }
+                    else
+                    {
+                        // node is already linked to the schema pointer
+                        // we need to dynamically alloc, use compact dtype
+                        node->set(des_dtype); // causes an init
+                    }
+
+                    // check for inline yaml values
+                    const int index_of_value = get_index_of_member("value", yaml_node);
+                    if (index_of_value > -1)
+                    {
+                        yaml_node_t *value_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_value);
+                        // TODO fix this function
+                        parse_inline_value(value_value, *node);
+                    }
+                }
+            }
+        }
+        else // object case
+        {
+            schema->set(DataType::object());
+            // standard object case - loop over all entries
+            int cld_idx = 0;
+            // while (has_next) --> grab next, then process
+            while( (yaml_node->data.mapping.pairs.start + cld_idx) < yaml_node->data.mapping.pairs.top)
+            {
+                yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
+
+                // TODO do I need all these checks?
+
+                if(yaml_pair == NULL)
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "failed to fetch mapping pair at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+
+                yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+                
+                if(yaml_key == NULL)
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "failed to fetch mapping key at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+
+                if(yaml_key->type != YAML_SCALAR_NODE )
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Invalid mapping key type at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+
+                const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
+
+                if(yaml_key_str == NULL )
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Invalid mapping key value at path: "
+                                  << node->path() << "[" << cld_idx << "]");
+                }
+                
+                const std::string entry_name(yaml_key_str);
+
+                // yaml files may have duplicate object names
+                // we could provide some clear semantics, such as:
+                //   always use first instance, or always use last instance
+                // however duplicate object names are most likely a
+                // typo, so it's best to throw an error
+                // 
+                // also its highly unlikely that the auto offset case
+                // could safely deal with offsets for the
+                // duplicate key case
+                if (schema->has_child(entry_name))
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Duplicate YAML object name: "
+                                  << utils::join_path(node->path(),entry_name));
+                }
+
+                yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
+                if(yaml_child == NULL )
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                  << "Invalid mapping child at path: "
+                                  << utils::join_path(node->path(),entry_name));
+                }
+
+                Schema *curr_schema = &schema->add_child(entry_name);
+                Node *curr_node = new Node();
+                curr_node->set_schema_ptr(curr_schema);
+                curr_node->set_parent(node);
+                node->append_node_ptr(curr_node);
+                walk_yaml_schema(node,
+                                 curr_schema,
+                                 data,
+                                 yaml_doc,
+                                 yaml_child,
+                                 curr_offset);
+
+                // auto offset only makes sense when we have data
+                if (data)
+                {
+                    curr_offset += curr_schema->total_strided_bytes();
+                }
+
+                cld_idx ++;
+            }
+        }
+    }
+    // List case
+    else if (check_yaml_is_list(yaml_node))
+    {
+        schema->set(DataType::list());
+
+        // TODO can I make these into for loops
+        index_t cld_idx = 0;
+        while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+        {
+            // TODO can I use my helper? Why is my helper different?
+            yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+                                                    yaml_node->data.sequence.items.start[cld_idx]);
+        
+            if (yaml_child == NULL )
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "Invalid sequence child at path: "
+                              << node->path() << "[" << cld_idx << "]");
+            }
+
+
+
+            schema->append();
+            Schema *curr_schema = schema->child_ptr(cld_idx);
+            Node *curr_node = new Node();
+            curr_node->set_schema_ptr(curr_schema);
+            curr_node->set_parent(node);
+            node->append_node_ptr(curr_node);
+            walk_yaml_schema(curr_node,
+                             curr_schema,
+                             data,
+                             yaml_doc,
+                             yaml_child,
+                             curr_offset);
+            // auto offset only makes sense when we have data
+            if (data)
+            {
+                curr_offset += curr_schema->total_strided_bytes();
+            }
+
+            cld_idx ++;
+        }
+    }
+    // Simplest case, handles "uint32", "float64", with extended type info
+    else if (check_yaml_is_string(yaml_node))
+    {
+        DataType dtype;
+        parse_leaf_dtype(yaml_doc, yaml_node, node, curr_offset, dtype);
+        schema->set(dtype);
+
+        if (data)
+        {
+            // node is already linked to the schema pointer
+            node->set_data_ptr(data);
+        }
+        else
+        {
+            // node is already linked to the schema pointer
+            // we need to dynamically alloc
+            node->set(dtype);  // causes an init
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid YAML type for parsing Node."
+                      << " Expected: YAML Object, Array, or String");
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_yaml_schema(Node *node,
+                                          Schema *schema,
+                                          void *data,
+                                          const char *yaml_txt,
+                                          index_t curr_offset)
+{
+    YAMLParserWrapper parser;
+    parser.parse(yaml_txt);
+
+    yaml_document_t *yaml_doc  = parser.yaml_doc_ptr();
+    yaml_node_t     *yaml_node = parser.yaml_doc_root_ptr();
+
+
+    if (!yaml_doc || !yaml_node)
+    {
+        CONDUIT_ERROR("failed to fetch yaml document root");
+    }
+
+    walk_yaml_schema(node,
+                     schema,
+                     data,
+                     yaml_doc,
+                     yaml_node,
+                     curr_offset);
+
+    // YAMLParserWrapper cleans up for us
+}
+
+// TODO fix these versions so they are for schema only and add them in the class declaration
+
 
 //---------------------------------------------------------------------------//
 void 
@@ -2651,7 +3057,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 }
 
                 yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
-                
+
                 if(yaml_key == NULL)
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
@@ -2674,7 +3080,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                   << "Invalid mapping key value at path: "
                                   << node->path() << "[" << cld_idx << "]");
                 }
-                
+
                 std::string entry_name(yaml_key_str);
 
                 // yaml files may have duplicate object names
@@ -2727,7 +3133,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             // TODO can I use my helper? Why is my helper different?
             yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                     yaml_node->data.sequence.items.start[cld_idx]);
-        
+
             if (yaml_child == NULL )
             {
                 CONDUIT_ERROR("YAML Generator error:\n"
@@ -3090,6 +3496,7 @@ Generator::data_ptr() const
 
 //---------------------------------------------------------------------------//
 void 
+// TODO we can add a protocol arg string and have it default to json
 Generator::walk(Schema &schema) const
 {
     schema.reset();
