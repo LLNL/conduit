@@ -329,6 +329,11 @@ public:
                                     const char *yaml_txt,
                                     index_t curr_offset);
 
+    static void    walk_yaml_schema(Schema *schema,
+                                    const char *yaml_txt,
+                                    index_t curr_offset);
+
+
     // workhorse for parsing a yaml tree
     static void    walk_yaml_schema(Node   *node,
                                     Schema *schema,
@@ -336,6 +341,11 @@ public:
                                     yaml_document_t *yaml_doc,
                                     yaml_node_t *yaml_node,
                                     index_t curr_offset);
+
+    static void    walk_yaml_schema(Schema *schema,
+                                    yaml_document_t *yaml_doc,
+                                    yaml_node_t *yaml_node,
+                                    index_t curr_offset)
 
     // main entry point for parsing pure yaml
     static void    walk_pure_yaml_schema(Node  *node,
@@ -2789,9 +2799,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
 
 //---------------------------------------------------------------------------//
 void 
-Generator::Parser::YAML::walk_yaml_schema(Node *node,
-                                          Schema *schema,
-                                          void *data,
+Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
                                           const char *yaml_txt,
                                           index_t curr_offset)
 {
@@ -2807,9 +2815,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         CONDUIT_ERROR("failed to fetch yaml document root");
     }
 
-    walk_yaml_schema(node,
-                     schema,
-                     data,
+    walk_yaml_schema(schema,
                      yaml_doc,
                      yaml_node,
                      curr_offset);
@@ -2822,10 +2828,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
 
 //---------------------------------------------------------------------------//
 void 
-// TODO do I need all these args?
-Generator::Parser::YAML::walk_yaml_schema(Node *node,
-                                          Schema *schema,
-                                          void *data,
+Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
                                           yaml_document_t *yaml_doc,
                                           yaml_node_t *yaml_node,
                                           index_t curr_offset)
@@ -3347,19 +3350,32 @@ Generator::data_ptr() const
 
 //---------------------------------------------------------------------------//
 void 
-// TODO we can add a protocol arg string and have it default to json
 Generator::walk(Schema &schema) const
 {
     schema.reset();
-    conduit_rapidjson::Document document;
-    std::string res = utils::json_sanitize(m_schema);
-
-    if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
-    {
-        CONDUIT_JSON_PARSE_ERROR(res, document);
-    }
     index_t curr_offset = 0;
-    Parser::JSON::walk_json_schema(&schema,document,curr_offset);
+    if (m_protocol.find("json") != std::string::npos)
+    {
+        conduit_rapidjson::Document document;
+        std::string res = utils::json_sanitize(m_schema);
+
+        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+        {
+            CONDUIT_JSON_PARSE_ERROR(res, document);
+        }
+
+        Parser::JSON::walk_json_schema(&schema,document,curr_offset);
+    }
+    else if (m_protocol.find("yaml") != std::string::npos)
+    {
+        Parser::YAML::walk_yaml_schema(&schema,
+                                       m_schema,
+                                       curr_offset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown protocol in " << m_protocol);
+    }
 }
 
 //---------------------------------------------------------------------------//
