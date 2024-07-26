@@ -90,8 +90,6 @@ public:
 
 //-----------------------------------------------------------------------------
 // Shared string parsing helpers
-// TODO: try to inline these helpers? Not sure it matters since
-// they call other routines?
 //-----------------------------------------------------------------------------
     // checks if c-string is a null pointer or empty
     static bool string_is_empty(const char *txt_value);
@@ -111,6 +109,8 @@ public:
     static double string_to_double(const char *txt_value);
     // converts c-string to long
     static long int string_to_long(const char *txt_value);
+
+    static index_t parse_leaf_dtype_name(const std::string &dtype_name);
 
 //-----------------------------------------------------------------------------
 // Generator::Parser::JSON handles parsing via rapidjson.
@@ -159,7 +159,6 @@ public:
 
     static void    parse_json_float64_array(const conduit_rapidjson::Value &jvalue,
                                             Node &node);
-    static index_t parse_leaf_dtype_name(const std::string &dtype_name);
     
     static void    parse_leaf_dtype(const conduit_rapidjson::Value &jvalue,
                                     index_t offset,
@@ -386,7 +385,6 @@ Generator::Parser::string_is_number(const char *txt_value)
 bool
 Generator::Parser::string_is_double(const char *txt_value)
 {
-    // TODO: inline check for empty ?
     if(string_is_empty(txt_value))
         return false;
     char *val_end = NULL;
@@ -400,7 +398,6 @@ Generator::Parser::string_is_double(const char *txt_value)
 bool
 Generator::Parser::string_is_integer(const char *txt_value)
 {
-    // TODO: inline check for empty ?
     if(string_is_empty(txt_value))
         return false;
     char *val_end = NULL;
@@ -422,6 +419,27 @@ Generator::Parser::string_to_long(const char *txt_value)
 {
     char *val_end = NULL;
     return strtol(txt_value,&val_end,10);
+}
+
+//---------------------------------------------------------------------------//
+index_t 
+Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
+{
+    index_t dtype_id = DataType::name_to_id(dtype_name);
+    if(dtype_id == DataType::EMPTY_ID)
+    {
+        // also try native type names
+        dtype_id = DataType::c_type_name_to_id(dtype_name);
+    }
+
+    // do an explicit check for empty
+    if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
+    {
+        CONDUIT_ERROR("Generator error:\n"
+                       << "invalid leaf type "
+                       << "\""  <<  dtype_name << "\"");
+    }
+    return dtype_id;
 }
 
 
@@ -753,28 +771,6 @@ Generator::Parser::JSON::parse_json_float64_array(const conduit_rapidjson::Value
     }
 }
 
-
-//---------------------------------------------------------------------------//
-index_t 
-Generator::Parser::JSON::parse_leaf_dtype_name(const std::string &dtype_name)
-{
-    index_t dtype_id = DataType::name_to_id(dtype_name);
-    if(dtype_id == DataType::EMPTY_ID)
-    {
-        // also try native type names
-        dtype_id = DataType::c_type_name_to_id(dtype_name);
-    }
-
-    // do an explicit check for empty
-    if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
-    {
-        CONDUIT_ERROR("JSON Generator error:\n"
-                       << "invalid leaf type "
-                       << "\""  <<  dtype_name << "\"");
-    }
-    return dtype_id;
-}
-
 //---------------------------------------------------------------------------//
 void
 Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue,
@@ -802,93 +798,41 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
             
         std::string dtype_name(jvalue["dtype"].GetString());
         
-        index_t length=0;
+        index_t length = 0;
+
+        auto extract_uint64_member = [&](const std::string &member_name,
+                                         index_t &number_to_set)
+        {
+            if (jvalue.HasMember(member_name))
+            {
+                const conduit_rapidjson::Value &json_value = jvalue[member_name];
+                
+                if (json_value.IsNumber())
+                {
+                    number_to_set = json_value.GetUint64();
+                }
+                else
+                {
+                    CONDUIT_ERROR("JSON Generator error:\n"
+                                  << "'" << member_name << "' must be a number ");
+                }
+            }
+        };
         
-        if(jvalue.HasMember("number_of_elements"))
-        {
-            const conduit_rapidjson::Value &json_num_eles = jvalue["number_of_elements"];
-            if(json_num_eles.IsNumber())
-            {              
-                length = json_num_eles.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                               << "'number_of_elements' must be a number ");
-            }
-        }
-        //
-        // DEPRECATE
-        //
-        // length is the old schema style, we should deprecate this path
-        else if(jvalue.HasMember("length"))
-        {
-            const conduit_rapidjson::Value &json_len = jvalue["length"];
-            if(json_len.IsNumber())
-            {              
-                length = json_len.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                               << "'length' must be a number ");
-            }
-        }
+        extract_uint64_member("number_of_elements", length);
 
         index_t dtype_id  = parse_leaf_dtype_name(dtype_name);
         index_t ele_size  = DataType::default_bytes(dtype_id);
         index_t stride    = ele_size;
     
-        // TODO can I refactor these into helpers they're all the same
-
         //  parse offset (override default if passed)
-        if(jvalue.HasMember("offset"))
-        {
-            const conduit_rapidjson::Value &json_offset = jvalue["offset"];
-            
-            if(json_offset.IsNumber())
-            {
-                offset = json_offset.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                              << "'offset' must be a number ");
-            }
-        }
+        extract_uint64_member("offset", offset);
 
         // parse stride (override default if passed)
-        if(jvalue.HasMember("stride") )
-        {
-            const conduit_rapidjson::Value &json_stride = jvalue["stride"];
-            
-            if(json_stride.IsNumber())
-            {
-                stride = json_stride.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                              << "'stride' must be a number ");
-            }
-        }
+        extract_uint64_member("stride", stride);
 
         // parse element_bytes (override default if passed)
-        if(jvalue.HasMember("element_bytes") )
-        {
-            const conduit_rapidjson::Value &json_ele_bytes = jvalue["element_bytes"];
-            
-            if(json_ele_bytes.IsNumber())
-            {
-                ele_size = json_ele_bytes.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                              << "'element_bytes' must be a number ");
-            }
-        }
-    
+        extract_uint64_member("element_bytes", ele_size);    
     
         // parse endianness (override default if passed)
         index_t endianness = Endianness::DEFAULT_ID;
@@ -2030,7 +1974,6 @@ get_yaml_long(yaml_node_t *yaml_node,
 }
 
 //---------------------------------------------------------------------------//
-// TODO can I inline all of these checks
 bool 
 check_yaml_is_string(yaml_node_t *yaml_node)
 {
@@ -2069,8 +2012,7 @@ check_yaml_is_list(yaml_node_t *yaml_node)
 int
 get_yaml_array_length(yaml_node_t *yaml_node)
 {
-    // TODO I think this is actually top minus start; look at while loops for inspo
-    return yaml_node->data.sequence.items.top;
+    return yaml_node->data.sequence.items.top - yaml_node->data.sequence.items.start;
 }
 
 //---------------------------------------------------------------------------//
@@ -2403,28 +2345,6 @@ Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
 }
 
 //---------------------------------------------------------------------------//
-// TODO no need to duplicate this with JSON
-index_t 
-Generator::Parser::YAML::parse_leaf_dtype_name(const std::string &dtype_name)
-{
-    index_t dtype_id = DataType::name_to_id(dtype_name);
-    if(dtype_id == DataType::EMPTY_ID)
-    {
-        // also try native type names
-        dtype_id = DataType::c_type_name_to_id(dtype_name);
-    }
-
-    // do an explicit check for empty
-    if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
-    {
-        CONDUIT_ERROR("YAML Generator error:\n"
-                       << "invalid leaf type "
-                       << "\""  <<  dtype_name << "\"");
-    }
-    return dtype_id;
-}
-
-//---------------------------------------------------------------------------//
 void
 Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                                           yaml_node_t *yaml_node,
@@ -2459,74 +2379,39 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
 
         index_t length = 0;
 
-        const int index_of_numele = get_index_of_member("number_of_elements", yaml_node);
-        if (index_of_numele > -1)
+        auto extract_uint64_member = [&](const std::string &member_name,
+                                         index_t &number_to_set) -> uint64
         {
-            const yaml_node_t* numele_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_numele);
-            if (check_yaml_is_number(numele_node, node))
+            const int index_of_member = get_index_of_member(member_name, yaml_node);
+            if (index_of_member > -1)
             {
-                length = static_cast<uint64>(get_yaml_long(numele_node, node));
+                const yaml_node_t* value_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_member);
+                if (check_yaml_is_number(value_node, node))
+                {
+                    number_to_set = static_cast<uint64>(get_yaml_long(offset_node, node));
+                }
+                else
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                   << "'" << member_name << "' must be a number ");
+                }
             }
-            else
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                               << "'number_of_elements' must be a number ");
-            }
-        }
+        };
+
+        extract_uint64_member("number_of_elements", length);
 
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
         index_t stride = ele_size;
 
-        // TODO can I refactor these into helpers they're all the same
-
         //  parse offset (override default if passed)
-        const int index_of_offset = get_index_of_member("offset", yaml_node);
-        if (index_of_offset > -1)
-        {
-            const yaml_node_t* offset_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_offset);
-            if (check_yaml_is_number(offset_node, node))
-            {
-                offset = static_cast<uint64>(get_yaml_long(offset_node, node));
-            }
-            else
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                               << "'offset' must be a number ");
-            }
-        }
+        extract_uint64_member("offset", offset);
 
         // parse stride (override default if passed)
-        const int index_of_stride = get_index_of_member("stride", yaml_node);
-        if (index_of_stride > -1)
-        {
-            const yaml_node_t* stride_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_stride);
-            if (check_yaml_is_number(stride_node, node))
-            {
-                stride = static_cast<uint64>(get_yaml_long(stride_node, node));
-            }
-            else
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                               << "'stride' must be a number ");
-            }
-        }
+        extract_uint64_member("stride", stride);
 
         // parse element_bytes (override default if passed)
-        const int index_of_ele_bytes = get_index_of_member("element_bytes", yaml_node);
-        if (index_of_ele_bytes > -1)
-        {
-            const yaml_node_t* ele_bytes_node = fetch_yaml_node(yaml_doc, yaml_node, index_of_ele_bytes);
-            if (check_yaml_is_number(ele_bytes_node, node))
-            {
-                ele_size = static_cast<uint64>(get_yaml_long(ele_bytes_node, node));
-            }
-            else
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                               << "'element_bytes' must be a number ");
-            }
-        }
+        extract_uint64_member("element_bytes", ele_size);
 
         // parse endianness (override default if passed)
         index_t endianness = Endianness::DEFAULT_ID;
