@@ -2037,8 +2037,7 @@ int
 get_index_of_member(const std::string member_name,
                                yaml_node_t *yaml_node_to_search)
 {
-    int cld_idx = 0;
-    while ((yaml_node_to_search->data.mapping.pairs.start + cld_idx) < yaml_node_to_search->data.mapping.pairs.top)
+    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
         yaml_node_pair_t *yaml_pair = yaml_node_to_search->data.mapping.pairs.start + cld_idx;
 
@@ -2082,8 +2081,6 @@ get_index_of_member(const std::string member_name,
         {
             return cld_idx;
         }
-
-        cld_idx ++;
     }
 
     return -1;
@@ -2175,8 +2172,7 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
                                                 Node &res)
 {
     int64_array res_vals = res.value();
-    int cld_idx = 0;
-    while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
         yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                  yaml_node->data.sequence.items.start[cld_idx]);
@@ -2200,8 +2196,6 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
         }
 
         res_vals[cld_idx] = (int64) string_to_long(yaml_value_str);
-
-        cld_idx++;
     }
 }
 
@@ -2213,8 +2207,7 @@ Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
                                                   Node &res)
 {
     float64_array res_vals = res.value();
-    int cld_idx = 0;
-    while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
         yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                  yaml_node->data.sequence.items.start[cld_idx]);
@@ -2238,8 +2231,6 @@ Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
         }
 
         res_vals[cld_idx] = (float64) string_to_double(yaml_value_str);
-
-        cld_idx++;
     }
 }
 
@@ -2250,13 +2241,12 @@ Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node
                                                                 yaml_node_t *yaml_node,
                                                                 index_t &seq_size)
 {
-     index_t res = DataType::EMPTY_ID;
-     seq_size = -1;
-     bool ok = true;
-     int cld_idx = 0;
-     while( ok && yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
-     {
-         yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+    index_t res = DataType::EMPTY_ID;
+    seq_size = -1;
+    bool ok = true;
+    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
+    {
+        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                  yaml_node->data.sequence.items.start[cld_idx]);
                                                  
         if(yaml_child == NULL )
@@ -2287,6 +2277,7 @@ Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node
             if(child_dtype_id == DataType::EMPTY_ID)
             {
                 ok = false;
+                break;
             }
             else if(res == DataType::EMPTY_ID)
             {
@@ -2302,22 +2293,21 @@ Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node
         else
         {
             ok = false;
+            break;
         }
+    }
 
-        cld_idx++;
-     }
-
-     // if we are ok, seq_size is the final cld_idx
-     if(ok)
-     {
-         seq_size = cld_idx;
-     }
-     else
-     {
+    // if we are ok, seq_size is the final cld_idx
+    if(ok)
+    {
+        seq_size = cld_idx;
+    }
+    else
+    {
         res = DataType::EMPTY_ID;
-     }
+    }
 
-     return res;
+    return res;
 }
 
 //---------------------------------------------------------------------------//
@@ -2648,9 +2638,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         {
             schema->set(DataType::object());
             // standard object case - loop over all entries
-            int cld_idx = 0;
-            // while (has_next) --> grab next, then process
-            while( (yaml_node->data.mapping.pairs.start + cld_idx) < yaml_node->data.mapping.pairs.top)
+            for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
             {
                 yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
 
@@ -2731,8 +2719,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 {
                     curr_offset += curr_schema->total_strided_bytes();
                 }
-
-                cld_idx ++;
             }
         }
     }
@@ -2741,22 +2727,18 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
     {
         schema->set(DataType::list());
 
-        // TODO can I make these into for loops
-        index_t cld_idx = 0;
-        while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+        for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
         {
             // TODO can I use my helper? Why is my helper different?
             yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                     yaml_node->data.sequence.items.start[cld_idx]);
-        
+            
             if (yaml_child == NULL )
             {
                 CONDUIT_ERROR("YAML Generator error:\n"
                               << "Invalid sequence child at path: "
                               << node->path() << "[" << cld_idx << "]");
             }
-
-
 
             schema->append();
             Schema *curr_schema = schema->child_ptr(cld_idx);
@@ -2775,8 +2757,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             {
                 curr_offset += curr_schema->total_strided_bytes();
             }
-
-            cld_idx ++;
         }
     }
     // Simplest case, handles "uint32", "float64", with extended type info
@@ -2927,9 +2907,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             schema->set(DataType::object());
 
             // loop over all entries
-            int cld_idx = 0;
-            // while (has_next) --> grab next, then process
-            while( (yaml_node->data.mapping.pairs.start + cld_idx) < yaml_node->data.mapping.pairs.top)
+            for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
             {
                 yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
 
@@ -2997,8 +2975,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                  yaml_child,
                                  curr_offset);
                 curr_offset += curr_schema.total_strided_bytes();
-
-                cld_idx ++;
             }
         }
     }
@@ -3010,9 +2986,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         // list role
         schema->set(DataType::list());
 
-
-        index_t cld_idx = 0;
-        while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+        for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
         {
             // TODO can I use my helper? Why is my helper different?
             yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
@@ -3029,8 +3003,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             curr_schema.set(DataType::list());
             walk_yaml_schema(&curr_schema, yaml_doc, yaml_child, curr_offset);
             curr_offset += curr_schema.total_strided_bytes();
-
-            cld_idx ++;
         }
     }
     // Simplest case, handles "uint32", "float64", etc
@@ -3094,9 +3066,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
         schema->set(DataType::object());
         // loop over all entries
         
-        int cld_idx = 0;
-        // while (has_next) --> grab next, then process
-        while( (yaml_node->data.mapping.pairs.start + cld_idx) < yaml_node->data.mapping.pairs.top)
+        for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
         {
             yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
 
@@ -3132,7 +3102,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                               << node->path() << "[" << cld_idx << "]");
             }
             
-            std::string entry_name(yaml_key_str);
+            const std::string entry_name(yaml_key_str);
 
             yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
 
@@ -3162,12 +3132,11 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             node->append_node_ptr(curr_node);
-        
+            
             walk_pure_yaml_schema(curr_node,
                                   curr_schema,
                                   yaml_doc,
                                   yaml_child);
-            cld_idx++;
         }
     }
     // List case
@@ -3194,12 +3163,11 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
         else
         {
             // general case (not a numeric array)
-            index_t cld_idx = 0;
-            while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+            for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
             {
                 yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                         yaml_node->data.sequence.items.start[cld_idx]);
-            
+                
                 if(yaml_child == NULL )
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
@@ -3217,7 +3185,6 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                                       curr_schema,
                                       yaml_doc,
                                       yaml_child);
-                cld_idx++;
             }
         }
     }
