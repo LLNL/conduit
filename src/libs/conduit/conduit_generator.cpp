@@ -866,7 +866,7 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
             }
         }
     
-        if(length == 0)
+        if (0 == length)
         {
             if(jvalue.HasMember("value") &&
                jvalue["value"].IsArray())
@@ -874,8 +874,7 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
                 length = jvalue["value"].Size();
             }
             // support explicit length 0 in a schema
-            else if(!jvalue.HasMember("length") && 
-                    !jvalue.HasMember("number_of_elements"))
+            else if(!jvalue.HasMember("number_of_elements"))
             {
                 length = 1;
             }
@@ -1923,7 +1922,7 @@ check_yaml_is_number(yaml_node_t *yaml_node,
     if (yaml_node->type == YAML_SCALAR_NODE)
     {
         const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
-        if( yaml_value_str == NULL )
+        if ( yaml_value_str == nullptr)
         {
             // TODO do I need this part
             CONDUIT_ERROR("YAML Generator error:\n"
@@ -1943,7 +1942,7 @@ check_yaml_is_int(yaml_node_t *yaml_node,
     if (yaml_node->type == YAML_SCALAR_NODE)
     {
         const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
-        if( yaml_value_str == NULL )
+        if( yaml_value_str == nullptr )
         {
             // TODO do I need this part
             CONDUIT_ERROR("YAML Generator error:\n"
@@ -1962,7 +1961,7 @@ get_yaml_long(yaml_node_t *yaml_node,
 {
     // TODO any way to combine this w/ prior function? Maybe in some cases
     const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
-    if( yaml_value_str == NULL )
+    if( yaml_value_str == nullptr )
     {
         // TODO do I need this part
         CONDUIT_ERROR("YAML Generator error:\n"
@@ -1988,7 +1987,7 @@ get_yaml_string(yaml_node_t *yaml_node,
 {
     const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
 
-    if( yaml_value_str == NULL )
+    if( yaml_value_str == nullptr )
     {
         CONDUIT_ERROR("YAML Generator error:\n"
                       << "Invalid yaml scalar value at path: "
@@ -2456,15 +2455,12 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                 {
                     length = get_yaml_array_length(value_node);
                 }
-                // TODO duplicating this logic is sadge
-                else if (get_index_of_member("length", yaml_node) == -1 &&
-                         get_index_of_member("number_of_elements", yaml_node) == -1)
+                else if (get_index_of_member("number_of_elements", yaml_node) == -1)
                 {
                     length = 1;
                 }
             }
-            else if (get_index_of_member("length", yaml_node) == -1 &&
-                     get_index_of_member("number_of_elements", yaml_node) == -1)
+            else if (get_index_of_member("number_of_elements", yaml_node) == -1)
             {
                 length = 1;
             }
@@ -2516,9 +2512,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
     // YAMLParserWrapper cleans up for us
 }
 
-// TODO look at these two functions - they are for node version
-// make sure I translated node version correctly
-
 
 //---------------------------------------------------------------------------//
 void 
@@ -2552,15 +2545,21 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                     {
                         length = static_cast<index_t>(get_yaml_long(len_value, node));
                     }
-                    else if (check_yaml_is_object(len_value) &&
-                             get_index_of_member("reference", len_value) > -1)
+                    else if (check_yaml_is_object(len_value))
                     {
-                        // TODO this is so sad can I get this in advance
                         const int index_of_ref = get_index_of_member("reference", len_value);
-                        yaml_node_t *ref_value = fetch_yaml_node(yaml_doc, len_value, index_of_ref);
-                        const std::string ref_path = get_yaml_string(ref_value, node);
-                        length = node->fetch(ref_path).to_index_t();
-                        
+                        if (index_of_ref > -1)
+                        {
+                            yaml_node_t *ref_value = fetch_yaml_node(yaml_doc, len_value, index_of_ref);
+                            const std::string ref_path = get_yaml_string(ref_value, node);
+                            length = node->fetch(ref_path).to_index_t();
+                        }
+                        else
+                        {
+                            CONDUIT_ERROR("YAML Generator error:\n"
+                                          << "'length' must be a number or"
+                                          << " reference");
+                        }
                     }
                     else
                     {
