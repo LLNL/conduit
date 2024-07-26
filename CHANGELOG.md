@@ -20,7 +20,6 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 #### Conduit
 - Removed cmake use of distutils for python introspection.
-- Deprecated length in json schema.
 
 #### Blueprint
 - Fixed partitioner so it reverses vertex order as needed in polyhedral face definitions when extracting mesh elements.
