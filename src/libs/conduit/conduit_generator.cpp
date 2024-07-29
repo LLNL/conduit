@@ -256,8 +256,7 @@ public:
     // with the yaml parser
     //
 
-    static bool check_yaml_is_number(yaml_node_t *yaml_node,
-                                     Node *node); // TODO do I need this
+    static bool check_yaml_is_number(yaml_node_t *yaml_node);
 
     static bool check_yaml_is_int(yaml_node_t *yaml_node);
 
@@ -284,6 +283,11 @@ public:
                                       Node *node); // TODO do I need this
 
     // assumes res is already inited to DataType::int64 w/ proper size
+    static void parse_yaml_uint64_array(yaml_document_t *yaml_doc,
+                                        yaml_node_t *yaml_node,
+                                        Node &res);
+
+    // assumes res is already inited to DataType::int64 w/ proper size
     static void parse_yaml_int64_array(yaml_document_t *yaml_doc,
                                        yaml_node_t *yaml_node,
                                        Node &res);
@@ -300,6 +304,10 @@ public:
                                  yaml_node_t *yaml_node,
                                  index_t offset,
                                  DataType &dtype_res);
+
+    static index_t parse_inline_value(yaml_document_t *yaml_doc,
+                                      yaml_node_t *yaml_node,
+                                      Node &node)
 
     // finds if leaf string is int64, float64, or neither (DataType::EMPTY_T)
     static index_t yaml_leaf_to_numeric_dtype(const char *txt_value);
@@ -1923,18 +1931,15 @@ Generator::Parser::YAML::yaml_leaf_to_numeric_dtype(const char *txt_value)
 
 //---------------------------------------------------------------------------//
 bool
-check_yaml_is_number(yaml_node_t *yaml_node,
-                     Node *node) // TODO do I need this
+check_yaml_is_number(yaml_node_t *yaml_node)
 {
     if (yaml_node->type == YAML_SCALAR_NODE)
     {
         const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
         if ( yaml_value_str == nullptr)
         {
-            // TODO do I need this part
             CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid yaml scalar value at path: "
-                          << node->path());
+                          << "Invalid yaml scalar value.");
         }
 
         return string_is_integer(yaml_value_str) || string_is_double(yaml_value_str);
@@ -2087,14 +2092,18 @@ get_index_of_member(const std::string member_name,
 
 //---------------------------------------------------------------------------//
 void
-Generator::Parser::YAML::parse_inline_value(yaml_node_t *yaml_node,
+Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
+                                            yaml_node_t *yaml_node,
                                             Node &node)
 {
     if (check_yaml_is_list(yaml_node))
     {
         // we assume a "value" is a leaf or list of compatible leaves
-        // TODO use some kind of yaml equivalent
-        index_t hval_type = check_homogenous_json_array(jvalue);
+        index_t seq_size  = -1;
+        index_t hval_type = check_homogenous_yaml_numeric_sequence(node,
+                                                                   yaml_doc,
+                                                                   yaml_node,
+                                                                   seq_size);
 
         CONDUIT_ASSERT( (node.dtype().number_of_elements() >= get_yaml_array_length(yaml_node) ),
                        "YAML Generator error:\n" 
@@ -2105,19 +2114,19 @@ Generator::Parser::YAML::parse_inline_value(yaml_node_t *yaml_node,
         {
             if (node.dtype().is_unsigned_integer())
             {
-                // TODO use yaml equivalent
-                parse_json_uint64_array(jvalue,node);
+                node->set(DataType::uint64(seq_size));
+                parse_yaml_uint64_array(yaml_doc, yaml_node, *node);
             }
             else
             {
-                // TODO use yaml equivalent
-                parse_json_int64_array(jvalue,node);
+                node->set(DataType::int64(seq_size));
+                parse_yaml_int64_array(yaml_doc, yaml_node, *node);
             }
         }
         else if(hval_type == DataType::FLOAT64_ID)
         {
-            // TODO use yaml equivalent
-            parse_json_float64_array(jvalue,node);
+            node->set(DataType::float64(seq_size));
+            parse_yaml_float64_array(yaml_doc, yaml_node, *node);
         }
         else if(hval_type == DataType::EMPTY_ID)
         {
@@ -2164,6 +2173,42 @@ Generator::Parser::YAML::parse_inline_address(yaml_node_t *yaml_node,
 }
 
 //---------------------------------------------------------------------------//
+// NOTE: Assumes Node res is already DataType::uint64, w/ proper len
+void
+Generator::Parser::YAML::parse_yaml_uint64_array(yaml_document_t *yaml_doc,
+                                                 yaml_node_t *yaml_node,
+                                                 Node &res)
+{
+    int64_array res_vals = res.value();
+    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
+    {
+        // TODO use helper?
+        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
+                                                 yaml_node->data.sequence.items.start[cld_idx]);
+                                     
+        if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid uint64 array value at path: "
+                          << res.path() << "[" << cld_idx << "]");
+        }
+
+
+        // check type of string contents
+        const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
+
+        if(yaml_value_str == NULL )
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid uint64 array value at path: "
+                          << res.path() << "[" << cld_idx << "]");
+        }
+
+        res_vals[cld_idx] = (uint64) string_to_long(yaml_value_str);
+    }
+}
+
+//---------------------------------------------------------------------------//
 // NOTE: Assumes Node res is already DataType::int64, w/ proper len
 void
 Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
@@ -2173,6 +2218,7 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
     int64_array res_vals = res.value();
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
+        // TODO use helper?
         yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
                                                  yaml_node->data.sequence.items.start[cld_idx]);
                                      
@@ -2528,10 +2574,9 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 if (index_of_length > -1)
                 {
                     yaml_node_t *len_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_length);
-                    // TODO double check this is the right conduit node to pass
-                    if (check_yaml_is_number(len_value, node))
+                    if (check_yaml_is_number(len_value))
                     {
-                        length = static_cast<index_t>(get_yaml_long(len_value, node));
+                        length = static_cast<index_t>(get_yaml_long(len_value));
                     }
                     else if (check_yaml_is_object(len_value))
                     {
@@ -2539,7 +2584,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                         if (index_of_ref > -1)
                         {
                             yaml_node_t *ref_value = fetch_yaml_node(yaml_doc, len_value, index_of_ref);
-                            const std::string ref_path = get_yaml_string(ref_value, node);
+                            const std::string ref_path = get_yaml_string(ref_value);
                             length = node->fetch(ref_path).to_index_t();
                         }
                         else
@@ -2626,8 +2671,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                     if (index_of_value > -1)
                     {
                         yaml_node_t *value_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_value);
-                        // TODO fix this function
-                        parse_inline_value(value_value, *node);
+                        parse_inline_value(yaml_doc, value_value, *node);
                     }
                 }
             }
@@ -3127,10 +3171,16 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
 
         if(hval_type == DataType::INT64_ID)
         {
-
-            node->set(DataType::int64(seq_size));
-            parse_yaml_int64_array(yaml_doc, yaml_node, *node);
-
+            if (node.dtype().is_unsigned_integer())
+            {
+                node->set(DataType::uint64(seq_size));
+                parse_yaml_uint64_array(yaml_doc, yaml_node, *node);
+            }
+            else
+            {
+                node->set(DataType::int64(seq_size));
+                parse_yaml_int64_array(yaml_doc, yaml_node, *node);
+            }
         }
         else if(hval_type == DataType::FLOAT64_ID)
         {
