@@ -2052,16 +2052,14 @@ fetch_yaml_node(yaml_document_t *yaml_doc,
                 yaml_node_t *yaml_node,
                 const int index)
 {
-    // TODO is there a way to do this with [] operator?
-    return yaml_document_get_node(yaml_doc, 
-        // what is going on here? why is it sometimes value and other times key and other times neither
-        (yaml_node->data.mapping.pairs.start + index)->value);
+    return yaml_document_get_node(yaml_doc,
+                                  yaml_node->data.sequence.items.start[index]);
 }
 
 //---------------------------------------------------------------------------//
 int 
 get_index_of_member(const std::string member_name,
-                               yaml_node_t *yaml_node_to_search)
+                    yaml_node_t *yaml_node_to_search)
 {
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
@@ -2204,8 +2202,7 @@ Generator::Parser::YAML::parse_yaml_uint64_array(yaml_document_t *yaml_doc,
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
         // TODO use helper?
-        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                 yaml_node->data.sequence.items.start[cld_idx]);
+        yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
                                      
         if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
         {
@@ -2240,8 +2237,7 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
         // TODO use helper?
-        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                 yaml_node->data.sequence.items.start[cld_idx]);
+        yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
                                      
         if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
         {
@@ -2275,8 +2271,7 @@ Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
     float64_array res_vals = res.value();
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
-        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                 yaml_node->data.sequence.items.start[cld_idx]);
+        yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
                                      
         if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
         {
@@ -2312,8 +2307,7 @@ Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node
     bool ok = true;
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
-        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                 yaml_node->data.sequence.items.start[cld_idx]);
+        yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
                                                  
         if(yaml_child == NULL )
         {
@@ -2793,8 +2787,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
         {
             // TODO can I use my helper? Why is my helper different?
-            yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                    yaml_node->data.sequence.items.start[cld_idx]);
+            yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
             
             if (yaml_child == NULL )
             {
@@ -3032,9 +3025,7 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
 
         for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
         {
-            // TODO can I use my helper? Why is my helper different?
-            yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                    yaml_node->data.sequence.items.start[cld_idx]);
+            yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
 
             if (yaml_child == NULL )
             {
@@ -3213,8 +3204,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
             // general case (not a numeric array)
             for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
             {
-                yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                        yaml_node->data.sequence.items.start[cld_idx]);
+                yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
                 
                 if(yaml_child == NULL )
                 {
