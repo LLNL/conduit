@@ -279,8 +279,7 @@ public:
     static int get_index_of_member(const std::string member_name,
                                    yaml_node_t *yaml_node_to_search);
 
-    static void* parse_inline_address(yaml_node_t *yaml_node,
-                                      Node *node); // TODO do I need this
+    static void* parse_inline_address(yaml_node_t *yaml_node);
 
     // assumes res is already inited to DataType::int64 w/ proper size
     static void parse_yaml_uint64_array(yaml_document_t *yaml_doc,
@@ -468,7 +467,7 @@ Generator::Parser::JSON::json_to_numeric_dtype(const conduit_rapidjson::Value &j
     index_t res = DataType::EMPTY_ID; 
     if(jvalue.IsNumber())
     {
-        // TODO: We could have better logic for dealing with int vs uint
+        // TODO_LATER: We could have better logic for dealing with int vs uint
         if(jvalue.IsUint64() || 
            jvalue.IsInt64()  || 
            jvalue.IsUint()   ||
@@ -560,7 +559,7 @@ void
 Generator::Parser::JSON::parse_json_int64_array(const conduit_rapidjson::Value &jvalue,
                                                 Node &node)
 {
-    // TODO: we can make this more efficient 
+    // TODO_LATER: we can make this more efficient 
     std::vector<int64> vals;
     parse_json_int64_array(jvalue,vals);
     
@@ -636,7 +635,7 @@ void
 Generator::Parser::JSON::parse_json_uint64_array(const conduit_rapidjson::Value &jvalue,
                                                  Node &node)
 {
-    // TODO: we can make this more efficient 
+    // TODO_LATER: we can make this more efficient 
     std::vector<uint64> vals;
     parse_json_uint64_array(jvalue,vals);
     
@@ -739,7 +738,7 @@ void
 Generator::Parser::JSON::parse_json_float64_array(const conduit_rapidjson::Value &jvalue,
                                                   Node &node)
 {
-    // TODO: we can make this more efficient 
+    // TODO_LATER: we can make this more efficient 
     std::vector<float64> vals;
     parse_json_float64_array(jvalue,vals);
     
@@ -833,9 +832,36 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
             }
         };
 
-        // TODO restore length deprecated anad numele conditional
-        
-        extract_uint64_member("number_of_elements", length);
+        if (jvalue.HasMember("number_of_elements"))
+        {
+            const conduit_rapidjson::Value &json_num_eles = jvalue["number_of_elements"];
+            if(json_num_eles.IsNumber())
+            {              
+                length = json_num_eles.GetUint64();
+            }
+            else
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                               << "'number_of_elements' must be a number ");
+            }
+        }
+        //
+        // TODO_LATER DEPRECATE and replace with the lambda up above
+        //
+        // length is the old schema style, we should deprecate this path
+        else if (jvalue.HasMember("length"))
+        {
+            const conduit_rapidjson::Value &json_len = jvalue["length"];
+            if(json_len.IsNumber())
+            {              
+                length = json_len.GetUint64();
+            }
+            else
+            {
+                CONDUIT_ERROR("JSON Generator error:\n"
+                               << "'length' must be a number ");
+            }
+        }
 
         index_t dtype_id  = parse_leaf_dtype_name(dtype_name);
         index_t ele_size  = DataType::default_bytes(dtype_id);
@@ -1022,7 +1048,7 @@ Generator::Parser::JSON::parse_inline_address(const conduit_rapidjson::Value &jv
     }
     // else if(jvalue.IsNumber())
     // {
-    //     // TODO: FUTURE? ...
+    //     // TODO_LATER: FUTURE? ...
     // }
     else
     {
@@ -1123,7 +1149,7 @@ Generator::Parser::JSON::walk_json_schema(Schema *schema,
                 }
                 // we will create `length' # of objects of obj des by dt_value
                  
-                // TODO: we only need to parse this once, not leng # of times
+                // TODO_LATER: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for (int i = 0; i < length; i ++)
                 {
@@ -1362,7 +1388,7 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                 }
                 // we will create `length' # of objects of obj des by dt_value
                  
-                // TODO: we only need to parse this once, not leng # of times
+                // TODO_LATER: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for(index_t i=0;i< length;i++)
                 {
@@ -1566,7 +1592,7 @@ Generator::Parser::JSON::walk_json_schema_external(Node   *node,
                 }
                 // we will create `length' # of objects of obj des by dt_value
                  
-                // TODO: we only need to parse this once, not leng # of times
+                // TODO_LATER: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for(index_t i=0;i< length;i++)
                 {
@@ -1967,7 +1993,6 @@ check_yaml_is_int(yaml_node_t *yaml_node)
 long
 get_yaml_long(yaml_node_t *yaml_node)
 {
-    // TODO any way to combine this w/ prior function? Maybe in some cases
     const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
     if (yaml_value_str == nullptr)
     {
@@ -1982,7 +2007,6 @@ get_yaml_long(yaml_node_t *yaml_node)
 bool 
 check_yaml_is_string(yaml_node_t *yaml_node)
 {
-    // TODO I am worried that this could eat up other cases like the int case
     return yaml_node->type == YAML_SCALAR_NODE;
 }
 
@@ -1997,9 +2021,6 @@ get_yaml_string(yaml_node_t *yaml_node);
         CONDUIT_ERROR("YAML Generator error:\n"
                       << "Invalid yaml scalar value.");
     }
-
-    // TODO see the cases in parse_yaml_inline_leaf
-    // do we need to check that we are not one of those to use this as a string?
 
     return yaml_value_str;
 }
@@ -2033,6 +2054,7 @@ fetch_yaml_node(yaml_document_t *yaml_doc,
 {
     // TODO is there a way to do this with [] operator?
     return yaml_document_get_node(yaml_doc, 
+        // what is going on here? why is it sometimes value and other times key and other times neither
         (yaml_node->data.mapping.pairs.start + index)->value);
 }
 
@@ -2151,18 +2173,17 @@ Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
 
 //---------------------------------------------------------------------------//
 void *
-Generator::Parser::YAML::parse_inline_address(yaml_node_t *yaml_node,
-                                              Node *node)
+Generator::Parser::YAML::parse_inline_address(yaml_node_t *yaml_node)
 {
     void * res = nullptr;
     if (check_yaml_is_string(yaml_node))
     {
-        const std::string sval(get_yaml_string(yaml_node, node));
+        const std::string sval(get_yaml_string(yaml_node));
         res = utils::hex_string_to_value<void*>(sval);
     }
     // else if(jvalue.IsNumber())
     // {
-    //     // TODO: FUTURE? ...
+    //     // TODO_LATER: FUTURE? ...
     // }
     else
     {
@@ -2603,7 +2624,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 }
                 // we will create `length' # of objects of obj des by dt_value
 
-                // TODO: we only need to parse this once, not leng # of times
+                // TODO_LATER: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for (index_t i = 0; i < length; i++)
                 {
@@ -2640,7 +2661,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 if (index_of_address > -1)
                 {
                     yaml_node_t *address_value = fetch_yaml_node(yaml_doc, yaml_node, index_of_address);
-                    void *data_ptr = parse_inline_address(address_value, node);
+                    void *data_ptr = parse_inline_address(address_value);
                     node->set_external(src_dtype, data_ptr);
                 }
                 else
@@ -2907,7 +2928,7 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
                 }
                 // we will create `length' # of objects of obj des by dt_value
 
-                // TODO: we only need to parse this once, not leng # of times
+                // TODO_LATER: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for (int i = 0; i < length; i ++)
                 {
