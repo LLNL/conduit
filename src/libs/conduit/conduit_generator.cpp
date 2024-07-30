@@ -299,6 +299,9 @@ public:
     static void parse_yaml_inline_leaf(const char *yaml_txt,
                                        Node &res);
 
+    static void parse_inline_leaf(const char *yaml_txt,
+                                  Node &node);
+
     static void parse_leaf_dtype(yaml_document_t *yaml_doc,
                                  yaml_node_t *yaml_node,
                                  index_t offset,
@@ -2068,7 +2071,7 @@ get_index_of_member(const std::string member_name,
         // TODO hi we don't need to do all these checks; some of them are wrong
         // we don't necessarily want leaf nodes
 
-        if(yaml_pair == NULL)
+        if (yaml_pair == NULL)
         {
             CONDUIT_ERROR("YAML Generator error:\n"
                           << "failed to fetch mapping pair at path: "
@@ -2077,14 +2080,14 @@ get_index_of_member(const std::string member_name,
 
         yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
         
-        if(yaml_key == NULL)
+        if (yaml_key == NULL)
         {
             CONDUIT_ERROR("YAML Generator error:\n"
                           << "failed to fetch mapping key at path: "
                           << node->path() << "[" << cld_idx << "]");
         }
 
-        if(yaml_key->type != YAML_SCALAR_NODE )
+        if (yaml_key->type != YAML_SCALAR_NODE)
         {
             CONDUIT_ERROR("YAML Generator error:\n"
                           << "Invalid mapping key type at path: "
@@ -2093,7 +2096,7 @@ get_index_of_member(const std::string member_name,
 
         const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
 
-        if(yaml_key_str == NULL )
+        if (yaml_key_str == NULL)
         {
             CONDUIT_ERROR("YAML Generator error:\n"
                           << "Invalid mapping key value at path: "
@@ -2164,8 +2167,16 @@ Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
     }
     else
     {
-        // TODO implement me
-        parse_inline_leaf(jvalue,node);
+        const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+
+        if (yaml_value_str == NULL)
+        {
+            CONDUIT_ERROR("YAML Generator error:\n"
+                          << "Invalid yaml scalar value at path: "
+                          << node->path());
+        }
+
+        parse_inline_leaf(yaml_value_str, node);
     }
 }
 
@@ -2370,18 +2381,96 @@ Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node
 
 //---------------------------------------------------------------------------//
 void
+Generator::Parser::YAML::parse_inline_leaf(const char *yaml_txt,
+                                           Node &node)
+{
+    if (string_is_integer(yaml_txt) || string_is_double(yaml_txt))
+    {
+        switch(node.dtype().id())
+        {
+            // signed ints
+            case DataType::INT8_ID:   
+                node.set(static_cast<int8>(string_to_long(yaml_txt)));
+                break;
+            case DataType::INT16_ID: 
+                node.set(static_cast<int16>(string_to_long(yaml_txt)));
+                break;
+            case DataType::INT32_ID:
+                node.set(static_cast<int32>(string_to_long(yaml_txt)));
+                break;
+            case DataType::INT64_ID:
+                node.set(static_cast<int64>(string_to_long(yaml_txt)));
+                break;
+            // unsigned ints TODO do I need a special uint getter
+            case DataType::UINT8_ID:
+                node.set(static_cast<uint8>(string_to_long(yaml_txt)));
+                break;
+            case DataType::UINT16_ID:
+                node.set(static_cast<uint16>(string_to_long(yaml_txt)));
+                break;
+            case DataType::UINT32_ID:
+                node.set(static_cast<uint32>(string_to_long(yaml_txt)));
+                break;
+            case DataType::UINT64_ID:
+                node.set(static_cast<uint64>(string_to_long(yaml_txt)));
+                break;  
+            //floats
+            case DataType::FLOAT32_ID:
+                node.set(static_cast<float32>(string_to_double(yaml_txt)));
+                break;
+            case DataType::FLOAT64_ID:
+                node.set(static_cast<float64>(string_to_double(yaml_txt)));
+                break;
+            default:
+                // YAML type incompatible with numeric
+                // only allow numeric to be assigned to a numeric type
+                // throw parsing error if our inline values
+                // don't match what we expected
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "a YAML number can only be used as an inline"
+                              << " value for a Conduit Numeric Node.");
+                break;
+        }
+    }
+    else if (string_is_empty(yaml_txt))
+    {
+        // empty data type
+        node.reset();
+    }
+    else // general string case
+    {
+        if (node.dtype().id() == DataType::CHAR8_STR_ID)
+        {
+            node.set_char8_str(yaml_txt);
+        }
+        else
+        {
+             // YAML type incompatible with char8_str
+             // only allow strings to be assigned to a char8_str type
+             // throw parsing error if our inline values
+             // don't match what we expected
+
+            CONDUIT_ERROR("YAML Generator error:\n"
+                           << "a YAML string can only be used as an inline"
+                           << " value for a Conduit CHAR8_STR Node.");
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
 Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
                                                 Node &node)
 {
-    if(string_is_integer(yaml_txt))
+    if (string_is_integer(yaml_txt))
     {
-        node.set((int64)string_to_long(yaml_txt));
+        node.set(static_cast<int64>(string_to_long(yaml_txt)));
     }
-    else if(string_is_double(yaml_txt))
+    else if (string_is_double(yaml_txt))
     {
-        node.set((float64)string_to_double(yaml_txt));
+        node.set(static_cast<float64>(string_to_double(yaml_txt)));
     }
-    else if(string_is_empty(yaml_txt))
+    else if (string_is_empty(yaml_txt))
     {
         node.reset();
     }
@@ -2699,7 +2788,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
 
                 // TODO do I need all these checks?
 
-                if(yaml_pair == NULL)
+                if (yaml_pair == NULL)
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
                                   << "failed to fetch mapping pair at path: "
@@ -2708,14 +2797,14 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
 
                 yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
                 
-                if(yaml_key == NULL)
+                if (yaml_key == NULL)
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
                                   << "failed to fetch mapping key at path: "
                                   << node->path() << "[" << cld_idx << "]");
                 }
 
-                if(yaml_key->type != YAML_SCALAR_NODE )
+                if (yaml_key->type != YAML_SCALAR_NODE)
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
                                   << "Invalid mapping key type at path: "
@@ -2724,7 +2813,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
 
                 const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
 
-                if(yaml_key_str == NULL )
+                if (yaml_key_str == NULL)
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
                                   << "Invalid mapping key value at path: "
@@ -2750,7 +2839,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 }
 
                 yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
-                if(yaml_child == NULL )
+                if (yaml_child == NULL)
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
                                   << "Invalid mapping child at path: "
