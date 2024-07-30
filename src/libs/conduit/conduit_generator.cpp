@@ -2201,7 +2201,6 @@ Generator::Parser::YAML::parse_yaml_uint64_array(yaml_document_t *yaml_doc,
     int64_array res_vals = res.value();
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
-        // TODO use helper?
         yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
                                      
         if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
@@ -2236,7 +2235,6 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
     int64_array res_vals = res.value();
     for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
     {
-        // TODO use helper?
         yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
                                      
         if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
@@ -2786,7 +2784,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
 
         for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node), cld_idx ++)
         {
-            // TODO can I use my helper? Why is my helper different?
             yaml_node_t *yaml_child = fetch_yaml_node(yaml_doc, yaml_node, cld_idx);
             
             if (yaml_child == NULL )
