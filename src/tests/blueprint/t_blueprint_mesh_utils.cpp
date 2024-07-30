@@ -894,3 +894,347 @@ adjsets:
     EXPECT_TRUE( conduit::blueprint::mesh::utils::adjset::is_canonical(n["adjsets/multi"]));
     EXPECT_FALSE(conduit::blueprint::mesh::utils::adjset::is_canonical(n["adjsets/multi_out_of_order"]));
 }
+
+void verify_lerp_result(const std::vector<std::vector<double> >& expected,
+    const std::vector<std::vector<double> >& res, double eps = 1.e-8);
+
+void verify_lerp_result(const std::vector<std::vector<double> >& expected,
+    const std::vector<std::vector<double> >& res, double eps)
+{
+    // 1. Does number of components match?
+    ASSERT_EQ(expected.size(), res.size());
+
+    // 2. Does length of each result component match length of first expected component?
+    const int component_len = expected[0].size();
+    EXPECT_TRUE(std::all_of(res.begin(), res.end(), 
+                            [component_len](const std::vector<double>& rescmp) { return component_len == rescmp.size(); }));
+
+    // 3. For each component, does each value in res match the corresponding value in expected?
+    const int num_components = expected.size();
+    for (int c = 0; c < num_components; ++c)
+    {
+        const std::vector<double>& expected_cmp = expected[c];
+        const std::vector<double>& res_cmp = res[c];
+
+        for (int i = 0; i < component_len; ++i)
+        {
+            EXPECT_NEAR(expected_cmp[i], res_cmp[i], eps);
+        }
+    }
+}
+
+void verify_lerp_result(const std::vector<std::vector<std::vector<double> > >& expected,
+    const std::vector<std::vector<std::vector<double> > >& res, double eps = 1.e-8);
+
+void verify_lerp_result(const std::vector<std::vector<std::vector<double> > >& expected,
+    const std::vector<std::vector<std::vector<double> > >& res, double eps)
+{
+    // 1. Does the number of segments match?
+    ASSERT_EQ(expected.size(), res.size());
+
+    // 2. Check each segment.
+    const int num_segments = expected.size();
+    for (int s = 0; s < num_segments; ++s)
+    {
+        verify_lerp_result(expected[s], res[s], eps);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, lerp_1d)
+{
+    {
+        std::vector<double> A{ 1 };
+        std::vector<double> B{ 3 };
+        int n = 3;
+        std::vector<std::vector<double> > res;
+
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {1., 2., 3.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+
+    {
+        std::vector<double> A{ 1 };
+        std::vector<double> B{ 3 };
+        int n = 6;
+        std::vector<std::vector<double> > res;
+
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {1., 1.4, 1.8, 2.2, 2.6, 3.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+
+    {
+        std::vector<double> A{ 2 };
+        std::vector<double> B{ 0 };
+
+        std::vector<std::vector<double> > res;
+        int n = 4;
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {2., 1.3333333333, 0.6666666666, 0.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, lerp_2d)
+{
+    {
+        std::vector<double> A{ 1., 0. };
+        std::vector<double> B{ 3., 4. };
+        int n = 3;
+        std::vector<std::vector<double> > res;
+
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {1., 2., 3.},
+            {0., 2., 4.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+
+    {
+        std::vector<double> A{ 1., 0. };
+        std::vector<double> B{ 3., 4. };
+        int n = 6;
+        std::vector<std::vector<double> > res;
+
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {1., 1.4, 1.8, 2.2, 2.6, 3.},
+            {0., 0.8, 1.6, 2.4, 3.2, 4.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+
+    {
+        std::vector<double> A{ 2., 1. };
+        std::vector<double> B{ 0., -2. };
+
+        std::vector<std::vector<double> > res;
+        int n = 4;
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {2., 1.3333333333, 0.6666666666, 0.},
+            {1., 0., -1., -2.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, lerp_3d)
+{
+    {
+        std::vector<double> A{ 1., 0., 0. };
+        std::vector<double> B{ 3., 4., -1. };
+        int n = 3;
+        std::vector<std::vector<double> > res;
+
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {1., 2., 3.},
+            {0., 2., 4.},
+            {0., -0.5, -1.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+
+    {
+        std::vector<double> A{ 1., 0., 0. };
+        std::vector<double> B{ 3., 4., -1. };
+        int n = 6;
+        std::vector<std::vector<double> > res;
+
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {1., 1.4, 1.8, 2.2, 2.6, 3.},
+            {0., 0.8, 1.6, 2.4, 3.2, 4.},
+            {0, -0.2, -0.4, -0.6, -0.8, -1.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+
+    {
+        std::vector<double> A{ 2., 1., 1. };
+        std::vector<double> B{ 0., -2., 1. };
+        int n = 4;
+        std::vector<std::vector<double> > res;
+
+        conduit::blueprint::mesh::utils::lerp(A, B, n, res);
+
+        std::vector<std::vector<double> > expected
+        {
+            {2., 1.3333333333, 0.6666666666, 0.},
+            {1., 0., -1., -2.},
+            {1., 1., 1., 1.}
+        };
+
+        verify_lerp_result(expected, res);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, lerp_3d_grid)
+{
+    {
+        std::vector<double> A{ 0., 0., 0. };
+        std::vector<double> B{ 2., 0., 0. };
+        std::vector<double> C{ 0., 1., 0. };
+        std::vector<double> D{ 2., 1., 0. };
+        int n = 3;
+        std::vector<std::vector<double> > leftside;
+        conduit::blueprint::mesh::utils::lerp(A, C, n, leftside);
+        std::vector<std::vector<double> > rightside;
+        conduit::blueprint::mesh::utils::lerp(B, D, n, rightside);
+        std::vector <std::vector<double> > gridpoints;
+        int m = 4;
+        conduit::blueprint::mesh::utils::lerp(leftside, rightside, m, gridpoints);
+
+        std::vector<std::vector<double> > expected
+        {
+            {0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2},
+            {0, 0, 0, 0, .5, .5, .5, .5, 1, 1, 1, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+        };
+
+        verify_lerp_result(expected, gridpoints);
+    }
+}
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_utils, lerp_3d_cube)
+{
+    {
+        std::vector<double> A{ 0., 0., 0. };
+        std::vector<double> B{ 2., 0., 0. };
+        std::vector<double> C{ 0., 1., 0. };
+        std::vector<double> D{ 2., 1., 0. };
+        std::vector<double> E{ 0., 0., 1. };
+        std::vector<double> F{ 2., 0., 1. };
+        std::vector<double> G{ 0., 1., 1. };
+        std::vector<double> H{ 2., 1., 1. };
+
+        // First interpolate along z-dimension.  This results in "posts"
+        // at NW, NE, SW, SE corners.
+        int n = 3;
+        std::vector<std::vector<double> > SW;
+        conduit::blueprint::mesh::utils::lerp(A, E, n, SW);
+        std::vector<std::vector<double> > SE;
+        conduit::blueprint::mesh::utils::lerp(B, F, n, SE);
+        std::vector<std::vector<double> > NW;
+        conduit::blueprint::mesh::utils::lerp(C, G, n, NW);
+        std::vector<std::vector<double> > NE;
+        conduit::blueprint::mesh::utils::lerp(D, H, n, NE);
+
+        // Check each "post".
+        std::vector<std::vector<double> > expSW
+        {
+            {0, 0, 0},
+            {0, 0, 0},
+            {0, .5, 1}
+        };
+        std::vector<std::vector<double> > expSE
+        {
+            {2, 2, 2},
+            {0, 0, 0},
+            {0, .5, 1}
+        };
+        std::vector<std::vector<double> > expNW
+        {
+            {0, 0, 0},
+            {1, 1, 1},
+            {0, .5, 1}
+        };
+        std::vector<std::vector<double> > expNE
+        {
+            {2, 2, 2},
+            {1, 1, 1},
+            {0, .5, 1}
+        };
+        verify_lerp_result(expSW, SW);
+        verify_lerp_result(expSE, SE);
+        verify_lerp_result(expNW, NW);
+        verify_lerp_result(expNE, NE);
+
+        // Next interpolate along y-dimension.  This results in left
+        // and right grids.
+        int m = 5;
+        std::vector <std::vector<double> > gridleft;
+        conduit::blueprint::mesh::utils::lerp(SW, NW, m, gridleft);
+        std::vector <std::vector<double> > gridright;
+        conduit::blueprint::mesh::utils::lerp(SE, NE, m, gridright);
+
+        // Check the two "grids".
+        std::vector<std::vector<double> > expgridleft
+        {
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
+            {0, .25, .5, .75, 1, 0, .25, .5, .75, 1, 0, .25, .5, .75, 1},
+            {0, 0, 0, 0, 0, .5, .5, .5, .5, .5, 1, 1, 1, 1, 1}
+        };
+        std::vector<std::vector<double> > expgridright
+        {
+            {2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2},
+            {0, .25, .5, .75, 1, 0, .25, .5, .75, 1, 0, .25, .5, .75, 1},
+            {0, 0, 0, 0, 0, .5, .5, .5, .5, .5, 1, 1, 1, 1, 1}
+        };
+        verify_lerp_result(expgridleft, gridleft);
+        verify_lerp_result(expgridright, gridright);
+
+        // Finally interpolate along x-dimension.
+        int p = 4;
+        std::vector<std::vector<double> > cube;
+        conduit::blueprint::mesh::utils::lerp(gridleft, gridright, p, cube);
+
+        std::vector<std::vector<double> > expcube
+        {
+            {0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2,
+             0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2,
+             0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2,
+             0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2,
+             0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2, 0, .6666666666, 1.3333333333, 2},
+            {0, 0, 0, 0, .25, .25, .25, .25, .5, .5, .5, .5, .75, .75, .75, .75, 1, 1, 1, 1,
+             0, 0, 0, 0, .25, .25, .25, .25, .5, .5, .5, .5, .75, .75, .75, .75, 1, 1, 1, 1,
+             0, 0, 0, 0, .25, .25, .25, .25, .5, .5, .5, .5, .75, .75, .75, .75, 1, 1, 1, 1},
+            {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+             .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5, .5,
+             1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}
+        };
+
+        verify_lerp_result(expcube, cube);
+    }
+}

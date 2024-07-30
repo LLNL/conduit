@@ -953,18 +953,18 @@ braid_init_explicit_coordset(index_t npts_x,
             for(index_t i = 0; i < npts_x ; i++)
             {
                 x_vals[idx] = the_origin[0] + i * vec_fst[0] +
-                    j * vec_snd[0] + k * vec_thd[0];
+                    j * vec_fst[1] + k * vec_fst[2];
 
                 if(npts_y > 1)
                 {
-                    y_vals[idx] = the_origin[1] + i * vec_fst[1] +
-                        j * vec_snd[1] + k * vec_thd[1];
+                    y_vals[idx] = the_origin[1] + i * vec_snd[0] +
+                        j * vec_snd[1] + k * vec_snd[2];
                 }
 
                 if(npts_z > 1)
                 {
-                    z_vals[idx] = the_origin[2] + i * vec_fst[2] +
-                        j * vec_snd[2] + k * vec_thd[2];
+                    z_vals[idx] = the_origin[2] + i * vec_thd[0] +
+                        j * vec_thd[1] + k * vec_thd[2];
                 }
 
                 idx++;
