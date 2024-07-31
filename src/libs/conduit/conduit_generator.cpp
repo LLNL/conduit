@@ -109,6 +109,8 @@ public:
     static double string_to_double(const char *txt_value);
     // converts c-string to long
     static long int string_to_long(const char *txt_value);
+    // converts c-string to unsigned long
+    static unsigned long int string_to_unsigned_long(const char *txt_value);
 
     static index_t parse_leaf_dtype_name(const std::string &dtype_name);
 
@@ -261,6 +263,8 @@ public:
     static bool check_yaml_is_int(const yaml_node_t *yaml_node);
 
     static long get_yaml_long(const yaml_node_t *yaml_node);
+
+    static unsigned long get_yaml_unsigned_long(const yaml_node_t *yaml_node);
 
     static bool check_yaml_is_string(const yaml_node_t *yaml_node);
 
@@ -436,6 +440,14 @@ Generator::Parser::string_to_long(const char *txt_value)
 {
     char *val_end = NULL;
     return strtol(txt_value,&val_end,10);
+}
+
+//---------------------------------------------------------------------------//
+unsigned long int
+Generator::Parser::string_to_unsigned_long(const char *txt_value)
+{
+    char *val_end = NULL;
+    return strtoul(txt_value,&val_end,10);
 }
 
 //---------------------------------------------------------------------------//
@@ -817,7 +829,8 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
         
         index_t length = 0;
 
-        auto extract_uint64_member = [&](const char *member_name) -> uint64
+        auto extract_uint64_member = [&](const char *member_name,
+                                         index_t &value_to_change)
         {
             if (jvalue.HasMember(member_name))
             {
@@ -825,7 +838,7 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
                 CONDUIT_ASSERT(json_value.IsNumber(),
                                "JSON Generator error:\n"
                                << "'" << member_name << "' must be a number ");
-                return json_value.GetUint64();
+                value_to_change = json_value.GetUint64();
             }
         };
 
@@ -865,13 +878,13 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
         index_t stride    = ele_size;
     
         //  parse offset (override default if passed)
-        offset = extract_uint64_member("offset");
+        extract_uint64_member("offset", offset);
 
         // parse stride (override default if passed)
-        stride = extract_uint64_member("stride");
+        extract_uint64_member("stride", stride);
 
         // parse element_bytes (override default if passed)
-        ele_size = extract_uint64_member("element_bytes");    
+        extract_uint64_member("element_bytes", ele_size);    
     
         // parse endianness (override default if passed)
         index_t endianness = Endianness::DEFAULT_ID;
@@ -1967,6 +1980,8 @@ Generator::Parser::YAML::check_yaml_is_number(const yaml_node_t *yaml_node)
 
         return string_is_integer(yaml_value_str) || string_is_double(yaml_value_str);
     }
+
+    return false;
 }
 
 //---------------------------------------------------------------------------//
@@ -1984,11 +1999,12 @@ Generator::Parser::YAML::check_yaml_is_int(const yaml_node_t *yaml_node)
 
         return string_is_integer(yaml_value_str);
     }
+
+    return false;
 }
 
 //---------------------------------------------------------------------------//
 long
-// TODO does this work for uints
 Generator::Parser::YAML::get_yaml_long(const yaml_node_t *yaml_node)
 {
     const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
@@ -1999,6 +2015,20 @@ Generator::Parser::YAML::get_yaml_long(const yaml_node_t *yaml_node)
     }
 
     return string_to_long(yaml_value_str);
+}
+
+//---------------------------------------------------------------------------//
+unsigned long
+Generator::Parser::YAML::get_yaml_unsigned_long(const yaml_node_t *yaml_node)
+{
+    const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
+    if (yaml_value_str == nullptr)
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid yaml scalar value.");
+    }
+
+    return string_to_unsigned_long(yaml_value_str);
 }
 
 //---------------------------------------------------------------------------//
@@ -2391,18 +2421,18 @@ Generator::Parser::YAML::parse_inline_leaf(const char *yaml_txt,
             case DataType::INT64_ID:
                 node.set(static_cast<int64>(string_to_long(yaml_txt)));
                 break;
-            // unsigned ints TODO do I need a special uint getter
+            // unsigned ints
             case DataType::UINT8_ID:
-                node.set(static_cast<uint8>(string_to_long(yaml_txt)));
+                node.set(static_cast<uint8>(string_to_unsigned_long(yaml_txt)));
                 break;
             case DataType::UINT16_ID:
-                node.set(static_cast<uint16>(string_to_long(yaml_txt)));
+                node.set(static_cast<uint16>(string_to_unsigned_long(yaml_txt)));
                 break;
             case DataType::UINT32_ID:
-                node.set(static_cast<uint32>(string_to_long(yaml_txt)));
+                node.set(static_cast<uint32>(string_to_unsigned_long(yaml_txt)));
                 break;
             case DataType::UINT64_ID:
-                node.set(static_cast<uint64>(string_to_long(yaml_txt)));
+                node.set(static_cast<uint64>(string_to_unsigned_long(yaml_txt)));
                 break;  
             //floats
             case DataType::FLOAT32_ID:
@@ -2504,7 +2534,8 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
 
         index_t length = 0;
 
-        auto extract_uint64_member = [&](const std::string &member_name) -> uint64
+        auto extract_uint64_member = [&](const std::string &member_name,
+                                         index_t &value_to_change)
         {
             const int index_of_member = get_index_of_member(member_name, yaml_doc, yaml_node);
             if (index_of_member > -1)
@@ -2513,24 +2544,24 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                 CONDUIT_ASSERT(check_yaml_is_number(value_node),
                                "YAML Generator error:\n"
                                << "'" << member_name << "' must be a number ");
-                return static_cast<uint64>(get_yaml_long(value_node));
+                value_to_change = static_cast<uint64>(get_yaml_unsigned_long(value_node));
             }
         };
 
-        length = extract_uint64_member("number_of_elements");
+        extract_uint64_member("number_of_elements", length);
 
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
         index_t stride = ele_size;
 
         //  parse offset (override default if passed)
-        offset = extract_uint64_member("offset");
+        extract_uint64_member("offset", offset);
 
         // parse stride (override default if passed)
-        stride = extract_uint64_member("stride");
+        extract_uint64_member("stride", stride);
 
         // parse element_bytes (override default if passed)
-        ele_size = extract_uint64_member("element_bytes");
+        extract_uint64_member("element_bytes", ele_size);
 
         // parse endianness (override default if passed)
         index_t endianness = Endianness::DEFAULT_ID;
@@ -2770,8 +2801,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             {
                 yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
 
-                // TODO do I need all these checks?
-
                 if (yaml_pair == NULL)
                 {
                     CONDUIT_ERROR("YAML Generator error:\n"
@@ -2980,7 +3009,7 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
                     }
                     else if (check_yaml_is_int(len_value))
                     {
-                        length = static_cast<int64>(get_yaml_long(len_value));
+                        length = static_cast<int>(get_yaml_long(len_value));
                     }
                     else
                     {
