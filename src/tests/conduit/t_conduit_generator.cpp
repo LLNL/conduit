@@ -123,20 +123,20 @@ TEST(conduit_generator, simple_gen_schema)
         Node n;
         g1.walk(n);
 
-        // EXPECT_EQ(n["a"].as_uint32(),a_val);
-        // EXPECT_EQ(n["b"].as_uint32(),b_val);
-        // EXPECT_EQ(n["c"].as_float64(),c_val);
+        EXPECT_EQ(n["a"].as_uint32(),a_val);
+        EXPECT_EQ(n["b"].as_uint32(),b_val);
+        EXPECT_EQ(n["c"].as_float64(),c_val);
         
-        // std::string s2_str = "{\"g\": {\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}}";
-        // std::cout << s2_str << std::endl;
-        // Generator g2(s2_str);
-        // Schema schema2;
-        // g2.walk(schema2);
+        std::string s2_str = "g: \n  a: uint32\n  b: uint32\n  c: float64";
+        std::cout << s2_str << std::endl;
+        Generator g2(s2_str, "conduit_yaml");
+        Schema schema2;
+        g2.walk(schema2);
         
-        // Node n2(schema2,data,true); // true for external
-        // EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
-        // EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
-        // EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
+        Node n2(schema2,data,true); // true for external
+        EXPECT_EQ(n2["g"]["a"].as_uint32(),a_val);
+        EXPECT_EQ(n2["g"]["b"].as_uint32(),b_val);
+        EXPECT_EQ(n2["g"]["c"].as_float64(),c_val);
         
         // uint32 *data2 = new uint32[5];
         // for (int i = 0; i < 5; i++) {
