@@ -290,17 +290,17 @@ public:
 
     // assumes res is already inited to DataType::int64 w/ proper size
     static void parse_yaml_uint64_array(yaml_document_t *yaml_doc,
-                                        yaml_node_t *yaml_node,
+                                        const yaml_node_t *yaml_node,
                                         Node &res);
 
     // assumes res is already inited to DataType::int64 w/ proper size
     static void parse_yaml_int64_array(yaml_document_t *yaml_doc,
-                                       yaml_node_t *yaml_node,
+                                       const yaml_node_t *yaml_node,
                                        Node &res);
 
     // assumes res is already inited to DataType::float64 w/ proper size
     static void parse_yaml_float64_array(yaml_document_t *yaml_doc,
-                                         yaml_node_t *yaml_node,
+                                         const yaml_node_t *yaml_node,
                                          Node &res);
     // parses generic leaf and places value in res
     static void parse_yaml_inline_leaf(const char *yaml_txt,
@@ -310,13 +310,13 @@ public:
                                   Node &node);
 
     static void parse_leaf_dtype(yaml_document_t *yaml_doc,
-                                 yaml_node_t *yaml_node,
+                                 const yaml_node_t *yaml_node,
                                  index_t offset,
                                  DataType &dtype_res);
 
     static void parse_inline_value(yaml_document_t *yaml_doc,
-                                      yaml_node_t *yaml_node,
-                                      Node &node);
+                                   const yaml_node_t *yaml_node,
+                                   Node &node);
 
     // finds if leaf string is int64, float64, or neither (DataType::EMPTY_T)
     static index_t yaml_leaf_to_numeric_dtype(const char *txt_value);
@@ -331,7 +331,7 @@ public:
     //  if homogenous floating point sequence returns DataType::FLOAT64_T 
     static index_t check_homogenous_yaml_numeric_sequence(const Node &node,
                                                           yaml_document_t *yaml_doc,
-                                                          yaml_node_t *yaml_node,
+                                                          const yaml_node_t *yaml_node,
                                                           index_t &seq_size);
 
     // main entry point for parsing yaml
@@ -352,12 +352,12 @@ public:
                                     Schema *schema,
                                     void   *data,
                                     yaml_document_t *yaml_doc,
-                                    yaml_node_t *yaml_node,
+                                    const yaml_node_t *yaml_node,
                                     index_t curr_offset);
 
     static void    walk_yaml_schema(Schema *schema,
                                     yaml_document_t *yaml_doc,
-                                    yaml_node_t *yaml_node,
+                                    const yaml_node_t *yaml_node,
                                     index_t curr_offset);
 
     // main entry point for parsing pure yaml
@@ -2152,7 +2152,7 @@ Generator::Parser::YAML::fetch_yaml_node_from_object_by_name(yaml_document_t *ya
 //---------------------------------------------------------------------------//
 void
 Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
-                                            yaml_node_t *yaml_node,
+                                            const yaml_node_t *yaml_node,
                                             Node &node)
 {
     if (check_yaml_is_list(yaml_node))
@@ -2242,7 +2242,7 @@ Generator::Parser::YAML::parse_inline_address(const yaml_node_t *yaml_node)
 // NOTE: Assumes Node res is already DataType::uint64, w/ proper len
 void
 Generator::Parser::YAML::parse_yaml_uint64_array(yaml_document_t *yaml_doc,
-                                                 yaml_node_t *yaml_node,
+                                                 const yaml_node_t *yaml_node,
                                                  Node &res)
 {
     int64_array res_vals = res.value();
@@ -2276,7 +2276,7 @@ Generator::Parser::YAML::parse_yaml_uint64_array(yaml_document_t *yaml_doc,
 // NOTE: Assumes Node res is already DataType::int64, w/ proper len
 void
 Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
-                                                yaml_node_t *yaml_node,
+                                                const yaml_node_t *yaml_node,
                                                 Node &res)
 {
     int64_array res_vals = res.value();
@@ -2310,7 +2310,7 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
 // NOTE: Assumes Node res is already DataType::float64, w/ proper len
 void
 Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
-                                                  yaml_node_t *yaml_node,
+                                                  const yaml_node_t *yaml_node,
                                                   Node &res)
 {
     float64_array res_vals = res.value();
@@ -2344,7 +2344,7 @@ Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
 index_t
 Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node,
                                                                 yaml_document_t *yaml_doc,
-                                                                yaml_node_t *yaml_node,
+                                                                const yaml_node_t *yaml_node,
                                                                 index_t &seq_size)
 {
     index_t res = DataType::EMPTY_ID;
@@ -2520,7 +2520,7 @@ Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
 //---------------------------------------------------------------------------//
 void
 Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
-                                          yaml_node_t *yaml_node,
+                                          const yaml_node_t *yaml_node,
                                           index_t offset,
                                           DataType &dtype_res)
 {
@@ -2673,7 +2673,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                           Schema *schema,
                                           void *data,
                                           yaml_document_t *yaml_doc,
-                                          yaml_node_t *yaml_node,
+                                          const yaml_node_t *yaml_node,
                                           index_t curr_offset)
 {
     // object cases
@@ -2781,7 +2781,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                     }
 
                     // check for inline yaml values
-                    const yaml_node_t *value_value = fetch_yaml_node_from_list(yaml_doc, yaml_node, "value");
+                    const yaml_node_t *value_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "value");
                     if (value_value)
                     {
                         parse_inline_value(yaml_doc, value_value, *node);
@@ -2969,7 +2969,7 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
 void 
 Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
                                           yaml_document_t *yaml_doc,
-                                          yaml_node_t *yaml_node,
+                                          const yaml_node_t *yaml_node,
                                           index_t curr_offset)
 {
     // object cases
