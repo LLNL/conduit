@@ -12917,8 +12917,17 @@ Node::to_summary_string_stream(std::ostream &os,
 {
     // rubber, say hello to the road:
 
+    std::cout << "hello" << std::endl;
+
     std::ios_base::fmtflags prev_stream_flags(os.flags());
     os.precision(15);
+
+    if (m_schema)
+        std::cout << "m_schema valid" << std::endl;
+    std::cout << "dtype().id() " << dtype().id() << std::endl;
+    // if (dtype().id())
+    //     std::cout << "dtype id valid" << std::endl;
+
     if(dtype().id() == DataType::OBJECT_ID)
     {
         os << eoe;

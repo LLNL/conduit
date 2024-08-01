@@ -18,22 +18,22 @@ using namespace conduit;
 //-----------------------------------------------------------------------------
 TEST(conduit_generator, simple_gen_schema)
 {
-    // // JSON
-    // {
-    //     uint32   a_val  = 10;
-    //     uint32   b_val  = 20;
-    //     float64  c_val  = 30.0;
+    // JSON
+    {
+        uint32   a_val  = 10;
+        uint32   b_val  = 20;
+        float64  c_val  = 30.0;
     
-    //     char *data = new char[16];
-    //     memcpy(&data[0],&a_val,4);
-    //     memcpy(&data[4],&b_val,4);
-    //     memcpy(&data[8],&c_val,8);
+        char *data = new char[16];
+        memcpy(&data[0],&a_val,4);
+        memcpy(&data[4],&b_val,4);
+        memcpy(&data[8],&c_val,8);
     
-    //     Generator g1("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}",
-    //                  "conduit_json",
-    //                  data);
-    //     Node n;
-    //     g1.walk(n);
+        Generator g1("{\"a\":\"uint32\",\"b\":\"uint32\",\"c\":\"float64\"}",
+                     "conduit_json",
+                     data);
+        Node n;
+        g1.walk(n);
         
     //     EXPECT_EQ(n["a"].as_uint32(),a_val);
     //     EXPECT_EQ(n["b"].as_uint32(),b_val);
@@ -100,11 +100,11 @@ TEST(conduit_generator, simple_gen_schema)
     //     EXPECT_EQ(n5["other"].as_float64(),e_val);
     
     
-    //     delete [] data;
+        delete [] data;
     //     delete [] data2;
     //     delete [] data3;
     //     delete [] data4;
-    // }
+    }
 
     // YAML
     {
