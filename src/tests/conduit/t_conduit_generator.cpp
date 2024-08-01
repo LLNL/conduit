@@ -418,73 +418,73 @@ TEST(conduit_generator, simple_gen_schema_yaml)
     EXPECT_EQ(n["d"][0].as_string(),"hi");
     EXPECT_EQ(n["d"][1].as_string(),"there");
     
-    // Generator g2("a: 10\nb: 20\nc: \"30\"\nd: [0, 10, 20, 30]\n",
-    //              "yaml");
-    // g2.walk(n);
-    // n.print();
+    Generator g2("a: 10\nb: 20\nc: \"30\"\nd: [0, 10, 20, 30]\n",
+                 "yaml");
+    g2.walk(n);
+    n.print();
 
-    // EXPECT_EQ(n["a"].as_int64(),10);
-    // EXPECT_EQ(n["b"].as_int64(),20);
-    // EXPECT_EQ(n["c"].as_int64(),30);
-    // int64_array d_vals = n["d"].value();
-    // EXPECT_EQ(d_vals[0],0);
-    // EXPECT_EQ(d_vals[1],10);
-    // EXPECT_EQ(d_vals[2],20);
-    // EXPECT_EQ(d_vals[3],30);
+    EXPECT_EQ(n["a"].as_int64(),10);
+    EXPECT_EQ(n["b"].as_int64(),20);
+    EXPECT_EQ(n["c"].as_int64(),30);
+    int64_array d_vals = n["d"].value();
+    EXPECT_EQ(d_vals[0],0);
+    EXPECT_EQ(d_vals[1],10);
+    EXPECT_EQ(d_vals[2],20);
+    EXPECT_EQ(d_vals[3],30);
     
     
-    // // these are no longer special cases
-    // // we handle as string, but keep checking them
+    // these are no longer special cases
+    // we handle as string, but keep checking them
     
-    // Generator g3("a: true\nb: false\nc: null\n",
-    //              "yaml");
-    // g3.walk(n);
-    // n.print();
+    Generator g3("a: true\nb: false\nc: null\n",
+                 "yaml");
+    g3.walk(n);
+    n.print();
 
-    // EXPECT_TRUE(n["a"].dtype().is_string());
-    // EXPECT_TRUE(n["b"].dtype().is_string());
-    // EXPECT_TRUE(n["c"].dtype().is_string());
+    EXPECT_TRUE(n["a"].dtype().is_string());
+    EXPECT_TRUE(n["b"].dtype().is_string());
+    EXPECT_TRUE(n["c"].dtype().is_string());
 
-    // EXPECT_EQ(n["a"].as_string(),"true");
-    // EXPECT_EQ(n["b"].as_string(),"false");
-    // EXPECT_EQ(n["c"].as_string(),"null");
+    EXPECT_EQ(n["a"].as_string(),"true");
+    EXPECT_EQ(n["b"].as_string(),"false");
+    EXPECT_EQ(n["c"].as_string(),"null");
 
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_generator, yaml_parsing_errors)
-// {
-//     Generator g("a: 10\ns","yaml");
-//     Node n;
-//     EXPECT_THROW(g.walk(n),conduit::Error);
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, yaml_parsing_errors)
+{
+    Generator g("a: 10\ns","yaml");
+    Node n;
+    EXPECT_THROW(g.walk(n),conduit::Error);
 
-//     // protocol will still be "yaml"
-//     g.set_schema("[ 10,\ns");
-//     EXPECT_THROW(g.walk(n),conduit::Error);
-// }
+    // protocol will still be "yaml"
+    g.set_schema("[ 10,\ns");
+    EXPECT_THROW(g.walk(n),conduit::Error);
+}
 
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_generator, json_external_gen)
-// {
-//     Node n;
-//     n["a"] = 42;
-//     n["b"] = 144;
-//     n["c/d"] = 3.1415;
-//     n.print();
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, json_external_gen)
+{
+    Node n;
+    n["a"] = 42;
+    n["b"] = 144;
+    n["c/d"] = 3.1415;
+    n.print();
 
-//     std::string json_ext = n.to_json("conduit_json_external");
-//     std::cout << json_ext << std::endl;
+    std::string json_ext = n.to_json("conduit_json_external");
+    std::cout << json_ext << std::endl;
 
-//     Node n2;
-//     Generator g(json_ext,"conduit_json");
-//     g.walk(n2);
-//     n2.print();
+    Node n2;
+    Generator g(json_ext,"conduit_json");
+    g.walk(n2);
+    n2.print();
 
-//     // n2 should be full external, refing data owned by n
-//     EXPECT_EQ(n["a"].data_ptr(),n2["a"].data_ptr());
-//     EXPECT_EQ(n["b"].data_ptr(),n2["b"].data_ptr());
-//     EXPECT_EQ(n["c"].data_ptr(),n2["c"].data_ptr());
+    // n2 should be full external, refing data owned by n
+    EXPECT_EQ(n["a"].data_ptr(),n2["a"].data_ptr());
+    EXPECT_EQ(n["b"].data_ptr(),n2["b"].data_ptr());
+    EXPECT_EQ(n["c"].data_ptr(),n2["c"].data_ptr());
 
-// }
+}
 

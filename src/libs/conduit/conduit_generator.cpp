@@ -3527,7 +3527,6 @@ Generator::walk(Node &node) const
         }
         else if(m_protocol == "yaml")
         {
-            std::cout << "here" << std::endl;
             // errors will flow up from this call 
             Parser::YAML::walk_pure_yaml_schema(&node,
                                                 node.schema_ptr(),
