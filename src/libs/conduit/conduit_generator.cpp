@@ -266,17 +266,17 @@ public:
 
     static unsigned long get_yaml_unsigned_long(const yaml_node_t *yaml_node);
 
-    static bool check_yaml_is_string(const yaml_node_t *yaml_node);
+    static bool check_yaml_is_scalar_node(const yaml_node_t *yaml_node);
 
     static const char *get_yaml_string(const yaml_node_t *yaml_node);
 
-    static bool check_yaml_is_list(const yaml_node_t *yaml_node);
+    static bool check_yaml_is_sequence(const yaml_node_t *yaml_node);
 
-    static int get_yaml_array_length(const yaml_node_t *yaml_node);
+    static int get_yaml_sequence_length(const yaml_node_t *yaml_node);
 
     static int get_yaml_num_members(const yaml_node_t *yaml_node);
 
-    static bool check_yaml_is_object(const yaml_node_t *yaml_node);
+    static bool check_yaml_is_mapping_node(const yaml_node_t *yaml_node);
 
     static yaml_node_t* fetch_yaml_node_from_list(yaml_document_t *yaml_doc,
                                                   const yaml_node_t *yaml_node,
@@ -2034,7 +2034,7 @@ Generator::Parser::YAML::get_yaml_unsigned_long(const yaml_node_t *yaml_node)
 
 //---------------------------------------------------------------------------//
 bool 
-Generator::Parser::YAML::check_yaml_is_string(const yaml_node_t *yaml_node)
+Generator::Parser::YAML::check_yaml_is_scalar_node(const yaml_node_t *yaml_node)
 {
     return yaml_node->type == YAML_SCALAR_NODE;
 }
@@ -2056,14 +2056,14 @@ Generator::Parser::YAML::get_yaml_string(const yaml_node_t *yaml_node)
 
 //---------------------------------------------------------------------------//
 bool 
-Generator::Parser::YAML::check_yaml_is_list(const yaml_node_t *yaml_node)
+Generator::Parser::YAML::check_yaml_is_sequence(const yaml_node_t *yaml_node)
 {
     return yaml_node->type == YAML_SEQUENCE_NODE;
 }
 
 //---------------------------------------------------------------------------//
 int
-Generator::Parser::YAML::get_yaml_array_length(const yaml_node_t *yaml_node)
+Generator::Parser::YAML::get_yaml_sequence_length(const yaml_node_t *yaml_node)
 {
     // assumes yaml_node->type == YAML_SEQUENCE_NODE
     return yaml_node->data.sequence.items.top - yaml_node->data.sequence.items.start;
@@ -2079,7 +2079,7 @@ Generator::Parser::YAML::get_yaml_num_members(const yaml_node_t *yaml_node)
 
 //---------------------------------------------------------------------------//
 bool 
-Generator::Parser::YAML::check_yaml_is_object(const yaml_node_t *yaml_node)
+Generator::Parser::YAML::check_yaml_is_mapping_node(const yaml_node_t *yaml_node)
 {
     return yaml_node->type == YAML_MAPPING_NODE;
 }
@@ -2155,7 +2155,7 @@ Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
                                             const yaml_node_t *yaml_node,
                                             Node &node)
 {
-    if (check_yaml_is_list(yaml_node))
+    if (check_yaml_is_sequence(yaml_node))
     {
         // we assume a "value" is a leaf or list of compatible leaves
         index_t seq_size  = -1;
@@ -2164,7 +2164,7 @@ Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
                                                                    yaml_node,
                                                                    seq_size);
 
-        CONDUIT_ASSERT((node.dtype().number_of_elements() >= get_yaml_array_length(yaml_node)),
+        CONDUIT_ASSERT((node.dtype().number_of_elements() >= get_yaml_sequence_length(yaml_node)),
                        "YAML Generator error:\n" 
                         << "number of elements in YAML array is more"
                         << "than dtype can hold");
@@ -2221,7 +2221,7 @@ void *
 Generator::Parser::YAML::parse_inline_address(const yaml_node_t *yaml_node)
 {
     void * res = nullptr;
-    if (check_yaml_is_string(yaml_node))
+    if (check_yaml_is_scalar_node(yaml_node))
     {
         const std::string sval(get_yaml_string(yaml_node));
         res = utils::hex_string_to_value<void*>(sval);
@@ -2246,7 +2246,7 @@ Generator::Parser::YAML::parse_yaml_uint64_array(yaml_document_t *yaml_doc,
                                                  Node &res)
 {
     int64_array res_vals = res.value();
-    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node); cld_idx ++)
+    for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
     {
         yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
                                      
@@ -2280,7 +2280,7 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
                                                 Node &res)
 {
     int64_array res_vals = res.value();
-    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node); cld_idx ++)
+    for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
     {
         yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
                                      
@@ -2314,7 +2314,7 @@ Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
                                                   Node &res)
 {
     float64_array res_vals = res.value();
-    for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node); cld_idx ++)
+    for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
     {
         yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
                                      
@@ -2351,7 +2351,7 @@ Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node
     seq_size = -1;
     bool ok = true;
     index_t cld_idx;
-    for (cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node); cld_idx ++)
+    for (cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
     {
         yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
                                                  
@@ -2524,7 +2524,7 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                                           index_t offset,
                                           DataType &dtype_res)
 {
-    if (check_yaml_is_string(yaml_node))
+    if (check_yaml_is_scalar_node(yaml_node))
     {
         std::string dtype_name(get_yaml_string(yaml_node));
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
@@ -2536,10 +2536,10 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                       ele_size,
                       Endianness::DEFAULT_ID);
     }
-    else if (check_yaml_is_object(yaml_node))
+    else if (check_yaml_is_mapping_node(yaml_node))
     {
         yaml_node_t* dtype_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
-        CONDUIT_ASSERT(dtype_node && check_yaml_is_string(dtype_node), 
+        CONDUIT_ASSERT(dtype_node && check_yaml_is_scalar_node(dtype_node), 
                        "YAML Generator error:\n'dtype' must be a YAML string.")
         const std::string dtype_name(get_yaml_string(dtype_node));
 
@@ -2578,7 +2578,7 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
         const yaml_node_t* endianness_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "endianness");
         if (endianness_node)
         {
-            if (check_yaml_is_string(endianness_node))
+            if (check_yaml_is_scalar_node(endianness_node))
             {
                 const std::string end_val(get_yaml_string(endianness_node));
                 if ("big" == end_val)
@@ -2608,10 +2608,9 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
         if (0 == length)
         {
             const yaml_node_t* value_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "value");
-            if (value_node && check_yaml_is_list(value_node))
+            if (value_node && check_yaml_is_sequence(value_node))
             {
-                // TODO change the name of these functions to be consistent
-                length = get_yaml_array_length(value_node);
+                length = get_yaml_sequence_length(value_node);
             }
             // support explicit length 0 in a schema
             else if (fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "number_of_elements"))
@@ -2677,14 +2676,14 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                           index_t curr_offset)
 {
     // object cases
-    if (check_yaml_is_object(yaml_node))
+    if (check_yaml_is_mapping_node(yaml_node))
     {
         // if dtype is an object, we have a "list_of" case
         const yaml_node_t *dt_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
         if (dt_value) // if yaml has dtype
         {
             // if dtype yaml is object type
-            if (check_yaml_is_object(dt_value))
+            if (check_yaml_is_mapping_node(dt_value))
             {
                 index_t length = 1;
                 const yaml_node_t *len_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "length");
@@ -2694,7 +2693,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                     {
                         length = static_cast<index_t>(get_yaml_long(len_value));
                     }
-                    else if (check_yaml_is_object(len_value))
+                    else if (check_yaml_is_mapping_node(len_value))
                     {
                         const yaml_node_t *ref_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "reference");
                         if (ref_value)
@@ -2876,11 +2875,11 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         }
     }
     // List case
-    else if (check_yaml_is_list(yaml_node))
+    else if (check_yaml_is_sequence(yaml_node))
     {
         schema->set(DataType::list());
 
-        for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node); cld_idx ++)
+        for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
         {
             yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
             
@@ -2911,7 +2910,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         }
     }
     // Simplest case, handles "uint32", "float64", with extended type info
-    else if (check_yaml_is_string(yaml_node))
+    else if (check_yaml_is_scalar_node(yaml_node))
     {
         DataType dtype;
         parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
@@ -2973,19 +2972,19 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
                                           index_t curr_offset)
 {
     // object cases
-    if (check_yaml_is_object(yaml_node))
+    if (check_yaml_is_mapping_node(yaml_node))
     {
         const yaml_node_t* dt_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
         if (dt_value) // if yaml has dtype
         {
             // if dtype is an object, we have a "list_of" case
-            if (check_yaml_is_object(dt_value)) // if dtype yaml is object type
+            if (check_yaml_is_mapping_node(dt_value)) // if dtype yaml is object type
             {
                 int length = 1;
                 const yaml_node_t *len_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "length");
                 if (len_value) // if dtype has member length
                 {
-                    if (check_yaml_is_object(len_value) &&
+                    if (check_yaml_is_mapping_node(len_value) &&
                         fetch_yaml_node_from_object_by_name(yaml_doc, len_value, "reference"))
                     {
                         CONDUIT_ERROR("YAML Generator error:\n"
@@ -3101,14 +3100,14 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
         }
     }
     // List case
-    else if (check_yaml_is_list(yaml_node))
+    else if (check_yaml_is_sequence(yaml_node))
     {
         // if we make it here and have an empty yaml list
         // we still want the conduit schema to take on the
         // list role
         schema->set(DataType::list());
 
-        for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node); cld_idx ++)
+        for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
         {
             yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
 
@@ -3125,7 +3124,7 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
         }
     }
     // Simplest case, handles "uint32", "float64", etc
-    else if (check_yaml_is_string(yaml_node))
+    else if (check_yaml_is_scalar_node(yaml_node))
     {
         DataType dtype;
         parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
@@ -3176,7 +3175,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
 {
     
     // object cases
-    if (check_yaml_is_object(yaml_node))
+    if (check_yaml_is_mapping_node(yaml_node))
     {
         // if we make it here and have an empty json object
         // we still want the conduit node to take on the
@@ -3257,7 +3256,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
         }
     }
     // List case
-    else if (check_yaml_is_list(yaml_node))
+    else if (check_yaml_is_sequence(yaml_node))
     {
         index_t seq_size  = -1;
         index_t hval_type = check_homogenous_yaml_numeric_sequence(*node,
@@ -3286,7 +3285,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
         else
         {
             // general case (not a numeric array)
-            for (index_t cld_idx = 0; cld_idx < get_yaml_array_length(yaml_node); cld_idx ++)
+            for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
             {
                 yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
                 
@@ -3310,7 +3309,7 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
             }
         }
     }
-    else if (check_yaml_is_string(yaml_node))// bytestr case
+    else if (check_yaml_is_scalar_node(yaml_node))// bytestr case
     {
         const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
 
