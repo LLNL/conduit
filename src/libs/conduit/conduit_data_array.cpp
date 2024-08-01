@@ -100,12 +100,7 @@ template <typename T>
 T &             
 DataArray<T>::element(index_t idx) const 
 { 
-    const void *bungus = element_ptr(idx);
-    if (bungus == nullptr)
-    {
-        CONDUIT_ERROR("save me from segfault");
-    }
-    return (*(T*)(bungus));
+    return (*(T*)(element_ptr(idx)));
 }
 
 //---------------------------------------------------------------------------//
@@ -601,9 +596,7 @@ template <typename T>
 void            
 DataArray<T>::to_json_stream(std::ostream &os) const 
 { 
-    std::cout << "I'm gonna segfault" << std::endl;
     index_t nele = number_of_elements();
-    std::cout << "I'm gonna segfault 2" << std::endl;
     // note: nele == 0 case: 
     // https://github.com/LLNL/conduit/issues/992
     // we want empty arrays to display as [] not empty string
@@ -613,10 +606,8 @@ DataArray<T>::to_json_stream(std::ostream &os) const
     bool first=true;
     for(index_t idx = 0; idx < nele; idx++)
     {
-        std::cout << "I'm gonna segfault 3" << std::endl;
         if(!first)
             os << ", ";
-        std::cout << "I'm gonna segfault 4 " << m_dtype.id() << std::endl;
         switch(m_dtype.id())
         {
             // ints 
@@ -634,15 +625,7 @@ DataArray<T>::to_json_stream(std::ostream &os) const
             case DataType::UINT32_ID:
             case DataType::UINT64_ID:
             {
-                std::cout << "I'm gonna segfault 5" << std::endl;
-                element(idx);
-                if (element(idx))
-                    std::cout << "element is valid" << std::endl;
-                else
-                    std::cout << "element is NOT valid" << std::endl;
-                std::cout << "I'm gonna segfault 6" << std::endl;
                 os << (uint64) element(idx);
-                std::cout << "I'm gonna segfault 7" << std::endl;
                 break;
             }
             // floats 
