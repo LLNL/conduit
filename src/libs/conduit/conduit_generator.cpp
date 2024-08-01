@@ -2524,9 +2524,12 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                                           index_t offset,
                                           DataType &dtype_res)
 {
+    std::cout << "\there at the start of parse_leaf_dtype" << std::endl;
     if (check_yaml_is_scalar_node(yaml_node))
     {
+        std::cout << "\tscalar node case" << std::endl;
         std::string dtype_name(get_yaml_string(yaml_node));
+        std::cout << "\t" << dtype_name << std::endl;
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
         dtype_res.set(dtype_id,
@@ -2675,9 +2678,11 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                           const yaml_node_t *yaml_node,
                                           index_t curr_offset)
 {
+    std::cout << "I'm at the start of walk_yaml_schema node version" << std::endl;
     // object cases
     if (check_yaml_is_mapping_node(yaml_node))
     {
+        std::cout << "mapping node case" << std::endl;
         // if dtype is an object, we have a "list_of" case
         const yaml_node_t *dt_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
         if (dt_value) // if yaml has dtype
@@ -2790,10 +2795,13 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         }
         else // object case
         {
+            std::cout << "object case" << std::endl;
             schema->set(DataType::object());
             // standard object case - loop over all entries
+            std::cout << "get_yaml_num_members(yaml_node) " << get_yaml_num_members(yaml_node) << std::endl;
             for (index_t cld_idx = 0; cld_idx < get_yaml_num_members(yaml_node); cld_idx ++)
             {
+                std::cout << "cld_idx " << cld_idx << std::endl;
                 yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
 
                 if (yaml_pair == NULL)
@@ -2830,6 +2838,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 
                 const std::string entry_name(yaml_key_str);
 
+                std::cout << "entry_name " << entry_name << std::endl;
+
                 // yaml files may have duplicate object names
                 // we could provide some clear semantics, such as:
                 //   always use first instance, or always use last instance
@@ -2854,11 +2864,13 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                   << utils::join_path(node->path(),entry_name));
                 }
 
+                std::cout << "schema and node games" << std::endl;
                 Schema *curr_schema = &schema->add_child(entry_name);
                 Node *curr_node = new Node();
                 curr_node->set_schema_ptr(curr_schema);
                 curr_node->set_parent(node);
                 node->append_node_ptr(curr_node);
+                std::cout << "time to recurse" << std::endl;
                 walk_yaml_schema(node,
                                  curr_schema,
                                  data,
@@ -2912,8 +2924,11 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
     // Simplest case, handles "uint32", "float64", with extended type info
     else if (check_yaml_is_scalar_node(yaml_node))
     {
+        std::cout << "scalar case" << std::endl;
+
         DataType dtype;
         parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+        std::cout << "dtype.name() " << dtype.name() << std::endl;
         schema->set(dtype);
 
         if (data)
@@ -2927,6 +2942,12 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             // we need to dynamically alloc
             node->set(dtype);  // causes an init
         }
+
+        std::cout << "node so far" << std::endl;
+        node->print();
+
+        // TODO left off here - need to understand why json dtype is fine and yaml one
+        // makes this segfault
     }
     else
     {
@@ -2934,6 +2955,9 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                       << "Invalid YAML type for parsing Node."
                       << " Expected: YAML Object, Array, or String");
     }
+
+    schema->print();
+    // node->print();
 }
 
 
