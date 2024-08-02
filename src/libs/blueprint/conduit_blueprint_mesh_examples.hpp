@@ -268,13 +268,14 @@ namespace examples
                                      conduit::Node &res);
 
     /// Generates a multidomain grid of examples.  spec is a list or object
-    /// specifying one or more domains.  Each child of spec has
-    ///  - scalar children npts_x, optionally npts_y, and optionally npts_z,
-    ///  - array child origin,
-    ///  - array children vec_x, optionally vec_y, and optionally vec_z.
-    /// The npts children specify the size of the grid, in elements;
-    /// the vec children specify the spatial step of one unit in each
-    /// dimension, and the origin gives the origin of that domain.
+    /// specifying one or more domains.  Each child of spec represents a domain
+    /// in either two or three dimensions.  Each child has
+    ///  - integral children npts_x, npts_y, optionally npts_z
+    ///  - integral child domain_id
+    ///  - numerical array children corner_xs, corner_ys, optionally corner_zs
+    ///
+    /// The children in each domain specification represent the locations of
+    /// the corners of that domain and contain two or three coordinates.
     void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
                                         conduit::Node& res);
 

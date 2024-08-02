@@ -838,141 +838,134 @@ void braid_init_rectilinear_coordset(index_t npts_x,
 //---------------------------------------------------------------------------//
 
 void
-braid_init_explicit_coordset(index_t npts_x,
-                             index_t npts_y,
-                             index_t npts_z,
-                             Node &coords,
-                             const double* in_origin = nullptr,
-                             const double* in_vec_fst = nullptr,
-                             const double* in_vec_snd = nullptr,
-                             const double* in_vec_thd = nullptr);
+fill_corner_point(std::vector<double>& p,
+    const double* x, const double* y, const double* z, int idx,
+    double dftx, double dfty, double dftz)
+{
+    int dims = p.size();
+
+    p[0] = dftx;
+    if (dims > 1)
+    {
+        p[1] = dfty;
+        if (dims == 3)
+        {
+            p[2] = dftz;
+        }
+    }
+
+    if (x != nullptr && (dims == 1 || y != nullptr && (dims == 2 || z != nullptr)))
+    {
+        p[0] = x[idx];
+        if (dims > 1)
+        {
+            p[1] = y[idx];
+            if (dims == 3)
+            {
+                p[2] = z[idx];
+            }
+        }
+    }
+}
 
 void
 braid_init_explicit_coordset(index_t npts_x,
                              index_t npts_y,
                              index_t npts_z,
                              Node &coords,
-                             const double* in_origin,
-                             const double* in_vec_fst,
-                             const double* in_vec_snd,
-                             const double* in_vec_thd)
+                             const double* corner_xs = nullptr,
+                             const double* corner_ys = nullptr,
+                             const double* corner_zs = nullptr);
+
+void
+braid_init_explicit_coordset(index_t npts_x,
+                             index_t npts_y,
+                             index_t npts_z,
+                             Node &coords,
+                             const double* corner_xs,
+                             const double* corner_ys,
+                             const double* corner_zs)
 {
     coords["type"] = "explicit";
 
     index_t npts = npts_x;
+    index_t dims = 1;
     if (npts_y > 0)
     {
         npts *= npts_y;
-    }
-
-    if(npts_z > 1)
-    {
-        npts *= npts_z;
-    }
-
-    // also support interleaved
-    Node &coord_vals = coords["values"];
-    coord_vals["x"].set(DataType::float64(npts));
-    if (npts_y > 0)
-    {
-        coord_vals["y"].set(DataType::float64(npts));
-    }
-
-    if(npts_z > 1)
-    {
-        coord_vals["z"].set(DataType::float64(npts));
-    }
-
-    float64 *x_vals = coord_vals["x"].value();
-    float64 *y_vals = NULL;
-    if (npts_y > 0)
-    {
-        y_vals = coord_vals["y"].value();
-    }
-
-    float64 *z_vals = NULL;
-
-    if(npts_z > 1)
-    {
-        z_vals = coord_vals["z"].value();
-    }
-
-    double the_origin[3] {-10., -10., -10.};
-    double vec_fst[3] {20.0 / float64(npts_x - 1), 0., 0.};
-    double vec_snd[3] {0., 20.0 / float64(npts_y - 1), 0.};
-    double vec_thd[3] {0., 0., 20.0 / float64(npts_z - 1)};
-
-    if (in_origin != nullptr)
-    {
-        the_origin[0] = in_origin[0];
-        if (npts_y > 0) { the_origin[1] = in_origin[1]; }
-        if (npts_z > 0) { the_origin[2] = in_origin[2]; }
-    }
-
-    if (in_vec_fst != nullptr)
-    {
-        vec_fst[0] = in_vec_fst[0];
-        if (npts_y > 0) { vec_fst[1] = in_vec_fst[1]; }
-        if (npts_z > 0) { vec_fst[2] = in_vec_fst[2]; }
-    }
-
-    if (in_vec_snd != nullptr)
-    {
-        vec_snd[0] = in_vec_snd[0];
-        if (npts_y > 0) { vec_snd[1] = in_vec_snd[1]; }
-        if (npts_z > 0) { vec_snd[2] = in_vec_snd[2]; }
-    }
-
-    if (in_vec_thd != nullptr)
-    {
-        vec_thd[0] = in_vec_thd[0];
-        if (npts_y > 0) { vec_thd[1] = in_vec_thd[1]; }
-        if (npts_z > 0) { vec_thd[2] = in_vec_thd[2]; }
-    }
-
-    index_t idx = 0;
-    // default to one loop iteration (2d case)
-    index_t outer = 1;
-    // expand loop iteration for 3d case
-    if(npts_z > 1)
-    {
-        outer = npts_z;
-    }
-    // default to one loop iteration (1d case)
-    index_t middle = 1;
-    // expand loop iteration for 2d and 3d case
-    if(npts_y > 1)
-    {
-        middle = npts_y;
-    }
-
-    for(index_t k = 0; k < outer; k++)
-    {
-        for(index_t j = 0; j < middle ; j++)
+        dims = 2;
+        if (npts_z > 1)
         {
-            for(index_t i = 0; i < npts_x ; i++)
-            {
-                x_vals[idx] = the_origin[0] + i * vec_fst[0] +
-                    j * vec_fst[1] + k * vec_fst[2];
-
-                if(npts_y > 1)
-                {
-                    y_vals[idx] = the_origin[1] + i * vec_snd[0] +
-                        j * vec_snd[1] + k * vec_snd[2];
-                }
-
-                if(npts_z > 1)
-                {
-                    z_vals[idx] = the_origin[2] + i * vec_thd[0] +
-                        j * vec_thd[1] + k * vec_thd[2];
-                }
-
-                idx++;
-            }
-
+            npts *= npts_z;
+            dims = 3;
         }
     }
 
+
+    // Extract corner points
+    std::vector<double>A(dims);
+    fill_corner_point(A, corner_xs, corner_ys, corner_zs, 0, -10, -10, -10);
+    std::vector<double>B(dims);
+    fill_corner_point(B, corner_xs, corner_ys, corner_zs, 1,  10, -10, -10);
+
+    // Set up result vectors
+    std::vector<std::vector<double> > left, right, grid;
+
+    if (dims > 1)
+    {
+        std::vector<double>C(dims);
+        fill_corner_point(C, corner_xs, corner_ys, corner_zs, 2, -10, 10, -10);
+        std::vector<double>D(dims);
+        fill_corner_point(D, corner_xs, corner_ys, corner_zs, 3, 10, 10, -10);
+        if (dims > 2)
+        {
+            std::vector<double>E(dims);
+            fill_corner_point(E, corner_xs, corner_ys, corner_zs, 4, -10, -10, 10);
+            std::vector<double>F(dims);
+            fill_corner_point(F, corner_xs, corner_ys, corner_zs, 5, 10, -10, 10);
+            std::vector<double>G(dims);
+            fill_corner_point(G, corner_xs, corner_ys, corner_zs, 6, -10, 10, 10);
+            std::vector<double>H(dims);
+            fill_corner_point(H, corner_xs, corner_ys, corner_zs, 7, 10, 10, 10);
+            std::vector<std::vector<double> > SW;
+            conduit::blueprint::mesh::utils::lerp(A, E, npts_z, SW);
+            std::vector<std::vector<double> > SE;
+            conduit::blueprint::mesh::utils::lerp(B, F, npts_z, SE);
+            std::vector<std::vector<double> > NW;
+            conduit::blueprint::mesh::utils::lerp(C, G, npts_z, NW);
+            std::vector<std::vector<double> > NE;
+            conduit::blueprint::mesh::utils::lerp(D, H, npts_z, NE);
+
+
+            conduit::blueprint::mesh::utils::lerp(SW, NW, npts_y, left);
+            conduit::blueprint::mesh::utils::lerp(SW, NW, npts_y, right);
+        }
+        else
+        {
+            // dims == 2
+            conduit::blueprint::mesh::utils::lerp(A, D, npts_y, left);
+            conduit::blueprint::mesh::utils::lerp(B, C, npts_y, right);
+        }
+    }
+    else
+    {
+        left.push_back(A);
+        right.push_back(B);
+    }
+    conduit::blueprint::mesh::utils::lerp(left, right, npts_x, grid);
+
+    // also support interleaved
+    Node &coord_vals = coords["values"];
+
+    coord_vals["x"].set(grid[0]);
+    if (dims > 1)
+    {
+        coord_vals["y"].set(grid[1]);
+        if (dims > 2)
+        {
+            coord_vals["z"].set(grid[2]);
+        }
+    }
 }
 
 
@@ -1684,9 +1677,8 @@ braid_bent_quads(const Node & spec, Node &res)
 
     const int32 domain_id = spec["domain_id"].as_int32();
 
-    const double* origin = spec["origin"].as_double_ptr();
-    const double* vec_fst = spec["vec_x"].as_double_ptr();
-    const double* vec_snd = spec["vec_y"].as_double_ptr();
+    const double* x = spec["corner_xs"].as_double_ptr();
+    const double* y = spec["corner_ys"].as_double_ptr();
 
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
@@ -1698,10 +1690,7 @@ braid_bent_quads(const Node & spec, Node &res)
                                  npts_y,
                                  1,
                                  res["coordsets/coords"],
-                                 origin,
-                                 vec_fst,
-                                 vec_snd,
-                                 nullptr);
+                                 x, y, nullptr);
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
@@ -2552,10 +2541,11 @@ braid_bent_hexs(const Node & spec, Node &res)
     const int32 npts_y = spec["npts_y"].as_int32();
     const int32 npts_z = spec["npts_z"].as_int32();
 
-    const double* origin = spec["origin"].as_double_ptr();
-    const double* vec_fst = spec["vec_x"].as_double_ptr();
-    const double* vec_snd = spec["vec_y"].as_double_ptr();
-    const double* vec_thd = spec["vec_z"].as_double_ptr();
+    const int32 domain_id = spec["domain_id"].as_int32();
+
+    const double* x = spec["corner_xs"].as_double_ptr();
+    const double* y = spec["corner_ys"].as_double_ptr();
+    const double* z = spec["corner_zs"].as_double_ptr();
 
     int32 nele_x = (int32)(npts_x - 1);
     int32 nele_y = (int32)(npts_y - 1);
@@ -2563,13 +2553,12 @@ braid_bent_hexs(const Node & spec, Node &res)
     int32 nele = nele_x * nele_y * nele_z;
 
     braid_init_example_state(res);
+    res["state/domain_id"] = domain_id;
     braid_init_explicit_coordset(npts_x,
                                  npts_y,
                                  npts_z,
                                  res["coordsets/coords"],
-                                 vec_fst,
-                                 vec_snd,
-                                 vec_thd);
+                                 x, y, z);
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
@@ -3643,82 +3632,51 @@ void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
     {
         const Node& ver_node = ver_it.next();
         // Check for necessary domain information
+        bool has_corner_xs = ver_node.has_child("corner_xs");
+        bool has_corner_ys = ver_node.has_child("corner_ys");
+        bool has_corner_zs = ver_node.has_child("corner_zs");
         bool has_npts_x = ver_node.has_child("npts_x");
         bool has_npts_y = ver_node.has_child("npts_y");
         bool has_npts_z = ver_node.has_child("npts_z");
-        bool has_origin = ver_node.has_child("origin");
-        bool has_vec_x = ver_node.has_child("vec_x");
-        bool has_vec_y = ver_node.has_child("vec_y");
-        bool has_vec_z = ver_node.has_child("vec_z");
+        bool has_domain_id = ver_node.has_child("domain_id");
 
         int dims = 0;
-        if (has_npts_x) { dims += 1; }
-        if (has_npts_x && has_npts_y) { dims += 1; }
-        if (has_npts_x && has_npts_y && has_npts_z) { dims += 1; }
+        if (has_corner_xs && has_corner_ys && has_npts_x && has_npts_y) { dims = 2; }
+        if (dims == 2 && has_corner_zs && has_npts_z) { dims = 3; }
 
-        int vdims = 0;
-        if (has_vec_x) { vdims += 1; }
-        if (has_vec_x && has_vec_y) { vdims += 1; }
-        if (has_vec_x && has_vec_y && has_vec_z) { vdims += 1; }
-
-        bool children_ok = (dims > 1) && (dims == vdims) && has_origin;
+        bool children_ok = (dims == 2 || dims == 3) && has_domain_id;
         bool dims_ok = false;
-        bool npts_ok = false;
 
         if (children_ok)
         {
-            dims_ok = ver_node["origin"].as_float64_accessor().number_of_elements() == dims;
-            dims_ok = dims_ok && ver_node["vec_x"].as_float64_accessor().number_of_elements() == dims;
-            dims_ok = dims_ok && ver_node["vec_y"].as_float64_accessor().number_of_elements() == dims;
-            if (dims > 2)
-            {
-                dims_ok = dims_ok && ver_node["vec_z"].as_float64_accessor().number_of_elements() == dims;
-            }
-
+            dims_ok = ver_node["corner_xs"].as_float64_accessor().number_of_elements() > 3;
+            dims_ok = dims_ok && ver_node["corner_ys"].as_float64_accessor().number_of_elements() > 3;
             int npts_x = ver_node["npts_x"].as_int32();
-            int npts_y = 1;
-            npts_y = ver_node["npts_y"].as_int32();
-            int npts_z = 1;
+            dims_ok = dims_ok && npts_x >= 2;
+            int npts_y = ver_node["npts_y"].as_int32();
+            dims_ok = dims_ok && npts_y >= 2;
             if (dims > 2)
             {
-                npts_z = ver_node["npts_z"].as_int32();
-            }
-
-            npts_ok = (npts_x > 1 && npts_y > 1);
-            if (dims > 2)
-            {
-                npts_ok = npts_ok && npts_z > 1;
+                dims_ok = dims_ok && ver_node["corner_xs"].as_float64_accessor().number_of_elements() > 7;
+                dims_ok = dims_ok && ver_node["corner_ys"].as_float64_accessor().number_of_elements() > 7;
+                dims_ok = dims_ok && ver_node["corner_zs"].as_float64_accessor().number_of_elements() > 7;
+                int npts_z = ver_node["npts_z"].as_int32();
+                dims_ok = dims_ok && npts_z >= 2;
             }
         }
 
-        if (!(children_ok && dims_ok && npts_ok))
+        if (!(children_ok && dims_ok))
         {
             // error: some domain doesn't have the right children.
             CONDUIT_ERROR("blueprint::mesh::examples::bentgrid requires each domain in spec " << std::endl <<
-                "to have children npts_x, npts_y; origin; vec_x, vec_y. " << std::endl <<
-                "For a 3D mesh, each domain must also have npts_z and vec_z." << std::endl <<
-                "Arrays in origin and vec_x, y, z must be of consistent length." << std::endl <<
-                "values provided:" << std::endl << ver_node.to_yaml() << std::endl);
+                "to have floating-point children corner_xs, corner_ys each with length > 3." << std::endl <<
+                "For a 3D mesh, each domain must have corner_xs, corner_ys, corner_zs each" << std::endl <<
+                "with length > 7.  Each domain must also have an integral domain_id and integral" << std::endl <<
+                "npts_x, npts_y, and optionally npts_z.  Values provided : " << std::endl << 
+                ver_node.to_yaml() << std::endl);
         }
 
         dom_dimensions.push_back(dims);
-    }
-
-    bool consistent_dims = std::all_of(dom_dimensions.begin(), dom_dimensions.end(), [&](int i) { return i == dom_dimensions[0]; });
-
-    if (!consistent_dims)
-    {
-        std::stringstream errss;
-
-        for (int d : dom_dimensions)
-        {
-            errss << "  " << d;
-        }
-
-        // error: some domain has an inconsisten dimension.
-        CONDUIT_ERROR("blueprint::mesh::examples::bentgrid requires each domain in spec "
-            "to have the same dimensionality. " << std::endl <<
-            "Dimensions provided: " << errss.str() << std::endl);
     }
 
     // For each child node in spec,

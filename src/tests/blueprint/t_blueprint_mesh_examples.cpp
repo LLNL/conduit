@@ -378,8 +378,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
 
 void add_domain_node(Node& spec, const char * dom_name, int domain_id,
     int npts_x, int npts_y, int npts_z,
-    std::vector<double>& origin,
-    std::vector<double>& vec_x, std::vector<double>& vec_y, std::vector<double>& vec_z)
+    std::vector<double>& x, std::vector<double>& y, std::vector<double>& z)
 {
     Node& dom = spec[dom_name];
     dom["npts_x"] = npts_x;
@@ -388,12 +387,11 @@ void add_domain_node(Node& spec, const char * dom_name, int domain_id,
     {
         dom["npts_z"] = npts_z;
     }
-    dom["origin"].set(origin);
-    dom["vec_x"].set(vec_x);
-    dom["vec_y"].set(vec_y);
-    if (vec_z.size() > 0)
+    dom["corner_xs"].set(x);
+    dom["corner_ys"].set(y);
+    if (z.size() > 0)
     {
-        dom["vec_z"].set(vec_z);
+        dom["corner_zs"].set(z);
     }
     dom["domain_id"] = domain_id;
 }
@@ -414,20 +412,17 @@ TEST(conduit_blueprint_mesh_examples, mesh_2D_enh_red_connectivity)
     {
         Node spec;
 
-        std::vector<double> d1origin{ 0, 0 };
-        std::vector<double> d1vec_x { 1, 0.4 };
-        std::vector<double> d1vec_y { 0, 1.2 };
-        add_domain_node(spec, "domain1", 1, 4, 3, 0, d1origin, d1vec_x, d1vec_y, empty_z);
+        std::vector<double> d1x{0, 3, 3, 0};
+        std::vector<double> d1y{0, 1.2, 3.6, 3.6};
+        add_domain_node(spec, "domain1", 1, 4, 3, 0, d1x, d1y, empty_z);
 
-        std::vector<double> d2origin{ 3, 1.2 };
-        std::vector<double> d2vec_x{ 0.8, -0.6 };
-        // dom2 shares vec_y with dom1
-        add_domain_node(spec, "domain2", 2, 4, 3, 0, d2origin, d2vec_x, d1vec_y, empty_z);
+        std::vector<double> d2x{ 3, 5.4, 5.4, 3 };
+        std::vector<double> d2y{ 1.2, -0.6, 3.6, 3.6 };
+        add_domain_node(spec, "domain2", 2, 4, 3, 0, d2x, d2y, empty_z);
 
-        // dom3 shares origin with dom1
-        // dom3 shares vec_x with dom2
-        // dom3 vec_y is dom1's vec_x (note mismatched dimension y <- x)
-        add_domain_node(spec, "domain3", 3, 4, 4, 0, d1origin, d2vec_x, d1vec_x, empty_z);
+        std::vector<double> d3x{ 0, 2.4, 5.4, 3 };
+        std::vector<double> d3y{ 0, -1.8, -0.6, 1.2};
+        add_domain_node(spec, "domain3", 3, 4, 4, 0, d3x, d3y, empty_z);
 
         spec.print();
 
@@ -438,30 +433,25 @@ TEST(conduit_blueprint_mesh_examples, mesh_2D_enh_red_connectivity)
     {
         Node spec;
 
-        std::vector<double> d1origin{ 1.5, 2.3 };
-        std::vector<double> d1vec_x{ 1, 0.32 };
-        std::vector<double> d1vec_y{ 0, 2 };
-        add_domain_node(spec, "domain1", 1, 4, 3, 0, d1origin, d1vec_x, d1vec_y, empty_z);
+        std::vector<double> d1x{ 1.5, 4.5, 4.5, 1.5 };
+        std::vector<double> d1y{ 2.3, 3.26, 6.3, 6.3 };
+        add_domain_node(spec, "domain1", 1, 4, 3, 0, d1x, d1y, empty_z);
 
-        // dom2 shares origin with dom1
-        std::vector<double> d2vec_x{ 0.6, -0.25 };
-        // dom2 vec_y is dom1 vec_x
-        add_domain_node(spec, "domain2", 2, 5, 4, 0, d1origin, d2vec_x, d1vec_x, empty_z);
+        std::vector<double> d2x{ 1.5, 3.9, 4.5, 4.5 };
+        std::vector<double> d2y{ 2.3, 1.3, 1.3, 3.26};
+        add_domain_node(spec, "domain2", 2, 5, 4, 0, d2x, d2y, empty_z);
 
-        std::vector<double> d3origin{ 0.4, -3.7 };
-        std::vector<double> d3vec_x{ 0.7, 1 };
-        std::vector<double> d3vec_y{ -0.6, 0.25 };  // -1 times d2vec_x
-        add_domain_node(spec, "domain3", 3, 6, 5, 0, d3origin, d3vec_x, d3vec_y, empty_z);
+        std::vector<double> d3x{ 0.4, 3.9, 1.5, -2 };
+        std::vector<double> d3y{ -3.7, 1.3, 2.3, -2.7};
+        add_domain_node(spec, "domain3", 3, 6, 5, 0, d3x, d3y, empty_z);
 
-        std::vector<double> d4origin{ -2.1, 1.3 };
-        std::vector<double> d4vec_x{ -0.7, -1 };  // -1 times d3vec_x
-        std::vector<double> d4vec_y{ 1.2, 0 };
-        add_domain_node(spec, "domain4", 4, 6, 4, 0, d4origin, d4vec_x, d4vec_y, empty_z);
+        std::vector<double> d4x{ -2.1, -2.1, -2, 1.5 };
+        std::vector<double> d4y{ 2.3, -2.7, -2.7, 2.3 };
+        add_domain_node(spec, "domain4", 4, 6, 4, 0, d4x, d4y, empty_z);
 
-        // dom5 shares origin with dom4
-        // dom5 vec_x is dom4 vec_y
-        // dom5 vec_y is dom1 vec_y
-        add_domain_node(spec, "domain5", 5, 4, 3, 0, d4origin, d4vec_y, d1vec_x, empty_z);
+        std::vector<double> d5x{ -2.1, 1.5, 1.5, -2.1 };
+        std::vector<double> d5y{ 2.3, 2.3, 6.3, 6.3 };
+        add_domain_node(spec, "domain5", 5, 4, 3, 0, d5x, d5y, empty_z);
 
         blueprint::mesh::examples::bentgrid(spec, dsets["bentgrid_2d_enhanced"]);
     }
