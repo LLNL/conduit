@@ -465,11 +465,10 @@ TEST(conduit_blueprint_mesh_examples, mesh_2D_enh_red_connectivity)
     while (itr.has_next())
     {
         const Node& mesh = itr.next();
+        std::string meshname = itr.name();
         EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
-        CONDUIT_INFO(info.to_yaml());
+        braid_save_helper(mesh, meshname);
     }
-
-    braid_save_helper(dsets, "braid_2d_enh_red");
 }
 
 
