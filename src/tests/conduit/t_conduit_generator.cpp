@@ -408,119 +408,234 @@ TEST(conduit_generator, simple_gen_schema_with_gen_setters)
 }
 
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_generator, gen_array_with_num_eles)
-// {
-//     Node n;
-
-//     // signed ints
-//     n.generate("{\"dtype\":\"int8\",\"number_of_elements\": 8}");
-//     EXPECT_TRUE(n.dtype().is_int8());
-//     EXPECT_EQ(8,n.dtype().number_of_elements());
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, gen_array_with_num_eles)
+{
+    // JSON
+    {
+        Node n;
     
-//     n.generate("{\"dtype\":\"int16\",\"number_of_elements\": 16}");
-//     EXPECT_TRUE(n.dtype().is_int16());
-//     EXPECT_EQ(16,n.dtype().number_of_elements());
-
-//     n.generate("{\"dtype\":\"int32\",\"number_of_elements\": 32}");
-//     EXPECT_TRUE(n.dtype().is_int32());
-//     EXPECT_EQ(32,n.dtype().number_of_elements());
+        // signed ints
+        n.generate("{\"dtype\":\"int8\",\"number_of_elements\": 8}");
+        EXPECT_TRUE(n.dtype().is_int8());
+        EXPECT_EQ(8,n.dtype().number_of_elements());
+        
+        n.generate("{\"dtype\":\"int16\",\"number_of_elements\": 16}");
+        EXPECT_TRUE(n.dtype().is_int16());
+        EXPECT_EQ(16,n.dtype().number_of_elements());
     
-//     n.generate("{\"dtype\":\"int64\",\"number_of_elements\": 64}");
-//     EXPECT_TRUE(n.dtype().is_int64());
-//     EXPECT_EQ(64,n.dtype().number_of_elements());
-
-//     // unsigned ints
-//     n.generate("{\"dtype\":\"uint8\",\"number_of_elements\": 8}");
-//     EXPECT_TRUE(n.dtype().is_uint8());
-//     EXPECT_EQ(8,n.dtype().number_of_elements());
+        n.generate("{\"dtype\":\"int32\",\"number_of_elements\": 32}");
+        EXPECT_TRUE(n.dtype().is_int32());
+        EXPECT_EQ(32,n.dtype().number_of_elements());
+        
+        n.generate("{\"dtype\":\"int64\",\"number_of_elements\": 64}");
+        EXPECT_TRUE(n.dtype().is_int64());
+        EXPECT_EQ(64,n.dtype().number_of_elements());
     
-//     n.generate("{\"dtype\":\"uint16\",\"number_of_elements\": 16}");
-//     EXPECT_TRUE(n.dtype().is_uint16());
-//     EXPECT_EQ(16,n.dtype().number_of_elements());
-
-//     n.generate("{\"dtype\":\"uint32\",\"number_of_elements\": 32}");
-//     EXPECT_TRUE(n.dtype().is_uint32());
-//     EXPECT_EQ(32,n.dtype().number_of_elements());
+        // unsigned ints
+        n.generate("{\"dtype\":\"uint8\",\"number_of_elements\": 8}");
+        EXPECT_TRUE(n.dtype().is_uint8());
+        EXPECT_EQ(8,n.dtype().number_of_elements());
+        
+        n.generate("{\"dtype\":\"uint16\",\"number_of_elements\": 16}");
+        EXPECT_TRUE(n.dtype().is_uint16());
+        EXPECT_EQ(16,n.dtype().number_of_elements());
     
-//     n.generate("{\"dtype\":\"uint64\",\"number_of_elements\": 64}");
-//     EXPECT_TRUE(n.dtype().is_uint64());
-//     EXPECT_EQ(64,n.dtype().number_of_elements());
+        n.generate("{\"dtype\":\"uint32\",\"number_of_elements\": 32}");
+        EXPECT_TRUE(n.dtype().is_uint32());
+        EXPECT_EQ(32,n.dtype().number_of_elements());
+        
+        n.generate("{\"dtype\":\"uint64\",\"number_of_elements\": 64}");
+        EXPECT_TRUE(n.dtype().is_uint64());
+        EXPECT_EQ(64,n.dtype().number_of_elements());
+        
+        n.generate("{\"dtype\":\"float32\",\"number_of_elements\": 32}");
+        EXPECT_TRUE(n.dtype().is_float32());
+        EXPECT_EQ(32,n.dtype().number_of_elements());
+        
+        n.generate("{\"dtype\":\"float64\",\"number_of_elements\": 64}");
+        EXPECT_TRUE(n.dtype().is_float64());
+        EXPECT_EQ(64,n.dtype().number_of_elements());
+    }
+
+    // YAML
+    {
+        Node n;
+        
+        // signed ints
+        n.generate("dtype: int8\nnumber_of_elements: 8", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_int8());
+        EXPECT_EQ(8,n.dtype().number_of_elements());
+        
+        n.generate("dtype: int16\nnumber_of_elements: 16", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_int16());
+        EXPECT_EQ(16,n.dtype().number_of_elements());
+        
+        n.generate("dtype: int32\nnumber_of_elements: 32", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_int32());
+        EXPECT_EQ(32,n.dtype().number_of_elements());
+        
+        n.generate("dtype: int64\nnumber_of_elements: 64", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_int64());
+        EXPECT_EQ(64,n.dtype().number_of_elements());
+        
+        // unsigned ints
+        n.generate("dtype: uint8\nnumber_of_elements: 8", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_uint8());
+        EXPECT_EQ(8,n.dtype().number_of_elements());
+        
+        n.generate("dtype: uint16\nnumber_of_elements: 16", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_uint16());
+        EXPECT_EQ(16,n.dtype().number_of_elements());
+        
+        n.generate("dtype: uint32\nnumber_of_elements: 32", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_uint32());
+        EXPECT_EQ(32,n.dtype().number_of_elements());
+        
+        n.generate("dtype: uint64\nnumber_of_elements: 64", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_uint64());
+        EXPECT_EQ(64,n.dtype().number_of_elements());
+        
+        n.generate("dtype: float32\nnumber_of_elements: 32", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_float32());
+        EXPECT_EQ(32,n.dtype().number_of_elements());
+        
+        n.generate("dtype: float64\nnumber_of_elements: 64", "conduit_yaml");
+        EXPECT_TRUE(n.dtype().is_float64());
+        EXPECT_EQ(64,n.dtype().number_of_elements());
+    }
     
-//     n.generate("{\"dtype\":\"float32\",\"number_of_elements\": 32}");
-//     EXPECT_TRUE(n.dtype().is_float32());
-//     EXPECT_EQ(32,n.dtype().number_of_elements());
-    
-//     n.generate("{\"dtype\":\"float64\",\"number_of_elements\": 64}");
-//     EXPECT_TRUE(n.dtype().is_float64());
-//     EXPECT_EQ(64,n.dtype().number_of_elements());
-    
-// }
+}
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_generator, gen_array_with_data)
-// {
-//     Node n;
-//     // signed ints
-//     n.generate("{\"dtype\":\"int8\",\"length\": 2, \"value\": [-8,-8]}");
-//     int8 *vint8_ptr = n.value();
-//     EXPECT_EQ(-8,vint8_ptr[0]);
-//     EXPECT_EQ(vint8_ptr[0],vint8_ptr[1]);
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, gen_array_with_data)
+{
+    // JSON
+    {
+        Node n;
+        // signed ints
+        n.generate("{\"dtype\":\"int8\",\"length\": 2, \"value\": [-8,-8]}");
+        int8 *vint8_ptr = n.value();
+        EXPECT_EQ(-8,vint8_ptr[0]);
+        EXPECT_EQ(vint8_ptr[0],vint8_ptr[1]);
 
-//     n.generate("{\"dtype\":\"int16\",\"length\": 2, \"value\": [-16,-16]}");
-//     int16 *vint16_ptr = n.value();
-//     EXPECT_EQ(-16,vint16_ptr[0]);
-//     EXPECT_EQ(vint16_ptr[0],vint16_ptr[1]);
+        n.generate("{\"dtype\":\"int16\",\"length\": 2, \"value\": [-16,-16]}");
+        int16 *vint16_ptr = n.value();
+        EXPECT_EQ(-16,vint16_ptr[0]);
+        EXPECT_EQ(vint16_ptr[0],vint16_ptr[1]);
 
-//     n.generate("{\"dtype\":\"int32\",\"length\": 2, \"value\": [-32,-32]}");
-//     int32 *vint32_ptr = n.value();
-//     EXPECT_EQ(-32,vint32_ptr[0]);
-//     EXPECT_EQ(vint32_ptr[0],vint32_ptr[1]);
+        n.generate("{\"dtype\":\"int32\",\"length\": 2, \"value\": [-32,-32]}");
+        int32 *vint32_ptr = n.value();
+        EXPECT_EQ(-32,vint32_ptr[0]);
+        EXPECT_EQ(vint32_ptr[0],vint32_ptr[1]);
 
-//     n.generate("{\"dtype\":\"int64\",\"length\": 2, \"value\": [-64,-64]}");
-//     int64 *vint64_ptr = n.value();
-//     EXPECT_EQ(-64,vint64_ptr[0]);
-//     EXPECT_EQ(vint64_ptr[0],vint64_ptr[1]);
-    
-//     // unsigned ints
-//     n.generate("{\"dtype\":\"uint8\",\"length\": 2, \"value\": [8,8]}");
-//     uint8 *vuint8_ptr = n.value();
-//     EXPECT_EQ(8,vuint8_ptr[0]);
-//     EXPECT_EQ(vuint8_ptr[0],vuint8_ptr[1]);
+        n.generate("{\"dtype\":\"int64\",\"length\": 2, \"value\": [-64,-64]}");
+        int64 *vint64_ptr = n.value();
+        EXPECT_EQ(-64,vint64_ptr[0]);
+        EXPECT_EQ(vint64_ptr[0],vint64_ptr[1]);
+        
+        // unsigned ints
+        n.generate("{\"dtype\":\"uint8\",\"length\": 2, \"value\": [8,8]}");
+        uint8 *vuint8_ptr = n.value();
+        EXPECT_EQ(8,vuint8_ptr[0]);
+        EXPECT_EQ(vuint8_ptr[0],vuint8_ptr[1]);
 
-//     n.generate("{\"dtype\":\"uint16\",\"length\": 2, \"value\": [16,16]}");
-//     uint16 *vuint16_ptr = n.value();
-//     EXPECT_EQ(16,vuint16_ptr[0]);
-//     EXPECT_EQ(vuint16_ptr[0],vuint16_ptr[1]);
+        n.generate("{\"dtype\":\"uint16\",\"length\": 2, \"value\": [16,16]}");
+        uint16 *vuint16_ptr = n.value();
+        EXPECT_EQ(16,vuint16_ptr[0]);
+        EXPECT_EQ(vuint16_ptr[0],vuint16_ptr[1]);
 
-//     n.generate("{\"dtype\":\"uint32\",\"length\": 2, \"value\": [32,32]}");
-//     uint32 *vuint32_ptr = n.value();
-//     EXPECT_EQ(32,vuint32_ptr[0]);
-//     EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[1]);
+        n.generate("{\"dtype\":\"uint32\",\"length\": 2, \"value\": [32,32]}");
+        uint32 *vuint32_ptr = n.value();
+        EXPECT_EQ(32,vuint32_ptr[0]);
+        EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[1]);
 
-//     n.generate("{\"dtype\":\"uint64\",\"length\": 2, \"value\": [64,64]}");
-//     uint64 *vuint64_ptr = n.value();
-//     EXPECT_EQ(64,vuint64_ptr[0]);
-//     EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[1]);
+        n.generate("{\"dtype\":\"uint64\",\"length\": 2, \"value\": [64,64]}");
+        uint64 *vuint64_ptr = n.value();
+        EXPECT_EQ(64,vuint64_ptr[0]);
+        EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[1]);
 
-//     // floating point
-//     n.generate("{\"dtype\":\"float32\",\"length\": 2, \"value\": [32.0,32.0]}");
-//     float32 *vfloat32_ptr = n.value();
-//     EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
-//     EXPECT_EQ(vfloat32_ptr[0],vfloat32_ptr[1]);
+        // floating point
+        n.generate("{\"dtype\":\"float32\",\"length\": 2, \"value\": [32.0,32.0]}");
+        float32 *vfloat32_ptr = n.value();
+        EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
+        EXPECT_EQ(vfloat32_ptr[0],vfloat32_ptr[1]);
 
-//     n.generate("{\"dtype\":\"float64\",\"length\": 2, \"value\": [64.0,64.0]}");
-//     float64 *vfloat64_ptr = n.value();
-//     EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
-//     EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
+        n.generate("{\"dtype\":\"float64\",\"length\": 2, \"value\": [64.0,64.0]}");
+        float64 *vfloat64_ptr = n.value();
+        EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
+        EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
 
-    
-    
-//     n.generate("{\"dtype\":\"char8_str\",\"value\": \"mystring\"}");
-    
-//     EXPECT_EQ("mystring",n.as_string());
+        
+        
+        n.generate("{\"dtype\":\"char8_str\",\"value\": \"mystring\"}");
+        
+        EXPECT_EQ("mystring",n.as_string());
+    }
+    // YAML
+    {
+        Node n;
+        // signed ints
+        n.generate("dtype: int8\nlength: 2\nvalue:\n- -8\n- -8", "conduit_yaml");
+        int8 *vint8_ptr = n.value();
+        EXPECT_EQ(-8,vint8_ptr[0]);
+        EXPECT_EQ(vint8_ptr[0],vint8_ptr[1]);
 
-// }
+        // n.generate("dtype: int16\nlength: 2\nvalue:\n- -16\n- -16", "conduit_yaml");
+        // int16 *vint16_ptr = n.value();
+        // EXPECT_EQ(-16,vint16_ptr[0]);
+        // EXPECT_EQ(vint16_ptr[0],vint16_ptr[1]);
+
+        // n.generate("dtype: int32\nlength: 2\nvalue:\n- -32\n- -32", "conduit_yaml");
+        // int32 *vint32_ptr = n.value();
+        // EXPECT_EQ(-32,vint32_ptr[0]);
+        // EXPECT_EQ(vint32_ptr[0],vint32_ptr[1]);
+
+        // n.generate("dtype: int64\nlength: 2\nvalue:\n- -64\n- -64", "conduit_yaml");
+        // int64 *vint64_ptr = n.value();
+        // EXPECT_EQ(-64,vint64_ptr[0]);
+        // EXPECT_EQ(vint64_ptr[0],vint64_ptr[1]);
+        
+        // // unsigned ints
+        // n.generate("dtype: uint8\nlength: 2\nvalue:\n- 8\n- 8", "conduit_yaml");
+        // uint8 *vuint8_ptr = n.value();
+        // EXPECT_EQ(8,vuint8_ptr[0]);
+        // EXPECT_EQ(vuint8_ptr[0],vuint8_ptr[1]);
+
+        // n.generate("dtype: uint16\nlength: 2\nvalue:\n- 16\n- 16", "conduit_yaml");
+        // uint16 *vuint16_ptr = n.value();
+        // EXPECT_EQ(16,vuint16_ptr[0]);
+        // EXPECT_EQ(vuint16_ptr[0],vuint16_ptr[1]);
+
+        // n.generate("dtype: uint32\nlength: 2\nvalue:\n- 32\n- 32", "conduit_yaml");
+        // uint32 *vuint32_ptr = n.value();
+        // EXPECT_EQ(32,vuint32_ptr[0]);
+        // EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[1]);
+
+        // n.generate("dtype: uint64\nlength: 2\nvalue:\n- 64\n- 64", "conduit_yaml");
+        // uint64 *vuint64_ptr = n.value();
+        // EXPECT_EQ(64,vuint64_ptr[0]);
+        // EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[1]);
+
+        // // floating point
+        // n.generate("dtype: float32\nlength: 2\nvalue:\n- 32.0\n- 32.0]", "conduit_yaml");
+        // float32 *vfloat32_ptr = n.value();
+        // EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
+        // EXPECT_EQ(vfloat32_ptr[0],vfloat32_ptr[1]);
+
+        // n.generate("dtype: float64\nlength: 2\nvalue:\n- 64.0\n- 64.0]", "conduit_yaml");
+        // float64 *vfloat64_ptr = n.value();
+        // EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
+        // EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
+
+        
+        
+        // n.generate("dtype: char8_str\nvalue: \"mystring\"", "conduit_yaml");
+        
+        // EXPECT_EQ("mystring",n.as_string());
+    }
+
+}
 
 // //-----------------------------------------------------------------------------
 // TEST(conduit_generator, gen_endianness)

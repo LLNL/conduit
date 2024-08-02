@@ -2525,6 +2525,7 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
 {
     if (check_yaml_is_scalar_node(yaml_node))
     {
+        std::cout << "scalar node" << std::endl;
         std::string dtype_name(get_yaml_string(yaml_node));
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
@@ -2537,10 +2538,13 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
     }
     else if (check_yaml_is_mapping_node(yaml_node))
     {
+        std::cout << "mapping node" << std::endl;
         yaml_node_t* dtype_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
         CONDUIT_ASSERT(dtype_node && check_yaml_is_scalar_node(dtype_node), 
                        "YAML Generator error:\n'dtype' must be a YAML string.")
         const std::string dtype_name(get_yaml_string(dtype_node));
+
+        std::cout << "dtype_name " << dtype_name << std::endl;
 
         index_t length = 0;
 
@@ -2624,6 +2628,8 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                       stride,
                       ele_size,
                       endianness);
+
+        std::cout << "dtype_res.name() " << dtype_res.name() << std::endl;
     }
     else
     {
@@ -2741,6 +2747,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             }
             else
             {
+                std::cout << "BUG CONTINUES DOWN FROM HERE" << std::endl;
+
                 // handle leaf node with explicit props
                 DataType src_dtype;
                 parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, src_dtype);
@@ -2912,8 +2920,11 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
     else if (check_yaml_is_scalar_node(yaml_node))
     {
         DataType dtype;
+        std::cout << "help me 1" << std::endl;
         parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+        std::cout << "help me 2" << std::endl;
         schema->set(dtype);
+        std::cout << "help me 3" << std::endl;
 
         if (data)
         {
@@ -2926,6 +2937,10 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             // we need to dynamically alloc
             node->set(dtype);  // causes an init
         }
+        std::cout << "help me 4" << std::endl;
+
+        std::cout << "schema scalar print" << std::endl;
+        schema->print();
     }
     else
     {
@@ -2934,8 +2949,9 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                       << " Expected: YAML Object, Array, or String");
     }
 
+    std::cout << "im printing" << std::endl;
     schema->print();
-    // node->print();
+    node->print();
 }
 
 
