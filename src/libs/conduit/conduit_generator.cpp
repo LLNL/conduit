@@ -2278,6 +2278,11 @@ Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
                                                 const yaml_node_t *yaml_node,
                                                 Node &res)
 {
+// TODO I assume (?) there needs to be cases for int8, int16,int32, etc
+    // so we need to support those like we do for json
+    // check out the json version of this function for inspiration
+
+
     int64_array res_vals = res.value();
     for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
     {
@@ -2756,17 +2761,24 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 DataType des_dtype;
                 src_dtype.compact_to(des_dtype);
 
+                std::cout << "des_dtype.name() " << des_dtype.name() << std::endl;
+
                 // check for explicit address
                 const yaml_node_t* address_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "address");
                 if (address_value)
                 {
+                    std::cout << "addr" << std::endl;
                     void *data_ptr = parse_inline_address(address_value);
                     node->set_external(src_dtype, data_ptr);
                 }
                 else
                 {
+                    std::cout << "no addr" << std::endl;
+
                     if (data)
                     {
+                        std::cout << "yes data" << std::endl;
+
                         uint8 *src_data_ptr = ((uint8*)data) + src_dtype.offset();
                         // node is already linked to the schema pointer
                         // we need to dynamically alloc, use compact dtype
@@ -2781,15 +2793,21 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                     }
                     else
                     {
+                        std::cout << "no data" << std::endl;
+
                         // node is already linked to the schema pointer
                         // we need to dynamically alloc, use compact dtype
                         node->set(des_dtype); // causes an init
+
+                        std::cout << "node print" << std::endl;
+                        node->print();
                     }
 
                     // check for inline yaml values
                     const yaml_node_t *value_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "value");
                     if (value_value)
                     {
+                        std::cout << "inline va;lue" << std::endl;
                         parse_inline_value(yaml_doc, value_value, *node);
                     }
                 }
