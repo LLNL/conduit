@@ -566,12 +566,11 @@ TEST(conduit_generator, gen_array_with_data)
         EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
         EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
 
-        
-        
         n.generate("{\"dtype\":\"char8_str\",\"value\": \"mystring\"}");
         
         EXPECT_EQ("mystring",n.as_string());
     }
+    
     // YAML
     {
         Node n;
@@ -617,22 +616,20 @@ TEST(conduit_generator, gen_array_with_data)
         EXPECT_EQ(64,vuint64_ptr[0]);
         EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[1]);
 
-        // // floating point
-        // n.generate("dtype: float32\nlength: 2\nvalue:\n- 32.0\n- 32.0]", "conduit_yaml");
-        // float32 *vfloat32_ptr = n.value();
-        // EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
-        // EXPECT_EQ(vfloat32_ptr[0],vfloat32_ptr[1]);
+        // floating point
+        n.generate("dtype: float32\nlength: 2\nvalue:\n- 32.0\n- 32.0", "conduit_yaml");
+        float32 *vfloat32_ptr = n.value();
+        EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
+        EXPECT_EQ(vfloat32_ptr[0],vfloat32_ptr[1]);
 
-        // n.generate("dtype: float64\nlength: 2\nvalue:\n- 64.0\n- 64.0]", "conduit_yaml");
-        // float64 *vfloat64_ptr = n.value();
-        // EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
-        // EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
-
+        n.generate("dtype: float64\nlength: 2\nvalue:\n- 64.0\n- 64.0", "conduit_yaml");
+        float64 *vfloat64_ptr = n.value();
+        EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
+        EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
         
+        n.generate("dtype: char8_str\nvalue: \"mystring\"", "conduit_yaml");
         
-        // n.generate("dtype: char8_str\nvalue: \"mystring\"", "conduit_yaml");
-        
-        // EXPECT_EQ("mystring",n.as_string());
+        EXPECT_EQ("mystring",n.as_string());
     }
 
 }
