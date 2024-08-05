@@ -2234,7 +2234,8 @@ Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
 {
     static_assert(std::is_same<T, int64>::value ||
                   std::is_same<T, uint64>::value ||
-                  std::is_same<T, float64>::value);
+                  std::is_same<T, float64>::value,
+                  "Bad type provided.");
 
     res.resize(seq_size, 0);
     for (index_t cld_idx = 0; cld_idx < seq_size; cld_idx ++)
@@ -2268,7 +2269,8 @@ Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
 {
     static_assert(std::is_same<T, int64>::value ||
                   std::is_same<T, uint64>::value ||
-                  std::is_same<T, float64>::value);
+                  std::is_same<T, float64>::value,
+                  "Bad type provided.");
 
     for (index_t cld_idx = 0; cld_idx < seq_size; cld_idx ++)
     {
