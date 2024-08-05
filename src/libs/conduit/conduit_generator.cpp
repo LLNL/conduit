@@ -333,31 +333,30 @@ public:
                                                           const yaml_node_t *yaml_node,
                                                           index_t &seq_size);
 
-    // main entry point for parsing yaml
+    static void    walk_yaml_schema(Schema *schema,
+                                    const char *yaml_txt,
+                                    index_t curr_offset);
+
+    static void    walk_yaml_schema(Schema *schema,
+                                    yaml_document_t *yaml_doc,
+                                    const yaml_node_t *yaml_node,
+                                    index_t curr_offset);
+
     // if data pointer is provided, data is copied into dest node
     static void    walk_yaml_schema(Node   *node,
                                     Schema *schema,
                                     void   *data,
                                     const char *yaml_txt,
-                                    index_t curr_offset);
+                                    index_t curr_offset,
+                                    const bool external = false);
 
-    static void    walk_yaml_schema(Schema *schema,
-                                    const char *yaml_txt,
-                                    index_t curr_offset);
-
-
-    // workhorse for parsing a yaml tree
     static void    walk_yaml_schema(Node   *node,
                                     Schema *schema,
                                     void   *data,
                                     yaml_document_t *yaml_doc,
                                     const yaml_node_t *yaml_node,
-                                    index_t curr_offset);
-
-    static void    walk_yaml_schema(Schema *schema,
-                                    yaml_document_t *yaml_doc,
-                                    const yaml_node_t *yaml_node,
-                                    index_t curr_offset);
+                                    index_t curr_offset,
+                                    const bool external = false);
 
     // main entry point for parsing pure yaml
     static void    walk_pure_yaml_schema(Node  *node,
@@ -1560,6 +1559,8 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
 }
 
 //---------------------------------------------------------------------------//
+// TODO_LATER can this be creatively combined with walk_json_schema? The functions
+// are nearly identical
 void 
 Generator::Parser::JSON::walk_json_schema_external(Node   *node,
                                                    Schema *schema,
@@ -2574,7 +2575,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                           Schema *schema,
                                           void *data,
                                           const char *yaml_txt,
-                                          index_t curr_offset)
+                                          index_t curr_offset,
+                                          const bool external)
 {
     YAMLParserWrapper parser;
     parser.parse(yaml_txt);
@@ -2593,7 +2595,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                      data,
                      yaml_doc,
                      yaml_node,
-                     curr_offset);
+                     curr_offset,
+                     external);
 
     // YAMLParserWrapper cleans up for us
 }
@@ -2606,7 +2609,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                           void *data,
                                           yaml_document_t *yaml_doc,
                                           const yaml_node_t *yaml_node,
-                                          index_t curr_offset)
+                                          index_t curr_offset,
+                                          const bool external)
 {
     // object cases
     if (check_yaml_is_mapping_node(yaml_node))
@@ -2665,7 +2669,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                      data,
                                      yaml_doc,
                                      dt_value,
-                                     curr_offset);
+                                     curr_offset,
+                                     external);
                     // auto offset only makes sense when we have data
                     if (data)
                     {
@@ -2693,17 +2698,26 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 {
                     if (data)
                     {
-                        uint8 *src_data_ptr = ((uint8*)data) + src_dtype.offset();
-                        // node is already linked to the schema pointer
-                        // we need to dynamically alloc, use compact dtype
-                        node->set(des_dtype); // causes an init
-                        // copy bytes from src data to node's memory
-                        utils::conduit_memcpy_strided_elements(node->data_ptr(),               // dest data
-                                                               des_dtype.number_of_elements(), // num ele
-                                                               des_dtype.element_bytes(),      // ele bytes
-                                                               des_dtype.stride(),             // dest stride
-                                                               src_data_ptr,                   // src data
-                                                               src_dtype.stride());            // src stride
+                        if (external) // handle conduit_yaml_external case
+                        {
+                            // node is already linked to the schema pointer
+                            schema->set(des_dtype);
+                            node->set_data_ptr(data);
+                        }
+                        else
+                        {
+                            uint8 *src_data_ptr = ((uint8*)data) + src_dtype.offset();
+                            // node is already linked to the schema pointer
+                            // we need to dynamically alloc, use compact dtype
+                            node->set(des_dtype); // causes an init
+                            // copy bytes from src data to node's memory
+                            utils::conduit_memcpy_strided_elements(node->data_ptr(),               // dest data
+                                                                   des_dtype.number_of_elements(), // num ele
+                                                                   des_dtype.element_bytes(),      // ele bytes
+                                                                   des_dtype.stride(),             // dest stride
+                                                                   src_data_ptr,                   // src data
+                                                                   src_dtype.stride());            // src stride
+                        }
                     }
                     else
                     {
@@ -2762,7 +2776,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                                  data,
                                  yaml_doc,
                                  yaml_child,
-                                 curr_offset);
+                                 curr_offset,
+                                 external);
 
                 // auto offset only makes sense when we have data
                 if (data)
@@ -2793,7 +2808,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                              data,
                              yaml_doc,
                              yaml_child,
-                             curr_offset);
+                             curr_offset,
+                             external);
             // auto offset only makes sense when we have data
             if (data)
             {
@@ -3380,11 +3396,13 @@ Generator::walk(Node &node) const
         else if( m_protocol == "conduit_yaml" || m_protocol == "conduit_yaml_external")
         {
             index_t curr_offset = 0;
+            const bool external = false;
             Parser::YAML::walk_yaml_schema(&node,
                                            node.schema_ptr(),
                                            m_data,
                                            m_schema.c_str(),
-                                           curr_offset);
+                                           curr_offset,
+                                           external);
         }
         else
         {
@@ -3462,6 +3480,23 @@ Generator::walk_external(Node &node) const
                                                     m_data,
                                                     document,
                                                     curr_offset);
+        }
+        // TODO
+        // else if( m_protocol == "conduit_base64_yaml")
+        // {
+        //     Parser::YAML::parse_base64(&node,
+        //                                document);
+        // }
+        else if( m_protocol == "conduit_yaml" || m_protocol == "conduit_yaml_external")
+        {
+            index_t curr_offset = 0;
+            const bool external = true;
+            Parser::YAML::walk_yaml_schema(&node,
+                                           node.schema_ptr(),
+                                           m_data,
+                                           m_schema.c_str(),
+                                           curr_offset,
+                                           external);
         }
         else
         {

@@ -634,84 +634,165 @@ TEST(conduit_generator, gen_array_with_data)
 
 }
 
-// //-----------------------------------------------------------------------------
-// TEST(conduit_generator, gen_endianness)
-// {
-//     union{uint8  vbytes[4]; uint32 vuint;} data;
-
-//     if(Endianness::machine_default() == Endianness::BIG_ID)
-//     {
-//         data.vbytes[0] =  0xff;
-//         data.vbytes[1] =  0xff;
-//         data.vbytes[2] =  0xff;
-//         data.vbytes[3] =  0xfe;
-        
-      
-//         EXPECT_EQ(0xfffffffe,data.vuint);
-        
-//         CONDUIT_INFO("Gen as Big Endian (Machine Default)");
-//         Generator g1("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
-//                      "conduit_json",
-//                      &data.vbytes[0]);
-      
-//         Node n;
-//         n.generate_external(g1);
-        
-//         EXPECT_EQ(0xfffffffe,n.as_uint32());
-        
-        
-//         data.vbytes[0] =  0xfe;
-//         data.vbytes[1] =  0xff;
-//         data.vbytes[2] =  0xff;
-//         data.vbytes[3] =  0xff;
-        
-//         CONDUIT_INFO("Gen as Little Endian");
-//         Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
-//                      "conduit_json",
-//                      &data.vbytes[0]);
-        
-//         n.generate_external(g2);
-//         n.endian_swap_to_machine_default();
-//         EXPECT_EQ(0xfffffffe,n.as_uint32());
-        
-//     }
-//     else
-//     {
-//         data.vbytes[0] =  0xfe;
-//         data.vbytes[1] =  0xff;
-//         data.vbytes[2] =  0xff;
-//         data.vbytes[3] =  0xff;
-      
-//         EXPECT_EQ(0xfffffffe,data.vuint);
-        
-//         CONDUIT_INFO("Gen as Little Endian (Machine Default)");
-//         Generator g("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
-//                     "conduit_json",
-//                     &data.vbytes[0]);
-      
-//         Node n;
-//         n.generate_external(g);
-//         n.print_detailed();
-                
-//         EXPECT_EQ(0xfffffffe,n.as_uint32());
-
-//         data.vbytes[0] =  0xff;
-//         data.vbytes[1] =  0xff;
-//         data.vbytes[2] =  0xff;
-//         data.vbytes[3] =  0xfe;
+//-----------------------------------------------------------------------------
+TEST(conduit_generator, gen_endianness)
+{
+    // JSON
+    {
+        union{uint8  vbytes[4]; uint32 vuint;} data;
     
-//         Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
-//                      "conduit_json",
-//                      &data.vbytes[0]);
+        if(Endianness::machine_default() == Endianness::BIG_ID)
+        {
+            data.vbytes[0] =  0xff;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xfe;
+            
+          
+            EXPECT_EQ(0xfffffffe,data.vuint);
+            
+            CONDUIT_INFO("Gen as Big Endian (Machine Default)");
+            Generator g1("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
+                         "conduit_json",
+                         &data.vbytes[0]);
+          
+            Node n;
+            n.generate_external(g1);
+            
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+            
+            
+            data.vbytes[0] =  0xfe;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xff;
+            
+            CONDUIT_INFO("Gen as Little Endian");
+            Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
+                         "conduit_json",
+                         &data.vbytes[0]);
+            
+            n.generate_external(g2);
+            n.endian_swap_to_machine_default();
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+            
+        }
+        else
+        {
+            data.vbytes[0] =  0xfe;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xff;
+          
+            EXPECT_EQ(0xfffffffe,data.vuint);
+            
+            CONDUIT_INFO("Gen as Little Endian (Machine Default)");
+            Generator g("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"little\"}",
+                        "conduit_json",
+                        &data.vbytes[0]);
+          
+            Node n;
+            n.generate_external(g);
+            n.print_detailed();
+                    
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+    
+            data.vbytes[0] =  0xff;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xfe;
         
-//         CONDUIT_INFO("Gen as Big Endian");
-//         n.generate_external(g2);
-//         n.print_detailed();
-//         n.endian_swap_to_machine_default();
-//         EXPECT_EQ(0xfffffffe,n.as_uint32());
+            Generator g2("{\"dtype\":\"uint32\",\"length\": 1, \"endianness\": \"big\"}",
+                         "conduit_json",
+                         &data.vbytes[0]);
+            
+            CONDUIT_INFO("Gen as Big Endian");
+            n.generate_external(g2);
+            n.print_detailed();
+            n.endian_swap_to_machine_default();
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+            
+        }
+    }
+
+    // YAML
+    {
+        union{uint8  vbytes[4]; uint32 vuint;} data;
+    
+        if(Endianness::machine_default() == Endianness::BIG_ID)
+        {
+            data.vbytes[0] =  0xff;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xfe;
+            
+          
+            EXPECT_EQ(0xfffffffe,data.vuint);
+            
+            CONDUIT_INFO("Gen as Big Endian (Machine Default)");
+            Generator g1("dtype: uint32\nlength: 1\nendianness: big",
+                         "conduit_yaml",
+                         &data.vbytes[0]);
+          
+            Node n;
+            n.generate_external(g1);
+            
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+            
+            
+            data.vbytes[0] =  0xfe;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xff;
+            
+            CONDUIT_INFO("Gen as Little Endian");
+            Generator g2("dtype: uint32\nlength: 1\nendianness: little",
+                         "conduit_yaml",
+                         &data.vbytes[0]);
+            
+            n.generate_external(g2);
+            n.endian_swap_to_machine_default();
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+            
+        }
+        else
+        {
+            data.vbytes[0] =  0xfe;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xff;
+          
+            EXPECT_EQ(0xfffffffe,data.vuint);
+            
+            CONDUIT_INFO("Gen as Little Endian (Machine Default)");
+            Generator g("dtype: uint32\nlength: 1\nendianness: little",
+                        "conduit_yaml",
+                        &data.vbytes[0]);
+          
+            Node n;
+            n.generate_external(g);
+            n.print_detailed();
+                    
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+    
+            data.vbytes[0] =  0xff;
+            data.vbytes[1] =  0xff;
+            data.vbytes[2] =  0xff;
+            data.vbytes[3] =  0xfe;
         
-//     }
-// }
+            Generator g2("dtype: uint32\nlength: 1\nendianness: big",
+                         "conduit_yaml",
+                         &data.vbytes[0]);
+            
+            CONDUIT_INFO("Gen as Big Endian");
+            n.generate_external(g2);
+            n.print_detailed();
+            n.endian_swap_to_machine_default();
+            EXPECT_EQ(0xfffffffe,n.as_uint32());
+            
+        }
+    }
+}
 
 
 // //-----------------------------------------------------------------------------
