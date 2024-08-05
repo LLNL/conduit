@@ -575,54 +575,54 @@ TEST(conduit_generator, gen_array_with_data)
     {
         Node n;
         // signed ints
-        n.generate("dtype: int8\nlength: 2\nvalue:\n- -8\n- -8", "conduit_yaml");
+        n.generate("dtype: int8\nlength: 2\nvalue: [-8, -8]", "conduit_yaml");
         int8 *vint8_ptr = n.value();
         EXPECT_EQ(-8,vint8_ptr[0]);
         EXPECT_EQ(vint8_ptr[0],vint8_ptr[1]);
 
-        n.generate("dtype: int16\nlength: 2\nvalue:\n- -16\n- -16", "conduit_yaml");
+        n.generate("dtype: int16\nlength: 2\nvalue: [-16, -16]", "conduit_yaml");
         int16 *vint16_ptr = n.value();
         EXPECT_EQ(-16,vint16_ptr[0]);
         EXPECT_EQ(vint16_ptr[0],vint16_ptr[1]);
 
-        n.generate("dtype: int32\nlength: 2\nvalue:\n- -32\n- -32", "conduit_yaml");
+        n.generate("dtype: int32\nlength: 2\nvalue: [-32, -32]", "conduit_yaml");
         int32 *vint32_ptr = n.value();
         EXPECT_EQ(-32,vint32_ptr[0]);
         EXPECT_EQ(vint32_ptr[0],vint32_ptr[1]);
 
-        n.generate("dtype: int64\nlength: 2\nvalue:\n- -64\n- -64", "conduit_yaml");
+        n.generate("dtype: int64\nlength: 2\nvalue: [-64, -64]", "conduit_yaml");
         int64 *vint64_ptr = n.value();
         EXPECT_EQ(-64,vint64_ptr[0]);
         EXPECT_EQ(vint64_ptr[0],vint64_ptr[1]);
         
         // unsigned ints
-        n.generate("dtype: uint8\nlength: 2\nvalue:\n- 8\n- 8", "conduit_yaml");
+        n.generate("dtype: uint8\nlength: 2\nvalue: [8, 8]", "conduit_yaml");
         uint8 *vuint8_ptr = n.value();
         EXPECT_EQ(8,vuint8_ptr[0]);
         EXPECT_EQ(vuint8_ptr[0],vuint8_ptr[1]);
 
-        n.generate("dtype: uint16\nlength: 2\nvalue:\n- 16\n- 16", "conduit_yaml");
+        n.generate("dtype: uint16\nlength: 2\nvalue: [16, 16]", "conduit_yaml");
         uint16 *vuint16_ptr = n.value();
         EXPECT_EQ(16,vuint16_ptr[0]);
         EXPECT_EQ(vuint16_ptr[0],vuint16_ptr[1]);
 
-        n.generate("dtype: uint32\nlength: 2\nvalue:\n- 32\n- 32", "conduit_yaml");
+        n.generate("dtype: uint32\nlength: 2\nvalue: [32, 32]", "conduit_yaml");
         uint32 *vuint32_ptr = n.value();
         EXPECT_EQ(32,vuint32_ptr[0]);
         EXPECT_EQ(vuint32_ptr[0],vuint32_ptr[1]);
 
-        n.generate("dtype: uint64\nlength: 2\nvalue:\n- 64\n- 64", "conduit_yaml");
+        n.generate("dtype: uint64\nlength: 2\nvalue: [64, 64]", "conduit_yaml");
         uint64 *vuint64_ptr = n.value();
         EXPECT_EQ(64,vuint64_ptr[0]);
         EXPECT_EQ(vuint64_ptr[0],vuint64_ptr[1]);
 
         // floating point
-        n.generate("dtype: float32\nlength: 2\nvalue:\n- 32.0\n- 32.0", "conduit_yaml");
+        n.generate("dtype: float32\nlength: 2\nvalue: [32.0, 32.0]", "conduit_yaml");
         float32 *vfloat32_ptr = n.value();
         EXPECT_NEAR(32,vfloat32_ptr[0],1e-10);
         EXPECT_EQ(vfloat32_ptr[0],vfloat32_ptr[1]);
 
-        n.generate("dtype: float64\nlength: 2\nvalue:\n- 64.0\n- 64.0", "conduit_yaml");
+        n.generate("dtype: float64\nlength: 2\nvalue: [64.0, 64.0]", "conduit_yaml");
         float64 *vfloat64_ptr = n.value();
         EXPECT_NEAR(64,vfloat64_ptr[0],1e-10);
         EXPECT_EQ(vfloat64_ptr[0],vfloat64_ptr[1]);
