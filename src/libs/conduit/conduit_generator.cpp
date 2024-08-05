@@ -483,7 +483,7 @@ Generator::Parser::JSON::json_to_numeric_dtype(const conduit_rapidjson::Value &j
     index_t res = DataType::EMPTY_ID; 
     if(jvalue.IsNumber())
     {
-        // TODO_LATER: We could have better logic for dealing with int vs uint
+        // TODO: We could have better logic for dealing with int vs uint
         if(jvalue.IsUint64() || 
            jvalue.IsInt64()  || 
            jvalue.IsUint()   ||
@@ -575,7 +575,7 @@ void
 Generator::Parser::JSON::parse_json_int64_array(const conduit_rapidjson::Value &jvalue,
                                                 Node &node)
 {
-    // TODO_LATER: we can make this more efficient 
+    // TODO: we can make this more efficient 
     std::vector<int64> vals;
     parse_json_int64_array(jvalue,vals);
     
@@ -651,7 +651,7 @@ void
 Generator::Parser::JSON::parse_json_uint64_array(const conduit_rapidjson::Value &jvalue,
                                                  Node &node)
 {
-    // TODO_LATER: we can make this more efficient 
+    // TODO: we can make this more efficient 
     std::vector<uint64> vals;
     parse_json_uint64_array(jvalue,vals);
     
@@ -754,7 +754,7 @@ void
 Generator::Parser::JSON::parse_json_float64_array(const conduit_rapidjson::Value &jvalue,
                                                   Node &node)
 {
-    // TODO_LATER: we can make this more efficient 
+    // TODO: we can make this more efficient 
     std::vector<float64> vals;
     parse_json_float64_array(jvalue,vals);
     
@@ -856,7 +856,7 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
             }
         }
         //
-        // TODO_LATER DEPRECATE and replace with the lambda up above
+        // TODO DEPRECATE and replace with the lambda up above
         //
         // length is the old schema style, we should deprecate this path
         else if (jvalue.HasMember("length"))
@@ -1058,7 +1058,7 @@ Generator::Parser::JSON::parse_inline_address(const conduit_rapidjson::Value &jv
     }
     // else if(jvalue.IsNumber())
     // {
-    //     // TODO_LATER: FUTURE? ...
+    //     // TODO: FUTURE? ...
     // }
     else
     {
@@ -1159,7 +1159,7 @@ Generator::Parser::JSON::walk_json_schema(Schema *schema,
                 }
                 // we will create `length' # of objects of obj des by dt_value
                  
-                // TODO_LATER: we only need to parse this once, not leng # of times
+                // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for (int i = 0; i < length; i ++)
                 {
@@ -1397,7 +1397,7 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                 }
                 // we will create `length' # of objects of obj des by dt_value
                  
-                // TODO_LATER: we only need to parse this once, not leng # of times
+                // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for(index_t i=0;i< length;i++)
                 {
@@ -1559,7 +1559,7 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
 }
 
 //---------------------------------------------------------------------------//
-// TODO_LATER can this be creatively combined with walk_json_schema? The functions
+// TODO can this be creatively combined with walk_json_schema? The functions
 // are nearly identical
 void 
 Generator::Parser::JSON::walk_json_schema_external(Node   *node,
@@ -1602,7 +1602,7 @@ Generator::Parser::JSON::walk_json_schema_external(Node   *node,
                 }
                 // we will create `length' # of objects of obj des by dt_value
                  
-                // TODO_LATER: we only need to parse this once, not leng # of times
+                // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for(index_t i=0;i< length;i++)
                 {
@@ -1642,6 +1642,7 @@ Generator::Parser::JSON::walk_json_schema_external(Node   *node,
                     {
                         // node is already linked to the schema pointer
                         schema->set(dtype);
+                        schema->print();
                         node->set_data_ptr(data);
                     }
                     else
@@ -2110,7 +2111,7 @@ Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
         {
             if (node.dtype().is_unsigned_integer())
             {
-                // TODO_LATER: we can make this more efficient 
+                // TODO: we can make this more efficient 
                 std::vector<uint64> vals;
                 parse_yaml_array<uint64>(yaml_doc, yaml_node, vals, seq_size);
                 switch (node.dtype().id())
@@ -2136,7 +2137,7 @@ Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
             }
             else
             {
-                // TODO_LATER: we can make this more efficient 
+                // TODO: we can make this more efficient 
                 std::vector<int64> vals;
                 parse_yaml_array<int64>(yaml_doc, yaml_node, vals, seq_size);
                 switch (node.dtype().id())
@@ -2163,7 +2164,7 @@ Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
         }
         else if(hval_type == DataType::FLOAT64_ID)
         {
-            // TODO_LATER: we can make this more efficient 
+            // TODO: we can make this more efficient 
             std::vector<float64> vals;
             parse_yaml_array<float64>(yaml_doc, yaml_node, vals, seq_size);
             switch (node.dtype().id())
@@ -2213,7 +2214,7 @@ Generator::Parser::YAML::parse_inline_address(const yaml_node_t *yaml_node)
     }
     // else if(jvalue.IsNumber())
     // {
-    //     // TODO_LATER: FUTURE? ...
+    //     // TODO: FUTURE? ...
     // }
     else
     {
@@ -2492,7 +2493,35 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
             }
         };
 
-        extract_uint64_member("number_of_elements", length);
+        const yaml_node_t* num_ele_node = fetch_yaml_node_from_object_by_name(yaml_doc,
+                                                                              yaml_node,
+                                                                              "number_of_elements");
+        if (num_ele_node)
+        {
+            CONDUIT_ASSERT(check_yaml_is_number(num_ele_node),
+                           "YAML Generator error:\n"
+                           << "'number_of_elements' must be a number ");
+            length = static_cast<uint64>(get_yaml_unsigned_long(num_ele_node));
+        }
+        //
+        // TODO DEPRECATE and replace with the lambda up above
+        // I don't think that here and in the JSON equivalent are the only
+        // two places where length needs to be deprecated.
+        //
+        // length is the old schema style, we should deprecate this path
+        else
+        {
+            const yaml_node_t* length_node = fetch_yaml_node_from_object_by_name(yaml_doc,
+                                                                                 yaml_node,
+                                                                                 "length");
+            if (length_node)
+            {
+                CONDUIT_ASSERT(check_yaml_is_number(length_node),
+                               "YAML Generator error:\n"
+                               << "'length' must be a number ");
+                length = static_cast<uint64>(get_yaml_unsigned_long(length_node));
+            }
+        }
 
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
@@ -2654,7 +2683,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 }
                 // we will create `length' # of objects of obj des by dt_value
 
-                // TODO_LATER: we only need to parse this once, not leng # of times
+                // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for (index_t i = 0; i < length; i++)
                 {
@@ -2702,6 +2731,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                         {
                             // node is already linked to the schema pointer
                             schema->set(des_dtype);
+                            schema->print();
                             node->set_data_ptr(data);
                         }
                         else
@@ -2913,7 +2943,7 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
                 }
                 // we will create `length' # of objects of obj des by dt_value
 
-                // TODO_LATER: we only need to parse this once, not leng # of times
+                // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
                 for (int i = 0; i < length; i ++)
                 {
@@ -3323,8 +3353,6 @@ Generator::walk(Schema &schema) const
 void 
 Generator::walk(Node &node) const
 {
-    // TODO add the same stuff to walk_external
-
     // try catch b/c:
     // if something goes wrong we will clear the node and re-throw
     // if exception is caught downstream
