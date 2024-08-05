@@ -456,7 +456,7 @@ index_t
 Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
 {
     index_t dtype_id = DataType::name_to_id(dtype_name);
-    if(dtype_id == DataType::EMPTY_ID)
+    if (dtype_id == DataType::EMPTY_ID)
     {
         // also try native type names
         dtype_id = DataType::c_type_name_to_id(dtype_name);
@@ -2010,20 +2010,26 @@ Generator::Parser::YAML::check_yaml_is_scalar_node(const yaml_node_t *yaml_node)
 }
 
 //---------------------------------------------------------------------------//
+bool 
+Generator::Parser::YAML::check_yaml_is_sequence(const yaml_node_t *yaml_node)
+{
+    return yaml_node->type == YAML_SEQUENCE_NODE;
+}
+
+//---------------------------------------------------------------------------//
+bool 
+Generator::Parser::YAML::check_yaml_is_mapping_node(const yaml_node_t *yaml_node)
+{
+    return yaml_node->type == YAML_MAPPING_NODE;
+}
+
+//---------------------------------------------------------------------------//
 const char *
 Generator::Parser::YAML::get_yaml_string(const yaml_node_t *yaml_node)
 {
     const char *yaml_value_str = (const char*) yaml_node->data.scalar.value;
     CONDUIT_ASSERT(yaml_value_str, "YAML Generator error:\nInvalid yaml scalar value.");
     return yaml_value_str;
-}
-
-//---------------------------------------------------------------------------//
-bool 
-Generator::Parser::YAML::check_yaml_is_sequence(const yaml_node_t *yaml_node)
-{
-    // TODO check that I am using my helper everywhere
-    return yaml_node->type == YAML_SEQUENCE_NODE;
 }
 
 //---------------------------------------------------------------------------//
@@ -2040,13 +2046,6 @@ Generator::Parser::YAML::get_yaml_num_members(const yaml_node_t *yaml_node)
 {
     // assumes yaml_node->type == YAML_MAPPING_NODE
     return yaml_node->data.mapping.pairs.top - yaml_node->data.mapping.pairs.start;
-}
-
-//---------------------------------------------------------------------------//
-bool 
-Generator::Parser::YAML::check_yaml_is_mapping_node(const yaml_node_t *yaml_node)
-{
-    return yaml_node->type == YAML_MAPPING_NODE;
 }
 
 //---------------------------------------------------------------------------//
@@ -2231,6 +2230,7 @@ Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
                                           std::vector<T> &res,
                                           const int seq_size)
 {
+    // TODO test this out
     static_assert(std::is_same<T, int64>::value ||
                   std::is_same<T, uint64>::value ||
                   std::is_same<T, float64>::value, "Type not allowed");
@@ -2241,13 +2241,7 @@ Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
         yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
         CONDUIT_ASSERT(yaml_child && check_yaml_is_scalar_node(yaml_child), 
                        "YAML Generator error:\nInvalid array value.");
-
-        // check type of string contents
-        const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
-
-        CONDUIT_ASSERT(yaml_value_str, 
-                       "YAML Generator error:\nInvalid array value.");
-
+        const char *yaml_value_str = get_yaml_string(yaml_child);
         if (std::is_same<T, int64>::value)
         {
             res[cld_idx] = (T) string_to_long(yaml_value_str);
@@ -2280,13 +2274,7 @@ Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
         yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
         CONDUIT_ASSERT(yaml_child && check_yaml_is_scalar_node(yaml_child), 
                        "YAML Generator error:\nInvalid array value.");
-
-        // check type of string contents
-        const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
-
-        CONDUIT_ASSERT(yaml_value_str, 
-                       "YAML Generator error:\nInvalid array value.");
-
+        const char *yaml_value_str = get_yaml_string(yaml_child);
         if (std::is_same<T, int64>::value)
         {
             res[cld_idx] = (T) string_to_long(yaml_value_str);
@@ -2793,13 +2781,7 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
         for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
         {
             yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
-            
-            if (yaml_child == NULL )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid sequence child at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
+            CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
 
             schema->append();
             Schema *curr_schema = schema->child_ptr(cld_idx);
@@ -2990,12 +2972,7 @@ Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
         for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
         {
             yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
-
-            if (yaml_child == NULL )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid sequence child.");
-            }
+            CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
 
             Schema &curr_schema = schema->append();
             curr_schema.set(DataType::list());
