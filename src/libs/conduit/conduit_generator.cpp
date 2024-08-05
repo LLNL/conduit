@@ -2022,6 +2022,7 @@ Generator::Parser::YAML::get_yaml_string(const yaml_node_t *yaml_node)
 bool 
 Generator::Parser::YAML::check_yaml_is_sequence(const yaml_node_t *yaml_node)
 {
+    // TODO check that I am using my helper everywhere
     return yaml_node->type == YAML_SEQUENCE_NODE;
 }
 
@@ -2471,7 +2472,6 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
 {
     if (check_yaml_is_scalar_node(yaml_node))
     {
-        std::cout << "scalar node" << std::endl;
         std::string dtype_name(get_yaml_string(yaml_node));
         index_t dtype_id = parse_leaf_dtype_name(dtype_name);
         index_t ele_size = DataType::default_bytes(dtype_id);
@@ -2484,13 +2484,10 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
     }
     else if (check_yaml_is_mapping_node(yaml_node))
     {
-        std::cout << "mapping node" << std::endl;
         yaml_node_t* dtype_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
         CONDUIT_ASSERT(dtype_node && check_yaml_is_scalar_node(dtype_node), 
                        "YAML Generator error:\n'dtype' must be a YAML string.")
         const std::string dtype_name(get_yaml_string(dtype_node));
-
-        std::cout << "dtype_name " << dtype_name << std::endl;
 
         index_t length = 0;
 
@@ -2574,8 +2571,6 @@ Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
                       stride,
                       ele_size,
                       endianness);
-
-        std::cout << "dtype_res.name() " << dtype_res.name() << std::endl;
     }
     else
     {
@@ -2693,53 +2688,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             }
             else
             {
-                auto BUNGUS = [](const Node *node)
-                {
-                    std::cout << "BUNGUS" << std::endl;
-                    switch(node->dtype().id())
-                    {
-                        // signed ints
-                        case DataType::INT8_ID:
-                            std::cout << "I am INT8_ID" << std::endl;
-                            break;
-                        case DataType::INT16_ID:
-                            std::cout << "I am INT16_ID" << std::endl;
-                            break;
-                        case DataType::INT32_ID:
-                            std::cout << "I am INT32_ID" << std::endl;
-                            break;
-                        case DataType::INT64_ID:
-                            std::cout << "I am INT64_ID" << std::endl;
-                            break;
-                        // unsigned ints
-                        case DataType::UINT8_ID:
-                            std::cout << "I am UINT8_ID" << std::endl;
-                            break;
-                        case DataType::UINT16_ID:
-                            std::cout << "I am UINT16_ID" << std::endl;
-                            break;
-                        case DataType::UINT32_ID:
-                            std::cout << "I am UINT32_ID" << std::endl;
-                            break;
-                        case DataType::UINT64_ID:
-                            std::cout << "I am UINT64_ID" << std::endl;
-                            break;  
-                        //floats
-                        case DataType::FLOAT32_ID:
-                            std::cout << "I am FLOAT32_ID" << std::endl;
-                            break;
-                        case DataType::FLOAT64_ID:
-                            std::cout << "I am FLOAT64_ID" << std::endl;
-                            break;
-                        default:
-                            CONDUIT_ERROR("BUNGUS");
-                            break;
-                    }
-                };
-
-
-                std::cout << "BUG CONTINUES DOWN FROM HERE" << std::endl;
-
                 // handle leaf node with explicit props
                 DataType src_dtype;
                 parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, src_dtype);
@@ -2747,24 +2695,17 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                 DataType des_dtype;
                 src_dtype.compact_to(des_dtype);
 
-                std::cout << "des_dtype.name() " << des_dtype.name() << std::endl;
-
                 // check for explicit address
                 const yaml_node_t* address_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "address");
                 if (address_value)
                 {
-                    std::cout << "addr" << std::endl;
                     void *data_ptr = parse_inline_address(address_value);
                     node->set_external(src_dtype, data_ptr);
                 }
                 else
                 {
-                    std::cout << "no addr" << std::endl;
-
                     if (data)
                     {
-                        std::cout << "yes data" << std::endl;
-
                         uint8 *src_data_ptr = ((uint8*)data) + src_dtype.offset();
                         // node is already linked to the schema pointer
                         // we need to dynamically alloc, use compact dtype
@@ -2779,28 +2720,16 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                     }
                     else
                     {
-                        std::cout << "\tno data" << std::endl;
-
                         // node is already linked to the schema pointer
                         // we need to dynamically alloc, use compact dtype
                         node->set(des_dtype); // causes an init
-
-                        std::cout << "\tnode print" << std::endl;
-                        node->print();
-
-                        BUNGUS(node);
                     }
 
                     // check for inline yaml values
                     const yaml_node_t *value_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "value");
                     if (value_value)
                     {
-                        std::cout << "\tinline va;lue" << std::endl;
-                        BUNGUS(node);
                         parse_inline_value(yaml_doc, value_value, *node);
-                        std::cout << "\tafter parse inline value" << std::endl;
-                        node->print();
-                        BUNGUS(node);
                     }
                 }
             }
@@ -2895,11 +2824,8 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
     else if (check_yaml_is_scalar_node(yaml_node))
     {
         DataType dtype;
-        std::cout << "help me 1" << std::endl;
         parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
-        std::cout << "help me 2" << std::endl;
         schema->set(dtype);
-        std::cout << "help me 3" << std::endl;
 
         if (data)
         {
@@ -2912,10 +2838,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
             // we need to dynamically alloc
             node->set(dtype);  // causes an init
         }
-        std::cout << "help me 4" << std::endl;
-
-        std::cout << "schema scalar print" << std::endl;
-        schema->print();
     }
     else
     {
@@ -2923,10 +2845,6 @@ Generator::Parser::YAML::walk_yaml_schema(Node *node,
                       << "Invalid YAML type for parsing Node."
                       << " Expected: YAML Object, Array, or String");
     }
-
-    std::cout << "im printing" << std::endl;
-    schema->print();
-    node->print();
 }
 
 
@@ -3194,18 +3112,21 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
             if (node->dtype().is_unsigned_integer())
             {
                 node->set(DataType::uint64(seq_size));
-                parse_yaml_array<uint64>(yaml_doc, yaml_node, *node, seq_size);
+                uint64_array vals = node->value();
+                parse_yaml_array<uint64>(yaml_doc, yaml_node, vals, seq_size);
             }
             else
             {
                 node->set(DataType::int64(seq_size));
-                parse_yaml_array<int64>(yaml_doc, yaml_node, *node, seq_size);
+                int64_array vals = node->value();
+                parse_yaml_array<int64>(yaml_doc, yaml_node, vals, seq_size);
             }
         }
         else if(hval_type == DataType::FLOAT64_ID)
         {
             node->set(DataType::float64(seq_size));
-            parse_yaml_array<float64>(yaml_doc, yaml_node, *node, seq_size);
+            float64_array vals = node->value();
+            parse_yaml_array<float64>(yaml_doc, yaml_node, vals, seq_size);
         }
         else
         {
