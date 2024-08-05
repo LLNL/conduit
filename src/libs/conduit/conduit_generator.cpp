@@ -2230,10 +2230,9 @@ Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
                                           std::vector<T> &res,
                                           const int seq_size)
 {
-    // TODO test this out
     static_assert(std::is_same<T, int64>::value ||
                   std::is_same<T, uint64>::value ||
-                  std::is_same<T, float64>::value, "Type not allowed");
+                  std::is_same<T, float64>::value);
 
     res.resize(seq_size, 0);
     for (index_t cld_idx = 0; cld_idx < seq_size; cld_idx ++)
@@ -2267,7 +2266,7 @@ Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
 {
     static_assert(std::is_same<T, int64>::value ||
                   std::is_same<T, uint64>::value ||
-                  std::is_same<T, float64>::value, "Type not allowed");
+                  std::is_same<T, float64>::value);
 
     for (index_t cld_idx = 0; cld_idx < seq_size; cld_idx ++)
     {
