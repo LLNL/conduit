@@ -4,6 +4,22 @@ Notable changes to Conduit are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project aspires to adhere to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+### Added
+
+#### Blueprint
+- Added `conduit::blueprint::mesh::examples:generate` driver functions that supports creating any blueprint example mesh with options.
+- Added `conduit::blueprint::mesh::examples:generate_default_options` functions that provide default options values for `conduit::blueprint::mesh::examples:generate`.
+- Added python API support for `conduit::blueprint::mesh::examples:generate` and `conduit::blueprint::mesh::examples:generate_default_options`.
+- Added `gyre` example mesh, which provides a simple velocity vector field. 
+
+
+### Changed
+
+#### Conduit
+- Changed the MPI CMake target used by conduit from `MPI:MPI_CXX` to `MPI:MPI_C` to provide better compatibility with downstream tools.
+
 ## [0.9.2] - Released 2024-05-21
 
 ### Added
@@ -25,6 +41,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Fixed partitioner so it reverses vertex order as needed in polyhedral face definitions when extracting mesh elements.
 - Changed `conduit::blueprint::mesh::partition_map_back()` function so it will attempt to reuse existing field memory when mapping fields back. This permits `partition_map_back()` to send data from a partitioned mesh into the original mesh where fields were provided from a host code using `Node::set_external()`.
 - Changed `generate_sides` to be robust to the case where no fields exist. 
+- Deprecated braid `quads_and_tris` example in favor of `mixed_2d`.
+- Deprecated braid `braid_quads_and_tris_offsets` example in favor of `mixed_2d`.
+- Deprecated braid `hexs_and_tris` example in favor of `mixed`.
 
 #### Relay
 - Changed `conduit::relay::mpi::communicate_using_schema` to avoid an invalid tag MPI error message on some MPI distributions.

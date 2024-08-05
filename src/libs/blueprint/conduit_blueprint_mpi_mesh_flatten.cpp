@@ -161,7 +161,7 @@ ParallelMeshFlattener::FieldInfo::FieldInfo(const Node &n)
 void
 ParallelMeshFlattener::FieldInfo::from_node(const Node &n)
 {
-    DEBUG_PRINT("Rank " << relay::mpi::rank(MPI_COMM_WORLD) << " - from_node" << std::endl);
+    DEBUG_PRINT("Rank " << relay::mpi::rank(comm) << " - from_node" << std::endl);
     field_names.clear();
     field_ncomps.clear();
     field_assocs.clear();
