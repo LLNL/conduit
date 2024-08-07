@@ -37,7 +37,8 @@ ExecutionAccessor<T>::ExecutionAccessor()
   m_other_dtype(),
   m_do_i_own_it(false),
   m_data(nullptr),
-  m_offset(0),
+  m_offset(0), // TODO in constructor offset and stride are copies of the orig dtype vals
+  // they pnly hcange iof the other dtpye isneeded
   m_stride(0)
 {}
 
@@ -468,50 +469,19 @@ template <typename T>
 void
 ExecutionAccessor<T>::sync(Node &n)
 {
-    void *n_data_ptr = n.data_ptr();
-
     // if the ptrs point to the same place
-    if (m_data == n_data_ptr)
+    if (m_data != n.data_ptr())
     {
-        // nothing to do
-    }
-    else
-    {
-        if (dtype().compatible(n.dtype()))
+        if (!(n.dtype().compatible(dtype()) && number_of_elements() == n.number_of_elements()))
         {
-            conduit_memcpy_strided_elements(n_data_ptr,
-                                            number_of_elements(),
-                                            n.dtype().element_bytes(),
-                                            n.dtype().stride(),
-                                            m_data,
-                                            m_stride);
+            n.set(dtype());
         }
-        else
-        {
-            // uh oh spaghettio
-            // n_data_ptr.copy_from(m_data);
-            // n.set_dtype(???);
-        }
-    }
-}
-
-//---------------------------------------------------------------------------//
-template <typename T>
-void
-ExecutionAccessor<T>::replace(Node &n)
-{
-    void *n_ptr = n.data_ptr();
-
-    // if the ptrs point to the same place
-    if (m_data == n_ptr)
-    {
-        // nothing to do
-    }
-    else
-    {
-        free(n_ptr);
-        n_ptr = m_data;
-        n.set_dtype(???);
+        utils::conduit_memcpy_strided_elements(n.data_ptr(),
+                                               number_of_elements(),
+                                               n.dtype().element_bytes(),
+                                               n.dtype().stride(),
+                                               m_data,
+                                               m_stride);
     }
 }
 
