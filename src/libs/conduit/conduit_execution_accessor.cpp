@@ -414,6 +414,94 @@ ExecutionAccessor<T>::fill(T value)
     }
 }
 
+// TODO fix up these next three functions
+
+//---------------------------------------------------------------------------//
+template <typename T, typename policy_type>
+void
+ExecutionAccessor<T>::use_with(policy_type policy)
+{
+    // yes cases are duplicated. But they may end needing to be
+    // b/c of the questions I need to ask about where data lives
+    if (policy == Device)
+    {
+        if (whereami() == Device)
+        {
+            data_ptr = orig_ptr;
+            offset = orig_dtype.offset;
+            stride = orig_dtype.stride;
+        }
+        else // whereami() == Host
+        {
+            // copy and get rid of striding; just copy what we need
+            other_ptr.copy_from(orig_ptr);
+            other_dtype.oofus(orig_dtype);
+
+            data_ptr = other_ptr;
+            offset = other_dtype.offset;
+            stride = other_dtype.stride;
+        }
+    }
+    else // policy == Host
+    {
+        if (whereami() == Device)
+        {
+            // copy and get rid of striding; just copy what we need
+            other_ptr.copy_from(orig_ptr);
+            other_dtype.oofus(orig_dtype);
+
+            data_ptr = other_ptr;
+            offset = other_dtype.offset;
+            stride = other_dtype.stride;
+        }
+        else // whereami() == Host
+        {
+            data_ptr = orig_ptr;
+            offset = orig_dtype.offset;
+            stride = orig_dtype.stride;
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionAccessor<T>::sync(Node &n)
+{
+    void *n_ptr = n.get_ptr();
+
+    // if the ptrs point to the same place
+    if (data_ptr == n_ptr)
+    {
+        // nothing to do
+    }
+    else
+    {
+        n_ptr.copy_from(data_ptr);
+        n.set_dtype(???);
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionAccessor<T>::replace(Node &n)
+{
+    void *n_ptr = n.get_ptr();
+
+    // if the ptrs point to the same place
+    if (data_ptr == n_ptr)
+    {
+        // nothing to do
+    }
+    else
+    {
+        free(n_ptr);
+        n_ptr = data_ptr;
+        n.set_dtype(???);
+    }
+}
+
 //---------------------------------------------------------------------------//
 template <typename T>
 std::string
@@ -706,92 +794,3 @@ template class ExecutionAccessor<double>;
 // -- end conduit:: --
 //-----------------------------------------------------------------------------
 
-
-// TODO left off here - put these somewhere useful
-
-
-///////////////////////////////////////////
-
-
-template<typename T>
-void use_with(T policy)
-{
-    // yes cases are duplicated. But they may end needing to be
-    // b/c of the questions I need to ask about where data lives
-    if (policy == Device)
-    {
-        if (whereami() == Device)
-        {
-            data_ptr = orig_ptr;
-            offset = orig_dtype.offset;
-            stride = orig_dtype.stride;
-        }
-        else // whereami() == Host
-        {
-            // copy and get rid of striding; just copy what we need
-            other_ptr.copy_from(orig_ptr);
-            other_dtype.oofus(orig_dtype);
-
-            data_ptr = other_ptr;
-            offset = other_dtype.offset;
-            stride = other_dtype.stride;
-        }
-    }
-    else // policy == Host
-    {
-        if (whereami() == Device)
-        {
-            // copy and get rid of striding; just copy what we need
-            other_ptr.copy_from(orig_ptr);
-            other_dtype.oofus(orig_dtype);
-
-            data_ptr = other_ptr;
-            offset = other_dtype.offset;
-            stride = other_dtype.stride;
-        }
-        else // whereami() == Host
-        {
-            data_ptr = orig_ptr;
-            offset = orig_dtype.offset;
-            stride = orig_dtype.stride;
-        }
-    }
-}
-
-static void operator[](index_t index)
-{
-    return (data_ptr + offset)[stride * index];
-}
-
-void sync(Node &n)
-{
-    void *n_ptr = n.get_ptr();
-
-    // if the ptrs point to the same place
-    if (data_ptr == n_ptr)
-    {
-        // nothing to do
-    }
-    else
-    {
-        n_ptr.copy_from(data_ptr);
-        n.set_dtype(???);
-    }
-}
-
-void replace(Node &n)
-{
-    void *n_ptr = n.get_ptr();
-
-    // if the ptrs point to the same place
-    if (data_ptr == n_ptr)
-    {
-        // nothing to do
-    }
-    else
-    {
-        free(n_ptr);
-        n_ptr = data_ptr;
-        n.set_dtype(???);
-    }
-}
