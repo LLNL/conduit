@@ -468,17 +468,30 @@ template <typename T>
 void
 ExecutionAccessor<T>::sync(Node &n)
 {
-    void *n_ptr = n.get_ptr();
+    void *n_data_ptr = n.data_ptr();
 
     // if the ptrs point to the same place
-    if (data_ptr == n_ptr)
+    if (m_data == n_data_ptr)
     {
         // nothing to do
     }
     else
     {
-        n_ptr.copy_from(data_ptr);
-        n.set_dtype(???);
+        if (dtype().compatible(n.dtype()))
+        {
+            conduit_memcpy_strided_elements(n_data_ptr,
+                                            number_of_elements(),
+                                            n.dtype().element_bytes(),
+                                            n.dtype().stride(),
+                                            m_data,
+                                            m_stride);
+        }
+        else
+        {
+            // uh oh spaghettio
+            // n_data_ptr.copy_from(m_data);
+            // n.set_dtype(???);
+        }
     }
 }
 
@@ -487,17 +500,17 @@ template <typename T>
 void
 ExecutionAccessor<T>::replace(Node &n)
 {
-    void *n_ptr = n.get_ptr();
+    void *n_ptr = n.data_ptr();
 
     // if the ptrs point to the same place
-    if (data_ptr == n_ptr)
+    if (m_data == n_ptr)
     {
         // nothing to do
     }
     else
     {
         free(n_ptr);
-        n_ptr = data_ptr;
+        n_ptr = m_data;
         n.set_dtype(???);
     }
 }
