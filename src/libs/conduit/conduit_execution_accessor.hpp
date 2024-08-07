@@ -26,304 +26,214 @@
 namespace conduit
 {
 
+//-----------------------------------------------------------------------------
+// -- begin conduit::ExecutionAccessor --
+//-----------------------------------------------------------------------------
+///
+/// class: conduit::ExecutionAccessor
+///
+/// description:
+///  TODO
+///
+//-----------------------------------------------------------------------------
+template <typename T> 
 class CONDUIT_API ExecutionAccessor
 {
 public:
+//-----------------------------------------------------------------------------
+//
+// -- conduit::ExecutionAccessor public methods --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+// Construction and Destruction
+//-----------------------------------------------------------------------------
+    /// Default constructor
     ExecutionAccessor();
+    /// Copy constructor
+    ExecutionAccessor(const ExecutionAccessor<T> &accessor);
+    /// Access a pointer to raw data according to dtype description.
+    ExecutionAccessor(void *data, const DataType &dtype);
+    /// Access a const pointer to raw data according to dtype description.
+    ExecutionAccessor(const void *data, const DataType &dtype);
+    ~ExecutionAccessor();
 
-    ~ExecutionAccessor()
-    {
-        if (do_I_own_it)
-        {
-            delete other_ptr;
-        }
+    ///
+    /// Summary Stats Helpers
+    ///
+    T               min()  const;
+    T               max()  const;
+    T               sum()  const;
+    float64         mean() const;
+    
+    /// counts number of occurrences of given value
+    index_t         count(T value) const;
 
+    /// Assignment operator
+    ExecutionAccessor<T>   &operator=(const ExecutionAccessor<T> &accessor);
 
-        // other stuff
-    }
+//-----------------------------------------------------------------------------
+// Data and Info Access
+//-----------------------------------------------------------------------------
+    T              operator[](index_t idx) const
+                    {return element(idx);}
 
+    T              element(index_t idx) const;
 
+    void           set(index_t idx, T value);
+
+    void           fill(T value);
+
+    const void     *element_ptr(index_t idx) const
+                    {
+                        return static_cast<const char*>(m_data) +
+                               dtype().element_index(idx);
+                    }
+
+    index_t         number_of_elements() const 
+                    {return dtype().number_of_elements();}
+
+    const DataType &dtype() const
+                    {return (m_data == m_orig_ptr ? orig_dtype() : other_dtype());}
+
+    const DataType &orig_dtype() const 
+                    { return m_orig_dtype;}
+
+    const DataType &other_dtype() const 
+                    { return m_other_dtype;}
+
+//-----------------------------------------------------------------------------
+// Cool Stuff
+//-----------------------------------------------------------------------------
     template<typename T>
-    void use_with(T policy)
-    {
-        // yes cases are duplicated. But they may end needing to be
-        // b/c of the questions I need to ask about where data lives
-        if (policy == Device)
-        {
-            if (whereami() == Device)
-            {
-                data_ptr = orig_ptr;
-                offset = orig_dtype.offset;
-                stride = orig_dtype.stride;
-            }
-            else // whereami() == Host
-            {
-                // copy and get rid of striding; just copy what we need
-                other_ptr.copy_from(orig_ptr);
-                other_dtype.oofus(orig_dtype);
+    void            use_with(T policy);
 
-                data_ptr = other_ptr;
-                offset = other_dtype.offset;
-                stride = other_dtype.stride;
-            }
-        }
-        else // policy == Host
-        {
-            if (whereami() == Device)
-            {
-                // copy and get rid of striding; just copy what we need
-                other_ptr.copy_from(orig_ptr);
-                other_dtype.oofus(orig_dtype);
+    void            sync(Node &n);
 
-                data_ptr = other_ptr;
-                offset = other_dtype.offset;
-                stride = other_dtype.stride;
-            }
-            else // whereami() == Host
-            {
-                data_ptr = orig_ptr;
-                offset = orig_dtype.offset;
-                stride = orig_dtype.stride;
-            }
-        }
-    }
+    void            replace(Node &n);
 
-    void operator[](index_t i)
-    {
-        return (data_ptr + offset)[stride * i];
-    }
+//-----------------------------------------------------------------------------
+// Transforms
+//-----------------------------------------------------------------------------
+    std::string     to_string(const std::string &protocol="json") const;
+    void            to_string_stream(std::ostream &os,
+                                     const std::string &protocol="json") const;
 
-    void sync(Node &n)
-    {
-        void *n_ptr = n.get_ptr();
+    // NOTE(cyrush): The primary reason this function exists is to enable
+    // easier compatibility with debugging tools (e.g. totalview, gdb) that
+    // have difficulty allocating default string parameters.
+    std::string     to_string_default() const;
 
-        // if the ptrs point to the same place
-        if (data_ptr == n_ptr)
-        {
-            // nothing to do
-        }
-        else
-        {
-            n_ptr.copy_from(data_ptr);
-            n.set_dtype(???);
-        }
-    }
+    std::string     to_json() const;
+    void            to_json_stream(std::ostream &os) const;
 
-    void replace(Node n)
-    {
-        void *n_ptr = n.get_ptr();
+    std::string     to_yaml() const;
+    void            to_yaml_stream(std::ostream &os) const;
 
-        // if the ptrs point to the same place
-        if (data_ptr == n_ptr)
-        {
-            // nothing to do
-        }
-        else
-        {
-            free(n_ptr);
-            n_ptr = data_ptr;
-            n.set_dtype(???);
-        }
-    }
+    /// Creates a string repression for printing that limits
+    /// the number of elements shown to a max number
+    std::string     to_summary_string_default() const;
+    std::string     to_summary_string(index_t threshold=5) const;
+    void            to_summary_string_stream(std::ostream &os,
+                                             index_t threshold=5) const;
 
+//-----------------------------------------------------------------------------
+// -- stdout print methods ---
+//-----------------------------------------------------------------------------
+    /// print a simplified json representation of the this node to std out
+    void            print() const
+                      {std::cout << to_summary_string() << std::endl;}
 
 private:
-    void *orig_ptr;
-    void *orig_dtype;
-    void *other_ptr;
-    void *other_dtype;
-    bool  do_I_own_it;
 
-    void *data_ptr;
-    int   offset;
-    int   stride;
-}
+//-----------------------------------------------------------------------------
+//
+// -- conduit::ExecutionAccessor private data members --
+//
+//-----------------------------------------------------------------------------
+    /// holds data (always external, never allocated)
+    void           *m_orig_ptr;
+    /// holds data description
+    DataType        m_orig_dtype;
 
-// //-----------------------------------------------------------------------------
-// // -- begin conduit::DataArray --
-// //-----------------------------------------------------------------------------
-// ///
-// /// class: conduit::DataAccessor
-// ///
-// /// description:
-// ///  Helps consume array data as desired type with on the fly conversion.
-// ///
-// //-----------------------------------------------------------------------------
-// template <typename T> 
-// class CONDUIT_API DataAccessor
-// {
-// public: 
-// //-----------------------------------------------------------------------------
-// //
-// // -- conduit::DataAccessor public methods --
-// //
-// //-----------------------------------------------------------------------------
-
-// //-----------------------------------------------------------------------------
-// // Construction and Destruction
-// //-----------------------------------------------------------------------------
-//         /// Default constructor
-//         DataAccessor();
-//         /// Copy constructor
-//         DataAccessor(const DataAccessor<T> &accessor);
-//         /// Access a pointer to raw data according to dtype description.
-//         DataAccessor(void *data, const DataType &dtype);
-//         /// Access a const pointer to raw data according to dtype description.
-//         DataAccessor(const void *data, const DataType &dtype);
-//         ~DataAccessor();
-
-//     ///
-//     /// Summary Stats Helpers
-//     ///
-//     T               min()  const;
-//     T               max()  const;
-//     T               sum()  const;
-//     float64         mean() const;
+    void           *m_other_ptr;
+    DataType        m_other_dtype;
     
-//     /// counts number of occurrences of given value
-//     index_t         count(T value) const;
+    bool            m_do_i_own_it;
 
-//     /// Assignment operator
-//     DataAccessor<T>   &operator=(const DataAccessor<T> &accessor);
+    void           *m_data;
+    index_t         m_offset;
+    index_t         m_stride;
+};
 
-// //-----------------------------------------------------------------------------
-// // Data and Info Access
-// //-----------------------------------------------------------------------------
-//     T              operator[](index_t idx) const
-//                     {return element(idx);}
+//-----------------------------------------------------------------------------
+// -- end conduit::ExecutionAccessor --
+//-----------------------------------------------------------------------------
 
-//     T              element(index_t idx) const;
+//-----------------------------------------------------------------------------
+//
+// -- conduit::ExecutionAccessor typedefs for supported types --
+//
+//-----------------------------------------------------------------------------
 
-//     void           set(index_t idx, T value);
+/// Note: these are also the types we explicitly instantiate.
 
-//     void            fill(T value);
+/// signed integer arrays
+typedef ExecutionAccessor<int8>     int8_exec_accessor;
+typedef ExecutionAccessor<int16>    int16_exec_accessor;
+typedef ExecutionAccessor<int32>    int32_exec_accessor;
+typedef ExecutionAccessor<int64>    int64_exec_accessor;
 
-//     const void     *element_ptr(index_t idx) const
-//                     {
-//                          return static_cast<const char*>(m_data) +
-//                                   m_dtype.element_index(idx);
-//                     }
+/// unsigned integer arrays
+typedef ExecutionAccessor<uint8>    uint8_exec_accessor;
+typedef ExecutionAccessor<uint16>   uint16_exec_accessor;
+typedef ExecutionAccessor<uint32>   uint32_exec_accessor;
+typedef ExecutionAccessor<uint64>   uint64_exec_accessor;
 
-//     index_t         number_of_elements() const 
-//                         {return m_dtype.number_of_elements();}
+/// floating point arrays
+typedef ExecutionAccessor<float32>  float32_exec_accessor;
+typedef ExecutionAccessor<float64>  float64_exec_accessor;
 
-//     const DataType &dtype()    const 
-//                         { return m_dtype;}
+/// index type arrays
+typedef ExecutionAccessor<index_t>  index_t_exec_accessor;
 
-
-
-// //-----------------------------------------------------------------------------
-// // Transforms
-// //-----------------------------------------------------------------------------
-//     std::string     to_string(const std::string &protocol="json") const;
-//     void            to_string_stream(std::ostream &os,
-//                                      const std::string &protocol="json") const;
-
-//     // NOTE(cyrush): The primary reason this function exists is to enable
-//     // easier compatibility with debugging tools (e.g. totalview, gdb) that
-//     // have difficulty allocating default string parameters.
-//     std::string     to_string_default() const;
-
-//     std::string     to_json() const;
-//     void            to_json_stream(std::ostream &os) const;
-
-//     std::string     to_yaml() const;
-//     void            to_yaml_stream(std::ostream &os) const;
-
-//     /// Creates a string repression for printing that limits
-//     /// the number of elements shown to a max number
-//     std::string     to_summary_string_default() const;
-//     std::string     to_summary_string(index_t threshold=5) const;
-//     void            to_summary_string_stream(std::ostream &os,
-//                                              index_t threshold=5) const;
-
-// //-----------------------------------------------------------------------------
-// // -- stdout print methods ---
-// //-----------------------------------------------------------------------------
-//     /// print a simplified json representation of the this node to std out
-//     void            print() const
-//                       {std::cout << to_summary_string() << std::endl;}
-
-// private:
-
-// //-----------------------------------------------------------------------------
-// //
-// // -- conduit::DataAccessor private data members --
-// //
-// //-----------------------------------------------------------------------------
-//     /// holds data (always external, never allocated)
-//     void           *m_data;
-//     /// holds data description
-//     DataType        m_dtype;
-    
-// };
-// //-----------------------------------------------------------------------------
-// // -- end conduit::DataAccessor --
-// //-----------------------------------------------------------------------------
-
-// //-----------------------------------------------------------------------------
-// //
-// // -- conduit::DataAccessor typedefs for supported types --
-// //
-// //-----------------------------------------------------------------------------
-
-// /// Note: these are also the types we explicitly instantiate.
-
-// /// signed integer arrays
-// typedef DataAccessor<int8>     int8_accessor;
-// typedef DataAccessor<int16>    int16_accessor;
-// typedef DataAccessor<int32>    int32_accessor;
-// typedef DataAccessor<int64>    int64_accessor;
-
-// /// unsigned integer arrays
-// typedef DataAccessor<uint8>    uint8_accessor;
-// typedef DataAccessor<uint16>   uint16_accessor;
-// typedef DataAccessor<uint32>   uint32_accessor;
-// typedef DataAccessor<uint64>   uint64_accessor;
-
-// /// floating point arrays
-// typedef DataAccessor<float32>  float32_accessor;
-// typedef DataAccessor<float64>  float64_accessor;
-
-// /// index type arrays
-// typedef DataAccessor<index_t>  index_t_accessor;
-
-// /// native c types arrays
-// typedef DataAccessor<char>       char_accessor;
-// typedef DataAccessor<short>      short_accessor;
-// typedef DataAccessor<int>        int_accessor;
-// typedef DataAccessor<long>       long_accessor;
-// #ifdef CONDUIT_HAS_LONG_LONG
-// typedef DataAccessor<long long>  long_long_accessor;
-// #endif
+/// native c types arrays
+typedef ExecutionAccessor<char>       char_exec_accessor;
+typedef ExecutionAccessor<short>      short_exec_accessor;
+typedef ExecutionAccessor<int>        int_exec_accessor;
+typedef ExecutionAccessor<long>       long_exec_accessor;
+#ifdef CONDUIT_HAS_LONG_LONG
+typedef ExecutionAccessor<long long>  long_long_exec_accessor;
+#endif
 
 
-// /// signed integer arrays
-// typedef DataAccessor<signed char>       signed_char_accessor;
-// typedef DataAccessor<signed short>      signed_short_accessor;
-// typedef DataAccessor<signed int>        signed_int_accessor;
-// typedef DataAccessor<signed long>       signed_long_accessor;
-// #ifdef CONDUIT_HAS_LONG_LONG
-// typedef DataAccessor<signed long long>  signed_long_long_accessor;
-// #endif
+/// signed integer arrays
+typedef ExecutionAccessor<signed char>       signed_char_exec_accessor;
+typedef ExecutionAccessor<signed short>      signed_short_exec_accessor;
+typedef ExecutionAccessor<signed int>        signed_int_exec_accessor;
+typedef ExecutionAccessor<signed long>       signed_long_exec_accessor;
+#ifdef CONDUIT_HAS_LONG_LONG
+typedef ExecutionAccessor<signed long long>  signed_long_long_exec_accessor;
+#endif
 
 
-// /// unsigned integer arrays
-// typedef DataAccessor<unsigned char>   unsigned_char_accessor;
-// typedef DataAccessor<unsigned short>  unsigned_short_accessor;
-// typedef DataAccessor<unsigned int>    unsigned_int_accessor;
-// typedef DataAccessor<unsigned long>   unsigned_long_accessor;
-// #ifdef CONDUIT_HAS_LONG_LONG
-// typedef DataAccessor<unsigned long long>  unsigned_long_long_accessor;
-// #endif
+/// unsigned integer arrays
+typedef ExecutionAccessor<unsigned char>   unsigned_char_exec_accessor;
+typedef ExecutionAccessor<unsigned short>  unsigned_short_exec_accessor;
+typedef ExecutionAccessor<unsigned int>    unsigned_int_exec_accessor;
+typedef ExecutionAccessor<unsigned long>   unsigned_long_exec_accessor;
+#ifdef CONDUIT_HAS_LONG_LONG
+typedef ExecutionAccessor<unsigned long long>  unsigned_long_long_exec_accessor;
+#endif
 
 
-// /// floating point arrays
-// typedef DataAccessor<float>   float_accessor;
-// typedef DataAccessor<double>  double_accessor;
-// #ifdef CONDUIT_USE_LONG_DOUBLE
-// typedef DataAccessor<long double>  long_double_accessor;
-// #endif
+/// floating point arrays
+typedef ExecutionAccessor<float>   float_exec_accessor;
+typedef ExecutionAccessor<double>  double_exec_accessor;
+#ifdef CONDUIT_USE_LONG_DOUBLE
+typedef ExecutionAccessor<long double>  long_double_exec_accessor;
+#endif
 
 }
 //-----------------------------------------------------------------------------
