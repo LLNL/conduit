@@ -23,6 +23,8 @@
 #include "conduit_blueprint_mesh_examples_polystar.hpp"
 #include "conduit_blueprint_mesh_examples_rz_cylinder.hpp"
 #include "conduit_blueprint_mesh_examples_tiled.hpp"
+#include "conduit_blueprint_mesh_examples_gyre.hpp"
+#include "conduit_blueprint_mesh_examples_generate.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::--
@@ -48,6 +50,7 @@ namespace mesh
 //-----------------------------------------------------------------------------
 namespace examples
 {
+
     /// Generates a uniform grid with a scalar field that assigns a unique,
     /// monotonically increasing value to each element.
     void CONDUIT_BLUEPRINT_API basic(const std::string &mesh_type,

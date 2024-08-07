@@ -365,7 +365,7 @@ class Test_Conduit_Node(unittest.TestCase):
         print(n)
         self.assertEqual(n.value(),"my string!")
         # test numpy string
-        nps = np.string_("my numpy string!")
+        nps = np.bytes_("my numpy string!")
         n.set(nps)
         print(n)
         print(repr(n))

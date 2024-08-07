@@ -93,7 +93,7 @@ target_link_libraries(conduit_example conduit::conduit)
 
 # if you are using conduit's mpi features
 # if(NOT MPI_FOUND)
-#    find_package(MPI COMPONENTS CXX)
+#    find_package(MPI COMPONENTS C)
 # endif()
 # target_link_libraries(conduit_example conduit::conduit_mpi)
 
