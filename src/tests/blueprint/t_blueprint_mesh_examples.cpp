@@ -467,7 +467,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2D_enh_red_connectivity)
         const Node& mesh = itr.next();
         std::string meshname = itr.name();
         EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
-        braid_save_helper(mesh, meshname);
+        test_save_mesh_helper(mesh, meshname);
     }
 }
 
