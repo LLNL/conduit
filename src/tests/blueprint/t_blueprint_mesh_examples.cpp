@@ -412,53 +412,117 @@ TEST(conduit_blueprint_mesh_examples, mesh_2D_enh_red_connectivity)
     {
         Node spec;
 
-        std::vector<double> d1x{0, 3, 3, 0};
-        std::vector<double> d1y{0, 1.2, 3.6, 3.6};
-        add_domain_node(spec, "domain1", 1, 4, 3, 0, d1x, d1y, empty_z);
+        std::vector<double> d0x{ 0, 4, 4, 0 };
+        std::vector<double> d0y{ 0, 0, 4, 4 };
+        add_domain_node(spec, "domain0", 0, 4, 5, 0, d0x, d0y, empty_z);
 
-        std::vector<double> d2x{ 3, 5.4, 5.4, 3 };
-        std::vector<double> d2y{ 1.2, -0.6, 3.6, 3.6 };
-        add_domain_node(spec, "domain2", 2, 4, 3, 0, d2x, d2y, empty_z);
+        std::vector<double> d1x{ 4, 6, 6, 4 };
+        std::vector<double> d1y{ 0, 0, 7, 4 };
+        add_domain_node(spec, "domain1", 1, 4, 5, 0, d1x, d1y, empty_z);
 
-        std::vector<double> d3x{ 0, 2.4, 5.4, 3 };
-        std::vector<double> d3y{ 0, -1.8, -0.6, 1.2};
-        add_domain_node(spec, "domain3", 3, 4, 4, 0, d3x, d3y, empty_z);
+        std::vector<double> d2x{ 0, 4, 6, 0 };
+        std::vector<double> d2y{ 4, 4, 7, 7 };
+        add_domain_node(spec, "domain2", 2, 4, 4, 0, d2x, d2y, empty_z);
 
-        spec.print();
+        std::vector<double> d3x{ 0, 6, 6, 0 };
+        std::vector<double> d3y{ 7, 7, 10, 10 };
+        add_domain_node(spec, "domain3", 3, 4, 5, 0, d3x, d3y, empty_z);
 
-        blueprint::mesh::examples::bentgrid(spec, dsets["bentgrid_2d_reduced"]);
+        std::vector<double> d4x{ 6, 10, 10, 6 };
+        std::vector<double> d4y{ 0, 0, 7, 7};
+        add_domain_node(spec, "domain4", 4, 4, 5, 0, d4x, d4y, empty_z);
+
+        std::vector<double> d5x{ 6, 10, 10, 6 };
+        std::vector<double> d5y{ 7, 7, 10, 10 };
+        add_domain_node(spec, "domain5", 5, 4, 5, 0, d5x, d5y, empty_z);
+
+        blueprint::mesh::examples::bentgrid(spec, dsets["bentgrid_2d_visitghost"]);
     }
 
+    Node info;
+    NodeConstIterator itr = dsets.children();
+    while (itr.has_next())
+    {
+        const Node& mesh = itr.next();
+        std::string meshname = itr.name();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        test_save_mesh_helper(mesh, meshname);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mesh_3D_enh_red_connectivity)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+
+    bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // we are using one node to hold group of example meshes purely out of convenience
+    Node dsets;
 
     {
         Node spec;
 
-        std::vector<double> d1x{ 1.5, 4.5, 4.5, 1.5 };
-        std::vector<double> d1y{ 2.3, 3.26, 6.3, 6.3 };
-        add_domain_node(spec, "domain1", 1, 4, 3, 0, d1x, d1y, empty_z);
+        std::vector<double> d0x{ 0, 4, 4, 0, 0, 4, 4, 0 };
+        std::vector<double> d0y{ 0, 0, 4, 4, 0, 0, 4, 4 };
+        std::vector<double> d0z{ 0, 0, 0, 0, 3, 3, 3, 3 };
+        add_domain_node(spec, "domain0", 0, 4, 5, 4, d0x, d0y, d0z);
 
-        std::vector<double> d2x{ 1.5, 3.9, 4.5, 4.5 };
-        std::vector<double> d2y{ 2.3, 1.3, 1.3, 3.26};
-        add_domain_node(spec, "domain2", 2, 5, 4, 0, d2x, d2y, empty_z);
+        std::vector<double> d1x{ 4, 6, 6, 4, 4, 6, 6, 4 };
+        std::vector<double> d1y{ 0, 0, 7, 4, 0, 0, 7, 4 };
+        std::vector<double> d1z{ 0, 0, 0, 0, 3, 7, 7, 3 };
+        add_domain_node(spec, "domain1", 1, 4, 5, 4, d1x, d1y, d1z);
 
-        std::vector<double> d3x{ 0.4, 3.9, 1.5, -2 };
-        std::vector<double> d3y{ -3.7, 1.3, 2.3, -2.7};
-        add_domain_node(spec, "domain3", 3, 6, 5, 0, d3x, d3y, empty_z);
+        std::vector<double> d2x{ 0, 4, 6, 0, 0, 4, 6, 0 };
+        std::vector<double> d2y{ 4, 4, 7, 7, 4, 4, 7, 7 };
+        std::vector<double> d2z{ 0, 0, 0, 0, 3, 3, 7, 7 };
+        add_domain_node(spec, "domain2", 2, 4, 4, 4, d2x, d2y, d2z);
 
-        std::vector<double> d4x{ -2.1, -2.1, -2, 1.5 };
-        std::vector<double> d4y{ 2.3, -2.7, -2.7, 2.3 };
-        add_domain_node(spec, "domain4", 4, 6, 4, 0, d4x, d4y, empty_z);
+        std::vector<double> d3x{ 0, 6, 6, 0, 0, 6, 6, 0 };
+        std::vector<double> d3y{ 7, 7, 10, 10, 7, 7, 10, 10 };
+        std::vector<double> d3z{ 0, 0, 0, 0, 7, 7, 7, 7 };
+        add_domain_node(spec, "domain3", 3, 4, 5, 4, d3x, d3y, d3z);
 
-        std::vector<double> d5x{ -2.1, 1.5, 1.5, -2.1 };
-        std::vector<double> d5y{ 2.3, 2.3, 6.3, 6.3 };
-        add_domain_node(spec, "domain5", 5, 4, 3, 0, d5x, d5y, empty_z);
+        std::vector<double> d4x{ 6, 10, 10, 6, 6, 10, 10, 6 };
+        std::vector<double> d4y{ 0, 0, 7, 7, 0, 0, 7, 7 };
+        std::vector<double> d4z{ 0, 0, 0, 0, 7, 7, 7, 7 };
+        add_domain_node(spec, "domain4", 4, 4, 5, 4, d4x, d4y, d4z);
 
-        blueprint::mesh::examples::bentgrid(spec, dsets["bentgrid_2d_enhanced"]);
+        std::vector<double> d5x{ 6, 10, 10, 6, 6, 10, 10, 6 };
+        std::vector<double> d5y{ 7, 7, 10, 10, 7, 7, 10, 10 };
+        std::vector<double> d5z{ 0, 0, 0, 0, 7, 7, 7, 7 };
+        add_domain_node(spec, "domain5", 5, 4, 5, 4, d5x, d5y, d5z);
+
+        std::vector<double> d6x{ 0, 4, 4, 0, 0, 6, 6, 0 };
+        std::vector<double> d6y{ 0, 0, 4, 4, 0, 0, 7, 7 };
+        std::vector<double> d6z{ 3, 3, 3, 3, 7, 7, 7, 7 };
+        add_domain_node(spec, "domain6", 6, 4, 5, 4, d6x, d6y, d6z);
+
+        std::vector<double> d7x{ 0, 6, 6, 0, 0, 6, 6, 0 };
+        std::vector<double> d7y{ 0, 0, 7, 7, 0, 0, 7, 7};
+        std::vector<double> d7z{ 7, 7, 7, 7, 10, 10, 10, 10 };
+        add_domain_node(spec, "domain7", 7, 4, 5, 2, d7x, d7y, d7z);
+
+        std::vector<double> d8x{ 6, 10, 10, 6, 6, 10, 10, 6 };
+        std::vector<double> d8y{ 0, 0, 7, 7, 0, 0, 7, 7 };
+        std::vector<double> d8z{ 7, 7, 7, 7, 10, 10, 10, 10 };
+        add_domain_node(spec, "domain8", 8, 4, 5, 2, d8x, d8y, d8z);
+
+        std::vector<double> d9x{ 0, 6, 6, 0, 0, 6, 6, 0 };
+        std::vector<double> d9y{ 7, 7, 10, 10, 7, 7, 10, 10 };
+        std::vector<double> d9z{ 7, 7, 7, 7, 10, 10, 10, 10 };
+        add_domain_node(spec, "domain9", 9, 4, 5, 2, d9x, d9y, d9z);
+
+        std::vector<double> d10x{ 6, 10, 10, 6, 6, 10, 10, 6 };
+        std::vector<double> d10y{ 7, 7, 10, 10, 7, 7, 10, 10 };
+        std::vector<double> d10z{ 7, 7, 7, 7, 10, 10, 10, 10 };
+        add_domain_node(spec, "domain10", 10, 4, 5, 2, d10x, d10y, d10z);
+
+        blueprint::mesh::examples::bentgrid(spec, dsets["bentgrid_3d_visitghost"]);
     }
-
-    dsets["bentgrid_2d_reduced"].print();
-    dsets["bentgrid_2d_enhanced"].print();
-
 
     Node info;
     NodeConstIterator itr = dsets.children();
