@@ -914,9 +914,9 @@ braid_init_explicit_coordset(index_t npts_x,
     if (dims > 1)
     {
         std::vector<double>C(dims);
-        fill_corner_point(C, corner_xs, corner_ys, corner_zs, 2, -10, 10, -10);
+        fill_corner_point(C, corner_xs, corner_ys, corner_zs, 2, 10, 10, -10);
         std::vector<double>D(dims);
-        fill_corner_point(D, corner_xs, corner_ys, corner_zs, 3, 10, 10, -10);
+        fill_corner_point(D, corner_xs, corner_ys, corner_zs, 3, -10, 10, -10);
         if (dims > 2)
         {
             std::vector<double>E(dims);
@@ -924,9 +924,9 @@ braid_init_explicit_coordset(index_t npts_x,
             std::vector<double>F(dims);
             fill_corner_point(F, corner_xs, corner_ys, corner_zs, 5, 10, -10, 10);
             std::vector<double>G(dims);
-            fill_corner_point(G, corner_xs, corner_ys, corner_zs, 6, -10, 10, 10);
+            fill_corner_point(G, corner_xs, corner_ys, corner_zs, 6, 10, 10, 10);
             std::vector<double>H(dims);
-            fill_corner_point(H, corner_xs, corner_ys, corner_zs, 7, 10, 10, 10);
+            fill_corner_point(H, corner_xs, corner_ys, corner_zs, 7, -10, 10, 10);
             std::vector<std::vector<double> > SW;
             conduit::blueprint::mesh::utils::lerp(A, E, npts_z, SW);
             std::vector<std::vector<double> > SE;

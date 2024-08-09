@@ -4103,9 +4103,9 @@ void CONDUIT_BLUEPRINT_API lerp(const std::vector<double>& A,
                                 int base,
                                 bool allocate)
 {
-    if (n < 2)
+    if (n < 0)
     {
-        CONDUIT_ERROR("Linear interpolation requires output of two or more points.  "
+        CONDUIT_ERROR("Linear interpolation requires output of at least one point.  "
             "Requested n is " << n);
     }
 
@@ -4127,7 +4127,11 @@ void CONDUIT_BLUEPRINT_API lerp(const std::vector<double>& A,
     {
         std::vector<double>& comp = out[c];
         if (allocate) { comp.resize(n); }
-        double delta = (B[c] - A[c]) / (n - 1);
+        double delta = 0.;
+        if (n > 1)
+        {
+            delta = (B[c] - A[c]) / (n - 1);
+        }
 
         comp[base] = A[c];
         for (int i = 1; i < n; ++i)
@@ -4142,12 +4146,6 @@ void CONDUIT_BLUEPRINT_API lerp(const std::vector<std::vector<double> >& As,
                                 int n,
                                 std::vector<std::vector<double> >& out)
 {
-    if (n < 2)
-    {
-        CONDUIT_ERROR("Linear interpolation requires output of two or more points.  "
-            "Requested n is " << n);
-    }
-
     const int dims = As.size();
     if (dims < 1 || Bs.size() != dims)
     {
