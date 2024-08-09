@@ -24,6 +24,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### Conduit
+- Added support for YAML schema.
+
 #### Relay
 - Added support for Blueprint + Silo round trip for axis units and labels.
 - Added support for reading Silo column major data as strided structured Blueprint data.

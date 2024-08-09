@@ -90,8 +90,6 @@ public:
 
 //-----------------------------------------------------------------------------
 // Shared string parsing helpers
-// TODO: try to inline these helpers? Not sure it matters since
-// they call other routines?
 //-----------------------------------------------------------------------------
     // checks if c-string is a null pointer or empty
     static bool string_is_empty(const char *txt_value);
@@ -111,6 +109,10 @@ public:
     static double string_to_double(const char *txt_value);
     // converts c-string to long
     static long int string_to_long(const char *txt_value);
+    // converts c-string to unsigned long
+    static unsigned long int string_to_unsigned_long(const char *txt_value);
+
+    static index_t parse_leaf_dtype_name(const std::string &dtype_name);
 
 //-----------------------------------------------------------------------------
 // Generator::Parser::JSON handles parsing via rapidjson.
@@ -159,7 +161,6 @@ public:
 
     static void    parse_json_float64_array(const conduit_rapidjson::Value &jvalue,
                                             Node &node);
-    static index_t parse_leaf_dtype_name(const std::string &dtype_name);
     
     static void    parse_leaf_dtype(const conduit_rapidjson::Value &jvalue,
                                     index_t offset,
@@ -257,18 +258,64 @@ public:
     // with the yaml parser
     //
 
-    // assumes res is already inited to DataType::int64 w/ proper size
-    static void parse_yaml_int64_array(yaml_document_t *yaml_doc,
-                                       yaml_node_t *yaml_node,
-                                       Node &res);
+    static bool check_yaml_is_number(const yaml_node_t *yaml_node);
 
-    // assumes res is already inited to DataType::float64 w/ proper size
-    static void parse_yaml_float64_array(yaml_document_t *yaml_doc,
-                                         yaml_node_t *yaml_node,
-                                         Node &res);
+    static bool check_yaml_is_int(const yaml_node_t *yaml_node);
+
+    static long get_yaml_long(const yaml_node_t *yaml_node);
+
+    static unsigned long get_yaml_unsigned_long(const yaml_node_t *yaml_node);
+
+    static bool check_yaml_is_scalar_node(const yaml_node_t *yaml_node);
+
+    static const char *get_yaml_string(const yaml_node_t *yaml_node);
+
+    static bool check_yaml_is_sequence(const yaml_node_t *yaml_node);
+
+    static int get_yaml_sequence_length(const yaml_node_t *yaml_node);
+
+    static int get_yaml_num_members(const yaml_node_t *yaml_node);
+
+    static bool check_yaml_is_mapping_node(const yaml_node_t *yaml_node);
+
+    static yaml_node_t* fetch_yaml_node_from_list(yaml_document_t *yaml_doc,
+                                                  const yaml_node_t *yaml_node,
+                                                  const int index);
+
+    static yaml_node_t* fetch_yaml_node_from_object_by_name(yaml_document_t *yaml_doc,
+                                                            const yaml_node_t *yaml_node,
+                                                            const std::string member_name);
+
+    static void* parse_inline_address(const yaml_node_t *yaml_node);
+
+    template <typename T>
+    static void parse_yaml_array(yaml_document_t *yaml_doc,
+                                 const yaml_node_t *yaml_node,
+                                 std::vector<T> &res,
+                                 const int seq_size);
+
+    // for efficiency - assumes res is already alloced to proper size
+    template <typename T>
+    static void parse_yaml_array(yaml_document_t *yaml_doc,
+                                 const yaml_node_t *yaml_node,
+                                 DataArray<T> &res,
+                                 const int seq_size);
+
     // parses generic leaf and places value in res
     static void parse_yaml_inline_leaf(const char *yaml_txt,
                                        Node &res);
+
+    static void parse_inline_leaf(const char *yaml_txt,
+                                  Node &node);
+
+    static void parse_leaf_dtype(yaml_document_t *yaml_doc,
+                                 const yaml_node_t *yaml_node,
+                                 index_t offset,
+                                 DataType &dtype_res);
+
+    static void parse_inline_value(yaml_document_t *yaml_doc,
+                                   const yaml_node_t *yaml_node,
+                                   Node &node);
 
     // finds if leaf string is int64, float64, or neither (DataType::EMPTY_T)
     static index_t yaml_leaf_to_numeric_dtype(const char *txt_value);
@@ -283,8 +330,33 @@ public:
     //  if homogenous floating point sequence returns DataType::FLOAT64_T 
     static index_t check_homogenous_yaml_numeric_sequence(const Node &node,
                                                           yaml_document_t *yaml_doc,
-                                                          yaml_node_t *yaml_node,
+                                                          const yaml_node_t *yaml_node,
                                                           index_t &seq_size);
+
+    static void    walk_yaml_schema(Schema *schema,
+                                    const char *yaml_txt,
+                                    index_t curr_offset);
+
+    static void    walk_yaml_schema(Schema *schema,
+                                    yaml_document_t *yaml_doc,
+                                    const yaml_node_t *yaml_node,
+                                    index_t curr_offset);
+
+    // if data pointer is provided, data is copied into dest node
+    static void    walk_yaml_schema(Node   *node,
+                                    Schema *schema,
+                                    void   *data,
+                                    const char *yaml_txt,
+                                    index_t curr_offset,
+                                    const bool external = false);
+
+    static void    walk_yaml_schema(Node   *node,
+                                    Schema *schema,
+                                    void   *data,
+                                    yaml_document_t *yaml_doc,
+                                    const yaml_node_t *yaml_node,
+                                    index_t curr_offset,
+                                    const bool external = false);
 
     // main entry point for parsing pure yaml
     static void    walk_pure_yaml_schema(Node  *node,
@@ -334,7 +406,6 @@ Generator::Parser::string_is_number(const char *txt_value)
 bool
 Generator::Parser::string_is_double(const char *txt_value)
 {
-    // TODO: inline check for empty ?
     if(string_is_empty(txt_value))
         return false;
     char *val_end = NULL;
@@ -348,7 +419,6 @@ Generator::Parser::string_is_double(const char *txt_value)
 bool
 Generator::Parser::string_is_integer(const char *txt_value)
 {
-    // TODO: inline check for empty ?
     if(string_is_empty(txt_value))
         return false;
     char *val_end = NULL;
@@ -370,6 +440,35 @@ Generator::Parser::string_to_long(const char *txt_value)
 {
     char *val_end = NULL;
     return strtol(txt_value,&val_end,10);
+}
+
+//---------------------------------------------------------------------------//
+unsigned long int
+Generator::Parser::string_to_unsigned_long(const char *txt_value)
+{
+    char *val_end = NULL;
+    return strtoul(txt_value,&val_end,10);
+}
+
+//---------------------------------------------------------------------------//
+index_t 
+Generator::Parser::parse_leaf_dtype_name(const std::string &dtype_name)
+{
+    index_t dtype_id = DataType::name_to_id(dtype_name);
+    if (dtype_id == DataType::EMPTY_ID)
+    {
+        // also try native type names
+        dtype_id = DataType::c_type_name_to_id(dtype_name);
+    }
+
+    // do an explicit check for empty
+    if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
+    {
+        CONDUIT_ERROR("Generator error:\n"
+                       << "invalid leaf type "
+                       << "\""  <<  dtype_name << "\"");
+    }
+    return dtype_id;
 }
 
 
@@ -466,7 +565,7 @@ Generator::Parser::JSON::parse_json_int64_array(const conduit_rapidjson::Value &
     // for efficiency - assumes res is already alloced to proper size
     for (conduit_rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
     {
-       res[i] = jvalue[i].GetInt64();
+        res[i] = jvalue[i].GetInt64();
     }
 }
 
@@ -701,28 +800,6 @@ Generator::Parser::JSON::parse_json_float64_array(const conduit_rapidjson::Value
     }
 }
 
-
-//---------------------------------------------------------------------------//
-index_t 
-Generator::Parser::JSON::parse_leaf_dtype_name(const std::string &dtype_name)
-{
-    index_t dtype_id = DataType::name_to_id(dtype_name);
-    if(dtype_id == DataType::EMPTY_ID)
-    {
-        // also try native type names
-        dtype_id = DataType::c_type_name_to_id(dtype_name);
-    }
-
-    // do an explicit check for empty
-    if(dtype_id == DataType::EMPTY_ID && dtype_name != "empty")
-    {
-        CONDUIT_ERROR("JSON Generator error:\n"
-                       << "invalid leaf type "
-                       << "\""  <<  dtype_name << "\"");
-    }
-    return dtype_id;
-}
-
 //---------------------------------------------------------------------------//
 void
 Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue,
@@ -750,9 +827,22 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
             
         std::string dtype_name(jvalue["dtype"].GetString());
         
-        index_t length=0;
-        
-        if(jvalue.HasMember("number_of_elements"))
+        index_t length = 0;
+
+        auto extract_uint64_member = [&](const char *member_name,
+                                         index_t &value_to_change)
+        {
+            if (jvalue.HasMember(member_name))
+            {
+                const conduit_rapidjson::Value &json_value = jvalue[member_name];
+                CONDUIT_ASSERT(json_value.IsNumber(),
+                               "JSON Generator error:\n"
+                               << "'" << member_name << "' must be a number ");
+                value_to_change = json_value.GetUint64();
+            }
+        };
+
+        if (jvalue.HasMember("number_of_elements"))
         {
             const conduit_rapidjson::Value &json_num_eles = jvalue["number_of_elements"];
             if(json_num_eles.IsNumber())
@@ -766,10 +856,10 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
             }
         }
         //
-        // DEPRECATE
+        // TODO DEPRECATE and replace with the lambda up above
         //
         // length is the old schema style, we should deprecate this path
-        else if(jvalue.HasMember("length"))
+        else if (jvalue.HasMember("length"))
         {
             const conduit_rapidjson::Value &json_len = jvalue["length"];
             if(json_len.IsNumber())
@@ -788,53 +878,13 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
         index_t stride    = ele_size;
     
         //  parse offset (override default if passed)
-        if(jvalue.HasMember("offset"))
-        {
-            const conduit_rapidjson::Value &json_offset = jvalue["offset"];
-            
-            if(json_offset.IsNumber())
-            {
-                offset = json_offset.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                              << "'offset' must be a number ");
-            }
-        }
+        extract_uint64_member("offset", offset);
 
         // parse stride (override default if passed)
-        if(jvalue.HasMember("stride") )
-        {
-            const conduit_rapidjson::Value &json_stride = jvalue["stride"];
-            
-            if(json_stride.IsNumber())
-            {
-                stride = json_stride.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                              << "'stride' must be a number ");
-            }
-        }
+        extract_uint64_member("stride", stride);
 
         // parse element_bytes (override default if passed)
-        if(jvalue.HasMember("element_bytes") )
-        {
-            const conduit_rapidjson::Value &json_ele_bytes = jvalue["element_bytes"];
-            
-            if(json_ele_bytes.IsNumber())
-            {
-                ele_size = json_ele_bytes.GetUint64();
-            }
-            else
-            {
-                CONDUIT_ERROR("JSON Generator error:\n"
-                              << "'element_bytes' must be a number ");
-            }
-        }
-    
+        extract_uint64_member("element_bytes", ele_size);    
     
         // parse endianness (override default if passed)
         index_t endianness = Endianness::DEFAULT_ID;
@@ -868,7 +918,7 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
             }
         }
     
-        if(length == 0)
+        if (0 == length)
         {
             if(jvalue.HasMember("value") &&
                jvalue["value"].IsArray())
@@ -876,8 +926,7 @@ Generator::Parser::JSON::parse_leaf_dtype(const conduit_rapidjson::Value &jvalue
                 length = jvalue["value"].Size();
             }
             // support explicit length 0 in a schema
-            else if(!jvalue.HasMember("length") && 
-                    !jvalue.HasMember("number_of_elements"))
+            else if(!jvalue.HasMember("number_of_elements"))
             {
                 length = 1;
             }
@@ -1112,11 +1161,11 @@ Generator::Parser::JSON::walk_json_schema(Schema *schema,
                  
                 // TODO: we only need to parse this once, not leng # of times
                 // but this is the easiest way to start.
-                for(int i=0;i< length;i++)
+                for (int i = 0; i < length; i ++)
                 {
-                    Schema &curr_schema =schema->append();
+                    Schema &curr_schema = schema->append();
                     curr_schema.set(DataType::list());
-                    walk_json_schema(&curr_schema,dt_value, curr_offset);
+                    walk_json_schema(&curr_schema, dt_value, curr_offset);
                     curr_offset += curr_schema.total_strided_bytes();
                 }
             }
@@ -1140,7 +1189,7 @@ Generator::Parser::JSON::walk_json_schema(Schema *schema,
                  jvalue.MemberBegin(); 
                  itr != jvalue.MemberEnd(); ++itr)
             {
-                std::string entry_name(itr->name.GetString());
+                const std::string entry_name(itr->name.GetString());
                 Schema &curr_schema = schema->add_child(entry_name);
                 curr_schema.set(DataType::object());
                 walk_json_schema(&curr_schema,itr->value, curr_offset);
@@ -1158,7 +1207,6 @@ Generator::Parser::JSON::walk_json_schema(Schema *schema,
 
         for (conduit_rapidjson::SizeType i = 0; i < jvalue.Size(); i++)
         {
-
             Schema &curr_schema = schema->append();
             curr_schema.set(DataType::list());
             walk_json_schema(&curr_schema,jvalue[i], curr_offset);
@@ -1319,7 +1367,6 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
     // object cases
     if(jvalue.IsObject())
     {
-
         if (jvalue.HasMember("dtype"))
         {
             // if dtype is an object, we have a "list_of" case
@@ -1336,7 +1383,7 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                     else if(jvalue["length"].IsObject() && 
                             jvalue["length"].HasMember("reference"))
                     {
-                        std::string ref_path = 
+                        const std::string ref_path = 
                           jvalue["length"]["reference"].GetString();
                         length = node->fetch(ref_path).to_index_t();
                     }
@@ -1444,7 +1491,6 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
                 }
 
                 Schema *curr_schema = &schema->add_child(entry_name);
-                
                 Node *curr_node = new Node();
                 curr_node->set_schema_ptr(curr_schema);
                 curr_node->set_parent(node);
@@ -1494,14 +1540,14 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
         
         if(data != NULL)
         {
-             // node is already linked to the schema pointer
-             node->set_data_ptr(data);
+            // node is already linked to the schema pointer
+            node->set_data_ptr(data);
         }
         else
         {
-             // node is already linked to the schema pointer
-             // we need to dynamically alloc
-             node->set(dtype);  // causes an init
+            // node is already linked to the schema pointer
+            // we need to dynamically alloc
+            node->set(dtype);  // causes an init
         }
     }
     else
@@ -1513,6 +1559,8 @@ Generator::Parser::JSON::walk_json_schema(Node   *node,
 }
 
 //---------------------------------------------------------------------------//
+// TODO can this be creatively combined with walk_json_schema? The functions
+// are nearly identical
 void 
 Generator::Parser::JSON::walk_json_schema_external(Node   *node,
                                                    Schema *schema,
@@ -1594,6 +1642,7 @@ Generator::Parser::JSON::walk_json_schema_external(Node   *node,
                     {
                         // node is already linked to the schema pointer
                         schema->set(dtype);
+                        schema->print();
                         node->set_data_ptr(data);
                     }
                     else
@@ -1918,78 +1967,329 @@ Generator::Parser::YAML::yaml_leaf_to_numeric_dtype(const char *txt_value)
 }
 
 //---------------------------------------------------------------------------//
-// NOTE: Assumes Node res is already DataType::int64, w/ proper len
-void
-Generator::Parser::YAML::parse_yaml_int64_array(yaml_document_t *yaml_doc,
-                                                yaml_node_t *yaml_node,
-                                                Node &res)
+bool
+Generator::Parser::YAML::check_yaml_is_number(const yaml_node_t *yaml_node)
 {
-    int64_array res_vals = res.value();
-    int cld_idx = 0;
-    while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+    if (check_yaml_is_scalar_node(yaml_node))
     {
-        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                 yaml_node->data.sequence.items.start[cld_idx]);
-                                     
-        if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
+        const char *yaml_value_str = get_yaml_string(yaml_node);
+        return string_is_integer(yaml_value_str) || string_is_double(yaml_value_str);
+    }
+
+    return false;
+}
+
+//---------------------------------------------------------------------------//
+bool 
+Generator::Parser::YAML::check_yaml_is_int(const yaml_node_t *yaml_node)
+{
+    if (check_yaml_is_scalar_node(yaml_node))
+    {
+        return string_is_integer(get_yaml_string(yaml_node));
+    }
+    return false;
+}
+
+//---------------------------------------------------------------------------//
+long
+Generator::Parser::YAML::get_yaml_long(const yaml_node_t *yaml_node)
+{
+    return string_to_long(get_yaml_string(yaml_node));
+}
+
+//---------------------------------------------------------------------------//
+unsigned long
+Generator::Parser::YAML::get_yaml_unsigned_long(const yaml_node_t *yaml_node)
+{
+    return string_to_unsigned_long(get_yaml_string(yaml_node));
+}
+
+//---------------------------------------------------------------------------//
+bool 
+Generator::Parser::YAML::check_yaml_is_scalar_node(const yaml_node_t *yaml_node)
+{
+    return yaml_node->type == YAML_SCALAR_NODE;
+}
+
+//---------------------------------------------------------------------------//
+bool 
+Generator::Parser::YAML::check_yaml_is_sequence(const yaml_node_t *yaml_node)
+{
+    return yaml_node->type == YAML_SEQUENCE_NODE;
+}
+
+//---------------------------------------------------------------------------//
+bool 
+Generator::Parser::YAML::check_yaml_is_mapping_node(const yaml_node_t *yaml_node)
+{
+    return yaml_node->type == YAML_MAPPING_NODE;
+}
+
+//---------------------------------------------------------------------------//
+const char *
+Generator::Parser::YAML::get_yaml_string(const yaml_node_t *yaml_node)
+{
+    const char *yaml_value_str = (const char*) yaml_node->data.scalar.value;
+    CONDUIT_ASSERT(yaml_value_str, "YAML Generator error:\nInvalid yaml scalar value.");
+    return yaml_value_str;
+}
+
+//---------------------------------------------------------------------------//
+int
+Generator::Parser::YAML::get_yaml_sequence_length(const yaml_node_t *yaml_node)
+{
+    // assumes yaml_node->type == YAML_SEQUENCE_NODE
+    return yaml_node->data.sequence.items.top - yaml_node->data.sequence.items.start;
+}
+
+//---------------------------------------------------------------------------//
+int
+Generator::Parser::YAML::get_yaml_num_members(const yaml_node_t *yaml_node)
+{
+    // assumes yaml_node->type == YAML_MAPPING_NODE
+    return yaml_node->data.mapping.pairs.top - yaml_node->data.mapping.pairs.start;
+}
+
+//---------------------------------------------------------------------------//
+yaml_node_t*
+Generator::Parser::YAML::fetch_yaml_node_from_list(yaml_document_t *yaml_doc,
+                                                   const yaml_node_t *yaml_node,
+                                                   const int index)
+{
+    return yaml_document_get_node(yaml_doc,
+                                  yaml_node->data.sequence.items.start[index]);
+}
+
+//---------------------------------------------------------------------------//
+yaml_node_t*
+Generator::Parser::YAML::fetch_yaml_node_from_object_by_name(yaml_document_t *yaml_doc,
+                                                             const yaml_node_t *yaml_node,
+                                                             const std::string member_name)
+{
+    for (index_t cld_idx = 0; cld_idx < get_yaml_num_members(yaml_node); cld_idx ++)
+    {
+        yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
+        CONDUIT_ASSERT(yaml_pair, "YAML Generator error:\nfailed to fetch mapping pair.");
+        yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+        CONDUIT_ASSERT(yaml_key, "YAML Generator error:\nfailed to fetch mapping key.");
+        CONDUIT_ASSERT(check_yaml_is_scalar_node(yaml_key), 
+                       "YAML Generator error:\nInvalid mapping key type.");
+        const std::string entry_name(get_yaml_string(yaml_key));
+        if (entry_name == member_name)
         {
-            CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid int64 array value at path: "
-                          << res.path() << "[" << cld_idx << "]");
+            yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
+            CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
+            return yaml_child;
         }
+    }
+
+    return nullptr;
+}
 
 
-        // check type of string contents
-        const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::parse_inline_value(yaml_document_t *yaml_doc,
+                                            const yaml_node_t *yaml_node,
+                                            Node &node)
+{
+    if (check_yaml_is_sequence(yaml_node))
+    {
+        // we assume a "value" is a leaf or list of compatible leaves
+        index_t seq_size  = -1;
+        index_t hval_type = check_homogenous_yaml_numeric_sequence(node,
+                                                                   yaml_doc,
+                                                                   yaml_node,
+                                                                   seq_size);
 
-        if(yaml_value_str == NULL )
+        CONDUIT_ASSERT((node.dtype().number_of_elements() >= get_yaml_sequence_length(yaml_node)),
+                       "YAML Generator error:\n" 
+                        << "number of elements in YAML array is more"
+                        << "than dtype can hold");
+
+        if (hval_type == DataType::INT64_ID)
         {
-            CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid int64 array value at path: "
-                          << res.path() << "[" << cld_idx << "]");
+            if (node.dtype().is_unsigned_integer())
+            {
+                // TODO: we can make this more efficient 
+                std::vector<uint64> vals;
+                parse_yaml_array<uint64>(yaml_doc, yaml_node, vals, seq_size);
+                switch (node.dtype().id())
+                {
+                    case DataType::UINT8_ID:
+                        node.as_uint8_array().set(vals);
+                        break;
+                    case DataType::UINT16_ID:
+                        node.as_uint16_array().set(vals);
+                        break;
+                    case DataType::UINT32_ID:
+                        node.as_uint32_array().set(vals);
+                        break;
+                    case DataType::UINT64_ID:
+                        node.as_uint64_array().set(vals);
+                        break;  
+                    default:
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                       << "attempting to set non-numeric Node with"
+                                       << " uint64 array");
+                        break;
+                }
+            }
+            else
+            {
+                // TODO: we can make this more efficient 
+                std::vector<int64> vals;
+                parse_yaml_array<int64>(yaml_doc, yaml_node, vals, seq_size);
+                switch (node.dtype().id())
+                {
+                    case DataType::INT8_ID:
+                        node.as_int8_array().set(vals);
+                        break;
+                    case DataType::INT16_ID:
+                        node.as_int16_array().set(vals);
+                        break;
+                    case DataType::INT32_ID:
+                        node.as_int32_array().set(vals);
+                        break;
+                    case DataType::INT64_ID:
+                        node.as_int64_array().set(vals);
+                        break;
+                    default:
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                       << "attempting to set non-numeric Node with"
+                                       << " int64 array");
+                        break;
+                }
+            }
         }
-
-        res_vals[cld_idx] = (int64) string_to_long(yaml_value_str);
-
-        cld_idx++;
+        else if(hval_type == DataType::FLOAT64_ID)
+        {
+            // TODO: we can make this more efficient 
+            std::vector<float64> vals;
+            parse_yaml_array<float64>(yaml_doc, yaml_node, vals, seq_size);
+            switch (node.dtype().id())
+            {
+                case DataType::FLOAT32_ID:
+                    node.as_float32_array().set(vals);
+                    break;
+                case DataType::FLOAT64_ID:
+                    node.as_float64_array().set(vals);
+                    break;
+                default:
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                                   << "attempting to set non-numeric Node with"
+                                   << " float64 array");
+                    break;
+            }
+        }
+        else if(hval_type == DataType::EMPTY_ID)
+        {
+            // we need to allow this case but do nothing.
+            // for conduit_yaml cases, the node will
+            // have the right data type
+        }
+        else
+        {
+            // Parsing Error, not homogenous
+            CONDUIT_ERROR("YAML Generator error:\n"
+                        << "a YAML array for value initialization"
+                        << " is not homogenous");
+        }
+    }
+    else
+    {
+        parse_inline_leaf(get_yaml_string(yaml_node), node);
     }
 }
 
 //---------------------------------------------------------------------------//
-// NOTE: Assumes Node res is already DataType::float64, w/ proper len
-void
-Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
-                                                  yaml_node_t *yaml_node,
-                                                  Node &res)
+void *
+Generator::Parser::YAML::parse_inline_address(const yaml_node_t *yaml_node)
 {
-    float64_array res_vals = res.value();
-    int cld_idx = 0;
-    while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+    void * res = nullptr;
+    if (check_yaml_is_scalar_node(yaml_node))
     {
-        yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                 yaml_node->data.sequence.items.start[cld_idx]);
-                                     
-        if(yaml_child == NULL || yaml_child->type != YAML_SCALAR_NODE )
+        const std::string sval(get_yaml_string(yaml_node));
+        res = utils::hex_string_to_value<void*>(sval);
+    }
+    // else if(jvalue.IsNumber())
+    // {
+    //     // TODO: FUTURE? ...
+    // }
+    else
+    {
+         CONDUIT_ERROR("YAML Generator error:\n"
+                       << "inline address should be a string");
+    }
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
+                                          const yaml_node_t *yaml_node,
+                                          std::vector<T> &res,
+                                          const int seq_size)
+{
+    static_assert(std::is_same<T, int64>::value ||
+                  std::is_same<T, uint64>::value ||
+                  std::is_same<T, float64>::value,
+                  "Bad type provided.");
+
+    res.resize(seq_size, 0);
+    for (index_t cld_idx = 0; cld_idx < seq_size; cld_idx ++)
+    {
+        yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
+        CONDUIT_ASSERT(yaml_child && check_yaml_is_scalar_node(yaml_child), 
+                       "YAML Generator error:\nInvalid array value.");
+        const char *yaml_value_str = get_yaml_string(yaml_child);
+        if (std::is_same<T, int64>::value)
         {
-            CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid float64 array value at path: "
-                          << res.path() << "[" << cld_idx << "]");
+            res[cld_idx] = (T) string_to_long(yaml_value_str);
         }
-
-
-        // check type of string contents
-        const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
-
-        if(yaml_value_str == NULL )
+        else if (std::is_same<T, uint64>::value)
         {
-            CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid float64 array value at path: "
-                          << res.path() << "[" << cld_idx << "]");
+            res[cld_idx] = (T) string_to_unsigned_long(yaml_value_str);
         }
+        else // b/c of our static assertion at the beginning we can assume float64
+        {
+            res[cld_idx] = (T) string_to_double(yaml_value_str);
+        }
+    }
+}
 
-        res_vals[cld_idx] = (float64) string_to_double(yaml_value_str);
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+Generator::Parser::YAML::parse_yaml_array(yaml_document_t *yaml_doc,
+                                          const yaml_node_t *yaml_node,
+                                          DataArray<T> &res,
+                                          const int seq_size)
+{
+    static_assert(std::is_same<T, int64>::value ||
+                  std::is_same<T, uint64>::value ||
+                  std::is_same<T, float64>::value,
+                  "Bad type provided.");
 
-        cld_idx++;
+    for (index_t cld_idx = 0; cld_idx < seq_size; cld_idx ++)
+    {
+        yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
+        CONDUIT_ASSERT(yaml_child && check_yaml_is_scalar_node(yaml_child), 
+                       "YAML Generator error:\nInvalid array value.");
+        const char *yaml_value_str = get_yaml_string(yaml_child);
+        if (std::is_same<T, int64>::value)
+        {
+            res[cld_idx] = (T) string_to_long(yaml_value_str);
+        }
+        else if (std::is_same<T, uint64>::value)
+        {
+            res[cld_idx] = (T) string_to_unsigned_long(yaml_value_str);
+        }
+        else // b/c of our static assertion at the beginning we can assume float64
+        {
+            res[cld_idx] = (T) string_to_double(yaml_value_str);
+        }
     }
 }
 
@@ -1997,53 +2297,37 @@ Generator::Parser::YAML::parse_yaml_float64_array(yaml_document_t *yaml_doc,
 index_t
 Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node,
                                                                 yaml_document_t *yaml_doc,
-                                                                yaml_node_t *yaml_node,
+                                                                const yaml_node_t *yaml_node,
                                                                 index_t &seq_size)
 {
-     index_t res = DataType::EMPTY_ID;
-     seq_size = -1;
-     bool ok = true;
-     int cld_idx = 0;
-     while( ok && yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
-     {
-         yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                 yaml_node->data.sequence.items.start[cld_idx]);
-                                                 
-        if(yaml_child == NULL )
-        {
-            CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid sequence child at path: "
-                          << node.path() << "[" << cld_idx << "]");
-        }
+    index_t res = DataType::EMPTY_ID;
+    seq_size = -1;
+    bool ok = true;
+    index_t cld_idx;
+    for (cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
+    {
+        yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
+        CONDUIT_ASSERT(yaml_child,
+                       "YAML Generator error:\n"
+                       << "Invalid sequence child at path: "
+                       << node.path() << "[" << cld_idx << "]");
 
         // first make sure we only have yaml scalars
-        if(yaml_child->type == YAML_SCALAR_NODE)
+        if (check_yaml_is_scalar_node(yaml_child))
         {
-
-            // check type of string contents
-            const char *yaml_value_str = (const char*)yaml_child->data.scalar.value;
-
-            if(yaml_value_str == NULL )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid value for sequence child at path: "
-                              << node.path() << "[" << cld_idx << "]");
-            }
-
             // check for integers, then widen to floats
-
-            index_t child_dtype_id = yaml_leaf_to_numeric_dtype(yaml_value_str);
-
-            if(child_dtype_id == DataType::EMPTY_ID)
+            index_t child_dtype_id = yaml_leaf_to_numeric_dtype(get_yaml_string(yaml_child));
+            if (child_dtype_id == DataType::EMPTY_ID)
             {
                 ok = false;
+                break;
             }
-            else if(res == DataType::EMPTY_ID)
+            else if (res == DataType::EMPTY_ID)
             {
                 // good so far, promote to child's dtype
                 res = child_dtype_id;
             }
-            else if( res == DataType::INT64_ID && child_dtype_id == DataType::FLOAT64_ID)
+            else if (res == DataType::INT64_ID && child_dtype_id == DataType::FLOAT64_ID)
             {
                 // promote to float64
                 res = DataType::FLOAT64_ID;
@@ -2052,22 +2336,99 @@ Generator::Parser::YAML::check_homogenous_yaml_numeric_sequence(const Node &node
         else
         {
             ok = false;
+            break;
         }
+    }
 
-        cld_idx++;
-     }
-
-     // if we are ok, seq_size is the final cld_idx
-     if(ok)
-     {
-         seq_size = cld_idx;
-     }
-     else
-     {
+    // if we are ok, seq_size is the final cld_idx
+    if (ok)
+    {
+        seq_size = cld_idx;
+    }
+    else
+    {
         res = DataType::EMPTY_ID;
-     }
+    }
 
-     return res;
+    return res;
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::parse_inline_leaf(const char *yaml_txt,
+                                           Node &node)
+{
+    if (string_is_integer(yaml_txt) || string_is_double(yaml_txt))
+    {
+        switch(node.dtype().id())
+        {
+            // signed ints
+            case DataType::INT8_ID:   
+                node.set(static_cast<int8>(string_to_long(yaml_txt)));
+                break;
+            case DataType::INT16_ID: 
+                node.set(static_cast<int16>(string_to_long(yaml_txt)));
+                break;
+            case DataType::INT32_ID:
+                node.set(static_cast<int32>(string_to_long(yaml_txt)));
+                break;
+            case DataType::INT64_ID:
+                node.set(static_cast<int64>(string_to_long(yaml_txt)));
+                break;
+            // unsigned ints
+            case DataType::UINT8_ID:
+                node.set(static_cast<uint8>(string_to_unsigned_long(yaml_txt)));
+                break;
+            case DataType::UINT16_ID:
+                node.set(static_cast<uint16>(string_to_unsigned_long(yaml_txt)));
+                break;
+            case DataType::UINT32_ID:
+                node.set(static_cast<uint32>(string_to_unsigned_long(yaml_txt)));
+                break;
+            case DataType::UINT64_ID:
+                node.set(static_cast<uint64>(string_to_unsigned_long(yaml_txt)));
+                break;  
+            //floats
+            case DataType::FLOAT32_ID:
+                node.set(static_cast<float32>(string_to_double(yaml_txt)));
+                break;
+            case DataType::FLOAT64_ID:
+                node.set(static_cast<float64>(string_to_double(yaml_txt)));
+                break;
+            default:
+                // YAML type incompatible with numeric
+                // only allow numeric to be assigned to a numeric type
+                // throw parsing error if our inline values
+                // don't match what we expected
+                CONDUIT_ERROR("YAML Generator error:\n"
+                              << "a YAML number can only be used as an inline"
+                              << " value for a Conduit Numeric Node.");
+                break;
+        }
+    }
+    else if (string_is_empty(yaml_txt))
+    {
+        // empty data type
+        node.reset();
+    }
+    else // general string case
+    {
+        if (node.dtype().id() == DataType::CHAR8_STR_ID)
+        {
+            node.set_char8_str(yaml_txt);
+        }
+        else
+        {
+             // YAML type incompatible with char8_str
+             // only allow strings to be assigned to a char8_str type
+             // throw parsing error if our inline values
+             // don't match what we expected
+
+            CONDUIT_ERROR("YAML Generator error:\n"
+                           << "a YAML string can only be used as an inline"
+                           << " value for a Conduit CHAR8_STR Node.");
+        }
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -2075,21 +2436,609 @@ void
 Generator::Parser::YAML::parse_yaml_inline_leaf(const char *yaml_txt,
                                                 Node &node)
 {
-    if(string_is_integer(yaml_txt))
+    if (string_is_integer(yaml_txt))
     {
-        node.set((int64)string_to_long(yaml_txt));
+        node.set(static_cast<int64>(string_to_long(yaml_txt)));
     }
-    else if(string_is_double(yaml_txt))
+    else if (string_is_double(yaml_txt))
     {
-        node.set((float64)string_to_double(yaml_txt));
+        node.set(static_cast<float64>(string_to_double(yaml_txt)));
     }
-    else if(string_is_empty(yaml_txt))
+    else if (string_is_empty(yaml_txt))
     {
         node.reset();
     }
     else // general string case
     {
         node.set_char8_str(yaml_txt);
+    }
+}
+
+//---------------------------------------------------------------------------//
+void
+Generator::Parser::YAML::parse_leaf_dtype(yaml_document_t *yaml_doc,
+                                          const yaml_node_t *yaml_node,
+                                          index_t offset,
+                                          DataType &dtype_res)
+{
+    if (check_yaml_is_scalar_node(yaml_node))
+    {
+        std::string dtype_name(get_yaml_string(yaml_node));
+        index_t dtype_id = parse_leaf_dtype_name(dtype_name);
+        index_t ele_size = DataType::default_bytes(dtype_id);
+        dtype_res.set(dtype_id,
+                      1,
+                      offset,
+                      ele_size,
+                      ele_size,
+                      Endianness::DEFAULT_ID);
+    }
+    else if (check_yaml_is_mapping_node(yaml_node))
+    {
+        yaml_node_t* dtype_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
+        CONDUIT_ASSERT(dtype_node && check_yaml_is_scalar_node(dtype_node), 
+                       "YAML Generator error:\n'dtype' must be a YAML string.")
+        const std::string dtype_name(get_yaml_string(dtype_node));
+
+        index_t length = 0;
+
+        auto extract_uint64_member = [&](const std::string &member_name,
+                                         index_t &value_to_change)
+        {
+            const yaml_node_t* value_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, member_name);
+            if (value_node)
+            {
+                CONDUIT_ASSERT(check_yaml_is_number(value_node),
+                               "YAML Generator error:\n"
+                               << "'" << member_name << "' must be a number ");
+                value_to_change = static_cast<uint64>(get_yaml_unsigned_long(value_node));
+            }
+        };
+
+        const yaml_node_t* num_ele_node = fetch_yaml_node_from_object_by_name(yaml_doc,
+                                                                              yaml_node,
+                                                                              "number_of_elements");
+        if (num_ele_node)
+        {
+            CONDUIT_ASSERT(check_yaml_is_number(num_ele_node),
+                           "YAML Generator error:\n"
+                           << "'number_of_elements' must be a number ");
+            length = static_cast<uint64>(get_yaml_unsigned_long(num_ele_node));
+        }
+        //
+        // TODO DEPRECATE and replace with the lambda up above
+        // I don't think that here and in the JSON equivalent are the only
+        // two places where length needs to be deprecated.
+        //
+        // length is the old schema style, we should deprecate this path
+        else
+        {
+            const yaml_node_t* length_node = fetch_yaml_node_from_object_by_name(yaml_doc,
+                                                                                 yaml_node,
+                                                                                 "length");
+            if (length_node)
+            {
+                CONDUIT_ASSERT(check_yaml_is_number(length_node),
+                               "YAML Generator error:\n"
+                               << "'length' must be a number ");
+                length = static_cast<uint64>(get_yaml_unsigned_long(length_node));
+            }
+        }
+
+        index_t dtype_id = parse_leaf_dtype_name(dtype_name);
+        index_t ele_size = DataType::default_bytes(dtype_id);
+        index_t stride = ele_size;
+
+        //  parse offset (override default if passed)
+        extract_uint64_member("offset", offset);
+
+        // parse stride (override default if passed)
+        extract_uint64_member("stride", stride);
+
+        // parse element_bytes (override default if passed)
+        extract_uint64_member("element_bytes", ele_size);
+
+        // parse endianness (override default if passed)
+        index_t endianness = Endianness::DEFAULT_ID;
+        const yaml_node_t* endianness_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "endianness");
+        if (endianness_node)
+        {
+            if (check_yaml_is_scalar_node(endianness_node))
+            {
+                const std::string end_val(get_yaml_string(endianness_node));
+                if ("big" == end_val)
+                {
+                    endianness = Endianness::BIG_ID;
+                }
+                else if ("little" == end_val)
+                {
+                    endianness = Endianness::LITTLE_ID;
+                }
+                else
+                {
+                    CONDUIT_ERROR("YAML Generator error:\n"
+                              << "'endianness' must be a string"
+                              << " (\"big\" or \"little\")"
+                              << " parsed value: " << end_val);
+                }
+            }
+            else
+            {
+                CONDUIT_ERROR("YAML Generator error:\n"
+                          << "'endianness' must be a string"
+                          << " (\"big\" or \"little\")");
+            }
+        }
+
+        if (0 == length)
+        {
+            const yaml_node_t* value_node = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "value");
+            if (value_node && check_yaml_is_sequence(value_node))
+            {
+                length = get_yaml_sequence_length(value_node);
+            }
+            // support explicit length 0 in a schema
+            else if (fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "number_of_elements"))
+            {
+                length = 1;
+            }
+        }
+
+        dtype_res.set(dtype_id,
+                      length,
+                      offset,
+                      stride,
+                      ele_size,
+                      endianness);
+    }
+    else
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                       << "a leaf dtype entry must be a YAML string or"
+                       <<  " YAML object.");
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_yaml_schema(Node *node,
+                                          Schema *schema,
+                                          void *data,
+                                          const char *yaml_txt,
+                                          index_t curr_offset,
+                                          const bool external)
+{
+    YAMLParserWrapper parser;
+    parser.parse(yaml_txt);
+
+    yaml_document_t *yaml_doc  = parser.yaml_doc_ptr();
+    yaml_node_t     *yaml_node = parser.yaml_doc_root_ptr();
+
+
+    if (!yaml_doc || !yaml_node)
+    {
+        CONDUIT_ERROR("failed to fetch yaml document root");
+    }
+
+    walk_yaml_schema(node,
+                     schema,
+                     data,
+                     yaml_doc,
+                     yaml_node,
+                     curr_offset,
+                     external);
+
+    // YAMLParserWrapper cleans up for us
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_yaml_schema(Node *node,
+                                          Schema *schema,
+                                          void *data,
+                                          yaml_document_t *yaml_doc,
+                                          const yaml_node_t *yaml_node,
+                                          index_t curr_offset,
+                                          const bool external)
+{
+    // object cases
+    if (check_yaml_is_mapping_node(yaml_node))
+    {
+        // if dtype is an object, we have a "list_of" case
+        const yaml_node_t *dt_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
+        if (dt_value) // if yaml has dtype
+        {
+            // if dtype yaml is object type
+            if (check_yaml_is_mapping_node(dt_value))
+            {
+                index_t length = 1;
+                const yaml_node_t *len_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "length");
+                if (len_value) // if dtype has member length
+                {
+                    if (check_yaml_is_number(len_value))
+                    {
+                        length = static_cast<index_t>(get_yaml_long(len_value));
+                    }
+                    else if (check_yaml_is_mapping_node(len_value))
+                    {
+                        const yaml_node_t *ref_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "reference");
+                        if (ref_value)
+                        {
+                            const std::string ref_path = get_yaml_string(ref_value);
+                            length = node->fetch(ref_path).to_index_t();
+                        }
+                        else
+                        {
+                            CONDUIT_ERROR("YAML Generator error:\n"
+                                          << "'length' must be a number or"
+                                          << " reference");
+                        }
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                      << "'length' must be a number or"
+                                      << " reference");
+                    }
+                }
+                // we will create `length' # of objects of obj des by dt_value
+
+                // TODO: we only need to parse this once, not leng # of times
+                // but this is the easiest way to start.
+                for (index_t i = 0; i < length; i++)
+                {
+                    schema->append();
+                    Schema *curr_schema = schema->child_ptr(i);
+                    Node *curr_node = new Node();
+                    curr_node->set_schema_ptr(curr_schema);
+                    curr_node->set_parent(node);
+                    node->append_node_ptr(curr_node);
+                    walk_yaml_schema(curr_node,
+                                     curr_schema,
+                                     data,
+                                     yaml_doc,
+                                     dt_value,
+                                     curr_offset,
+                                     external);
+                    // auto offset only makes sense when we have data
+                    if (data)
+                    {
+                        curr_offset += curr_schema->total_strided_bytes();
+                    }
+                }
+            }
+            else
+            {
+                // handle leaf node with explicit props
+                DataType src_dtype;
+                parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, src_dtype);
+
+                DataType des_dtype;
+                src_dtype.compact_to(des_dtype);
+
+                // check for explicit address
+                const yaml_node_t* address_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "address");
+                if (address_value)
+                {
+                    void *data_ptr = parse_inline_address(address_value);
+                    node->set_external(src_dtype, data_ptr);
+                }
+                else
+                {
+                    if (data)
+                    {
+                        if (external) // handle conduit_yaml_external case
+                        {
+                            // node is already linked to the schema pointer
+                            schema->set(des_dtype);
+                            schema->print();
+                            node->set_data_ptr(data);
+                        }
+                        else
+                        {
+                            uint8 *src_data_ptr = ((uint8*)data) + src_dtype.offset();
+                            // node is already linked to the schema pointer
+                            // we need to dynamically alloc, use compact dtype
+                            node->set(des_dtype); // causes an init
+                            // copy bytes from src data to node's memory
+                            utils::conduit_memcpy_strided_elements(node->data_ptr(),               // dest data
+                                                                   des_dtype.number_of_elements(), // num ele
+                                                                   des_dtype.element_bytes(),      // ele bytes
+                                                                   des_dtype.stride(),             // dest stride
+                                                                   src_data_ptr,                   // src data
+                                                                   src_dtype.stride());            // src stride
+                        }
+                    }
+                    else
+                    {
+                        // node is already linked to the schema pointer
+                        // we need to dynamically alloc, use compact dtype
+                        node->set(des_dtype); // causes an init
+                    }
+
+                    // check for inline yaml values
+                    const yaml_node_t *value_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "value");
+                    if (value_value)
+                    {
+                        parse_inline_value(yaml_doc, value_value, *node);
+                    }
+                }
+            }
+        }
+        else // object case
+        {
+            schema->set(DataType::object());
+            // standard object case - loop over all entries
+            for (index_t cld_idx = 0; cld_idx < get_yaml_num_members(yaml_node); cld_idx ++)
+            {
+                yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
+                CONDUIT_ASSERT(yaml_pair, "YAML Generator error:\nfailed to fetch mapping pair.");
+                yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+                CONDUIT_ASSERT(yaml_key, "YAML Generator error:\nfailed to fetch mapping key.");
+                CONDUIT_ASSERT(check_yaml_is_scalar_node(yaml_key), 
+                               "YAML Generator error:\nInvalid mapping key type.");
+                const std::string entry_name(get_yaml_string(yaml_key));
+
+                // yaml files may have duplicate object names
+                // we could provide some clear semantics, such as:
+                //   always use first instance, or always use last instance
+                // however duplicate object names are most likely a
+                // typo, so it's best to throw an error
+                // 
+                // also its highly unlikely that the auto offset case
+                // could safely deal with offsets for the
+                // duplicate key case
+                CONDUIT_ASSERT(! schema->has_child(entry_name),
+                               "YAML Generator error:\n"
+                               << "Duplicate YAML object name: "
+                               << utils::join_path(node->path(),entry_name));
+
+                yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
+                CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
+
+                Schema *curr_schema = &schema->add_child(entry_name);
+                Node *curr_node = new Node();
+                curr_node->set_schema_ptr(curr_schema);
+                curr_node->set_parent(node);
+                node->append_node_ptr(curr_node);
+                walk_yaml_schema(curr_node,
+                                 curr_schema,
+                                 data,
+                                 yaml_doc,
+                                 yaml_child,
+                                 curr_offset,
+                                 external);
+
+                // auto offset only makes sense when we have data
+                if (data)
+                {
+                    curr_offset += curr_schema->total_strided_bytes();
+                }
+            }
+        }
+    }
+    // List case
+    else if (check_yaml_is_sequence(yaml_node))
+    {
+        schema->set(DataType::list());
+
+        for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
+        {
+            yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
+            CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
+
+            schema->append();
+            Schema *curr_schema = schema->child_ptr(cld_idx);
+            Node *curr_node = new Node();
+            curr_node->set_schema_ptr(curr_schema);
+            curr_node->set_parent(node);
+            node->append_node_ptr(curr_node);
+            walk_yaml_schema(curr_node,
+                             curr_schema,
+                             data,
+                             yaml_doc,
+                             yaml_child,
+                             curr_offset,
+                             external);
+            // auto offset only makes sense when we have data
+            if (data)
+            {
+                curr_offset += curr_schema->total_strided_bytes();
+            }
+        }
+    }
+    // Simplest case, handles "uint32", "float64", with extended type info
+    else if (check_yaml_is_scalar_node(yaml_node))
+    {
+        DataType dtype;
+        parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+        schema->set(dtype);
+
+        if (data)
+        {
+            // node is already linked to the schema pointer
+            node->set_data_ptr(data);
+        }
+        else
+        {
+            // node is already linked to the schema pointer
+            // we need to dynamically alloc
+            node->set(dtype);  // causes an init
+        }
+    }
+    else
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid YAML type for parsing Node."
+                      << " Expected: YAML Object, Array, or String");
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
+                                          const char *yaml_txt,
+                                          index_t curr_offset)
+{
+    YAMLParserWrapper parser;
+    parser.parse(yaml_txt);
+
+    yaml_document_t *yaml_doc  = parser.yaml_doc_ptr();
+    yaml_node_t     *yaml_node = parser.yaml_doc_root_ptr();
+
+
+    if (!yaml_doc || !yaml_node)
+    {
+        CONDUIT_ERROR("failed to fetch yaml document root");
+    }
+
+    walk_yaml_schema(schema,
+                     yaml_doc,
+                     yaml_node,
+                     curr_offset);
+
+    // YAMLParserWrapper cleans up for us
+}
+
+
+//---------------------------------------------------------------------------//
+void 
+Generator::Parser::YAML::walk_yaml_schema(Schema *schema,
+                                          yaml_document_t *yaml_doc,
+                                          const yaml_node_t *yaml_node,
+                                          index_t curr_offset)
+{
+    // object cases
+    if (check_yaml_is_mapping_node(yaml_node))
+    {
+        const yaml_node_t* dt_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "dtype");
+        if (dt_value) // if yaml has dtype
+        {
+            // if dtype is an object, we have a "list_of" case
+            if (check_yaml_is_mapping_node(dt_value)) // if dtype yaml is object type
+            {
+                int length = 1;
+                const yaml_node_t *len_value = fetch_yaml_node_from_object_by_name(yaml_doc, yaml_node, "length");
+                if (len_value) // if dtype has member length
+                {
+                    if (check_yaml_is_mapping_node(len_value) &&
+                        fetch_yaml_node_from_object_by_name(yaml_doc, len_value, "reference"))
+                    {
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                      << "'reference' option is not supported"
+                                      << " when parsing to a Schema because"
+                                      << " reference data does not exist.");
+                    }
+                    else if (check_yaml_is_int(len_value))
+                    {
+                        length = static_cast<int>(get_yaml_long(len_value));
+                    }
+                    else
+                    {
+                        CONDUIT_ERROR("YAML Generator error:\n"
+                                      << "'length' must be a YAML Object or"
+                                      << " YAML number");
+                    }
+                }
+                // we will create `length' # of objects of obj des by dt_value
+
+                // TODO: we only need to parse this once, not leng # of times
+                // but this is the easiest way to start.
+                for (int i = 0; i < length; i ++)
+                {
+                    Schema &curr_schema = schema->append();
+                    curr_schema.set(DataType::list());
+                    walk_yaml_schema(&curr_schema,
+                                     yaml_doc,
+                                     dt_value,
+                                     curr_offset);
+                    curr_offset += curr_schema.total_strided_bytes();
+                }
+            }
+            else
+            {
+                // handle leaf node with explicit props
+                DataType dtype;
+                parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+                schema->set(dtype);
+            }
+        }
+        else
+        {
+            // if we make it here and have an empty yaml object
+            // we still want the conduit schema to take on the
+            // object role
+            schema->set(DataType::object());
+
+            // loop over all entries
+            for (index_t cld_idx = 0; cld_idx < get_yaml_num_members(yaml_node); cld_idx ++)
+            {
+                yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
+                CONDUIT_ASSERT(yaml_pair, "YAML Generator error:\nfailed to fetch mapping pair.");
+                yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
+                CONDUIT_ASSERT(yaml_key, "YAML Generator error:\nfailed to fetch mapping key.");
+                CONDUIT_ASSERT(check_yaml_is_scalar_node(yaml_key), 
+                               "YAML Generator error:\nInvalid mapping key type.");
+                const std::string entry_name(get_yaml_string(yaml_key));
+
+                // yaml files may have duplicate object names
+                // we could provide some clear semantics, such as:
+                //   always use first instance, or always use last instance
+                // however duplicate object names are most likely a
+                // typo, so it's best to throw an error
+                CONDUIT_ASSERT(! schema->has_child(entry_name),
+                               "YAML Generator error:\n"
+                               << "Duplicate YAML object name: "
+                               << entry_name);
+
+                Schema &curr_schema = schema->add_child(entry_name);
+                curr_schema.set(DataType::object());
+
+                yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
+                CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
+
+                walk_yaml_schema(&curr_schema,
+                                 yaml_doc,
+                                 yaml_child,
+                                 curr_offset);
+                curr_offset += curr_schema.total_strided_bytes();
+            }
+        }
+    }
+    // List case
+    else if (check_yaml_is_sequence(yaml_node))
+    {
+        // if we make it here and have an empty yaml list
+        // we still want the conduit schema to take on the
+        // list role
+        schema->set(DataType::list());
+
+        for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
+        {
+            yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
+            CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
+
+            Schema &curr_schema = schema->append();
+            curr_schema.set(DataType::list());
+            walk_yaml_schema(&curr_schema, yaml_doc, yaml_child, curr_offset);
+            curr_offset += curr_schema.total_strided_bytes();
+        }
+    }
+    // Simplest case, handles "uint32", "float64", etc
+    else if (check_yaml_is_scalar_node(yaml_node))
+    {
+        DataType dtype;
+        parse_leaf_dtype(yaml_doc, yaml_node, curr_offset, dtype);
+        schema->set(dtype);
+    }
+    else
+    {
+        CONDUIT_ERROR("YAML Generator error:\n"
+                      << "Invalid YAML type for parsing Schema."
+                      << " Expected: YAML Map, Sequence, or String");
     }
 }
 
@@ -2130,62 +3079,24 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
 {
     
     // object cases
-    if( yaml_node->type == YAML_MAPPING_NODE )
+    if (check_yaml_is_mapping_node(yaml_node))
     {
         // if we make it here and have an empty json object
         // we still want the conduit node to take on the
         // object role
         schema->set(DataType::object());
         // loop over all entries
-        
-        int cld_idx = 0;
-        // while (has_next) --> grab next, then process
-        while( (yaml_node->data.mapping.pairs.start + cld_idx) < yaml_node->data.mapping.pairs.top)
+        for (index_t cld_idx = 0; cld_idx < get_yaml_num_members(yaml_node); cld_idx ++)
         {
             yaml_node_pair_t *yaml_pair = yaml_node->data.mapping.pairs.start + cld_idx;
-
-            if(yaml_pair == NULL)
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "failed to fetch mapping pair at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-
+            CONDUIT_ASSERT(yaml_pair, "YAML Generator error:\nfailed to fetch mapping pair.");
             yaml_node_t *yaml_key = yaml_document_get_node(yaml_doc, yaml_pair->key);
-            
-            if(yaml_key == NULL)
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "failed to fetch mapping key at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-
-            if(yaml_key->type != YAML_SCALAR_NODE )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid mapping key type at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-
-            const char *yaml_key_str = (const char *) yaml_key->data.scalar.value;
-
-            if(yaml_key_str == NULL )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid mapping key value at path: "
-                              << node->path() << "[" << cld_idx << "]");
-            }
-            
-            std::string entry_name(yaml_key_str);
-
+            CONDUIT_ASSERT(yaml_key, "YAML Generator error:\nfailed to fetch mapping key.");
+            CONDUIT_ASSERT(check_yaml_is_scalar_node(yaml_key), 
+                           "YAML Generator error:\nInvalid mapping key type.");
+            const std::string entry_name(get_yaml_string(yaml_key));
             yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc, yaml_pair->value);
-
-            if(yaml_child == NULL )
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Invalid mapping child at path: "
-                              << utils::join_path(node->path(),entry_name));
-            }
+            CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
 
             // yaml files may have duplicate object names
             // we could provide some clear semantics, such as:
@@ -2193,12 +3104,10 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
             // however duplicate object names are most likely a
             // typo, so it's best to throw an error
 
-            if(schema->has_child(entry_name))
-            {
-                CONDUIT_ERROR("YAML Generator error:\n"
-                              << "Duplicate YAML object name: "
-                              << utils::join_path(node->path(),entry_name));
-            }
+            CONDUIT_ASSERT(! schema->has_child(entry_name),
+                           "YAML Generator error:\n"
+                           << "Duplicate YAML object name: "
+                           << utils::join_path(node->path(),entry_name));
 
             Schema *curr_schema = &schema->add_child(entry_name);
 
@@ -2206,16 +3115,15 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
             curr_node->set_schema_ptr(curr_schema);
             curr_node->set_parent(node);
             node->append_node_ptr(curr_node);
-        
+            
             walk_pure_yaml_schema(curr_node,
                                   curr_schema,
                                   yaml_doc,
                                   yaml_child);
-            cld_idx++;
         }
     }
     // List case
-    else if( yaml_node->type == YAML_SEQUENCE_NODE )
+    else if (check_yaml_is_sequence(yaml_node))
     {
         index_t seq_size  = -1;
         index_t hval_type = check_homogenous_yaml_numeric_sequence(*node,
@@ -2223,33 +3131,34 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                                                                    yaml_node,
                                                                    seq_size);
 
-        if(hval_type == DataType::INT64_ID)
+        if (hval_type == DataType::INT64_ID)
         {
-
-            node->set(DataType::int64(seq_size));
-            parse_yaml_int64_array(yaml_doc, yaml_node, *node);
-
+            if (node->dtype().is_unsigned_integer())
+            {
+                node->set(DataType::uint64(seq_size));
+                uint64_array vals = node->value();
+                parse_yaml_array<uint64>(yaml_doc, yaml_node, vals, seq_size);
+            }
+            else
+            {
+                node->set(DataType::int64(seq_size));
+                int64_array vals = node->value();
+                parse_yaml_array<int64>(yaml_doc, yaml_node, vals, seq_size);
+            }
         }
         else if(hval_type == DataType::FLOAT64_ID)
         {
             node->set(DataType::float64(seq_size));
-            parse_yaml_float64_array(yaml_doc, yaml_node, *node);
+            float64_array vals = node->value();
+            parse_yaml_array<float64>(yaml_doc, yaml_node, vals, seq_size);
         }
         else
         {
             // general case (not a numeric array)
-            index_t cld_idx = 0;
-            while( yaml_node->data.sequence.items.start + cld_idx < yaml_node->data.sequence.items.top )
+            for (index_t cld_idx = 0; cld_idx < get_yaml_sequence_length(yaml_node); cld_idx ++)
             {
-                yaml_node_t *yaml_child = yaml_document_get_node(yaml_doc,
-                                                        yaml_node->data.sequence.items.start[cld_idx]);
-            
-                if(yaml_child == NULL )
-                {
-                    CONDUIT_ERROR("YAML Generator error:\n"
-                                  << "Invalid sequence child at path: "
-                                  << node->path() << "[" << cld_idx << "]");
-                }
+                yaml_node_t *yaml_child = fetch_yaml_node_from_list(yaml_doc, yaml_node, cld_idx);
+                CONDUIT_ASSERT(yaml_child, "YAML Generator error:\nInvalid mapping child.");
 
                 schema->append();
                 Schema *curr_schema = schema->child_ptr(cld_idx);
@@ -2261,22 +3170,12 @@ Generator::Parser::YAML::walk_pure_yaml_schema(Node *node,
                                       curr_schema,
                                       yaml_doc,
                                       yaml_child);
-                cld_idx++;
             }
         }
     }
-    else if(yaml_node->type == YAML_SCALAR_NODE)// bytestr case
+    else if (check_yaml_is_scalar_node(yaml_node))// bytestr case
     {
-        const char *yaml_value_str = (const char*)yaml_node->data.scalar.value;
-
-        if( yaml_value_str == NULL )
-        {
-            CONDUIT_ERROR("YAML Generator error:\n"
-                          << "Invalid yaml scalar value at path: "
-                          << node->path());
-        }
-
-        parse_yaml_inline_leaf(yaml_value_str,*node);
+        parse_yaml_inline_leaf(get_yaml_string(yaml_node),*node);
     }
     else // this will include unknown enum vals and YAML_NO_NODE
     {
@@ -2427,15 +3326,29 @@ void
 Generator::walk(Schema &schema) const
 {
     schema.reset();
-    conduit_rapidjson::Document document;
-    std::string res = utils::json_sanitize(m_schema);
-
-    if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
-    {
-        CONDUIT_JSON_PARSE_ERROR(res, document);
-    }
     index_t curr_offset = 0;
-    Parser::JSON::walk_json_schema(&schema,document,curr_offset);
+    if (m_protocol.find("json") != std::string::npos)
+    {
+        conduit_rapidjson::Document document;
+        std::string res = utils::json_sanitize(m_schema);
+
+        if(document.Parse<Parser::JSON::RAPIDJSON_PARSE_OPTS>(res.c_str()).HasParseError())
+        {
+            CONDUIT_JSON_PARSE_ERROR(res, document);
+        }
+
+        Parser::JSON::walk_json_schema(&schema,document,curr_offset);
+    }
+    else if (m_protocol.find("yaml") != std::string::npos)
+    {
+        Parser::YAML::walk_yaml_schema(&schema,
+                                       m_schema.c_str(),
+                                       curr_offset);
+    }
+    else
+    {
+        CONDUIT_ERROR("Unknown protocol in " << m_protocol);
+    }
 }
 
 //---------------------------------------------------------------------------//
@@ -2503,6 +3416,23 @@ Generator::walk(Node &node) const
                                            m_data,
                                            document,
                                            curr_offset);
+        }
+        // TODO
+        // else if( m_protocol == "conduit_base64_yaml")
+        // {
+        //     Parser::YAML::parse_base64(&node,
+        //                                document);
+        // }
+        else if( m_protocol == "conduit_yaml" || m_protocol == "conduit_yaml_external")
+        {
+            index_t curr_offset = 0;
+            const bool external = false;
+            Parser::YAML::walk_yaml_schema(&node,
+                                           node.schema_ptr(),
+                                           m_data,
+                                           m_schema.c_str(),
+                                           curr_offset,
+                                           external);
         }
         else
         {
@@ -2580,6 +3510,23 @@ Generator::walk_external(Node &node) const
                                                     m_data,
                                                     document,
                                                     curr_offset);
+        }
+        // TODO
+        // else if( m_protocol == "conduit_base64_yaml")
+        // {
+        //     Parser::YAML::parse_base64(&node,
+        //                                document);
+        // }
+        else if( m_protocol == "conduit_yaml" || m_protocol == "conduit_yaml_external")
+        {
+            index_t curr_offset = 0;
+            const bool external = true;
+            Parser::YAML::walk_yaml_schema(&node,
+                                           node.schema_ptr(),
+                                           m_data,
+                                           m_schema.c_str(),
+                                           curr_offset,
+                                           external);
         }
         else
         {
