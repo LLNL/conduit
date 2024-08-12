@@ -34,7 +34,7 @@ namespace execution
 {
 
 //---------------------------------------------------------------------------
-enum class policies { Serial, Device, Cuda, Hip, OpenMP };
+enum class policy { Serial, Device, Cuda, Hip, OpenMP };
 //---------------------------------------------------------------------------
 
 //---------------------------------------------------------------------------
@@ -48,8 +48,8 @@ struct EmptyPolicy
 class ExecPolicy
 {
 public:
-    ExecPolicy(policies _id): id(_id) {}
-    policies id;
+    ExecPolicy(policy _id): id(_id) {}
+    policy id;
 };
 
 #if defined(CONDUIT_USE_RAJA)
@@ -170,7 +170,7 @@ void dispatch(ExecPolicy policy, Function&& func)
 {
     switch(policy.id)
     {
-        case policies::Device: // TODO I have made device prefer cuda over hip if both are available
+        case policy::Device: // TODO I have made device prefer cuda over hip if both are available
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             CudaExec ce;
             return invoke(ce, func);
@@ -180,28 +180,28 @@ void dispatch(ExecPolicy policy, Function&& func)
 #else
             CONDUIT_ERROR("Conduit was built with neither CUDA nor HIP.");
 #endif
-        case policies::Cuda:
+        case policy::Cuda:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             CudaExec ce;
             return invoke(ce, func);
 #else
             CONDUIT_ERROR("Conduit was not built with CUDA.");
 #endif
-        case policies::Hip:
+        case policy::Hip:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_HIP)
             HipExec he;
             return invoke(he, func);
 #else
             CONDUIT_ERROR("Conduit was not built with HIP.");
 #endif
-        case policies::OpenMP:
+        case policy::OpenMP:
 #if defined(CONDUIT_USE_OPENMP)
             OpenMPExec ompe;
             return invoke(ompe, func);
 #else
             CONDUIT_ERROR("Conduit was not built with OpenMP.");
 #endif
-        case policies::Serial:
+        case policy::Serial:
         default:
             SerialExec se;
             return invoke(se, func);
@@ -248,7 +248,7 @@ inline void new_forall(ExecPolicy &policy,
 {
     switch(policy.id)
     {
-        case policies::Device: // TODO I have made device prefer cuda over hip if both are available
+        case policy::Device: // TODO I have made device prefer cuda over hip if both are available
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             new_forall<CudaExec>(begin,end,std::forward<Kernel>(kernel));
             break;
@@ -258,28 +258,28 @@ inline void new_forall(ExecPolicy &policy,
 #else
             CONDUIT_ERROR("Conduit was built with neither CUDA nor HIP.");
 #endif
-        case policies::Cuda:
+        case policy::Cuda:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_CUDA)
             new_forall<CudaExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
             CONDUIT_ERROR("Conduit was not built with CUDA.");
 #endif
-        case policies::Hip:
+        case policy::Hip:
 #if defined(CONDUIT_USE_RAJA) && defined(CONDUIT_USE_HIP)
             new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
             CONDUIT_ERROR("Conduit was not built with HIP.");
 #endif
-        case policies::OpenMP:
+        case policy::OpenMP:
 #if defined(CONDUIT_USE_OPENMP)
             new_forall<HipExec>(begin,end,std::forward<Kernel>(kernel));
             break;
 #else
             CONDUIT_ERROR("Conduit was not built with OpenMP.");
 #endif
-        case policies::Serial:
+        case policy::Serial:
         default:
             new_forall<SerialExec>(begin,end,std::forward<Kernel>(kernel));
             break;

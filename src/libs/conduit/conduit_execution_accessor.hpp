@@ -18,6 +18,7 @@
 #include "conduit_core.hpp"
 #include "conduit_data_type.hpp"
 #include "conduit_utils.hpp"
+#include "conduit_execution.hpp"
 
 
 //-----------------------------------------------------------------------------
@@ -40,6 +41,13 @@ template <typename T>
 class CONDUIT_API ExecutionAccessor
 {
 public:
+
+//-----------------------------------------------------------------------------
+// -- friends of ExecutionAccessor --
+//-----------------------------------------------------------------------------
+    friend class Node;
+    friend class Schema;
+
 //-----------------------------------------------------------------------------
 //
 // -- conduit::ExecutionAccessor public methods --
@@ -53,10 +61,15 @@ public:
     ExecutionAccessor();
     /// Copy constructor
     ExecutionAccessor(const ExecutionAccessor<T> &accessor);
-    /// Access a pointer to raw data according to dtype description.
-    ExecutionAccessor(void *data, const DataType &dtype);
+    /// Access a pointer to node data according to node dtype description.
+    ExecutionAccessor(Node &node);
+    // /// Access a const pointer to node data according to node dtype description.
+    // ExecutionAccessor(const Node &node);
+    /// Access a pointer to node data according to node dtype description.
+    ExecutionAccessor(Node *node);
+    /// Access a const pointer to node data according to node dtype description.
+    ExecutionAccessor(const Node *node);
     /// Access a const pointer to raw data according to dtype description.
-    ExecutionAccessor(const void *data, const DataType &dtype);
     ~ExecutionAccessor();
 
     ///
@@ -95,10 +108,10 @@ public:
                     {return dtype().number_of_elements();}
 
     const DataType &dtype() const
-                    {return (m_data == m_orig_ptr ? orig_dtype() : other_dtype());}
+                    {return (m_data == m_node_ptr->data_ptr() ? orig_dtype() : other_dtype());}
 
     const DataType &orig_dtype() const 
-                    { return m_orig_dtype;}
+                    { return m_node_ptr.dtype();}
 
     const DataType &other_dtype() const 
                     { return m_other_dtype;}
@@ -106,10 +119,11 @@ public:
 //-----------------------------------------------------------------------------
 // Cool Stuff
 //-----------------------------------------------------------------------------
-    template<typename T>
-    void            use_with(T policy);
+    void            use_with(conduit::execution::policy policy);
 
-    void            sync(Node &n);
+    void            sync();
+
+    void            assume();
 
 //-----------------------------------------------------------------------------
 // Transforms
@@ -150,12 +164,11 @@ private:
 // -- conduit::ExecutionAccessor private data members --
 //
 //-----------------------------------------------------------------------------
-    /// holds data (always external, never allocated)
-    void           *m_orig_ptr;
-    /// holds data description
-    DataType        m_orig_dtype;
+    Node           *m_node_ptr;
 
+    /// holds data
     void           *m_other_ptr;
+    /// holds data description
     DataType        m_other_dtype;
     
     bool            m_do_i_own_it;

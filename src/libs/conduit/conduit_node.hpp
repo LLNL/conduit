@@ -3774,7 +3774,7 @@ public:
     const DataType   &dtype() const
                         { return m_schema->dtype();}
 
-    Schema          *schema_ptr()
+    const Schema     *schema_ptr() const
                         {return m_schema;}
 
     // check if data owned by this node is externally
@@ -4446,6 +4446,31 @@ private:
 //-----------------------------------------------------------------------------
 //
 // -- end declaration of Private Construction Helpers --
+//
+//-----------------------------------------------------------------------------
+
+//-----------------------------------------------------------------------------
+//
+// -- begin declaration of Private Node information methods --
+//
+//-----------------------------------------------------------------------------
+//-----------------------------------------------------------------------------
+///@name Private Node Information
+///@{
+//-----------------------------------------------------------------------------
+/// description:
+///  These methods provide general info about the node hierarchy, and memory
+///  layout.
+//-----------------------------------------------------------------------------
+    // schema access
+    Schema          *schema_ptr()
+                        {return m_schema;}
+
+//-----------------------------------------------------------------------------
+///@}
+//-----------------------------------------------------------------------------
+//
+// -- end declaration of Private Node Information --
 //
 //-----------------------------------------------------------------------------
 

@@ -8,6 +8,7 @@
 ///
 //-----------------------------------------------------------------------------
 #include "conduit_execution_accessor.hpp"
+#include "conduit_memory_manager.hpp"
 
 //-----------------------------------------------------------------------------
 // -- standard includes -- 
@@ -31,22 +32,19 @@ namespace conduit
 //---------------------------------------------------------------------------//
 template <typename T> 
 ExecutionAccessor<T>::ExecutionAccessor()
-: m_orig_ptr(nullptr),
-  m_orig_dtype(),
+: m_node_ptr(nullptr),
   m_other_ptr(nullptr),
   m_other_dtype(),
   m_do_i_own_it(false),
   m_data(nullptr),
-  m_offset(0), // TODO in constructor offset and stride are copies of the orig dtype vals
-  // they pnly hcange iof the other dtpye isneeded
+  m_offset(0),
   m_stride(0)
 {}
 
 //---------------------------------------------------------------------------//
 template <typename T>
 ExecutionAccessor<T>::ExecutionAccessor(const ExecutionAccessor<T> &accessor)
-: m_orig_ptr(accessor.m_orig_ptr),
-  m_orig_dtype(accessor.m_orig_dtype),
+: m_node_ptr(accessor.m_node_ptr),
   m_other_ptr(accessor.m_other_ptr),
   m_other_dtype(accessor.m_other_dtype),
   m_do_i_own_it(accessor.m_do_i_own_it),
@@ -57,30 +55,42 @@ ExecutionAccessor<T>::ExecutionAccessor(const ExecutionAccessor<T> &accessor)
 
 //---------------------------------------------------------------------------//
 template <typename T> 
-ExecutionAccessor<T>::ExecutionAccessor(void *data, const DataType &dtype)
-: m_orig_ptr(data),
-  m_orig_dtype(dtype),
+ExecutionAccessor<T>::ExecutionAccessor(Node &node)
+: m_node_ptr(&node),
   m_other_ptr(nullptr),
   m_other_dtype(),
   m_do_i_own_it(false),
-  m_data(data),
-  m_offset(0), // TODO?
-  m_stride(0) // TODO?
+  m_data(node.data_ptr()),
+  m_offset(node.dtype().offset()),
+  m_stride(node.dtype().stride())
 {}
 
 
 //---------------------------------------------------------------------------//
 template <typename T> 
-ExecutionAccessor<T>::ExecutionAccessor(const void *data, const DataType &dtype)
-: m_orig_ptr(const_cast<void*>(data)),
-  m_orig_dtype(dtype),
+ExecutionAccessor<T>::ExecutionAccessor(Node *node)
+: m_node_ptr(node),
   m_other_ptr(nullptr),
   m_other_dtype(),
   m_do_i_own_it(false),
-  m_data(const_cast<void*>(data)),
-  m_offset(0), // TODO?
-  m_stride(0) // TODO?
+  m_data(node->data_ptr()),
+  m_offset(node->dtype().offset()),
+  m_stride(node->dtype().stride())
 {}
+
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+ExecutionAccessor<T>::ExecutionAccessor(const Node *node)
+: m_node_ptr(node),
+  m_other_ptr(nullptr),
+  m_other_dtype(),
+  m_do_i_own_it(false),
+  m_data(node->data_ptr()),
+  m_offset(node->dtype().offset()),
+  m_stride(node->dtype().stride())
+{}
+
 
 //---------------------------------------------------------------------------//
 template <typename T> 
@@ -191,8 +201,7 @@ ExecutionAccessor<T>::operator=(const ExecutionAccessor<T> &accessor)
 {
     if(this != &accessor)
     {
-        m_orig_ptr = accessor.m_orig_ptr;
-        m_orig_dtype = accessor.m_orig_dtype;
+        m_node_ptr = accessor.m_node_ptr;
         m_other_ptr = accessor.m_other_ptr;
         m_other_dtype = accessor.m_other_dtype;
 		m_do_i_own_it = accessor.m_do_i_own_it;
@@ -418,22 +427,51 @@ ExecutionAccessor<T>::fill(T value)
 // TODO fix up these next three functions
 
 //---------------------------------------------------------------------------//
-template <typename T, typename policy_type>
+template <typename T>
 void
-ExecutionAccessor<T>::use_with(policy_type policy)
+ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
 {
+    // start on host, use with device
+    // start on host, use with host, then use with device
+
+    // start on device, use with host
+    // start on device, use with device, then use with host
+
+    // start on host, use with host
+
+    // start on device, use with device
+
+    // start on host, use with device, then use with host - call sync and then do simple case
+    // start on device, use with host, then use with device - call sync and then do simple case
+
+
+    // CYRUS I'm not convinced about the last cases
+    // If we always ask where m_data is then we don't have to care where we started, right?
+    // unless we want to reuse pointer
+
+
     // yes cases are duplicated. But they may end needing to be
     // b/c of the questions I need to ask about where data lives
-    if (policy == Device)
+    if (policy == conduit::execution::policy::Device)
     {
-        if (whereami() == Device)
+        if (DeviceMemory::is_device_ptr(m_data))
         {
-            data_ptr = orig_ptr;
-            offset = orig_dtype.offset;
-            stride = orig_dtype.stride;
+            // Do nothing
+            
+            // probably delete these lines then
+            // m_data = m_node_ptr->data_ptr();
+            // CYRUS why do I need offset and stride? when are they ever different?
+            // m_offset = m_node_ptr->dtype().offset();
+            // m_stride = m_node_ptr->dtype().stride();
         }
-        else // whereami() == Host
+        else // m_data is on the host
         {
+            // CYRUS where do I get this pointer
+            // memory manager?
+            void* dest_ptr = ?;
+
+
+
             // copy and get rid of striding; just copy what we need
             other_ptr.copy_from(orig_ptr);
             other_dtype.oofus(orig_dtype);
@@ -443,9 +481,10 @@ ExecutionAccessor<T>::use_with(policy_type policy)
             stride = other_dtype.stride;
         }
     }
+    // TODO do we support other cases here? Serial, Device, Cuda, Hip, OpenMP
     else // policy == Host
     {
-        if (whereami() == Device)
+        if (DeviceMemory::is_device_ptr(m_data))
         {
             // copy and get rid of striding; just copy what we need
             other_ptr.copy_from(orig_ptr);
@@ -455,7 +494,7 @@ ExecutionAccessor<T>::use_with(policy_type policy)
             offset = other_dtype.offset;
             stride = other_dtype.stride;
         }
-        else // whereami() == Host
+        else // m_data is on the host
         {
             data_ptr = orig_ptr;
             offset = orig_dtype.offset;
@@ -467,21 +506,37 @@ ExecutionAccessor<T>::use_with(policy_type policy)
 //---------------------------------------------------------------------------//
 template <typename T>
 void
-ExecutionAccessor<T>::sync(Node &n)
+ExecutionAccessor<T>::sync()
 {
-    // if the ptrs point to the same place
-    if (m_data != n.data_ptr())
+    // if the ptrs don't point to the same place
+    if (m_data != m_node_ptr->data_ptr())
     {
-        if (!(n.dtype().compatible(dtype()) && number_of_elements() == n.number_of_elements()))
+        if (!(m_node_ptr->dtype().compatible(dtype()) && 
+              number_of_elements() == m_node_ptr->number_of_elements()))
         {
-            n.set(dtype());
+            m_node_ptr->set(dtype());
         }
-        utils::conduit_memcpy_strided_elements(n.data_ptr(),
+        utils::conduit_memcpy_strided_elements(m_node_ptr->data_ptr(),
                                                number_of_elements(),
-                                               n.dtype().element_bytes(),
-                                               n.dtype().stride(),
+                                               m_node_ptr->dtype().element_bytes(),
+                                               m_node_ptr->dtype().stride(),
                                                m_data,
                                                m_stride);
+    }
+}
+
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionAccessor<T>::assume()
+{
+    // if the ptrs don't point to the same place
+    if (m_data != m_node_ptr->data_ptr())
+    {
+        m_node_ptr->reset();
+        m_node_ptr->schema_ptr()->set(dtype());
+        m_node_ptr->set_data_ptr(m_data);
     }
 }
 

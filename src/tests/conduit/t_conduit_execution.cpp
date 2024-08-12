@@ -112,7 +112,7 @@ TEST(conduit_execution, test_forall)
     index_t host_vals[size];
     index_t *dev_vals_ptr = static_cast<index_t*>(device_alloc(sizeof(index_t) * size));
 
-    conduit::execution::ExecPolicy SerialPolicy(conduit::execution::policies::Serial);
+    conduit::execution::ExecPolicy SerialPolicy(conduit::execution::policy::Serial);
 
     conduit::execution::new_forall(SerialPolicy, 0, size, [=](index_t i)
     {
@@ -133,7 +133,7 @@ TEST(conduit_execution, test_forall)
 // //-----------------------------------------------------------------------------
 // TEST(conduit_execution, test_reductions)
 // {
-//     Conduit::execution::ExecPolicy SerialPolicy(conduit::execution::policies::Serial);
+//     Conduit::execution::ExecPolicy SerialPolicy(conduit::execution::policy::Serial);
 //     const index_t size = 4;
 //     index_t host_vals[size] = {0,-10,10, 5};
 //     index_t *dev_vals_ptr = static_cast<index_t*>(device_alloc(sizeof(index_t) * size));
@@ -142,7 +142,7 @@ TEST(conduit_execution, test_forall)
 
 //     // sum
 //     // ascent::ReduceSum<reduce_policy,index_t> sum_reducer;
-//     using reduce_policy = typename conduit::execution::policies::Serial::reduce_policy;
+//     using reduce_policy = typename conduit::execution::policy::Serial::reduce_policy;
 //     conduit::execution::new_forall<reduce_policy>(0, size, [=](index_t i)
 //     {
 //         sum_reducer += dev_vals_ptr[i];
@@ -204,8 +204,8 @@ TEST(conduit_execution, justin_fun)
 {
     std::cout << "forall cases!" << std::endl;
 
-    conduit::execution::ExecPolicy SerialPolicy(conduit::execution::policies::Serial);
-    // conduit::execution::ExecPolicy DevicePolicy(conduit::execution::policies::Device);
+    conduit::execution::ExecPolicy SerialPolicy(conduit::execution::policy::Serial);
+    // conduit::execution::ExecPolicy DevicePolicy(conduit::execution::policy::Device);
 
     int size = 4;
 
