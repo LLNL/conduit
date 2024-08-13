@@ -445,31 +445,54 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
     // start on device, use with host, then use with device - call sync and then do simple case
 
 
-    // CYRUS I'm not convinced about the last cases
-    // If we always ask where m_data is then we don't have to care where we started, right?
-    // unless we want to reuse pointer
-
-
-    // yes cases are duplicated. But they may end needing to be
-    // b/c of the questions I need to ask about where data lives
+    // we are being asked to execute on the device
     if (policy == conduit::execution::policy::Device)
     {
         if (DeviceMemory::is_device_ptr(m_data))
         {
             // Do nothing
-            
-            // probably delete these lines then
-            // m_data = m_node_ptr->data_ptr();
-            // CYRUS why do I need offset and stride? when are they ever different?
-            // m_offset = m_node_ptr->dtype().offset();
-            // m_stride = m_node_ptr->dtype().stride();
         }
         else // m_data is on the host
         {
-            // CYRUS where do I get this pointer
-            // memory manager?
-            void* dest_ptr = ?;
+            // if we started out on the host
+            if (m_node_ptr->data_ptr() == m_data)
+            {
+                CONDUIT_ASSERT(m_other_ptr == nullptr,
+                    "Using accessor in this way will result in a memory leak.");
 
+                // allocate new memory and create a new dtype
+                m_other_ptr = DeviceMemory::allocate(dtype().element_bytes() * number_of_elements());
+                m_other_dtype = DataType(dtype().id(),
+                                         number_of_elements(),
+                                         0, // offset is 0
+                                         DataType::default_bytes(dtype().id()), // stride
+                                         dtype().element_bytes(),
+                                         dtype().endianness());
+
+                // copy data
+                utils::conduit_memcpy_strided_elements(m_other_ptr,
+                                                       number_of_elements(),
+                                                       dtype().element_bytes(),
+                                                       m_other_dtype.stride(),
+                                                       m_data,
+                                                       dtype().stride());
+
+                // change where our data pointer points and update offset and stride
+                m_data = m_other_ptr;
+                m_offset = m_other_dtype.offset();
+                m_stride = m_other_dtype.stride();
+            }
+            else // we started out on the device
+            {
+                CONDUIT_ASSERT(m_data == m_other_ptr, "The accessor has failed.");
+
+                // call sync to bring our copy of the data on the host back to the device
+                sync();
+            }
+
+
+            
+            
 
 
             // copy and get rid of striding; just copy what we need
