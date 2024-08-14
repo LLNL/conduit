@@ -431,23 +431,10 @@ template <typename T>
 void
 ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
 {
-    // start on host, use with device
-    // start on host, use with host, then use with device
-
-    // start on device, use with host
-    // start on device, use with device, then use with host
-
-    // start on host, use with host
-
-    // start on device, use with device
-
-    // start on host, use with device, then use with host - call sync and then do simple case
-    // start on device, use with host, then use with device - call sync and then do simple case
-
-
     // we are being asked to execute on the device
     if (policy == conduit::execution::policy::Device)
     {
+        // data is already on the device
         if (DeviceMemory::is_device_ptr(m_data))
         {
             // Do nothing
@@ -488,40 +475,78 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
 
                 // call sync to bring our copy of the data on the host back to the device
                 sync();
+
+                // dealloc the ptr on the host now that we have copied back
+                HostMemory::deallocate(m_data);
+
+                // set m_data to device data and update offset and stride
+                m_data = m_node_ptr->data_ptr();
+                // the order of operations is important here; changing the pointer
+                // will change the result of calling dtype().
+                m_offset = dtype().offset();
+                m_stride = dtype().stride();
+
+                // reset m_other_ptr
+                m_other_ptr = nullptr;
             }
-
-
-            
-            
-
-
-            // copy and get rid of striding; just copy what we need
-            other_ptr.copy_from(orig_ptr);
-            other_dtype.oofus(orig_dtype);
-
-            data_ptr = other_ptr;
-            offset = other_dtype.offset;
-            stride = other_dtype.stride;
         }
     }
     // TODO do we support other cases here? Serial, Device, Cuda, Hip, OpenMP
-    else // policy == Host
+    else // we are being asked to execute on the host
     {
-        if (DeviceMemory::is_device_ptr(m_data))
+        // data is already on the host
+        if (! DeviceMemory::is_device_ptr(m_data))
         {
-            // copy and get rid of striding; just copy what we need
-            other_ptr.copy_from(orig_ptr);
-            other_dtype.oofus(orig_dtype);
-
-            data_ptr = other_ptr;
-            offset = other_dtype.offset;
-            stride = other_dtype.stride;
+            // Do nothing
         }
-        else // m_data is on the host
+        else // m_data is on the device
         {
-            data_ptr = orig_ptr;
-            offset = orig_dtype.offset;
-            stride = orig_dtype.stride;
+            // if we started out on the device
+            if (m_node_ptr->data_ptr() == m_data)
+            {
+                CONDUIT_ASSERT(m_other_ptr == nullptr,
+                    "Using accessor in this way will result in a memory leak.");
+
+                // allocate new memory and create a new dtype
+                m_other_ptr = HostMemory::allocate(dtype().element_bytes() * number_of_elements());
+                m_other_dtype = DataType(dtype().id(),
+                                         number_of_elements(),
+                                         0, // offset is 0
+                                         DataType::default_bytes(dtype().id()), // stride
+                                         dtype().element_bytes(),
+                                         dtype().endianness());
+
+                // copy data
+                utils::conduit_memcpy_strided_elements(m_other_ptr,
+                                                       number_of_elements(),
+                                                       dtype().element_bytes(),
+                                                       m_other_dtype.stride(),
+                                                       m_data,
+                                                       dtype().stride());
+
+                // change where our data pointer points and update offset and stride
+                m_data = m_other_ptr;
+                m_offset = m_other_dtype.offset();
+                m_stride = m_other_dtype.stride();
+            }
+            else // we started out on the host
+            {
+                CONDUIT_ASSERT(m_data == m_other_ptr, "The accessor has failed.");
+
+                // call sync to bring our copy of the data on the device back to the host
+                sync();
+
+                // dealloc the ptr on the host now that we have copied back
+                DeviceMemory::deallocate(m_data);
+
+                // set m_data to host data and update offset and stride
+                m_data = m_node_ptr->data_ptr();
+                m_offset = dtype().offset();
+                m_stride = dtype().stride();
+
+                // reset m_other_ptr
+                m_other_ptr = nullptr;
+            }
         }
     }
 }
