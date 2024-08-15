@@ -8,7 +8,6 @@
 ///
 //-----------------------------------------------------------------------------
 #include "conduit_execution_accessor.hpp"
-#include "conduit_memory_manager.hpp"
 
 //-----------------------------------------------------------------------------
 // -- standard includes -- 
@@ -16,6 +15,11 @@
 #include <algorithm>
 #include <limits>
 #include <type_traits>
+
+//-----------------------------------------------------------------------------
+// -- conduit includes -- 
+//-----------------------------------------------------------------------------
+#include "conduit_memory_manager.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -34,7 +38,7 @@ template <typename T>
 ExecutionAccessor<T>::ExecutionAccessor()
 : m_node_ptr(nullptr),
   m_other_ptr(nullptr),
-  m_other_dtype(),
+  m_other_dtype(DataType::empty()),
   m_do_i_own_it(false),
   m_data(nullptr),
   m_offset(0),
@@ -58,7 +62,7 @@ template <typename T>
 ExecutionAccessor<T>::ExecutionAccessor(Node &node)
 : m_node_ptr(&node),
   m_other_ptr(nullptr),
-  m_other_dtype(),
+  m_other_dtype(DataType::empty()),
   m_do_i_own_it(false),
   m_data(node.data_ptr()),
   m_offset(node.dtype().offset()),
@@ -71,7 +75,7 @@ template <typename T>
 ExecutionAccessor<T>::ExecutionAccessor(Node *node)
 : m_node_ptr(node),
   m_other_ptr(nullptr),
-  m_other_dtype(),
+  m_other_dtype(DataType::empty()),
   m_do_i_own_it(false),
   m_data(node->data_ptr()),
   m_offset(node->dtype().offset()),
@@ -84,7 +88,7 @@ template <typename T>
 ExecutionAccessor<T>::ExecutionAccessor(const Node *node)
 : m_node_ptr(node),
   m_other_ptr(nullptr),
-  m_other_dtype(),
+  m_other_dtype(DataType::empty()),
   m_do_i_own_it(false),
   m_data(node->data_ptr()),
   m_offset(node->dtype().offset()),
@@ -96,8 +100,8 @@ ExecutionAccessor<T>::ExecutionAccessor(const Node *node)
 template <typename T> 
 ExecutionAccessor<T>::~ExecutionAccessor()
 {
-	if (m_do_i_own_it)
-	{
+    if (m_do_i_own_it)
+    {
         if (DeviceMemory::is_device_ptr(m_other_ptr))
         {
             DeviceMemory::deallocate(m_other_ptr);
@@ -106,7 +110,7 @@ ExecutionAccessor<T>::~ExecutionAccessor()
         {
             HostMemory::deallocate(m_other_ptr);
         }
-	}
+    }
 }
 
 
@@ -209,7 +213,7 @@ ExecutionAccessor<T>::operator=(const ExecutionAccessor<T> &accessor)
         m_node_ptr = accessor.m_node_ptr;
         m_other_ptr = accessor.m_other_ptr;
         m_other_dtype = accessor.m_other_dtype;
-		m_do_i_own_it = accessor.m_do_i_own_it;
+        m_do_i_own_it = accessor.m_do_i_own_it;
         m_data = accessor.m_data;
         m_offset = accessor.m_offset;
         m_stride = accessor.m_stride;
@@ -475,7 +479,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
             }
             else // we started out on the device
             {
-                CONDUIT_ASSERT(m_data == m_other_ptr, "The accessor has failed.");
+                CONDUIT_ASSERT(m_data == m_other_ptr, "TODO");
 
                 // call sync to bring our copy of the data on the host back to the device
                 sync();
@@ -483,6 +487,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
                 // dealloc the ptr on the host now that we have copied back
                 HostMemory::deallocate(m_data);
                 m_do_i_own_it = false;
+                m_other_dtype = DataType::empty();
 
                 // set m_data to device data and update offset and stride
                 m_data = m_node_ptr->data_ptr();
@@ -537,7 +542,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
             }
             else // we started out on the host
             {
-                CONDUIT_ASSERT(m_data == m_other_ptr, "The accessor has failed.");
+                CONDUIT_ASSERT(m_data == m_other_ptr, "TODO");
 
                 // call sync to bring our copy of the data on the device back to the host
                 sync();
@@ -545,6 +550,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
                 // dealloc the ptr on the host now that we have copied back
                 DeviceMemory::deallocate(m_data);
                 m_do_i_own_it = false;
+                m_other_dtype = DataType::empty();
 
                 // set m_data to host data and update offset and stride
                 m_data = m_node_ptr->data_ptr();
@@ -589,12 +595,17 @@ ExecutionAccessor<T>::assume()
     // if the ptrs don't point to the same place
     if (m_data != m_node_ptr->data_ptr())
     {
+        CONDUIT_ASSERT(m_data == m_other_ptr, "TODO");
+
         // reset will deallocate the data the node points to
         m_node_ptr->reset();
         m_node_ptr->schema_ptr()->set(dtype());
         m_node_ptr->set_data_ptr(m_data);
+
         // we no longer own the data since we have given it to node
+        m_other_ptr = nullptr;
         m_do_i_own_it = false;
+        m_other_dtype = DataType::empty();
     }
 }
 
@@ -612,7 +623,7 @@ ExecutionAccessor<T>::to_string(const std::string &protocol) const
 template <typename T>
 void
 ExecutionAccessor<T>::to_string_stream(std::ostream &os,
-                                  	   const std::string &protocol) const
+                                       const std::string &protocol) const
 {
     if(protocol == "yaml")
     {
