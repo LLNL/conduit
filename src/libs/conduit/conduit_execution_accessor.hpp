@@ -69,7 +69,7 @@ public:
     ExecutionAccessor(Node *node);
     /// Access a const pointer to node data according to node dtype description.
     ExecutionAccessor(const Node *node);
-    /// Access a const pointer to raw data according to dtype description.
+    /// Destructor.
     ~ExecutionAccessor();
 
     ///

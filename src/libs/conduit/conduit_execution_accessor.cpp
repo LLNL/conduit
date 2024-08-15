@@ -98,10 +98,15 @@ ExecutionAccessor<T>::~ExecutionAccessor()
 {
 	if (m_do_i_own_it)
 	{
-		delete[] m_other_ptr;
+        if (DeviceMemory::is_device_ptr(m_other_ptr))
+        {
+            DeviceMemory::deallocate(m_other_ptr);
+        }
+        else
+        {
+            HostMemory::deallocate(m_other_ptr);
+        }
 	}
-
-	// other stuff?
 }
 
 
@@ -424,8 +429,6 @@ ExecutionAccessor<T>::fill(T value)
     }
 }
 
-// TODO fix up these next three functions
-
 //---------------------------------------------------------------------------//
 template <typename T>
 void
@@ -449,6 +452,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
 
                 // allocate new memory and create a new dtype
                 m_other_ptr = DeviceMemory::allocate(dtype().element_bytes() * number_of_elements());
+                m_do_i_own_it = true;
                 m_other_dtype = DataType(dtype().id(),
                                          number_of_elements(),
                                          0, // offset is 0
@@ -478,6 +482,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
 
                 // dealloc the ptr on the host now that we have copied back
                 HostMemory::deallocate(m_data);
+                m_do_i_own_it = false;
 
                 // set m_data to device data and update offset and stride
                 m_data = m_node_ptr->data_ptr();
@@ -509,6 +514,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
 
                 // allocate new memory and create a new dtype
                 m_other_ptr = HostMemory::allocate(dtype().element_bytes() * number_of_elements());
+                m_do_i_own_it = true;
                 m_other_dtype = DataType(dtype().id(),
                                          number_of_elements(),
                                          0, // offset is 0
@@ -538,6 +544,7 @@ ExecutionAccessor<T>::use_with(conduit::execution::policy policy)
 
                 // dealloc the ptr on the host now that we have copied back
                 DeviceMemory::deallocate(m_data);
+                m_do_i_own_it = false;
 
                 // set m_data to host data and update offset and stride
                 m_data = m_node_ptr->data_ptr();
@@ -582,9 +589,12 @@ ExecutionAccessor<T>::assume()
     // if the ptrs don't point to the same place
     if (m_data != m_node_ptr->data_ptr())
     {
+        // reset will deallocate the data the node points to
         m_node_ptr->reset();
         m_node_ptr->schema_ptr()->set(dtype());
         m_node_ptr->set_data_ptr(m_data);
+        // we no longer own the data since we have given it to node
+        m_do_i_own_it = false;
     }
 }
 
