@@ -54,11 +54,15 @@ public:
         ExecutionArray();
         /// copy constructor
         ExecutionArray(const ExecutionArray<T> &array);
-        /// Access a pointer to raw data according to dtype description.
-        ExecutionArray(void *data, const DataType &dtype);
-        /// Access a const pointer to raw data according to dtype description.
-        ExecutionArray(const void *data, const DataType &dtype);
-        /// Destructor
+       /// Access a pointer to node data according to node dtype description.
+       ExecutionArray(Node &node);
+       // /// Access a const pointer to node data according to node dtype description.
+       // ExecutionArray(const Node &node);
+       /// Access a pointer to node data according to node dtype description.
+       ExecutionArray(Node *node);
+       /// Access a const pointer to node data according to node dtype description.
+       ExecutionArray(const Node *node);
+       /// Destructor.
        ~ExecutionArray();
 
     /// Assignment operator
@@ -80,19 +84,27 @@ public:
     void           *element_ptr(index_t idx)
                     {
                         return static_cast<char*>(m_data) +
-                            m_dtype.element_index(idx);
+                            dtype().element_index(idx);
                     };
 
     const void     *element_ptr(index_t idx) const 
                     {
                          return static_cast<char*>(m_data) +
-                            m_dtype.element_index(idx);
+                            dtype().element_index(idx);
                     };
 
     index_t         number_of_elements() const 
-                        {return m_dtype.number_of_elements();}
-    const DataType &dtype()    const 
-                        { return m_dtype;} 
+                        {return dtype().number_of_elements();}
+
+    const DataType &dtype() const
+                    {return (m_data == m_node_ptr->data_ptr() ? orig_dtype() : other_dtype());}
+
+    const DataType &orig_dtype() const 
+                    { return m_node_ptr.dtype();}
+
+    const DataType &other_dtype() const 
+                    { return m_other_dtype;}
+
     void           *data_ptr() const 
                         { return m_data;}
 
@@ -392,10 +404,18 @@ private:
 // -- conduit::ExecutionArray private data members --
 //
 //-----------------------------------------------------------------------------
-    /// holds data (always external, never allocated)
-    void           *m_data;
+    Node           *m_node_ptr;
+
+    /// holds data
+    void           *m_other_ptr;
     /// holds data description
-    DataType        m_dtype;
+    DataType        m_other_dtype;
+    
+    bool            m_do_i_own_it;
+
+    void           *m_data;
+    index_t         m_offset;
+    index_t         m_stride;
     
 };
 //-----------------------------------------------------------------------------
@@ -411,59 +431,59 @@ private:
 /// Note: these are also the types we explicitly instantiate.
 
 /// signed integer arrays
-typedef ExecutionArray<int8>     int8_array;
-typedef ExecutionArray<int16>    int16_array;
-typedef ExecutionArray<int32>    int32_array;
-typedef ExecutionArray<int64>    int64_array;
+typedef ExecutionArray<int8>     int8_exec_array;
+typedef ExecutionArray<int16>    int16_exec_array;
+typedef ExecutionArray<int32>    int32_exec_array;
+typedef ExecutionArray<int64>    int64_exec_array;
 
 /// unsigned integer arrays
-typedef ExecutionArray<uint8>    uint8_array;
-typedef ExecutionArray<uint16>   uint16_array;
-typedef ExecutionArray<uint32>   uint32_array;
-typedef ExecutionArray<uint64>   uint64_array;
+typedef ExecutionArray<uint8>    uint8_exec_array;
+typedef ExecutionArray<uint16>   uint16_exec_array;
+typedef ExecutionArray<uint32>   uint32_exec_array;
+typedef ExecutionArray<uint64>   uint64_exec_array;
 
 /// floating point arrays
-typedef ExecutionArray<float32>  float32_array;
-typedef ExecutionArray<float64>  float64_array;
+typedef ExecutionArray<float32>  float32_exec_array;
+typedef ExecutionArray<float64>  float64_exec_array;
 
 /// index type arrays
-typedef ExecutionArray<index_t>  index_t_array;
+typedef ExecutionArray<index_t>  index_t_exec_array;
 
 /// native c types arrays
-typedef ExecutionArray<char>       char_array;
-typedef ExecutionArray<short>      short_array;
-typedef ExecutionArray<int>        int_array;
-typedef ExecutionArray<long>       long_array;
+typedef ExecutionArray<char>       char_exec_array;
+typedef ExecutionArray<short>      short_exec_array;
+typedef ExecutionArray<int>        int_exec_array;
+typedef ExecutionArray<long>       long_exec_array;
 #ifdef CONDUIT_HAS_LONG_LONG
-typedef ExecutionArray<long long>  long_long_array;
+typedef ExecutionArray<long long>  long_long_exec_array;
 #endif
 
 
 /// signed integer arrays
-typedef ExecutionArray<signed char>       signed_char_array;
-typedef ExecutionArray<signed short>      signed_short_array;
-typedef ExecutionArray<signed int>        signed_int_array;
-typedef ExecutionArray<signed long>       signed_long_array;
+typedef ExecutionArray<signed char>       signed_char_exec_array;
+typedef ExecutionArray<signed short>      signed_short_exec_array;
+typedef ExecutionArray<signed int>        signed_int_exec_array;
+typedef ExecutionArray<signed long>       signed_long_exec_array;
 #ifdef CONDUIT_HAS_LONG_LONG
-typedef ExecutionArray<signed long long>  signed_long_long_array;
+typedef ExecutionArray<signed long long>  signed_long_long_exec_array;
 #endif
 
 
 /// unsigned integer arrays
-typedef ExecutionArray<unsigned char>   unsigned_char_array;
-typedef ExecutionArray<unsigned short>  unsigned_short_array;
-typedef ExecutionArray<unsigned int>    unsigned_int_array;
-typedef ExecutionArray<unsigned long>   unsigned_long_array;
+typedef ExecutionArray<unsigned char>   unsigned_char_exec_array;
+typedef ExecutionArray<unsigned short>  unsigned_short_exec_array;
+typedef ExecutionArray<unsigned int>    unsigned_int_exec_array;
+typedef ExecutionArray<unsigned long>   unsigned_long_exec_array;
 #ifdef CONDUIT_HAS_LONG_LONG
-typedef ExecutionArray<unsigned long long>  unsigned_long_long_array;
+typedef ExecutionArray<unsigned long long>  unsigned_long_long_exec_array;
 #endif
 
 
 /// floating point arrays
-typedef ExecutionArray<float>   float_array;
-typedef ExecutionArray<double>  double_array;
+typedef ExecutionArray<float>   float_exec_array;
+typedef ExecutionArray<double>  double_exec_array;
 #ifdef CONDUIT_USE_LONG_DOUBLE
-typedef ExecutionArray<long double>  long_double_array;
+typedef ExecutionArray<long double>  long_double_exec_array;
 #endif
 
 }
