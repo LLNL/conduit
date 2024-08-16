@@ -2115,6 +2115,144 @@ ExecutionArray<T>::set(const ExecutionArray<float64> &values)
 
 //---------------------------------------------------------------------------//
 //***************************************************************************//
+// Set from ExecutionAccessor
+//***************************************************************************//
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// Set from ExecutionAccessor signed integers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<int8> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<int16> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<int32> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<int64> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Set from ExecutionAccessor unsigned integers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<uint8> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<uint16> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<uint32> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<uint64> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Set from ExecutionAccessor floating point
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<float32> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const ExecutionAccessor<float64> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+//***************************************************************************//
 // Set from DataAccessor
 //***************************************************************************//
 //---------------------------------------------------------------------------//
@@ -2137,7 +2275,7 @@ ExecutionArray<T>::set(const DataAccessor<int8> &values)
 
 //---------------------------------------------------------------------------//
 template <typename T>
-void            
+void
 ExecutionArray<T>::set(const DataAccessor<int16> &values)
 { 
     index_t num_elems = dtype().number_of_elements();
@@ -2149,7 +2287,7 @@ ExecutionArray<T>::set(const DataAccessor<int16> &values)
 
 //---------------------------------------------------------------------------//
 template <typename T>
-void            
+void
 ExecutionArray<T>::set(const DataAccessor<int32> &values)
 { 
     index_t num_elems = dtype().number_of_elements();
@@ -2161,7 +2299,7 @@ ExecutionArray<T>::set(const DataAccessor<int32> &values)
 
 //---------------------------------------------------------------------------//
 template <typename T>
-void            
+void
 ExecutionArray<T>::set(const DataAccessor<int64> &values)
 { 
     index_t num_elems = dtype().number_of_elements();
@@ -2228,7 +2366,7 @@ ExecutionArray<T>::set(const DataAccessor<uint64> &values)
 //---------------------------------------------------------------------------//
 
 //---------------------------------------------------------------------------//
-template <typename T> 
+template <typename T>
 void
 ExecutionArray<T>::set(const DataAccessor<float32> &values)
 {
@@ -2240,9 +2378,147 @@ ExecutionArray<T>::set(const DataAccessor<float32> &values)
 }
 
 //---------------------------------------------------------------------------//
-template <typename T> 
+template <typename T>
 void
 ExecutionArray<T>::set(const DataAccessor<float64> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+//***************************************************************************//
+// Set from DataArray
+//***************************************************************************//
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+// Set from DataArray signed integers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<int8> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<int16> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<int32> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<int64> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Set from DataArray unsigned integers
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<uint8> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<uint16> &values)
+{ 
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<uint32> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<uint64> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+// Set from DataArray floating point
+//---------------------------------------------------------------------------//
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<float32> &values)
+{
+    index_t num_elems = dtype().number_of_elements();
+    for(index_t i=0; i <num_elems; i++)
+    {
+        this->element(i) = (T)values[i];
+    }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T>
+void
+ExecutionArray<T>::set(const DataArray<float64> &values)
 {
     index_t num_elems = dtype().number_of_elements();
     for(index_t i=0; i <num_elems; i++)
