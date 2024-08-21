@@ -4579,8 +4579,8 @@ private:
                                         const std::string &eoe="\n") const;
 
     void                to_json_generic(const std::string &stream_path,
-                                        bool address,
                                         bool detailed,
+                                        bool address,
                                         index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
@@ -4684,12 +4684,14 @@ private:
     // the generic to_yaml methods are used by the specialized cases
     //-------------------------------------------------------------------------
     std::string         to_yaml_generic(bool detailed,
+                                        bool address,
                                         index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
                                         const std::string &eoe="\n") const;
 
     void                to_yaml_generic(const std::string &stream_path,
+                                        bool address,
                                         bool detailed,
                                         index_t indent=2,
                                         index_t depth=0,
@@ -4698,6 +4700,7 @@ private:
 
     void                to_yaml_generic(std::ostream &os,
                                         bool detailed,
+                                        bool address,
                                         index_t indent=2,
                                         index_t depth=0,
                                         const std::string &pad=" ",
@@ -4721,6 +4724,66 @@ private:
                                   index_t depth=0,
                                   const std::string &pad=" ",
                                   const std::string &eoe="\n") const;
+
+    //-------------------------------------------------------------------------
+    // transforms the node to yaml that contains conduit schema constructs
+    //-------------------------------------------------------------------------
+    std::string      to_detailed_yaml(index_t indent=2,
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const;
+
+    void             to_detailed_yaml(const std::string &stream_path,
+                                      index_t indent=2,
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const;
+
+    void             to_detailed_yaml(std::ostream &os,
+                                      index_t indent=2,
+                                      index_t depth=0,
+                                      const std::string &pad=" ",
+                                      const std::string &eoe="\n") const;
+
+    //-------------------------------------------------------------------------
+    // transforms the node to detailed yaml with address entry
+    //-------------------------------------------------------------------------
+    std::string      to_detailed_yaml_external(index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
+
+    void             to_detailed_yaml_external(const std::string &stream_path,
+                                               index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
+
+    void             to_detailed_yaml_external(std::ostream &os,
+                                               index_t indent=2,
+                                               index_t depth=0,
+                                               const std::string &pad=" ",
+                                               const std::string &eoe="\n") const;
+
+    // //-------------------------------------------------------------------------
+    // // transforms the node to yaml with data payload encoded using base64
+    // //-------------------------------------------------------------------------
+    // std::string      to_base64_yaml(index_t indent=2,
+    //                                 index_t depth=0,
+    //                                 const std::string &pad=" ",
+    //                                 const std::string &eoe="\n") const;
+
+    // void             to_base64_yaml(const std::string &stream_path,
+    //                                 index_t indent=2,
+    //                                 index_t depth=0,
+    //                                 const std::string &pad=" ",
+    //                                 const std::string &eoe="\n") const;
+
+    // void             to_base64_yaml(std::ostream &os,
+    //                                 index_t indent=2,
+    //                                 index_t depth=0,
+    //                                 const std::string &pad=" ",
+    //                                 const std::string &eoe="\n") const;
 
     //-------------------------------------------------------------------------
     // private summary string helper

@@ -13347,11 +13347,25 @@ Node::to_yaml_stream(std::ostream &os,
     {
         return to_pure_yaml(os,indent,depth,pad,eoe);
     }
+    else if(protocol == "conduit_yaml")
+    {
+        return to_detailed_yaml(os,indent,depth,pad,eoe);
+    }
+    else if(protocol == "conduit_yaml_external")
+    {
+        return to_detailed_yaml_external(os,indent,depth,pad,eoe);
+    }
+    // else if(protocol == "conduit_base64_yaml")
+    // {
+    //     return to_base64_yaml(os,indent,depth,pad,eoe);
+    // }
     else
     {
         CONDUIT_ERROR("Unknown Node::to_yaml protocol: " << protocol
                       << "\nSupported protocols:\n"
-                      << " yaml\n");
+                      << " yaml\n"
+                      << " conduit_yaml\n"
+                      << " conduit_base64_yaml\n");
     }
 }
 
@@ -13859,13 +13873,14 @@ Node::to_base64_json(std::ostream &os,
 //---------------------------------------------------------------------------//
 std::string
 Node::to_yaml_generic(bool detailed,
+                      bool address,
                       index_t indent,
                       index_t depth,
                       const std::string &pad,
                       const std::string &eoe) const
 {
     std::ostringstream oss;
-    to_yaml_generic(oss,detailed,indent,depth,pad,eoe);
+    to_yaml_generic(oss,detailed,address,indent,depth,pad,eoe);
     return oss.str();
 }
 
@@ -13874,6 +13889,7 @@ Node::to_yaml_generic(bool detailed,
 void
 Node::to_yaml_generic(const std::string &stream_path,
                       bool detailed,
+                      bool address,
                       index_t indent,
                       index_t depth,
                       const std::string &pad,
@@ -13886,7 +13902,7 @@ Node::to_yaml_generic(const std::string &stream_path,
         CONDUIT_ERROR("<Node::to_yaml_generic> failed to open file: "
                      << "\"" << stream_path << "\"");
     }
-    to_yaml_generic(ofs,detailed,indent,depth,pad,eoe);
+    to_yaml_generic(ofs,detailed,address,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -13894,7 +13910,8 @@ Node::to_yaml_generic(const std::string &stream_path,
 //---------------------------------------------------------------------------//
 void
 Node::to_yaml_generic(std::ostream &os,
-                      bool  detailed,
+                      bool detailed,
+                      bool address,
                       index_t indent,
                       index_t depth,
                       const std::string &pad,
@@ -13911,6 +13928,7 @@ Node::to_yaml_generic(std::ostream &os,
             utils::indent(os,indent,depth,pad);
             os << m_schema->object_order()[i] << ": ";
             m_children[i]->to_yaml_generic(os,
+                                           address,
                                            detailed,
                                            indent,
                                            depth+1,
@@ -13931,6 +13949,7 @@ Node::to_yaml_generic(std::ostream &os,
             utils::indent(os,indent,depth,pad);
             os << "- ";
             m_children[i]->to_yaml_generic(os,
+                                           address,
                                            detailed,
                                            indent,
                                            depth+1,
@@ -13944,50 +13963,73 @@ Node::to_yaml_generic(std::ostream &os,
     }
     else // assume leaf data type
     {
-        switch(dtype().id())
+        if(detailed)
         {
-            // ints
-            case DataType::INT8_ID:
-                as_int8_array().to_json_stream(os);
-                break;
-            case DataType::INT16_ID:
-                as_int16_array().to_json_stream(os);
-                break;
-            case DataType::INT32_ID:
-                as_int32_array().to_json_stream(os);
-                break;
-            case DataType::INT64_ID:
-                as_int64_array().to_json_stream(os);
-                break;
-            // uints
-            case DataType::UINT8_ID:
-                as_uint8_array().to_json_stream(os);
-                break;
-            case DataType::UINT16_ID:
-                as_uint16_array().to_json_stream(os);
-                break;
-            case DataType::UINT32_ID:
-                as_uint32_array().to_json_stream(os);
-                break;
-            case DataType::UINT64_ID:
-                as_uint64_array().to_json_stream(os);
-                break;
-            // floats
-            case DataType::FLOAT32_ID:
-                as_float32_array().to_json_stream(os);
-                break;
-            case DataType::FLOAT64_ID:
-                as_float64_array().to_json_stream(os);
-                break;
-            // char8_str
-            case DataType::CHAR8_STR_ID:
-                os << "\""
-                   << utils::escape_special_chars(as_string())
-                   << "\"";
-                break;
-            // empty
-            case DataType::EMPTY_ID:
-                break;
+            std::string dtype_yaml = dtype().to_yaml(indent, depth, pad, eoe);
+            std::string dtype_content;
+            std::string dtype_unused;
+
+            // TODO
+        }
+
+        if(address)
+        {
+            os << "address: " << utils::to_hex_string(m_data);
+        }
+        else
+        {
+            switch(dtype().id())
+            {
+                // TODO should these be using to_yaml_stream instead
+
+                // ints
+                case DataType::INT8_ID:
+                    as_int8_array().to_json_stream(os);
+                    break;
+                case DataType::INT16_ID:
+                    as_int16_array().to_json_stream(os);
+                    break;
+                case DataType::INT32_ID:
+                    as_int32_array().to_json_stream(os);
+                    break;
+                case DataType::INT64_ID:
+                    as_int64_array().to_json_stream(os);
+                    break;
+                // uints
+                case DataType::UINT8_ID:
+                    as_uint8_array().to_json_stream(os);
+                    break;
+                case DataType::UINT16_ID:
+                    as_uint16_array().to_json_stream(os);
+                    break;
+                case DataType::UINT32_ID:
+                    as_uint32_array().to_json_stream(os);
+                    break;
+                case DataType::UINT64_ID:
+                    as_uint64_array().to_json_stream(os);
+                    break;
+                // floats
+                case DataType::FLOAT32_ID:
+                    as_float32_array().to_json_stream(os);
+                    break;
+                case DataType::FLOAT64_ID:
+                    as_float64_array().to_json_stream(os);
+                    break;
+                // char8_str
+                case DataType::CHAR8_STR_ID:
+                    os << "\""
+                       << utils::escape_special_chars(as_string())
+                       << "\"";
+                    break;
+                // empty
+                case DataType::EMPTY_ID:
+                    break;
+            }
+        }
+
+        if(detailed)
+        {
+            // TODO
         }
     }
 
@@ -14001,7 +14043,7 @@ Node::to_pure_yaml(index_t indent,
                    const std::string &pad,
                    const std::string &eoe) const
 {
-    return to_yaml_generic(false,indent,depth,pad,eoe);
+    return to_yaml_generic(false,false,indent,depth,pad,eoe);
 }
 
 //---------------------------------------------------------------------------//
@@ -14019,7 +14061,7 @@ Node::to_pure_yaml(const std::string &stream_path,
         CONDUIT_ERROR("<Node::to_pure_yaml> failed to open file: "
                      << "\"" << stream_path << "\"");
     }
-    to_yaml_generic(ofs,false,indent,depth,pad,eoe);
+    to_yaml_generic(ofs,false,false,indent,depth,pad,eoe);
     ofs.close();
 }
 
@@ -14031,7 +14073,91 @@ Node::to_pure_yaml(std::ostream &os,
                    const std::string &pad,
                    const std::string &eoe) const
 {
-    to_yaml_generic(os,false,indent,depth,pad,eoe);
+    to_yaml_generic(os,false,false,indent,depth,pad,eoe);
+}
+
+
+//---------------------------------------------------------------------------//
+std::string
+Node::to_detailed_yaml(index_t indent,
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    return to_yaml_generic(true,false,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_yaml(const std::string &stream_path,
+                       index_t indent,
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_detailed_yaml> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
+    to_yaml_generic(ofs,true,false,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_yaml(std::ostream &os,
+                       index_t indent,
+                       index_t depth,
+                       const std::string &pad,
+                       const std::string &eoe) const
+{
+    to_yaml_generic(os,true,false,indent,depth,pad,eoe);
+}
+
+
+//---------------------------------------------------------------------------//
+std::string
+Node::to_detailed_yaml_external(index_t indent,
+                                index_t depth,
+                                const std::string &pad,
+                                const std::string &eoe) const
+{
+    return to_yaml_generic(true,true,indent,depth,pad,eoe);
+}
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_yaml_external(const std::string &stream_path,
+                                index_t indent,
+                                index_t depth,
+                                const std::string &pad,
+                                const std::string &eoe) const
+{
+    std::ofstream ofs;
+    ofs.open(stream_path.c_str());
+    if(!ofs.is_open())
+    {
+        CONDUIT_ERROR("<Node::to_detailed_yaml> failed to open file: "
+                     << "\"" << stream_path << "\"");
+    }
+    to_yaml_generic(ofs,true,true,indent,depth,pad,eoe);
+    ofs.close();
+}
+
+
+//---------------------------------------------------------------------------//
+void
+Node::to_detailed_yaml_external(std::ostream &os,
+                                index_t indent,
+                                index_t depth,
+                                const std::string &pad,
+                                const std::string &eoe) const
+{
+    to_yaml_generic(os,true,true,indent,depth,pad,eoe);
 }
 
 
