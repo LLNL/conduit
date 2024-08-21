@@ -86,11 +86,11 @@ ExecutionAccessor<T>::ExecutionAccessor(Node *node)
 //---------------------------------------------------------------------------//
 template <typename T> 
 ExecutionAccessor<T>::ExecutionAccessor(const Node *node)
-: m_node_ptr(node),
+: m_node_ptr(const_cast<Node*>(node)),
   m_other_ptr(nullptr),
   m_other_dtype(DataType::empty()),
   m_do_i_own_it(false),
-  m_data(node->data_ptr()),
+  m_data(const_cast<void*>(node->data_ptr())),
   m_offset(node->dtype().offset()),
   m_stride(node->dtype().stride())
 {}
@@ -573,7 +573,7 @@ ExecutionAccessor<T>::sync()
     if (m_data != m_node_ptr->data_ptr())
     {
         if (!(m_node_ptr->dtype().compatible(dtype()) && 
-              number_of_elements() == m_node_ptr->number_of_elements()))
+              number_of_elements() == m_node_ptr->dtype().number_of_elements()))
         {
             m_node_ptr->set(dtype());
         }

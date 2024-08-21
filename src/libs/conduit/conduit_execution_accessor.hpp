@@ -111,7 +111,7 @@ public:
                     {return (m_data == m_node_ptr->data_ptr() ? orig_dtype() : other_dtype());}
 
     const DataType &orig_dtype() const 
-                    { return m_node_ptr.dtype();}
+                    { return m_node_ptr->dtype();}
 
     const DataType &other_dtype() const 
                     { return m_other_dtype;}
