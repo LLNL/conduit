@@ -43,12 +43,6 @@ class CONDUIT_API ExecutionAccessor
 public:
 
 //-----------------------------------------------------------------------------
-// -- friends of ExecutionAccessor --
-//-----------------------------------------------------------------------------
-    friend class Node;
-    friend class Schema;
-
-//-----------------------------------------------------------------------------
 //
 // -- conduit::ExecutionAccessor public methods --
 //
