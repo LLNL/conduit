@@ -15,10 +15,10 @@
 //-----------------------------------------------------------------------------
 // -- conduit  includes -- 
 //-----------------------------------------------------------------------------
+#include "conduit.hpp"
 #include "conduit_core.hpp"
 #include "conduit_data_type.hpp"
 #include "conduit_utils.hpp"
-#include "conduit_execution.hpp"
 
 
 //-----------------------------------------------------------------------------
