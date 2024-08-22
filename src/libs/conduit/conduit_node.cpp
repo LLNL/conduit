@@ -13355,6 +13355,7 @@ Node::to_yaml_stream(std::ostream &os,
     {
         return to_detailed_yaml_external(os,indent,depth,pad,eoe);
     }
+    // TODO
     // else if(protocol == "conduit_base64_yaml")
     // {
     //     return to_base64_yaml(os,indent,depth,pad,eoe);
@@ -13928,8 +13929,8 @@ Node::to_yaml_generic(std::ostream &os,
             utils::indent(os,indent,depth,pad);
             os << m_schema->object_order()[i] << ": ";
             m_children[i]->to_yaml_generic(os,
-                                           address,
                                            detailed,
+                                           address,
                                            indent,
                                            depth+1,
                                            pad,
@@ -13949,8 +13950,8 @@ Node::to_yaml_generic(std::ostream &os,
             utils::indent(os,indent,depth,pad);
             os << "- ";
             m_children[i]->to_yaml_generic(os,
-                                           address,
                                            detailed,
+                                           address,
                                            indent,
                                            depth+1,
                                            pad,
@@ -13966,10 +13967,13 @@ Node::to_yaml_generic(std::ostream &os,
         if(detailed)
         {
             std::string dtype_yaml = dtype().to_yaml(indent, depth, pad, eoe);
-            std::string dtype_content;
-            std::string dtype_unused;
-
-            // TODO
+            os << eoe;
+            os << dtype_yaml;
+            utils::indent(os,indent,depth,pad);
+            if(!address)
+            {
+                os << "value: ";
+            }
         }
 
         if(address)
@@ -14025,11 +14029,6 @@ Node::to_yaml_generic(std::ostream &os,
                 case DataType::EMPTY_ID:
                     break;
             }
-        }
-
-        if(detailed)
-        {
-            // TODO
         }
     }
 
