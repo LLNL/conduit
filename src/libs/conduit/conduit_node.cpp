@@ -13984,40 +13984,38 @@ Node::to_yaml_generic(std::ostream &os,
         {
             switch(dtype().id())
             {
-                // TODO should these be using to_yaml_stream instead
-
                 // ints
                 case DataType::INT8_ID:
-                    as_int8_array().to_json_stream(os);
+                    as_int8_array().to_yaml_stream(os);
                     break;
                 case DataType::INT16_ID:
-                    as_int16_array().to_json_stream(os);
+                    as_int16_array().to_yaml_stream(os);
                     break;
                 case DataType::INT32_ID:
-                    as_int32_array().to_json_stream(os);
+                    as_int32_array().to_yaml_stream(os);
                     break;
                 case DataType::INT64_ID:
-                    as_int64_array().to_json_stream(os);
+                    as_int64_array().to_yaml_stream(os);
                     break;
                 // uints
                 case DataType::UINT8_ID:
-                    as_uint8_array().to_json_stream(os);
+                    as_uint8_array().to_yaml_stream(os);
                     break;
                 case DataType::UINT16_ID:
-                    as_uint16_array().to_json_stream(os);
+                    as_uint16_array().to_yaml_stream(os);
                     break;
                 case DataType::UINT32_ID:
-                    as_uint32_array().to_json_stream(os);
+                    as_uint32_array().to_yaml_stream(os);
                     break;
                 case DataType::UINT64_ID:
-                    as_uint64_array().to_json_stream(os);
+                    as_uint64_array().to_yaml_stream(os);
                     break;
                 // floats
                 case DataType::FLOAT32_ID:
-                    as_float32_array().to_json_stream(os);
+                    as_float32_array().to_yaml_stream(os);
                     break;
                 case DataType::FLOAT64_ID:
-                    as_float64_array().to_json_stream(os);
+                    as_float64_array().to_yaml_stream(os);
                     break;
                 // char8_str
                 case DataType::CHAR8_STR_ID:
