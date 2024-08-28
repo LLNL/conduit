@@ -11,9 +11,9 @@
 //-----------------------------------------------------------------------------
 // conduit lib includes
 //-----------------------------------------------------------------------------
-#include "conduit_config.h"
 #include "conduit_memory_manager.hpp"
-#include "conduit.hpp"
+#include "conduit_config.h"
+#include "conduit_utils.hpp"
 
 #include <cstring> // memcpy
 

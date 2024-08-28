@@ -19,8 +19,6 @@
 //-----------------------------------------------------------------------------
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
-#include "conduit_node.hpp"
-#include "conduit_utils.hpp"
 #include "conduit_log.hpp"
 #include "conduit_memory_manager.hpp"
 
