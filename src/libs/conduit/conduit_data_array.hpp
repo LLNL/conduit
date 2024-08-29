@@ -20,8 +20,8 @@
 #include "conduit_data_type.hpp"
 #include "conduit_utils.hpp"
 #include "conduit_data_accessor.hpp"
-// #include "conduit_execution_accessor.hpp"
-// #include "conduit_execution_array.hpp"
+#include "conduit_execution_accessor.hpp"
+#include "conduit_execution_array.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --

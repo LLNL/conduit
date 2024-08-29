@@ -21,6 +21,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_log.hpp"
 #include "conduit_memory_manager.hpp"
+#include "conduit_node.hpp"
 
 // Easier access to the Conduit logging functions
 using namespace conduit::utils;
@@ -150,6 +151,30 @@ T &
 ExecutionArray<T>::element(index_t idx) const 
 { 
     return (*(T*)(element_ptr(idx)));
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+const DataType &
+ExecutionArray<T>::dtype() const
+{
+    return (m_data == m_node_ptr->data_ptr() ? orig_dtype() : other_dtype());
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+const DataType &
+ExecutionArray<T>::orig_dtype() const
+{
+    return m_node_ptr->dtype();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+const DataType &
+ExecutionArray<T>::other_dtype() const
+{
+    return m_other_dtype;
 }
 
 //---------------------------------------------------------------------------//

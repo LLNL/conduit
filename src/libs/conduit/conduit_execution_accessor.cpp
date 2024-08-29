@@ -20,6 +20,7 @@
 // -- conduit includes -- 
 //-----------------------------------------------------------------------------
 #include "conduit_memory_manager.hpp"
+#include "conduit_node.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
@@ -431,6 +432,30 @@ ExecutionAccessor<T>::fill(T value)
             CONDUIT_ERROR("ExecutionAccessor does not support dtype: "
                           << dtype().name());
     }
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+const DataType &
+ExecutionAccessor<T>::dtype() const
+{
+    return (m_data == m_node_ptr->data_ptr() ? orig_dtype() : other_dtype());
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+const DataType &
+ExecutionAccessor<T>::orig_dtype() const
+{
+    return m_node_ptr->dtype();
+}
+
+//---------------------------------------------------------------------------//
+template <typename T> 
+const DataType &
+ExecutionAccessor<T>::other_dtype() const
+{
+    return m_other_dtype;
 }
 
 //---------------------------------------------------------------------------//

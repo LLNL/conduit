@@ -20,15 +20,19 @@
 #include "conduit_data_type.hpp"
 #include "conduit_utils.hpp"
 #include "conduit_execution.hpp"
-#include "conduit_node.hpp"
 #include "conduit_execution_accessor.hpp"
-// #include "conduit_data_array.hpp"
+#include "conduit_data_array.hpp"
 
 //-----------------------------------------------------------------------------
 // -- begin conduit:: --
 //-----------------------------------------------------------------------------
 namespace conduit
 {
+
+//-----------------------------------------------------------------------------
+// -- forward declarations required for conduit::ExecutionAccessor --
+//-----------------------------------------------------------------------------
+class Node;
 
 //-----------------------------------------------------------------------------
 // -- begin conduit::ExecutionArray --
@@ -100,14 +104,11 @@ public:
     index_t         number_of_elements() const 
                         {return dtype().number_of_elements();}
 
-    const DataType &dtype() const
-                    {return (m_data == m_node_ptr->data_ptr() ? orig_dtype() : other_dtype());}
+    const DataType &dtype() const;
 
-    const DataType &orig_dtype() const 
-                    { return m_node_ptr->dtype();}
+    const DataType &orig_dtype() const;
 
-    const DataType &other_dtype() const 
-                    { return m_other_dtype;}
+    const DataType &other_dtype() const;
 
     void           *data_ptr() const 
                         { return m_data;}
