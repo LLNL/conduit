@@ -1798,26 +1798,10 @@ braid_bent_quads(const Node & spec, Node &res)
                                       res["coordsets/coords"],
                                       x, y, nullptr);
 
-    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "quad";
-    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*4));
-    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
-
-    int32 idx = 0;
-    for(int32 j = 0; j < nele_y ; j++)
-    {
-        int32 yoff = j * (nele_x+1);
-        for(int32 i = 0; i < nele_x; i++)
-        {
-            conn[idx+0] = yoff + i;
-            conn[idx+1] = yoff + i + (nele_x+1);
-            conn[idx+2] = yoff + i + 1 + (nele_x+1);
-            conn[idx+3] = yoff + i + 1;
-
-            idx+=4;
-        }
-    }
+    res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
+    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
 
 
     Node &fields = res["fields"];
@@ -2666,42 +2650,11 @@ braid_bent_hexs(const Node & spec, Node &res)
                                       res["coordsets/coords"],
                                       x, y, z);
 
-    res["topologies/mesh/type"] = "unstructured";
+    res["topologies/mesh/type"] = "structured";
     res["topologies/mesh/coordset"] = "coords";
-    res["topologies/mesh/elements/shape"] = "hex";
-    res["topologies/mesh/elements/connectivity"].set(DataType::int32(nele*8));
-    int32 *conn = res["topologies/mesh/elements/connectivity"].value();
-
-    int32 idx = 0;
-    for(int32 k = 0; k < nele_z ; k++)
-    {
-        int32 zoff = k * (nele_x+1)*(nele_y+1);
-        int32 zoff_n = (k+1) * (nele_x+1)*(nele_y+1);
-
-        for(int32 j = 0; j < nele_y ; j++)
-        {
-            int32 yoff = j * (nele_x+1);
-            int32 yoff_n = (j+1) * (nele_x+1);
-
-
-            for(int32 i = 0; i < nele_x; i++)
-            {
-                // ordering is same as VTK_HEXAHEDRON
-
-                conn[idx+0] = zoff + yoff + i;
-                conn[idx+1] = zoff + yoff + i + 1;
-                conn[idx+2] = zoff + yoff_n + i + 1;
-                conn[idx+3] = zoff + yoff_n + i;
-
-                conn[idx+4] = zoff_n + yoff + i;
-                conn[idx+5] = zoff_n + yoff + i + 1;
-                conn[idx+6] = zoff_n + yoff_n + i + 1;
-                conn[idx+7] = zoff_n + yoff_n + i;
-
-                idx+=8;
-            }
-        }
-    }
+    res["topologies/mesh/elements/dims/i"] = (int32)nele_x;
+    res["topologies/mesh/elements/dims/j"] = (int32)nele_y;
+    res["topologies/mesh/elements/dims/k"] = (int32)nele_z;
 
     Node &fields = res["fields"];
 
