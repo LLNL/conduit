@@ -836,6 +836,112 @@ void braid_init_rectilinear_coordset(index_t npts_x,
 }
 
 //---------------------------------------------------------------------------//
+void
+braid_init_explicit_coordset(index_t npts_x,
+    index_t npts_y,
+    index_t npts_z,
+    Node& coords)
+{
+    coords["type"] = "explicit";
+
+    index_t npts = npts_x;
+    if (npts_y > 0)
+    {
+        npts *= npts_y;
+    }
+
+    if (npts_z > 1)
+    {
+        npts *= npts_z;
+    }
+
+    // also support interleaved
+    Node& coord_vals = coords["values"];
+    coord_vals["x"].set(DataType::float64(npts));
+    if (npts_y > 0)
+    {
+        coord_vals["y"].set(DataType::float64(npts));
+    }
+
+    if (npts_z > 1)
+    {
+        coord_vals["z"].set(DataType::float64(npts));
+    }
+
+    float64* x_vals = coord_vals["x"].value();
+    float64* y_vals = NULL;
+    if (npts_y > 0)
+    {
+        y_vals = coord_vals["y"].value();
+    }
+
+    float64* z_vals = NULL;
+
+    if (npts_z > 1)
+    {
+        z_vals = coord_vals["z"].value();
+    }
+
+    float64 dx = 20.0 / float64(npts_x - 1);
+    float64 dy = 20.0 / float64(npts_y - 1);
+    if (npts_y > 0)
+    {
+        dy = 20.0 / float64(npts_y - 1);
+    }
+
+    float64 dz = 0.0;
+
+    if (npts_z > 1)
+    {
+        dz = 20.0 / float64(npts_z - 1);
+    }
+
+    index_t idx = 0;
+    // default to one loop iteration (2d case)
+    index_t outer = 1;
+    // expand loop iteration for 3d case
+    if (npts_z > 1)
+    {
+        outer = npts_z;
+    }
+    // default to one loop iteration (1d case)
+    index_t middle = 1;
+    // expand loop iteration for 2d and 3d case
+    if (npts_y > 1)
+    {
+        middle = npts_y;
+    }
+
+    for (index_t k = 0; k < outer; k++)
+    {
+        float64 cz = -10.0 + k * dz;
+
+        for (index_t j = 0; j < middle; j++)
+        {
+            float64 cy = -10.0 + j * dy;
+
+            for (index_t i = 0; i < npts_x; i++)
+            {
+                x_vals[idx] = -10.0 + i * dx;
+
+                if (npts_y > 1)
+                {
+                    y_vals[idx] = cy;
+                }
+
+                if (npts_z > 1)
+                {
+                    z_vals[idx] = cz;
+                }
+
+                idx++;
+            }
+
+        }
+    }
+}
+
+//---------------------------------------------------------------------------//
 
 void
 fill_corner_point(std::vector<double>& p,
@@ -869,7 +975,7 @@ fill_corner_point(std::vector<double>& p,
 }
 
 void
-braid_init_explicit_coordset(index_t npts_x,
+braid_init_explicit_lerp_coordset(index_t npts_x,
                              index_t npts_y,
                              index_t npts_z,
                              Node &coords,
@@ -878,7 +984,7 @@ braid_init_explicit_coordset(index_t npts_x,
                              const double* corner_zs = nullptr);
 
 void
-braid_init_explicit_coordset(index_t npts_x,
+braid_init_explicit_lerp_coordset(index_t npts_x,
                              index_t npts_y,
                              index_t npts_z,
                              Node &coords,
@@ -1686,11 +1792,11 @@ braid_bent_quads(const Node & spec, Node &res)
 
     braid_init_example_state(res);
     res["state/domain_id"] = domain_id;
-    braid_init_explicit_coordset(npts_x,
-                                 npts_y,
-                                 1,
-                                 res["coordsets/coords"],
-                                 x, y, nullptr);
+    braid_init_explicit_lerp_coordset(npts_x,
+                                      npts_y,
+                                      1,
+                                      res["coordsets/coords"],
+                                      x, y, nullptr);
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
@@ -2554,11 +2660,11 @@ braid_bent_hexs(const Node & spec, Node &res)
 
     braid_init_example_state(res);
     res["state/domain_id"] = domain_id;
-    braid_init_explicit_coordset(npts_x,
-                                 npts_y,
-                                 npts_z,
-                                 res["coordsets/coords"],
-                                 x, y, z);
+    braid_init_explicit_lerp_coordset(npts_x,
+                                      npts_y,
+                                      npts_z,
+                                      res["coordsets/coords"],
+                                      x, y, z);
 
     res["topologies/mesh/type"] = "unstructured";
     res["topologies/mesh/coordset"] = "coords";
@@ -3620,7 +3726,7 @@ strided_structured(Node &desc, // shape of requested data arrays
 
 
 //---------------------------------------------------------------------------//
-void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
+void CONDUIT_BLUEPRINT_API bent_multi_grid(const conduit::Node& spec,
     conduit::Node& res)
 {
     // verify each child node in spec.
@@ -3668,7 +3774,7 @@ void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
         if (!(children_ok && dims_ok))
         {
             // error: some domain doesn't have the right children.
-            CONDUIT_ERROR("blueprint::mesh::examples::bentgrid requires each domain in spec " << std::endl <<
+            CONDUIT_ERROR("blueprint::mesh::examples::bent_multi_grid requires each domain in spec " << std::endl <<
                 "to have floating-point children corner_xs, corner_ys each with length > 3." << std::endl <<
                 "For a 3D mesh, each domain must have corner_xs, corner_ys, corner_zs each" << std::endl <<
                 "with length > 7.  Each domain must also have an integral domain_id and integral" << std::endl <<

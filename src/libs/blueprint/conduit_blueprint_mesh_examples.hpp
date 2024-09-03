@@ -276,13 +276,13 @@ namespace examples
     ///
     /// The children in each domain specification represent the locations of
     /// the corners of that domain and contain two or three coordinates.
-    void CONDUIT_BLUEPRINT_API bentgrid(const conduit::Node& spec,
+    void CONDUIT_BLUEPRINT_API bent_multi_grid(const conduit::Node& spec,
                                         conduit::Node& res);
 
     /// Generates a braid-like example mesh that covers elements defined in a
     /// rectilinear grid.  Currently hexs are supported for 3D meshes and quads
     /// are supported for 2D meshes.  Specify a mesh as outlined in the docs
-    /// for bentgrid().
+    /// for bent_multi_grid().
     void CONDUIT_BLUEPRINT_API bent_braid(const conduit::Node& spec,
                                           conduit::Node& res);
 

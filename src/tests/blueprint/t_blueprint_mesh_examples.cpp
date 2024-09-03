@@ -436,7 +436,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_2D_enh_red_connectivity)
         std::vector<double> d5y{ 7, 7, 10, 10 };
         add_domain_node(spec, "domain5", 5, 4, 5, 0, d5x, d5y, empty_z);
 
-        blueprint::mesh::examples::bentgrid(spec, dsets["bentgrid_2d_visitghost"]);
+        blueprint::mesh::examples::bent_multi_grid(spec, dsets["bentgrid_2d_visitghost"]);
     }
 
     Node info;
@@ -521,7 +521,7 @@ TEST(conduit_blueprint_mesh_examples, mesh_3D_enh_red_connectivity)
         std::vector<double> d10z{ 7, 7, 7, 7, 10, 10, 10, 10 };
         add_domain_node(spec, "domain10", 10, 4, 5, 2, d10x, d10y, d10z);
 
-        blueprint::mesh::examples::bentgrid(spec, dsets["bentgrid_3d_visitghost"]);
+        blueprint::mesh::examples::bent_multi_grid(spec, dsets["bentgrid_3d_visitghost"]);
     }
 
     Node info;
