@@ -1082,13 +1082,18 @@ namespace adjset
       already allocated by specifying a base index to store new values and
       setting \a allocate to false.
      */
-    void CONDUIT_BLUEPRINT_API lerp(const std::vector<double>& A,
+    void CONDUIT_BLUEPRINT_API lerp_v(const std::vector<double>& A,
                                     const std::vector<double>& B,
                                     int n,
                                     std::vector<std::vector<double> > & out,
                                     int base = 0,
                                     bool allocate = true);
-
+    void CONDUIT_BLUEPRINT_API lerp_one(const Node& A,
+                                        const Node& B,
+                                        int n,
+                                        Node& out,
+                                        int base = 0,
+                                        bool allocate = true);
 
     //-------------------------------------------------------------------------
     /**
@@ -1101,12 +1106,15 @@ namespace adjset
                  inner vector stores a component of the point and the
                  outer vector stores all the points.
      */
-    void CONDUIT_BLUEPRINT_API lerp(const std::vector<std::vector<double> >& As,
+    void CONDUIT_BLUEPRINT_API lerp_v(const std::vector<std::vector<double> >& As,
                                     const std::vector<std::vector<double> >& Bs,
                                     int n,
                                     std::vector<std::vector<double> >& out);
 
-
+    void CONDUIT_BLUEPRINT_API lerp(const Node& As,
+                                    const Node& Bs,
+                                    int n,
+                                    Node& out);
 
 }
 //-----------------------------------------------------------------------------

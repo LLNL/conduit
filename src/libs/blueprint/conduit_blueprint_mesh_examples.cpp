@@ -1034,23 +1034,23 @@ braid_init_explicit_lerp_coordset(index_t npts_x,
             std::vector<double>H(dims);
             fill_corner_point(H, corner_xs, corner_ys, corner_zs, 7, -10, 10, 10);
             std::vector<std::vector<double> > SW;
-            conduit::blueprint::mesh::utils::lerp(A, E, npts_z, SW);
+            conduit::blueprint::mesh::utils::lerp_v(A, E, npts_z, SW);
             std::vector<std::vector<double> > SE;
-            conduit::blueprint::mesh::utils::lerp(B, F, npts_z, SE);
+            conduit::blueprint::mesh::utils::lerp_v(B, F, npts_z, SE);
             std::vector<std::vector<double> > NE;
-            conduit::blueprint::mesh::utils::lerp(C, G, npts_z, NE);
+            conduit::blueprint::mesh::utils::lerp_v(C, G, npts_z, NE);
             std::vector<std::vector<double> > NW;
-            conduit::blueprint::mesh::utils::lerp(D, H, npts_z, NW);
+            conduit::blueprint::mesh::utils::lerp_v(D, H, npts_z, NW);
 
 
-            conduit::blueprint::mesh::utils::lerp(SW, NW, npts_y, left);
-            conduit::blueprint::mesh::utils::lerp(SE, NE, npts_y, right);
+            conduit::blueprint::mesh::utils::lerp_v(SW, NW, npts_y, left);
+            conduit::blueprint::mesh::utils::lerp_v(SE, NE, npts_y, right);
         }
         else
         {
             // dims == 2
-            conduit::blueprint::mesh::utils::lerp(A, D, npts_y, left);
-            conduit::blueprint::mesh::utils::lerp(B, C, npts_y, right);
+            conduit::blueprint::mesh::utils::lerp_v(A, D, npts_y, left);
+            conduit::blueprint::mesh::utils::lerp_v(B, C, npts_y, right);
         }
     }
     else
@@ -1058,7 +1058,7 @@ braid_init_explicit_lerp_coordset(index_t npts_x,
         left.push_back(A);
         right.push_back(B);
     }
-    conduit::blueprint::mesh::utils::lerp(left, right, npts_x, grid);
+    conduit::blueprint::mesh::utils::lerp_v(left, right, npts_x, grid);
 
     // also support interleaved
     Node &coord_vals = coords["values"];
