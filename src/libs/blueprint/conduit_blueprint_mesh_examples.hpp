@@ -274,8 +274,8 @@ namespace examples
     ///  - integral child domain_id
     ///  - numerical array children corner_xs, corner_ys, optionally corner_zs
     ///
-    /// The children in each domain specification represent the locations of
-    /// the corners of that domain and contain two or three coordinates.
+    /// Taken together, the corner_xs, corner_ys, and optionally corner_zs
+    /// represent the points at the corners of that domain.
     void CONDUIT_BLUEPRINT_API bent_multi_grid(const conduit::Node& spec,
                                         conduit::Node& res);
 

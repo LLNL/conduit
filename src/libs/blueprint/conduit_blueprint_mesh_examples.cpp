@@ -3681,78 +3681,114 @@ strided_structured(Node &desc, // shape of requested data arrays
 
 
 //---------------------------------------------------------------------------//
+void bent_multi_grid_defaults(conduit::Node& spec)
+{
+    // Provide defaults for bent_multi_grid so a user can call that function
+    // without having to remember what goes in spec
+    auto fill_domain = [&spec] (int npts_x, int npts_y, int domain_id,
+        const char * label,
+        std::initializer_list<double> corner_xs,
+        std::initializer_list<double> corner_ys)
+        {
+            conduit::Node dom = spec[label];
+            dom["npts_x"] = npts_x;
+            dom["npts_y"] = npts_y;
+            dom["domain_id"] = domain_id;
+            conduit::Node& c_xs = dom["corner_xs"];
+            c_xs.set(corner_xs.begin(), corner_xs.size());
+            conduit::Node& c_ys = dom["corner_ys"];
+            c_ys.set(corner_ys.begin(), corner_ys.size());
+        };
+
+    fill_domain(3, 4, 0, "domain0", { 0, 2, 2, 0 }, { 0, 0, 1, 1 });
+    fill_domain(3, 4, 1, "domain1", { 2, 4, 4, 2 }, { 0, 0, 2, 1 });
+    fill_domain(3, 3, 2, "domain2", { 0, 2, 4, 0 }, { 1, 1, 2, 2 });
+    fill_domain(3, 2, 3, "domain3", { 0, 4, 4, 0 }, { 2, 2, 3, 3 });
+    fill_domain(2, 4, 4, "domain4", { 4, 5, 5, 4 }, { 0, 0, 2, 2 });
+    fill_domain(2, 2, 5, "domain5", { 4, 5, 5, 4 }, { 2, 3, 3, 2 });
+}
+
 void CONDUIT_BLUEPRINT_API bent_multi_grid(const conduit::Node& spec,
     conduit::Node& res)
 {
-    // verify each child node in spec.
-    // 1. make sure each is dimensionally self-consistent
-    // 2. make sure dimensionality is equal among all domains
-    std::vector<int> dom_dimensions;
-    NodeConstIterator ver_it = spec.children();
-    while (ver_it.has_next())
+    if (res.dtype().is_empty())
     {
-        const Node& ver_node = ver_it.next();
-        // Check for necessary domain information
-        bool has_corner_xs = ver_node.has_child("corner_xs");
-        bool has_corner_ys = ver_node.has_child("corner_ys");
-        bool has_corner_zs = ver_node.has_child("corner_zs");
-        bool has_npts_x = ver_node.has_child("npts_x");
-        bool has_npts_y = ver_node.has_child("npts_y");
-        bool has_npts_z = ver_node.has_child("npts_z");
-        bool has_domain_id = ver_node.has_child("domain_id");
-
-        int dims = 0;
-        if (has_corner_xs && has_corner_ys && has_npts_x && has_npts_y) { dims = 2; }
-        if (dims == 2 && has_corner_zs && has_npts_z) { dims = 3; }
-
-        bool children_ok = (dims == 2 || dims == 3) && has_domain_id;
-        bool dims_ok = false;
-
-        if (children_ok)
+        conduit::Node default_spec;
+        bent_multi_grid_defaults(default_spec);
+        bent_multi_grid(default_spec, res);
+    }
+    else
+    {
+        // verify each child node in spec.
+        // 1. make sure each is dimensionally self-consistent
+        // 2. make sure dimensionality is equal among all domains
+        std::vector<int> dom_dimensions;
+        NodeConstIterator ver_it = spec.children();
+        while (ver_it.has_next())
         {
-            dims_ok = ver_node["corner_xs"].as_float64_accessor().number_of_elements() > 3;
-            dims_ok = dims_ok && ver_node["corner_ys"].as_float64_accessor().number_of_elements() > 3;
-            int npts_x = ver_node["npts_x"].as_int32();
-            dims_ok = dims_ok && npts_x >= 2;
-            int npts_y = ver_node["npts_y"].as_int32();
-            dims_ok = dims_ok && npts_y >= 2;
-            if (dims > 2)
+            const Node& ver_node = ver_it.next();
+            // Check for necessary domain information
+            bool has_corner_xs = ver_node.has_child("corner_xs");
+            bool has_corner_ys = ver_node.has_child("corner_ys");
+            bool has_corner_zs = ver_node.has_child("corner_zs");
+            bool has_npts_x = ver_node.has_child("npts_x");
+            bool has_npts_y = ver_node.has_child("npts_y");
+            bool has_npts_z = ver_node.has_child("npts_z");
+            bool has_domain_id = ver_node.has_child("domain_id");
+
+            int dims = 0;
+            if (has_corner_xs && has_corner_ys && has_npts_x && has_npts_y) { dims = 2; }
+            if (dims == 2 && has_corner_zs && has_npts_z) { dims = 3; }
+
+            bool children_ok = (dims == 2 || dims == 3) && has_domain_id;
+            bool dims_ok = false;
+
+            if (children_ok)
             {
-                dims_ok = dims_ok && ver_node["corner_xs"].as_float64_accessor().number_of_elements() > 7;
-                dims_ok = dims_ok && ver_node["corner_ys"].as_float64_accessor().number_of_elements() > 7;
-                dims_ok = dims_ok && ver_node["corner_zs"].as_float64_accessor().number_of_elements() > 7;
-                int npts_z = ver_node["npts_z"].as_int32();
-                dims_ok = dims_ok && npts_z >= 2;
+                dims_ok = ver_node["corner_xs"].as_float64_accessor().number_of_elements() > 3;
+                dims_ok = dims_ok && ver_node["corner_ys"].as_float64_accessor().number_of_elements() > 3;
+                int npts_x = ver_node["npts_x"].as_int32();
+                dims_ok = dims_ok && npts_x >= 2;
+                int npts_y = ver_node["npts_y"].as_int32();
+                dims_ok = dims_ok && npts_y >= 2;
+                if (dims > 2)
+                {
+                    dims_ok = dims_ok && ver_node["corner_xs"].as_float64_accessor().number_of_elements() > 7;
+                    dims_ok = dims_ok && ver_node["corner_ys"].as_float64_accessor().number_of_elements() > 7;
+                    dims_ok = dims_ok && ver_node["corner_zs"].as_float64_accessor().number_of_elements() > 7;
+                    int npts_z = ver_node["npts_z"].as_int32();
+                    dims_ok = dims_ok && npts_z >= 2;
+                }
             }
+
+            if (!(children_ok && dims_ok))
+            {
+                // error: some domain doesn't have the right children.
+                CONDUIT_ERROR("blueprint::mesh::examples::bent_multi_grid requires each domain in spec " << std::endl <<
+                    "to have floating-point children corner_xs, corner_ys each with length > 3." << std::endl <<
+                    "For a 3D mesh, each domain must have corner_xs, corner_ys, corner_zs each" << std::endl <<
+                    "with length > 7.  Each domain must also have an integral domain_id and integral" << std::endl <<
+                    "npts_x, npts_y, and optionally npts_z.  Values provided : " << std::endl <<
+                    ver_node.to_yaml() << std::endl);
+            }
+
+            dom_dimensions.push_back(dims);
         }
 
-        if (!(children_ok && dims_ok))
+        // For each child node in spec,
+        // call braid()
+        NodeConstIterator doms_it = spec.children();
+        while (doms_it.has_next())
         {
-            // error: some domain doesn't have the right children.
-            CONDUIT_ERROR("blueprint::mesh::examples::bent_multi_grid requires each domain in spec " << std::endl <<
-                "to have floating-point children corner_xs, corner_ys each with length > 3." << std::endl <<
-                "For a 3D mesh, each domain must have corner_xs, corner_ys, corner_zs each" << std::endl <<
-                "with length > 7.  Each domain must also have an integral domain_id and integral" << std::endl <<
-                "npts_x, npts_y, and optionally npts_z.  Values provided : " << std::endl << 
-                ver_node.to_yaml() << std::endl);
+            const Node& dom_node = doms_it.next();
+            // I need to construct a name and pass in res[thename], not just res.
+            std::string thename;
+            // If spec is a list, use a numerical value that we increment.  Otherwise, use the name of this particular child.
+            bent_braid(dom_node, res[doms_it.name()]);
         }
 
-        dom_dimensions.push_back(dims);
+        braid_init_example_adjset(res);
     }
-
-    // For each child node in spec,
-    // call braid()
-    NodeConstIterator doms_it = spec.children();
-    while (doms_it.has_next())
-    {
-        const Node& dom_node = doms_it.next();
-        // I need to construct a name and pass in res[thename], not just res.
-        std::string thename;
-        // If spec is a list, use a numerical value that we increment.  Otherwise, use the name of this particular child.
-        bent_braid(dom_node, res[doms_it.name()]);
-    }
-
-    braid_init_example_adjset(res);
 }
 
 
