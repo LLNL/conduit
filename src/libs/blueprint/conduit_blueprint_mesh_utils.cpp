@@ -4096,51 +4096,6 @@ MatchQuery::results(int dom, int query_dom) const
 // -- end conduit::blueprint::mesh::utils::query --
 //-----------------------------------------------------------------------------
 
-void CONDUIT_BLUEPRINT_API lerp_v(const std::vector<double>& A,
-                                const std::vector<double>& B,
-                                int n,
-                                std::vector<std::vector<double> >& out,
-                                int base,
-                                bool allocate)
-{
-    if (n < 0)
-    {
-        CONDUIT_ERROR("Linear interpolation requires output of at least one point.  "
-            "Requested n is " << n);
-    }
-
-    const int num_components = A.size();
-    if (num_components < 1 || B.size() != num_components)
-    {
-        CONDUIT_ERROR("Linear interpolation requires same number of components "
-            "(greater than zero) in points A and B.  A has " << num_components << 
-            " and B has " << B.size() << " components.");
-    }
-
-    if (allocate)
-    {
-        out.clear();
-        out.resize(num_components);
-    }
-
-    for (int c = 0; c < num_components; ++c)
-    {
-        std::vector<double>& comp = out[c];
-        if (allocate) { comp.resize(n); }
-        double delta = 0.;
-        if (n > 1)
-        {
-            delta = (B[c] - A[c]) / (n - 1);
-        }
-
-        comp[base] = A[c];
-        for (int i = 1; i < n; ++i)
-        {
-            comp[base + i] = comp[base + i - 1] + delta;
-        }
-    }
-}
-
 void CONDUIT_BLUEPRINT_API lerp_one(const Node& A,
                                     const Node& B,
                                     int n,
@@ -4255,57 +4210,13 @@ void CONDUIT_BLUEPRINT_API lerp(const Node& As,
                 const double_array pAcomp = As.child(d).as_double_array();
                 const double_array pBcomp = Bs.child(d).as_double_array();
 
-                tempa[d] = pAcomp[p];
-                tempb[d] = pBcomp[p];
+                ptempa[d] = pAcomp[p];
+                ptempb[d] = pBcomp[p];
             }
             lerp_one(tempa, tempb, n, out, offset, false);
 
             offset += n;
         }
-    }
-}
-
-void CONDUIT_BLUEPRINT_API lerp_v(const std::vector<std::vector<double> >& As,
-                                const std::vector<std::vector<double> >& Bs,
-                                int n,
-                                std::vector<std::vector<double> >& out)
-{
-    const int dims = As.size();
-    if (dims < 1 || Bs.size() != dims)
-    {
-        CONDUIT_ERROR("Linear interpolation requires same dimensionality "
-            "(greater than zero) in point lists As and Bs.  As has dimension " <<
-            dims << " and Bs has dimension " << Bs.size() << ".");
-    }
-
-    const int num_segments = As[0].size();
-    if (num_segments < 1 || Bs[0].size() != num_segments)
-    {
-        CONDUIT_ERROR("Linear interpolation requires same number of points "
-            "(greater than zero) in point lists As and Bs.  As has " << num_segments <<
-            " and Bs has " << Bs[0].size() << " points.");
-    }
-
-    out.clear();
-    out.resize(dims);
-    for (int d = 0; d < dims; ++d)
-    {
-        out[d].resize(num_segments * n);
-    }
-
-    int offset = 0;
-    for (int p = 0; p < num_segments; ++p)
-    {
-        std::vector<double> tempa(dims);
-        std::vector<double> tempb(dims);
-        for (int d = 0; d < dims; ++d)
-        {
-            tempa[d] = As[d][p];
-            tempb[d] = Bs[d][p];
-        }
-        lerp_v(tempa, tempb, n, out, offset, false);
-
-        offset += n;
     }
 }
 

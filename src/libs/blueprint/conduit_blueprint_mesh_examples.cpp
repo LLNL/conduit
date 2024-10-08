@@ -944,34 +944,36 @@ braid_init_explicit_coordset(index_t npts_x,
 //---------------------------------------------------------------------------//
 
 void
-fill_corner_point(std::vector<double>& p,
+fill_corner_point(Node& n,
     const double* x, const double* y, const double* z, int idx,
     double dftx, double dfty, double dftz)
 {
-    int dims = p.size();
+    int dims = n.dtype().number_of_elements();
+    double_array an = n.as_double_array();
 
-    p[0] = dftx;
+    an[0] = dftx;
     if (dims > 1)
     {
-        p[1] = dfty;
+        an[1] = dfty;
         if (dims == 3)
         {
-            p[2] = dftz;
+            an[2] = dftz;
         }
     }
 
     if (x != nullptr && (dims == 1 || y != nullptr && (dims == 2 || z != nullptr)))
     {
-        p[0] = x[idx];
+        an[0] = x[idx];
         if (dims > 1)
         {
-            p[1] = y[idx];
+            an[1] = y[idx];
             if (dims == 3)
             {
-                p[2] = z[idx];
+                an[2] = z[idx];
             }
         }
     }
+
 }
 
 void
@@ -1009,56 +1011,56 @@ braid_init_explicit_lerp_coordset(index_t npts_x,
 
 
     // Extract corner points
-    std::vector<double>A(dims);
+    Node A; A.set(DataType::float64(dims));
     fill_corner_point(A, corner_xs, corner_ys, corner_zs, 0, -10, -10, -10);
-    std::vector<double>B(dims);
+    Node B; B.set(DataType::float64(dims));
     fill_corner_point(B, corner_xs, corner_ys, corner_zs, 1,  10, -10, -10);
 
     // Set up result vectors
-    std::vector<std::vector<double> > left, right, grid;
+    Node left, right, grid;
 
     if (dims > 1)
     {
-        std::vector<double>C(dims);
+        Node C; C.set(DataType::float64(dims));
         fill_corner_point(C, corner_xs, corner_ys, corner_zs, 2, 10, 10, -10);
-        std::vector<double>D(dims);
+        Node D; D.set(DataType::float64(dims));
         fill_corner_point(D, corner_xs, corner_ys, corner_zs, 3, -10, 10, -10);
         if (dims > 2)
         {
-            std::vector<double>E(dims);
+            Node E; E.set(DataType::float64(dims));
             fill_corner_point(E, corner_xs, corner_ys, corner_zs, 4, -10, -10, 10);
-            std::vector<double>F(dims);
+            Node F; F.set(DataType::float64(dims));
             fill_corner_point(F, corner_xs, corner_ys, corner_zs, 5, 10, -10, 10);
-            std::vector<double>G(dims);
+            Node G; G.set(DataType::float64(dims));
             fill_corner_point(G, corner_xs, corner_ys, corner_zs, 6, 10, 10, 10);
-            std::vector<double>H(dims);
+            Node H; H.set(DataType::float64(dims));
             fill_corner_point(H, corner_xs, corner_ys, corner_zs, 7, -10, 10, 10);
-            std::vector<std::vector<double> > SW;
-            conduit::blueprint::mesh::utils::lerp_v(A, E, npts_z, SW);
-            std::vector<std::vector<double> > SE;
-            conduit::blueprint::mesh::utils::lerp_v(B, F, npts_z, SE);
-            std::vector<std::vector<double> > NE;
-            conduit::blueprint::mesh::utils::lerp_v(C, G, npts_z, NE);
-            std::vector<std::vector<double> > NW;
-            conduit::blueprint::mesh::utils::lerp_v(D, H, npts_z, NW);
+            Node SW;
+            conduit::blueprint::mesh::utils::lerp(A, E, npts_z, SW);
+            Node SE;
+            conduit::blueprint::mesh::utils::lerp(B, F, npts_z, SE);
+            Node NE;
+            conduit::blueprint::mesh::utils::lerp(C, G, npts_z, NE);
+            Node NW;
+            conduit::blueprint::mesh::utils::lerp(D, H, npts_z, NW);
 
 
-            conduit::blueprint::mesh::utils::lerp_v(SW, NW, npts_y, left);
-            conduit::blueprint::mesh::utils::lerp_v(SE, NE, npts_y, right);
+            conduit::blueprint::mesh::utils::lerp(SW, NW, npts_y, left);
+            conduit::blueprint::mesh::utils::lerp(SE, NE, npts_y, right);
         }
         else
         {
             // dims == 2
-            conduit::blueprint::mesh::utils::lerp_v(A, D, npts_y, left);
-            conduit::blueprint::mesh::utils::lerp_v(B, C, npts_y, right);
+            conduit::blueprint::mesh::utils::lerp(A, D, npts_y, left);
+            conduit::blueprint::mesh::utils::lerp(B, C, npts_y, right);
         }
     }
     else
     {
-        left.push_back(A);
-        right.push_back(B);
+        left.set(A);
+        right.set(B);
     }
-    conduit::blueprint::mesh::utils::lerp_v(left, right, npts_x, grid);
+    conduit::blueprint::mesh::utils::lerp(left, right, npts_x, grid);
 
     // also support interleaved
     Node &coord_vals = coords["values"];
