@@ -337,6 +337,13 @@ public:
 private:
     void clear();
 
+    /**
+     @brief Execute all the outstanding isend/irecv calls and reconstruct any
+            nodes after doing the data movement.
+     @return The return value from MPI_Waitall.
+     */
+    int  execute_internal();
+
     static const int OP_SEND;
     static const int OP_RECV;
     struct operation

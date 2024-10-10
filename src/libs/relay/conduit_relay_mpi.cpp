@@ -277,15 +277,35 @@ bool invalid_tag(int tag)
 /**
  @brief MPI tags can be in the range [0,MPI_TAG_UB]. The values are
         implementation-dependent. If the tag is not in that range, return
-        MPI_TAG_UB so it is safe to use with MPI functions.
+        the value for MPI_TAG_UB so it is safe to use with MPI functions.
 
+ @param comm The MPI communicator.
  @param tag The input tag.
 
  @return A tag value that is safe to use with MPI.
  */
-int safe_tag(int tag)
+int safe_tag(MPI_Comm comm, int tag)
 {
-    return (tag < MPI_TAG_UB) ? ((tag >= 0) ? tag : MPI_TAG_UB) : MPI_TAG_UB;
+    // Get the tag upper bound for the communicator.
+    // MPI_Comm_get_attr with MPI_TAG_UB is not a very reliable function.
+    constexpr int backup_tag_limit = 4096;
+    int tag_ub = 0, flag = 0;
+    int mpi_error = MPI_Comm_get_attr(comm, MPI_TAG_UB, &tag_ub, &flag);
+    if(mpi_error == MPI_SUCCESS && flag != 0)
+    {
+        // Some MPI implementations give a negative upper bound; maybe they
+        // do not really support querying MPI_TAG_UB.
+        if(tag_ub < 0)
+        {
+            tag_ub = backup_tag_limit;
+        }
+    }
+    else
+    {
+        tag_ub = backup_tag_limit;
+    }
+
+    return (tag < tag_ub) ? ((tag >= 0) ? tag : tag_ub) : tag_ub;
 }
 
 //---------------------------------------------------------------------------//
@@ -992,7 +1012,7 @@ isend(const Node &node,
                                static_cast<int>(data_size),
                                MPI_BYTE, 
                                dest, 
-                               safe_tag(tag),
+                               safe_tag(mpi_comm, tag),
                                mpi_comm,
                                &(request->m_request));
                                
@@ -1045,7 +1065,7 @@ irecv(Node &node,
                                static_cast<int>(data_size),
                                MPI_BYTE,
                                src,
-                               safe_tag(tag),
+                               safe_tag(mpi_comm, tag),
                                mpi_comm,
                                &(request->m_request));
 
@@ -1887,12 +1907,45 @@ communicate_using_schema::add_irecv(Node &node, int src, int tag)
 int
 communicate_using_schema::execute()
 {
+    // Uncomment this to install an MPI_Comm error handler.
+    // HandleMPICommError errHandler(comm);
+
+    // Get the currently installed warning and error handlers.
+    conduit::utils::conduit_warning_handler onWarning = conduit::utils::warning_handler();
+    conduit::utils::conduit_error_handler onError = conduit::utils::error_handler();
+
+    // Install the default exception-throwing handlers.
+    conduit::utils::set_warning_handler(conduit::utils::default_warning_handler);
+    conduit::utils::set_error_handler(conduit::utils::default_error_handler);
+
+    int retval = 0;
+    try
+    {
+        retval = execute_internal();
+
+        // Restore warning/error handlers.
+        conduit::utils::set_warning_handler(onWarning);
+        conduit::utils::set_error_handler(onError);
+    }
+    catch(conduit::Error &e)
+    {
+        // Restore warning/error handlers.
+        conduit::utils::set_warning_handler(onWarning);
+        conduit::utils::set_error_handler(onError);
+
+        // Rethrow the exception.
+        throw e;
+    }
+    return retval;
+}
+
+//-----------------------------------------------------------------------------
+int
+communicate_using_schema::execute_internal()
+{
     int mpi_error = 0;
     std::vector<MPI_Request> requests(operations.size());
     std::vector<MPI_Status>  statuses(operations.size());
-
-    // Uncomment this to install an MPI_Comm error handler.
-    // HandleMPICommError errHandler(comm);
 
     int rank, size;
     MPI_Comm_rank(comm, &rank);
@@ -1953,7 +2006,7 @@ communicate_using_schema::execute()
                     << msg_data_size << ", "
                     << "MPI_BYTE, "
                     << operations[i].rank << ", "
-                    << safe_tag(operations[i].tag) << ", "
+                    << safe_tag(comm, operations[i].tag) << ", "
                     << "comm, &requests[" << i << "]);" << std::endl;
             }
             
@@ -1968,7 +2021,7 @@ communicate_using_schema::execute()
                                   static_cast<int>(msg_data_size),
                                   MPI_BYTE,
                                   operations[i].rank,
-                                  safe_tag(operations[i].tag),
+                                  safe_tag(comm, operations[i].tag),
                                   comm,
                                   &requests[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -1978,6 +2031,7 @@ communicate_using_schema::execute()
     if(logging)
     {
         log << "* Time issuing MPI_Isend calls: " << (t1-t0) << std::endl;
+        log.flush();
     }
 
     // Issue all the recvs.
@@ -1990,10 +2044,10 @@ communicate_using_schema::execute()
             {
                 log << "    MPI_Probe("
                     << operations[i].rank << ", "
-                    << safe_tag(operations[i].tag) << ", "
+                    << safe_tag(comm, operations[i].tag) << ", "
                     << "comm, &statuses[" << i << "]);" << std::endl;
             }
-            mpi_error = MPI_Probe(operations[i].rank, safe_tag(operations[i].tag), comm, &statuses[i]);
+            mpi_error = MPI_Probe(operations[i].rank, safe_tag(comm, operations[i].tag), comm, &statuses[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
             int buffer_size = 0;
@@ -2015,7 +2069,7 @@ communicate_using_schema::execute()
                     << buffer_size << ", "
                     << "MPI_BYTE, "
                     << operations[i].rank << ", "
-                    << safe_tag(operations[i].tag) << ", "
+                    << safe_tag(comm, operations[i].tag) << ", "
                     << "comm, &requests[" << i << "]);" << std::endl;
             }
 
@@ -2024,7 +2078,7 @@ communicate_using_schema::execute()
                                   buffer_size,
                                   MPI_BYTE,
                                   operations[i].rank,
-                                  safe_tag(operations[i].tag),
+                                  safe_tag(comm, operations[i].tag),
                                   comm,
                                   &requests[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -2034,6 +2088,7 @@ communicate_using_schema::execute()
     if(logging)
     {
         log << "* Time issuing MPI_Irecv calls: " << (t2-t1) << std::endl;
+        log.flush();
     }
 
     // Wait for the requests to complete.
@@ -2041,6 +2096,7 @@ communicate_using_schema::execute()
     if(logging)
     {
         log << "    MPI_Waitall(" << n << ", &requests[0], &statuses[0]);" << std::endl;
+        log.flush();
     }
     mpi_error = MPI_Waitall(n, &requests[0], &statuses[0]);
     CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -2048,6 +2104,7 @@ communicate_using_schema::execute()
     if(logging)
     {
         log << "* Time in MPI_Waitall: " << (t3-t2) << std::endl;
+        log.flush();
     }
 
     // Finish building the nodes for which we received data.
@@ -2082,6 +2139,7 @@ communicate_using_schema::execute()
             if(logging)
             {
                 log << "* Built output node " << i << std::endl;
+                log.flush();
             }
         }
     }
