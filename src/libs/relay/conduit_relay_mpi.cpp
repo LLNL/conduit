@@ -313,6 +313,7 @@ int safe_tag(int tag, MPI_Comm comm)
       // the range than to just clamp them.
       newtag = newtag % tag_ub;
     }
+std::cout << "**** safe_tag(" << tag << ")->" << newtag << std::endl;
     return newtag;
 }
 
@@ -1016,11 +1017,12 @@ isend(const Node &node,
                      "(" << std::numeric_limits<int>::max() << ")")
     }
 
+    const int newtag = safe_tag(tag, mpi_comm);
     int mpi_error =  MPI_Isend(const_cast<void*>(data_ptr), 
                                static_cast<int>(data_size),
                                MPI_BYTE, 
                                dest, 
-                               safe_tag(tag, mpi_comm),
+                               newtag,
                                mpi_comm,
                                &(request->m_request));
                                
@@ -1069,11 +1071,12 @@ irecv(Node &node,
                      "(" << std::numeric_limits<int>::max() << ")")
     }
 
+    const int newtag = safe_tag(tag, mpi_comm);
     int mpi_error =  MPI_Irecv(data_ptr,
                                static_cast<int>(data_size),
                                MPI_BYTE,
                                src,
-                               safe_tag(tag, mpi_comm),
+                               newtag,
                                mpi_comm,
                                &(request->m_request));
 
