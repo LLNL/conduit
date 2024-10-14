@@ -313,7 +313,7 @@ int safe_tag(int tag, MPI_Comm comm)
       // the range than to just clamp them.
       newtag = newtag % tag_ub;
     }
-std::cout << "**** safe_tag(" << tag << ")->" << newtag << std::endl;
+
     return newtag;
 }
 
