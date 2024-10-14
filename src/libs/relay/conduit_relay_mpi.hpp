@@ -83,10 +83,11 @@ namespace mpi
              MPI_TAG_UB so it is safe to use with MPI functions.
 
       @param tag The input tag.
+      @param comm The MPI communicator.
 
       @return A tag value that is safe to use with MPI.
     */
-    int CONDUIT_RELAY_API safe_tag(int tag);
+    int CONDUIT_RELAY_API safe_tag(int tag, MPI_Comm comm);
 
     int CONDUIT_RELAY_API send(const Node &node,
                                 int dest,

@@ -279,12 +279,12 @@ bool invalid_tag(int tag)
         implementation-dependent. If the tag is not in that range, return
         the value for MPI_TAG_UB so it is safe to use with MPI functions.
 
- @param comm The MPI communicator.
  @param tag The input tag.
+ @param comm The MPI communicator.
 
  @return A tag value that is safe to use with MPI.
  */
-int safe_tag(MPI_Comm comm, int tag)
+int safe_tag(int tag, MPI_Comm comm)
 {
     // Get the tag upper bound for the communicator.
     // MPI_Comm_get_attr with MPI_TAG_UB is not a very reliable function.
@@ -305,7 +305,15 @@ int safe_tag(MPI_Comm comm, int tag)
         tag_ub = backup_tag_limit;
     }
 
-    return (tag < tag_ub) ? ((tag >= 0) ? tag : tag_ub) : tag_ub;
+    int newtag = std::max(0, tag);
+    if(newtag >= tag_ub)
+    {
+      // Some operations may emit a bunch of large tag numbers. If they fall
+      // outside the allowable range, it is probably better to spread them over
+      // the range than to just clamp them.
+      newtag = newtag % tag_ub;
+    }
+    return newtag;
 }
 
 //---------------------------------------------------------------------------//
@@ -1012,7 +1020,7 @@ isend(const Node &node,
                                static_cast<int>(data_size),
                                MPI_BYTE, 
                                dest, 
-                               safe_tag(mpi_comm, tag),
+                               safe_tag(tag, mpi_comm),
                                mpi_comm,
                                &(request->m_request));
                                
@@ -1065,7 +1073,7 @@ irecv(Node &node,
                                static_cast<int>(data_size),
                                MPI_BYTE,
                                src,
-                               safe_tag(mpi_comm, tag),
+                               safe_tag(tag, mpi_comm),
                                mpi_comm,
                                &(request->m_request));
 
@@ -2006,7 +2014,7 @@ communicate_using_schema::execute_internal()
                     << msg_data_size << ", "
                     << "MPI_BYTE, "
                     << operations[i].rank << ", "
-                    << safe_tag(comm, operations[i].tag) << ", "
+                    << safe_tag(operations[i].tag, comm) << ", "
                     << "comm, &requests[" << i << "]);" << std::endl;
             }
             
@@ -2021,7 +2029,7 @@ communicate_using_schema::execute_internal()
                                   static_cast<int>(msg_data_size),
                                   MPI_BYTE,
                                   operations[i].rank,
-                                  safe_tag(comm, operations[i].tag),
+                                  safe_tag(operations[i].tag, comm),
                                   comm,
                                   &requests[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
@@ -2044,10 +2052,10 @@ communicate_using_schema::execute_internal()
             {
                 log << "    MPI_Probe("
                     << operations[i].rank << ", "
-                    << safe_tag(comm, operations[i].tag) << ", "
+                    << safe_tag(operations[i].tag, comm) << ", "
                     << "comm, &statuses[" << i << "]);" << std::endl;
             }
-            mpi_error = MPI_Probe(operations[i].rank, safe_tag(comm, operations[i].tag), comm, &statuses[i]);
+            mpi_error = MPI_Probe(operations[i].rank, safe_tag(operations[i].tag, comm), comm, &statuses[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
     
             int buffer_size = 0;
@@ -2069,7 +2077,7 @@ communicate_using_schema::execute_internal()
                     << buffer_size << ", "
                     << "MPI_BYTE, "
                     << operations[i].rank << ", "
-                    << safe_tag(comm, operations[i].tag) << ", "
+                    << safe_tag(operations[i].tag, comm) << ", "
                     << "comm, &requests[" << i << "]);" << std::endl;
             }
 
@@ -2078,7 +2086,7 @@ communicate_using_schema::execute_internal()
                                   buffer_size,
                                   MPI_BYTE,
                                   operations[i].rank,
-                                  safe_tag(comm, operations[i].tag),
+                                  safe_tag(operations[i].tag, comm),
                                   comm,
                                   &requests[i]);
             CONDUIT_CHECK_MPI_ERROR(mpi_error);
