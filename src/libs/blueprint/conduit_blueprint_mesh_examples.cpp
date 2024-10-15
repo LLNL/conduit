@@ -3711,7 +3711,7 @@ void bent_multi_grid_defaults(conduit::Node& spec)
 void CONDUIT_BLUEPRINT_API bent_multi_grid(const conduit::Node& spec,
     conduit::Node& res)
 {
-    if (res.dtype().is_empty())
+    if (spec.dtype().is_empty())
     {
         conduit::Node default_spec;
         bent_multi_grid_defaults(default_spec);
