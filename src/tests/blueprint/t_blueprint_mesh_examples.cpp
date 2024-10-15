@@ -346,6 +346,167 @@ TEST(conduit_blueprint_mesh_examples, mesh_3d)
 #endif
 }
 
+
+//-----------------------------------------------------------------------------
+void add_domain_node(Node& spec, const char* dom_name, int domain_id,
+    int npts_x, int npts_y, int npts_z,
+    Node& x, Node& y, Node& z)
+{
+    Node& dom = spec[dom_name];
+    dom["npts_x"] = npts_x;
+    dom["npts_y"] = npts_y;
+    if (npts_z > 0)
+    {
+        dom["npts_z"] = npts_z;
+    }
+    dom["corner_xs"].set(x);
+    dom["corner_ys"].set(y);
+    if (z.dtype().number_of_elements() > 0)
+    {
+        dom["corner_zs"].set(z);
+    }
+    dom["domain_id"] = domain_id;
+}
+
+TEST(conduit_blueprint_mesh_examples, mesh_2D_enh_red_connectivity)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+
+    bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // we are using one node to hold group of example meshes purely out of convenience
+    Node dsets;
+    Node empty_z;
+
+    {
+        Node spec;
+
+        Node d0x; d0x = { 0., 4., 4., 0. };
+        Node d0y; d0y = { 0., 0., 4., 4. };
+        add_domain_node(spec, "domain0", 0, 4, 5, 0, d0x, d0y, empty_z);
+
+        Node d1x; d1x = { 4., 6., 6., 4. };
+        Node d1y; d1y = { 0., 0., 7., 4. };
+        add_domain_node(spec, "domain1", 1, 4, 5, 0, d1x, d1y, empty_z);
+
+        Node d2x; d2x = { 0., 4., 6., 0. };
+        Node d2y; d2y = { 4., 4., 7., 7. };
+        add_domain_node(spec, "domain2", 2, 4, 4, 0, d2x, d2y, empty_z);
+
+        Node d3x; d3x = { 0., 6., 6., 0. };
+        Node d3y; d3y = { 7., 7., 10., 10. };
+        add_domain_node(spec, "domain3", 3, 4, 5, 0, d3x, d3y, empty_z);
+
+        Node d4x; d4x = { 6., 10., 10., 6. };
+        Node d4y; d4y = { 0., 0., 7., 7.};
+        add_domain_node(spec, "domain4", 4, 4, 5, 0, d4x, d4y, empty_z);
+
+        Node d5x; d5x = { 6., 10., 10., 6. };
+        Node d5y; d5y = { 7., 7., 10., 10. };
+        add_domain_node(spec, "domain5", 5, 4, 5, 0, d5x, d5y, empty_z);
+
+        blueprint::mesh::examples::bent_multi_grid(spec, dsets["bentgrid_2d_visitghost"]);
+    }
+
+    Node info;
+    NodeConstIterator itr = dsets.children();
+    while (itr.has_next())
+    {
+        const Node& mesh = itr.next();
+        std::string meshname = itr.name();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        test_save_mesh_helper(mesh, meshname);
+    }
+}
+
+
+//-----------------------------------------------------------------------------
+TEST(conduit_blueprint_mesh_examples, mesh_3D_enh_red_connectivity)
+{
+    Node io_protos;
+    relay::io::about(io_protos["io"]);
+
+    bool silo_enabled = io_protos["io/protocols/conduit_silo"].as_string() == "enabled";
+    bool hdf5_enabled = io_protos["io/protocols/hdf5"].as_string() == "enabled";
+
+    // we are using one node to hold group of example meshes purely out of convenience
+    Node dsets;
+
+    {
+        Node spec;
+
+        Node d0x; d0x = { 0., 4., 4., 0., 0., 4., 4., 0. };
+        Node d0y; d0y = { 0., 0., 4., 4., 0., 0., 4., 4. };
+        Node d0z; d0z = { 0., 0., 0., 0., 3., 3., 3., 3. };
+        add_domain_node(spec, "domain0", 0, 4, 5, 4, d0x, d0y, d0z);
+
+        Node d1x; d1x = { 4., 6., 6., 4., 4., 6., 6., 4. };
+        Node d1y; d1y = { 0., 0., 7., 4., 0., 0., 7., 4. };
+        Node d1z; d1z = { 0., 0., 0., 0., 3., 7., 7., 3. };
+        add_domain_node(spec, "domain1", 1, 4, 5, 4, d1x, d1y, d1z);
+
+        Node d2x; d2x = { 0., 4., 6., 0., 0., 4., 6., 0. };
+        Node d2y; d2y = { 4., 4., 7., 7., 4., 4., 7., 7. };
+        Node d2z; d2z = { 0., 0., 0., 0., 3., 3., 7., 7. };
+        add_domain_node(spec, "domain2", 2, 4, 4, 4, d2x, d2y, d2z);
+
+        Node d3x; d3x = { 0., 6., 6., 0., 0., 6., 6., 0. };
+        Node d3y; d3y = { 7., 7., 10., 10., 7., 7., 10., 10. };
+        Node d3z; d3z = { 0., 0., 0., 0., 7., 7., 7., 7. };
+        add_domain_node(spec, "domain3", 3, 4, 5, 4, d3x, d3y, d3z);
+
+        Node d4x; d4x = { 6., 10., 10., 6., 6., 10., 10., 6. };
+        Node d4y; d4y = { 0., 0., 7., 7., 0., 0., 7., 7. };
+        Node d4z; d4z = { 0., 0., 0., 0., 7., 7., 7., 7. };
+        add_domain_node(spec, "domain4", 4, 4, 5, 4, d4x, d4y, d4z);
+
+        Node d5x; d5x = { 6., 10., 10., 6., 6., 10., 10., 6. };
+        Node d5y; d5y = { 7., 7., 10., 10., 7., 7., 10., 10. };
+        Node d5z; d5z = { 0., 0., 0., 0., 7., 7., 7., 7. };
+        add_domain_node(spec, "domain5", 5, 4, 5, 4, d5x, d5y, d5z);
+
+        Node d6x; d6x = { 0., 4., 4., 0., 0., 6., 6., 0. };
+        Node d6y; d6y = { 0., 0., 4., 4., 0., 0., 7., 7. };
+        Node d6z; d6z = { 3., 3., 3., 3., 7., 7., 7., 7. };
+        add_domain_node(spec, "domain6", 6, 4, 5, 4, d6x, d6y, d6z);
+
+        Node d7x; d7x = { 0., 6., 6., 0., 0., 6., 6., 0. };
+        Node d7y; d7y = { 0., 0., 7., 7., 0., 0., 7., 7.};
+        Node d7z; d7z = { 7., 7., 7., 7., 10., 10., 10., 10. };
+        add_domain_node(spec, "domain7", 7, 4, 5, 2, d7x, d7y, d7z);
+
+        Node d8x; d8x = { 6., 10., 10., 6., 6., 10., 10., 6. };
+        Node d8y; d8y = { 0., 0., 7., 7., 0., 0., 7., 7. };
+        Node d8z; d8z = { 7., 7., 7., 7., 10., 10., 10., 10. };
+        add_domain_node(spec, "domain8", 8, 4, 5, 2, d8x, d8y, d8z);
+
+        Node d9x; d9x = { 0., 6., 6., 0., 0., 6., 6., 0. };
+        Node d9y; d9y = { 7., 7., 10., 10., 7., 7., 10., 10. };
+        Node d9z; d9z = { 7., 7., 7., 7., 10., 10., 10., 10. };
+        add_domain_node(spec, "domain9", 9, 4, 5, 2, d9x, d9y, d9z);
+
+        Node d10x; d10x = { 6., 10., 10., 6., 6., 10., 10., 6. };
+        Node d10y; d10y = { 7., 7., 10., 10., 7., 7., 10., 10. };
+        Node d10z; d10z = { 7., 7., 7., 7., 10., 10., 10., 10. };
+        add_domain_node(spec, "domain10", 10, 4, 5, 2, d10x, d10y, d10z);
+
+        blueprint::mesh::examples::bent_multi_grid(spec, dsets["bentgrid_3d_visitghost"]);
+    }
+
+    Node info;
+    NodeConstIterator itr = dsets.children();
+    while (itr.has_next())
+    {
+        const Node& mesh = itr.next();
+        std::string meshname = itr.name();
+        EXPECT_TRUE(blueprint::mesh::verify(mesh, info));
+        test_save_mesh_helper(mesh, meshname);
+    }
+}
+
+
 //-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_examples, braid_too_small_npts)
 {

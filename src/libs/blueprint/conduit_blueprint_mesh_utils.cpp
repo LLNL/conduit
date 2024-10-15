@@ -4096,6 +4096,130 @@ MatchQuery::results(int dom, int query_dom) const
 // -- end conduit::blueprint::mesh::utils::query --
 //-----------------------------------------------------------------------------
 
+void CONDUIT_BLUEPRINT_API lerp_one(const Node& A,
+                                    const Node& B,
+                                    int n,
+                                    Node& out,
+                                    int base,
+                                    bool allocate)
+{
+    if (n < 0)
+    {
+        CONDUIT_ERROR("Linear interpolation requires output of at least one point.  "
+            "Requested n is " << n);
+    }
+
+    const int Asize = A.dtype().number_of_elements();
+    const int Bsize = B.dtype().number_of_elements();
+    if (Asize < 1 || Bsize != Asize)
+    {
+        CONDUIT_ERROR("Linear interpolation requires same number of components "
+            "(greater than zero) in points A and B.  A has " << Asize <<
+            " and B has " << Bsize << " components.");
+    }
+    const int component_count = Asize;
+
+    if (allocate)
+    {
+        out.reset();
+        for (int c = 0; c < component_count; ++c)
+        {
+            out.append();
+        }
+    }
+    else if (out.number_of_children() != component_count)
+    {
+        CONDUIT_ERROR("Attempted to linearly interpolate A (" << Asize <<
+            " components) and B (" << Bsize << " components) storing the result "
+            "into a Node with " << out.number_of_children() << " children.  "
+            "Please make sure this matches the component count or pass "
+            "allocate == true.");
+    }
+
+    const float64* A_ptr = A.value();
+    const float64* B_ptr = B.value();
+    NodeIterator comp_itr = out.children();
+    for (int c = 0; c < component_count; ++c)
+    {
+        Node& comp = comp_itr.next();
+        if (allocate) {
+            comp.reset();   // do we need this?
+            comp.set(DataType::float64(n)); 
+        }
+        float64* comp_ptr = comp.value();
+        double delta = 0.;
+        if (n > 1)
+        {
+            delta = (B_ptr[c] - A_ptr[c]) / (n - 1);
+        }
+
+        comp_ptr[base] = A_ptr[c];
+        for (int i = 1; i < n; ++i)
+        {
+            comp_ptr[base + i] = comp_ptr[base + i - 1] + delta;
+        }
+    }
+}
+
+void CONDUIT_BLUEPRINT_API lerp(const Node& As,
+                                const Node& Bs,
+                                int n,
+                                Node& out)
+{
+    if (As.dtype().is_number() && Bs.dtype().is_number())
+    {
+        lerp_one(As, Bs, n, out);
+    }
+    else
+    {
+        const int dims = As.number_of_children();
+        if (dims < 1 || Bs.number_of_children() != dims)
+        {
+            CONDUIT_ERROR("Linear interpolation requires same dimensionality "
+                "(greater than zero) in point lists As and Bs.  As has dimension " <<
+                dims << " and Bs has dimension " << Bs.number_of_children() << ".");
+        }
+
+        const int num_segments = As.child(0).dtype().number_of_elements();
+        if (num_segments < 1 || Bs.child(0).dtype().number_of_elements() != num_segments)
+        {
+            CONDUIT_ERROR("Linear interpolation requires same number of points "
+                "(greater than zero) in point lists As and Bs.  As has " << num_segments <<
+                " and Bs has " << Bs.child(0).dtype().number_of_elements() << " points.");
+        }
+
+        out.reset();
+        for (int c = 0; c < dims; ++c)
+        {
+            Node& comp = out.append();
+            comp.set(DataType::float64(num_segments * n));
+        }
+
+        int offset = 0;
+        for (int p = 0; p < num_segments; ++p)
+        {
+            Node tempa;
+            tempa.set(DataType::float64(dims));
+            double* ptempa = tempa.value();
+            Node tempb;
+            tempb.set(DataType::float64(dims));
+            double* ptempb = tempb.value();
+
+            for (int d = 0; d < dims; ++d)
+            {
+                const double_array pAcomp = As.child(d).as_double_array();
+                const double_array pBcomp = Bs.child(d).as_double_array();
+
+                ptempa[d] = pAcomp[p];
+                ptempb[d] = pBcomp[p];
+            }
+            lerp_one(tempa, tempb, n, out, offset, false);
+
+            offset += n;
+        }
+    }
+}
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils --

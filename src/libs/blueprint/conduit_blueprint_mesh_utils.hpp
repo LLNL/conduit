@@ -1066,6 +1066,45 @@ namespace adjset
 // -- end conduit::blueprint::mesh::utils::adjset --
 //-----------------------------------------------------------------------------
 
+
+    //-------------------------------------------------------------------------
+    /**
+      @brief Linearly interpolate n points along a line segment from A to B
+      @param A Location of first point
+      @param B Location of second point
+      @param n Number of interpolated points (including end points)
+      @param out The interpolated points, with one vector per component
+      @param base The index to store the interpolated points in \a out
+      @param allocate Whether to clear and allocate \a out
+
+      By default, this routine clears and reallocates the output vector.
+      If desired, the caller can add values into an output vector that is
+      already allocated by specifying a base index to store new values and
+      setting \a allocate to false.
+     */
+    void CONDUIT_BLUEPRINT_API lerp_one(const Node& A,
+                                        const Node& B,
+                                        int n,
+                                        Node& out,
+                                        int base = 0,
+                                        bool allocate = true);
+
+    //-------------------------------------------------------------------------
+    /**
+      @brief Linearly interpolate n points along many line segments
+      @param As Locations of first point of each segment
+      @param Bs Locations of second point of each segment
+      @param n Number of interpolated points (including end points)
+               along each segment
+      @param out The interpolated points.  As with \a As and \a Bs, each
+                 inner vector stores a component of the point and the
+                 outer vector stores all the points.
+     */
+    void CONDUIT_BLUEPRINT_API lerp(const Node& As,
+                                    const Node& Bs,
+                                    int n,
+                                    Node& out);
+
 }
 //-----------------------------------------------------------------------------
 // -- end conduit::blueprint::mesh::utils --

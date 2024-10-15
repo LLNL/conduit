@@ -270,6 +270,25 @@ namespace examples
                                      conduit::index_t dz,
                                      conduit::Node &res);
 
+    /// Generates a multidomain grid of examples.  spec is a list or object
+    /// specifying one or more domains.  Each child of spec represents a domain
+    /// in either two or three dimensions.  Each child has
+    ///  - integral children npts_x, npts_y, optionally npts_z
+    ///  - integral child domain_id
+    ///  - numerical array children corner_xs, corner_ys, optionally corner_zs
+    ///
+    /// Taken together, the corner_xs, corner_ys, and optionally corner_zs
+    /// represent the points at the corners of that domain.
+    void CONDUIT_BLUEPRINT_API bent_multi_grid(const conduit::Node& spec,
+                                        conduit::Node& res);
+
+    /// Generates a braid-like example mesh that covers elements defined in a
+    /// rectilinear grid.  Currently hexs are supported for 3D meshes and quads
+    /// are supported for 2D meshes.  Specify a mesh as outlined in the docs
+    /// for bent_multi_grid().
+    void CONDUIT_BLUEPRINT_API bent_braid(const conduit::Node& spec,
+                                          conduit::Node& res);
+
     /// Generates a braid-like example mesh that covers elements defined in a
     /// rectilinear grid. The element type (e.g. triangles, quads, their 3D
     /// counterparts, or a mixture) and the coordinate set/topology
