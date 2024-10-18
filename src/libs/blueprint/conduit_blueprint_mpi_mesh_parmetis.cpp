@@ -375,7 +375,7 @@ void generate_global_element_and_vertex_ids(conduit::Node &mesh,
 
     if (adjset_name != "")
     {
-        const int TAG_SHARED_NODE_SYNC = 0;
+        const int TAG_SHARED_NODE_SYNC = 175;
         // map of groups -> global vtx ids
         std::map<std::set<uint64>, std::vector<uint64>> groups_2_vids;
         // map of rank -> sends to/recvs from that rank of global vtx ids for
