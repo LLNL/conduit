@@ -129,7 +129,7 @@ void process_doubles_with_accessor(Node & n)
 }
 
 //-----------------------------------------------------------------------------
-TEST(conduit_tutorial, numeric_double_conversion)
+TEST(conduit_tutorial, numeric_data_accessor)
 {
     int64 i_vals[4] = {100,200,300,400};
 
@@ -143,7 +143,7 @@ TEST(conduit_tutorial, numeric_double_conversion)
     process_doubles_with_accessor(n);
 
 
-    float64 dvals[4] = {1.1,2.2,3.3,4.4,5.5,6.6};
+    float64 dvals[6] = {1.1,2.2,3.3,4.4,5.5,6.6};
 
     Node dn;
     dn.set(dvals,3, // # of elements
