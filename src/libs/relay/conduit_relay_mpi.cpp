@@ -312,8 +312,8 @@ private:
     }
 
     /// MPI calls this function to handle errors.
-    static void handler(MPI_Comm */*comm*/,
-                        int      */*errcode*/,
+    static void handler(MPI_Comm * /*comm*/,
+                        int      * /*errcode*/,
                         ...)
     {
 #if 0
@@ -374,7 +374,7 @@ public:
 
 private:
     /**
-     * @brief Query MPI for the maximum tag value, set m_upper_bound on success.
+     * @brief Query MPI for the maximum tag value.
      *
      * @param comm The MPI communicator.
      *
@@ -401,7 +401,7 @@ private:
     }
 
     /**
-     * @brief Probe MPI to determine the max tag value and set m_upper_bound.
+     * @brief Probe MPI to determine the max tag value.
      *
      * @param comm The MPI communicator.
      *
