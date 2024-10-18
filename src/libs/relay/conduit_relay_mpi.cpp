@@ -9,6 +9,7 @@
 //-----------------------------------------------------------------------------
 
 #include "conduit_relay_mpi.hpp"
+#include <algorithm>
 #include <iostream>
 #include <limits>
 
