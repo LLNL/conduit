@@ -436,12 +436,12 @@ MatchQuery::execute()
     C.set_logging_root("mpi_matchquery");
     C.set_logging(true);
 #endif
-    int query_tag = 1;
+    const int query_tag = 770;
     for(size_t i = 0; i < allqueries.size(); i += ntuple_values)
     {
-        int owner = allqueries[i];
-        int domain = allqueries[i + 1];
-        int query_domain = allqueries[i + 2];
+        const int owner = allqueries[i];
+        const int domain = allqueries[i + 1];
+        const int query_domain = allqueries[i + 2];
 
         auto oppositeKey = std::make_pair(query_domain, domain);
 
@@ -668,7 +668,7 @@ compare_pointwise_impl(conduit::Node &mesh, const std::string &adjsetName,
 
     // Iterate over each of the possible adjset relationships. Not all of these
     // will have adjset groups.
-    const int tag = 1;
+    const int tag = 122;
     for(int d0 = 0; d0 < maxDomains; d0++)
     {
         for(int d1 = d0 + 1; d1 < maxDomains; d1++)
