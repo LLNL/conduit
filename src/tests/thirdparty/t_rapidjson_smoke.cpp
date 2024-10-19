@@ -8,15 +8,15 @@
 ///
 //-----------------------------------------------------------------------------
 
-#include "rapidjson/document.h"
+#include "conduit_json.hpp"
 #include "gtest/gtest.h"
 
 //-----------------------------------------------------------------------------
-TEST(rapidjson_smoke, basic_use)
+TEST(json_smoke, basic_use)
 {
     const char json[] = "{ \"hello\" : \"world\" }";
 
-    conduit_rapidjson::Document d;
+    conduit_json::Document d;
     d.Parse<0>(json);
 
     ASSERT_STREQ(d["hello"].GetString(),"world");

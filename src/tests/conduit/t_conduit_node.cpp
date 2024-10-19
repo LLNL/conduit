@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+#include "conduit_json.hpp"
 using namespace conduit;
 
 //-----------------------------------------------------------------------------
@@ -198,7 +198,7 @@ TEST(conduit_node, simple_schema)
 
     std::string res = n.schema().to_json();
     std::cout << res;
-    conduit_rapidjson::Document d;
+    conduit_json::Document d;
     d.Parse<0>(res.c_str());
 
     EXPECT_TRUE(d.HasMember("a"));

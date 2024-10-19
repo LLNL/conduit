@@ -66,6 +66,7 @@ set(conduit_headers
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_config.h
     conduit_config.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/conduit_bitwidth_style_types.h
+    conduit_json.hpp
     )
 
 #
