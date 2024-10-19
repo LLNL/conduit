@@ -12,7 +12,7 @@
 
 #include <iostream>
 #include "gtest/gtest.h"
-#include "rapidjson/document.h"
+#include "conduit_json.hpp"
 using namespace conduit;
 
 //-----------------------------------------------------------------------------

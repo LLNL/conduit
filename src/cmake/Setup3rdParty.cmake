@@ -27,9 +27,15 @@ endif()
 ################################
 # Setup includes for RapidJSON
 ################################
-include(cmake/thirdparty/SetupRapidJSON.cmake)
-message(STATUS "Using RapidJSON Include: ${RAPIDJSON_INCLUDE_DIR}")
-include_directories(${RAPIDJSON_INCLUDE_DIR})
+if(${USE_SYSTEM_YYJSON})
+    find_package(yyjson REQUIRED)
+    link_libraries(yyjson::yyjson)
+    include_directories(thirdparty_builtin/yyjson)
+else()
+    include(cmake/thirdparty/SetupRapidJSON.cmake)
+    message(STATUS "Using RapidJSON Include: ${RAPIDJSON_INCLUDE_DIR}")
+    include_directories(${RAPIDJSON_INCLUDE_DIR})
+endif()
 
 ################################
 # Setup and build libb64
