@@ -20,6 +20,14 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 #### Conduit
 - Changed the MPI CMake target used by conduit from `MPI:MPI_CXX` to `MPI:MPI_C` to provide better compatibility with downstream tools.
 
+#### Blueprint
+- Certain algorithms that use MPI tags had their tag values lowered since some MPI implementations do not support large values.
+
+#### Relay
+- User-supplied warning and error handlers are suspended during `conduit::relay::communicate_using_schema::execute()` so exceptions will be thrown properly when there is an MPI error. The handlers are restored before the execute method returns.
+- `conduit::relay::communicate_using_schema::execute()` flushes logs as they are generated, in case of error. This is mostly to facilitate internal debugging.
+- Changes were made to how Relay queries the upper limit for MPI tags to work around problems on some systems.
+
 ## [0.9.2] - Released 2024-05-21
 
 ### Added

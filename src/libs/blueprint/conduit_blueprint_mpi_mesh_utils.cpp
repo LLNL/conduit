@@ -173,8 +173,8 @@ PointQuery::execute(const std::string &coordsetName)
     // the results. The results get stored in m_domResults.
     std::map<std::pair<int,int>, conduit::Node *> input_sends, result_sends,
                                                   input_recvs, result_recvs;
-    int inputs_tag = 55000000;
-    int results_tag = 66000000;
+    const int inputs_tag = 550;
+    const int results_tag = 660;
     for(int pass = 0; pass < 2; pass++)
     {
         conduit::relay::mpi::communicate_using_schema C(m_comm);
@@ -187,10 +187,10 @@ PointQuery::execute(const std::string &coordsetName)
 #endif
         for(size_t i = 0; i < allqueries.size(); i += 3)
         {
-            int asker  = allqueries[i];
-            int domain = allqueries[i+1];
-            int npts   = allqueries[i+2];
-            int owner = domain_to_rank[domain];
+            const int asker  = allqueries[i];
+            const int domain = allqueries[i+1];
+            const int npts   = allqueries[i+2];
+            const int owner = domain_to_rank[domain];
 
             if(asker == rank)
             {
@@ -278,6 +278,7 @@ PointQuery::execute(const std::string &coordsetName)
     for(auto it = result_recvs.begin(); it != result_recvs.end(); it++)
     {
         int domain = it->first.second;
+
         const conduit::Node &r = it->second->fetch_existing("results");
         auto acc = r.as_int_accessor();
         std::vector<int> &result = m_domResults[domain];
@@ -435,12 +436,12 @@ MatchQuery::execute()
     C.set_logging_root("mpi_matchquery");
     C.set_logging(true);
 #endif
-    int query_tag = 77000000;    
+    const int query_tag = 770;
     for(size_t i = 0; i < allqueries.size(); i += ntuple_values)
     {
-        int owner = allqueries[i];
-        int domain = allqueries[i + 1];
-        int query_domain = allqueries[i + 2];
+        const int owner = allqueries[i];
+        const int domain = allqueries[i + 1];
+        const int query_domain = allqueries[i + 2];
 
         auto oppositeKey = std::make_pair(query_domain, domain);
 
@@ -667,7 +668,7 @@ compare_pointwise_impl(conduit::Node &mesh, const std::string &adjsetName,
 
     // Iterate over each of the possible adjset relationships. Not all of these
     // will have adjset groups.
-    const int tag = 12211221;
+    const int tag = 122;
     for(int d0 = 0; d0 < maxDomains; d0++)
     {
         for(int d1 = d0 + 1; d1 < maxDomains; d1++)
