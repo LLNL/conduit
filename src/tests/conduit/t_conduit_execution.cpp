@@ -124,7 +124,7 @@ TEST(conduit_execution, execution_settings)
 
         // prove that host data is on host (which is device accessible on
         // unified memory systems)
-        EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(host_data.data_ptr()));
+        EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(host_data.data_ptr()));
         EXPECT_FALSE(execution::DeviceMemory::is_device_allocation(host_data.data_ptr()));
 
 #if defined(CONDUIT_USE_DEVICE)
@@ -135,7 +135,7 @@ TEST(conduit_execution, execution_settings)
 #else // !defined(CONDUIT_USE_DEVICE)
         // without device support, device_data stays on host
         device_data.set(src_vals);
-        EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(device_data.data_ptr()));
+        EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(device_data.data_ptr()));
 #endif // !defined(CONDUIT_USE_DEVICE)
     }
 
@@ -326,7 +326,7 @@ TEST(conduit_execution, execution_settings)
         execution::ExecutionPolicy host_supplied_policy = execution::get_execution_policy(host_data);
         execution::ExecutionPolicy device_supplied_policy = execution::get_execution_policy(device_data);
         EXPECT_TRUE(fallback_policy.is_host_policy());
-        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::unified());
+        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::is_unified());
 #if defined(CONDUIT_USE_DEVICE)
         // with device, device_data is on the device, so input policy gives device policy
         EXPECT_TRUE(device_supplied_policy.is_device_policy());
@@ -352,7 +352,7 @@ TEST(conduit_execution, execution_settings)
         execution::ExecutionPolicy host_supplied_policy = execution::get_execution_policy(host_data);
         execution::ExecutionPolicy device_supplied_policy = execution::get_execution_policy(device_data);
         EXPECT_TRUE(fallback_policy.is_serial());
-        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::unified());
+        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::is_unified());
 #if defined(CONDUIT_USE_DEVICE)
         EXPECT_TRUE(device_supplied_policy.is_device_policy());
 #else
@@ -375,7 +375,7 @@ TEST(conduit_execution, execution_settings)
         execution::ExecutionPolicy host_supplied_policy = execution::get_execution_policy(host_data);
         execution::ExecutionPolicy device_supplied_policy = execution::get_execution_policy(device_data);
         EXPECT_TRUE(fallback_policy.is_device_policy());
-        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::unified());
+        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::is_unified());
         EXPECT_TRUE(device_supplied_policy.is_device_policy());
         EXPECT_TRUE(get_opts.has_child("execution_location"));
         EXPECT_EQ(get_opts["execution_location"].as_string(), "input");
@@ -397,7 +397,7 @@ TEST(conduit_execution, execution_settings)
         execution::ExecutionPolicy host_supplied_policy = execution::get_execution_policy(host_data);
         execution::ExecutionPolicy device_supplied_policy = execution::get_execution_policy(device_data);
         EXPECT_TRUE(fallback_policy.is_openmp());
-        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::unified());
+        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::is_unified());
 #if defined(CONDUIT_USE_DEVICE)
         EXPECT_TRUE(device_supplied_policy.is_device_policy());
 #else
@@ -421,7 +421,7 @@ TEST(conduit_execution, execution_settings)
         execution::ExecutionPolicy host_supplied_policy = execution::get_execution_policy(host_data);
         execution::ExecutionPolicy device_supplied_policy = execution::get_execution_policy(device_data);
         EXPECT_TRUE(fallback_policy.is_cuda());
-        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::unified());
+        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::is_unified());
         EXPECT_TRUE(device_supplied_policy.is_device_policy());
         EXPECT_TRUE(get_opts.has_child("fallback_location"));
         EXPECT_EQ(get_opts["fallback_location"].as_string(), "cuda");
@@ -441,7 +441,7 @@ TEST(conduit_execution, execution_settings)
         execution::ExecutionPolicy host_supplied_policy = execution::get_execution_policy(host_data);
         execution::ExecutionPolicy device_supplied_policy = execution::get_execution_policy(device_data);
         EXPECT_TRUE(fallback_policy.is_hip());
-        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::unified());
+        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::is_unified());
         EXPECT_TRUE(device_supplied_policy.is_device_policy());
         EXPECT_TRUE(get_opts.has_child("fallback_location"));
         EXPECT_EQ(get_opts["fallback_location"].as_string(), "hip");
@@ -460,7 +460,7 @@ TEST(conduit_execution, execution_settings)
         execution::ExecutionPolicy host_supplied_policy = execution::get_execution_policy(host_data);
         execution::ExecutionPolicy device_supplied_policy = execution::get_execution_policy(device_data);
         EXPECT_EQ(fallback_policy.policy_id(), ExecutionPolicy::parallel().policy_id());
-        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::unified());
+        EXPECT_EQ(host_supplied_policy.is_device_policy(), execution::DeviceMemory::is_unified());
 #if defined(CONDUIT_USE_DEVICE)
         EXPECT_TRUE(device_supplied_policy.is_device_policy());
 #else
@@ -531,7 +531,7 @@ TEST(conduit_execution, execution_settings)
         index_t host_supplied_alloc_id = execution::get_output_allocator_id(host_data);
         index_t device_supplied_alloc_id = execution::get_output_allocator_id(device_data);
         EXPECT_EQ(fallback_alloc_id, HOST_ALLOC_ID);
-        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
+        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::is_unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
 #if defined(CONDUIT_USE_DEVICE)
         // with device, device_data is on the device and returns its device allocator
         EXPECT_EQ(device_supplied_alloc_id, DEVICE_ALLOC_ID);
@@ -557,7 +557,7 @@ TEST(conduit_execution, execution_settings)
         index_t host_supplied_alloc_id = execution::get_output_allocator_id(host_data);
         index_t device_supplied_alloc_id = execution::get_output_allocator_id(device_data);
         EXPECT_EQ(fallback_alloc_id, HOST_ALLOC_ID);
-        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
+        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::is_unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
 #if defined(CONDUIT_USE_DEVICE)
         EXPECT_EQ(device_supplied_alloc_id, DEVICE_ALLOC_ID);
 #else
@@ -580,7 +580,7 @@ TEST(conduit_execution, execution_settings)
         index_t host_supplied_alloc_id = execution::get_output_allocator_id(host_data);
         index_t device_supplied_alloc_id = execution::get_output_allocator_id(device_data);
         EXPECT_EQ(fallback_alloc_id, DEVICE_ALLOC_ID);
-        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
+        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::is_unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
         EXPECT_EQ(device_supplied_alloc_id, DEVICE_ALLOC_ID);
         EXPECT_TRUE(get_opts.has_child("output_location"));
         EXPECT_EQ(get_opts["output_location"].as_string(), "input");
@@ -602,7 +602,7 @@ TEST(conduit_execution, execution_settings)
         index_t host_supplied_alloc_id = execution::get_output_allocator_id(host_data);
         index_t device_supplied_alloc_id = execution::get_output_allocator_id(device_data);
         EXPECT_EQ(fallback_alloc_id, HOST_ALLOC_ID);
-        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
+        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::is_unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
 #if defined(CONDUIT_USE_DEVICE)
         EXPECT_EQ(device_supplied_alloc_id, DEVICE_ALLOC_ID);
 #else
@@ -626,7 +626,7 @@ TEST(conduit_execution, execution_settings)
         index_t host_supplied_alloc_id = execution::get_output_allocator_id(host_data);
         index_t device_supplied_alloc_id = execution::get_output_allocator_id(device_data);
         EXPECT_EQ(fallback_alloc_id, DEVICE_ALLOC_ID);
-        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
+        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::is_unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
         EXPECT_EQ(device_supplied_alloc_id, DEVICE_ALLOC_ID);
         EXPECT_TRUE(get_opts.has_child("fallback_location"));
         EXPECT_EQ(get_opts["fallback_location"].as_string(), "cuda");
@@ -646,7 +646,7 @@ TEST(conduit_execution, execution_settings)
         index_t host_supplied_alloc_id = execution::get_output_allocator_id(host_data);
         index_t device_supplied_alloc_id = execution::get_output_allocator_id(device_data);
         EXPECT_EQ(fallback_alloc_id, DEVICE_ALLOC_ID);
-        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
+        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::is_unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
         EXPECT_EQ(device_supplied_alloc_id, DEVICE_ALLOC_ID);
         EXPECT_TRUE(get_opts.has_child("fallback_location"));
         EXPECT_EQ(get_opts["fallback_location"].as_string(), "hip");
@@ -669,7 +669,7 @@ TEST(conduit_execution, execution_settings)
 #else
         EXPECT_EQ(fallback_alloc_id, HOST_ALLOC_ID);
 #endif
-        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
+        EXPECT_EQ(host_supplied_alloc_id, execution::DeviceMemory::is_unified() ? DEVICE_ALLOC_ID : HOST_ALLOC_ID);
 #if defined(CONDUIT_USE_DEVICE)
         EXPECT_EQ(device_supplied_alloc_id, DEVICE_ALLOC_ID);
 #else
@@ -1087,7 +1087,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1096,7 +1096,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // des data is sync'd back to where it started
                 if (des_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {
@@ -1170,7 +1170,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 annotations::finalize();
 
                 // data is not moved within unified memory
-                if (execution::DeviceMemory::unified())
+                if (execution::DeviceMemory::is_unified())
                 {
                     EXPECT_EQ(node["des"].data_ptr(), des_ptr);
                 }
@@ -1178,7 +1178,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1187,7 +1187,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // but destination memory will move to be where policy is
                 if (policy_str == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {
@@ -1260,7 +1260,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1269,7 +1269,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // des data is sync'd back to where it started
                 if (des_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {
@@ -1349,7 +1349,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1358,7 +1358,7 @@ TEST(conduit_execution, strawman_data_accessor)
                 // des data is sync'd back to where it started
                 if (des_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {
@@ -1458,7 +1458,7 @@ TEST(conduit_execution, strawman_data_array)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1467,7 +1467,7 @@ TEST(conduit_execution, strawman_data_array)
                 // des data is sync'd back to where it started
                 if (des_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {
@@ -1541,7 +1541,7 @@ TEST(conduit_execution, strawman_data_array)
                 annotations::finalize();
 
                 // data is not moved within unified memory
-                if (execution::DeviceMemory::unified())
+                if (execution::DeviceMemory::is_unified())
                 {
                     EXPECT_EQ(node["des"].data_ptr(), des_ptr);
                 }
@@ -1549,7 +1549,7 @@ TEST(conduit_execution, strawman_data_array)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1558,7 +1558,7 @@ TEST(conduit_execution, strawman_data_array)
                 // but destination memory will move to be where policy is
                 if (policy_str == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {
@@ -1631,7 +1631,7 @@ TEST(conduit_execution, strawman_data_array)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1640,7 +1640,7 @@ TEST(conduit_execution, strawman_data_array)
                 // des data is sync'd back to where it started
                 if (des_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {
@@ -1720,7 +1720,7 @@ TEST(conduit_execution, strawman_data_array)
                 // src data will never change from where it started
                 if (src_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["src"].data_ptr()));
                 }
                 else
                 {
@@ -1729,7 +1729,7 @@ TEST(conduit_execution, strawman_data_array)
                 // des data is sync'd back to where it started
                 if (des_start == "host")
                 {
-                    EXPECT_EQ(execution::DeviceMemory::unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
+                    EXPECT_EQ(execution::DeviceMemory::is_unified(), execution::DeviceMemory::is_device_ptr(node["des"].data_ptr()));
                 }
                 else
                 {

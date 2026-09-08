@@ -127,7 +127,7 @@ get_exec_configs(const bool host_only = false)
     // We don't have to stage buffers in unified memory, so assume is identical
     // to sync. Both will always no-op (so we only have to benchmark one or the
     // other).
-    if (execution::DeviceMemory::unified())
+    if (execution::DeviceMemory::is_unified())
     {
         std::vector<ExecConfig> unified_configs;
         for (const ExecConfig &config : configs)
@@ -177,7 +177,7 @@ exec(const std::string &name,
         backend_name = execution::ExecutionPolicy::device().policy_name();
     }
 
-    std::string memory_type = execution::DeviceMemory::unified() ? "unified" : "discrete";
+    std::string memory_type = execution::DeviceMemory::is_unified() ? "unified" : "discrete";
 
     // Execute `run` `iterations` times
     {

@@ -808,7 +808,7 @@ DataAccessor<T>::use_with(conduit::execution::ExecutionPolicy policy)
     }
 
     // Unified memory is accessible from any policy
-    if (execution::DeviceMemory::unified())
+    if (execution::DeviceMemory::is_unified())
     {
         m_policy = policy;
         return;
@@ -1060,7 +1060,7 @@ DataAccessor<T>::active_policy() const
         // operations over small arrays are faster on the host than on the
         // device. Therefore, we prefer host policies for small N, unless the
         // user explicitly requests a device policy via use_with().
-        const bool small_unified = execution::DeviceMemory::unified() &&
+        const bool small_unified = execution::DeviceMemory::is_unified() &&
                                    number_of_elements() < CONDUIT_SMALL_N_THRESHOLD;
         m_policy = (execution::DeviceMemory::is_device_ptr(m_data) && !small_unified)
                       ? execution::ExecutionPolicy::device()

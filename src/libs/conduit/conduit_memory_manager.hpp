@@ -68,7 +68,7 @@ struct CONDUIT_API DeviceMemory
     // whether ptr was allocated by a device allocator
     static bool  is_device_allocation(const void *ptr);
     // whether the host and device share a memory space
-    static bool  unified();
+    static bool  is_unified();
 
 private:
     static size_t m_total_bytes_alloced;

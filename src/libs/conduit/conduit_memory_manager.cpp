@@ -13,6 +13,7 @@
 //-----------------------------------------------------------------------------
 #include "conduit_memory_manager.hpp"
 #include "conduit_config.h"
+#include "conduit_execution.hpp"
 #include "conduit_utils.hpp"
 
 #if defined(CONDUIT_USE_UMPIRE)
@@ -233,7 +234,7 @@ bool
 DeviceMemory::is_device_ptr(const void *ptr)
 {
     // In unified memory, every pointer is considered device accessible
-    if (unified())
+    if (is_unified())
     {
         return true;
     }
@@ -273,7 +274,7 @@ DeviceMemory::is_device_allocation(const void *ptr)
 
 //-----------------------------------------------------------------------------
 bool
-DeviceMemory::unified()
+DeviceMemory::is_unified()
 {
     // MI300A-style unified memory requires two things to be true:
     //
@@ -335,7 +336,7 @@ MagicMemory::set(void * ptr, int value, size_t num )
         }
         // hipMemset can return before it finishes, and in unified memory the
         // host may read this memory next
-        if (DeviceMemory::unified())
+        if (DeviceMemory::is_unified())
         {
             (void)hipStreamSynchronize(0);
         }
@@ -350,11 +351,67 @@ MagicMemory::set(void * ptr, int value, size_t num )
 #endif
 }
 
+#if defined(CONDUIT_USE_DEVICE)
+//-----------------------------------------------------------------------------
+struct FastUnifiedMemcpy
+{
+    const uint64 *src;
+    uint64 *dst;
+
+    CONDUIT_EXEC void operator()(index_t i) const
+    {
+        dst[i] = src[i];
+    }
+};
+
+// Below this size, memcpy is faster than launching a kernel.
+static constexpr size_t DEVICE_COPY_MIN_BYTES = 4 * 1024 * 1024;
+
+//-----------------------------------------------------------------------------
+// Copies num bytes with a device kernel. Our device forall policies are
+// synchronous, so we don't need to include extra synchronization.
+static void
+device_copy(void *destination, const void *source, size_t num)
+{
+    const size_t word = sizeof(uint64);
+    ExecutionPolicy policy = ExecutionPolicy::device();
+    forall(policy, 0, static_cast<int>(num / word),
+           FastUnifiedMemcpy{static_cast<const uint64*>(source),
+                             static_cast<uint64*>(destination)});
+    CONDUIT_DEVICE_ERROR_CHECK(policy);
+
+    // The kernel copies data 8 bytes at a time to maximize bandwidth, but
+    // our arrays might use types smaller than 8 bytes, in which case the
+    // last few bytes of the source might not fill a whole word and didn't
+    // get copied. This final memcpy accounts for that.
+    const size_t tail = num % word;
+    if (tail > 0)
+    {
+        memcpy(static_cast<char*>(destination) + num - tail,
+               static_cast<const char*>(source) + num - tail,
+               tail);
+    }
+}
+#endif // defined(CONDUIT_USE_DEVICE)
+
 //-----------------------------------------------------------------------------
 void
 MagicMemory::copy(void * destination, const void * source, size_t num)
 {
 #if defined(CONDUIT_USE_RAJA)
+#if defined(CONDUIT_USE_DEVICE)
+    // In unified memory, the GPU can read and write to memory allocated by
+    // either host or device APIs, but a regular hipMemcpy is still slow for
+    // large data transfers involving a host pointer. If the right conditions
+    // are met, we can use a device forall instead to bulk copy the data with
+    // significantly higher bandwidth.
+    if (DeviceMemory::is_unified() && num >= DEVICE_COPY_MIN_BYTES)
+    {
+        device_copy(destination, source, num);
+        return;
+    }
+#endif
+
     bool src_is_gpu = DeviceMemory::is_device_allocation(source);
     bool dst_is_gpu = DeviceMemory::is_device_allocation(destination);
     if (src_is_gpu && dst_is_gpu)
@@ -371,7 +428,7 @@ MagicMemory::copy(void * destination, const void * source, size_t num)
         }
         // device-to-device copies can return before they finish, and in
         // unified memory the host may read the destination next
-        if (DeviceMemory::unified())
+        if (DeviceMemory::is_unified())
         {
             (void)hipStreamSynchronize(0);
         }
