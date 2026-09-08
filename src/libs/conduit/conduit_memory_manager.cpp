@@ -365,7 +365,7 @@ struct FastUnifiedMemcpy
 };
 
 // Below this size, memcpy is faster than launching a kernel.
-static constexpr size_t DEVICE_COPY_MIN_BYTES = 4 * 1024 * 1024;
+static constexpr size_t DEVICE_COPY_MIN_BYTES = 256 * 1024;
 
 //-----------------------------------------------------------------------------
 // Copies num bytes with a device kernel. Our device forall policies are
