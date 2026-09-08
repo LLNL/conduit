@@ -9,12 +9,12 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 
 #### Conduit
-- Added a data-parallel execution model in the `conduit::execution` namespace that can run parallel kernels using host or device execution policies (serial, OpenMP, CUDA and HIP via RAJA and Umpire). It provides execution policies, `forall()` kernel launches, reductions, atomics, sorting, global execution options, typed dispatch, and host/device memory management. See the new `Data-Parallel Execution Model` documentation page for more information.
-- `DataArray` and `DataAccessor` can now wrap a `Node` and move its data between host and device memory, and their element access, `set()`, and reduction methods can be used within device kernels.
-- Added the `ENABLE_TYPED_DISPATCH` CMake option (default `OFF`) to control compilation of typed dispatch kernels.
+- Added a data-parallel execution model in the `conduit::execution` namespace that can run parallel kernels using host or device execution policies (serial, OpenMP, CUDA and HIP via RAJA and Umpire). It provides execution policies, `forall()` kernel launches, reductions, atomics, sorting, and host/device memory management for `Node`s. Users can set global execution options to adjust the execution model's behavior to their liking. The existing Conduit APIs will be incrementally ported to the execution model over time, but the execution model itself is made available for downstream projects that may be interested in porting their own APIs to it. See the new `Data-Parallel Execution Model` documentation page for more information.
+- `DataArray` and `DataAccessor` can now wrap a `Node` and move its data between host and device memory. Their element access, `set()`, and reduction methods can be used within device kernels as well.
+- Added the `ENABLE_TYPED_DISPATCH` CMake option (default `OFF`) to control compilation of typed dispatch kernels. This significantly improves the performance of using `DataArray` and `DataAccessor` within `forall()`s at the expense of adding additional compile time. It is off by default within CMake (i.e., for CI), but is on by default within `build_conduit.sh` for user builds.
 
 #### Blueprint
-- Ported coordset and topology conversions (`to_explicit`, `to_rectilinear`, `to_unstructured`) and `generate_centroids` to the execution model. Their APIs are unchanged, but they can now run on host or device.
+- Ported the coordset and topology conversions (`to_explicit`, `to_rectilinear`, `to_unstructured`) and `generate_centroids` to the execution model. Their APIs are unchanged from before, but they have been significantly optimized and can now run on host or device.
 
 ### Changed
 
@@ -25,7 +25,7 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Fixed
 
 #### General
-- Fixed `conduit_setup_deps.cmake` so downstream projects correctly locate Umpire when Conduit was built with it.
+- Fixed `conduit_setup_deps.cmake` so that downstream projects correctly locate Umpire when Conduit was built with it.
 
 ## [0.9.8] - Released 2026-09-01
 
