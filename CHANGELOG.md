@@ -8,6 +8,32 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### Conduit
+- Added a data-parallel execution model in the `conduit::execution` namespace that can run parallel kernels using host or device execution policies (serial, OpenMP, CUDA and HIP via RAJA and Umpire). It provides execution policies, `forall()` kernel launches, reductions, atomics, sorting, global execution options, typed dispatch, and host/device memory management. See the new `Data-Parallel Execution Model` documentation page for more information.
+- `DataArray` and `DataAccessor` can now wrap a `Node` and move its data between host and device memory, and their element access, `set()`, and reduction methods can be used within device kernels.
+- Added the `ENABLE_TYPED_DISPATCH` CMake option (default `OFF`) to control compilation of typed dispatch kernels.
+
+#### Blueprint
+- Ported coordset and topology conversions (`to_explicit`, `to_rectilinear`, `to_unstructured`) and `generate_centroids` to the execution model. Their APIs are unchanged, but they can now run on host or device.
+
+### Changed
+
+#### Conduit
+- Replaced the header-only `conduit::execution::for_all()` and `sort()` helpers with the new execution model API. `conduit_execution_serial.hpp` and `conduit_execution_omp.hpp` were removed.
+- Building with `ENABLE_CUDA` or `ENABLE_HIP` now requires RAJA.
+
+### Fixed
+
+#### General
+- Fixed `conduit_setup_deps.cmake` so downstream projects correctly locate Umpire when Conduit was built with it.
+
+## [0.9.8] - Released 2026-09-01
+
+### Added
+
+#### Relay
+- Added optional support for reading and writing HDF5 attributes.
+
 #### Blueprint
 - Added additional options for `conduit::blueprint::mesh::examples::venn()` allowing for the creation of a material map in all cases as well as the creation of species sets. These options were exposed in `conduit::blueprint::mesh::examples:generate()`.
 - Added `conduit::blueprint::mesh::matset::has_mixed_elements()` which can determine if a material set contains any mixed elements.
@@ -22,6 +48,11 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 - Added `CONDUIT_PYTHONPATH`, the absolute path of Conduit's installed Python module, to Conduit's CMake config.
 
 ### Fixed
+
+#### General
+- Fixed Python unit test registration to use `Python3_EXECUTABLE` instead of `PYTHON_EXECUTABLE`. Configuring with `-DPython3_EXECUTABLE` left the old variable empty, which registered every Python test with an empty program name (`ctest` reported `Could not find executable -B`) and made those tests unrunnable.
+- Fixed a case where a Python with `setuptools < 61.0.0` would silently result in empty python modules. The python modules are installed with `pip install --no-build-isolation`, so pip uses the setuptools installed in the selected python rather than the version our `pyproject.toml` files request. The exit code of the install-time `pip install` is now checked so thta pip errors don't go unnoticed, and the install is validated after the fact by ensuring the presenece of the top-level `__init__.py`.
+- A setuptools bare-minimum version (`61.0.0`) is now manually enforced at configure time.
 
 #### Blueprint
 - Fixed more C++20 issues with runtime fmt params in Silo support implementation and tests.
@@ -1168,7 +1199,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 ### Added
 - Initial Open Source Release on GitHub
 
-[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.6...HEAD
+[Unreleased]: https://github.com/llnl/conduit/compare/v0.9.8...HEAD
+[0.9.8]: https://github.com/llnl/conduit/compare/v0.9.7...v0.9.8
+[0.9.7]: https://github.com/llnl/conduit/compare/v0.9.6...v0.9.7
 [0.9.6]: https://github.com/llnl/conduit/compare/v0.9.5...v0.9.6
 [0.9.5]: https://github.com/llnl/conduit/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/llnl/conduit/compare/v0.9.3...v0.9.4
