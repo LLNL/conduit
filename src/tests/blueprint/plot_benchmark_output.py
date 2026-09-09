@@ -49,9 +49,8 @@
 #         each containing:
 #           - mesh_scaling.png, mesh_scaling_per_element.png
 #           - generate_scaling.png, generate_scaling_per_element.png
-#           - generate_scaling_by_config.png and
-#             generate_scaling_per_element_by_config.png (only when more
-#             than one src/exec/out/sync configuration is present)
+#             (one panel per benchmark, one line per src/exec/out/sync
+#             configuration)
 #           - mesh_conversion_heatmap_dim-<N>.png (and _per_element variant)
 #           - generate_heatmap_dim-<N>.png (and _per_element variant)
 #           - generate_growth_heatmap_dim-<N>.png
@@ -106,6 +105,13 @@ OPERATIONS = [
 ]
 MESH_SRC_ORDER = ["structured", "rectilinear", "uniform"]
 SHAPE_ORDER = ["quads", "hexs", "pyramids"]
+# Panel order for the conversion benchmarks, read row by row in a two-column
+# grid: conversions to structured on the left, to unstructured on the right.
+CONVERSION_ORDER = [
+    "rectilinear_to_structured", "structured_to_unstructured",
+    "uniform_to_structured", "rectilinear_to_unstructured",
+    "uniform_to_rectilinear", "uniform_to_unstructured",
+]
 
 BASELINE_CFG = ("host", "host", "host", "sync")
 DEVICE_BASELINE_CFG = ("device", "device", "device", "sync")
@@ -302,17 +308,15 @@ def growth_value(record):
     return record["outelems"] / record["inelems"]
 
 
-def build_line_panels(records, group_series_fn, value_fn):
+def build_line_panels(records, value_fn):
+    # {benchmark name: {configuration label: [(dim, value), ...]}}
     panels = {}
     for record in records:
-        grouped = group_series_fn(record)
-        if grouped is None:
-            continue
         value = value_fn(record)
         if value is None:
             continue
-        panel_title, series_label = grouped
-        panels.setdefault(panel_title, {}).setdefault(series_label, []).append((record["dim"], value))
+        series = panels.setdefault(record["name"], {})
+        series.setdefault(format_cfg_label(record["cfg"]), []).append((record["dim"], value))
     return panels
 
 
@@ -330,7 +334,7 @@ def render_series(ax, series, title, y_scale, series_order):
         ax.plot(dims, ys, marker=MARKERS[idx % len(MARKERS)], color=colors[idx % len(colors)],
                 label=label)
 
-    ax.set_title(title.replace("_", " "), fontsize=10)
+    ax.set_title(pretty_region(title), fontsize=10)
     ax.tick_params(labelsize=8)
     ax.set_yscale("log")
     low, high = ax.get_ylim()
@@ -363,7 +367,7 @@ def legend_below(fig, axes, series_order, columns):
 
 
 def plot_group(panels, path, suptitle, ylabel, y_scale, series_order):
-    titles = sorted(panels)
+    titles = sorted(panels, key=region_sort_key)
     n = len(titles)
     columns = min(2, n)
     rows = math.ceil(n / columns)
@@ -391,7 +395,7 @@ def plot_group(panels, path, suptitle, ylabel, y_scale, series_order):
     for title in titles:
         fig, ax = plt.subplots(figsize=(INDIVIDUAL_FIGSIZE[0], height))
         render_series(ax, panels[title], title, y_scale, series_order)
-        ax.set_title(f"{suptitle}\n{title.replace('_', ' ')}", fontsize=11)
+        ax.set_title(f"{suptitle}\n{pretty_region(title)}", fontsize=11)
         ax.set_ylabel(ylabel)
         legend_below(fig, [ax], series_order, 2)
         fig.savefig(individual_dir / f"{title}.png", dpi=150)
@@ -498,59 +502,38 @@ def plot_thicket_views(thicket, records, time_column, out_dir):
         print(f"saved {path}")
 
 
+def generate_label(records):
+    operations = {split_generate_name(r["name"])[0] for r in records}
+    if len(operations) == 1:
+        return operations.pop().replace("_", " ").capitalize()
+    return "Generate-function"
+
+
 def render_plot_set(records, out_dir, iters_label, heatmaps):
     out_dir.mkdir(parents=True, exist_ok=True)
     cfg_order_labels = [format_cfg_label(c) for c in CFG_ORDER]
 
     cfgs_seen = {r["cfg"] for r in records}
-    multi_cfg = len(cfgs_seen) > 1
-    if multi_cfg:
-        cfg_list = ", ".join(format_cfg_label(c) for c in ordered(cfgs_seen, CFG_ORDER))
-        print(f"  {len(cfgs_seen)} execution configs: {cfg_list}")
-    else:
-        print(f"  single execution config ({format_cfg_label(next(iter(cfgs_seen)))}); "
-              "config-comparison plots skipped")
+    cfg_list = ", ".join(format_cfg_label(c) for c in ordered(cfgs_seen, CFG_ORDER))
+    print(f"  {len(cfgs_seen)} execution config(s): {cfg_list}")
 
     baseline_cfg = BASELINE_CFG if BASELINE_CFG in cfgs_seen \
         else ordered(cfgs_seen, CFG_ORDER)[0]
-    baseline_note = f" ({format_cfg_label(baseline_cfg)})" if multi_cfg else ""
     baseline_records = [r for r in records if r["cfg"] == baseline_cfg]
     mesh_records = [r for r in records if split_convert(r["name"])]
     generate_records = [r for r in records if not split_convert(r["name"])]
-    baseline_generate_records = [r for r in baseline_records if not split_convert(r["name"])]
-
-    def mesh_group(record):
-        return (record["name"], format_cfg_label(record["cfg"]))
-
-    def generate_group(record):
-        operation, shape = split_generate_name(record["name"])
-        return (operation, shape) if shape else None
-
-    def generate_config_group(record):
-        operation, shape = split_generate_name(record["name"])
-        if not shape:
-            return None
-        return (f"{operation}_{shape}", format_cfg_label(record["cfg"]))
+    generate_name = generate_label(generate_records)
 
     for suffix, quantity, unit, scale in METRICS:
         value_fn = METRIC_VALUES[quantity]
         ylabel = f"avg time / {quantity} ({unit})"
-        panels = build_line_panels(mesh_records, mesh_group, value_fn)
-        if panels:
-            plot_group(panels, out_dir / f"mesh_scaling{suffix}.png",
-                       f"Mesh conversion benchmark: avg time per {quantity} ({iters_label})",
-                       ylabel, scale, cfg_order_labels)
-        panels = build_line_panels(baseline_generate_records, generate_group, value_fn)
-        if panels:
-            plot_group(panels, out_dir / f"generate_scaling{suffix}.png",
-                       f"Generate-function benchmark: avg time per {quantity}{baseline_note} "
-                       f"({iters_label})", ylabel, scale, SHAPE_ORDER)
-        if multi_cfg:
-            panels = build_line_panels(generate_records, generate_config_group, value_fn)
+        for group, stem, benchmark in ((mesh_records, "mesh_scaling", "Mesh conversion"),
+                                       (generate_records, "generate_scaling", generate_name)):
+            panels = build_line_panels(group, value_fn)
             if panels:
-                plot_group(panels, out_dir / f"generate_scaling{suffix}_by_config.png",
-                           f"Generate-function benchmark: avg time per {quantity} across execution "
-                           f"configs ({iters_label})", ylabel, scale, cfg_order_labels)
+                plot_group(panels, out_dir / f"{stem}{suffix}.png",
+                           f"{benchmark} benchmark: avg time per {quantity} ({iters_label})",
+                           ylabel, scale, cfg_order_labels)
 
     if not heatmaps:
         return baseline_records
@@ -589,14 +572,14 @@ def render_plot_set(records, out_dir, iters_label, heatmaps):
                 plot_heatmaps(
                     shape_lookup, OPERATIONS, SHAPE_ORDER, value_fn, scale, out_dir,
                     f"generate_heatmap{suffix}{cfg_suffix}",
-                    f"Generate-function avg time per {quantity}, {unit}{cfg_note} ({iters_label})",
+                    f"{generate_name} avg time per {quantity}, {unit}{cfg_note} ({iters_label})",
                     "operation", "element shape", cbar_label,
                 )
         if shape_lookup and cfg == heatmap_cfgs[0]:
             plot_heatmaps(
                 shape_lookup, OPERATIONS, SHAPE_ORDER, growth_value, 1.0, out_dir,
                 "generate_growth_heatmap",
-                f"Generate-function output/input element ratio ({iters_label})",
+                f"{generate_name} output/input element ratio ({iters_label})",
                 "operation", "element shape", "output elements / input elements",
                 cell_fmt=format_growth_cell,
             )
@@ -743,10 +726,8 @@ def pair_runs(base_index, new_index, base_label, new_label):
 
 
 def region_sort_key(name):
-    convert = split_convert(name)
-    if convert:
-        src, dst = convert
-        return (0, rank(src, MESH_SRC_ORDER), dst)
+    if split_convert(name):
+        return (0, rank(name, CONVERSION_ORDER), name)
     operation, shape = split_generate_name(name)
     return (1, rank(operation, OPERATIONS), rank(shape, SHAPE_ORDER), name)
 
