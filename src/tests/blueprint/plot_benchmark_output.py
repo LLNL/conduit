@@ -10,6 +10,7 @@
 #     python3 plot_benchmark_output.py --compare BASE.cali NEW.cali
 #                                      [--label-base L] [--label-new L]
 #                                      [--output DIR]
+#     Either form also takes --rank-reduce {max,min,mean} (default: max).
 #
 #     With no arguments, the most recently modified .cali file in the current
 #     working directory is plotted.
@@ -37,13 +38,18 @@
 #
 # Input:
 #     A Caliper .cali file produced by t_blueprint_mesh_transform_benchmark.
+#     When the benchmark ran under MPI, Caliper merges every rank's results
+#     into one .cali file. Each rank converts its own domains without
+#     communication.
+#     --rank-reduce picks how the per-rank times are combined (default max).
 #
 # Output:
 #     For a single file, a directory next to it named after it with the
 #     extension stripped (e.g. 20260803_120000.cali -> 20260803_120000/),
 #     containing:
 #       - thicket_mesh_heatmap.png, thicket_generate_heatmap.png,
-#         thicket_boxplot.png (skipped if seaborn is not installed)
+#         thicket_boxplot.png (skipped if seaborn is not installed; for an
+#         MPI run the boxplot shows the spread across ranks)
 #       - one subdirectory per execution backend found in the file (plus a
 #         "combined" subdirectory when more than one backend is present),
 #         each containing:
@@ -174,6 +180,7 @@ def parse_scope_name(raw):
     for key in NUMERIC_FIELDS:
         parsed[key] = int(fields[key])
     parsed["threads"] = int(fields["threads"]) if "threads" in fields else None
+    parsed["ranks"] = int(fields["ranks"]) if "ranks" in fields else None
     return parsed
 
 
@@ -226,31 +233,60 @@ def find_time_column(dataframe):
 
 INCLUSIVE_COLUMN = "inclusive#time.duration"
 
+# How the per-rank times of an MPI run are combined into one time per region.
+RANK_REDUCERS = {
+    "max": max,
+    "min": min,
+    "mean": lambda values: sum(values) / len(values),
+}
+
 
 def add_inclusive_column(thicket, records):
     # thicket's own views read a dataframe column; fill it with the inclusive
-    # times collect() already computed for the benchmark regions.
-    totals = {r["node"]: r["total_time"] for r in records}
-    thicket.dataframe[INCLUSIVE_COLUMN] = [
-        totals.get(index[0], float("nan")) for index in thicket.dataframe.index
-    ]
+    # times collect() already computed for the benchmark regions. An MPI run
+    # has a rank index level, and each row gets its own rank's time so the
+    # boxplot shows the spread across ranks.
+    index = thicket.dataframe.index
+    rank_level = index.names.index("rank") if "rank" in index.names else None
+    by_node = {r["node"]: r for r in records}
+
+    def inclusive(key):
+        record = by_node.get(key[0])
+        if record is None:
+            return float("nan")
+        if rank_level is None:
+            return record["total_time"]
+        return record["rank_times"].get(key[rank_level], float("nan"))
+
+    thicket.dataframe[INCLUSIVE_COLUMN] = [inclusive(key) for key in index]
     return INCLUSIVE_COLUMN
 
 
-def collect(thicket):
-    profile_id = thicket.dataframe.index.get_level_values("profile")[0]
-    time_column = find_time_column(thicket.dataframe)
+def collect(thicket, rank_reduce):
+    dataframe = thicket.dataframe
+    time_column = find_time_column(dataframe)
+    has_ranks = "rank" in dataframe.index.names
+
+    # Own time per node for a serial run, or per (node, rank) for an MPI run
+    # where Caliper merged every rank's rows into the one file.
+    levels = ["node", "rank"] if has_ranks else ["node"]
+    own_times = dataframe[time_column].groupby(level=levels).sum()
+    if has_ranks:
+        own_times = {node: group.droplevel("node").to_dict()
+                     for node, group in own_times.groupby(level="node")}
+    else:
+        own_times = own_times.to_dict()
 
     def node_time(node):
         # A region's time is its own time plus every nested region beneath
-        # it; Caliper stores only the own time.
-        try:
-            total = float(thicket.dataframe.loc[(node, profile_id), time_column])
-        except (KeyError, TypeError):
-            total = 0.0
-        for child in node.children:
-            total += node_time(child)
-        return total
+        # it; Caliper stores only the own time. Kept per rank when present.
+        if has_ranks:
+            total = dict(own_times.get(node, {}))
+            for child in node.children:
+                for rank, time in node_time(child).items():
+                    total[rank] = total.get(rank, 0.0) + time
+            return total
+        return own_times.get(node, 0.0) + sum(node_time(c) for c in node.children)
 
     def all_nodes(node):
         yield node
@@ -264,23 +300,40 @@ def collect(thicket):
             if parsed is None:
                 continue
             parsed["node"] = node
-            parsed["total_time"] = node_time(node)
+            if has_ranks:
+                parsed["rank_times"] = node_time(node)
+                parsed["total_time"] = RANK_REDUCERS[rank_reduce](
+                    list(parsed["rank_times"].values()) or [0.0])
+            else:
+                parsed["rank_times"] = None
+                parsed["total_time"] = node_time(node)
             parsed["avg_time"] = parsed["total_time"] / parsed["iter"]
             records.append(parsed)
     return records
 
 
-def load_records(cali_file):
+def load_records(cali_file, rank_reduce):
     if not cali_file.exists():
         sys.exit(f"no such file: {cali_file}")
     try:
         thicket = th.Thicket.from_caliperreader(str(cali_file))
     except ReaderError as error:
         sys.exit(f"failed to read {cali_file}: {error}")
-    records = collect(thicket)
+    records = collect(thicket, rank_reduce)
     if not records:
         sys.exit(f"no benchmark regions found in {cali_file}")
+    if records[0]["rank_times"] is not None:
+        print(f"{cali_file}: MPI run, taking the {rank_reduce} across ranks")
     return thicket, records
+
+
+def range_label(name, values):
+    values = sorted(values)
+    if not values:
+        return ""
+    if len(values) == 1:
+        return f", {name}={values[0]}"
+    return f", {name}={values[0]}-{values[-1]}"
 
 
 def avg_time(record):
@@ -595,16 +648,15 @@ def backend_group(record):
     return record["backend"]
 
 
-def plot_single(cali_file):
-    thicket, records = load_records(cali_file)
+def plot_single(cali_file, rank_reduce):
+    thicket, records = load_records(cali_file, rank_reduce)
 
     iters = sorted({r["iter"] for r in records})
     iters_label = f"n={iters[0]}" if len(iters) == 1 else f"n={iters[0]}-{iters[-1]}"
-    threads = sorted({r["threads"] for r in records if r["threads"] is not None})
-    if len(threads) == 1:
-        iters_label += f", threads={threads[0]}"
-    elif threads:
-        iters_label += f", threads={threads[0]}-{threads[-1]}"
+    iters_label += range_label("threads", {r["threads"] for r in records
+                                           if r["threads"] is not None})
+    iters_label += range_label("ranks", {r["ranks"] for r in records
+                                         if r["ranks"] is not None})
 
     out_dir = cali_file.with_suffix("")
     out_dir.mkdir(exist_ok=True)
@@ -1047,11 +1099,11 @@ def write_comparison_csv(rows, summary, out_dir):
     print(f"saved matched_cases.csv, speedup_summary.csv, speedup_by_region.csv to {out_dir}/")
 
 
-def compare_runs(base_file, new_file, base_label, new_label, out_dir):
+def compare_runs(base_file, new_file, base_label, new_label, out_dir, rank_reduce):
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    _, base_records = load_records(base_file)
-    _, new_records = load_records(new_file)
+    _, base_records = load_records(base_file, rank_reduce)
+    _, new_records = load_records(new_file, rank_reduce)
     print("timing: inclusive Caliper region time divided by the recorded iteration count")
     series = pair_runs(index_series(base_records), index_series(new_records),
                        base_label, new_label)
@@ -1076,6 +1128,8 @@ def parse_args():
     parser.add_argument("--label-base", help="name for BASE in the comparison (default: file stem)")
     parser.add_argument("--label-new", help="name for NEW in the comparison (default: file stem)")
     parser.add_argument("--output", type=Path, help="comparison output directory")
+    parser.add_argument("--rank-reduce", choices=sorted(RANK_REDUCERS), default="max",
+                        help="how to combine the per-rank times of an MPI run (default: max)")
     return parser.parse_args()
 
 
@@ -1085,9 +1139,9 @@ def main():
         base_file, new_file = args.compare
         out_dir = args.output or base_file.parent / f"{base_file.stem}_vs_{new_file.stem}"
         compare_runs(base_file, new_file, args.label_base or base_file.stem,
-                     args.label_new or new_file.stem, out_dir)
+                     args.label_new or new_file.stem, out_dir, args.rank_reduce)
     else:
-        plot_single(args.cali_file or find_cali_file())
+        plot_single(args.cali_file or find_cali_file(), args.rank_reduce)
 
 
 if __name__ == "__main__":
