@@ -81,7 +81,8 @@ exec(const std::string &name,
      const ExecConfig &config,
      const index_t npts,
      const index_t warmup,
-     const index_t iterations)
+     const index_t iterations,
+     const std::string &rank_suffix = "")
 {
     // Capture input/output data sizes to include in the scope name below.
     // This is a function of (name, npts) and never changes between
@@ -119,6 +120,7 @@ exec(const std::string &name,
 #if defined(CONDUIT_USE_OPENMP)
             + "_threads-" + std::to_string(omp_get_max_threads())
 #endif
+            + rank_suffix
             + "_iter-" + std::to_string(iterations);
 
         for (index_t i = 0; i < iterations; i++)

@@ -18,7 +18,6 @@ set(BLUEPRINT_TESTS t_blueprint_smoke
                     t_blueprint_mesh_verify
                     t_blueprint_mesh_convert
                     t_blueprint_mesh_transform
-                    t_blueprint_mesh_transform_benchmark
                     t_blueprint_mesh_partition
                     t_blueprint_mesh_query
                     t_blueprint_mesh_relay
@@ -135,8 +134,18 @@ if(MPI_FOUND)
                                                                  conduit_relay_mpi_io)
     endforeach()
 
+    add_cpp_mpi_test(TEST t_blueprint_mesh_transform_benchmark
+                     NUM_MPI_TASKS 2
+                     DEPENDS_ON conduit conduit_blueprint conduit_relay
+                     FOLDER tests/blueprint)
+    target_compile_definitions(t_blueprint_mesh_transform_benchmark
+                               PRIVATE CONDUIT_BENCHMARK_MPI_ENABLED)
 else()
     message(STATUS "MPI disabled: Skipping conduit_blueprint_mpi tests")
+
+    add_cpp_test(TEST t_blueprint_mesh_transform_benchmark
+                 DEPENDS_ON conduit conduit_blueprint conduit_relay
+                 FOLDER tests/blueprint)
 endif()
 
 message(STATUS "Adding blueprint lib Zfp unit tests")

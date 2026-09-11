@@ -31,10 +31,17 @@ Examples:
     # 5 warmups, 20 timed iterations, at dim sizes 10, 20, and 40
     ./t_blueprint_mesh_transform_benchmark 5 20 10 20 40
 
+    # Same, with MPI: every rank converts its own braid domains
+    mpiexec -n 4 ./t_blueprint_mesh_transform_benchmark 5 20 10 20 40
+
 If conduit was built with Caliper support, timing results are written to
 <YYYYmmdd_HHMMSS>.cali in the current directory, which can be plotted
 with src/tests/blueprint/plot_benchmark_output.py (cmake automatically
 copies it to the tests/blueprint folder for convenience).
+
+If Conduit was built with MPI, each rank gets BENCHMARK_DOMAINS_PER_RANK
+domains of the requested size. Caliper must also be built with MPI, else
+every rank will write its own .cali file (not desirable).
 */
 
 #include "conduit.hpp"
@@ -42,6 +49,10 @@ copies it to the tests/blueprint folder for convenience).
 #include "conduit_benchmark.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_core.hpp"
+
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+#include <mpi.h>
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
 
 #include "gtest/gtest.h"
 
@@ -59,6 +70,25 @@ std::vector<index_t> BENCHMARK_DIM_SIZES = {2};
 index_t BENCHMARK_NUM_WARMUP_ITERATIONS = 2;
 index_t BENCHMARK_NUM_ITERATIONS = 2;
 
+// Set from MPI_COMM_WORLD
+int BENCHMARK_RANK = 0;
+int BENCHMARK_NUM_RANKS = 1;
+const int BENCHMARK_DOMAINS_PER_RANK = 2;
+
+//-----------------------------------------------------------------------------
+// Vertex and element counts summed over every domain in `mesh`.
+void
+mesh_lengths(const Node &mesh, index_t &verts, index_t &elems)
+{
+    verts = 0;
+    elems = 0;
+    for (const Node *domain : blueprint::mesh::domains(mesh))
+    {
+        verts += blueprint::mesh::coordset::length((*domain)["coordsets"].child(0));
+        elems += blueprint::mesh::topology::length((*domain)["topologies"].child(0));
+    }
+}
+
 //-----------------------------------------------------------------------------
 // Reports vertex/element counts for the input and output meshes. Some
 // operations (e.g. generate_corners) produce far more elements than they
@@ -66,10 +96,9 @@ index_t BENCHMARK_NUM_ITERATIONS = 2;
 std::string
 mesh_size_info(const Node &input, const Node &output)
 {
-    const index_t inverts  = blueprint::mesh::coordset::length(input["coordsets"].child(0));
-    const index_t inelems  = blueprint::mesh::topology::length(input["topologies"].child(0));
-    const index_t outverts = blueprint::mesh::coordset::length(output["coordsets"].child(0));
-    const index_t outelems = blueprint::mesh::topology::length(output["topologies"].child(0));
+    index_t inverts, inelems, outverts, outelems;
+    mesh_lengths(input, inverts, inelems);
+    mesh_lengths(output, outverts, outelems);
 
     return "inverts-"   + std::to_string(inverts)
          + "_inelems-"  + std::to_string(inelems)
@@ -89,12 +118,45 @@ make_braid_dataset(const std::string &src_type,
 
     const index_t npts_z = is_2d ? 0 : npts;
 
-    // Braid will reset `src` for us internally 
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+    // pencil layout
+
+    src.reset();
+    for (int i = 0; i < BENCHMARK_DOMAINS_PER_RANK; i++)
+    {
+        const int domain_id = BENCHMARK_RANK * BENCHMARK_DOMAINS_PER_RANK + i;
+        Node &domain = src.append();
+        blueprint::mesh::examples::braid(src_type,
+                                         npts,
+                                         npts,
+                                         npts_z,
+                                         domain);
+
+        const float64 x_offset = 20.0 * domain_id;
+        Node &coords = domain["coordsets/coords"];
+        if (coords["type"].as_string() == "uniform")
+        {
+            coords["origin/x"] = coords["origin/x"].to_float64() + x_offset;
+        }
+        else
+        {
+            float64_array x = coords["values/x"].value();
+            for (index_t j = 0; j < x.number_of_elements(); j++)
+            {
+                x[j] += x_offset;
+            }
+        }
+        domain["state/domain_id"] = domain_id;
+        domain["state/cycle"] = 0;
+    }
+#else // if defined(!CONDUIT_BENCHMARK_MPI_ENABLED)
+    // Braid will reset `src` for us internally
     blueprint::mesh::examples::braid(src_type,
                                      npts,
                                      npts,
                                      npts_z,
                                      src);
+#endif // defined(!CONDUIT_BENCHMARK_MPI_ENABLED)
 }
 
 //-----------------------------------------------------------------------------
@@ -154,6 +216,11 @@ run_benchmarks(const std::vector<ConvertConfig> &convert_configs)
                     blueprint::mesh::convert(input, options, output);
                 };
 
+                std::string rank_suffix;
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+                rank_suffix = "_ranks-" + std::to_string(BENCHMARK_NUM_RANKS);
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+
                 // This executes a benchmark of the current configuration
                 benchmark::exec(convert_config.name,
                                 src,
@@ -163,7 +230,8 @@ run_benchmarks(const std::vector<ConvertConfig> &convert_configs)
                                 exec_config,
                                 npts,
                                 BENCHMARK_NUM_WARMUP_ITERATIONS,
-                                BENCHMARK_NUM_ITERATIONS);
+                                BENCHMARK_NUM_ITERATIONS,
+                                rank_suffix);
             }
         }
     }
@@ -222,7 +290,13 @@ main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
 
-    if (!annotations::supported())
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &BENCHMARK_RANK);
+    MPI_Comm_size(MPI_COMM_WORLD, &BENCHMARK_NUM_RANKS);
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+
+    if (BENCHMARK_RANK == 0 && !annotations::supported())
     {
         std::cout << "WARNING: conduit was built without Caliper support, "
                      "so this benchmark will run but will not produce any "
@@ -275,8 +349,13 @@ main(int argc, char *argv[])
     // Run all benchmarks
     const int result = RUN_ALL_TESTS();
 
-    // Finalize timing
+    // Finalize timing. With MPI this is a collective operation, so it has to
+    // happen on every rank before MPI_Finalize.
     annotations::finalize();
+
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+    MPI_Finalize();
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
 
     return result;
 }
