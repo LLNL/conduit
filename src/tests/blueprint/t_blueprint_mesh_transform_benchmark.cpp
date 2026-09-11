@@ -149,14 +149,14 @@ make_braid_dataset(const std::string &src_type,
         domain["state/domain_id"] = domain_id;
         domain["state/cycle"] = 0;
     }
-#else
+#else // if defined(!CONDUIT_BENCHMARK_MPI_ENABLED)
     // Braid will reset `src` for us internally
     blueprint::mesh::examples::braid(src_type,
                                      npts,
                                      npts,
                                      npts_z,
                                      src);
-#endif
+#endif // defined(!CONDUIT_BENCHMARK_MPI_ENABLED)
 }
 
 //-----------------------------------------------------------------------------
@@ -219,7 +219,7 @@ run_benchmarks(const std::vector<ConvertConfig> &convert_configs)
                 std::string rank_suffix;
 #if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
                 rank_suffix = "_ranks-" + std::to_string(BENCHMARK_NUM_RANKS);
-#endif
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
 
                 // This executes a benchmark of the current configuration
                 benchmark::exec(convert_config.name,
@@ -294,7 +294,7 @@ main(int argc, char *argv[])
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &BENCHMARK_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &BENCHMARK_NUM_RANKS);
-#endif
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
 
     if (BENCHMARK_RANK == 0 && !annotations::supported())
     {
@@ -355,7 +355,7 @@ main(int argc, char *argv[])
 
 #if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
     MPI_Finalize();
-#endif
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
 
     return result;
 }
