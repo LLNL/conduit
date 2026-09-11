@@ -8,9 +8,24 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### Conduit
+- Added a data-parallel execution model in the `conduit::execution` namespace that runs generic parallel kernels using RAJA's host or device execution policies (serial, OpenMP, CUDA and HIP are supported). Its API provides the means to ask for specific execution policies, launch `forall()` kernels, perform reductions, atomics, sorting, and automatically manages host/device memory. Users can configure global options to control the execution model's behavior (e.g., whether to copy output data to a particular memory space). The existing Conduit APIs will be incrementally ported over time, but in the meantime, the execution model's API is exposed for downstream projects that may be interested in porting their own APIs to it. See the new `Data-Parallel Execution Model` documentation page for more information.
+- `DataArray` and `DataAccessor` can now wrap a `Node` and move its data between host and device memory. They additionally provide the means to read, write, and perform reductions over `Node` data within `forall()` kernels, including device kernels.
+- Added the `ENABLE_TYPED_DISPATCH` CMake option to control compilation of typed dispatch kernels. This significantly improves the read/write performance of `DataArray` and `DataAccessor` within `forall()` kernels at the expense of additional compile time due to extra kernel instantiations. It is off by default within CMake (i.e., for CI), but is on by default within `build_conduit.sh` for user builds.
+
+#### Blueprint
+- Ported the coordset and topology conversions (`to_explicit`, `to_rectilinear`, `to_unstructured`) and `generate_centroids` to the execution model. Their APIs are unchanged, but they have been individually optimized and have been parallelized where possible. Furthermore, all of these APIs can now be executed on host or device and consume host or device data as input.
+
 ### Changed
 
+#### Conduit
+- Replaced the header-only `conduit::execution::for_all()` and `sort()` helpers with the new execution model API. These were relics of an earlier attempt at introducing a form of execution model.
+- Building with `ENABLE_CUDA` or `ENABLE_HIP` now requires RAJA.
+
 ### Fixed
+
+#### General
+- Fixed `conduit_setup_deps.cmake` so that downstream projects correctly locate Umpire when Conduit was built with it.
 
 ## [0.9.8] - Released 2026-09-01
 
