@@ -138,6 +138,8 @@ if(MPI_FOUND)
                      NUM_MPI_TASKS 2
                      DEPENDS_ON conduit conduit_blueprint conduit_relay
                      FOLDER tests/blueprint)
+    target_compile_definitions(t_blueprint_mesh_transform_benchmark
+                               PRIVATE CONDUIT_BENCHMARK_MPI_ENABLED)
 else()
     message(STATUS "MPI disabled: Skipping conduit_blueprint_mpi tests")
 

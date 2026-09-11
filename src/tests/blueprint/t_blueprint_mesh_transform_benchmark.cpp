@@ -39,10 +39,9 @@ If conduit was built with Caliper support, timing results are written to
 with src/tests/blueprint/plot_benchmark_output.py (cmake automatically
 copies it to the tests/blueprint folder for convenience).
 
-If conduit was built with MPI (CONDUIT_RELAY_MPI_ENABLED, from
-conduit_relay_config.h), each rank gets BENCHMARK_DOMAINS_PER_RANK domains
-of the requested size. Caliper must also be built with MPI, else every rank
-will write its own .cali file (not desirable).
+If Conduit was built with MPI, each rank gets BENCHMARK_DOMAINS_PER_RANK
+domains of the requested size. Caliper must also be built with MPI, else
+every rank will write its own .cali file (not desirable).
 */
 
 #include "conduit.hpp"
@@ -50,11 +49,10 @@ will write its own .cali file (not desirable).
 #include "conduit_benchmark.hpp"
 #include "conduit_blueprint.hpp"
 #include "conduit_core.hpp"
-#include "conduit_relay_config.h"
 
-#if defined(CONDUIT_RELAY_MPI_ENABLED)
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
 #include <mpi.h>
-#endif // defined(CONDUIT_RELAY_MPI_ENABLED)
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
 
 #include "gtest/gtest.h"
 
@@ -120,7 +118,7 @@ make_braid_dataset(const std::string &src_type,
 
     const index_t npts_z = is_2d ? 0 : npts;
 
-#if defined(CONDUIT_RELAY_MPI_ENABLED)
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
     // pencil layout
 
     src.reset();
@@ -219,7 +217,7 @@ run_benchmarks(const std::vector<ConvertConfig> &convert_configs)
                 };
 
                 std::string rank_suffix;
-#if defined(CONDUIT_RELAY_MPI_ENABLED)
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
                 rank_suffix = "_ranks-" + std::to_string(BENCHMARK_NUM_RANKS);
 #endif
 
@@ -292,7 +290,7 @@ main(int argc, char *argv[])
 {
     ::testing::InitGoogleTest(&argc, argv);
 
-#if defined(CONDUIT_RELAY_MPI_ENABLED)
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &BENCHMARK_RANK);
     MPI_Comm_size(MPI_COMM_WORLD, &BENCHMARK_NUM_RANKS);
@@ -355,7 +353,7 @@ main(int argc, char *argv[])
     // happen on every rank before MPI_Finalize.
     annotations::finalize();
 
-#if defined(CONDUIT_RELAY_MPI_ENABLED)
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
     MPI_Finalize();
 #endif
 
