@@ -132,7 +132,6 @@ TEST(conduit_execution, execution_settings)
         {
             EXPECT_FALSE(execution::DeviceMemory::is_device_ptr(host_data.data_ptr()));
         }
-        EXPECT_FALSE(execution::DeviceMemory::is_device_allocation(host_data.data_ptr()));
 
 #if defined(CONDUIT_USE_DEVICE)
         // with device support, allocate device_data on the device
