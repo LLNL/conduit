@@ -375,7 +375,7 @@ device_copy(void *destination, const void *source, size_t num)
 {
     const size_t word = sizeof(uint64);
     ExecutionPolicy policy = ExecutionPolicy::device();
-    forall(policy, 0, static_cast<int>(num / word),
+    forall(policy, 0, static_cast<index_t>(num / word),
            FastUnifiedMemcpy{static_cast<const uint64*>(source),
                              static_cast<uint64*>(destination)});
     CONDUIT_DEVICE_ERROR_CHECK(policy);

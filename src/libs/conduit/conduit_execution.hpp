@@ -184,8 +184,8 @@ using DefaultAtomicPolicy = RAJA::seq_atomic;
 template <typename ExecPolicyTag, typename Kernel>
 inline void
 forall_exec(ExecPolicyTag,
-            const int& begin,
-            const int& end,
+            const index_t& begin,
+            const index_t& end,
             Kernel&& kernel) noexcept
 {
     RAJA::forall<typename ExecPolicyTag::for_policy>(
@@ -308,8 +308,8 @@ namespace detail
 template <typename Kernel>
 inline void
 forall_exec(OpenMPExec,
-            const int& begin,
-            const int& end,
+            const index_t& begin,
+            const index_t& end,
             Kernel&& kernel) noexcept
 {
     #pragma omp parallel for
@@ -436,11 +436,11 @@ sort_descending(OpenMPExec,
 template <typename ExecPolicyTag, typename Kernel>
 inline void
 forall_exec(ExecPolicyTag,
-            const int& begin,
-            const int& end,
+            const index_t& begin,
+            const index_t& end,
             Kernel&& kernel) noexcept
 {
-    for (int i = begin; i < end; i ++)
+    for (index_t i = begin; i < end; i ++)
     {
         kernel(i);
     }
@@ -819,8 +819,8 @@ private:
 //-----------------------------------------------------------------------------
 template <typename ExecPolicyTag, typename Kernel>
 inline void
-forall(const int& begin,
-       const int& end,
+forall(const index_t& begin,
+       const index_t& end,
        Kernel&& kernel) noexcept
 {
     detail::forall_exec(ExecPolicyTag{}, begin, end, std::forward<Kernel>(kernel));
@@ -875,8 +875,8 @@ atomic_max(T *acc, T value)
 template <typename Kernel>
 inline void
 forall(ExecutionPolicy &policy,
-       const int& begin,
-       const int& end,
+       const index_t& begin,
+       const index_t& end,
        Kernel&& kernel) noexcept
 {
     CONDUIT_ANNOTATE_MARK_FUNCTION;
