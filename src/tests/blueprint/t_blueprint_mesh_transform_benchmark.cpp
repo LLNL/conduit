@@ -163,29 +163,54 @@ make_braid_dataset(const std::string &src_location,
     // utilization as low as possible.
     src.reset();
 
-    if (src_location == "device")
+    // Braid only builds host meshes. For a host source we build directly
+    // into `src` to avoid a full copy; for a device source we build into
+    // `host_src` first and copy the result to device memory afterwards.
+    Node host_src;
+    Node &host_target = (src_location == "device") ? host_src : src;
+
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+    // pencil layout
+    for (int i = 0; i < BENCHMARK_DOMAINS_PER_RANK; i++)
     {
-        // Braid only builds host meshes, so we first build it on the host
-        // and then copy the result to device memory.
-        Node host_src;
+        const int domain_id = BENCHMARK_RANK * BENCHMARK_DOMAINS_PER_RANK + i;
+        Node &domain = host_target.append();
         blueprint::mesh::examples::braid(src_type,
                                          npts,
                                          npts,
                                          npts_z,
-                                         host_src);
+                                         domain);
 
+        const float64 x_offset = 20.0 * domain_id;
+        Node &coords = domain["coordsets/coords"];
+        if (coords["type"].as_string() == "uniform")
+        {
+            coords["origin/x"] = coords["origin/x"].to_float64() + x_offset;
+        }
+        else
+        {
+            float64_array x = coords["values/x"].value();
+            for (index_t j = 0; j < x.number_of_elements(); j++)
+            {
+                x[j] += x_offset;
+            }
+        }
+        domain["state/domain_id"] = domain_id;
+        domain["state/cycle"] = 0;
+    }
+#else // if defined(!CONDUIT_BENCHMARK_MPI_ENABLED)
+    blueprint::mesh::examples::braid(src_type,
+                                     npts,
+                                     npts,
+                                     npts_z,
+                                     host_target);
+#endif // defined(!CONDUIT_BENCHMARK_MPI_ENABLED)
+
+    if (src_location == "device")
+    {
         copy_numeric_arrays_to_device(host_src,
                                       src,
                                       execution::get_device_allocator_id());
-    }
-    else // if (src_location == "host")
-    {
-        // Build directly into `src` to avoid a full copy
-        blueprint::mesh::examples::braid(src_type,
-                                         npts,
-                                         npts,
-                                         npts_z,
-                                         src);
     }
 }
 
@@ -291,6 +316,11 @@ run_benchmarks(const std::vector<ConvertConfig> &convert_configs)
                         dst.reset();
                     }
 
+                    std::string rank_suffix;
+#if defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+                    rank_suffix = "_ranks-" + std::to_string(BENCHMARK_NUM_RANKS);
+#endif // defined(CONDUIT_BENCHMARK_MPI_ENABLED)
+
                     // This executes a benchmark of the current configuration
                     benchmark::exec(convert_config.name,
                                     src,
@@ -300,7 +330,8 @@ run_benchmarks(const std::vector<ConvertConfig> &convert_configs)
                                     exec_config,
                                     npts,
                                     BENCHMARK_NUM_WARMUP_ITERATIONS,
-                                    BENCHMARK_NUM_ITERATIONS);
+                                    BENCHMARK_NUM_ITERATIONS,
+                                    rank_suffix);
 
                     execution::reset_execution_options();
                 }
