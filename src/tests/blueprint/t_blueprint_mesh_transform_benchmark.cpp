@@ -176,12 +176,12 @@ TEST(blueprint_mesh_transform_benchmark, mesh_transforms)
     CONDUIT_ANNOTATE_MARK_FUNCTION;
 
     run_benchmarks({
-        {"mesh_uniform_to_rectilinear",      "uniform",     "rectilinear"},
-        {"mesh_uniform_to_structured",       "uniform",     "structured"},
-        {"mesh_uniform_to_unstructured",     "uniform",     "unstructured"},
-        {"mesh_rectilinear_to_structured",   "rectilinear", "structured"},
-        {"mesh_rectilinear_to_unstructured", "rectilinear", "unstructured"},
-        {"mesh_structured_to_unstructured",  "structured",  "unstructured"},
+        {"uniform_to_rectilinear",      "uniform",     "rectilinear"},
+        {"uniform_to_structured",       "uniform",     "structured"},
+        {"uniform_to_unstructured",     "uniform",     "unstructured"},
+        {"rectilinear_to_structured",   "rectilinear", "structured"},
+        {"rectilinear_to_unstructured", "rectilinear", "unstructured"},
+        {"structured_to_unstructured",  "structured",  "unstructured"},
     });
 }
 
