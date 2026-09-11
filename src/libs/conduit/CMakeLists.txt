@@ -109,7 +109,8 @@ set(conduit_sources
 # Compile device TUs for these files
 set(conduit_device_sources
     conduit_data_array.cpp
-    conduit_data_accessor.cpp)
+    conduit_data_accessor.cpp
+    conduit_memory_manager.cpp)
 conduit_set_source_device_properties("${conduit_device_sources}")
 
 if(TOTALVIEW_FOUND)
