@@ -8,6 +8,9 @@ and this project aspires to adhere to [Semantic Versioning](https://semver.org/s
 
 ### Added
 
+#### Relay
+- Added a `relabel_domain_ids` option to `conduit::relay::io::blueprint::save_mesh()` and `write_mesh()` (and their MPI variants). It defaults to `"true"`, which keeps the current behavior of re-generating domain ids. When set to `"false"`, existing `state/domain_id` values are kept and used to name the domain files and trees. The kept ids must be unique and in the range `[0, N)`.
+
 ### Changed
 
 ### Fixed
