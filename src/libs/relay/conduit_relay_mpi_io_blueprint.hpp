@@ -100,6 +100,12 @@ void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
+///      relabel_domain_ids: "true", "false" (default ==> "true")
+///            when "true" domain ids are re-generated (0 to N-1, in
+///            rank and domain order) and replace state/domain_id
+///            when "false" existing state/domain_id values are kept,
+///            they must be unique and in the range 0 to N-1
+///
 //-----------------------------------------------------------------------------
 void CONDUIT_RELAY_API save_mesh(const conduit::Node &mesh,
                                  const std::string &path,
@@ -146,6 +152,12 @@ void CONDUIT_RELAY_API write_mesh(const conduit::Node &mesh,
 ///            when "multi_file":
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
+///
+///      relabel_domain_ids: "true", "false" (default ==> "true")
+///            when "true" domain ids are re-generated (0 to N-1, in
+///            rank and domain order) and replace state/domain_id
+///            when "false" existing state/domain_id values are kept,
+///            they must be unique and in the range 0 to N-1
 ///
 ///      truncate: "false", "true" (used if present, default ==> "false")
 ///           when "true" overwrites existing files (relay 'save' semantics)

@@ -1316,6 +1316,53 @@ TEST(conduit_blueprint_mesh_relay, spiral_multi_file_yaml_json_hdf5_silo)
 
 
 //-----------------------------------------------------------------------------
+// See: https://github.com/llnl/conduit/issues/1115
+TEST(blueprint_mpi_relay, save_mesh_keep_domain_ids)
+{
+    MPI_Comm comm = MPI_COMM_WORLD;
+    int par_rank = mpi::rank(comm);
+    int par_size = mpi::size(comm);
+    EXPECT_EQ(par_size, 2);
+
+    // spiral with 4 domains, each domain gets its index as its domain id
+    Node data;
+    conduit::blueprint::mesh::examples::spiral(4,data);
+    for(index_t i = 0; i < 4; i++)
+    {
+        data.child(i)["state/domain_id"] = i;
+    }
+    // type sanitize sieve (avoid diffs due to int32 src vs int64 load heurstic)
+    std::string data_str = data.to_yaml();
+    data.reset();
+    data.parse(data_str,"yaml");
+
+    // rank 0 holds domains 2 and 3, rank 1 holds domains 1 and 0
+    const index_t rank_domain_ids[2][2] = {{2, 3}, {1, 0}};
+    Node rank_data;
+    for(index_t i = 0; i < 2; i++)
+    {
+        rank_data.append().set(data.child(rank_domain_ids[par_rank][i]));
+    }
+
+    std::string tout_base = "tout_relay_mpi_bp_mesh_keep_domain_ids";
+    Node opts;
+    opts["suffix"] = "none";
+    opts["relabel_domain_ids"] = "false";
+    relay::mpi::io::blueprint::save_mesh(rank_data, tout_base, "yaml", opts, comm);
+
+    // the domain with id d should be loaded as domain d
+    Node n_load, info;
+    relay::io::blueprint::load_mesh(tout_base + ".root", n_load);
+    EXPECT_EQ(n_load.number_of_children(), 4);
+    for(index_t d = 0; d < 4; d++)
+    {
+        EXPECT_EQ(n_load.child(d)["state/domain_id"].to_index_t(), d);
+        EXPECT_FALSE(data.child(d).diff(n_load.child(d), info));
+    }
+    MPI_Barrier(comm);
+}
+
+//-----------------------------------------------------------------------------
 int main(int argc, char* argv[])
 {
     int result = 0;

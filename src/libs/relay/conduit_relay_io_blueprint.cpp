@@ -658,9 +658,13 @@ identify_protocol(const std::string &path)
 // have no data left in a domain because of something like a
 // clip
 //
-bool clean_mesh(const conduit::Node &data,
-                conduit::Node &output
-                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+// When relabel_domain_ids is false, existing state/domain_id values are
+// kept instead of being re-generated.
+//
+static bool clean_mesh_impl(const conduit::Node &data,
+                            conduit::Node &output,
+                            bool relabel_domain_ids
+                            CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
 {
     output.reset();
     const index_t potential_doms = data.number_of_children();
@@ -713,17 +717,32 @@ bool clean_mesh(const conduit::Node &data,
         }
     }
 
+    if(relabel_domain_ids)
+    {
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    conduit::blueprint::mpi::mesh::generate_domain_ids(output, mpi_comm);
+        conduit::blueprint::mpi::mesh::generate_domain_ids(output, mpi_comm);
 #else
-    conduit::blueprint::mesh::generate_domain_ids(output);
+        conduit::blueprint::mesh::generate_domain_ids(output);
 #endif
+    }
 
     const bool local_is_valid = output.number_of_children() > 0;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
     return detail::global_someone_agrees(local_is_valid, mpi_comm);
 #else
     return local_is_valid;
+#endif
+}
+
+//-----------------------------------------------------------------------------
+bool clean_mesh(const conduit::Node &data,
+                conduit::Node &output
+                CONDUIT_RELAY_COMMUNICATOR_ARG(MPI_Comm mpi_comm))
+{
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+    return clean_mesh_impl(data, output, true, mpi_comm);
+#else
+    return clean_mesh_impl(data, output, true);
 #endif
 }
 
@@ -796,6 +815,12 @@ void save_mesh(const Node &mesh,
 ///            when "multi_file":
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
+///
+///      relabel_domain_ids: "true", "false" (default ==> "true")
+///            when "true" domain ids are re-generated (0 to N-1, in
+///            rank and domain order) and replace state/domain_id
+///            when "false" existing state/domain_id values are kept,
+///            they must be unique and in the range 0 to N-1
 ///
 //-----------------------------------------------------------------------------
 void save_mesh(const Node &mesh,
@@ -893,6 +918,12 @@ void write_mesh(const Node &mesh,
 ///                 <= 0, use # of files == # of domains
 ///                  > 0, # of files == number_of_files
 ///
+///      relabel_domain_ids: "true", "false" (default ==> "true")
+///            when "true" domain ids are re-generated (0 to N-1, in
+///            rank and domain order) and replace state/domain_id
+///            when "false" existing state/domain_id values are kept,
+///            they must be unique and in the range 0 to N-1
+///
 //-----------------------------------------------------------------------------
 void write_mesh(const Node &mesh,
                 const std::string &path,
@@ -927,6 +958,7 @@ void write_mesh(const Node &mesh,
     std::string opts_mesh_name  = "mesh";
     int         opts_num_files  = -1;
     bool        opts_truncate   = false;
+    bool        opts_relabel_domain_ids = true;
 
     // check for + validate file_style option
     if(opts.has_child("file_style") && opts["file_style"].dtype().is_string())
@@ -981,6 +1013,27 @@ void write_mesh(const Node &mesh,
             opts_truncate = true;
     }
 
+    // check for + validate relabel_domain_ids option
+    if(opts.has_child("relabel_domain_ids"))
+    {
+        const Node &n_relabel = opts["relabel_domain_ids"];
+        if(n_relabel.dtype().is_string() &&
+           (n_relabel.as_string() == "true" || n_relabel.as_string() == "false"))
+        {
+            opts_relabel_domain_ids = n_relabel.as_string() == "true";
+        }
+        else if(n_relabel.dtype().is_integer())
+        {
+            opts_relabel_domain_ids = n_relabel.to_int() != 0;
+        }
+        else
+        {
+            CONDUIT_ERROR("write_mesh invalid relabel_domain_ids option: \""
+                          << n_relabel.to_string() << "\"\n"
+                          " expected: \"true\" or \"false\"");
+        }
+    }
+
     int num_files = opts_num_files;
 
     //-----------------------------------------------------------------------------
@@ -988,9 +1041,9 @@ void write_mesh(const Node &mesh,
     //-----------------------------------------------------------------------------
     Node multi_dom;
 #ifdef CONDUIT_RELAY_IO_MPI_ENABLED
-    if (! conduit::relay::mpi::io::blueprint::clean_mesh(mesh, multi_dom, mpi_comm))
+    if (! clean_mesh_impl(mesh, multi_dom, opts_relabel_domain_ids, mpi_comm))
 #else
-    if (! conduit::relay::io::blueprint::clean_mesh(mesh, multi_dom))
+    if (! clean_mesh_impl(mesh, multi_dom, opts_relabel_domain_ids))
 #endif
     {
         CONDUIT_INFO("Blueprint save: no valid data exists. Skipping save");
@@ -1044,6 +1097,57 @@ void write_mesh(const Node &mesh,
             CONDUIT_WARN("There is no data to save. Doing nothing.");
         }
         return;
+    }
+
+    // when keeping existing domain ids, they are used to name the domain
+    // files and trees, and to build the index, so we need every domain to
+    // have one and the ids to be unique and in the range 0 to N-1
+    if(!opts_relabel_domain_ids && global_num_domains > 1)
+    {
+        // the last entry counts missing or out of range ids
+        Node n_local_counts, n_counts;
+        n_local_counts.set(DataType::index_t(global_num_domains + 1));
+        index_t_array local_counts = n_local_counts.value();
+        local_counts.fill(0);
+
+        for(int i = 0; i < local_num_domains; ++i)
+        {
+            const Node &dom = multi_dom.child(i);
+            index_t domain_id = -1;
+            if(dom.has_path("state/domain_id"))
+            {
+                domain_id = dom["state/domain_id"].to_index_t();
+            }
+
+            if(domain_id < 0 || domain_id >= global_num_domains)
+            {
+                local_counts[global_num_domains]++;
+            }
+            else
+            {
+                local_counts[domain_id]++;
+            }
+        }
+
+#ifdef CONDUIT_RELAY_IO_MPI_ENABLED
+        relay::mpi::sum_all_reduce(n_local_counts, n_counts, mpi_comm);
+#else
+        n_counts.set_external(n_local_counts);
+#endif
+        index_t_array counts = n_counts.value();
+        bool domain_ids_ok = (counts[global_num_domains] == 0);
+        for(index_t i = 0; i < global_num_domains && domain_ids_ok; i++)
+        {
+            domain_ids_ok = (counts[i] == 1);
+        }
+
+        if(!domain_ids_ok)
+        {
+            CONDUIT_ERROR("write_mesh relabel_domain_ids is \"false\", but "
+                          "the existing state/domain_id values are not "
+                          "unique and in the range [0, "
+                          << global_num_domains << ")");
+        }
     }
 
     std::string output_dir = "";
@@ -1258,8 +1362,8 @@ void write_mesh(const Node &mesh,
     else // more complex case, N domains to M files
     {
         //
-        // recall: we have re-labeled domain ids from 0 - > N-1, however
-        // some mpi tasks may have no data.
+        // recall: domain ids are 0 - > N-1 (re-labeled, or checked if
+        // kept), however some mpi tasks may have no data.
         //
 
         // books we keep:

@@ -2542,6 +2542,12 @@ Save a mesh to disk using a specific protocol and options:
     ///                 <= 0, use # of files == # of domains
     ///                  > 0, # of files == number_of_files
     ///
+    ///      relabel_domain_ids: "true", "false" (default ==> "true")
+    ///            when "true" domain ids are re-generated (0 to N-1, in
+    ///            rank and domain order) and replace state/domain_id
+    ///            when "false" existing state/domain_id values are kept,
+    ///            they must be unique and in the range 0 to N-1
+    ///
     conduit::relay::io::blueprint::write_mesh(const conduit::Node &mesh,
                                               const std::string &path,
                                               const std::string &protocol,

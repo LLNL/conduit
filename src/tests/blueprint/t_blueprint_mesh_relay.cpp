@@ -572,6 +572,120 @@ TEST(conduit_blueprint_mesh_relay, save_multi_domain_json_yaml)
 }
 
 //-----------------------------------------------------------------------------
+// See: https://github.com/llnl/conduit/issues/1115
+TEST(conduit_blueprint_mesh_relay, save_mesh_keep_domain_ids)
+{
+    std::vector<std::string> protocols;
+    protocols.push_back("json");
+    protocols.push_back("yaml");
+
+    Node n_about;
+    relay::io::about(n_about);
+    if(n_about["protocols/hdf5"].as_string() == "enabled")
+    {
+        protocols.push_back("hdf5");
+    }
+
+    Node data;
+    // use spiral, with 4 domains
+    conduit::blueprint::mesh::examples::spiral(4,data);
+    // give the domains ids that do not match their order
+    const index_t domain_ids[4] = {2, 0, 3, 1};
+    for(index_t i = 0; i < 4; i++)
+    {
+        data.child(i)["state/domain_id"] = domain_ids[i];
+    }
+    // type sanitize sieve (avoid diffs due to int32 src vs int64 load heurstic)
+    std::string data_str = data.to_yaml();
+    data.reset();
+    data.parse(data_str,"yaml");
+
+    // root only, one file per domain, and N domains to M files
+    std::vector<std::string> file_styles;
+    file_styles.push_back("root_only");
+    file_styles.push_back("multi_file");
+    file_styles.push_back("multi_file");
+    const int number_of_files[3] = {-1, -1, 2};
+
+    for(size_t p = 0; p < protocols.size(); p++)
+    {
+        for(size_t f = 0; f < file_styles.size(); f++)
+        {
+            std::string tout_base = conduit_fmt::format(
+                "tout_relay_bp_mesh_keep_domain_ids_{}_{}_{}",
+                protocols[p], file_styles[f], number_of_files[f]);
+            CONDUIT_INFO("Testing " << tout_base);
+
+            Node opts;
+            opts["suffix"] = "none";
+            opts["file_style"] = file_styles[f];
+            opts["number_of_files"] = number_of_files[f];
+            opts["relabel_domain_ids"] = "false";
+            relay::io::blueprint::save_mesh(data, tout_base, protocols[p], opts);
+
+            Node n_load, info;
+            relay::io::blueprint::load_mesh(tout_base + ".root", n_load);
+            EXPECT_EQ(n_load.number_of_children(), 4);
+
+            // the domain with id d should be loaded as domain d
+            for(index_t i = 0; i < 4; i++)
+            {
+                const Node &n_load_dom = n_load.child(domain_ids[i]);
+                EXPECT_EQ(n_load_dom["state/domain_id"].to_index_t(),
+                          domain_ids[i]);
+                EXPECT_FALSE(data.child(i).diff(n_load_dom, info));
+            }
+        }
+    }
+
+    // default behavior still relabels domain ids in order
+    Node opts, n_load;
+    opts["suffix"] = "none";
+    std::string tout_base = "tout_relay_bp_mesh_relabel_domain_ids";
+    relay::io::blueprint::save_mesh(data, tout_base, "yaml", opts);
+    relay::io::blueprint::load_mesh(tout_base + ".root", n_load);
+    for(index_t i = 0; i < 4; i++)
+    {
+        EXPECT_EQ(n_load.child(i)["state/domain_id"].to_index_t(), i);
+    }
+
+    // kept domain ids must be unique and in the range [0, N)
+    Node n_bad;
+    n_bad.set(data);
+    n_bad.child(0)["state/domain_id"] = 1;
+    opts["relabel_domain_ids"] = "false";
+    EXPECT_THROW(relay::io::blueprint::save_mesh(n_bad,
+                                                 tout_base + "_bad_dup",
+                                                 "yaml",
+                                                 opts),
+                 conduit::Error);
+
+    n_bad.set(data);
+    n_bad.child(0)["state/domain_id"] = 4;
+    EXPECT_THROW(relay::io::blueprint::save_mesh(n_bad,
+                                                 tout_base + "_bad_range",
+                                                 "yaml",
+                                                 opts),
+                 conduit::Error);
+
+    n_bad.set(data);
+    n_bad.child(0)["state"].remove("domain_id");
+    EXPECT_THROW(relay::io::blueprint::save_mesh(n_bad,
+                                                 tout_base + "_bad_missing",
+                                                 "yaml",
+                                                 opts),
+                 conduit::Error);
+
+    // invalid option values are an error
+    opts["relabel_domain_ids"] = "nope";
+    EXPECT_THROW(relay::io::blueprint::save_mesh(data,
+                                                 tout_base + "_bad_opt",
+                                                 "yaml",
+                                                 opts),
+                 conduit::Error);
+}
+
+//-----------------------------------------------------------------------------
 TEST(conduit_blueprint_mesh_relay, save_with_subdir)
 {
     // reqs hdf5
